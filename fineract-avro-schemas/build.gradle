@@ -1,0 +1,133 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import com.github.davidmc24.gradle.plugin.avro.GenerateAvroJavaTask
+
+// TODO: @vidakovic we should publish this lib to Maven Central; do in separate PR
+description = 'Fineract Avro Schemas'
+
+apply plugin: 'com.github.davidmc24.gradle.plugin.avro-base'
+
+apply from: 'dependencies.gradle'
+
+abstract class PreprocessAvroSchemasTask extends DefaultTask {
+    @InputDirectory
+    abstract DirectoryProperty getInputDir()
+
+    @InputFile
+    abstract RegularFileProperty getBigDecimalTemplate()
+
+    @OutputDirectory
+    abstract DirectoryProperty getOutputDir()
+
+    @TaskAction
+    def preprocess() {
+        def template = getBigDecimalTemplate().get().asFile.getText("UTF-8")
+        def input = getInputDir().get().asFile
+        def output = getOutputDir().get().asFile
+        
+        input.eachFileRecurse { file ->
+            if (file.isFile()) {
+                def relativePath = input.toPath().relativize(file.toPath())
+                def targetFile = output.toPath().resolve(relativePath).toFile()
+                targetFile.parentFile.mkdirs()
+                targetFile.text = file.text.replaceAll("\"bigdecimal\"", template)
+            }
+        }
+    }
+}
+
+tasks.register('preprocessAvroSchemas', PreprocessAvroSchemasTask) {
+    inputDir = file("$projectDir/src/main/avro")
+    bigDecimalTemplate = file("$projectDir/src/main/resources/avro-templates/bigdecimal.avsc")
+    outputDir = file("$buildDir/generated/avro/src/main/avro")
+}
+
+task buildJavaSdk(type: GenerateAvroJavaTask) {
+    source("$buildDir/generated/avro/src/main/avro")
+    outputDir = file("$buildDir/generated/java/src/main/java")
+    templateDirectory = "$projectDir/src/main/resources/avro-generator-templates/"
+}
+
+spotless {
+    json {
+        target '**/*.avsc' // TODO: include generated AVSCs as well
+        targetExclude ''
+        simple()
+    }
+}
+
+buildJavaSdk.dependsOn(preprocessAvroSchemas, spotlessJsonApply)
+
+sourceSets {
+    main {
+        java {
+            srcDir file("$buildDir/generated/java/src/main/java")
+        }
+        resources {
+            srcDir file("$projectDir/src/main/resources")
+            srcDir file("$projectDir/src/main/avro")
+        }
+        output.dir(file("$buildDir/generated/java/src/main/java"), builtBy: 'buildJavaSdk')
+    }
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.main.output
+    from("$buildDir/generated/java/src/main/java") {
+        include "**/*.java"
+    }
+}
+
+compileJava {
+    dependsOn buildJavaSdk
+    source = sourceSets.main.java.srcDirs
+    options.compilerArgs += ['-parameters']
+}
+
+java {
+    // keep this at Java 8, not 17
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone {
+        enabled = false  // Disable ErrorProne for this module since it contains generated code
+    }
+    options.compilerArgs -= ["-Werror"]
+}
+
+configurations {
+    generatedCompileClasspath.extendsFrom implementation
+    generatedRuntimeClasspath.extendsFrom runtimeClasspath
+}
+
+test {
+    useJUnitPlatform()
+}
+
+licenseFormatMain.dependsOn buildJavaSdk
+licenseMain.dependsOn licenseFormatMain
+
+tasks.named('sourcesJar') {
+    dependsOn tasks.named('buildJavaSdk')
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}

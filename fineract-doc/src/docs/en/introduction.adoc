@@ -1,0 +1,22 @@
+= Introduction
+
+== Platform for Digital Financial Services
+
+See https://fineract.apache.org
+
+== About
+
+See https://fineract.apache.org/#about
+
+== Contribute
+
+See https://fineract.apache.org/#contribute
+
+== Downloads
+
+See https://fineract.apache.org/#downloads
+
+== Resources
+
+See https://fineract.apache.org/#resources
+

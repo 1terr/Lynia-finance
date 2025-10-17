@@ -1,0 +1,9 @@
+[colophon]
+
+*Version*: {revnumber}
+
+*Built on*: {docdate}
+
+For document authors and changelog, view code history for the `fineract-doc` directory in https://github.com/apache/fineract/.
+
+toc::[]

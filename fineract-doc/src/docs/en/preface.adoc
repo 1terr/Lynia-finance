@@ -1,0 +1,6 @@
+[preface]
+= Preface
+
+*Apache Fineract*
+Website: https://fineract.apache.org[]
+Email: mailto:dev@fineract.apache.org[]
