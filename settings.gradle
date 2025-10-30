@@ -47,42 +47,42 @@ buildCache {
 }
 
 rootProject.name='fineract'
-include ':fineract-core'
-include ':fineract-cob'
-include ':fineract-validation'
-include ':fineract-command'
-include ':fineract-accounting'
-include ':fineract-provider'
-include ':fineract-branch'
-include ':fineract-document'
-include ':fineract-investor'
-include ':fineract-rates'
-include ':fineract-charge'
-include ':fineract-tax'
-include ':fineract-loan'
-include ':fineract-savings'
-include ':fineract-report'
-include ':fineract-war'
-include ':integration-tests'
-include ':twofactor-tests'
-include ':oauth2-tests'
-include ':fineract-client'
-include ':fineract-doc'
-include ':fineract-avro-schemas'
-include ':fineract-e2e-tests-core'
-include ':fineract-e2e-tests-runner'
-include 'fineract-progressive-loan'
-include 'fineract-progressive-loan-embeddable-schedule-generator'
+include ':fineract:modules:fineract-core'
+include ':fineract:modules:fineract-cob'
+include ':fineract:modules:fineract-validation'
+include ':fineract:modules:fineract-command'
+include ':fineract:modules:fineract-accounting'
+include ':fineract:modules:fineract-provider'
+include ':fineract:modules:fineract-branch'
+include ':fineract:modules:fineract-document'
+include ':fineract:modules:fineract-investor'
+include ':fineract:modules:fineract-rates'
+include ':fineract:modules:fineract-charge'
+include ':fineract:modules:fineract-tax'
+include ':fineract:modules:fineract-loan'
+include ':fineract:modules:fineract-savings'
+include ':fineract:modules:fineract-report'
+include ':fineract:modules:fineract-war'
+include ':fineract:tests:integration-tests'
+include ':fineract:tests:twofactor-tests'
+include ':fineract:tests:oauth2-tests'
+include ':fineract:modules:fineract-client'
+include ':fineract:modules:fineract-doc'
+include ':fineract:modules:fineract-avro-schemas'
+include ':fineract:modules:fineract-e2e-tests-core'
+include ':fineract:modules:fineract-e2e-tests-runner'
+include ':fineract:modules:fineract-progressive-loan'
+include ':fineract:modules:fineract-progressive-loan-embeddable-schedule-generator'
 // NOTE: custom Docker image with all custom modules included
-include ':custom:docker'
+include ':fineract:custom:docker'
 // NOTE: dynamically load custom modules with pattern "custom -> company -> category -> module"
-file("${rootDir}/custom").eachDir { companyDir ->
+file("${rootDir}/fineract/custom").eachDir { companyDir ->
     if('build' != companyDir.name && 'docker' != companyDir.name) {
-        file("${rootDir}/custom/${companyDir.name}").eachDir { categoryDir ->
+        file("${rootDir}/fineract/custom/${companyDir.name}").eachDir { categoryDir ->
             if('build' != categoryDir.name) {
-                file("${rootDir}/custom/${companyDir.name}/${categoryDir.name}").eachDir { moduleDir ->
+                file("${rootDir}/fineract/custom/${companyDir.name}/${categoryDir.name}").eachDir { moduleDir ->
                     if('build' != moduleDir.name) {
-                        include ":custom:${companyDir.name}:${categoryDir.name}:${moduleDir.name}"
+                        include ":fineract:custom:${companyDir.name}:${categoryDir.name}:${moduleDir.name}"
                     }
                 }
             }
