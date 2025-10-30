@@ -1,7 +1,0 @@
-= Fineract SDKs
-
-TBD
-
-include::client.adoc[leveloffset=+1]
-
-// include::api.adoc[leveloffset=+1]

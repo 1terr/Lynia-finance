@@ -1,7 +1,0 @@
-= GPG
-
-TBD
-
-== Committers
-
-Please make sure to provide your GPG fingerprint in your Apache committer profile at https://id.apache.org.

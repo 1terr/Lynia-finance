@@ -1,5 +1,0 @@
-= Archimate Cheatsheet
-
-TBD
-
-NOTE: https://www.opengroup.org/archimate-forum/archimate-overview and https://plantuml.com/archimate-diagram

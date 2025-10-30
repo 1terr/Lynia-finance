@@ -1,9 +1,0 @@
-= VSCode
-
-== Asciidoc
-
-See: https://marketplace.visualstudio.com/items?itemName=asciidoctor.asciidoctor-vscode
-
-== PlantUML
-
-See: https://marketplace.visualstudio.com/items?itemName=jebbs.plantuml

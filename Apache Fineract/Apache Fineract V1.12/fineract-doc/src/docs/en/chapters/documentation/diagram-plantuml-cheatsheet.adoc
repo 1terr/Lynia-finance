@@ -1,5 +1,0 @@
-= PlantUML Cheatsheet
-
-TBD
-
-NOTE: https://plantuml.com
