@@ -1,0 +1,5 @@
+= Modules
+
+We are currently working towards a fully modular codebase and will publish more here when we are ready.
+
+NOTE: Even if we are not quite there yet with full modularity you can already create your own custom modules to extend Fineract. Please see chapter <<_custom_modules>>.

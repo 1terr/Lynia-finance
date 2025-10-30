@@ -1,0 +1,75 @@
+= OAuth
+
+Fineract has basic OAuth support based on Spring Boot Security.
+
+This can be enabled at runtime in one of two ways:
+
+. Use environment variables (best choice if you run with Docker Compose):
++
+[source,bash]
+----
+FINERACT_SECURITY_BASICAUTH_ENABLED=false
+FINERACT_SECURITY_OAUTH_ENABLED=true
+FINERACT_SERVER_OAUTH_RESOURCE_URL=http://localhost:9000/realms/fineract
+----
+
+. Use JVM parameters (best choice if you run the Spring Boot JAR):
++
+[source,bash]
+----
+java -Dfineract.security.basicauth.enabled=false -Dfineract.security.oauth.enabled=true -jar fineract-provider.jar
+----
+
+Here's how to test OAuth with https://www.keycloak.org[Keycloak].
+The steps required for other OAuth providers will be similar.
+
+== Set up Keycloak
+
+. From terminal, run: `docker run -p 9000:8080 -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:26.2.5 start-dev`
+. Go to URL 'http://localhost:9000/admin' and login with admin/admin
+. Click 'Manage realms', then 'Create realm'
+. Enter name `fineract` for the realm name
+. Click on tab 'Users' on the left, then 'Create new user' with username `mifos`, email `test@example.com`, First name `Mifos`, Last name `User`
+. Click on tab 'Credentials' at the top, and set password to `password`, turning 'temporary' setting to off
+. Click on tab 'Clients' on the left, and create client with ID `community-app`
+. In Settings tab, set 'Valid redirect URIs' to `localhost`, enable 'Client authentication', check 'Direct access grants'
+. Click 'Save' and a 'Credentials' tab will appear
+. In Credentials tab, copy string in field 'secret' as this will be needed in the step to request the access token
+
+Finally we need to change Keycloak configuration so that it uses the username as a subject of the token:
+
+. Choose client `community-app` in the tab 'Clients'
+. Click on tab 'Client scopes', then `community-app-dedicated`
+. Go to tab 'Mappers', click 'Configure a new mapper' and choose 'User Property'
+. Enter `usernameInSub` as 'Name'
+. Enter `username` into the field 'Property' and `sub` into the field 'Token Claim Name'
+
+You are now ready to test out OAuth:
+
+== Retrieve an access token from Keycloak
+
+[source,bash]
+----
+curl --request POST \
+  "$FINERACT_SERVER_OAUTH_RESOURCE_URL/protocol/openid-connect/token" \
+  --header 'Content-Type: application/x-www-form-urlencoded' \
+  --data-urlencode 'username=mifos' \
+  --data-urlencode 'password=password' \
+  --data-urlencode 'client_id=community-app' \
+  --data-urlencode 'grant_type=password' \
+  --data-urlencode 'client_secret=<enter the client secret from credentials tab>'
+----
+
+The reply should contain a field `access_token`. Copy the field's value and use it in the API call below:
+
+== Invoke APIs and pass `Authorization: bearer ...` header
+
+[source,bash]
+----
+curl --insecure \
+  'https://localhost:8443/fineract-provider/api/v1/offices' \
+  --header 'Fineract-Platform-TenantId: default' \
+  --header 'Authorization: bearer <enter the value of the access_token field>'
+----
+
+NOTE: See also https://fineract.apache.org/docs/legacy/#authentication_oauth

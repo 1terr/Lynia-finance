@@ -1,0 +1,66 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+import static org.slf4j.LoggerFactory.*
+
+plugins {
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'groovy'
+    id 'java-gradle-plugin'
+    id 'groovy-gradle-plugin'
+}
+
+//Suppress errors related to invalid org.eclipse.* maven poms versions.
+def loggerFactory = getILoggerFactory()
+def noOpMethod = getILoggerFactory().getClass().getDeclaredMethod("addNoOpLogger", String.class)
+noOpMethod.setAccessible(true)
+noOpMethod.invoke(loggerFactory, "io.spring.gradle.dependencymanagement.internal.maven.EffectiveModelBuilder")
+
+apply from: "${projectDir}/src/main/groovy/org.apache.fineract.dependencies.gradle"
+
+description = 'Fineract Gradle Plugin'
+
+repositories {
+    gradlePluginPortal()
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.sun.activation:jakarta.activation'
+    implementation 'com.sun.mail:jakarta.mail'
+    implementation 'org.freemarker:freemarker'
+    implementation ('com.tmatesoft.svnkit:svnkit') {
+        exclude group: 'net.i2p.crypto', module: 'eddsa'
+    }
+    implementation 'org.bouncycastle:bcprov-jdk18on'
+    implementation 'org.bouncycastle:bcutil-jdk18on'
+    implementation 'org.bouncycastle:bcpg-jdk18on'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit.gpg.bc'
+    implementation 'org.eclipse.jgit:org.eclipse.jgit.ssh.apache'
+    implementation 'com.vdurmont:semver4j'
+    implementation 'org.beryx:text-io'
+    implementation 'commons-io:commons-io'
+    implementation 'com.squareup.okhttp3:okhttp'
+    implementation 'com.squareup.okhttp3:logging-interceptor'
+    implementation 'com.squareup.retrofit2:retrofit'
+    implementation 'com.squareup.retrofit2:converter-jackson'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.squareup.okhttp3:okhttp'
+}
