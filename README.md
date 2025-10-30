@@ -1,10 +1,38 @@
-# Lynia Finance Platform
+# Lynia Finance
 
-A WhatsApp-first digital lending platform for device financing in Zimbabwe. Built on Apache Fineract v1.13.0 with a microservices architecture optimized for YC bootstrap budgets ($5-25/month Year 1).
+**Alternative financial rails to power financial mobility**
+
+A new credit infrastructure for Zimbabwe's underbanked majority, powered by AI/ML underwriting and enforced by technology.
 
 ## Vision
 
-Enabling financial inclusion through conversational lending - customers can apply for device financing, get approved, make payments, and manage their loans entirely through WhatsApp, with zero app downloads required.
+**The underbanked aren't high-risk—they're unmodeled.**
+
+We're building the first credit system designed for the informal majority in Zimbabwe. 80% of Zimbabweans work in the informal sector with no payslips, no contracts, and no access to formal credit. Legacy credit models rely on collateral, employment history, and credit scores—none of which exist for the underbanked.
+
+Lynia Finance is building a parallel financial system where credit decisions are made through alternative data, enforced through remote asset-lock technology, and repaid through mobile money rails integrated directly into income streams.
+
+## The Problem
+
+**Credit in Zimbabwe was never built for the informal majority**
+
+- **80% informal workforce**: No payslips, no formal employment contracts, invisible to traditional lenders
+- **76% informal businesses**: Unregistered, cash-based, and excluded from formal financing
+- **Legacy lending broken**: Traditional models require collateral, employment verification, and credit history that don't exist
+
+The informal economy isn't unproductive—it's simply unstructured and unmodeled by existing financial systems.
+
+## Our Solution
+
+**A new credit infrastructure: powered by data, enforced by tech**
+
+1. **AI/ML Underwriting**: Assess affordability and repayment behavior without formal credit history, using alternative signals from mobile money behavior, location data, and social networks
+
+2. **Enforceable Collateral**: Remote asset-lock technology enables asset-based lending at scale—smartphones and vehicles become productive collateral that can be locked/unlocked remotely
+
+3. **Revenue-Linked Repayment**: Flexible payment collection that adapts to irregular income streams via mobile money integration (EcoCash, Omari), not rigid monthly schedules
+
+4. **WhatsApp-First Platform**: Complete loan journey via WhatsApp—KYC submission, instant approval (<5 mins), asset selection, payment, and loan management with zero app downloads
 
 ## 📁 Project Structure
 
@@ -94,6 +122,16 @@ docker-compose up
 - **Fineract v1.13 Highlights**: [docs/FINERACT_V1.13_HIGHLIGHTS.md](docs/FINERACT_V1.13_HIGHLIGHTS.md)
 - **Upgrade Log**: [docs/UPGRADE_LOG.md](docs/UPGRADE_LOG.md)
 
+## 📊 Market Opportunity
+
+**Starting narrow, scaling systemically**
+
+- **TAM**: $12M annual mobile phone imports in Zimbabwe—our entry point into asset-based lending
+- **SAM**: $8M financing potential based on informal sector demand and mobile money penetration
+- **SOM**: $2M target market of underbanked phone buyers
+
+**Product Roadmap**: Cell phone financing → Digital loans → Motorbike finance → Vehicle finance → Microfinance banking license → Regional expansion (Southern Africa)
+
 ## 🎯 Core Features
 
 ### Customer Journey (WhatsApp Bot)
@@ -125,6 +163,50 @@ docker-compose up
 - **Supabase Platform**: PostgreSQL database, real-time subscriptions, Edge Functions, Auth with RLS
 - **WhatsApp Cloud API**: Native Meta integration (1000 free conversations/month)
 - **Hybrid Credit Scoring**: ML models with A/B testing, one-click rollback, prediction logging
+
+## 🥊 Competitive Landscape
+
+**We're not in the lending business. We're in the system-building business—and no one else is.**
+
+### Traditional Lenders & Retailers
+- Finance only for salaried individuals with formal employment
+- Offline, paper-based loan applications
+- Laybye purchase models requiring upfront deposits
+
+### Fintech Competitors
+- **Zimloan**: Digital loans for formal sector workers
+- **Soshopay**: Buy-now-pay-later for e-commerce
+
+### Our Differentiators
+These aren't just features—they're **structural advantages adapted for the underbanked**:
+
+- ✅ **<5 minute approval**: WhatsApp-based KYC and instant AI/ML credit decisioning
+- ✅ **Embedded asset insurance**: Built into every loan to protect both customer and lender
+- ✅ **Remote asset-lock**: Real-time repayment discipline through technology enforcement
+- ✅ **Mobile money repayments**: Direct integration with EcoCash/Omari for seamless collection
+- ✅ **Scalable distribution**: Commission-based agent network + B2B2C partnerships (retailers, delivery platforms)
+
+## 💼 Business Model
+
+**Dual-sided marketplace connecting borrowers and debt investors**
+
+### Revenue Sources
+- **Interest income/commissions**: Margin on loan interest and financing fees
+- **Asset markup**: Retail margin on financed devices (phones, motorbikes, vehicles)
+
+### Unit Economics
+- Average phone landed cost: **$90**
+- Average phone retail price: **$100** (11% margin)
+- Average loan amount: **$180** (80% financed over 8 months)
+- Target loan margin: **25-50% APR** (competitive for asset-backed lending in informal markets)
+
+### Go-to-Market Strategy
+Cost-effective, commission-based distribution powered by technology:
+
+1. **B2B2C**: Establish distribution partnerships with phone retailers and electronics shops
+2. **Agent Network**: Commission-based local agents for device handover and KYC verification
+3. **B2C Direct**: Viral WhatsApp growth for direct customer acquisition
+4. **Platform Partnerships**: Integration with delivery platforms (motorbikes) and ride-hailing (vehicles)
 
 ## 🔄 Staying Updated
 
