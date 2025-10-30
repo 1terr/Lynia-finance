@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(node --version:*)"
+      "Bash(node --version:*)",
+      "Bash(git mv:*)"
     ],
     "deny": [],
     "ask": []

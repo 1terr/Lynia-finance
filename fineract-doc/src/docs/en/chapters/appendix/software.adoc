@@ -1,4 +1,0 @@
-[appendix]
-= Third Party Software
-
-TBD

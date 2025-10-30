@@ -1,5 +1,0 @@
-// NOTE: no section title needed here!
-
-include::properties.adoc[leveloffset=+1]
-
-include::software.adoc[leveloffset=+1]

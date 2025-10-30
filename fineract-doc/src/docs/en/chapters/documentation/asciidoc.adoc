@@ -1,3 +1,0 @@
-= AsciiDoc
-
-include::asciidoc-cheatsheet.adoc[leveloffset=+1]

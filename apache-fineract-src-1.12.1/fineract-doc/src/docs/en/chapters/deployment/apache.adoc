@@ -1,5 +1,0 @@
-= Apache Software Foundation Infrastructure
-
-We can order a server from Apache's infrastructure team and deploy a demo instance...
-
-TBD

@@ -1,6 +1,0 @@
-= Fineract Client Documentation
-
-[%collapsible]
-====
-include::{rootdir}/fineract-client/build/generated/asciidoc/index.adoc[]
-====

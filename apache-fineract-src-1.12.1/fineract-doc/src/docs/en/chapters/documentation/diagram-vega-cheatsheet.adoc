@@ -1,5 +1,0 @@
-= Vega Cheatsheet
-
-TBD
-
-NOTE: https://vega.github.io/vega-lite/
