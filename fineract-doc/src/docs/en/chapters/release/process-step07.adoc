@@ -1,0 +1,28 @@
+= Step 7: Sign Distribution
+
+== Description
+
+Release source and binary tarballs must be checksummed and signed. In order to sign a release you will need a PGP key. You should get your key signed by a few other people. You will also need to receive their keys from a public key server. See the https://www.apache.org/legal/release-policy.html#release-signing[Apache release policy] for more details.
+
+[source,bash,subs="attributes+,+macros"]
+----
+# sign
+gpg --armor --output apache-fineract-src-{revnumber}.tar.gz.asc \
+  --detach-sig apache-fineract-src-{revnumber}.tar.gz
+gpg --armor --output apache-fineract-bin-{revnumber}.tar.gz.asc \
+  --detach-sig apache-fineract-bin-{revnumber}.tar.gz
+
+# hash
+gpg --print-md SHA512 apache-fineract-src-{revnumber}.tar.gz \
+  > apache-fineract-src-{revnumber}.tar.gz.sha512
+gpg --print-md SHA512 apache-fineract-bin-{revnumber}.tar.gz \
+  > apache-fineract-bin-{revnumber}.tar.gz.sha512
+----
+
+== Gradle Task
+
+.Command
+[source,bash]
+----
+./gradlew fineractReleaseStep7
+----

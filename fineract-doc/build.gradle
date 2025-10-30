@@ -1,0 +1,156 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    
+    dependencies {
+        classpath 'org.asciidoctor:asciidoctor-gradle-jvm:4.0.5'
+        classpath 'org.asciidoctor:asciidoctor-gradle-jvm-pdf:4.0.5'
+        classpath 'org.yaml:snakeyaml:1.33'
+    }
+}
+
+plugins {
+    id 'org.asciidoctor.jvm.convert' version '4.0.5' apply false
+    id 'org.asciidoctor.jvm.pdf' version '4.0.5' apply false
+}
+
+apply plugin: 'org.asciidoctor.jvm.convert'
+apply plugin: 'org.asciidoctor.jvm.pdf'
+
+// Configure resolution strategy for all configurations
+configurations.all {
+    resolutionStrategy {
+        // Force specific versions of dependencies to avoid conflicts
+        force 'org.yaml:snakeyaml:1.33',
+              'org.jruby:jruby-complete:9.4.5.0'
+    }
+}
+
+// Configure Asciidoctor PDF
+asciidoctorPdf {
+    asciidoctorj {
+        version = '2.5.11' // Explicitly set AsciidoctorJ version
+        
+        modules {
+            // Use a specific version of asciidoctorj-pdf that's known to work with AsciidoctorJ 2.5.11
+            pdf.version '2.3.10'
+        }
+    }
+}
+
+// see also: https://asciidoctor.github.io/asciidoctor-gradle-plugin/master/user-guide/
+
+asciidoctorj {
+    attributes = [
+        version: "${project.version}",
+        docdate: new Date(),
+        generated: "${buildDir}/generated/asciidoc",
+        imagesdir: "${buildDir}/generated/images",
+        diagramsdir: "${buildDir}/generated/diagrams",
+        years: '2015-2025',
+        revnumber: "${project.version}".toString(),
+        rootdir: "${rootDir}".toString(),
+        baseurl: 'fineract.apache.org',
+    ]
+
+    modules {
+        diagram.use()
+    }
+
+    fatalWarnings ~/include file not found|missing callout|image to embed not found or not readable/
+    fatalWarnings missingIncludes()
+}
+
+task copyImages(type: Copy) {
+    from "${projectDir}/src/docs/en/images"
+    into "${buildDir}/generated/images"
+}
+
+task copyDiagrams(type: Copy) {
+    from "${projectDir}/src/docs/en/diagrams"
+    into "${buildDir}/generated/diagrams"
+}
+
+asciidoctor {
+    languages 'en'
+
+    baseDir 'src/docs'
+    sourceDir 'src/docs'
+    sources {
+        include('index.adoc')
+    }
+    outputDir 'build/docs/html'
+
+    logging.captureStandardError LogLevel.INFO
+
+    dependsOn copyImages, copyDiagrams
+
+    dependsOn(':fineract-client:clean', ':fineract-client:buildAsciidoc')
+}
+
+asciidoctorPdf {
+    languages 'en'
+
+    baseDir 'src/docs'
+    sourceDir 'src/docs'
+    sources {
+        include('index.adoc')
+    }
+    outputDir 'build/docs/pdf'
+
+    logging.captureStandardError LogLevel.INFO
+
+    dependsOn copyImages, copyDiagrams
+
+    // TODO: @vidakovic prepare a nicer theme
+    // theme 'fineract-default'
+    // pdfThemes {
+    //     local 'fineract-default', {
+    //         themeDir = "$projectDir/src/resources/themes"
+    //     }
+    // }
+    // fontsDir "$projectDir/src/resources/fonts"
+    dependsOn(':fineract-client:clean', ':fineract-client:buildAsciidoc')
+}
+
+task doc(type: Zip) {
+    dependsOn(asciidoctor, asciidoctorPdf)
+
+    into("fineract-${project.version}/html") {
+        from("$buildDir/docs/html") {
+            include "**/*"
+            exclude "**/.asciidoctor"
+        }
+    }
+    into("fineract-${project.version}/pdf") {
+        from("$buildDir/docs/pdf") {
+            include "**/index.pdf"
+            exclude "**/.asciidoctor"
+            rename {
+                "fineract-${project.version}.pdf"
+            }
+        }
+    }
+    archiveFileName = "${project.name}-${project.version}.zip"
+}

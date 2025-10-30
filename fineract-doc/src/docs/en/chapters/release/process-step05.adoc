@@ -1,0 +1,24 @@
+= Step 5: Create Release Tag
+
+== Description
+
+Next, you create a git tag from the HEAD of the release's git branch.
+
+[source,bash,subs="attributes+,+macros"]
+----
+git checkout -b release/{revnumber} <1>
+git tag -a {revnumber} -m "Fineract {revnumber} release" -s <2>
+git push origin tag {revnumber}
+----
+<1> Ensure all tests pass for this commit both in CI and locally.
+<2> `-s` is optional but recommended: GPG signatures on tags are useful for trust and integrity.
+
+CAUTION: It is important to create so called annotated tags (vs. lightweight) for releases.
+
+== Gradle Task
+
+.Command
+[source,bash,subs="attributes+,+macros"]
+----
+./gradlew fineractReleaseStep5 -Pfineract.release.version={revnumber}
+----

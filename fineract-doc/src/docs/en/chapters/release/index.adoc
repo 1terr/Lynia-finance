@@ -1,0 +1,17 @@
+= Releases
+
+This chapter explains how we make the https://github.com/apache/fineract[source code] into an official release available on https://fineract.apache.org.
+
+.Release Schedule
+[plantuml, format=svg, width=100%]
+----
+include::{diagramsdir}/release-schedule.puml[]
+----
+
+include::configuration.adoc[leveloffset=+1]
+
+include::process.adoc[leveloffset=+1]
+
+include::maintenance.adoc[leveloffset=+1]
+
+include::publish.adoc[leveloffset=+1]

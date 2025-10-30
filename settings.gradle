@@ -1,0 +1,91 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
+plugins {
+    id 'com.gradle.develocity' version '3.18.2'
+    id 'com.gradle.common-custom-user-data-gradle-plugin' version '2.0.2'
+}
+
+def isCI = System.getenv('JENKINS_URL') != null
+
+develocity {
+    projectId = "fineract"
+    server = "https://develocity.apache.org"
+    buildScan {
+        uploadInBackground = !isCI
+        publishing.onlyIf { it.authenticated }
+        obfuscation {
+            ipAddresses { addresses ->
+                addresses.collect { address ->
+                    "0.0.0.0"
+                }
+            }
+        }
+    }
+}
+
+buildCache {
+    local {
+        enabled = true
+    }
+}
+
+rootProject.name='fineract'
+include ':fineract-core'
+include ':fineract-cob'
+include ':fineract-validation'
+include ':fineract-command'
+include ':fineract-accounting'
+include ':fineract-provider'
+include ':fineract-branch'
+include ':fineract-document'
+include ':fineract-investor'
+include ':fineract-rates'
+include ':fineract-charge'
+include ':fineract-tax'
+include ':fineract-loan'
+include ':fineract-savings'
+include ':fineract-report'
+include ':fineract-war'
+include ':integration-tests'
+include ':twofactor-tests'
+include ':oauth2-tests'
+include ':fineract-client'
+include ':fineract-doc'
+include ':fineract-avro-schemas'
+include ':fineract-e2e-tests-core'
+include ':fineract-e2e-tests-runner'
+include 'fineract-progressive-loan'
+include 'fineract-progressive-loan-embeddable-schedule-generator'
+// NOTE: custom Docker image with all custom modules included
+include ':custom:docker'
+// NOTE: dynamically load custom modules with pattern "custom -> company -> category -> module"
+file("${rootDir}/custom").eachDir { companyDir ->
+    if('build' != companyDir.name && 'docker' != companyDir.name) {
+        file("${rootDir}/custom/${companyDir.name}").eachDir { categoryDir ->
+            if('build' != categoryDir.name) {
+                file("${rootDir}/custom/${companyDir.name}/${categoryDir.name}").eachDir { moduleDir ->
+                    if('build' != moduleDir.name) {
+                        include ":custom:${companyDir.name}:${categoryDir.name}:${moduleDir.name}"
+                    }
+                }
+            }
+        }
+    }
+}

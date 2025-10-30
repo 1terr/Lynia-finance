@@ -1,0 +1,6 @@
+{
+    "logicalType": "decimal",
+    "precision": 27,
+    "scale": 8,
+    "type": "bytes"
+}

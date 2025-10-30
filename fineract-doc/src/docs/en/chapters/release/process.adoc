@@ -1,0 +1,39 @@
+= Release Process
+
+CAUTION: Fineract release plugin Gradle tasks are experimental and incomplete.
+
+.Release Process Diagram
+[plantuml,format=svg]
+----
+include::{diagramsdir}/release-process.puml[]
+----
+
+include::process-step01.adoc[leveloffset=+1]
+
+include::process-step02.adoc[leveloffset=+1]
+
+include::process-step03.adoc[leveloffset=+1]
+
+include::process-step04.adoc[leveloffset=+1]
+
+include::process-step05.adoc[leveloffset=+1]
+
+include::process-step06.adoc[leveloffset=+1]
+
+include::process-step07.adoc[leveloffset=+1]
+
+include::process-step08.adoc[leveloffset=+1]
+
+include::process-step09.adoc[leveloffset=+1]
+
+include::process-step10.adoc[leveloffset=+1]
+
+include::process-step11.adoc[leveloffset=+1]
+
+include::process-step12.adoc[leveloffset=+1]
+
+include::process-step13.adoc[leveloffset=+1]
+
+include::process-step14.adoc[leveloffset=+1]
+
+include::process-step15.adoc[leveloffset=+1]
