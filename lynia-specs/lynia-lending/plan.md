@@ -1,6 +1,6 @@
-# Implementation Plan: WhatsApp Bot Lending Platform
+# Implementation Plan: Lynia Lending Platform
 
-**Branch**: `001-whatsapp-bot-lending` | **Date**: 2025-10-29 | **Spec**: [spec.md](./spec.md)
+**Branch**: `lynia-lending` | **Date**: 2025-10-29 | **Spec**: [spec.md](./spec.md)
 
 ## Summary
 
@@ -19,8 +19,8 @@ The Lynia Finance platform is an asset-backed lending system targeting Zimbabwe'
 - In-house ML models for advanced risk assessment (behavioral scoring, payment prediction)
 - Smile Identity API for KYC/ID verification (Zimbabwe national ID validation)
 - EcoCash + Omari payment gateway SDKs with circuit breaker pattern
-- WhatsApp Cloud API (Meta) for WhatsApp message handling and USSD payment flows
-- Africa's Talk SMS API for Zimbabwe SMS delivery (6x cheaper than Twilio)
+- WhatsApp Cloud API (Meta) for WhatsApp messaging (FREE 1000 conversations/month, replacing Twilio $75/month)
+- Africa's Talk SMS API for Zimbabwe SMS delivery ($0.008/SMS, 6x cheaper than Twilio $0.05/SMS)
 
 **Primary technical challenge**: Orchestrating stateful WhatsApp conversations (24hr expiry, menu navigation, multi-step KYC) while maintaining transactional consistency across Fineract loan operations, payment gateway callbacks, and inventory management.
 
@@ -58,7 +58,7 @@ The Lynia Finance platform is an asset-backed lending system targeting Zimbabwe'
 - **WhatsApp Cloud API (Meta) FREE Tier** (1000 conversations/month) - Replaces Twilio WhatsApp
 - **Africa's Talk SMS** (Zimbabwe-optimized, $0.008/SMS vs Twilio $0.05/SMS)
 - **Target Costs**: $0-5/month (Months 1-3), $5-15/month (Months 4-6), $15-25/month (Months 7-12), <$40/month (Year 2 post AWS free tier)
-- **See**: YC-BOOTSTRAP-COST-OPTIMIZATION.md for detailed cost breakdown and migration strategy
+- **See**: cost-optimization-COST-OPTIMIZATION.md for detailed cost breakdown and migration strategy
 **Project Type**: Web + Mobile (5 microservices + Supabase platform, 2 Next.js web frontends, Android lock app)
 **Services Architecture** (YC Bootstrap):
 - **5 Custom Microservices** (AWS Lambda Node.js/Python): whatsapp-service, kyc-service, payment-service, lock-service (+ Cloudflare Workers for scoring-service)
@@ -109,7 +109,7 @@ The Lynia Finance platform is an asset-backed lending system targeting Zimbabwe'
 ### Documentation (this feature)
 
 ```
-specs/001-whatsapp-bot-lending/
+specs/lynia-lending/
 ├── spec.md              # Feature specification (31 clarifications, 147 FRs, 13 user stories)
 ├── plan.md              # This file (implementation roadmap)
 ├── research.md          # Phase 0 research findings (to be created)
@@ -1197,7 +1197,7 @@ apache-fineract-src-1.12.1/
 7. **Vercel FREE Tier**: 100GB bandwidth (vs AWS Amplify $15/month)
 
 ### Detailed Cost Optimization Document
-See [YC-BOOTSTRAP-COST-OPTIMIZATION.md](./YC-BOOTSTRAP-COST-OPTIMIZATION.md) for comprehensive cost analysis, migration strategy, code examples, and scaling plan.
+See [cost-optimization-COST-OPTIMIZATION.md](./cost-optimization-COST-OPTIMIZATION.md) for comprehensive cost analysis, migration strategy, code examples, and scaling plan.
 
 ---
 

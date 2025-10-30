@@ -1,9 +1,9 @@
-# Feature Specification: WhatsApp Bot for Device Financing
+# Feature Specification: Lynia Lending Platform
 
-**Feature Branch**: `001-whatsapp-bot-lending`
+**Feature Branch**: `lynia-lending`
 **Created**: 2025-10-29
 **Status**: Draft
-**Input**: User description: "WhatsApp Bot for device financing - Customer onboarding, KYC, loan application, asset selection, payment collection, repayment management, and agent operations"
+**Input**: User description: "Lynia Lending Platform - Customer onboarding, KYC, loan application, asset selection, payment collection, repayment management, and agent operations"
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -165,9 +165,9 @@ As a distributor agent, I want to view customer handover history and receive low
 
 ### Functional Requirements
 
-**WhatsApp Bot - Customer-Facing**
+**WhatsApp Bot - Customer-Facing** (WhatsApp Cloud API via Meta Graph API)
 
-- **FR-001**: System MUST send a greeting message with terms and conditions to customers within 5 seconds of initial WhatsApp contact
+- **FR-001**: System MUST send a greeting message with terms and conditions to customers within 5 seconds of initial WhatsApp contact using WhatsApp Cloud API (Meta)
 - **FR-002**: System MUST require customer acceptance of terms (via "Accept" keyword or similar) before proceeding to KYC collection
 - **FR-003**: System MUST collect the following KYC fields: Full Name, ID Number, Address, Phone Number, and 2 Next of Kin (each with Name, ID Number, and Phone Number)
 - **FR-004**: System MUST validate ID number format according to Zimbabwean national ID standards
@@ -201,6 +201,17 @@ As a distributor agent, I want to view customer handover history and receive low
 - **FR-032**: System MUST send a "Final Warning" message after missed payment with deadline and consequences
 - **FR-033**: System MUST trigger backend asset lock workflow if payment remains unpaid after final warning deadline
 
+**WhatsApp Integration Provider Requirements**
+
+- **FR-033a**: System MUST use WhatsApp Cloud API (Meta) instead of Twilio for WhatsApp messaging to leverage FREE tier (1000 conversations/month)
+- **FR-033b**: System MUST authenticate with Meta Graph API using WhatsApp Business API access token
+- **FR-033c**: System MUST register WhatsApp Business phone number via Meta Business Account
+- **FR-033d**: System MUST handle WhatsApp Cloud API webhook callbacks (POST to configured webhook URL)
+- **FR-033e**: System MUST implement Meta Graph API message sending: POST /v18.0/{phone-number-id}/messages
+- **FR-033f**: System MUST track conversation windows (24-hour session) per WhatsApp Cloud API pricing model
+- **FR-033g**: System MUST use message templates for notifications outside 24-hour window (pre-approved by Meta)
+- **FR-033h**: System MUST implement WhatsApp Cloud API rate limiting (80 messages/second per phone number)
+
 **Agent Operations**
 
 - **FR-034**: System MUST allow agents to input customer ID for verification via dashboard or mobile app
@@ -222,6 +233,16 @@ As a distributor agent, I want to view customer handover history and receive low
 - **FR-050**: System MUST monitor inventory levels against defined thresholds
 - **FR-051**: System MUST send WhatsApp or dashboard alerts to agents when inventory falls below threshold
 - **FR-052**: System MUST allow agents to submit restock requests via dashboard
+
+**SMS Integration Provider Requirements** (Africa's Talk for Zimbabwe)
+
+- **FR-052a**: System MUST use Africa's Talk SMS API for Next of Kin verification SMS ($0.008/SMS vs Twilio $0.05/SMS)
+- **FR-052b**: System MUST authenticate with Africa's Talk API using API key and username
+- **FR-052c**: System MUST send SMS using Africa's Talk REST API: POST /version1/messaging
+- **FR-052d**: System MUST include sender ID "LYNIA" in SMS messages (registered with Africa's Talk)
+- **FR-052e**: System MUST handle Africa's Talk delivery callbacks for SMS verification tracking
+- **FR-052f**: System MUST implement retry logic for failed SMS (exponential backoff, max 3 attempts)
+- **FR-052g**: System MUST log all SMS costs per message for financial reconciliation
 
 ### Key Entities
 

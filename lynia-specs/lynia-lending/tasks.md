@@ -1,6 +1,6 @@
 # Tasks: WhatsApp Bot for Device Financing
 
-**Input**: Design documents from `/specs/001-whatsapp-bot-lending/`
+**Input**: Design documents from `/specs/lynia-lending/`
 **Prerequisites**: plan.md (complete), spec.md (complete), lynia-finance-core.md specification (complete)
 
 **Tests**: Tests are MANDATORY per constitution requirement for Test-Driven Development (TDD). All tests MUST be written FIRST and FAIL before implementation.
@@ -20,24 +20,30 @@
   - ML service: `services/ml-scoring/src/` (Python)
   - Shared: `shared/types/`, `shared/utils/`
 
-## Database Architecture
-- **Supabase PostgreSQL (Unified Database)**:
+## Database Architecture - YC Bootstrap (Supabase FREE Tier)
+- **Supabase PostgreSQL FREE Tier (500MB limit - optimized)**:
   - `fineract_tenants` database (Apache Fineract multi-tenancy config)
   - `fineract_default` database (loan accounts, transactions, repayment schedules)
   - Operational tables: whatsapp_sessions, distributor_inventory, distributor_commissions, inventory_reconciliations, admin_users, support_tickets, kyc_cache, payment_reconciliations, payment_callbacks, next_of_kin, model_versions, lock_commands, event_log
+  - **Optimization**: Table compression (LZ4), partitioning (monthly), 90-day event_log retention
 
-## Supabase Platform Services
+## Supabase Platform Services (FREE Tier)
 - **Supabase Auth**: Admin/distributor authentication, Row Level Security (RLS) for RBAC, MFA for admin roles
-- **Supabase Realtime**: Live inventory updates, commission dashboards, payment status (WebSocket subscriptions)
-- **Supabase Edge Functions**: Serverless Deno/TypeScript functions for cron jobs (weekly-commission-batch, payment-reconciliation, daily-reminders, low-stock-alerts, send-sms, send-email)
-- **Supabase Storage**: Commission PDFs, KYC documents, reconciliation photos, ML model files
+- **Supabase Realtime**: Live inventory updates, commission dashboards, payment status (200 concurrent connections FREE)
+- **Supabase Edge Functions**: Serverless Deno/TypeScript functions for cron jobs (500K invocations/month FREE)
+- **Supabase Storage**: Commission PDFs, KYC documents, reconciliation photos (1GB FREE)
 
-## Custom Microservices (Only 5!)
-1. **whatsapp-service** (Node.js/TypeScript) - Twilio webhook handler, conversation state machine
-2. **kyc-service** (Node.js/TypeScript) - Smile Identity integration, duplicate detection, Next of Kin SMS verification
+## Custom Microservices - AWS Lambda (Always FREE: 1M requests/month)
+1. **whatsapp-service** (Node.js/TypeScript) - WhatsApp Cloud API webhook handler, conversation state machine
+2. **kyc-service** (Node.js/TypeScript) - Smile Identity integration, duplicate detection, Next of Kin SMS verification (Africa's Talk)
 3. **scoring-service** (Python) - ML models, Fineract Scorecard integration, A/B testing
 4. **payment-service** (Node.js/TypeScript) - EcoCash/Omari integration, payment callbacks, Fineract posting, idempotency
 5. **lock-service** (Node.js/TypeScript) - Third-party lock provider API, grace period logic, lock/unlock commands
+
+## Apache Fineract Deployment - AWS EC2 Free Tier
+- **EC2 t3.micro** (750 hrs/month FREE for 12 months, then $8/month reserved instance)
+- **Docker Compose** with Fineract connecting to Supabase PostgreSQL
+- **1GB RAM, 2 vCPUs** (sufficient for <1000 active loans)
 
 ---
 
@@ -56,14 +62,16 @@
 - [ ] T005 [P] [M0] Document Fineract loan product configuration (25-50% interest rate) in research.md
 - [ ] T006 [M0] Create Fineract API integration test plan (localhost Docker instance)
 
-### R0.2: Twilio WhatsApp Business API Research
+### R0.2: WhatsApp Cloud API (Meta) Research - YC Bootstrap Free Tier
 
-- [ ] T007 [P] [M0] Research Twilio WhatsApp webhook setup (incoming message handling)
-- [ ] T008 [P] [M0] Research Twilio message sending API (text, buttons, lists)
-- [ ] T009 [P] [M0] Research Twilio session management (24hr expiry window)
-- [ ] T010 [P] [M0] Research Twilio template messages (pre-approved templates for notifications)
-- [ ] T011 [P] [M0] Document Twilio rate limits (80 msg/sec) in research.md
-- [ ] T012 [M0] Create Twilio sandbox test account and verify message flow
+- [ ] T007 [P] [M0] Research WhatsApp Cloud API webhook setup via Meta Graph API (incoming message handling)
+- [ ] T008 [P] [M0] Research WhatsApp Cloud API message sending (POST /v18.0/{phone-number-id}/messages with text, buttons, lists)
+- [ ] T009 [P] [M0] Research WhatsApp Cloud API conversation windows (24hr free session, pricing after)
+- [ ] T010 [P] [M0] Research WhatsApp Cloud API message templates (pre-approved templates for notifications outside 24hr window)
+- [ ] T011 [P] [M0] Document WhatsApp Cloud API rate limits (80 msg/sec) and FREE tier (1000 conversations/month) in research.md
+- [ ] T012 [M0] Create Meta Business Account, register WhatsApp Business phone number, get API access token, and verify message flow
+- [ ] T012a [P] [M0] Document cost comparison: WhatsApp Cloud API ($0 for 1000 conversations) vs Twilio ($0.005/message = $75/month for 500 msgs/day)
+- [ ] T012b [P] [M0] Research WhatsApp Cloud API webhook verification (required by Meta for security)
 
 ### R0.3: EcoCash & Omari Payment Gateway Research
 
@@ -73,6 +81,16 @@
 - [ ] T016 [P] [M0] Document callback authentication mechanisms (HMAC, API keys)
 - [ ] T017 [P] [M0] Document callback retry strategies from gateway side
 - [ ] T018 [M0] Identify sandbox/test environments for EcoCash and Omari
+
+### R0.3a: Africa's Talk SMS Provider Research - YC Bootstrap Cost Optimization
+
+- [ ] T018a [P] [M0] Research Africa's Talk SMS API for Zimbabwe ($0.008/SMS vs Twilio $0.05/SMS = 6x cheaper)
+- [ ] T018b [P] [M0] Research Africa's Talk authentication (API key + username)
+- [ ] T018c [P] [M0] Research Africa's Talk SMS sending API (POST /version1/messaging)
+- [ ] T018d [P] [M0] Research Africa's Talk delivery callbacks and status tracking
+- [ ] T018e [P] [M0] Document Africa's Talk sender ID registration process for "LYNIA" in Zimbabwe
+- [ ] T018f [P] [M0] Document cost comparison: 100 SMS/month with Africa's Talk ($0.80) vs Twilio ($5.00)
+- [ ] T018g [M0] Create Africa's Talk test account and verify SMS delivery in Zimbabwe
 
 ### R0.4: Smile Identity KYC API Research
 
@@ -117,7 +135,20 @@
 - [ ] T048 [M0] Select provider and document decision rationale in research.md
 - [ ] T049 [M0] Create test account and verify lock/unlock API works
 
-**Checkpoint**: Research phase complete - all vendor APIs understood, test accounts created
+### R0.8: AWS Free Tier Research - YC Bootstrap Infrastructure
+
+- [ ] T049a [P] [M0] Research AWS Lambda always-free tier (1M requests/month, 400K GB-seconds)
+- [ ] T049b [P] [M0] Research AWS EC2 t3.micro free tier (750 hrs/month for 12 months, 1GB RAM, 2 vCPUs)
+- [ ] T049c [P] [M0] Research AWS API Gateway free tier (1M requests/month for 12 months, then $1/million)
+- [ ] T049d [P] [M0] Document Lambda cold start mitigation strategies (SnapStart, provisioned concurrency)
+- [ ] T049e [P] [M0] Calculate estimated Lambda usage for 5 microservices (whatsapp, kyc, payment, lock, scoring)
+- [ ] T049f [P] [M0] Document Apache Fineract deployment on EC2 t3.micro (Docker Compose, PostgreSQL connection)
+- [ ] T049g [P] [M0] Document post-12-month costs: EC2 reserved instance ($8/month) or AWS Lightsail ($5/month)
+- [ ] T049h [P] [M0] Research AWS SAM (Serverless Application Model) vs Serverless Framework for Lambda deployment
+- [ ] T049i [M0] Create AWS account and verify free tier eligibility
+- [ ] T049j [M0] Document cost comparison: AWS Lambda + EC2 Free Tier ($0-10/month Year 1) vs Railway/Fly.io ($50-65/month)
+
+**Checkpoint**: Research phase complete - all vendor APIs understood, test accounts created, YC Bootstrap infrastructure validated
 
 ---
 
@@ -331,19 +362,23 @@
 
 ### Implementation for User Story 1
 
-**WhatsApp Service - Conversation Flow**
+**WhatsApp Service - Conversation Flow (WhatsApp Cloud API)**
 
 - [ ] T178 [P] [US1] Create WhatsAppSession model in services/whatsapp-service/src/models/session.ts
 - [ ] T179 [P] [US1] Create Customer model in services/whatsapp-service/src/models/customer.ts
-- [ ] T180 [US1] Implement Twilio webhook handler POST /webhook in services/whatsapp-service/src/routes/webhook.ts
+- [ ] T180 [US1] Implement WhatsApp Cloud API webhook handler POST /webhook with Meta verification (GET /webhook?hub.verify_token=...) in services/whatsapp-service/src/routes/webhook.ts
+- [ ] T180a [US1] Create WhatsApp Cloud API client (Graph API v18.0) in services/whatsapp-service/src/clients/whatsapp-cloud-client.ts
+- [ ] T180b [US1] Implement WhatsApp message sending: POST /v18.0/{phone-number-id}/messages with access token authentication
+- [ ] T180c [US1] Implement conversation window tracking (24hr free session, message templates after) in services/whatsapp-service/src/services/conversation-window-tracker.ts
 - [ ] T181 [US1] Implement conversation state machine (greeting → terms → kyc_name → kyc_id → kyc_address → kyc_phone → kyc_nok1 → kyc_nok2 → processing) in services/whatsapp-service/src/services/conversation-manager.ts
-- [ ] T182 [US1] Implement greeting message handler with terms display (FR-001, FR-002) in services/whatsapp-service/src/handlers/greeting.ts
+- [ ] T182 [US1] Implement greeting message handler with terms display (FR-001, FR-033a) in services/whatsapp-service/src/handlers/greeting.ts
 - [ ] T183 [US1] Implement terms acceptance handler (keyword "Accept") in services/whatsapp-service/src/handlers/terms.ts
 - [ ] T184 [US1] Implement KYC field collection handlers (Name, ID, Address, Phone) in services/whatsapp-service/src/handlers/kyc-collection.ts
 - [ ] T185 [US1] Implement Next of Kin collection handler (2 contacts: Name, ID, Phone each) in services/whatsapp-service/src/handlers/nok-collection.ts
 - [ ] T186 [US1] Add field validation (Zimbabwe ID format, phone number length) in services/whatsapp-service/src/validators/kyc-validator.ts
 - [ ] T187 [US1] Implement "Retry KYC" option to clear previous submission (FR-026) in services/whatsapp-service/src/handlers/retry.ts
 - [ ] T188 [US1] Implement session expiry handling (15min timeout, 7-day retention, restoration on return) (FR-211 to FR-214) in services/whatsapp-service/src/services/session-manager.ts
+- [ ] T188a [US1] Implement WhatsApp Cloud API rate limiting (80 msg/sec, token bucket algorithm) per FR-033h
 
 **KYC Service - Smile Identity Integration**
 
@@ -356,13 +391,17 @@
 - [ ] T195 [US1] Implement duplicate customer detection (National ID primary key, loan status checks) (FR-217 to FR-222) in services/kyc-service/src/services/duplicate-detector.ts
 - [ ] T196 [US1] Add error handling for manual review required, ID not found in services/kyc-service/src/services/error-handler.ts
 
-**Next of Kin SMS Verification**
+**Next of Kin SMS Verification (Africa's Talk)**
 
 - [ ] T197 [US1] Implement POST /kyc/next-of-kin/verify endpoint in services/kyc-service/src/routes/nok-verify.ts
-- [ ] T198 [US1] Implement SMS verification workflow: send "Reply YES to confirm" (FR-228 to FR-229) in services/kyc-service/src/services/nok-verifier.ts
+- [ ] T197a [US1] Create Africa's Talk SMS API client in services/kyc-service/src/clients/africastalking-client.ts
+- [ ] T197b [US1] Implement Africa's Talk authentication (API key + username) and sender ID "LYNIA" (FR-052a to FR-052d)
+- [ ] T198 [US1] Implement SMS verification workflow: send "Reply YES to confirm" via Africa's Talk (FR-228 to FR-229, FR-052c) in services/kyc-service/src/services/nok-verifier.ts
+- [ ] T198a [US1] Implement Africa's Talk delivery callback handler for SMS status tracking (FR-052e)
+- [ ] T198b [US1] Log SMS costs per message ($0.008 per SMS) for financial reconciliation (FR-052g)
 - [ ] T199 [US1] Implement 24-hour verification window with status tracking (Pending/Verified/Failed) in services/kyc-service/src/services/nok-verification-tracker.ts
 - [ ] T200 [US1] Implement loan approval requirement: at least 1 Next of Kin must verify (FR-231) in services/kyc-service/src/services/loan-approval-validator.ts
-- [ ] T201 [US1] Implement retry workflow: after 3 failed attempts → escalate to CS (FR-232 to FR-233) in services/kyc-service/src/services/nok-retry-handler.ts
+- [ ] T201 [US1] Implement retry workflow with exponential backoff (max 3 attempts, FR-052f), then escalate to CS (FR-232 to FR-233) in services/kyc-service/src/services/nok-retry-handler.ts
 
 **Scoring Service - Hybrid Credit Scoring**
 
@@ -815,14 +854,53 @@
 - [ ] T395 [P] [M12] Create CloudWatch dashboard (KPIs, error rates, latency) in infrastructure/monitoring/dashboard.json
 - [ ] T396 [P] [M12] Implement WhatsApp rate limiting dashboard (FR-255) in frontend/admin-portal/src/app/dashboard/monitoring/whatsapp.tsx
 
-### Infrastructure & Deployment
+### Infrastructure & Deployment - YC Bootstrap (AWS Free Tier + Supabase)
 
-- [ ] T397 [M12] Create Terraform infrastructure as code (ECS, RDS, ElastiCache, SNS/SQS)
-- [ ] T398 [P] [M12] Create ECS task definitions for all 10 services
-- [ ] T399 [P] [M12] Create Docker Compose for local development (Fineract, PostgreSQL, Redis)
-- [ ] T400 [P] [M12] Create CI/CD pipeline (GitHub Actions: build, test, deploy)
-- [ ] T401 [M12] Setup production RDS with automatic backups and 7-year retention
-- [ ] T402 [M12] Create runbooks (incident response, rollback, scaling) in docs/runbooks/
+**AWS Lambda Deployment (Always FREE: 1M requests/month)**
+
+- [ ] T397 [M12] Create AWS SAM template (template.yaml) for all 5 Lambda functions (whatsapp, kyc, payment, lock, scoring)
+- [ ] T397a [P] [M12] Configure Lambda function: whatsapp-service (Node.js 18, 256MB RAM, 30s timeout)
+- [ ] T397b [P] [M12] Configure Lambda function: kyc-service (Node.js 18, 512MB RAM, 60s timeout for Smile Identity)
+- [ ] T397c [P] [M12] Configure Lambda function: payment-service (Node.js 18, 256MB RAM, 30s timeout)
+- [ ] T397d [P] [M12] Configure Lambda function: lock-service (Node.js 18, 128MB RAM, 15s timeout)
+- [ ] T397e [P] [M12] Configure Lambda function: scoring-service (Python 3.11, 1GB RAM, 120s timeout for ML inference)
+- [ ] T397f [M12] Setup API Gateway HTTP API (FREE 1M requests for 12 months, then $1/million)
+- [ ] T397g [P] [M12] Configure Lambda environment variables (SUPABASE_URL, SUPABASE_SERVICE_KEY, WHATSAPP_ACCESS_TOKEN, etc.)
+- [ ] T397h [M12] Setup Lambda VPC configuration for Supabase PostgreSQL access (if private)
+- [ ] T397i [M12] Configure Lambda concurrency limits (reserve 10 concurrent executions per service)
+
+**AWS EC2 Free Tier - Apache Fineract Deployment**
+
+- [ ] T398 [M12] Launch EC2 t3.micro instance (Ubuntu 22.04 LTS, 750 hrs/month FREE for 12 months)
+- [ ] T398a [M12] Install Docker and Docker Compose on EC2 instance
+- [ ] T398b [M12] Create Docker Compose file for Fineract (connect to Supabase PostgreSQL)
+- [ ] T398c [M12] Configure Fineract environment variables (FINERACT_HIKARI_JDBC_URL, FINERACT_HIKARI_USERNAME, FINERACT_HIKARI_PASSWORD)
+- [ ] T398d [M12] Setup EC2 security groups (allow HTTPS 8443, HTTP 8080 from Lambda, admin portal)
+- [ ] T398e [M12] Configure Elastic IP for EC2 instance (persistent IP address)
+- [ ] T398f [M12] Setup CloudWatch agent on EC2 for monitoring (5GB logs/month FREE)
+- [ ] T398g [M12] Create EC2 AMI snapshot for disaster recovery
+- [ ] T398h [M12] Document post-12-month migration: Reserved Instance ($8/month) or AWS Lightsail ($5/month)
+
+**Local Development Environment**
+
+- [ ] T399 [P] [M12] Create Docker Compose for local development (Fineract, Supabase local, LocalStack for Lambda testing)
+- [ ] T399a [P] [M12] Setup LocalStack for local Lambda testing (FREE for basic features)
+- [ ] T399b [P] [M12] Create .env.local with local development credentials
+
+**CI/CD Pipeline (GitHub Actions)**
+
+- [ ] T400 [P] [M12] Create GitHub Actions workflow: build and test (runs on every PR)
+- [ ] T400a [P] [M12] Create GitHub Actions workflow: deploy Lambda functions (sam build && sam deploy)
+- [ ] T400b [P] [M12] Create GitHub Actions workflow: deploy EC2 Fineract (SSH + docker-compose pull && up -d)
+- [ ] T400c [P] [M12] Create GitHub Actions workflow: deploy Supabase Edge Functions (supabase functions deploy)
+- [ ] T400d [M12] Setup GitHub Secrets for AWS credentials, Supabase keys, WhatsApp tokens
+
+**Database & Monitoring**
+
+- [ ] T401 [M12] Configure Supabase automated backups (FREE tier: daily backups, 7-day retention)
+- [ ] T401a [M12] Setup 7-year data archival strategy (export old data to S3 Glacier after RBZ compliance period)
+- [ ] T401b [M12] Configure Supabase database size monitoring (alert at 400MB = 80% of 500MB FREE limit)
+- [ ] T402 [M12] Create runbooks (incident response, Lambda rollback, EC2 recovery, Supabase restore) in docs/runbooks/
 
 ### Testing & Quality
 

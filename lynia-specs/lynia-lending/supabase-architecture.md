@@ -515,7 +515,7 @@ supabase functions deploy low-stock-alerts --schedule "0 9 * * *"         # Ever
 | CloudWatch Logs (50GB/month) | ~$25 |
 | **Total** | **~$462/month** |
 
-### Supabase-First Architecture:
+### Supabase-First Architecture (Previous Plan):
 | Service | Monthly Cost |
 |---------|-------------|
 | Supabase Pro (500GB database, Auth, Realtime, Edge Functions, Storage) | ~$25 |
@@ -523,6 +523,21 @@ supabase functions deploy low-stock-alerts --schedule "0 9 * * *"         # Ever
 | **Total** | **~$75/month** |
 
 **Savings**: ~$387/month (~84% reduction)
+
+### YC Bootstrap Architecture (FREE Tier Optimized):
+| Service | Monthly Cost (Year 1) | Monthly Cost (Year 2+) |
+|---------|----------------------|------------------------|
+| **Supabase FREE Tier** (500MB database, Auth, Realtime, Edge Functions, Storage) | **$0** | **$0** (or $25 if >500MB) |
+| **AWS Lambda** (1M requests/month always FREE) | **$0** | **$0** |
+| **AWS API Gateway** (1M requests/month FREE Year 1) | **$0** | **~$1-2** |
+| **AWS EC2 t3.micro** (FREE Year 1 for Fineract) | **$0** | **~$8** (reserved instance) |
+| **WhatsApp Cloud API** (1000 conversations/month FREE) | **$0** | **~$5** (if >1000) |
+| **Africa's Talk SMS** (100 SMS/month) | **$0.80** | **$0.80** |
+| **External Services** (KYC, payments, lock) | **~$5-10** | **~$10-20** |
+| **Total** | **~$5.80-10.80/month** | **~$24.80-35.80/month** |
+
+**Savings vs Original**: ~$451/month (~97% reduction in Year 1)
+**Savings vs Supabase-First**: ~$64/month (~85% reduction in Year 1)
 
 ---
 
@@ -610,22 +625,168 @@ supabase functions deploy low-stock-alerts --schedule "0 9 * * *"         # Ever
 
 ---
 
+## Database Optimization for Supabase FREE Tier (500MB Limit)
+
+### Compression Strategies
+
+```sql
+-- Enable LZ4 compression for large text columns (event_log, support_tickets)
+ALTER TABLE event_log SET (toast_compression = 'lz4');
+ALTER TABLE support_tickets SET (toast_compression = 'lz4');
+ALTER TABLE distributor_inventory SET (toast_compression = 'lz4');
+ALTER TABLE whatsapp_sessions SET (toast_compression = 'lz4');
+
+-- Enable autovacuum for automatic space reclamation
+ALTER TABLE event_log SET (autovacuum_enabled = true);
+ALTER TABLE distributor_inventory SET (autovacuum_enabled = true);
+ALTER TABLE whatsapp_sessions SET (autovacuum_enabled = true);
+```
+
+### Table Partitioning (Monthly) for Large Tables
+
+```sql
+-- Partition event_log table by month (oldest data archived after 7 years)
+CREATE TABLE event_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  event_type VARCHAR(100) NOT NULL,
+  payload JSONB,
+  created_at TIMESTAMP DEFAULT NOW()
+) PARTITION BY RANGE (created_at);
+
+-- Create monthly partitions
+CREATE TABLE event_log_2025_01 PARTITION OF event_log
+  FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
+
+CREATE TABLE event_log_2025_02 PARTITION OF event_log
+  FOR VALUES FROM ('2025-02-01') TO ('2025-03-01');
+
+-- Auto-create partitions with pg_partman extension (if available on Supabase FREE tier)
+-- Or create script to generate partitions monthly
+
+-- Drop old partitions after 90 days (retention policy)
+DROP TABLE IF EXISTS event_log_2024_10; -- After 90 days, archive to S3 Glacier
+```
+
+### Event Log Retention Policy (90 days)
+
+```sql
+-- Cron job to delete events older than 90 days (keep database <500MB)
+CREATE OR REPLACE FUNCTION cleanup_old_event_logs()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM event_log WHERE created_at < NOW() - INTERVAL '90 days';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Schedule via Supabase Edge Function (daily cron)
+```
+
+### WhatsApp Session Cleanup (7-day retention)
+
+```sql
+-- Delete expired WhatsApp sessions after 7 days
+CREATE OR REPLACE FUNCTION cleanup_expired_sessions()
+RETURNS void AS $$
+BEGIN
+  DELETE FROM whatsapp_sessions WHERE last_activity < NOW() - INTERVAL '7 days';
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### Estimated Database Growth (Stay Under 500MB)
+
+```
+Year 1 (500 users, 1000 loans):
+- Fineract tables: ~50MB (clients, loans, transactions, schedules)
+- Operational tables: ~30MB (inventory, commissions, sessions)
+- Event log (90-day retention): ~20MB
+- TOTAL: ~100MB ✅ (20% of 500MB limit)
+
+Year 2 (2000 users, 5000 loans):
+- Fineract tables: ~250MB
+- Operational tables: ~150MB
+- Event log: ~50MB (with partitioning + 90-day cleanup)
+- TOTAL: ~450MB ✅ (90% of 500MB limit - close but under)
+
+Year 3 (5000 users, 15000 loans):
+- TOTAL: ~800MB ❌ (Exceeds 500MB FREE limit)
+- Action: Upgrade to Supabase Pro ($25/month) OR
+- Action: Archive old data (>7 years) to AWS S3 Glacier ($0.004/GB/month)
+```
+
+### Monitoring Database Size
+
+```sql
+-- Query to check current database size
+SELECT
+  pg_size_pretty(pg_database_size(current_database())) as total_size,
+  pg_size_pretty(pg_total_relation_size('event_log')) as event_log_size,
+  pg_size_pretty(pg_total_relation_size('distributor_inventory')) as inventory_size,
+  pg_size_pretty(pg_total_relation_size('whatsapp_sessions')) as sessions_size;
+
+-- Alert when database reaches 400MB (80% of 500MB limit)
+CREATE OR REPLACE FUNCTION check_database_size_limit()
+RETURNS void AS $$
+DECLARE
+  db_size_mb NUMERIC;
+BEGIN
+  SELECT pg_database_size(current_database()) / (1024 * 1024) INTO db_size_mb;
+
+  IF db_size_mb > 400 THEN
+    -- Trigger alert (send to admin via Supabase Edge Function)
+    PERFORM pg_notify('database_size_alert', json_build_object(
+      'current_size_mb', db_size_mb,
+      'limit_mb', 500,
+      'usage_percent', (db_size_mb / 500) * 100
+    )::text);
+  END IF;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+### 7-Year Data Archival Strategy (RBZ Compliance)
+
+```sql
+-- After 7 years, archive data to AWS S3 Glacier (cold storage: $0.004/GB/month)
+-- Keep metadata in PostgreSQL, move full records to S3
+
+CREATE TABLE archived_loans (
+  loan_id BIGINT PRIMARY KEY,
+  archived_at TIMESTAMP DEFAULT NOW(),
+  s3_key VARCHAR(255), -- S3 Glacier object key
+  archived_by UUID REFERENCES admin_users(id)
+);
+
+-- Nightly cron job: export loans older than 7 years to S3 Glacier, delete from Fineract tables
+```
+
+---
+
 ## Acceptance Criteria
 
-- [ ] Apache Fineract successfully connected to Supabase PostgreSQL
+### YC Bootstrap FREE Tier Criteria
+
+- [ ] Apache Fineract successfully connected to Supabase PostgreSQL FREE tier
+- [ ] Database size optimization: compression enabled (LZ4), partitioning configured (monthly), retention policies (90 days event_log, 7 days sessions)
+- [ ] Database size monitoring: alert at 400MB (80% of 500MB limit), query to check current size
+- [ ] WhatsApp Cloud API integrated (Meta Graph API v18.0, FREE 1000 conversations/month)
+- [ ] Africa's Talk SMS integrated ($0.008/SMS vs Twilio $0.05/SMS)
+- [ ] AWS Lambda deployed for 5 microservices (1M requests/month always FREE)
+- [ ] AWS EC2 t3.micro deployed for Apache Fineract (750 hrs/month FREE for 12 months)
+- [ ] AWS API Gateway configured (1M requests/month FREE for 12 months)
+- [ ] Cost validated: <$15/month in Year 1 (target: $5-10/month)
+
+### Supabase FREE Tier Criteria
+
 - [ ] All 13 operational tables created with RLS policies
 - [ ] Supabase Auth configured with 4 RBAC roles (Super Admin, Financial Ops, Risk/Compliance, CS)
 - [ ] MFA enabled for Super Admin and Financial Ops
-- [ ] Supabase Realtime tested with inventory updates (<100ms latency)
+- [ ] Supabase Realtime tested with inventory updates (<100ms latency, <200 concurrent connections)
 - [ ] 6 Supabase Edge Functions deployed and tested (weekly-commission-batch, payment-reconciliation, daily-reminders, low-stock-alerts, send-sms, send-email)
-- [ ] Supabase Storage configured with 3 buckets (commission-pdfs, kyc-documents, reconciliation-photos)
+- [ ] Supabase Storage configured with 3 buckets (commission-pdfs, kyc-documents, reconciliation-photos) - 1GB FREE limit
 - [ ] Frontend (admin portal + distributor dashboard) integrated with Supabase Auth and Realtime
 - [ ] Load testing: 50 concurrent Realtime subscriptions without degradation
-- [ ] Cost savings validated: <$100/month total infrastructure cost
-- [ ] All 5 custom microservices deployed and connected to Supabase PostgreSQL
-- [ ] AWS SNS/SQS decommissioned
-- [ ] Custom WebSocket server decommissioned
-- [ ] Redis ElastiCache evaluated (retain only if needed for ML feature store)
+- [ ] All 5 custom microservices deployed as AWS Lambda functions and connected to Supabase PostgreSQL
 
 ---
 
