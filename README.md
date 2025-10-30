@@ -126,9 +126,7 @@ docker-compose up
 
 **Starting narrow, scaling systemically**
 
-- **TAM**: $12M annual mobile phone imports in Zimbabwe—our entry point into asset-based lending
-- **SAM**: $8M financing potential based on informal sector demand and mobile money penetration
-- **SOM**: $2M target market of underbanked phone buyers
+Zimbabwe's informal sector represents a massive untapped market for alternative credit solutions. We're starting with device financing (phones as productive assets for informal workers) and expanding systematically.
 
 **Product Roadmap**: Cell phone financing → Digital loans → Motorbike finance → Vehicle finance → Microfinance banking license → Regional expansion (Southern Africa)
 
@@ -164,20 +162,10 @@ docker-compose up
 - **WhatsApp Cloud API**: Native Meta integration (1000 free conversations/month)
 - **Hybrid Credit Scoring**: ML models with A/B testing, one-click rollback, prediction logging
 
-## 🥊 Competitive Landscape
+## 🥊 Key Differentiators
 
-**We're not in the lending business. We're in the system-building business—and no one else is.**
+**We're not in the lending business. We're in the system-building business.**
 
-### Traditional Lenders & Retailers
-- Finance only for salaried individuals with formal employment
-- Offline, paper-based loan applications
-- Laybye purchase models requiring upfront deposits
-
-### Fintech Competitors
-- **Zimloan**: Digital loans for formal sector workers
-- **Soshopay**: Buy-now-pay-later for e-commerce
-
-### Our Differentiators
 These aren't just features—they're **structural advantages adapted for the underbanked**:
 
 - ✅ **<5 minute approval**: WhatsApp-based KYC and instant AI/ML credit decisioning
@@ -193,12 +181,6 @@ These aren't just features—they're **structural advantages adapted for the und
 ### Revenue Sources
 - **Interest income/commissions**: Margin on loan interest and financing fees
 - **Asset markup**: Retail margin on financed devices (phones, motorbikes, vehicles)
-
-### Unit Economics
-- Average phone landed cost: **$90**
-- Average phone retail price: **$100** (11% margin)
-- Average loan amount: **$180** (80% financed over 8 months)
-- Target loan margin: **25-50% APR** (competitive for asset-backed lending in informal markets)
 
 ### Go-to-Market Strategy
 Cost-effective, commission-based distribution powered by technology:
