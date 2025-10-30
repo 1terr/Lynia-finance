@@ -1,0 +1,141 @@
+{
+    "name": "CollectionDataV1",
+    "namespace": "org.apache.fineract.avro.loan.v1",
+    "type": "record",
+    "fields": [
+        {
+            "default": null,
+            "name": "availableDisbursementAmount",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "pastDueDays",
+            "type": [
+                "null",
+                "int"
+            ]
+        },
+        {
+            "default": null,
+            "name": "nextPaymentDueDate",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentDays",
+            "type": [
+                "null",
+                "int"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentDate",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentAmount",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "lastPaymentDate",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "lastPaymentAmount",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "lastRepaymentDate",
+            "type": [
+                "null",
+                "string"
+            ]
+        },
+        {
+            "default": null,
+            "name": "lastRepaymentAmount",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquencyPausePeriods",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "org.apache.fineract.avro.loan.v1.DelinquencyPausePeriodV1"
+                }
+            ]
+        },
+        {
+            "default": null,
+            "name": "installmentDelinquencyBuckets",
+            "type": [
+                "null",
+                {
+                    "type": "array",
+                    "items": "org.apache.fineract.avro.loan.v1.LoanInstallmentDelinquencyBucketDataV1"
+                }
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentPrincipal",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentInterest",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentFee",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        },
+        {
+            "default": null,
+            "name": "delinquentPenalty",
+            "type": [
+                "null",
+                "bigdecimal"
+            ]
+        }
+    ]
+}
