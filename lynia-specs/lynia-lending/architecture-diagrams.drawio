@@ -1,0 +1,127 @@
+<mxfile host="app.diagrams.net" modified="2025-11-24T00:00:00.000Z" agent="Claude Code" version="22.0.0" type="device">
+  <diagram name="High-Level Architecture" id="high-level">
+    <mxGraphModel dx="1422" dy="794" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Customer Layer -->
+        <mxCell id="customer-layer" value="CUSTOMER LAYER (Zimbabwe)" style="swimlane;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="40" width="1080" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="whatsapp-customer" value="WhatsApp&#xa;(Customers)" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="customer-layer">
+          <mxGeometry x="100" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="distributor-dashboard" value="Distributor&#xa;Dashboard&#xa;(Agents)" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="customer-layer">
+          <mxGeometry x="480" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-portal" value="Admin&#xa;Portal&#xa;(Staff)" style="rounded=1;fillColor=#d5e8d4;strokeColor=#82b366" vertex="1" parent="customer-layer">
+          <mxGeometry x="860" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- API Gateway Layer -->
+        <mxCell id="api-layer" value="API GATEWAY LAYER (AWS)" style="swimlane;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="200" width="1080" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="whatsapp-bot" value="WhatsApp Bot&#xa;Service&#xa;(Lambda)" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="api-layer">
+          <mxGeometry x="100" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="distributor-api" value="Distributor&#xa;API Service&#xa;(Lambda)" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="api-layer">
+          <mxGeometry x="480" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="admin-api" value="Admin API&#xa;Service&#xa;(Lambda)" style="rounded=1;fillColor=#ffe6cc;strokeColor=#d79b00" vertex="1" parent="api-layer">
+          <mxGeometry x="860" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Microservices Layer -->
+        <mxCell id="microservices-layer" value="MICROSERVICES LAYER (AWS Lambda)" style="swimlane;fillColor=#f8cecc;strokeColor=#b85450;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="360" width="1080" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="kyc-service" value="KYC&#xa;Service" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="60" y="40" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="credit-scoring" value="Credit&#xa;Scoring" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="200" y="40" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="payment-service" value="Payment&#xa;Processing" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="340" y="40" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="notification-service" value="Notification&#xa;Service" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="480" y="40" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="device-lock" value="Device Lock&#xa;Service" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="60" y="120" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="inventory-service" value="Inventory&#xa;Service" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="200" y="120" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="audit-service" value="Audit&#xa;Service" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="340" y="120" width="100" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="analytics-service" value="Analytics&#xa;Service" style="rounded=1;fillColor=#f5f5f5;strokeColor=#666666" vertex="1" parent="microservices-layer">
+          <mxGeometry x="480" y="120" width="100" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Data Layer -->
+        <mxCell id="data-layer" value="DATA LAYER (Supabase + Fineract)" style="swimlane;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="600" width="1080" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="supabase" value="Supabase PostgreSQL&#xa;&#xa;• Customers&#xa;• Devices&#xa;• KYC Data&#xa;• Notifications&#xa;• Audit Logs" style="rounded=1;fillColor=#e3c7f0;strokeColor=#9673a6;align=left;verticalAlign=top" vertex="1" parent="data-layer">
+          <mxGeometry x="100" y="40" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="fineract" value="Apache Fineract&#xa;(Core Banking)&#xa;MySQL 8.0&#xa;&#xa;• Loans&#xa;• Repayments&#xa;• Accounts&#xa;• Transactions" style="rounded=1;fillColor=#e3c7f0;strokeColor=#9673a6;align=left;verticalAlign=top" vertex="1" parent="data-layer">
+          <mxGeometry x="650" y="40" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="sync-arrow" value="Sync" style="endArrow=classic;startArrow=classic;html=1;dashed=1" edge="1" parent="data-layer" source="supabase" target="fineract">
+          <mxGeometry width="50" height="50" relative="1" as="geometry">
+            <mxPoint x="400" y="80" as="sourcePoint" />
+            <mxPoint x="450" y="30" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+
+        <!-- External Integrations -->
+        <mxCell id="external-layer" value="EXTERNAL INTEGRATIONS (Third-Party APIs)" style="swimlane;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=14;fontStyle=1" vertex="1" parent="1">
+          <mxGeometry x="40" y="780" width="1080" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="whatsapp-api" value="WhatsApp&#xa;Cloud API&#xa;(Meta)" style="rounded=1;fillColor=#c5e8b7;strokeColor=#82b366" vertex="1" parent="external-layer">
+          <mxGeometry x="60" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="smile-identity" value="Smile&#xa;Identity&#xa;(KYC)" style="rounded=1;fillColor=#c5e8b7;strokeColor=#82b366" vertex="1" parent="external-layer">
+          <mxGeometry x="220" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="ecocash" value="EcoCash&#xa;/ Paynow&#xa;(Payments)" style="rounded=1;fillColor=#c5e8b7;strokeColor=#82b366" vertex="1" parent="external-layer">
+          <mxGeometry x="380" y="40" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="device-lock-provider" value="Device Lock&#xa;Providers&#xa;(IMEI Lock)" style="rounded=1;fillColor=#c5e8b7;strokeColor=#82b366" vertex="1" parent="external-layer">
+          <mxGeometry x="60" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="aws-ses" value="AWS SES&#xa;(Email)" style="rounded=1;fillColor=#c5e8b7;strokeColor=#82b366" vertex="1" parent="external-layer">
+          <mxGeometry x="220" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cloudwatch" value="CloudWatch&#xa;(Logging)" style="rounded=1;fillColor=#c5e8b7;strokeColor=#82b366" vertex="1" parent="external-layer">
+          <mxGeometry x="380" y="90" width="120" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Connections -->
+        <mxCell id="conn1" style="endArrow=classic;html=1" edge="1" parent="1" source="whatsapp-customer" target="whatsapp-bot">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn2" style="endArrow=classic;html=1" edge="1" parent="1" source="distributor-dashboard" target="distributor-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn3" style="endArrow=classic;html=1" edge="1" parent="1" source="admin-portal" target="admin-api">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn4" style="endArrow=classic;html=1" edge="1" parent="1" source="whatsapp-bot" target="kyc-service">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn5" style="endArrow=classic;html=1" edge="1" parent="1" source="kyc-service" target="supabase">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="conn6" style="endArrow=classic;html=1;dashed=1" edge="1" parent="1" source="kyc-service" target="smile-identity">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
