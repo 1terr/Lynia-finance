@@ -1,0 +1,733 @@
+openapi: 3.0.3
+info:
+  title: Lynia Finance API
+  description: |
+    WhatsApp-first device financing platform for Zimbabwe's informal sector.
+
+    ## Authentication
+    - **JWT Bearer Token**: For customer, distributor, and admin authentication
+    - **API Key**: For service-to-service communication
+    - **Webhook Signature**: For external webhook verification
+
+    ## Base URL
+    - Production: `https://api.lyniafinance.com/v1`
+    - Staging: `https://staging-api.lyniafinance.com/v1`
+
+  version: 1.0.0
+  contact:
+    name: Lynia Finance API Support
+    email: api@lyniafinance.com
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://api.lyniafinance.com/v1
+    description: Production server
+  - url: https://staging-api.lyniafinance.com/v1
+    description: Staging server
+  - url: http://localhost:3000/v1
+    description: Development server
+
+tags:
+  - name: WhatsApp Bot
+    description: WhatsApp message handling and conversation management
+  - name: KYC
+    description: Know Your Customer verification
+  - name: Credit Scoring
+    description: Credit evaluation and decision making
+  - name: Payments
+    description: Payment processing and reconciliation
+  - name: Device Lock
+    description: Remote device lock/unlock management
+  - name: Notifications
+    description: Multi-channel notification delivery
+  - name: Inventory
+    description: Device catalog and inventory management
+  - name: Admin
+    description: Administrative operations
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # ==================== KYC Service ====================
+  /kyc/submit:
+    post:
+      tags:
+        - KYC
+      summary: Submit KYC documents
+      description: Submit customer identity documents for verification via Smile Identity
+      operationId: submitKYC
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KYCSubmission'
+      responses:
+        '201':
+          description: KYC submission created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/KYCSubmissionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /kyc/status/{submissionId}:
+    get:
+      tags:
+        - KYC
+      summary: Get KYC verification status
+      operationId: getKYCStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: submissionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: KYC status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/KYCStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ==================== Credit Scoring Service ====================
+  /scoring/evaluate:
+    post:
+      tags:
+        - Credit Scoring
+      summary: Evaluate credit score
+      description: Calculate credit score and determine credit limit
+      operationId: evaluateCredit
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreditEvaluationRequest'
+      responses:
+        '200':
+          description: Credit evaluation completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/CreditScore'
+
+  # ==================== Payment Service ====================
+  /payments/initiate:
+    post:
+      tags:
+        - Payments
+      summary: Initiate payment
+      description: Start payment process for a loan
+      operationId: initiatePayment
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInitiation'
+      responses:
+        '201':
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/PaymentResponse'
+
+  /payments/webhook/ecocash:
+    post:
+      tags:
+        - Payments
+      summary: EcoCash webhook
+      description: Receive payment confirmation from EcoCash
+      operationId: ecoCashWebhook
+      security:
+        - WebhookSignature: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EcoCashWebhook'
+      responses:
+        '200':
+          description: Webhook processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  # ==================== Device Lock Service ====================
+  /devices/lock:
+    post:
+      tags:
+        - Device Lock
+      summary: Lock device
+      description: Remotely lock a device
+      operationId: lockDevice
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceLockRequest'
+      responses:
+        '200':
+          description: Device locked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/DeviceLockResponse'
+
+  /devices/unlock:
+    post:
+      tags:
+        - Device Lock
+      summary: Unlock device
+      description: Remotely unlock a device
+      operationId: unlockDevice
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceUnlockRequest'
+      responses:
+        '200':
+          description: Device unlocked
+
+  # ==================== Inventory Service ====================
+  /inventory/devices:
+    get:
+      tags:
+        - Inventory
+      summary: List devices
+      description: Get list of available devices
+      operationId: listDevices
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [available, reserved, assigned]
+        - name: brand
+          in: query
+          schema:
+            type: string
+        - name: min_price
+          in: query
+          schema:
+            type: number
+        - name: max_price
+          in: query
+          schema:
+            type: number
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: List of devices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  # ==================== Admin API ====================
+  /admin/dashboard:
+    get:
+      tags:
+        - Admin
+      summary: Get dashboard KPIs
+      description: Retrieve key performance indicators for admin dashboard
+      operationId: getAdminDashboard
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Dashboard'
+
+  /admin/loans:
+    get:
+      tags:
+        - Admin
+      summary: List all loans
+      description: Get paginated list of loans with filters
+      operationId: listLoans
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, approved, active, paid, defaulted]
+        - name: overdue
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: List of loans
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token for user authentication
+
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for service-to-service communication
+
+    WebhookSignature:
+      type: apiKey
+      in: header
+      name: X-Webhook-Signature
+      description: HMAC signature for webhook verification
+
+  schemas:
+    # ==================== KYC Schemas ====================
+    KYCSubmission:
+      type: object
+      required:
+        - customer_id
+        - document_type
+        - document_number
+        - document_front
+        - selfie
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        document_type:
+          type: string
+          enum: [national_id, passport, drivers_license]
+          default: national_id
+        document_number:
+          type: string
+          pattern: '^[0-9]{2}-[0-9]{6,7}-[A-Z]-[0-9]{2}$'
+          example: "63-123456-A-12"
+        document_front:
+          type: string
+          format: base64
+          description: Base64 encoded image or S3 URL
+        document_back:
+          type: string
+          format: base64
+        selfie:
+          type: string
+          format: base64
+
+    KYCSubmissionResponse:
+      type: object
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, approved, rejected, manual_review]
+        smile_job_id:
+          type: string
+        estimated_completion:
+          type: string
+          format: date-time
+
+    KYCStatus:
+      type: object
+      properties:
+        submission_id:
+          type: string
+          format: uuid
+        customer_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, approved, rejected, manual_review]
+        verified_at:
+          type: string
+          format: date-time
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+        liveness_passed:
+          type: boolean
+        document_readable:
+          type: boolean
+
+    # ==================== Credit Scoring Schemas ====================
+    CreditEvaluationRequest:
+      type: object
+      required:
+        - customer_id
+        - loan_amount
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        loan_amount:
+          type: number
+          minimum: 200
+          maximum: 500
+        data:
+          type: object
+          properties:
+            kyc_verified:
+              type: boolean
+            phone_number_age_months:
+              type: integer
+            mobile_money_transactions_count:
+              type: integer
+            previous_loans:
+              type: integer
+
+    CreditScore:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        credit_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+        credit_tier:
+          type: integer
+          enum: [1, 2, 3]
+        credit_limit:
+          type: number
+          enum: [200, 350, 500]
+        decision:
+          type: string
+          enum: [approved, rejected, manual_review]
+        confidence:
+          type: number
+          format: float
+        reasons:
+          type: array
+          items:
+            type: string
+
+    # ==================== Payment Schemas ====================
+    PaymentInitiation:
+      type: object
+      required:
+        - loan_id
+        - amount
+        - payment_method
+        - phone_number
+      properties:
+        loan_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+        payment_method:
+          type: string
+          enum: [ecocash, paynow, bank_transfer]
+        phone_number:
+          type: string
+          pattern: '^\+263[0-9]{9}$'
+
+    PaymentResponse:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        payment_url:
+          type: string
+          format: uri
+        reference:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    EcoCashWebhook:
+      type: object
+      properties:
+        reference:
+          type: string
+        status:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        phone_number:
+          type: string
+        transaction_id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    # ==================== Device Schemas ====================
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        brand:
+          type: string
+        model:
+          type: string
+        sku:
+          type: string
+        ram_gb:
+          type: integer
+        storage_gb:
+          type: integer
+        financing_price:
+          type: number
+        primary_image_url:
+          type: string
+          format: uri
+        status:
+          type: string
+          enum: [available, reserved, assigned, sold]
+
+    DeviceLockRequest:
+      type: object
+      required:
+        - imei
+        - reason
+      properties:
+        imei:
+          type: string
+          pattern: '^[0-9]{15}$'
+        reason:
+          type: string
+          enum: [missed_payment, fraud, customer_request]
+        grace_period_ends_at:
+          type: string
+          format: date-time
+
+    DeviceLockResponse:
+      type: object
+      properties:
+        device_id:
+          type: string
+          format: uuid
+        imei:
+          type: string
+        lock_status:
+          type: string
+          enum: [locked, unlocked, permanent_unlock]
+        locked_at:
+          type: string
+          format: date-time
+
+    DeviceUnlockRequest:
+      type: object
+      required:
+        - imei
+        - reason
+      properties:
+        imei:
+          type: string
+        reason:
+          type: string
+        payment_id:
+          type: string
+          format: uuid
+
+    # ==================== Admin Schemas ====================
+    Dashboard:
+      type: object
+      properties:
+        overview:
+          type: object
+          properties:
+            total_customers:
+              type: integer
+            active_loans:
+              type: integer
+            total_disbursed:
+              type: number
+            collection_rate:
+              type: number
+              format: float
+
+    # ==================== Common Schemas ====================
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+        has_next:
+          type: boolean
+        has_prev:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid input data
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: Resource does not exist
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: VALIDATION_ERROR
+              message: Input validation failed
+              details:
+                field: phone_number
+                value: "0771234567"
+                expected: "+263771234567"
