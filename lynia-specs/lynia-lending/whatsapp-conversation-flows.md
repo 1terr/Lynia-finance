@@ -75,26 +75,29 @@
 **Approach**: Finite State Machine (FSM) with context preservation
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     WhatsApp Bot States                     │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  [IDLE] ─────────────────────────────────────────────────► │
-│    │                                                         │
-│    ├──► [ONBOARDING] ──► [KYC_SUBMIT] ──► [KYC_PENDING]   │
-│    │                                            │            │
-│    │                                            ▼            │
-│    ├──► [BROWSING] ──► [DEVICE_SELECTED] ──► [IDLE]       │
-│    │                                                         │
-│    ├──► [LOAN_APPLICATION] ──► [LOAN_REVIEW] ──► [IDLE]   │
-│    │                                                         │
-│    ├──► [PAYMENT_MENU] ──► [PAYMENT_CONFIRM] ──► [IDLE]   │
-│    │                                                         │
-│    ├──► [SUPPORT] ──► [SUPPORT_RESOLVED] ──► [IDLE]       │
-│    │                                                         │
-│    └──► [ACCOUNT_MENU] ──► [ACCOUNT_ACTION] ──► [IDLE]    │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│                        WhatsApp Bot States                              │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  [IDLE] ──────────────────────────────────────────────────────────────►│
+│    │                                                                     │
+│    ├──► [ONBOARDING] ──► [KYC_SUBMIT] ──► [KYC_PENDING]               │
+│    │                                            │                        │
+│    │                                            ▼                        │
+│    ├──► [BROWSING] ──► [DEVICE_SELECTED] ──► [IDLE]                   │
+│    │                                                                     │
+│    ├──► [LOAN_APPLICATION] ──► [LOAN_REVIEW] ──► [DEPOSIT_PENDING]   │
+│    │                                                      │               │
+│    │                                                      ▼               │
+│    │                                              [DEPOSIT_PAID] ──► [IDLE] │
+│    │                                                                     │
+│    ├──► [PAYMENT_MENU] ──► [PAYMENT_CONFIRM] ──► [IDLE]               │
+│    │                                                                     │
+│    ├──► [SUPPORT] ──► [SUPPORT_RESOLVED] ──► [IDLE]                   │
+│    │                                                                     │
+│    └──► [ACCOUNT_MENU] ──► [ACCOUNT_ACTION] ──► [IDLE]                │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 2.2 State Schema
@@ -145,7 +148,13 @@ CREATE INDEX idx_whatsapp_sessions_expires ON whatsapp_sessions(expires_at)
     "principal": 350,
     "term_months": 8,
     "monthly_payment": 70.31,
-    "confirmation_pending": true
+    "deposit_amount": 35.00,
+    "deposit_percentage": 0.10,
+    "confirmation_pending": true,
+    "deposit_paid": false,
+    "deposit_payment_id": null,
+    "deposit_transaction_id": null,
+    "deposit_confirmed_at": null
   },
   "payment": {
     "loan_id": "uuid",
@@ -181,7 +190,9 @@ async function transitionState(sessionId, newState, context = {}) {
     'BROWSING': ['DEVICE_SELECTED', 'IDLE'],
     'DEVICE_SELECTED': ['LOAN_APPLICATION', 'BROWSING', 'IDLE'],
     'LOAN_APPLICATION': ['LOAN_REVIEW', 'IDLE'],
-    'LOAN_REVIEW': ['IDLE'],
+    'LOAN_REVIEW': ['DEPOSIT_PENDING', 'IDLE'], // Added deposit payment state
+    'DEPOSIT_PENDING': ['DEPOSIT_PAID', 'IDLE'], // Customer must pay deposit before collection
+    'DEPOSIT_PAID': ['IDLE'], // Deposit verified, device ready for collection
     'PAYMENT_MENU': ['PAYMENT_CONFIRM', 'IDLE'],
     'PAYMENT_CONFIRM': ['IDLE'],
     'SUPPORT': ['SUPPORT_RESOLVED', 'IDLE'],
@@ -892,10 +903,11 @@ Type 1, 2, or 3, or refine your search.
 
 ### 5.1 Flow Overview
 
-**Goal**: Complete loan application and get approval
-**Duration**: 3-5 minutes
-**States**: DEVICE_SELECTED → LOAN_APPLICATION → LOAN_REVIEW → IDLE
-**Success Criteria**: Loan approved, device assigned
+**Goal**: Complete loan application, pay deposit, and prepare for device collection
+**Duration**: 5-10 minutes (including deposit payment)
+**States**: DEVICE_SELECTED → LOAN_APPLICATION → LOAN_REVIEW → DEPOSIT_PENDING → DEPOSIT_PAID → IDLE
+**Success Criteria**: Loan approved, deposit paid, agent can verify payment, device ready for collection
+**Critical Control**: Customer MUST pay deposit and payment MUST reflect in system before agent can hand over device
 
 ### 5.2 Flow Diagram
 
@@ -968,15 +980,71 @@ Type 1, 2, or 3, or refine your search.
 │ Amount: $299              │       │ • Try a lower amount       │
 │ Monthly: $47.81           │       │ • Improve credit score     │
 │ First payment: Dec 24     │       │ • Contact support          │
-│                           │       │                             │
-│ Next steps:               │       │ [Try Again] [Contact Support]│
-│ 1. Visit distributor      │       └─────────────────────────────┘
-│ 2. Collect your device    │
-│ 3. Start making payments  │
-│                           │
-│ [📍 Find Distributor]     │
-│ [📋 View Loan Details]    │
-└──────────────────────────┘
+└──────────────────────────┘       │                             │
+         │                          │ [Try Again] [Contact Support]│
+         ▼                          └─────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ BOT: 💰 DEPOSIT REQUIRED                                  │
+│                                                           │
+│ Before collecting your device, please pay:               │
+│                                                           │
+│ 📌 Deposit Amount: $29.90 (10% of $299)                  │
+│ 📌 Payment Method: EcoCash or Paynow                     │
+│                                                           │
+│ ⚠️ IMPORTANT:                                             │
+│ • Your deposit MUST reflect in our system                │
+│ • Agent will verify payment before handover              │
+│ • Without payment verification, device cannot be released│
+│                                                           │
+│ [💳 Pay Deposit Now] [📋 View Payment Details]           │
+└──────────────────────────────────────────────────────────┘
+         │
+         ▼ [Pay Deposit Now]
+┌──────────────────────────────────────────────────────────┐
+│ BOT: 💳 Deposit Payment                                   │
+│                                                           │
+│ Amount to pay: $29.90                                    │
+│                                                           │
+│ Choose payment method:                                   │
+│ [EcoCash] [Paynow]                                       │
+└──────────────────────────────────────────────────────────┘
+         │
+         ▼ [Payment method selected - generates payment link]
+┌──────────────────────────────────────────────────────────┐
+│ BOT: Click below to complete your deposit payment:       │
+│                                                           │
+│ [Pay $29.90] (CTA button with payment link)              │
+│                                                           │
+│ ⏱️ Payment link expires in 30 minutes                    │
+└──────────────────────────────────────────────────────────┘
+         │
+         ▼ [User completes payment]
+┌──────────────────────────────────────────────────────────┐
+│ BOT: ✅ Deposit Payment Received!                         │
+│                                                           │
+│ Payment confirmed:                                       │
+│ • Amount: $29.90                                         │
+│ • Transaction ID: TXN123456789                           │
+│ • Date: Nov 26, 2025 14:30                              │
+│                                                           │
+│ 🎉 Your device is ready for collection!                  │
+│                                                           │
+│ Next steps:                                              │
+│ 1. Visit our distributor (see address below)            │
+│ 2. Show this confirmation to the agent                  │
+│ 3. Agent will verify payment in system                  │
+│ 4. Collect your Samsung Galaxy A14                      │
+│                                                           │
+│ 📍 Distributor Details:                                  │
+│ {distributor_name}                                       │
+│ {distributor_address}                                    │
+│ Phone: {distributor_phone}                               │
+│ Hours: Mon-Sat 8am-6pm                                   │
+│                                                           │
+│ Your payment confirmation code: #LYN12345-PAID           │
+│                                                           │
+│ [📍 Get Directions] [📋 View Loan Details]               │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ### 5.3 Detailed Conversation Script
@@ -1350,6 +1418,294 @@ In the meantime, you can:
 - Application completion: >80%
 - Auto-approval rate: >60%
 - Time to decision: <2 minutes (auto), <4 hours (manual)
+
+### 5.6 Agent Verification Process for Device Handover
+
+**CRITICAL CONTROL MECHANISM**: This section describes how agents verify deposit payment in the system before handing over devices to customers.
+
+#### Agent Dashboard - Loan Verification Screen
+
+When a customer arrives to collect their device, the agent must:
+
+**Step 1: Customer Identification**
+```
+Agent enters:
+- Customer phone number: +263771234567
+OR
+- Loan ID: #LYN12345
+OR
+- Payment confirmation code: #LYN12345-PAID
+```
+
+**Step 2: System Verification**
+
+Agent dashboard shows:
+```
+╔══════════════════════════════════════════════════════════╗
+║            LOAN & DEPOSIT VERIFICATION                    ║
+╠══════════════════════════════════════════════════════════╣
+║ Customer: John Doe                                       ║
+║ Phone: +263771234567                                     ║
+║ National ID: 90-123456-A-12                              ║
+║                                                          ║
+║ Loan ID: #LYN12345                                       ║
+║ Device: Samsung Galaxy A14 ($299)                       ║
+║ Loan Status: APPROVED ✅                                  ║
+║                                                          ║
+║ DEPOSIT PAYMENT STATUS:                                  ║
+║ ┌────────────────────────────────────────────────────┐  ║
+║ │ ✅ PAID - VERIFIED                                  │  ║
+║ │                                                     │  ║
+║ │ Amount: $29.90 (10%)                               │  ║
+║ │ Payment Method: EcoCash                            │  ║
+║ │ Transaction ID: TXN123456789                       │  ║
+║ │ Payment Date: Nov 26, 2025 14:30                   │  ║
+║ │ Verified: Nov 26, 2025 14:31                       │  ║
+║ └────────────────────────────────────────────────────┘  ║
+║                                                          ║
+║ 🔓 DEVICE HANDOVER: APPROVED                             ║
+║                                                          ║
+║ [CONFIRM HANDOVER] [VIEW LOAN DETAILS]                   ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Step 3: Verification Checklist**
+
+Agent MUST verify:
+- ✅ Deposit payment status = "PAID"
+- ✅ Customer ID matches (check National ID)
+- ✅ Device is in stock
+- ✅ Loan status = "APPROVED"
+
+**Step 4: Device Handover**
+
+Only if ALL verifications pass:
+1. Agent clicks [CONFIRM HANDOVER]
+2. System updates loan status: `deposit_paid` → `device_collected`
+3. Agent hands device to customer
+4. Customer signs handover form (digital or paper)
+5. System sends confirmation WhatsApp message
+
+#### System States for Agent Verification
+
+**Database Schema**:
+```sql
+CREATE TABLE loans (
+  id UUID PRIMARY KEY,
+  customer_id UUID REFERENCES customers(id),
+  device_id UUID REFERENCES devices(id),
+
+  -- Loan details
+  principal DECIMAL(10,2) NOT NULL,
+  deposit_amount DECIMAL(10,2) NOT NULL,
+  deposit_percentage DECIMAL(5,2) DEFAULT 0.10,
+
+  -- Deposit payment tracking
+  deposit_paid BOOLEAN DEFAULT FALSE,
+  deposit_payment_id UUID REFERENCES payments(id),
+  deposit_transaction_id VARCHAR(100),
+  deposit_paid_at TIMESTAMP WITH TIME ZONE,
+
+  -- Device handover tracking
+  device_collected BOOLEAN DEFAULT FALSE,
+  device_collected_at TIMESTAMP WITH TIME ZONE,
+  device_collected_by_agent UUID REFERENCES admin_users(id),
+  handover_signature_url TEXT,
+
+  -- Loan status
+  status VARCHAR(50) DEFAULT 'pending', -- pending, approved, deposit_pending, deposit_paid, active, completed, default
+
+  -- Audit
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_loans_deposit_paid ON loans(deposit_paid) WHERE deposit_paid = TRUE;
+CREATE INDEX idx_loans_device_collected ON loans(device_collected) WHERE device_collected = FALSE;
+CREATE INDEX idx_loans_status ON loans(status);
+```
+
+#### Agent Verification API Endpoint
+
+```typescript
+// Agent Dashboard API
+app.post('/api/agent/verify-loan', async (req, res) => {
+  const { loan_id, agent_id } = req.body;
+
+  // 1. Fetch loan with deposit payment info
+  const { data: loan } = await supabase
+    .from('loans')
+    .select(`
+      *,
+      customer:customers(*),
+      device:devices(*),
+      deposit_payment:payments!deposit_payment_id(*)
+    `)
+    .eq('id', loan_id)
+    .single();
+
+  // 2. Verify loan eligibility for device handover
+  const verification = {
+    loan_approved: loan.status === 'approved' || loan.status === 'deposit_paid',
+    deposit_paid: loan.deposit_paid === true,
+    deposit_amount_correct: loan.deposit_payment?.amount === loan.deposit_amount,
+    device_available: loan.device.status === 'reserved',
+    device_not_collected: loan.device_collected === false
+  };
+
+  const can_handover = Object.values(verification).every(v => v === true);
+
+  // 3. Return verification result
+  res.json({
+    loan,
+    verification,
+    can_handover,
+    message: can_handover
+      ? 'Device can be handed over to customer'
+      : 'Device handover NOT approved - missing requirements'
+  });
+});
+
+// Agent confirms device handover
+app.post('/api/agent/confirm-handover', async (req, res) => {
+  const { loan_id, agent_id, customer_signature_url } = req.body;
+
+  // 1. Verify deposit is paid (double-check)
+  const { data: loan } = await supabase
+    .from('loans')
+    .select('deposit_paid, device_collected')
+    .eq('id', loan_id)
+    .single();
+
+  if (!loan.deposit_paid) {
+    return res.status(400).json({
+      error: 'Cannot handover device - deposit not paid'
+    });
+  }
+
+  if (loan.device_collected) {
+    return res.status(400).json({
+      error: 'Device already collected'
+    });
+  }
+
+  // 2. Update loan status
+  await supabase
+    .from('loans')
+    .update({
+      device_collected: true,
+      device_collected_at: new Date().toISOString(),
+      device_collected_by_agent: agent_id,
+      handover_signature_url: customer_signature_url,
+      status: 'active'
+    })
+    .eq('id', loan_id);
+
+  // 3. Update device status
+  await supabase
+    .from('devices')
+    .update({
+      status: 'in_use',
+      assigned_to_customer: loan.customer_id,
+      assigned_at: new Date().toISOString()
+    })
+    .eq('id', loan.device_id);
+
+  // 4. Send WhatsApp confirmation to customer
+  await sendWhatsAppMessage(loan.customer.phone_number, {
+    type: 'text',
+    text: {
+      body: `🎉 Device Collected!\n\nYour ${loan.device.name} has been handed over.\n\nLoan ID: #${loan.id.slice(0, 8)}\nFirst Payment Due: ${loan.first_payment_date}\n\nEnjoy your new device!`
+    }
+  });
+
+  // 5. Log audit trail
+  await supabase
+    .from('audit_logs')
+    .insert({
+      action: 'device_handover',
+      entity_type: 'loan',
+      entity_id: loan_id,
+      performed_by: agent_id,
+      details: {
+        customer_id: loan.customer_id,
+        device_id: loan.device_id,
+        deposit_verified: true
+      }
+    });
+
+  res.json({
+    success: true,
+    message: 'Device handover confirmed',
+    loan_id
+  });
+});
+```
+
+#### Error Scenarios
+
+**Scenario 1: Deposit Not Paid**
+```
+Agent dashboard shows:
+╔══════════════════════════════════════════════════════════╗
+║ ❌ DEPOSIT PAYMENT: NOT PAID                              ║
+║                                                          ║
+║ Customer has NOT paid the required deposit.              ║
+║ Device handover is NOT approved.                         ║
+║                                                          ║
+║ Required: $29.90                                         ║
+║ Paid: $0.00                                              ║
+║                                                          ║
+║ Action Required:                                         ║
+║ 1. Ask customer to complete deposit payment via WhatsApp║
+║ 2. Wait for payment to reflect in system (~2 minutes)   ║
+║ 3. Refresh this screen to verify payment                ║
+║                                                          ║
+║ [SEND PAYMENT REMINDER] [REFRESH STATUS]                 ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Scenario 2: Deposit Payment Pending Verification**
+```
+╔══════════════════════════════════════════════════════════╗
+║ ⏳ DEPOSIT PAYMENT: PENDING VERIFICATION                  ║
+║                                                          ║
+║ Payment initiated but not yet confirmed.                 ║
+║                                                          ║
+║ Payment Method: EcoCash                                  ║
+║ Amount: $29.90                                           ║
+║ Initiated: Nov 26, 2025 14:28                           ║
+║                                                          ║
+║ Typical verification time: 2-5 minutes                   ║
+║                                                          ║
+║ [REFRESH STATUS] [CONTACT FINANCE TEAM]                  ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+**Scenario 3: Device Already Collected**
+```
+╔══════════════════════════════════════════════════════════╗
+║ ⚠️ DEVICE ALREADY COLLECTED                               ║
+║                                                          ║
+║ This device was already handed over.                     ║
+║                                                          ║
+║ Collected Date: Nov 25, 2025 10:30                      ║
+║ Collected By: Agent John Smith                          ║
+║                                                          ║
+║ If customer claims they didn't receive device,          ║
+║ escalate to manager immediately.                        ║
+║                                                          ║
+║ [VIEW AUDIT LOG] [CONTACT MANAGER]                       ║
+╚══════════════════════════════════════════════════════════╝
+```
+
+#### Security & Fraud Prevention
+
+1. **Agent Authentication**: Agents must log in with 2FA before accessing verification screen
+2. **Audit Trail**: All verification attempts and handovers are logged
+3. **ID Verification**: Agent must physically verify customer National ID
+4. **Geolocation**: System logs distributor location for all handovers
+5. **Time Limits**: Deposit must be paid within 7 days of approval, or loan is cancelled
 
 ---
 
