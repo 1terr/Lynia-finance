@@ -11,13 +11,20 @@
 ## Table of Contents
 1. [Overview](#overview)
 2. [Hybrid Scoring Strategy](#hybrid-scoring-strategy)
+   - Long-Term Strategy: Affordability, Ability-to-Repay, Willingness-to-Pay
+   - Advanced Data Enrichment (MNO, Platforms, CSV Upload)
 3. [Rule-Based Scoring (Phase 1)](#rule-based-scoring-phase-1)
 4. [Machine Learning Model (Phase 2+)](#machine-learning-model-phase-2)
 5. [Feature Engineering](#feature-engineering)
 6. [Model Versioning Strategy](#model-versioning-strategy)
 7. [A/B Testing Framework](#ab-testing-framework)
-8. [Implementation Guide](#implementation-guide)
-9. [Monitoring & Evaluation](#monitoring--evaluation)
+8. [Advanced Data Integration (Phase 3+)](#advanced-data-integration-phase-3)
+   - MNO Airtime Data Integration
+   - Platform Integration (InDrive, Bolt, Uber)
+   - CSV Data Upload & Processing
+   - African Fintech Models Reference (Moove, M-Kopa, GigMile)
+9. [Implementation Guide](#implementation-guide)
+10. [Monitoring & Evaluation](#monitoring--evaluation)
 
 ---
 
@@ -83,6 +90,48 @@ Score Range: 300-850 (FICO-like scale)
 - Advanced models (XGBoost, LightGBM)
 - Maximize approval rate and minimize defaults
 
+### Long-Term Scoring Strategy (Phase 3+)
+
+**Inspired by African fintech leaders**: Moove.io (mobility financing), M-Kopa (pay-as-you-go devices), GigMile.com (gig economy financing)
+
+The fully established Lynia Finance credit scoring system will assess **three critical dimensions**:
+
+#### 1. **Affordability** - Can the customer afford the repayment?
+- Monthly income vs. monthly installment ratio (target: ≤30% debt-to-income)
+- Total financial obligations (rent, utilities, existing debts)
+- Income stability indicators (consistent vs. volatile earnings)
+- Household size and dependents
+
+**Data Sources**:
+- Bank statement analysis (via Plaid-like aggregators)
+- Mobile money transaction patterns
+- Employer integrations for salary verification
+- Platform income data (ride-hailing, gig economy)
+
+#### 2. **Ability-to-Repay** - Does the customer have reliable income streams?
+- Income consistency over 3-6 months
+- Employment stability (tenure, platform ratings)
+- Income growth trends
+- Alternative income sources (side hustles, multiple gigs)
+
+**Data Sources**:
+- Airtime spending patterns from MNO data (Econet, NetOne, Telecel)
+- Platform earnings history (InDrive, Bolt, Uber drivers)
+- Business revenue proxies (M-Pesa/EcoCash merchant transactions)
+- CSV-uploaded customer data for non-API sources
+
+#### 3. **Willingness-to-Pay** - Will the customer prioritize this repayment?
+- Past loan repayment history (internal + credit bureau)
+- Bill payment consistency (utilities, rent, subscriptions)
+- Communication responsiveness (replies to reminders)
+- Device usage patterns (active vs. dormant)
+
+**Data Sources**:
+- Internal loan performance history
+- Credit bureau data (when available in Zimbabwe)
+- Payment behavior on other platforms
+- WhatsApp engagement metrics
+
 ### Hybrid Architecture
 
 ```
@@ -92,10 +141,37 @@ Score Range: 300-850 (FICO-like scale)
 └────────────────┬───────────────────────────────────┘
                  ↓
 ┌────────────────────────────────────────────────────┐
-│ Data Enrichment Layer                             │
+│ Data Enrichment Layer (Phase 1)                   │
 │ - Smile Identity (KYC verification)               │
 │ - Zimbocash API (mobile money history - optional) │
 │ - Location data (from phone)                      │
+└────────────────┬───────────────────────────────────┘
+                 ↓
+┌────────────────────────────────────────────────────┐
+│ Advanced Data Enrichment (Phase 3+)               │
+│                                                    │
+│ 1. MNO Data Integration (Airtime Patterns)        │
+│    • Econet/NetOne/Telecel APIs                   │
+│    • Airtime purchase frequency & amounts         │
+│    • Recharge consistency (proxy for income)      │
+│    • Data bundle purchases (usage patterns)       │
+│                                                    │
+│ 2. Platform Integrations (Gig Economy)            │
+│    • InDrive: Driver earnings, ratings, trips     │
+│    • Bolt: Ride frequency, income, customer score │
+│    • Uber: Trip history, acceptance rate          │
+│    • Other platforms: CSV upload fallback         │
+│                                                    │
+│ 3. Income Verification APIs                        │
+│    • Employer payroll integrations                │
+│    • Bank statement parsing (Plaid-like)          │
+│    • Mobile money merchant analytics              │
+│                                                    │
+│ 4. CSV Data Upload (Manual Ingestion)             │
+│    • Platform income reports                      │
+│    • Employer salary confirmations                │
+│    • Bank statements (when no API)                │
+│    • Processed via ML parsing pipeline            │
 └────────────────┬───────────────────────────────────┘
                  ↓
          ┌───────────────┐
@@ -600,9 +676,10 @@ demographic_features = {
 }
 ```
 
-**Category 3: Mobile Money (15 features)**
+**Category 3: Mobile Money & Airtime (22 features)**
 ```python
 mobile_money_features = {
+    # Mobile Money Transactions (15 features)
     'mm_account_age_months': int,
     'mm_avg_monthly_inflow': float,
     'mm_avg_monthly_outflow': float,
@@ -617,7 +694,16 @@ mobile_money_features = {
     'mm_airtime_purchases_3m': int,
     'mm_cash_out_frequency': int,
     'mm_days_since_last_transaction': int,
-    'mm_weekend_transaction_ratio': float
+    'mm_weekend_transaction_ratio': float,
+
+    # MNO Airtime Data (7 features - Phase 3+)
+    'airtime_total_recharges_3m': int,
+    'airtime_avg_recharge_amount_usd': float,
+    'airtime_recharge_frequency_per_month': float,
+    'airtime_consistency_score': float,  # 0-100, regularity of recharges
+    'airtime_peak_recharge_day': int,  # Salary day indicator (1-31)
+    'data_bundles_purchased_3m': int,
+    'total_airtime_spent_3m_usd': float
 }
 ```
 
@@ -655,7 +741,44 @@ behavioral_features = {
 }
 ```
 
-**Category 6: Social (5 features)**
+**Category 6: Platform & Gig Economy (12 features - Phase 3+)**
+```python
+platform_features = {
+    # General Platform Data
+    'has_platform_income': bool,
+    'platform_type': str,  # 'indrive', 'bolt', 'uber', 'none'
+    'platform_driver_verified': bool,
+
+    # Income & Earnings
+    'platform_avg_monthly_earnings_usd': float,
+    'platform_income_consistency_score': float,  # 0-100
+    'platform_earnings_3m_avg': float,
+    'platform_income_volatility': float,  # Standard deviation of monthly income
+
+    # Performance Metrics
+    'platform_driver_rating': float,  # 0-5
+    'platform_total_trips': int,
+    'platform_tenure_months': int,
+    'platform_active_days_per_week': float,
+    'platform_acceptance_rate': float  # 0-1
+}
+```
+
+**Category 7: Alternative Income Sources (8 features - CSV Upload)**
+```python
+alternative_income_features = {
+    'has_alternative_income': bool,
+    'alt_income_source_type': str,  # 'salary', 'bank_statement', 'platform_csv'
+    'alt_income_monthly_amount_usd': float,
+    'alt_income_consistency_score': float,
+    'alt_income_verified': bool,
+    'alt_income_data_period_months': int,
+    'employer_verified': bool,
+    'multi_income_stream_count': int  # Number of different income sources
+}
+```
+
+**Category 8: Social (5 features)**
 ```python
 social_features = {
     'phone_contacts_count': int,
@@ -1164,6 +1287,419 @@ print(result)
 #   'p_value': 0.032,
 #   'is_significant': True
 # }
+```
+
+---
+
+## 7. Advanced Data Integration (Phase 3+)
+
+### 7.1 MNO (Mobile Network Operator) Airtime Data Integration
+
+**Business Value**: Airtime spending patterns are strong proxies for income and financial behavior in Zimbabwe where mobile money is dominant.
+
+#### API Integration Architecture
+
+```typescript
+// MNO Data Aggregator Service
+interface MNODataProvider {
+  provider: 'econet' | 'netone' | 'telecel';
+  getAirtimeHistory(phoneNumber: string, months: number): Promise<AirtimeData>;
+  getDataBundleHistory(phoneNumber: string, months: number): Promise<DataBundleData>;
+}
+
+interface AirtimeData {
+  phone_number: string;
+  total_recharges_3m: number;
+  avg_recharge_amount: number;
+  recharge_frequency: number; // times per month
+  last_recharge_date: Date;
+  recharge_consistency_score: number; // 0-100
+  peak_recharge_day_of_month: number; // Salary day indicator
+  data_bundles_purchased_3m: number;
+  total_data_spent_usd: number;
+}
+
+async function fetchMNOData(phoneNumber: string): Promise<AirtimeData> {
+  // Determine MNO from phone prefix
+  const mno = determineMNO(phoneNumber); // 0771 = Econet, 0712 = NetOne, etc.
+
+  try {
+    const response = await axios.post(`https://api.${mno}.co.zw/airtime-history`, {
+      phone_number: phoneNumber,
+      months: 6,
+      api_key: process.env[`${mno.toUpperCase()}_API_KEY`]
+    }, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    return response.data;
+  } catch (error) {
+    // Fallback to CSV upload if API unavailable
+    console.warn(`MNO API unavailable for ${mno}, using CSV fallback`);
+    return null;
+  }
+}
+
+// Scoring based on airtime patterns
+function scoreAirtimePatterns(airtimeData: AirtimeData): number {
+  let score = 0;
+
+  // Consistent recharges = stable income (50 points)
+  if (airtimeData.recharge_consistency_score >= 80) score += 50;
+  else if (airtimeData.recharge_consistency_score >= 60) score += 35;
+  else if (airtimeData.recharge_consistency_score >= 40) score += 20;
+
+  // Recharge frequency (30 points)
+  if (airtimeData.recharge_frequency >= 4) score += 30; // Weekly recharges
+  else if (airtimeData.recharge_frequency >= 2) score += 20;
+  else if (airtimeData.recharge_frequency >= 1) score += 10;
+
+  // Average recharge amount (20 points)
+  if (airtimeData.avg_recharge_amount >= 10) score += 20; // $10+ per recharge
+  else if (airtimeData.avg_recharge_amount >= 5) score += 15;
+  else if (airtimeData.avg_recharge_amount >= 2) score += 10;
+
+  return Math.min(score, 100); // Max 100 points
+}
+```
+
+### 7.2 Platform Integration (Gig Economy & Ride-Hailing)
+
+**Use Case**: Finance drivers and gig workers based on their platform earnings and ratings
+
+**Supported Platforms**:
+- **InDrive**: P2P ride-hailing popular in Zimbabwe
+- **Bolt**: Regional ride-hailing with API support
+- **Uber**: International standard with driver API
+- **Future**: Food delivery (Glovo), logistics (Sendy)
+
+#### InDrive/Bolt Driver Verification
+
+```typescript
+interface PlatformDriverData {
+  platform: 'indrive' | 'bolt' | 'uber';
+  driver_id: string;
+  verification_status: 'verified' | 'pending' | 'rejected';
+
+  // Income data
+  avg_monthly_earnings_usd: number;
+  earnings_last_3_months: number[];
+  income_consistency_score: number; // 0-100
+
+  // Performance metrics
+  total_trips: number;
+  avg_rating: number; // 0-5
+  cancellation_rate: number; // 0-1
+  acceptance_rate: number; // 0-1
+  driver_tenure_months: number;
+
+  // Activity patterns
+  active_days_per_week: number;
+  peak_hours_worked: string[]; // ['morning', 'afternoon', 'evening', 'night']
+  weekends_active: boolean;
+}
+
+// Platform API Integration
+async function fetchPlatformData(
+  platform: string,
+  phoneNumber: string,
+  userConsent: boolean
+): Promise<PlatformDriverData | null> {
+
+  if (!userConsent) {
+    throw new Error('User consent required for platform data access');
+  }
+
+  // Example: InDrive API integration
+  if (platform === 'indrive') {
+    const response = await axios.post('https://api.indrive.com/driver/financial-data', {
+      phone_number: phoneNumber,
+      consent_token: userConsent,
+      data_period_months: 6
+    }, {
+      headers: {
+        'Authorization': `Bearer ${process.env.INDRIVE_API_KEY}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    return response.data;
+  }
+
+  // Add more platform integrations...
+
+  return null;
+}
+
+// Scoring based on platform data
+function scorePlatformDriver(driverData: PlatformDriverData): number {
+  let score = 0;
+
+  // Income level (40 points)
+  if (driverData.avg_monthly_earnings_usd >= 500) score += 40;
+  else if (driverData.avg_monthly_earnings_usd >= 300) score += 30;
+  else if (driverData.avg_monthly_earnings_usd >= 200) score += 20;
+  else if (driverData.avg_monthly_earnings_usd >= 100) score += 10;
+
+  // Rating (30 points)
+  if (driverData.avg_rating >= 4.8) score += 30;
+  else if (driverData.avg_rating >= 4.5) score += 20;
+  else if (driverData.avg_rating >= 4.0) score += 10;
+
+  // Activity consistency (20 points)
+  if (driverData.active_days_per_week >= 6) score += 20;
+  else if (driverData.active_days_per_week >= 4) score += 15;
+  else if (driverData.active_days_per_week >= 2) score += 10;
+
+  // Tenure (10 points)
+  if (driverData.driver_tenure_months >= 12) score += 10;
+  else if (driverData.driver_tenure_months >= 6) score += 7;
+  else if (driverData.driver_tenure_months >= 3) score += 5;
+
+  return Math.min(score, 100);
+}
+```
+
+### 7.3 CSV Data Upload & Processing
+
+**Use Case**: When platform APIs are unavailable, allow manual CSV upload of income/employment data
+
+**Supported File Types**:
+- Platform earnings reports (InDrive, Bolt exports)
+- Employer salary confirmations
+- Bank statements
+- Mobile money transaction history
+
+#### CSV Upload Architecture
+
+```typescript
+// Admin Dashboard: Upload CSV for batch customer scoring
+interface CSVUploadRequest {
+  file: File; // CSV file
+  data_type: 'platform_earnings' | 'salary_confirmation' | 'bank_statement' | 'mobile_money';
+  source_platform?: string; // 'indrive', 'bolt', etc.
+  uploaded_by: string; // Admin user ID
+}
+
+// CSV Parser with ML-based field detection
+async function parseAndIngestCSV(uploadRequest: CSVUploadRequest): Promise<{
+  records_processed: number;
+  customers_matched: number;
+  errors: string[];
+}> {
+
+  // 1. Upload to S3
+  const s3Key = `csv-uploads/${Date.now()}-${uploadRequest.file.name}`;
+  await s3.upload({
+    Bucket: 'lynia-data-uploads',
+    Key: s3Key,
+    Body: uploadRequest.file
+  }).promise();
+
+  // 2. Parse CSV with Papa Parse
+  const csvData = await parseCsvFile(uploadRequest.file);
+
+  // 3. Detect field mappings (ML-based column detection)
+  const fieldMappings = await detectFieldMappings(csvData.headers, uploadRequest.data_type);
+
+  // 4. Process each row
+  const results = {
+    records_processed: 0,
+    customers_matched: 0,
+    errors: []
+  };
+
+  for (const row of csvData.rows) {
+    try {
+      // Extract phone number (key identifier)
+      const phoneNumber = extractPhoneNumber(row, fieldMappings);
+
+      // Find matching customer
+      const customer = await supabase
+        .from('customers')
+        .select('id')
+        .eq('phone_number', phoneNumber)
+        .single();
+
+      if (!customer) {
+        results.errors.push(`No customer found for phone: ${phoneNumber}`);
+        continue;
+      }
+
+      // Extract income/earnings data based on data_type
+      const incomeData = extractIncomeData(row, fieldMappings, uploadRequest.data_type);
+
+      // Store in alternative_income_sources table
+      await supabase.from('alternative_income_sources').insert({
+        customer_id: customer.id,
+        source_type: uploadRequest.data_type,
+        source_platform: uploadRequest.source_platform,
+        monthly_income_usd: incomeData.monthly_income,
+        income_consistency_score: incomeData.consistency_score,
+        data_period_months: incomeData.period_months,
+        raw_data: row, // Store for audit
+        uploaded_by: uploadRequest.uploaded_by,
+        upload_file_s3_key: s3Key
+      });
+
+      results.customers_matched++;
+    } catch (error) {
+      results.errors.push(`Row ${results.records_processed}: ${error.message}`);
+    }
+
+    results.records_processed++;
+  }
+
+  return results;
+}
+
+// ML-based field mapping (detects columns automatically)
+async function detectFieldMappings(
+  headers: string[],
+  dataType: string
+): Promise<Record<string, string>> {
+
+  // Common field patterns for different data types
+  const patterns = {
+    'platform_earnings': {
+      phone: ['phone', 'mobile', 'number', 'contact'],
+      earnings: ['earnings', 'income', 'amount', 'total', 'revenue'],
+      date: ['date', 'period', 'month', 'week'],
+      trips: ['trips', 'rides', 'orders', 'deliveries']
+    },
+    'salary_confirmation': {
+      phone: ['phone', 'mobile', 'employee_contact'],
+      salary: ['salary', 'gross_pay', 'net_pay', 'amount'],
+      employer: ['employer', 'company', 'organization'],
+      date: ['pay_date', 'payment_date', 'month']
+    },
+    'bank_statement': {
+      phone: ['account_holder_phone', 'mobile'],
+      deposits: ['credit', 'deposit', 'incoming', 'received'],
+      date: ['date', 'transaction_date', 'value_date']
+    }
+  };
+
+  // Use fuzzy matching to map CSV headers to expected fields
+  const mappings: Record<string, string> = {};
+  const expectedFields = patterns[dataType];
+
+  for (const [fieldName, searchTerms] of Object.entries(expectedFields)) {
+    const matchedHeader = headers.find(header =>
+      searchTerms.some(term =>
+        header.toLowerCase().includes(term.toLowerCase())
+      )
+    );
+
+    if (matchedHeader) {
+      mappings[fieldName] = matchedHeader;
+    }
+  }
+
+  return mappings;
+}
+```
+
+**CSV Upload Flow**:
+```
+1. Admin uploads CSV via dashboard
+2. System detects column mappings automatically
+3. Parses data and matches to existing customers (by phone)
+4. Stores in alternative_income_sources table
+5. Updates credit score calculation to include new data
+6. Returns summary report (records processed, errors)
+```
+
+### 7.4 African Fintech Models Reference
+
+**Learning from Industry Leaders**:
+
+#### 1. **Moove.io** - Mobility Financing Model
+**What they do**: Finance vehicles for ride-hailing drivers (Uber, Bolt) in Nigeria, Ghana, South Africa
+
+**Key Strategies We Adopt**:
+- Platform integration for real-time earnings verification
+- Weekly revenue-based repayments (aligned with driver income cycles)
+- Asset tracking via GPS/telemetry (we use device locks instead)
+- Driver ratings as creditworthiness indicator
+
+**Lynia Implementation**:
+```typescript
+// Moove-inspired driver financing
+interface DriverLoanTerms {
+  platform: 'indrive' | 'bolt';
+  weekly_repayment: number; // Based on avg weekly earnings
+  repayment_as_pct_of_earnings: number; // Target: 20-25%
+  automatic_deduction: boolean; // Via platform wallet integration
+  credit_limit_based_on_3m_avg_earnings: boolean;
+}
+```
+
+#### 2. **M-Kopa** - Pay-As-You-Go Device Financing
+**What they do**: Finance solar panels and smartphones in Kenya, Uganda, Nigeria via daily micropayments
+
+**Key Strategies We Adopt**:
+- Device lock/unlock based on payment status ✅ (already implemented)
+- Daily/weekly micro-repayments (we use monthly currently)
+- Usage data as willingness-to-pay signal
+- Graduation model: successful borrowers get larger credit limits
+
+**Lynia Implementation**:
+```typescript
+// M-Kopa-inspired features (already implemented)
+- Device lock after 7 days overdue ✅
+- Credit limit increases after successful repayment ✅
+- First-time customer bonuses ✅
+- Remote device management ✅
+
+// Future enhancements from M-Kopa model:
+- Bi-weekly repayment option (aligned with payday cycles)
+- Usage-based credit score adjustments
+- Referral rewards (customers refer others)
+```
+
+#### 3. **GigMile** - Gig Economy Financing
+**What they do**: Finance motorcycles and vehicles for gig workers (delivery, ride-hailing) in Nigeria
+
+**Key Strategies We Adopt**:
+- Multi-platform income aggregation (driver works on multiple apps)
+- Earnings volatility modeling (gig income fluctuates)
+- Performance metrics as credit indicators (ratings, completion rates)
+
+**Lynia Implementation**:
+```typescript
+// GigMile-inspired multi-platform scoring
+interface MultiPlatformIncome {
+  platforms: {
+    indrive_monthly_avg: number;
+    bolt_monthly_avg: number;
+    uber_monthly_avg: number;
+  };
+  total_monthly_income: number;
+  income_volatility_score: number; // Lower is better
+  diversification_bonus: number; // Extra points for multiple income streams
+}
+
+function scoreMultiPlatformWorker(income: MultiPlatformIncome): number {
+  let score = 0;
+
+  // Base income score (60 points)
+  if (income.total_monthly_income >= 500) score += 60;
+  else if (income.total_monthly_income >= 300) score += 40;
+  else if (income.total_monthly_income >= 150) score += 20;
+
+  // Diversification bonus (20 points)
+  const activePlatforms = Object.values(income.platforms).filter(v => v > 0).length;
+  if (activePlatforms >= 3) score += 20;
+  else if (activePlatforms >= 2) score += 15;
+  else if (activePlatforms >= 1) score += 10;
+
+  // Low volatility bonus (20 points)
+  if (income.income_volatility_score <= 0.2) score += 20; // Stable income
+  else if (income.income_volatility_score <= 0.4) score += 10;
+
+  return score;
+}
 ```
 
 ---

@@ -62,7 +62,7 @@
 ```
 Supabase PostgreSQL 15
 │
-├── Application Tables (12 tables)
+├── Application Tables (13 tables)
 │   ├── customers
 │   ├── kyc_submissions
 │   ├── loans
@@ -72,6 +72,7 @@ Supabase PostgreSQL 15
 │   ├── notifications
 │   ├── distributors
 │   ├── admin_users
+│   ├── alternative_income_sources  (Phase 3+)
 │   ├── audit_logs
 │   ├── sessions
 │   └── system_config
@@ -931,7 +932,180 @@ ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 
 ---
 
-### 10. audit_logs
+### 10. alternative_income_sources (Phase 3+)
+
+**Purpose**: Store alternative income data from platforms, CSV uploads, and external APIs for enhanced credit scoring
+
+```sql
+CREATE TABLE alternative_income_sources (
+  -- Primary Key
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Customer Reference
+  customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+
+  -- Income Source Details
+  source_type VARCHAR(50) NOT NULL,
+  -- 'platform_earnings', 'salary_confirmation', 'bank_statement', 'mobile_money', 'airtime_data'
+  source_platform VARCHAR(50),
+  -- 'indrive', 'bolt', 'uber', 'econet', 'netone', 'telecel', 'manual_csv'
+
+  -- Income Data
+  monthly_income_usd DECIMAL(10,2),
+  income_consistency_score DECIMAL(5,2), -- 0-100, regularity of income
+  data_period_months INTEGER DEFAULT 3, -- Data covers X months
+  earnings_breakdown JSONB, -- Detailed earnings by month/week
+
+  -- Platform-Specific Data (for drivers/gig workers)
+  platform_driver_rating DECIMAL(3,2), -- 0-5 rating
+  platform_total_trips INTEGER,
+  platform_active_days_per_week DECIMAL(3,1),
+  platform_acceptance_rate DECIMAL(3,2), -- 0-1
+  platform_tenure_months INTEGER,
+
+  -- Airtime Data (MNO integration)
+  airtime_recharge_frequency_per_month DECIMAL(4,1),
+  airtime_avg_recharge_amount_usd DECIMAL(6,2),
+  airtime_consistency_score DECIMAL(5,2), -- 0-100
+  airtime_peak_recharge_day INTEGER, -- 1-31, salary day indicator
+
+  -- Verification & Trust
+  verified BOOLEAN DEFAULT false,
+  verified_by UUID REFERENCES admin_users(id),
+  verified_at TIMESTAMP WITH TIME ZONE,
+  verification_method VARCHAR(50), -- 'api', 'csv_upload', 'manual_review'
+
+  -- Data Upload Info (CSV uploads)
+  uploaded_by UUID REFERENCES admin_users(id),
+  upload_file_s3_key TEXT, -- S3 location of original CSV
+  upload_file_name VARCHAR(200),
+
+  -- Raw Data Storage (for audit)
+  raw_data JSONB, -- Original data from API or CSV row
+
+  -- Status
+  status VARCHAR(20) DEFAULT 'active', -- active, expired, rejected
+  expires_at TIMESTAMP WITH TIME ZONE, -- Data expires after 6 months
+
+  -- Timestamps
+  data_collected_at TIMESTAMP WITH TIME ZONE, -- When source data was collected
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+  -- Constraints
+  CONSTRAINT valid_source_type CHECK (source_type IN (
+    'platform_earnings', 'salary_confirmation', 'bank_statement',
+    'mobile_money', 'airtime_data', 'other'
+  )),
+  CONSTRAINT valid_status CHECK (status IN ('active', 'expired', 'rejected')),
+  CONSTRAINT valid_income CHECK (monthly_income_usd >= 0),
+  CONSTRAINT valid_consistency_score CHECK (
+    income_consistency_score IS NULL OR (income_consistency_score BETWEEN 0 AND 100)
+  ),
+  CONSTRAINT valid_rating CHECK (
+    platform_driver_rating IS NULL OR (platform_driver_rating BETWEEN 0 AND 5)
+  )
+);
+
+-- Indexes
+CREATE INDEX idx_alt_income_customer ON alternative_income_sources(customer_id)
+  WHERE status = 'active';
+CREATE INDEX idx_alt_income_source_type ON alternative_income_sources(source_type);
+CREATE INDEX idx_alt_income_platform ON alternative_income_sources(source_platform)
+  WHERE source_platform IS NOT NULL;
+CREATE INDEX idx_alt_income_verified ON alternative_income_sources(verified)
+  WHERE verified = true;
+CREATE INDEX idx_alt_income_expires ON alternative_income_sources(expires_at)
+  WHERE status = 'active';
+
+-- Enable RLS
+ALTER TABLE alternative_income_sources ENABLE ROW LEVEL SECURITY;
+
+-- Auto-expire old data (trigger)
+CREATE OR REPLACE FUNCTION expire_old_income_data()
+RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE alternative_income_sources
+  SET status = 'expired'
+  WHERE expires_at < NOW() AND status = 'active';
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trigger_expire_income_data
+  AFTER INSERT OR UPDATE ON alternative_income_sources
+  FOR EACH ROW
+  EXECUTE FUNCTION expire_old_income_data();
+```
+
+**Usage Examples**:
+
+```sql
+-- Store InDrive driver earnings from API
+INSERT INTO alternative_income_sources (
+  customer_id, source_type, source_platform,
+  monthly_income_usd, income_consistency_score,
+  platform_driver_rating, platform_total_trips,
+  platform_active_days_per_week, platform_tenure_months,
+  verified, verification_method, expires_at
+) VALUES (
+  'customer-uuid',
+  'platform_earnings',
+  'indrive',
+  350.00,
+  85.5,
+  4.8,
+  450,
+  6.0,
+  8,
+  true,
+  'api',
+  NOW() + INTERVAL '6 months'
+);
+
+-- Store salary data from CSV upload
+INSERT INTO alternative_income_sources (
+  customer_id, source_type, monthly_income_usd,
+  uploaded_by, upload_file_s3_key, upload_file_name,
+  raw_data, verified, verification_method, expires_at
+) VALUES (
+  'customer-uuid',
+  'salary_confirmation',
+  450.00,
+  'admin-uuid',
+  'csv-uploads/1732638000-salaries.csv',
+  'salaries.csv',
+  '{"employer": "ZimCo Ltd", "position": "Driver", "gross_pay": 450}'::jsonb,
+  true,
+  'csv_upload',
+  NOW() + INTERVAL '6 months'
+);
+
+-- Store airtime data from MNO API
+INSERT INTO alternative_income_sources (
+  customer_id, source_type, source_platform,
+  airtime_recharge_frequency_per_month,
+  airtime_avg_recharge_amount_usd,
+  airtime_consistency_score,
+  airtime_peak_recharge_day,
+  verified, verification_method, expires_at
+) VALUES (
+  'customer-uuid',
+  'airtime_data',
+  'econet',
+  4.5,
+  12.50,
+  78.0,
+  25, -- Likely salary day
+  true,
+  'api',
+  NOW() + INTERVAL '6 months'
+);
+```
+
+---
+
+### 11. audit_logs
 
 ```sql
 CREATE TABLE audit_logs (
