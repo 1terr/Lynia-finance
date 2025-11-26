@@ -31,6 +31,31 @@
 4. **Security**: Row Level Security (RLS) on all tables
 5. **Performance**: Strategic indexes on foreign keys and query patterns
 6. **Compliance**: 7-year data retention for financial records
+7. **Configurable Terms**: Loan parameters stored in `system_config` for easy modification
+
+### Business Rules & Data Display Guidelines
+
+**CRITICAL**: The following business rules must be enforced across all interfaces (WhatsApp, web, mobile):
+
+1. **Deposit Payment Control**:
+   - 10% deposit required before device collection (tracked in `loans.deposit_amount`, `loans.deposit_paid`)
+   - Agent verification required via `loans.deposit_payment_id` before device handover
+   - Payment must reflect in system before `device_collected` flag can be set
+
+2. **Collection Model** (No Delivery):
+   - Customers must collect devices from agents (no delivery)
+   - Agent location stored in `distributors` table
+   - Tracking via `loans.device_collected`, `loans.device_collected_by_agent`
+
+3. **Configurable Loan Terms**:
+   - ALL loan parameters stored in `system_config` table (NOT hardcoded)
+   - Key configs: `credit.interest_rate`, `credit.default_term_months`, `credit.tier1/2/3_limit`
+   - UI/WhatsApp flows must dynamically pull from `system_config`
+
+4. **Interest Rate Display Rules**:
+   - ❌ NEVER display `interest_rate` percentage to customers
+   - ✅ ONLY display: `total_repayment`, `monthly_payment`, `term_months`
+   - `interest_rate` field exists in database for internal calculations only
 
 ### Database Architecture
 

@@ -1593,9 +1593,9 @@ Amount: {{3}}
 Please review the attached document carefully before signing.
 
 Key terms:
-- Interest Rate: 30% flat
 - Term: 8 months
 - Monthly Payment: {{4}}
+- Total Repayment: {{5}}
 
 FOOTER: Read before signing
 

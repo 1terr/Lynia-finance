@@ -66,6 +66,46 @@
 | Quick Replies | Frequent actions (Check Balance, Pay Now) | ✅ Core |
 | Location Messages | Find nearest distributor | 🚧 Phase 2 |
 
+### 1.4 Configurable Loan Terms
+
+**IMPORTANT**: All loan terms displayed in WhatsApp flows MUST be pulled from system configuration, NOT hardcoded.
+
+**Configurable Parameters**:
+- Loan term duration (default: 8 months, configurable per credit tier)
+- Interest rate percentage (NOT displayed to customers)
+- Payment schedule frequency (monthly, bi-weekly)
+- Late payment penalties
+- Deposit percentage (default: 10%)
+- Credit tier limits ($200, $350, $500)
+
+**Implementation**:
+```javascript
+// System configuration table
+const loanConfig = await db.system_config.findOne({
+  key: 'loan_terms',
+  active: true
+});
+
+// Use configured values in WhatsApp messages
+const loanTerm = loanConfig.default_term_months; // 8 months
+const depositPct = loanConfig.deposit_percentage; // 0.10
+const interestRate = loanConfig.interest_rate; // NOT shown to customer
+
+// Calculate and display
+const monthlyPayment = calculateMonthlyPayment(principal, interestRate, loanTerm);
+const totalRepayment = monthlyPayment * loanTerm;
+```
+
+**Customer Display Rules**:
+- ✅ SHOW: Total repayment amount, monthly payment, loan term period
+- ❌ HIDE: Interest rate percentage, interest calculation breakdown
+
+**Admin Configuration**:
+- Loan terms can be changed via admin dashboard
+- Changes apply to NEW loans only (not retroactive)
+- WhatsApp flows automatically reflect updated terms
+- Audit trail for all configuration changes
+
 ---
 
 ## 2. State Machine Architecture
@@ -527,7 +567,6 @@ Your account is now active.
 • Credit Limit: $200
 • Available: $200
 • Loan Term: 8 months
-• Interest Rate: 30% flat
 
 You can now:
 🛒 Browse devices
@@ -775,7 +814,6 @@ BOT:
 💵 Financing Price: $299
    Monthly Payment: $47.81/month (8 months)
    Total Repayment: $382.50
-   Interest: $83.50 (30% flat rate)
 
 📊 Specifications:
 • Display: 6.6" FHD+
@@ -927,7 +965,6 @@ Type 1, 2, or 3, or refine your search.
 │                                                           │
 │ Loan Terms:                                              │
 │ • Principal: $299                                        │
-│ • Interest Rate: 30% flat                                │
 │ • Term: 8 months                                         │
 │ • Monthly Payment: $47.81                                │
 │ • Total Repayment: $382.50                               │
@@ -937,9 +974,11 @@ Type 1, 2, or 3, or refine your search.
          │
          ▼ [Continue]
 ┌──────────────────────────────────────────────────────────┐
-│ BOT: Where should we deliver your device?                │
+│ BOT: Which agent will you collect your device from?      │
 │                                                           │
-│ [Use my registered address] [Enter new address]          │
+│ We'll show you agents near your location.                │
+│                                                           │
+│ [📍 Find Nearby Agents] [📋 View All Agents]             │
 └──────────────────────────────────────────────────────────┘
          │
          ▼ [Use registered address]
@@ -951,7 +990,7 @@ Type 1, 2, or 3, or refine your search.
 │ 📅 Loan Term: 8 months                                    │
 │ 💰 Monthly Payment: $47.81                                │
 │ 📆 First Payment Due: Dec 24, 2025                       │
-│ 📍 Delivery: [address]                                    │
+│ 📍 Collection Point: {agent_name} - {agent_address}      │
 │                                                           │
 │ By continuing, you agree to our:                         │
 │ • Loan Agreement                                         │
@@ -1030,16 +1069,16 @@ Type 1, 2, or 3, or refine your search.
 │ 🎉 Your device is ready for collection!                  │
 │                                                           │
 │ Next steps:                                              │
-│ 1. Visit our distributor (see address below)            │
+│ 1. Visit your selected agent (see details below)        │
 │ 2. Show this confirmation to the agent                  │
 │ 3. Agent will verify payment in system                  │
 │ 4. Collect your Samsung Galaxy A14                      │
 │                                                           │
-│ 📍 Distributor Details:                                  │
-│ {distributor_name}                                       │
-│ {distributor_address}                                    │
-│ Phone: {distributor_phone}                               │
-│ Hours: Mon-Sat 8am-6pm                                   │
+│ 📍 Collection Agent Details:                             │
+│ {agent_name}                                             │
+│ {agent_address}                                          │
+│ Phone: {agent_phone}                                     │
+│ Hours: {agent_hours}                                     │
 │                                                           │
 │ Your payment confirmation code: #LYN12345-PAID           │
 │                                                           │
@@ -1115,11 +1154,9 @@ Device: Samsung Galaxy A14 ($299)
 
 📊 Proposed Loan Terms:
 • Loan Amount: $299
-• Interest Rate: 30% flat (industry standard)
 • Loan Term: 8 months
 • Monthly Payment: $47.81
 • Total Repayment: $382.50
-• Interest Charged: $83.50
 
 📅 Payment Schedule:
 • First Payment: Dec 24, 2025
@@ -1152,33 +1189,44 @@ Reason: Your credit limit ($200) is less than the device price ($299).
 
 **State**: DEVICE_SELECTED → LOAN_APPLICATION
 
-#### **Step 2: Delivery Address Confirmation**
+#### **Step 2: Agent Selection**
 
 ```
 BOT:
-Great! Where should we deliver your device?
+Great! Which agent will you collect your device from?
 
-We have your registered address:
-📍 {address_line_1}
-   {city}, {province}
+📍 Agents near you (based on {city}, {province}):
 
-[✅ Use this address] [📝 Enter new address]
+1️⃣ TechHub Harare CBD
+   123 Nelson Mandela Ave, Harare
+   Distance: 2.5 km
+   Hours: Mon-Sat 8am-6pm
+
+2️⃣ MobileZone Avondale
+   45 King George Rd, Avondale
+   Distance: 3.8 km
+   Hours: Mon-Sat 9am-5pm
+
+3️⃣ PhonePoint Belvedere
+   78 Simon Mazorodze Rd, Belvedere
+   Distance: 5.2 km
+   Hours: Mon-Fri 8am-5pm, Sat 9am-2pm
+
+[Select Agent 1-3] [📍 View More Agents] [🔍 Search by Location]
 ```
 
-**If user selects**: [Enter new address]
+**If user selects**: [Search by Location]
 ```
 BOT:
-Please enter your delivery address.
+Enter your preferred area or suburb:
 
-Format:
-Street address, City, Province
-
-Example: 123 Main Street, Harare, Harare Province
+Example: Borrowdale, Highlands, Eastlea
 ```
 
 **Validation**:
-- Must include city and province
-- Max 200 characters
+- Must be valid Zimbabwe city/suburb
+- Show agents within 20km radius
+- Sort by distance (nearest first)
 
 #### **Step 3: Loan Terms Review**
 
@@ -1194,7 +1242,6 @@ Please confirm these details are correct:
 
 💵 LOAN DETAILS
    Principal: $299
-   Interest (30%): $83.50
    Total Repayment: $382.50
 
 📅 PAYMENT PLAN
@@ -1202,9 +1249,11 @@ Please confirm these details are correct:
    Monthly Payment: $47.81
    First Payment: Dec 24, 2025
 
-📍 DELIVERY
-   {address_line_1}
-   {city}, {province}
+📍 COLLECTION POINT
+   {agent_name}
+   {agent_address}
+   {agent_city}, {agent_province}
+   Phone: {agent_phone}
 
 📞 CONTACT
    Phone: {phone_number}
@@ -2356,7 +2405,7 @@ Final Credit Score: 780 (+60 points!)
 🎁 You now qualify for:
 • Larger loans (up to $500)
 • Better devices
-• Lower interest rates (25% vs 30%)
+• Improved loan terms
 
 [🛍️ Browse Devices] [📊 View Credit Profile] [🏠 Main Menu]
 ```
