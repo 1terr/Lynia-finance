@@ -634,10 +634,10 @@ CREATE TABLE payments (
   -- Payment Details
   amount DECIMAL(10,2) NOT NULL,
   currency VARCHAR(3) DEFAULT 'USD',
-  payment_method VARCHAR(50) NOT NULL, -- ecocash, paynow, bank_transfer, cash
+  payment_method VARCHAR(50) NOT NULL, -- ecocash, payment gateway, bank_transfer, cash
 
   -- Payment Gateway
-  gateway VARCHAR(50), -- ecocash, paynow, stripe
+  gateway VARCHAR(50), -- ecocash, payment gateway, stripe
   gateway_transaction_id VARCHAR(100) UNIQUE,
   gateway_reference VARCHAR(100),
   gateway_fee DECIMAL(10,2),

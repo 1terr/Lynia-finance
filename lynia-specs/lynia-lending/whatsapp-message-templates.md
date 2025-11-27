@@ -709,7 +709,7 @@ Pay early to:
 - Keep your device unlocked
 - Maintain good credit score
 
-Tap below to pay now via EcoCash, Paynow, or Bank Transfer.
+Tap below to pay now via EcoCash, EcoCash/Omari/Innbucks/OneWallet, or Bank Transfer.
 
 FOOTER: Pay on time, stay on track
 
@@ -744,7 +744,7 @@ Pay now to avoid:
 - Device lock (at 7 days overdue)
 - Credit score impact
 
-We accept EcoCash, Paynow, and Bank Transfer.
+We accept EcoCash, EcoCash/Omari/Innbucks/OneWallet, and Bank Transfer.
 
 FOOTER: Pay today to avoid late fees
 
@@ -1324,7 +1324,7 @@ Bhadhara nhasi kuti:
 - Foni yako isaenderwe
 - Credit score yako ichengeteke
 
-Dzvanya pasi pano kubhadhara iye zvino ne EcoCash, Paynow, kana Bank Transfer.
+Dzvanya pasi pano kubhadhara iye zvino ne EcoCash, EcoCash/Omari/Innbucks/OneWallet, kana Bank Transfer.
 
 FOOTER: Bhadhara nenguva, chengetedza nzira yako
 

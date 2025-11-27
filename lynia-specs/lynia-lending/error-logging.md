@@ -472,7 +472,7 @@ function maskPII(data) {
 │   ├── application.log
 │   ├── error.log
 │   ├── ecocash-gateway.log
-│   └── paynow-gateway.log
+│   └── payment gateway-gateway.log
 │
 ├── /device-lock-service
 │   ├── application.log
@@ -791,7 +791,7 @@ Post-Mortem (for P1/P2)
 - >10 PAYMENT_FAILED errors in 1 hour
 
 ## Immediate Actions:
-1. Identify affected gateway (EcoCash/Paynow)
+1. Identify affected gateway (EcoCash/EcoCash/Omari/Innbucks/OneWallet)
 2. Check gateway status page
 3. Review gateway API logs
 

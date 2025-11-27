@@ -107,7 +107,7 @@ Lynia Finance is a WhatsApp-first device financing platform for Zimbabwe's infor
 │         │                                                               │
 │  ┌──────▼──────────┐  ┌──────────────┐  ┌──────────────┐             │
 │  │   WhatsApp      │  │    Smile     │  │   EcoCash    │             │
-│  │   Cloud API     │  │   Identity   │  │   / Paynow   │             │
+│  │   Cloud API     │  │   Identity   │  │   / EcoCash/Omari/Innbucks/OneWallet   │             │
 │  │   (Meta)        │  │    (KYC)     │  │  (Payments)  │             │
 │  └─────────────────┘  └──────────────┘  └──────────────┘             │
 │                                                                         │
@@ -223,11 +223,11 @@ Lynia Finance is a WhatsApp-first device financing platform for Zimbabwe's infor
 - **Trigger**: Webhook from payment gateways
 - **Responsibilities**:
   - Payment reconciliation
-  - EcoCash/Paynow integration
+  - EcoCash/EcoCash/Omari/Innbucks/OneWallet integration
   - Retry logic (exponential backoff)
   - Fraud detection
 - **SLA**: <10 seconds per transaction
-- **Integrations**: EcoCash, Paynow, Fineract
+- **Integrations**: EcoCash, EcoCash/Omari/Innbucks/OneWallet, Fineract
 
 #### 3.4 Notification Service
 - **Runtime**: AWS Lambda (Node.js 18)
@@ -348,7 +348,7 @@ Lynia Finance is a WhatsApp-first device financing platform for Zimbabwe's infor
 - **Features**: Document verification, Selfie matching, Liveness detection
 - **Supported IDs**: Zimbabwe National ID
 
-#### 5.3 EcoCash / Paynow
+#### 5.3 EcoCash / EcoCash/Omari/Innbucks/OneWallet
 - **Provider**: Econet / Paygate
 - **Authentication**: Merchant key + API token
 - **Settlement**: T+1 (next business day)
@@ -659,7 +659,7 @@ Customer (WhatsApp)
 
 #### Payment Service
 - `POST /payments/webhook/ecocash` - EcoCash webhook
-- `POST /payments/webhook/paynow` - Paynow webhook
+- `POST /payments/webhook/payment gateway` - EcoCash/Omari/Innbucks/OneWallet webhook
 - `GET /payments/:loanId` - Payment history
 - `POST /payments/reconcile` - Manual reconciliation
 
@@ -701,7 +701,7 @@ Customer (WhatsApp)
 ### External Services
 - **WhatsApp**: Meta WhatsApp Cloud API
 - **KYC**: Smile Identity
-- **Payments**: EcoCash, Paynow
+- **Payments**: EcoCash, EcoCash/Omari/Innbucks/OneWallet
 - **Device Lock**: Absolute Software / Prey
 - **Email**: AWS SES
 

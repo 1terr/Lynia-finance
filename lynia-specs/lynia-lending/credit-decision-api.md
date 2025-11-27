@@ -130,7 +130,7 @@ X-Request-ID: req_xyz789
   "explanation": "Approved for $350 (Tier 2). Credit score: 720. Risk level: low. Excellent employment stability and mobile money activity.",
 
   "next_steps": [
-    "Customer must pay $29.90 deposit via EcoCash/Paynow",
+    "Customer must pay $29.90 deposit via EcoCash/EcoCash/Omari/Innbucks/OneWallet",
     "After deposit payment, visit selected agent to collect device",
     "Agent will verify payment before device handover"
   ],

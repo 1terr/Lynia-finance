@@ -716,18 +716,18 @@ EcoCash payment webhook.
 
 ---
 
-### POST /webhook/paynow
+### POST /webhook/payment gateway
 
-Paynow payment webhook.
+EcoCash/Omari/Innbucks/OneWallet payment webhook.
 
 **Request:**
 ```json
 {
   "reference": "PAY-ABC123",
-  "paynowreference": "12345",
+  "payment gatewayreference": "12345",
   "amount": "70.31",
   "status": "Paid",
-  "pollurl": "https://paynow.co.zw/poll/xxx",
+  "pollurl": "https://payment gateway.co.zw/poll/xxx",
   "hash": "signature_hash"
 }
 ```

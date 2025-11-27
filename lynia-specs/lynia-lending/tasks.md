@@ -33,7 +33,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 - ✅ T013: Zimbabwe National ID validation
 
 #### **Payment Gateways**
-- ✅ T014-T016: EcoCash/Paynow integration
+- ✅ T014-T016: EcoCash/EcoCash/Omari/Innbucks/OneWallet integration
 - ✅ T017: Omari payment gateway
 
 #### **Device Management**
@@ -59,7 +59,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 - Supabase PostgreSQL (application data) ✅
 - WhatsApp Cloud API (customer communication) ✅
 - Smile Identity (KYC) ✅
-- EcoCash/Paynow (payments) ✅
+- EcoCash/EcoCash/Omari/Innbucks/OneWallet (payments) ✅
 
 ---
 
@@ -434,7 +434,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 **Dependencies:** Phase 0 (T014-T017)
 
 **Deliverable:**
-- EcoCash/Paynow integration design
+- EcoCash/EcoCash/Omari/Innbucks/OneWallet integration design
 - Webhook handling architecture
 - Payment reconciliation flow
 - Retry and idempotency strategy

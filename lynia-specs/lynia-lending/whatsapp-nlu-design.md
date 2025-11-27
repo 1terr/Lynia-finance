@@ -538,7 +538,7 @@ async function handleContextFallback(session: Session): Promise<void> {
     ],
     PAYMENT_MENU: [
       'Pay via EcoCash',
-      'Pay via Paynow',
+      'Pay via EcoCash/Omari/Innbucks/OneWallet',
       'View payment history'
     ],
     SUPPORT: [

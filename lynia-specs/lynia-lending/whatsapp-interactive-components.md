@@ -214,7 +214,7 @@ URL buttons that open external links. Used for payment links and document viewin
       "text": "Payment Ready"
     },
     "body": {
-      "text": "Your payment link is ready. Click below to complete your payment of $47.81 via EcoCash or Paynow."
+      "text": "Your payment link is ready. Click below to complete your payment of $47.81 via EcoCash or EcoCash/Omari/Innbucks/OneWallet."
     },
     "footer": {
       "text": "Secure payment via Lynia"
@@ -546,7 +546,7 @@ Choose how you'd like to pay your installment of $47.81.
 Sections:
 - Mobile Money
   • EcoCash ($47.81) - "Instant confirmation"
-  • Paynow ($47.81) - "All banks supported"
+  • EcoCash/Omari/Innbucks/OneWallet ($47.81) - "All banks supported"
 - Bank Transfer
   • Manual Transfer - "2-3 business days"
 ```
@@ -572,8 +572,8 @@ const PAYMENT_METHOD_LIST = {
             description: '$47.81 • Instant confirmation'
           },
           {
-            id: 'payment_paynow',
-            title: 'Paynow',
+            id: 'payment_payment gateway',
+            title: 'EcoCash/Omari/Innbucks/OneWallet',
             description: '$47.81 • All banks supported'
           }
         ]
@@ -748,7 +748,7 @@ truncateButtonTitle('Check My Credit Limit') // "Check My Credit Li…" (20 char
 
 ### 6.1 Payment Link Integration
 
-**Use Case**: Generate secure payment links for EcoCash/Paynow
+**Use Case**: Generate secure payment links for EcoCash/EcoCash/Omari/Innbucks/OneWallet
 
 **Flow**:
 ```
@@ -790,7 +790,7 @@ async function sendPaymentLink(
       type: 'cta_url',
       header: { type: 'text', text: 'Payment Ready' },
       body: {
-        text: `Your payment link is ready. Click below to pay $${amount.toFixed(2)} via EcoCash or Paynow.\n\nLoan ID: ${loanId}\nExpires in: 30 minutes`
+        text: `Your payment link is ready. Click below to pay $${amount.toFixed(2)} via EcoCash or EcoCash/Omari/Innbucks/OneWallet.\n\nLoan ID: ${loanId}\nExpires in: 30 minutes`
       },
       footer: { text: 'Secure payment via Lynia' },
       action: {
@@ -925,7 +925,7 @@ async function escalateToPhoneSupport(
                  ↓
 ┌─────────────────────────────────────────────────────┐
 │ 5. User Clicks Button → Opens Payment Page         │
-│    Next.js page with EcoCash/Paynow options        │
+│    Next.js page with EcoCash/EcoCash/Omari/Innbucks/OneWallet options        │
 └────────────────┬────────────────────────────────────┘
                  ↓
 ┌─────────────────────────────────────────────────────┐
@@ -951,7 +951,7 @@ CREATE TABLE payment_sessions (
   amount DECIMAL(10,2) NOT NULL,
   currency VARCHAR(3) DEFAULT 'USD',
   status VARCHAR(20) DEFAULT 'pending',
-  payment_method VARCHAR(50), -- 'ecocash', 'paynow'
+  payment_method VARCHAR(50), -- 'ecocash', 'payment gateway'
   whatsapp_message_id VARCHAR(255),
   session_url TEXT,
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -1072,7 +1072,7 @@ export default function PaymentSessionPage() {
       const data = await response.json();
 
       if (data.redirect_url) {
-        // Redirect to EcoCash/Paynow
+        // Redirect to EcoCash/EcoCash/Omari/Innbucks/OneWallet
         window.location.href = data.redirect_url;
       }
     } catch (error) {
@@ -1099,10 +1099,10 @@ export default function PaymentSessionPage() {
           EcoCash
         </button>
         <button
-          className={selectedMethod === 'paynow' ? 'active' : ''}
-          onClick={() => setSelectedMethod('paynow')}
+          className={selectedMethod === 'payment gateway' ? 'active' : ''}
+          onClick={() => setSelectedMethod('payment gateway')}
         >
-          Paynow
+          EcoCash/Omari/Innbucks/OneWallet
         </button>
       </div>
 
@@ -1129,7 +1129,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Verify webhook signature (EcoCash/Paynow specific)
+  // Verify webhook signature (EcoCash/EcoCash/Omari/Innbucks/OneWallet specific)
   const signature = req.headers['x-webhook-signature'] as string;
   const isValid = verifyWebhookSignature(req.body, signature, process.env.PAYMENT_WEBHOOK_SECRET);
 
@@ -1162,7 +1162,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         loan_id: session.loan_id,
         customer_id: session.customer_id,
         amount: session.amount,
-        payment_method: 'ecocash', // or 'paynow'
+        payment_method: 'ecocash', // or 'payment gateway'
         transaction_id,
         status: 'completed'
       });

@@ -556,7 +556,7 @@ interface SessionContext {
   payment?: {
     loan_id: string;
     amount: number;
-    payment_method?: 'ecocash' | 'paynow' | 'bank_transfer';
+    payment_method?: 'ecocash' | 'payment gateway' | 'bank_transfer';
     phone_number?: string;
     payment_id?: string;
   };

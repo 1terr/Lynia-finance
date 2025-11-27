@@ -139,7 +139,7 @@ Non-sensitive information:
 | Data Type | Retention Period | Justification |
 |-----------|------------------|---------------|
 | Smile Identity KYC results | 7 years | Regulatory compliance |
-| EcoCash/Paynow transaction records | 7 years | Financial reconciliation |
+| EcoCash/EcoCash/Omari/Innbucks/OneWallet transaction records | 7 years | Financial reconciliation |
 | WhatsApp message metadata | 90 days | Conversation context |
 | Device lock provider records | 3 years | Device management |
 
@@ -767,7 +767,7 @@ async function handleDataAccessRequest(customerId, requestType) {
 | Smile Identity | National ID, selfie | Nigeria/SA | Contractual necessity | Medium |
 | Meta (WhatsApp) | Phone, messages | Ireland/USA | User consent | Low |
 | AWS | All application data | India | Legitimate interest | Low |
-| EcoCash/Paynow | Payment details | Zimbabwe | Contractual necessity | Low |
+| EcoCash/EcoCash/Omari/Innbucks/OneWallet | Payment details | Zimbabwe | Contractual necessity | Low |
 
 ---
 
@@ -1624,7 +1624,7 @@ We use your information to:
 ## Who We Share With
 We share your data with:
 - Smile Identity (to verify your ID)
-- EcoCash/Paynow (to process payments)
+- EcoCash/EcoCash/Omari/Innbucks/OneWallet (to process payments)
 - Data Protection Authority (if required by law)
 
 We will NEVER sell your data to third parties.

@@ -1028,7 +1028,7 @@ Type 1, 2, or 3, or refine your search.
 │ Before collecting your device, please pay:               │
 │                                                           │
 │ 📌 Deposit Amount: $29.90 (10% of $299)                  │
-│ 📌 Payment Method: EcoCash or Paynow                     │
+│ 📌 Payment Method: EcoCash or EcoCash/Omari/Innbucks/OneWallet                     │
 │                                                           │
 │ ⚠️ IMPORTANT:                                             │
 │ • Your deposit MUST reflect in our system                │
@@ -1045,7 +1045,7 @@ Type 1, 2, or 3, or refine your search.
 │ Amount to pay: $29.90                                    │
 │                                                           │
 │ Choose payment method:                                   │
-│ [EcoCash] [Paynow]                                       │
+│ [EcoCash] [EcoCash/Omari/Innbucks/OneWallet]                                       │
 └──────────────────────────────────────────────────────────┘
          │
          ▼ [Payment method selected - generates payment link]
@@ -1161,7 +1161,7 @@ Device: Samsung Galaxy A14 ($299)
 📅 Payment Schedule:
 • First Payment: Dec 24, 2025
 • Last Payment: Jul 24, 2026
-• Payment Method: EcoCash/Paynow
+• Payment Method: EcoCash/EcoCash/Omari/Innbucks/OneWallet
 
 Ready to continue?
 [✅ Continue] [❌ Cancel]
@@ -1807,7 +1807,7 @@ Agent dashboard shows:
 │                                                           │
 │ How do you want to pay $47.81?                           │
 │                                                           │
-│ [📱 EcoCash] [💳 Paynow] [🏦 Bank Transfer]              │
+│ [📱 EcoCash] [💳 EcoCash/Omari/Innbucks/OneWallet] [🏦 Bank Transfer]              │
 └──────────────────────────────────────────────────────────┘
          │
          ▼ [EcoCash]
@@ -1975,10 +1975,10 @@ How do you want to pay?
    • Charged to +263771234567
    [Pay with EcoCash]
 
-💳 Paynow
+💳 EcoCash/Omari/Innbucks/OneWallet
    • Instant confirmation
    • All banks supported
-   [Pay with Paynow]
+   [Pay with EcoCash/Omari/Innbucks/OneWallet]
 
 🏦 Bank Transfer
    • Manual verification (1-2 hours)
@@ -2212,7 +2212,7 @@ Recent Payments:
    EcoCash | Receipt: #PAY67889
 
 3️⃣ Sep 24, 2025 - $47.81 ✅ (First payment)
-   Paynow | Receipt: #PAY67888
+   EcoCash/Omari/Innbucks/OneWallet | Receipt: #PAY67888
 ━━━━━━━━━━━━━━━━
 
 📈 Payment Stats:
@@ -2304,21 +2304,21 @@ Locked device means:
 
 ### 6.5 Alternative Payment Methods
 
-#### **Paynow**
+#### **EcoCash/Omari/Innbucks/OneWallet**
 
 ```
 BOT:
-💳 Paynow Payment
+💳 EcoCash/Omari/Innbucks/OneWallet Payment
 
 Amount: $47.81
 Merchant: Lynia Finance
 
 You'll be redirected to your bank's app to complete payment.
 
-[✅ Open Paynow] [❌ Cancel]
+[✅ Open EcoCash/Omari/Innbucks/OneWallet] [❌ Cancel]
 ```
 
-**After opening Paynow**:
+**After opening EcoCash/Omari/Innbucks/OneWallet**:
 ```
 BOT:
 ⏳ Waiting for payment confirmation...
@@ -2498,7 +2498,7 @@ BOT:
    Visit nearest distributor with your ID
 
 5️⃣ MAKE PAYMENTS (8 months)
-   Pay monthly via EcoCash/Paynow
+   Pay monthly via EcoCash/EcoCash/Omari/Innbucks/OneWallet
 
 🎉 Device is yours after final payment!
 
@@ -3045,7 +3045,7 @@ async function sendWelcomeMessage(phoneNumber) {
 - [ ] Message templates (approved by WhatsApp)
 
 ### Phase 2: Payment & Support (Weeks 3-4)
-- [ ] Payment flow (EcoCash, Paynow)
+- [ ] Payment flow (EcoCash, EcoCash/Omari/Innbucks/OneWallet)
 - [ ] Payment reminders (templates)
 - [ ] Customer support flow
 - [ ] FAQ auto-responses
