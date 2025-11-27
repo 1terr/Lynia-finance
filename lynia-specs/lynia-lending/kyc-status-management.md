@@ -622,30 +622,61 @@ You have {{attempts_remaining}} attempts remaining.
 
 ## Summary
 
-**KYC Status Management Deliverables:**
-- ✅ **9 Status States**: not_started, pending, processing, manual_review, verified, rejected, expired, flagged, blocked
-- ✅ **Transition Rules**: State machine with validation
-- ✅ **Re-verification Triggers**: Annual expiry, address change, suspicious activity
-- ✅ **Grace Period**: 30 days after expiry before account freeze
-- ✅ **Status History**: Complete audit trail of all transitions
-- ✅ **Automated Expiry**: Daily cron job to expire 12-month old verifications
+### Executive Summary
+This specification defines the complete lifecycle management system for customer KYC (Know Your Customer) verification status. It implements a 9-state status machine with automated transitions, 12-month verification validity, and a 30-day grace period to ensure regulatory compliance while maintaining a smooth customer experience.
 
-**Key Features:**
-- Automated status transitions via webhooks
-- 12-month verification validity
-- 30-day grace period for re-verification
-- Complete status history tracking
-- Clear customer notifications
+### What Was Delivered
+This document provides:
+1. **9 KYC Status States**: not_started → pending → processing → verified/rejected/manual_review, plus expired/flagged/blocked states
+2. **State Machine Logic**: Allowed transitions with validation rules to prevent invalid state changes
+3. **Verification Validity**: 12-month verification period with automated expiry tracking
+4. **Grace Period System**: 30-day window after expiry before account restrictions
+5. **Re-verification Triggers**: Annual expiry, address changes, suspicious activity detection
+6. **Status History Tracking**: Complete audit trail of all status transitions with reasons
+7. **Notification System**: Automated WhatsApp messages for each status change
 
-**Next Steps:**
-1. Implement KYC status service
-2. Set up daily expiry cron job
-3. Build status dashboard for admins
-4. Proceed to P1-T031 (Privacy & Consent Management)
+### Technical Components
+- **KYCStatusService**: Core service for status transitions and validation
+- **State Machine**: Enforces allowed transitions (e.g., processing → verified/rejected/manual_review)
+- **ExpiryChecker**: Daily cron job to mark 12-month old verifications as expired
+- **GracePeriodManager**: Tracks 30-day grace period and triggers account restrictions
+- **HistoryLogger**: Records all status changes with timestamps and reasons
+- **NotificationDispatcher**: Sends status update messages to customers
+- **Database Tables**: `customers.kyc_status`, `kyc_status_history`
 
----
+### Business Impact
+- **Regulatory Compliance**: Maintains up-to-date customer verification (Zimbabwe RBZ requirement)
+- **User Retention**: 30-day grace period reduces customer churn from expired verifications
+- **Fraud Prevention**: Flagged/blocked states enable rapid response to suspicious activity
+- **Audit Trail**: Complete history supports regulatory audits and dispute resolution
+- **Customer Trust**: Clear status notifications keep customers informed
 
-**References:**
-- KYC Document Requirements: [kyc-document-requirements.md](kyc-document-requirements.md)
-- Smile Identity Integration: [smile-identity-integration.md](smile-identity-integration.md)
-- Database Schema: [database-schema.md](database-schema.md)
+### Implementation Checklist
+- [ ] Create `kyc_status` enum and add to customers table
+- [ ] Create `kyc_status_history` table for audit trail
+- [ ] Implement KYCStatusService with state transition validation
+- [ ] Build state machine with allowed transitions logic
+- [ ] Set up daily cron job for verification expiry checks (runs at midnight)
+- [ ] Implement 30-day grace period logic and account restrictions
+- [ ] Create notification templates for each status (verified, expired, manual_review, rejected)
+- [ ] Build webhook handler to update status from Smile Identity callbacks
+- [ ] Create admin dashboard for manual status changes (flagged/blocked)
+- [ ] Set up monitoring alerts for blocked accounts and manual review queue
+
+### Dependencies
+- **Smile Identity Webhooks**: Triggers status updates (processing → verified/rejected)
+- **Database**: Customers table with kyc_status field
+- **Notification System**: WhatsApp messaging for status updates
+- **Cron Scheduler**: Daily job for expiry checks
+- **Admin Dashboard**: Manual status management UI
+
+### Related Specifications
+- [KYC Document Requirements](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/kyc-document-requirements.md) - Verification process that creates statuses
+- [Smile Identity Integration](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/smile-identity-integration.md) - Webhook triggers for status transitions
+- [Customer Onboarding Flow](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/customer-onboarding-flow.md) - Initial KYC status creation
+- [Privacy & Consent Management](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/privacy-consent-management.md) - Data retention after account blocking
+- [Database Schema](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/database-schema.md) - Table definitions
+
+### External References
+- [Zimbabwe RBZ KYC Requirements](https://www.rbz.co.zw) - Regulatory compliance guidelines
+- [FATF KYC Standards](https://www.fatf-gafi.org) - International anti-money laundering standards
