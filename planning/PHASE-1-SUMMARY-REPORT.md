@@ -1813,6 +1813,7 @@ Proceed to onboarding
 **File:** `device-catalog-design.md`
 **Priority:** High
 **Estimated:** 6 hours | **Actual:** 6 hours
+**GitHub Issue:** [#105](https://github.com/1terr/Lynia-finance/issues/105)
 
 **Key Deliverables:**
 - Device catalog schema
@@ -1913,6 +1914,7 @@ interface DeviceSpecifications {
 **File:** `device-lock-unlock-integration.md`
 **Priority:** Critical
 **Estimated:** 8 hours | **Actual:** 8 hours
+**GitHub Issue:** [#106](https://github.com/1terr/Lynia-finance/issues/106)
 
 **Key Deliverables:**
 - Lock/unlock API integration design
@@ -2015,6 +2017,7 @@ async function lockDevice(deviceId: string, reason: string) {
 **File:** `device-handover-process.md`
 **Priority:** High
 **Estimated:** 6 hours | **Actual:** 6 hours
+**GitHub Issue:** [#107](https://github.com/1terr/Lynia-finance/issues/107)
 
 > **📝 SPEC UPDATE - Nov 28, 2025**
 > Enhanced deposit payment enforcement with critical business rule. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md#task-5-deposit-payment-enforcement) for complete details.
@@ -2114,6 +2117,7 @@ interface DeviceHandover {
 **File:** `device-return-repossession-flow.md`
 **Priority:** Medium
 **Estimated:** 4 hours | **Actual:** 4 hours
+**GitHub Issue:** [#108](https://github.com/1terr/Lynia-finance/issues/108)
 
 **Key Deliverables:**
 - Repossession triggers (90+ days overdue)
@@ -2192,6 +2196,7 @@ Post-repo: "Your device has been repossessed. Outstanding balance: $X. Contact u
 **File:** `device-condition-assessment.md`
 **Priority:** Low
 **Estimated:** 4 hours | **Actual:** 4 hours
+**GitHub Issue:** [#109](https://github.com/1terr/Lynia-finance/issues/109)
 
 **Key Deliverables:**
 - Device condition checklist
@@ -2266,6 +2271,7 @@ interface DeviceCondition {
 **File:** `multi-channel-notification-design.md`
 **Priority:** High
 **Estimated:** 6 hours | **Actual:** 6 hours
+**GitHub Issue:** [#110](https://github.com/1terr/Lynia-finance/issues/110)
 
 **Key Deliverables:**
 - Notification channel priority (WhatsApp > SMS > Email)
@@ -2318,6 +2324,7 @@ async function sendNotification(notification: Notification) {
 **File:** `notification-templates-triggers.md`
 **Priority:** High
 **Estimated:** 6 hours | **Actual:** 6 hours
+**GitHub Issue:** [#111](https://github.com/1terr/Lynia-finance/issues/111)
 
 **Key Deliverables:**
 - 15+ notification types defined
@@ -2395,6 +2402,7 @@ Lynia Finance
 **File:** `payment-reminder-strategy.md`
 **Priority:** High
 **Estimated:** 4 hours | **Actual:** 4 hours
+**GitHub Issue:** [#112](https://github.com/1terr/Lynia-finance/issues/112)
 
 **Key Deliverables:**
 - Reminder schedule (D-7, D-3, D-1, D+1, D+3, D+7)
@@ -2475,6 +2483,7 @@ OR CALL US: +263 123 456 789
 **File:** `notification-delivery-tracking.md`
 **Priority:** Medium
 **Estimated:** 4 hours | **Actual:** 4 hours
+**GitHub Issue:** [#113](https://github.com/1terr/Lynia-finance/issues/113)
 
 **Key Deliverables:**
 - Queue design (AWS SQS/Supabase Realtime)
@@ -2599,6 +2608,7 @@ async function processNotification(notification: Notification) {
 **File:** `admin-dashboard-overview.md`
 **Priority:** Medium
 **Estimated:** 8 hours | **Actual:** 8 hours
+**GitHub Issue:** [#114](https://github.com/1terr/Lynia-finance/issues/114)
 
 **Key Deliverables:**
 - Dashboard wireframes (Next.js architecture)
@@ -2645,6 +2655,7 @@ const ADMIN_DASHBOARD_STACK = {
 **File:** `admin-user-roles-permissions.md`
 **Priority:** High
 **Estimated:** 4 hours | **Actual:** 4 hours
+**GitHub Issue:** [#115](https://github.com/1terr/Lynia-finance/issues/115)
 
 **Key Deliverables:**
 - 7 admin role definitions
@@ -2689,6 +2700,7 @@ const PERMISSIONS = {
 **File:** `reporting-requirements.md`
 **Priority:** Medium
 **Estimated:** 6 hours | **Actual:** 6 hours
+**GitHub Issue:** [#116](https://github.com/1terr/Lynia-finance/issues/116)
 
 > **📝 SPEC UPDATE - Nov 28, 2025**
 > Removed financial statements and added product filtering. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md#task-7-product-filtering-in-reports) for complete details.
@@ -2768,6 +2780,7 @@ const PERMISSIONS = {
 **File:** `manual-review-workflows.md`
 **Priority:** High
 **Estimated:** 6 hours | **Actual:** 6 hours
+**GitHub Issue:** [#117](https://github.com/1terr/Lynia-finance/issues/117)
 
 **Key Deliverables:**
 - 6 review workflow types
@@ -2815,6 +2828,7 @@ interface ReviewQueue {
 **File:** `admin-notification-system.md`
 **Priority:** Low
 **Estimated:** 4 hours | **Actual:** 4 hours
+**GitHub Issue:** [#118](https://github.com/1terr/Lynia-finance/issues/118)
 
 **Key Deliverables:**
 - Admin alert types (20+ types)
