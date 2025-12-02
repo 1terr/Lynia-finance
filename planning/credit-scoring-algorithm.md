@@ -210,151 +210,139 @@ The fully established Lynia Finance credit scoring system will assess **three cr
 
 ### 3.1 Scoring Components
 
-**6 Components** with weighted contributions:
+**5 Components** with weighted contributions (aligned with affordability-based risk model):
 
 | Component | Weight | Score Range | Description |
 |-----------|--------|-------------|-------------|
-| **KYC Verification** | 35% | 0-300 | National ID validation + selfie match |
-| **Age & Employment** | 25% | 0-200 | Age (18-65), employment type |
-| **Geographic Risk** | 15% | 0-150 | Location-based risk (Harare vs rural) |
-| **Mobile Money History** | 15% | 0-150 | Transaction volume (optional Phase 1) |
-| **Social Signals** | 5% | 0-50 | Phone contact list size, app usage |
-| **First-Time Bonus** | 5% | 0-100 | New customer incentive |
+| **Affordability Assessment** | 30% | 0-300 | Income vs installment ratio, debt obligations |
+| **Repayment Willingness** | 25% | 0-250 | Past repayment behavior, bill payment consistency |
+| **Mobile Money Activity** | 20% | 0-200 | Transaction volume, airtime purchases, account stability |
+| **External Credit Data** | 15% | 0-150 | Credit bureau, platform data (Bolt/Uber), bank verification |
+| **KYC Verification** | 10% | 0-100 | National ID validation + selfie match |
 
-**Total**: 300-850 (sum of all components)
+**Total**: 300-1000 raw points → Scaled to 300-850 (FICO-like scale)
 
-### 3.2 Component 1: KYC Verification (35%, 0-300 points)
+**Note**: Geographic location, social media signals, and detailed employment type are NOT used in scoring. The model focuses on affordability and willingness-to-pay indicators.
 
-**Data Source**: Smile Identity API
+### 3.2 Component 1: Affordability Assessment (30%, 0-300 points)
+
+**Purpose**: Determine if customer can afford monthly installment based on income
+
+**Data Sources**: Self-reported income, mobile money inflows, platform earnings (Bolt/Uber)
 
 ```typescript
-async function scoreKYCVerification(kycResult: SmileIdentityResult): Promise<number> {
+interface AffordabilityData {
+  monthly_income_usd: number; // Verified or estimated
+  existing_debt_obligations_usd: number; // Other loans, rent, etc.
+  household_size: number;
+  dependents: number;
+  requested_loan_amount: number;
+}
+
+function scoreAffordability(data: AffordabilityData): number {
+  const loanTerm = 6; // months
+  const monthlyInstallment = (data.requested_loan_amount * 1.12) / loanTerm; // 12% APR
+
+  // 1. Debt-to-Income Ratio (150 points max)
+  const totalMonthlyObligations = data.existing_debt_obligations_usd + monthlyInstallment;
+  const dtiRatio = totalMonthlyObligations / data.monthly_income_usd;
+
+  let dtiScore = 0;
+  if (dtiRatio <= 0.30) dtiScore = 150; // Ideal: ≤30% DTI
+  else if (dtiRatio <= 0.40) dtiScore = 120; // Acceptable
+  else if (dtiRatio <= 0.50) dtiScore = 80; // Risky
+  else if (dtiRatio <= 0.60) dtiScore = 40; // Very risky
+  else dtiScore = 0; // Cannot afford
+
+  // 2. Income Level (100 points max)
+  let incomeScore = 0;
+  if (data.monthly_income_usd >= 500) incomeScore = 100;
+  else if (data.monthly_income_usd >= 300) incomeScore = 75;
+  else if (data.monthly_income_usd >= 150) incomeScore = 50;
+  else if (data.monthly_income_usd >= 100) incomeScore = 25;
+  else incomeScore = 0;
+
+  // 3. Household Financial Stress (50 points max)
+  const incomePerPerson = data.monthly_income_usd / (data.household_size || 1);
+  let householdScore = 0;
+  if (incomePerPerson >= 100) householdScore = 50;
+  else if (incomePerPerson >= 75) householdScore = 35;
+  else if (incomePerPerson >= 50) householdScore = 20;
+  else householdScore = 10;
+
+  return Math.min(dtiScore + incomeScore + householdScore, 300);
+}
+```
+
+**Affordability Scoring Table**:
+| DTI Ratio | Monthly Income | Score Range | Approval Likelihood |
+|-----------|----------------|-------------|---------------------|
+| ≤30% | ≥$500 | 250-300 | Very High |
+| 30-40% | $300-500 | 180-250 | High |
+| 40-50% | $150-300 | 100-180 | Medium |
+| 50-60% | $100-150 | 40-100 | Low |
+| >60% | <$100 | 0-40 | Very Low |
+
+### 3.3 Component 2: Repayment Willingness (25%, 0-250 points)
+
+**Purpose**: Assess customer's willingness and history of making payments on time
+
+**Data Sources**: Internal repayment history, bill payment patterns, communication responsiveness
+
+```typescript
+interface RepaymentData {
+  previous_loans_count: number;
+  on_time_payment_rate: number; // 0-1 (0% to 100%)
+  days_since_last_payment: number;
+  total_payments_made: number;
+  bill_payment_consistency: number; // Airtime recharges, utility bills (0-1)
+  communication_response_rate: number; // Responds to reminders (0-1)
+}
+
+function scoreRepaymentWillingness(data: RepaymentData | null): number {
+  if (!data || data.previous_loans_count === 0) {
+    return 125; // Neutral score for first-time customers
+  }
+
   let score = 0;
 
-  // 1. ID Document Verification (150 points)
-  if (kycResult.id_verification.status === 'verified') {
-    score += 150;
-  } else if (kycResult.id_verification.status === 'review') {
-    score += 75; // Partial credit
-  }
+  // 1. Historical Repayment Performance (150 points max)
+  if (data.on_time_payment_rate >= 0.95) score += 150; // Excellent
+  else if (data.on_time_payment_rate >= 0.85) score += 120; // Good
+  else if (data.on_time_payment_rate >= 0.75) score += 80; // Fair
+  else if (data.on_time_payment_rate >= 0.60) score += 40; // Poor
+  else score += 0; // Very poor
 
-  // 2. Selfie-ID Match (100 points)
-  const faceMatchScore = kycResult.face_match.confidence;
-  if (faceMatchScore >= 0.95) {
-    score += 100;
-  } else if (faceMatchScore >= 0.85) {
-    score += 75;
-  } else if (faceMatchScore >= 0.75) {
-    score += 50;
-  }
+  // 2. Bill Payment Consistency (50 points max)
+  if (data.bill_payment_consistency >= 0.90) score += 50;
+  else if (data.bill_payment_consistency >= 0.75) score += 35;
+  else if (data.bill_payment_consistency >= 0.60) score += 20;
+  else score += 10;
 
-  // 3. Liveness Check (50 points)
-  if (kycResult.liveness.status === 'passed') {
-    score += 50;
-  }
+  // 3. Communication Responsiveness (50 points max)
+  if (data.communication_response_rate >= 0.90) score += 50;
+  else if (data.communication_response_rate >= 0.75) score += 35;
+  else if (data.communication_response_rate >= 0.60) score += 20;
+  else score += 10;
 
-  return Math.min(score, 300); // Cap at 300
+  return Math.min(score, 250);
 }
 ```
 
-**Scoring Table**:
-| KYC Status | ID Verified | Face Match | Liveness | Score |
-|------------|-------------|------------|----------|-------|
-| Perfect | ✅ Yes | ≥95% | ✅ Passed | 300 |
-| Good | ✅ Yes | 85-94% | ✅ Passed | 225 |
-| Fair | ✅ Yes | 75-84% | ❌ Failed | 200 |
-| Poor | ⚠️ Review | <75% | ❌ Failed | 75 |
-| Failed | ❌ No | <50% | ❌ Failed | 0 |
+**Repayment Willingness Table**:
+| On-Time Rate | Bill Consistency | Responsiveness | Score Range |
+|--------------|------------------|----------------|-------------|
+| ≥95% | ≥90% | ≥90% | 220-250 |
+| 85-94% | 75-89% | 75-89% | 170-220 |
+| 75-84% | 60-74% | 60-74% | 110-170 |
+| 60-74% | <60% | <60% | 50-110 |
+| <60% | <50% | <50% | 0-50 |
 
-### 3.3 Component 2: Age & Employment (25%, 0-200 points)
+### 3.4 Component 3: Mobile Money Activity (20%, 0-200 points)
 
-**Age Risk Curve** (120 points max):
+**Purpose**: Use mobile money transaction patterns as income and stability proxy
 
-```typescript
-function scoreAge(birthDate: Date): number {
-  const age = calculateAge(birthDate);
-
-  if (age < 18) return 0; // Not eligible
-  if (age >= 18 && age <= 25) return 60; // Young, higher risk
-  if (age >= 26 && age <= 35) return 100; // Prime age, lower risk
-  if (age >= 36 && age <= 50) return 120; // Established, lowest risk
-  if (age >= 51 && age <= 60) return 100; // Pre-retirement
-  if (age >= 61 && age <= 65) return 80; // Retirement age
-  return 0; // Over 65, not eligible
-}
-```
-
-**Employment Type** (80 points max):
-
-```typescript
-function scoreEmployment(employmentType: string): number {
-  const scores = {
-    'formal_employed': 80, // Salaried job
-    'self_employed': 70, // Small business owner
-    'informal_trader': 60, // Market vendor, street vendor
-    'gig_worker': 50, // Ride-share, delivery driver
-    'unemployed': 20, // Actively seeking work
-    'student': 40 // Part-time income
-  };
-
-  return scores[employmentType] || 0;
-}
-```
-
-**Combined Age + Employment**:
-```typescript
-function scoreAgeAndEmployment(birthDate: Date, employmentType: string): number {
-  const ageScore = scoreAge(birthDate);
-  const employmentScore = scoreEmployment(employmentType);
-  return ageScore + employmentScore; // Max 200
-}
-```
-
-### 3.4 Component 3: Geographic Risk (15%, 0-150 points)
-
-**Zimbabwe Location Risk Tiers**:
-
-```typescript
-interface LocationRisk {
-  province: string;
-  city: string;
-  riskTier: 'low' | 'medium' | 'high';
-  score: number;
-}
-
-const LOCATION_RISK_SCORES: LocationRisk[] = [
-  // Low Risk (Urban centers) - 150 points
-  { province: 'Harare', city: 'Harare CBD', riskTier: 'low', score: 150 },
-  { province: 'Bulawayo', city: 'Bulawayo CBD', riskTier: 'low', score: 150 },
-  { province: 'Harare', city: 'Chitungwiza', riskTier: 'low', score: 140 },
-
-  // Medium Risk (Semi-urban) - 100 points
-  { province: 'Manicaland', city: 'Mutare', riskTier: 'medium', score: 100 },
-  { province: 'Midlands', city: 'Gweru', riskTier: 'medium', score: 100 },
-  { province: 'Masvingo', city: 'Masvingo', riskTier: 'medium', score: 100 },
-
-  // High Risk (Rural) - 50 points
-  { province: 'Matabeleland North', city: 'Rural', riskTier: 'high', score: 50 },
-  { province: 'Mashonaland Central', city: 'Rural', riskTier: 'high', score: 50 }
-];
-
-function scoreGeographicRisk(province: string, city: string): number {
-  const match = LOCATION_RISK_SCORES.find(
-    loc => loc.province === province && loc.city === city
-  );
-
-  return match?.score || 75; // Default to medium risk
-}
-```
-
-**Rationale**:
-- **Urban**: Higher economic activity, easier device recovery
-- **Semi-urban**: Moderate risk, local enforcement possible
-- **Rural**: Higher risk, harder to recover devices
-
-### 3.5 Component 4: Mobile Money History (15%, 0-150 points)
-
-**Optional in Phase 1** - Requires Zimbocash/EcoCash API integration
+**Data Sources**: EcoCash/OneMoney API, airtime purchase history, transaction patterns
 
 ```typescript
 interface MobileMoneyProfile {
@@ -363,174 +351,252 @@ interface MobileMoneyProfile {
   avg_monthly_outflow_usd: number;
   transaction_count_3m: number;
   balance_usd: number;
+  airtime_purchases_3m: number;
+  airtime_avg_per_purchase_usd: number;
 }
 
-function scoreMobileMoneyHistory(profile: MobileMoneyProfile | null): number {
-  if (!profile) return 75; // Neutral score if no data
+function scoreMobileMoneyActivity(profile: MobileMoneyProfile | null): number {
+  if (!profile) return 100; // Neutral score if no data
 
   let score = 0;
 
-  // 1. Account Age (40 points)
+  // 1. Account Age (40 points) - Established customer
   if (profile.account_age_months >= 24) score += 40;
   else if (profile.account_age_months >= 12) score += 30;
   else if (profile.account_age_months >= 6) score += 20;
   else score += 10;
 
-  // 2. Monthly Inflow (50 points) - Income proxy
-  if (profile.avg_monthly_inflow_usd >= 500) score += 50;
-  else if (profile.avg_monthly_inflow_usd >= 300) score += 40;
-  else if (profile.avg_monthly_inflow_usd >= 150) score += 30;
-  else score += 10;
+  // 2. Monthly Inflow (70 points) - Income proxy
+  if (profile.avg_monthly_inflow_usd >= 500) score += 70;
+  else if (profile.avg_monthly_inflow_usd >= 300) score += 55;
+  else if (profile.avg_monthly_inflow_usd >= 150) score += 35;
+  else if (profile.avg_monthly_inflow_usd >= 75) score += 20;
+  else score += 5;
 
-  // 3. Transaction Frequency (30 points) - Activity level
-  if (profile.transaction_count_3m >= 100) score += 30;
-  else if (profile.transaction_count_3m >= 50) score += 20;
-  else if (profile.transaction_count_3m >= 20) score += 10;
+  // 3. Transaction Frequency (40 points) - Active usage
+  if (profile.transaction_count_3m >= 100) score += 40;
+  else if (profile.transaction_count_3m >= 50) score += 30;
+  else if (profile.transaction_count_3m >= 20) score += 15;
+  else score += 5;
 
-  // 4. Current Balance (30 points) - Financial stability
-  if (profile.balance_usd >= 100) score += 30;
-  else if (profile.balance_usd >= 50) score += 20;
+  // 4. Airtime Purchase Consistency (30 points) - Regular income indicator
+  if (profile.airtime_purchases_3m >= 12) score += 30; // Weekly purchases
+  else if (profile.airtime_purchases_3m >= 6) score += 20; // Bi-weekly
+  else if (profile.airtime_purchases_3m >= 3) score += 10; // Monthly
+  else score += 5;
+
+  // 5. Current Balance (20 points) - Financial stability
+  if (profile.balance_usd >= 100) score += 20;
+  else if (profile.balance_usd >= 50) score += 15;
   else if (profile.balance_usd >= 20) score += 10;
+  else score += 5;
+
+  return Math.min(score, 200);
+}
+```
+
+### 3.5 Component 4: External Credit Data (15%, 0-150 points)
+
+**Purpose**: Leverage external data sources for credit verification
+
+**Data Sources**: Credit bureau, platform integration (Bolt/Uber), bank account verification
+
+```typescript
+interface ExternalCreditData {
+  credit_bureau_score: number | null; // 300-850 if available
+  platform_verified: boolean; // Bolt/Uber driver verified
+  platform_earnings_3m_usd: number;
+  platform_rating: number; // 1-5 stars
+  bank_account_verified: boolean;
+  bank_account_age_months: number;
+}
+
+function scoreExternalCredit(data: ExternalCreditData | null): number {
+  if (!data) return 75; // Neutral score if no data
+
+  let score = 0;
+
+  // 1. Credit Bureau Score (80 points max)
+  if (data.credit_bureau_score !== null) {
+    if (data.credit_bureau_score >= 750) score += 80;
+    else if (data.credit_bureau_score >= 700) score += 65;
+    else if (data.credit_bureau_score >= 650) score += 50;
+    else if (data.credit_bureau_score >= 600) score += 30;
+    else score += 10;
+  } else {
+    score += 40; // Neutral if no bureau data
+  }
+
+  // 2. Platform Integration (Bolt/Uber) (40 points max)
+  if (data.platform_verified) {
+    score += 15; // Base verification bonus
+
+    // Earnings level
+    if (data.platform_earnings_3m_usd >= 1500) score += 15;
+    else if (data.platform_earnings_3m_usd >= 900) score += 10;
+    else if (data.platform_earnings_3m_usd >= 450) score += 5;
+
+    // Driver rating
+    if (data.platform_rating >= 4.5) score += 10;
+    else if (data.platform_rating >= 4.0) score += 7;
+    else if (data.platform_rating >= 3.5) score += 3;
+  }
+
+  // 3. Bank Account Verification (30 points max)
+  if (data.bank_account_verified) {
+    score += 15; // Base verification
+
+    if (data.bank_account_age_months >= 24) score += 15;
+    else if (data.bank_account_age_months >= 12) score += 10;
+    else if (data.bank_account_age_months >= 6) score += 5;
+  }
 
   return Math.min(score, 150);
 }
 ```
 
-### 3.6 Component 5: Social Signals (5%, 0-50 points)
+### 3.6 Component 5: KYC Verification (10%, 0-100 points)
 
-**Optional** - Requires user consent for app permissions
+**Purpose**: Basic identity verification (reduced from 35% as affordability is now primary)
 
-```typescript
-interface SocialSignals {
-  phone_contacts_count: number;
-  installed_apps_count: number;
-  whatsapp_active: boolean;
-  email_verified: boolean;
-}
-
-function scoreSocialSignals(signals: SocialSignals | null): number {
-  if (!signals) return 25; // Neutral score if no data
-
-  let score = 0;
-
-  // 1. Phone Contacts (20 points) - Social network size
-  if (signals.phone_contacts_count >= 100) score += 20;
-  else if (signals.phone_contacts_count >= 50) score += 15;
-  else if (signals.phone_contacts_count >= 20) score += 10;
-  else score += 5;
-
-  // 2. WhatsApp Active (15 points) - Primary communication channel
-  if (signals.whatsapp_active) score += 15;
-
-  // 3. Email Verified (10 points) - Additional contact method
-  if (signals.email_verified) score += 10;
-
-  // 4. Installed Apps (5 points) - Smartphone usage
-  if (signals.installed_apps_count >= 20) score += 5;
-
-  return Math.min(score, 50);
-}
-```
-
-### 3.7 Component 6: First-Time Bonus (5%, 0-100 points)
-
-**New Customer Incentive**:
+**Data Source**: Smile Identity API
 
 ```typescript
-function scoreFirstTimeBonus(
-  isFirstLoan: boolean,
-  referredBy: string | null,
-  marketingCampaign: string | null
-): number {
+async function scoreKYCVerification(kycResult: SmileIdentityResult): Promise<number> {
   let score = 0;
 
-  // 1. First-time customer base bonus (50 points)
-  if (isFirstLoan) {
+  // 1. ID Document Verification (50 points)
+  if (kycResult.id_verification.status === 'verified') {
     score += 50;
+  } else if (kycResult.id_verification.status === 'review') {
+    score += 25;
   }
 
-  // 2. Referral bonus (30 points)
-  if (referredBy) {
-    // Check if referrer has good repayment history
-    const referrerScore = getReferrerCreditScore(referredBy);
-    if (referrerScore >= 700) score += 30;
-    else if (referrerScore >= 650) score += 20;
-  }
+  // 2. Selfie-ID Match (35 points)
+  const faceMatchScore = kycResult.face_match.confidence;
+  if (faceMatchScore >= 0.95) score += 35;
+  else if (faceMatchScore >= 0.85) score += 25;
+  else if (faceMatchScore >= 0.75) score += 15;
 
-  // 3. Marketing campaign bonus (20 points)
-  if (marketingCampaign === 'launch_promo') {
-    score += 20; // Launch promotion
+  // 3. Liveness Check (15 points)
+  if (kycResult.liveness.status === 'passed') {
+    score += 15;
   }
 
   return Math.min(score, 100);
 }
 ```
 
-### 3.8 Complete Rule-Based Scoring Function
+**KYC Scoring Table**:
+| KYC Status | ID Verified | Face Match | Liveness | Score |
+|------------|-------------|------------|----------|-------|
+| Perfect | ✅ Yes | ≥95% | ✅ Passed | 100 |
+| Good | ✅ Yes | 85-94% | ✅ Passed | 75 |
+| Fair | ✅ Yes | 75-84% | ❌ Failed | 65 |
+| Poor | ⚠️ Review | <75% | ❌ Failed | 25 |
+| Failed | ❌ No | <50% | ❌ Failed | 0 |
+
+### 3.7 Complete Rule-Based Scoring Function
 
 ```typescript
 interface CreditScoreInput {
-  kyc_result: SmileIdentityResult;
-  birth_date: Date;
-  employment_type: string;
-  province: string;
-  city: string;
+  // Affordability data
+  monthly_income_usd: number;
+  existing_debt_obligations_usd: number;
+  household_size: number;
+  dependents: number;
+  requested_loan_amount: number;
+
+  // Repayment willingness data
+  previous_loans_count: number;
+  on_time_payment_rate: number;
+  bill_payment_consistency: number;
+  communication_response_rate: number;
+
+  // Mobile money data
   mobile_money_profile: MobileMoneyProfile | null;
-  social_signals: SocialSignals | null;
-  is_first_loan: boolean;
-  referred_by: string | null;
-  marketing_campaign: string | null;
+
+  // External credit data
+  external_credit_data: ExternalCreditData | null;
+
+  // KYC data
+  kyc_result: SmileIdentityResult;
 }
 
 async function calculateRuleBasedScore(input: CreditScoreInput): Promise<{
   total_score: number;
+  scaled_score: number;
   components: Record<string, number>;
   decision: 'approve' | 'review' | 'reject';
   credit_limit: number;
+  tier: string;
 }> {
-  // Calculate each component
+  // Calculate each component (total raw score: 0-1000)
   const components = {
-    kyc_verification: await scoreKYCVerification(input.kyc_result),
-    age_employment: scoreAgeAndEmployment(input.birth_date, input.employment_type),
-    geographic_risk: scoreGeographicRisk(input.province, input.city),
-    mobile_money: scoreMobileMoneyHistory(input.mobile_money_profile),
-    social_signals: scoreSocialSignals(input.social_signals),
-    first_time_bonus: scoreFirstTimeBonus(
-      input.is_first_loan,
-      input.referred_by,
-      input.marketing_campaign
-    )
+    affordability: scoreAffordability({
+      monthly_income_usd: input.monthly_income_usd,
+      existing_debt_obligations_usd: input.existing_debt_obligations_usd,
+      household_size: input.household_size,
+      dependents: input.dependents,
+      requested_loan_amount: input.requested_loan_amount
+    }), // 0-300
+
+    repayment_willingness: scoreRepaymentWillingness({
+      previous_loans_count: input.previous_loans_count,
+      on_time_payment_rate: input.on_time_payment_rate,
+      days_since_last_payment: 0,
+      total_payments_made: 0,
+      bill_payment_consistency: input.bill_payment_consistency,
+      communication_response_rate: input.communication_response_rate
+    }), // 0-250
+
+    mobile_money: scoreMobileMoneyActivity(input.mobile_money_profile), // 0-200
+
+    external_credit: scoreExternalCredit(input.external_credit_data), // 0-150
+
+    kyc_verification: await scoreKYCVerification(input.kyc_result) // 0-100
   };
 
-  // Calculate total score (max 850)
-  const total_score = Object.values(components).reduce((sum, score) => sum + score, 0);
+  // Calculate total raw score (0-1000)
+  const raw_total = Object.values(components).reduce((sum, score) => sum + score, 0);
 
-  // Determine decision based on score
+  // Scale to 300-850 range (FICO-like)
+  const scaled_score = Math.round(300 + (raw_total / 1000) * 550);
+
+  // Determine decision based on scaled score (300-850)
   let decision: 'approve' | 'review' | 'reject';
   let credit_limit = 0;
+  let tier = '';
 
-  if (total_score >= 750) {
+  if (scaled_score >= 750) {
     decision = 'approve';
-    credit_limit = 500; // Tier 3
-  } else if (total_score >= 700) {
+    credit_limit = 500;
+    tier = 'Tier 3';
+  } else if (scaled_score >= 700) {
     decision = 'approve';
-    credit_limit = 350; // Tier 2
-  } else if (total_score >= 650) {
+    credit_limit = 350;
+    tier = 'Tier 2';
+  } else if (scaled_score >= 650) {
     decision = 'approve';
-    credit_limit = 200; // Tier 1
-  } else if (total_score >= 550) {
-    decision = 'review'; // Manual review required
+    credit_limit = 200;
+    tier = 'Tier 1';
+  } else if (scaled_score >= 550) {
+    decision = 'review';
     credit_limit = 0;
+    tier = 'Manual Review';
   } else {
     decision = 'reject';
     credit_limit = 0;
+    tier = 'Rejected';
   }
 
   return {
-    total_score,
+    total_score: raw_total,
+    scaled_score,
     components,
     decision,
-    credit_limit
+    credit_limit,
+    tier
   };
 }
 ```
@@ -542,30 +608,41 @@ async function calculateRuleBasedScore(input: CreditScoreInput): Promise<{
 const customer = {
   name: 'John Doe',
   birth_date: new Date('1990-05-15'), // Age 34
-  employment_type: 'self_employed',
-  province: 'Harare',
-  city: 'Harare CBD',
+  employment_type: 'self_employed', // Collected for data enrichment, not scored in Phase 1
+  phone_number: '+263771234567',
+
+  // Affordability data
+  monthly_income_usd: 400,
+  existing_debt_obligations_usd: 50,
+  household_size: 3,
+  dependents: 1,
+  requested_loan_amount: 200,
+
+  // KYC result
   kyc_result: {
     id_verification: { status: 'verified' },
     face_match: { confidence: 0.96 },
     liveness: { status: 'passed' }
   },
+
+  // Mobile money profile
   mobile_money_profile: {
     account_age_months: 18,
     avg_monthly_inflow_usd: 400,
     avg_monthly_outflow_usd: 350,
     transaction_count_3m: 75,
-    balance_usd: 80
+    balance_usd: 80,
+    airtime_purchases_3m: 10,
+    airtime_avg_per_purchase_usd: 5
   },
-  social_signals: {
-    phone_contacts_count: 120,
-    whatsapp_active: true,
-    email_verified: true,
-    installed_apps_count: 25
-  },
-  is_first_loan: true,
-  referred_by: null,
-  marketing_campaign: 'launch_promo'
+
+  // Repayment history (first-time customer)
+  previous_loans_count: 0,
+
+  // External credit data
+  credit_bureau_score: null, // Not available
+  platform_verified: false,
+  bank_account_verified: false
 };
 
 // Calculate score
@@ -573,17 +650,18 @@ const result = await calculateRuleBasedScore(customer);
 
 console.log(result);
 // {
-//   total_score: 735,
+//   total_score: 730,
+//   scaled_score: 702,
 //   components: {
-//     kyc_verification: 300 (35% weight),
-//     age_employment: 170 (25% weight) = 100 (age) + 70 (self-employed),
-//     geographic_risk: 150 (15% weight) = Harare CBD (low risk),
-//     mobile_money: 110 (15% weight),
-//     social_signals: 45 (5% weight),
-//     first_time_bonus: 70 (5% weight) = 50 (first-time) + 20 (campaign)
+//     affordability: 250 (30% weight) - DTI 32%, income $400, household 3 people,
+//     repayment_willingness: 125 (25% weight) - First-time customer (neutral),
+//     mobile_money: 155 (20% weight) - 18mo account, $400 inflow, 75 txns, 10 airtime,
+//     external_credit: 50 (15% weight) - No bureau data, no platform verification,
+//     kyc_verification: 95 (10% weight) - ID verified, 96% face match, liveness passed
 //   },
 //   decision: 'approve',
-//   credit_limit: 350 // Tier 2
+//   credit_limit: 350, // Tier 2 (700-749 score range)
+//   tier: 'Tier 2'
 // }
 ```
 
@@ -1867,9 +1945,9 @@ const ALERT_THRESHOLDS = {
 This document defines the credit scoring algorithm for Lynia Finance:
 
 1. **Hybrid Strategy**: Rule-based (Phase 1) → Hybrid (Phase 2) → ML-first (Phase 3)
-2. **Rule-Based Scoring**: 6 components (KYC 35%, Age/Employment 25%, Geographic 15%, Mobile Money 15%, Social 5%, Bonus 5%)
+2. **Rule-Based Scoring**: 5 components (Affordability 30%, Repayment Willingness 25%, Mobile Money 20%, External Credit 15%, KYC 10%)
 3. **ML Model**: LightGBM with 60+ features, binary classification (default prediction)
-4. **Feature Engineering**: 6 categories (KYC, demographics, mobile money, device/loan, behavioral, social)
+4. **Feature Engineering**: 6 categories (KYC, demographics, mobile money, device/loan, behavioral, external credit)
 5. **Model Versioning**: Semantic versioning with model registry (training → shadow → champion/challenger → production)
 6. **A/B Testing**: Statistical significance testing, sample size calculation, metric tracking
 

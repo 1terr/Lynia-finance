@@ -108,6 +108,8 @@ interface TimeSeriesData {
 
 ## 3. Loan Portfolio Reports
 
+**IMPORTANT**: All reports must support filtering by product type (Smartphone Financing, Digital Credit, Motorbike Financing) to enable product-specific metrics and comparisons.
+
 ### 3.1 Portfolio Performance Report
 
 **Purpose**: Comprehensive view of loan portfolio health and performance
@@ -118,6 +120,12 @@ interface TimeSeriesData {
 interface PortfolioPerformanceReport {
   reportDate: string;
   reportPeriod: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+
+  // Product filtering
+  productFilter?: {
+    productType: 'smartphone_financing' | 'digital_credit' | 'motorbike_financing';
+    productCode?: string; // Specific product like 'SMRT_FIN_001'
+  };
 
   // Portfolio Composition
   composition: {
@@ -777,155 +785,9 @@ interface DeviceLockReport {
 
 ## 7. Financial Reports
 
-### 7.1 Profit & Loss (P&L) Statement
+**Note**: P&L Statement, Balance Sheet, and Cash Flow Statement are managed externally in accounting software (e.g., QuickBooks, Xero). The admin dashboard focuses on operational financial reporting only.
 
-**Purpose**: Comprehensive financial performance statement
-
-**Data Schema**:
-
-```typescript
-interface ProfitLossReport {
-  reportPeriod: { startDate: string; endDate: string };
-
-  // Revenue
-  revenue: {
-    interestIncome: number;
-    latePaymentFees: number;
-    otherFees: number;
-    totalRevenue: number;
-  };
-
-  // Direct Costs
-  directCosts: {
-    deviceProcurement: number;
-    deviceDepreciation: number;
-    paymentGatewayFees: number;
-    totalDirectCosts: number;
-  };
-
-  grossProfit: number;
-  grossMargin: number;
-
-  // Operating Expenses
-  operatingExpenses: {
-    salaries: number;
-    marketing: number;
-    technology: number; // AWS, Supabase, etc.
-    kycVerification: number;
-    smsCosts: number;
-    officeExpenses: number;
-    otherExpenses: number;
-    totalOperatingExpenses: number;
-  };
-
-  operatingProfit: number;
-  operatingMargin: number;
-
-  // Other Income/Expenses
-  otherIncomeExpenses: {
-    deviceResaleIncome: number;
-    loanWriteOffs: number;
-    badDebtProvision: number;
-    netOtherIncomeExpenses: number;
-  };
-
-  netProfit: number;
-  netMargin: number;
-
-  // Key Metrics
-  metrics: {
-    customerAcquisitionCost: number;
-    averageRevenuePerUser: number;
-    returnOnAssets: number;
-    breakEvenPoint: number;
-  };
-}
-```
-
-**Export Formats**: PDF (formatted statement), Excel (with formulas)
-
----
-
-### 7.2 Cash Flow Report
-
-**Purpose**: Track cash inflows and outflows
-
-**Data Schema**:
-
-```typescript
-interface CashFlowReport {
-  reportPeriod: { startDate: string; endDate: string };
-
-  openingBalance: number;
-
-  // Operating Activities
-  operatingActivities: {
-    cashInflows: {
-      loanRepayments: number;
-      latePaymentFees: number;
-      otherIncome: number;
-      total: number;
-    };
-
-    cashOutflows: {
-      salaries: number;
-      marketing: number;
-      technologyCosts: number;
-      operationalExpenses: number;
-      total: number;
-    };
-
-    netOperatingCashFlow: number;
-  };
-
-  // Investing Activities
-  investingActivities: {
-    cashOutflows: {
-      devicePurchases: number;
-      equipmentPurchases: number;
-      total: number;
-    };
-
-    cashInflows: {
-      deviceResales: number;
-      total: number;
-    };
-
-    netInvestingCashFlow: number;
-  };
-
-  // Financing Activities
-  financingActivities: {
-    cashInflows: {
-      capitalInvestments: number;
-      loans: number;
-      total: number;
-    };
-
-    cashOutflows: {
-      loanRepayments: number;
-      dividends: number;
-      total: number;
-    };
-
-    netFinancingCashFlow: number;
-  };
-
-  netCashFlow: number;
-  closingBalance: number;
-
-  // Projections (next 30 days)
-  projections: {
-    expectedInflows: number;
-    expectedOutflows: number;
-    projectedBalance: number;
-  };
-}
-```
-
----
-
-### 7.3 Financial Reconciliation Report
+### 7.1 Financial Reconciliation Report
 
 **Purpose**: Reconcile payments across gateways and accounting
 

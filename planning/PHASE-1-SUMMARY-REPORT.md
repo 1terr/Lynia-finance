@@ -7,6 +7,18 @@
 **Status:** ✅ COMPLETED
 **Completion Date:** November 28, 2025
 
+> **🔄 SPECIFICATION UPDATES - November 28, 2025**
+>
+> Four critical specifications have been updated based on new business requirements. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md) for complete change documentation.
+>
+> **Updated Tasks:**
+> - [P1-T015: Credit Scoring Algorithm](#p1-t015-hybrid-scoring-model-design-) - Major redesign to affordability-based model
+> - [P1-T029: Customer Onboarding Flow](#p1-t029-customer-onboarding-flow-) - Added Zimbabwe phone validation
+> - [P1-T034: Device Handover Process](#p1-t034-device-handover-process-) - Enhanced deposit enforcement
+> - [P1-T043: Reporting Requirements](#p1-t043-reporting-requirements-) - Removed P&L/Cash Flow, added product filtering
+>
+> **Requirements Coverage:** 17/17 (100%) - All new business requirements addressed
+
 ---
 
 ## Executive Summary
@@ -659,6 +671,19 @@ const mockWhatsAppMessage = {
 **File:** `credit-scoring-algorithm.md`
 **Priority:** Critical
 **Estimated:** 12 hours | **Actual:** 12 hours
+
+> **📝 SPEC UPDATE - Nov 28, 2025**
+> Major redesign based on new business requirements. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md#task-1-credit-scoring-algorithm-redesign) for complete details.
+>
+> **Changes:**
+> - ✅ Removed 6-component old model (Geographic 15%, Social Signals 5%, Age & Employment 25%)
+> - ✅ Implemented new 5-component affordability-based model (1000 raw points → 300-850 scaled)
+> - ✅ New components: Affordability 30%, Repayment Willingness 25%, Mobile Money 20%, External Credit 15%, KYC 10%
+> - ✅ Primary focus: DTI ratio ≤30% ideal, income verification, bill payment consistency
+> - ✅ Removed: Geographic scoring, social media data, detailed employment scoring
+> - ✅ Product-specific scoring configurations for multi-product architecture
+>
+> **Business Impact:** 100% alignment with affordability/willingness-to-pay model, Zimbabwe market focus
 
 **Key Deliverables:**
 - Hybrid scoring algorithm (Rule-based + ML)
@@ -1543,8 +1568,20 @@ async function handleSmileCallback(response: SmileIdentityResponse) {
 **Priority:** Critical
 **Estimated:** 8 hours | **Actual:** 8 hours
 
+> **📝 SPEC UPDATE - Nov 28, 2025**
+> Added Zimbabwe phone number validation as new Step 2. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md#task-2-zimbabwe-phone-number-validation) for complete details.
+>
+> **Changes:**
+> - ✅ Inserted new Step 2: Zimbabwe Phone Number Validation (before OTP verification)
+> - ✅ Regex validation for +263 country code and valid Zimbabwe mobile prefixes (77, 78, 71, 73, 74)
+> - ✅ Rejection messaging for non-Zimbabwean numbers with email waitlist option
+> - ✅ International interest tracking in `international_interest` table for market research
+> - ✅ Flow now has 8 steps total (was 7)
+>
+> **Business Impact:** Entry-point enforcement of Zimbabwe-only policy, prevents wasted KYC processing
+
 **Key Deliverables:**
-- 7-step onboarding flow
+- 8-step onboarding flow (updated from 7)
 - Progress tracking
 - Drop-off recovery
 - Onboarding completion metrics
@@ -1557,46 +1594,52 @@ async function handleSmileCallback(response: SmileIdentityResponse) {
 - Customer enters OTP
 - Phone verified, account created
 
-**Step 2: Basic Info Collection (3 minutes)**
+**Step 2: Zimbabwe Number Validation (30 seconds)** ⭐ NEW
+- Validate phone number starts with +263
+- Check against Zimbabwe mobile pattern: +263 7XX XXX XXX
+- If non-Zimbabwean: Show rejection message with email waitlist
+- Log to `international_interest` table for market expansion research
+
+**Step 3: Basic Info Collection (3 minutes)**
 - First name, last name
 - Date of birth
 - Occupation (dropdown)
 - Location/city
 
-**Step 3: ID Upload (4 minutes)**
+**Step 4: ID Upload (4 minutes)**
 - Instructions on taking clear ID photo
 - Upload Zimbabwe National ID
 - Basic validation (file size, format)
 - Retry if quality issues
 
-**Step 4: Selfie Capture (2 minutes)**
+**Step 5: Selfie Capture (2 minutes)**
 - Instructions on taking good selfie
 - Liveness check guidelines
 - Upload selfie
 - Retry if quality issues
 
-**Step 5: KYC Verification (5-30 seconds)**
+**Step 6: KYC Verification (5-30 seconds)**
 - Submit to Smile Identity
 - Display loading message
 - Real-time status updates
 
-**Step 6: Credit Assessment (5 seconds)**
+**Step 7: Credit Assessment (5 seconds)**
 - Run credit scoring algorithm
 - Determine eligibility tier
 - Calculate approved amount
 
-**Step 7: Loan Offer (1 minute)**
+**Step 8: Loan Offer (1 minute)**
 - Present loan offer
 - Show device catalog
 - Customer can browse or apply
 
-**Total Onboarding Time:** ~15 minutes (median)
+**Total Onboarding Time:** ~15.5 minutes (median) - updated with new validation step
 
 **Progress Tracking:**
 ```typescript
 interface OnboardingProgress {
   customer_id: string;
-  current_step: number; // 1-7
+  current_step: number; // 1-8 (updated from 1-7)
   completed_steps: number[];
   started_at: string;
   last_activity_at: string;
@@ -1972,6 +2015,18 @@ async function lockDevice(deviceId: string, reason: string) {
 **File:** `device-handover-process.md`
 **Priority:** High
 **Estimated:** 6 hours | **Actual:** 6 hours
+
+> **📝 SPEC UPDATE - Nov 28, 2025**
+> Enhanced deposit payment enforcement with critical business rule. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md#task-5-deposit-payment-enforcement) for complete details.
+>
+> **Changes:**
+> - ✅ Added critical business rule: "Deposit payment MUST be confirmed before device handover"
+> - ✅ Enhanced `checkHandoverEligibility()` function with blockers array for detailed rejection reasons
+> - ✅ Explicit deposit verification: checks for `payment_type === 'deposit'` and `status === 'confirmed'`
+> - ✅ System-level prevention: Handover CANNOT proceed if `DEPOSIT_NOT_PAID` blocker exists
+> - ✅ Clear error messaging for agents attempting handover without deposit confirmation
+>
+> **Business Impact:** Eliminates unauthorized device handovers, enforces "no cash on delivery" policy
 
 **Key Deliverables:**
 - Handover workflow (distributor → customer)
@@ -2635,11 +2690,25 @@ const PERMISSIONS = {
 **Priority:** Medium
 **Estimated:** 6 hours | **Actual:** 6 hours
 
+> **📝 SPEC UPDATE - Nov 28, 2025**
+> Removed financial statements and added product filtering. See [PHASE-1-SPEC-CHANGES-SUMMARY.md](../PHASE-1-SPEC-CHANGES-SUMMARY.md#task-7-product-filtering-in-reports) for complete details.
+>
+> **Changes:**
+> - ✅ Removed Section 7.1: P&L Statement (~75 lines)
+> - ✅ Removed Section 7.2: Cash Flow Statement (~70 lines)
+> - ✅ Added note: Financial statements managed externally (QuickBooks/Xero)
+> - ✅ Retained Section 7.3: Financial Reconciliation (operational focus)
+> - ✅ Added `productFilter` parameter to all report interfaces
+> - ✅ Product filtering supports: product type, specific product codes, date ranges
+>
+> **Business Impact:** Focused dashboard scope on operational reporting, multi-product analytics enabled
+
 **Key Deliverables:**
-- 20+ report types across 8 categories
+- 18+ report types across 8 categories (reduced from 20+)
 - Data aggregation logic
 - Export formats (CSV, Excel, PDF)
 - Scheduled reports
+- Product-level filtering for all reports
 
 **Report Categories:**
 
@@ -2647,16 +2716,17 @@ const PERMISSIONS = {
 - Real-time KPIs
 - Portfolio overview
 - Financial health metrics
+- Product performance comparison ⭐ NEW
 
 **2. Loan Portfolio Reports**
-- Portfolio performance
-- Loan aging report
-- Cohort analysis
+- Portfolio performance (with product filter ⭐)
+- Loan aging report (with product filter ⭐)
+- Cohort analysis (with product filter ⭐)
 
 **3. Payment & Collections**
-- Daily collections report
-- Collections efficiency
-- Delinquency report
+- Daily collections report (with product filter ⭐)
+- Collections efficiency (with product filter ⭐)
+- Delinquency report (with product filter ⭐)
 
 **4. Customer Analytics**
 - Customer acquisition funnel
@@ -2669,9 +2739,9 @@ const PERMISSIONS = {
 - Device lock/unlock report
 
 **6. Financial Reports**
-- Profit & Loss (P&L)
-- Cash flow statement
-- Financial reconciliation
+- ~~Profit & Loss (P&L)~~ ❌ REMOVED - Managed in QuickBooks/Xero
+- ~~Cash flow statement~~ ❌ REMOVED - Managed in QuickBooks/Xero
+- Financial reconciliation (operational only)
 
 **7. Operational Reports**
 - KYC processing metrics
@@ -2690,7 +2760,7 @@ const PERMISSIONS = {
 **Scheduled Reports:**
 - Daily: Collections report (8 AM)
 - Weekly: Portfolio performance (Monday 9 AM)
-- Monthly: P&L statement (1st of month)
+- Monthly: ~~P&L statement~~ Reconciliation report (1st of month)
 
 ---
 

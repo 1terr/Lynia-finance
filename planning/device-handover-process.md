@@ -99,36 +99,78 @@ The Device Handover Process is the final step in the loan disbursement workflow.
 
 ### 3.1 Loan Approval Requirements
 
+**CRITICAL BUSINESS RULE**: Device handover is NOT ALLOWED without confirmed deposit payment. No cash on delivery.
+
 Before device can be handed over:
 
 ```typescript
 interface HandoverEligibility {
   loan_approved: boolean;
   deposit_paid: boolean;
+  deposit_amount_usd: number;
+  deposit_paid_at: Date | null;
   kyc_verified: boolean;
   consent_signed: boolean;
   device_reserved: boolean;
   device_in_stock: boolean;
 }
 
-async function checkHandoverEligibility(loanId: string): Promise<HandoverEligibility> {
+async function checkHandoverEligibility(loanId: string): Promise<{
+  eligible: boolean;
+  eligibility: HandoverEligibility;
+  blockers: string[];
+}> {
 
   const { data: loan } = await supabase
     .from('loans')
-    .select('*, customers(*), devices(*)')
+    .select('*, customers(*), devices(*), payments(*)')
     .eq('id', loanId)
     .single();
 
+  const blockers: string[] = [];
+
+  // CRITICAL CHECK: Deposit Payment (MUST be confirmed)
+  const depositPayment = loan.payments.find(
+    p => p.payment_type === 'deposit' && p.status === 'confirmed'
+  );
+
+  if (!depositPayment) {
+    blockers.push('DEPOSIT_NOT_PAID: Customer has not paid deposit. Handover NOT ALLOWED.');
+  }
+
+  const loanApproved = loan.status === 'approved';
+  if (!loanApproved) blockers.push('LOAN_NOT_APPROVED');
+
+  const kycVerified = loan.customers.kyc_status === 'verified';
+  if (!kycVerified) blockers.push('KYC_NOT_VERIFIED');
+
+  const consentSigned = await hasSignedConsent(loan.customer_id, 'device_lock_authorization');
+  if (!consentSigned) blockers.push('CONSENT_NOT_SIGNED');
+
+  const deviceReserved = loan.device_id !== null;
+  if (!deviceReserved) blockers.push('DEVICE_NOT_RESERVED');
+
+  const deviceInStock = loan.devices?.available_stock > 0;
+  if (!deviceInStock) blockers.push('DEVICE_OUT_OF_STOCK');
+
   return {
-    loan_approved: loan.status === 'approved',
-    deposit_paid: loan.deposit_paid === true,
-    kyc_verified: loan.customers.kyc_status === 'verified',
-    consent_signed: await hasSignedConsent(loan.customer_id, 'device_lock_authorization'),
-    device_reserved: loan.device_id !== null,
-    device_in_stock: loan.devices.available_stock > 0
+    eligible: blockers.length === 0,
+    eligibility: {
+      loan_approved: loanApproved,
+      deposit_paid: !!depositPayment,
+      deposit_amount_usd: depositPayment?.amount_usd || 0,
+      deposit_paid_at: depositPayment?.paid_at || null,
+      kyc_verified: kycVerified,
+      consent_signed: consentSigned,
+      device_reserved: deviceReserved,
+      device_in_stock: deviceInStock
+    },
+    blockers
   };
 }
 ```
+
+**Agent Dashboard Display**: Must clearly show deposit status with visual indicator (✅ Paid / ❌ Not Paid)
 
 **Eligibility Criteria**:
 - ✅ Loan approved by credit system

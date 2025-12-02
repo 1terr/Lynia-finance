@@ -108,9 +108,72 @@ Ready to get started?
 
 ---
 
-#### **Step 2: Phone Number Verification**
+#### **Step 2: Zimbabwe Phone Number Validation**
 
-**Purpose:** Verify customer owns the phone number
+**Purpose:** Ensure customer has a Zimbabwean phone number (+263)
+
+**Validation Logic:**
+```typescript
+function validateZimbabwePhoneNumber(phoneNumber: string): {
+  valid: boolean;
+  message?: string;
+} {
+  // Normalize phone number
+  const normalized = phoneNumber.replace(/[\s\-()]/g, '');
+
+  // Check for +263 country code
+  if (!normalized.startsWith('+263') && !normalized.startsWith('263')) {
+    return {
+      valid: false,
+      message: 'non_zimbabwean_number'
+    };
+  }
+
+  // Validate Zimbabwe mobile number format: +263 7XX XXX XXX
+  // Valid prefixes: 77, 78, 71, 73, 74 (Econet, NetOne, Telecel)
+  const mobilePattern = /^(\+?263|0)(7[1-8]{1}\d{7})$/;
+
+  if (!mobilePattern.test(normalized)) {
+    return {
+      valid: false,
+      message: 'invalid_zimbabwe_mobile'
+    };
+  }
+
+  return { valid: true };
+}
+```
+
+**Rejection Message (Non-Zimbabwean Number):**
+```
+❌ Service Not Available
+
+We currently only serve customers with Zimbabwean phone numbers (+263).
+
+We'll notify you via email when we expand to your country! 🌍
+
+Have a Zimbabwean number?
+👉 Contact us: support@lynia.finance
+
+[Notify Me When Available] [Exit]
+```
+
+**Database Logging:**
+```typescript
+// Log rejected countries for market research
+await supabase.from('international_interest').insert({
+  phone_number: phoneNumber,
+  country_code: extractCountryCode(phoneNumber),
+  rejected_at: new Date(),
+  source: 'whatsapp_onboarding'
+});
+```
+
+---
+
+#### **Step 3: Phone Number Verification (OTP)**
+
+**Purpose:** Verify customer owns the Zimbabwe phone number
 
 **WhatsApp Message:**
 ```
