@@ -52,212 +52,215 @@ Device locking is a critical risk mitigation tool for device financing. It allow
 
 ## 2. Device Lock Solutions
 
-### 2.1 Solution Comparison
+### 2.1 Chosen Solution: Trustonic
 
-| Solution | Coverage | Cost | Effectiveness | Implementation |
-|----------|----------|------|---------------|----------------|
-| **Samsung Knox** | Samsung devices only (30%) | $0.50/device/month | 98% | API integration |
-| **Google Play Integrity** | All Android devices | Free | 85% | Requires app install |
-| **MDM (AirWatch/Intune)** | All devices | $2-5/device/month | 95% | Complex setup |
-| **Custom App** | Devices with app installed | Free (dev cost) | 80% | Easiest to implement |
+**Trustonic** is the selected device lock solution for Lynia Finance Phase 2.
 
-**Recommended Approach**: **Hybrid Strategy**
+| Feature | Details |
+|---------|---------|
+| **Provider** | Trustonic Device Security |
+| **Coverage** | All Android devices (100% coverage) |
+| **Implementation** | Cloud-based API integration (no app installation) |
+| **Lock Method** | Remote device management via cloud |
+| **Effectiveness** | 95%+ lock success rate |
+| **Cost** | Pricing per device/month (contact Trustonic) |
 
-1. **Phase 1 (Launch)**: Custom app-based locking (80% coverage, lowest cost)
-2. **Phase 2 (6 months)**: Add Samsung Knox for Samsung devices
-3. **Phase 3 (12 months)**: Evaluate full MDM solution for enterprise-grade control
+**Why Trustonic?**
+- ✅ **No App Installation Required**: Works at device level without customer app
+- ✅ **Broad Device Coverage**: Supports all Android devices
+- ✅ **Cloud-Based**: Fully managed cloud solution
+- ✅ **Automated**: Supports automated lock/unlock workflows
+- ✅ **Compliance**: Meets Zimbabwe regulatory requirements
+- ✅ **Scalable**: Grows with business needs
+
+**Alternative Solutions** (Future Consideration):
+- Samsung Knox (Samsung-specific devices)
+- MDM solutions (enterprise-grade control)
+- Google Device Management APIs
 
 ---
 
-### 2.2 Custom App-Based Locking (Phase 1)
+### 2.2 Trustonic Integration
 
-**Lynia Device Manager App** (installed during handover):
+**Implementation**: Cloud-based API integration with NO app installation on customer device.
 
-#### Features
-
-- **Remote Lock**: Disable device via cloud command
-- **Emergency Mode**: Allow emergency calls only
-- **Payment Reminders**: Push notifications for overdue payments
-- **Device Health**: Battery, network status reporting
-- **Geolocation**: Track device location (with consent)
-
-#### App Architecture
+#### Integration Architecture
 
 ```typescript
-// Lynia Device Manager App (React Native)
+// Trustonic API Integration
 
-interface DeviceManagerConfig {
-  device_id: string;
-  imei: string;
-  customer_id: string;
-  loan_id: string;
-
-  lock_status: 'unlocked' | 'locked' | 'emergency_only';
-  last_check_in: Date;
-  sync_interval_minutes: number;  // Default: 60
+interface TrustonicConfig {
+  api_key: string;
+  api_secret: string;
+  base_url: string;
+  environment: 'sandbox' | 'production';
 }
 
-// Background service (runs every 60 minutes)
-async function checkLockStatus(): Promise<void> {
-
-  const config = await getLocalConfig();
-
-  // Call backend API
-  const response = await fetch(`${API_URL}/api/devices/${config.device_id}/lock-status`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${config.auth_token}`,
-      'X-Device-ID': config.device_id,
-      'X-IMEI': config.imei
-    }
-  });
-
-  const { lock_status, reason } = await response.json();
-
-  // Apply lock state
-  if (lock_status === 'locked' && config.lock_status !== 'locked') {
-    await lockDevice(reason);
-  } else if (lock_status === 'unlocked' && config.lock_status !== 'unlocked') {
-    await unlockDevice();
-  }
-
-  // Update config
-  await saveConfig({
-    ...config,
-    lock_status,
-    last_check_in: new Date()
-  });
+interface TrustonicDevice {
+  device_id: string;  // Lynia internal device ID
+  imei: string;       // Device IMEI
+  trustonic_device_id: string;  // Trustonic's device identifier
+  enrolled_at: Date;
+  enrollment_status: 'pending' | 'enrolled' | 'failed';
 }
 
-async function lockDevice(reason: string): Promise<void> {
-
-  // Show lock screen
-  await NativeModules.DeviceLockModule.showLockScreen({
-    message: `Device locked: ${reason}`,
-    contact: '+263 771 234 567',  // Lynia support
-    allow_emergency_calls: true
-  });
-
-  // Disable device features
-  await NativeModules.DeviceLockModule.disableFeatures({
-    calls: false,  // Allow calls
-    sms: true,     // Block SMS
-    data: true,    // Block internet
-    apps: true     // Block app launches
-  });
-
-  // Log event
-  await logEvent('device_locked', { reason });
-}
-
-async function unlockDevice(): Promise<void> {
-
-  // Remove lock screen
-  await NativeModules.DeviceLockModule.hideLockScreen();
-
-  // Re-enable all features
-  await NativeModules.DeviceLockModule.enableAllFeatures();
-
-  // Show notification
-  await showNotification({
-    title: 'Device Unlocked',
-    message: 'Thank you for your payment! Your device is now unlocked.',
-    icon: 'success'
-  });
-
-  // Log event
-  await logEvent('device_unlocked', {});
-}
-```
-
----
-
-#### Lock Screen UI
-
-```
-╔═══════════════════════════════════════╗
-║                                       ║
-║         [Lynia Finance Logo]          ║
-║                                       ║
-║      ⚠️ Device Temporarily Locked     ║
-║                                       ║
-║  Your payment is overdue.             ║
-║                                       ║
-║  Amount Due: $45.00                   ║
-║  Payment Method: EcoCash, Omari       ║
-║                                       ║
-║  Pay now to unlock your device.       ║
-║                                       ║
-║  ┌─────────────────────────────────┐ ║
-║  │     [Pay Now via WhatsApp]      │ ║
-║  └─────────────────────────────────┘ ║
-║                                       ║
-║  ┌─────────────────────────────────┐ ║
-║  │      [Contact Support]          │ ║
-║  └─────────────────────────────────┘ ║
-║                                       ║
-║  ┌─────────────────────────────────┐ ║
-║  │     [Emergency Call: 999]       │ ║
-║  └─────────────────────────────────┘ ║
-║                                       ║
-╚═══════════════════════════════════════╝
-```
-
----
-
-### 2.3 Samsung Knox Integration (Phase 2)
-
-For Samsung devices (30% of catalog):
-
-```typescript
-import { KnoxSDK } from 'samsung-knox-sdk';
-
-const knox = new KnoxSDK({
-  api_key: process.env.KNOX_API_KEY,
-  license_key: process.env.KNOX_LICENSE_KEY
+// Initialize Trustonic client
+const trustonic = new TrustonicClient({
+  api_key: process.env.TRUSTONIC_API_KEY,
+  api_secret: process.env.TRUSTONIC_API_SECRET,
+  base_url: 'https://api.trustonic.com/v1',
+  environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
 });
 
-async function lockDeviceViaKnox(deviceId: string, imei: string): Promise<void> {
+// Enroll device during handover (no customer app needed)
+async function enrollDeviceWithTrustonic(
+  deviceId: string,
+  imei: string,
+  customerId: string
+): Promise<TrustonicDevice> {
 
-  // Send lock command via Knox API
-  await knox.lockDevice({
-    device_id: deviceId,
-    imei: imei,
-    lock_message: 'Device locked due to missed payment. Contact Lynia Finance.',
-    lock_type: 'full',  // 'full' or 'partial'
-    allow_emergency_calls: true
-  });
+  try {
+    // Register device with Trustonic
+    const response = await trustonic.devices.enroll({
+      imei: imei,
+      customer_reference: customerId,
+      allow_emergency_calls: true,
+      metadata: {
+        lynia_device_id: deviceId,
+        enrollment_date: new Date().toISOString()
+      }
+    });
 
-  // Knox triggers device lock within 1-5 minutes
+    // Store Trustonic device ID
+    const { data: device, error } = await supabase
+      .from('devices')
+      .update({
+        trustonic_device_id: response.device_id,
+        trustonic_enrolled: true,
+        trustonic_enrolled_at: new Date()
+      })
+      .eq('id', deviceId)
+      .select()
+      .single();
+
+    return {
+      device_id: deviceId,
+      imei: imei,
+      trustonic_device_id: response.device_id,
+      enrolled_at: new Date(),
+      enrollment_status: 'enrolled'
+    };
+
+  } catch (error) {
+    console.error('Trustonic enrollment failed:', error);
+    throw new Error(`Failed to enroll device with Trustonic: ${error.message}`);
+  }
 }
 
-async function unlockDeviceViaKnox(deviceId: string, imei: string): Promise<void> {
+// Lock device via Trustonic API (automated)
+async function lockDeviceViaTrustonic(
+  deviceId: string,
+  reason: string
+): Promise<void> {
 
-  await knox.unlockDevice({
-    device_id: deviceId,
-    imei: imei
+  // Get Trustonic device ID
+  const { data: device } = await supabase
+    .from('devices')
+    .select('trustonic_device_id, imei')
+    .eq('id', deviceId)
+    .single();
+
+  if (!device.trustonic_device_id) {
+    throw new Error('Device not enrolled with Trustonic');
+  }
+
+  // Send lock command via Trustonic API
+  await trustonic.devices.lock({
+    device_id: device.trustonic_device_id,
+    lock_message: `Payment overdue. Contact Lynia Finance: +263 771 234 567`,
+    lock_reason: reason,
+    allow_emergency_calls: true,
+    emergency_numbers: ['999', '994', '993', '112']
   });
 
-  // Knox unlocks device within 1-5 minutes
+  // Update device status in database
+  await supabase.from('devices').update({
+    lock_status: 'locked',
+    locked_at: new Date(),
+    lock_reason: reason
+  }).eq('id', deviceId);
+
+  // Create lock event record
+  await supabase.from('device_locks').insert({
+    device_id: deviceId,
+    action: 'lock',
+    reason: reason,
+    executed_at: new Date(),
+    execution_status: 'success',
+    lock_provider: 'trustonic'
+  });
+}
+
+// Unlock device via Trustonic API (automated)
+async function unlockDeviceViaTrustonic(
+  deviceId: string,
+  reason: string
+): Promise<void> {
+
+  // Get Trustonic device ID
+  const { data: device } = await supabase
+    .from('devices')
+    .select('trustonic_device_id, imei, customer_id')
+    .eq('id', deviceId)
+    .single();
+
+  if (!device.trustonic_device_id) {
+    throw new Error('Device not enrolled with Trustonic');
+  }
+
+  // Send unlock command via Trustonic API
+  await trustonic.devices.unlock({
+    device_id: device.trustonic_device_id,
+    unlock_reason: reason
+  });
+
+  // Update device status in database
+  await supabase.from('devices').update({
+    lock_status: 'unlocked',
+    unlocked_at: new Date()
+  }).eq('id', deviceId);
+
+  // Create unlock event record
+  await supabase.from('device_locks').insert({
+    device_id: deviceId,
+    action: 'unlock',
+    reason: reason,
+    executed_at: new Date(),
+    execution_status: 'success',
+    lock_provider: 'trustonic'
+  });
+
+  // Send unlock notification to customer
+  await sendUnlockNotification(device.customer_id);
 }
 ```
 
-**Knox Advantages**:
-- Device-level control (works even if app uninstalled)
-- 98% reliability
-- Enterprise-grade security
-
-**Knox Costs**:
-- $0.50/device/month
-- Estimated cost: $150/month for 300 Samsung devices
+**Trustonic Key Features**:
+- ✅ **No App Required**: Cloud-based, works at device OS level
+- ✅ **Fast Execution**: Lock/unlock within 1-5 minutes
+- ✅ **Emergency Access**: Always allows emergency calls
+- ✅ **Compliance**: Meets Zimbabwe regulatory requirements
+- ✅ **Audit Trail**: Complete lock/unlock history
 
 ---
 
-## 3. Lock Triggers
+## 3. Lock Triggers (AUTOMATED)
 
-### 3.1 Payment-Related Triggers
+**CRITICAL BUSINESS RULE**: Device locks are **fully automated**. Manual locks are only for special situations (fraud, theft, disputes).
 
-#### Trigger L-001: Missed Payment (7 Days Overdue)
+### 3.1 Automated Payment-Related Triggers
+
+#### Trigger L-001: Missed Payment (7 Days Overdue) - AUTOMATED
 
 ```typescript
 interface LockTrigger {
@@ -410,11 +413,13 @@ async function reportDeviceStolen(deviceId: string, reportedBy: string): Promise
 
 ---
 
-## 4. Unlock Triggers
+## 4. Unlock Triggers (AUTOMATED)
 
-### 4.1 Payment-Related Unlocks
+**CRITICAL BUSINESS RULE**: Device unlocks are **fully automated**. System automatically unlocks when overdue loan is repaid and there is no balance. Manual unlocks are only for special situations.
 
-#### Trigger U-001: Payment Received
+### 4.1 Automated Payment-Related Unlocks
+
+#### Trigger U-001: Overdue Loan Repaid - AUTOMATED
 
 ```typescript
 async function handlePaymentReceived(paymentId: string): Promise<void> {
@@ -428,27 +433,31 @@ async function handlePaymentReceived(paymentId: string): Promise<void> {
   // Check if device is locked
   if (payment.loans.devices.lock_status !== 'locked') return;
 
-  // Check if loan is now current
-  const isLoanCurrent = await isLoanCurrentAfterPayment(payment.loan_id, payment.amount);
+  // CRITICAL: Check if overdue loan is fully repaid with no balance
+  const hasNoBalance = await hasNoOutstandingBalance(payment.loan_id);
 
-  if (isLoanCurrent) {
-    // Unlock device
-    await unlockDevice(payment.loans.device_id, 'Payment received');
+  if (hasNoBalance) {
+    // Automatically unlock device via Trustonic
+    await unlockDeviceViaTrustonic(
+      payment.loans.device_id,
+      'Overdue payment cleared - no outstanding balance'
+    );
 
     // Notify customer
     await sendUnlockNotification(payment.customer_id);
   }
 }
 
-async function isLoanCurrentAfterPayment(loanId: string, paymentAmount: number): Promise<boolean> {
+async function hasNoOutstandingBalance(loanId: string): Promise<boolean> {
 
-  const loan = await getLoan(loanId);
+  const { data: loan } = await supabase
+    .from('loans')
+    .select('outstanding_balance_usd, days_past_due')
+    .eq('id', loanId)
+    .single();
 
-  // Check if payment brings loan current (no overdue payments)
-  const daysOverdue = daysSince(loan.next_payment_date);
-
-  // If not overdue OR payment covers overdue amount, unlock
-  return daysOverdue <= 0 || paymentAmount >= loan.monthly_installment;
+  // Unlock if: outstanding balance is zero AND not past due
+  return loan.outstanding_balance_usd === 0 && loan.days_past_due === 0;
 }
 ```
 
@@ -487,9 +496,17 @@ async function removeAppRestrictions(deviceId: string): Promise<void> {
 
 ---
 
-### 4.2 Manual Unlocks
+### 4.2 Manual Unlocks (SPECIAL SITUATIONS ONLY)
 
-#### Trigger U-003: Admin Override
+**IMPORTANT**: Manual locks/unlocks should be rare exceptions. Use only for:
+- Customer disputes (payment system error, bank delay)
+- Fraud investigations
+- Technical issues with automated system
+- Compassionate grounds (emergency, hardship)
+
+All manual actions require admin approval and are fully audited.
+
+#### Trigger U-003: Admin Override (Special Situations)
 
 ```typescript
 interface AdminUnlock {
@@ -497,49 +514,71 @@ interface AdminUnlock {
   device_id: string;
   admin_user_id: string;
   reason: string;
+  reason_category: 'dispute' | 'fraud' | 'technical' | 'compassionate' | 'other';
   unlock_type: 'temporary' | 'permanent';
   unlock_duration_hours?: number;  // For temporary unlocks
+  approved_by: string;  // Senior admin approval required
   unlocked_at: Date;
 }
 
 async function adminUnlockDevice(
   deviceId: string,
   adminUserId: string,
+  approvedBy: string,
   reason: string,
+  reasonCategory: string,
   temporary: boolean = false,
   durationHours?: number
 ): Promise<void> {
 
-  // Unlock device
-  await unlockDevice(deviceId, `Admin override: ${reason}`);
+  // IMPORTANT: This overrides automated system - use with caution
+  console.warn(`MANUAL UNLOCK: Device ${deviceId} - Reason: ${reason}`);
 
-  // Log admin action
+  // Unlock device via Trustonic
+  await unlockDeviceViaTrustonic(deviceId, `Admin override: ${reason}`);
+
+  // Log admin action with full audit trail
   const unlock: AdminUnlock = {
     unlock_id: generateId(),
     device_id: deviceId,
     admin_user_id: adminUserId,
     reason: reason,
+    reason_category: reasonCategory,
     unlock_type: temporary ? 'temporary' : 'permanent',
     unlock_duration_hours: durationHours,
+    approved_by: approvedBy,
     unlocked_at: new Date()
   };
 
   await supabase.from('admin_device_unlocks').insert(unlock);
 
-  // If temporary, schedule re-lock
+  // Alert security team of manual override
+  await notifySecurityTeam({
+    action: 'manual_unlock',
+    device_id: deviceId,
+    admin_id: adminUserId,
+    reason: reason
+  });
+
+  // If temporary, schedule automated re-lock
   if (temporary && durationHours) {
-    await scheduleRelock(deviceId, durationHours);
+    await scheduleAutomatedRelock(deviceId, durationHours, reason);
   }
 }
 
-async function scheduleRelock(deviceId: string, hours: number): Promise<void> {
+async function scheduleAutomatedRelock(
+  deviceId: string,
+  hours: number,
+  originalReason: string
+): Promise<void> {
 
   const relockAt = new Date(Date.now() + hours * 60 * 60 * 1000);
 
   await supabase.from('scheduled_device_locks').insert({
     device_id: deviceId,
     scheduled_at: relockAt,
-    reason: 'Temporary unlock expired',
+    reason: `Temporary unlock expired - returning to automated management`,
+    original_reason: originalReason,
     created_at: new Date()
   });
 }
@@ -571,31 +610,31 @@ async function scheduleRelock(deviceId: string, hours: number): Promise<void> {
    ├─ Daily reminders
    └─ Allow customer to make payment
 
-4. LOCK EXECUTION (scheduled job)
+4. AUTOMATED LOCK EXECUTION (scheduled job)
    ├─ Check if payment received during grace period
    │  ├─ YES → Cancel lock, mark trigger as resolved
-   │  └─ NO → Proceed to lock
-   ├─ Send lock command to device
-   │  ├─ Via app (custom solution)
-   │  └─ Via Knox API (Samsung devices)
+   │  └─ NO → Proceed to automated lock
+   ├─ Send lock command to Trustonic API
+   │  └─ Trustonic locks device within 1-5 minutes
    └─ Update device.lock_status = 'locked'
 
-5. DEVICE LOCKED STATE
-   ├─ Show lock screen on device
-   ├─ Block apps and data
-   ├─ Allow emergency calls only
-   └─ Poll for unlock command (every 60 min)
+5. DEVICE LOCKED STATE (Trustonic-Managed)
+   ├─ Device locked at OS level (no app required)
+   ├─ Block all apps and data
+   ├─ Allow emergency calls only (999, 994, 993, 112)
+   └─ Display lock message from Trustonic
 
 6. CUSTOMER MAKES PAYMENT
-   ├─ Payment webhook received
-   ├─ Update loan status
-   └─ Trigger unlock
+   ├─ Payment webhook received (EcoCash, OneMoney, etc.)
+   ├─ Update loan status and outstanding balance
+   └─ Check if outstanding balance is zero
 
-7. UNLOCK EXECUTION
-   ├─ Send unlock command to device
-   ├─ Device removes lock screen (within 60 min)
+7. AUTOMATED UNLOCK EXECUTION
+   ├─ If outstanding balance = 0 AND not past due:
+   │  └─ Automatically send unlock command to Trustonic API
+   ├─ Trustonic unlocks device within 1-5 minutes
    ├─ Update device.lock_status = 'unlocked'
-   └─ Send confirmation notification
+   └─ Send confirmation notification to customer
 ```
 
 ---
@@ -603,8 +642,10 @@ async function scheduleRelock(deviceId: string, hours: number): Promise<void> {
 ### 5.2 Implementation
 
 ```typescript
-// Scheduled job (runs daily at 8 AM)
-async function processDeviceLocks(): Promise<void> {
+// Scheduled job (runs daily at 8 AM) - FULLY AUTOMATED
+async function processAutomatedDeviceLocks(): Promise<void> {
+
+  console.log('Starting automated device lock processing...');
 
   // Find locks that are scheduled for today
   const { data: scheduledLocks } = await supabase
@@ -612,6 +653,8 @@ async function processDeviceLocks(): Promise<void> {
     .select('*, loans(*, devices(*))')
     .lte('lock_scheduled_at', new Date())
     .eq('status', 'pending');
+
+  console.log(`Found ${scheduledLocks.length} pending lock triggers`);
 
   for (const trigger of scheduledLocks) {
 
@@ -623,25 +666,44 @@ async function processDeviceLocks(): Promise<void> {
     );
 
     if (paymentReceived) {
-      // Cancel lock
+      // Cancel lock (customer paid during grace period)
       await supabase.from('device_lock_triggers').update({
         status: 'cancelled',
         cancelled_at: new Date(),
         cancellation_reason: 'Payment received during grace period'
       }).eq('trigger_id', trigger.trigger_id);
 
+      console.log(`Lock cancelled for device ${trigger.device_id} - payment received`);
       continue;
     }
 
-    // Execute lock
-    await lockDevice(trigger.loans.device_id, trigger.trigger_type);
+    // Execute automated lock via Trustonic
+    try {
+      await lockDeviceViaTrustonic(
+        trigger.loans.device_id,
+        `Payment overdue - ${trigger.trigger_type}`
+      );
 
-    // Update trigger status
-    await supabase.from('device_lock_triggers').update({
-      status: 'executed',
-      executed_at: new Date()
-    }).eq('trigger_id', trigger.trigger_id);
+      // Update trigger status
+      await supabase.from('device_lock_triggers').update({
+        status: 'executed',
+        executed_at: new Date()
+      }).eq('trigger_id', trigger.trigger_id);
+
+      console.log(`Device ${trigger.device_id} locked successfully via Trustonic`);
+
+    } catch (error) {
+      console.error(`Failed to lock device ${trigger.device_id}:`, error);
+
+      // Mark as failed for manual review
+      await supabase.from('device_lock_triggers').update({
+        status: 'failed',
+        error_message: error.message
+      }).eq('trigger_id', trigger.trigger_id);
+    }
   }
+
+  console.log('Automated device lock processing complete');
 }
 
 async function checkPaymentDuringGracePeriod(
@@ -932,20 +994,31 @@ CREATE INDEX idx_lock_history_device ON device_lock_history(device_id);
 
 ---
 
-## Summary
+## Summary (UPDATED - Trustonic Integration)
 
 **Device Lock/Unlock Integration Deliverables**:
-- ✅ **Custom App-Based Locking**: Phase 1 solution (80% coverage)
-- ✅ **Samsung Knox Integration**: Phase 2 for Samsung devices (98% reliability)
-- ✅ **Lock Triggers**: Missed payment (7d), default (30d), fraud, theft
-- ✅ **Unlock Triggers**: Payment received, loan paid off, admin override
-- ✅ **Grace Periods**: 3-day warning before lock
+- ✅ **Trustonic Cloud-Based Solution**: No app installation required (100% coverage)
+- ✅ **Automated Lock/Unlock**: Fully automated based on payment status
+- ✅ **Lock Triggers**: Payment overdue (automated), fraud (manual), theft (manual)
+- ✅ **Unlock Triggers**: Overdue loan repaid with zero balance (automated)
+- ✅ **Manual Override**: Admin override for special situations only (disputes, emergencies)
+- ✅ **Grace Periods**: 3-day warning before automated lock
 - ✅ **Compliance**: Emergency call access, customer consent, data privacy
 
 **Key Features**:
-- <5 minute lock/unlock execution
+- 1-5 minute lock/unlock execution via Trustonic API
 - 95%+ lock success rate
-- Emergency calls always available
+- **No customer app installation required** (cloud-based)
+- Emergency calls always available (999, 994, 993, 112)
+- **Fully automated** lock/unlock workflows
+- Manual actions only for special situations
+- Complete audit trail of all lock/unlock events
 - 70%+ recovery rate within 7 days
 
-**Next Steps**: Implement Device Handover Process (P1-T034)
+**Architecture**:
+- Cloud-based device management via Trustonic API
+- Real-time integration with payment webhooks
+- Automated daily cron job for lock processing
+- Trustonic enrollment during device handover (via IMEI)
+
+**Next Steps**: Implement Device Handover Process (P1-T034) with Trustonic enrollment

@@ -755,102 +755,109 @@ Response: {
 
 ---
 
-### P2-T010: Device Lock/Unlock Management
+### P2-T010: Device Lock/Unlock Management (UPDATED - Trustonic)
 **Priority**: Medium
 **Estimate**: 8 hours
 **Status**: Pending
 **Dependencies**: P2-T002, P2-T009
 
-**Objective**: Implement device lock/unlock functionality for payment enforcement.
+**Objective**: Implement **automated** device lock/unlock via Trustonic cloud-based solution.
 
-**Lock Triggers**:
-- Payment is 7+ days overdue
-- Loan marked as defaulted by admin
+**UPDATED: Trustonic Solution**:
+- ✅ **No app installation** on customer device (cloud-based)
+- ✅ **Fully automated** locks and unlocks
+- ✅ **Manual override** for special situations only
 
-**Unlock Triggers**:
-- Overdue payment received and confirmed
-- Admin manually unlocks (e.g., dispute resolution)
+**Automated Lock Triggers**:
+- Payment is 7+ days overdue → Automated lock via Trustonic API
+- System checks daily via cron job
+
+**Automated Unlock Triggers**:
+- Overdue loan repaid with zero balance → Automated unlock via Trustonic API
+- Payment webhook triggers unlock check
+
+**Manual Override** (Special Situations Only):
+- Admin override for disputes, fraud, technical issues, compassionate grounds
+- Requires senior admin approval and full audit trail
 
 **Tasks**:
-- [ ] Create lock service Lambda handler
-- [ ] Research device lock APIs:
-  - [ ] Google Find My Device API
-  - [ ] Samsung Knox API
-  - [ ] Generic MDM options
-- [ ] Implement lock device endpoint
-- [ ] Implement unlock device endpoint
-- [ ] Create automated lock job (runs daily, checks overdue loans)
-- [ ] Store lock/unlock events in device_locks table
-- [ ] Implement lock notification (WhatsApp message to customer)
+- [ ] Set up Trustonic API credentials and sandbox environment
+- [ ] Create Trustonic client integration library
+- [ ] Implement device enrollment with Trustonic (during handover via IMEI)
+- [ ] Add trustonic_device_id fields to devices table
+- [ ] Implement automated lock function (Trustonic API)
+- [ ] Implement automated unlock function (Trustonic API)
+- [ ] Create automated daily cron job (checks overdue loans, triggers locks)
+- [ ] Create payment webhook handler (triggers automated unlocks)
+- [ ] Store all lock/unlock events in device_locks table
+- [ ] Implement lock notification (WhatsApp + SMS)
 - [ ] Implement unlock notification
-- [ ] Create admin override functionality
-- [ ] Write integration tests
-- [ ] Document lock API
+- [ ] Create admin manual override functionality (special situations)
+- [ ] Write integration tests for Trustonic API
+- [ ] Document Trustonic integration
 
-**Lock Business Logic**:
+**Automated Lock Business Logic**:
 ```typescript
-async function checkAndLockOverdueDevices() {
+async function checkAndLockOverdueDevicesAutomated() {
   const overdueLoans = await getOverdueLoans(7); // 7+ days overdue
 
   for (const loan of overdueLoans) {
     const device = await getDeviceByLoanId(loan.id);
 
     if (device && device.lock_status === 'unlocked') {
-      await lockDevice(device.id);
+      // Automated lock via Trustonic API
+      await lockDeviceViaTrustonic(device.id, 'Payment overdue');
       await notifyCustomerOfLock(loan.customer_id, loan.amount_overdue);
+    }
+  }
+}
+
+async function handlePaymentReceivedAutomated(paymentId: string) {
+  const payment = await getPayment(paymentId);
+  const loan = await getLoan(payment.loan_id);
+
+  // Check if outstanding balance is zero
+  if (loan.outstanding_balance_usd === 0 && loan.days_past_due === 0) {
+    const device = await getDeviceByLoanId(loan.id);
+
+    if (device && device.lock_status === 'locked') {
+      // Automated unlock via Trustonic API
+      await unlockDeviceViaTrustonic(device.id, 'Loan current - zero balance');
+      await notifyCustomerOfUnlock(loan.customer_id);
     }
   }
 }
 ```
 
-**API Specification**:
+**Trustonic API Integration**:
 ```typescript
-POST /api/locks/lock-device
-Request: {
-  device_id: string;
-  loan_id: string;
-  reason: 'payment_overdue' | 'default' | 'admin_action';
-  days_overdue?: number;
-}
-
-Response: {
-  lock_id: string;
-  device_id: string;
-  lock_status: 'locked';
-  locked_at: string;
-}
-
-POST /api/locks/unlock-device
-Request: {
-  device_id: string;
-  reason: 'payment_received' | 'admin_override';
-}
-
-Response: {
-  device_id: string;
-  lock_status: 'unlocked';
-  unlocked_at: string;
-}
+POST https://api.trustonic.com/v1/devices/enroll
+POST https://api.trustonic.com/v1/devices/{trustonic_device_id}/lock
+POST https://api.trustonic.com/v1/devices/{trustonic_device_id}/unlock
 ```
 
 **Deliverables**:
-- Working lock service Lambda function
-- Device lock API integrated
-- Automated daily lock job working
+- Working Trustonic API integration
+- Device enrollment during handover
+- Automated daily lock cron job
+- Automated unlock on payment webhook
 - Lock/unlock notifications working
+- Manual admin override for special situations
 - Integration tests passing
+- Complete audit trail
 
 **Success Criteria**:
-- [ ] Can lock device successfully
-- [ ] Can unlock device successfully
+- [ ] Trustonic API integration working (sandbox)
+- [ ] Devices enroll with Trustonic during handover
 - [ ] Automated job locks overdue devices (7+ days)
-- [ ] Customer notified before locking
-- [ ] Lock events stored in database
-- [ ] Admin can manually override
-- [ ] Tests passing
+- [ ] Automated unlock when balance reaches zero
+- [ ] Customer notified before locking (3-day grace period)
+- [ ] All lock/unlock events stored in device_locks table
+- [ ] Admin can manually override for special situations
+- [ ] Tests passing (95%+ lock success rate)
 
 **Reference Specs**:
-- `planning/device-lock-unlock-process.md`
+- `planning/device-lock-unlock-integration.md` (UPDATED with Trustonic)
 - `planning/api-specifications.md`
 
 ---
