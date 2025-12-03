@@ -99,86 +99,134 @@ The Device Handover Process is the final step in the loan disbursement workflow.
 
 ### 3.1 Loan Approval Requirements
 
-**CRITICAL BUSINESS RULE**: Device handover is NOT ALLOWED without confirmed deposit payment. No cash on delivery.
+**UPDATED BUSINESS RULE**: Deposit payment occurs AT the distributor location during handover. Device cannot be given to customer until deposit payment is confirmed.
 
-Before device can be handed over:
+**Handover Eligibility Check** (Before customer arrives):
 
 ```typescript
 interface HandoverEligibility {
   loan_approved: boolean;
-  deposit_paid: boolean;
-  deposit_amount_usd: number;
-  deposit_paid_at: Date | null;
   kyc_verified: boolean;
-  consent_signed: boolean;
   device_reserved: boolean;
   device_in_stock: boolean;
+  deposit_amount_required: number;
 }
 
-async function checkHandoverEligibility(loanId: string): Promise<{
-  eligible: boolean;
+async function checkHandoverReadiness(loanId: string): Promise<{
+  ready: boolean;
   eligibility: HandoverEligibility;
   blockers: string[];
 }> {
 
   const { data: loan } = await supabase
     .from('loans')
-    .select('*, customers(*), devices(*), payments(*)')
+    .select('*, customers(*), devices(*)')
     .eq('id', loanId)
     .single();
 
   const blockers: string[] = [];
 
-  // CRITICAL CHECK: Deposit Payment (MUST be confirmed)
-  const depositPayment = loan.payments.find(
-    p => p.payment_type === 'deposit' && p.status === 'confirmed'
-  );
-
-  if (!depositPayment) {
-    blockers.push('DEPOSIT_NOT_PAID: Customer has not paid deposit. Handover NOT ALLOWED.');
-  }
-
   const loanApproved = loan.status === 'approved';
   if (!loanApproved) blockers.push('LOAN_NOT_APPROVED');
 
-  const kycVerified = loan.customers.kyc_status === 'verified';
+  const kycVerified = loan.customers.kyc_status === 'approved';
   if (!kycVerified) blockers.push('KYC_NOT_VERIFIED');
 
-  const consentSigned = await hasSignedConsent(loan.customer_id, 'device_lock_authorization');
-  if (!consentSigned) blockers.push('CONSENT_NOT_SIGNED');
-
-  const deviceReserved = loan.device_id !== null;
-  if (!deviceReserved) blockers.push('DEVICE_NOT_RESERVED');
-
-  const deviceInStock = loan.devices?.available_stock > 0;
+  const deviceInStock = loan.devices?.status === 'in_stock';
   if (!deviceInStock) blockers.push('DEVICE_OUT_OF_STOCK');
 
   return {
-    eligible: blockers.length === 0,
+    ready: blockers.length === 0,
     eligibility: {
       loan_approved: loanApproved,
-      deposit_paid: !!depositPayment,
-      deposit_amount_usd: depositPayment?.amount_usd || 0,
-      deposit_paid_at: depositPayment?.paid_at || null,
       kyc_verified: kycVerified,
-      consent_signed: consentSigned,
-      device_reserved: deviceReserved,
-      device_in_stock: deviceInStock
+      device_reserved: loan.device_id !== null,
+      device_in_stock: deviceInStock,
+      deposit_amount_required: loan.deposit_amount_usd
     },
     blockers
   };
 }
 ```
 
-**Agent Dashboard Display**: Must clearly show deposit status with visual indicator (✅ Paid / ❌ Not Paid)
+**During Handover - Deposit Payment Verification**:
 
-**Eligibility Criteria**:
+```typescript
+async function verifyDepositPayment(
+  loanId: string,
+  transactionReference: string,
+  provider: 'ecocash' | 'onemoney' | 'innbucks' | 'onewallet'
+): Promise<{
+  verified: boolean;
+  payment_id?: string;
+  error?: string;
+}> {
+
+  // Call payment provider API to verify transaction
+  const verification = await verifyPaymentWithProvider(
+    provider,
+    transactionReference
+  );
+
+  if (!verification.success) {
+    return {
+      verified: false,
+      error: 'Payment verification failed. Please check transaction reference.'
+    };
+  }
+
+  // Record payment in database
+  const { data: payment, error } = await supabase
+    .from('payments')
+    .insert({
+      loan_id: loanId,
+      customer_id: loan.customer_id,
+      payment_type: 'deposit',
+      amount_usd: verification.amount,
+      payment_method: provider,
+      transaction_id: transactionReference,
+      status: 'confirmed',
+      confirmed_at: new Date(),
+      reconciled: true
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return {
+      verified: false,
+      error: 'Failed to record payment'
+    };
+  }
+
+  // Update loan deposit status
+  await supabase.from('loans').update({
+    deposit_paid: true,
+    deposit_paid_at: new Date()
+  }).eq('id', loanId);
+
+  return {
+    verified: true,
+    payment_id: payment.id
+  };
+}
+```
+
+**Distributor Dashboard Display**:
+- Shows deposit amount required
+- Provides payment verification form
+- Displays real-time verification status
+- ⚠️ "Complete Handover" button disabled until deposit verified
+
+**Eligibility Criteria** (Before customer arrives):
 - ✅ Loan approved by credit system
-- ✅ Deposit payment confirmed
 - ✅ KYC verification completed (ID + selfie)
-- ✅ Device lock consent signed
-- ✅ Device reserved for customer
 - ✅ Device in stock at handover location
+
+**Required During Handover**:
+- ✅ Customer identity verified
+- ✅ Device availability confirmed
+- ✅ **Deposit payment verified** ← CRITICAL CHECKPOINT
 
 ---
 
@@ -210,72 +258,66 @@ async function checkHandoverEligibility(loanId: string): Promise<{
 
 ## 4. Handover Workflow
 
-### 4.1 Step-by-Step Process
+### 4.1 Step-by-Step Process (Simplified)
 
 **Total Time: 15-20 minutes**
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                    DEVICE HANDOVER WORKFLOW                       │
+│            DEVICE HANDOVER WORKFLOW (SIMPLIFIED)                  │
 └──────────────────────────────────────────────────────────────────┘
 
-STEP 1: CUSTOMER ARRIVAL (2 minutes)
-├─ Customer arrives at distributor location
-├─ Distributor staff verifies customer identity
-│  ├─ Check National ID
-│  └─ Verify ID matches loan application
-└─ Retrieve device from secure storage
+STEP 1: CUSTOMER COMPLETES ONBOARDING
+├─ Customer completes WhatsApp onboarding flow
+├─ Loan approved by credit scoring system
+└─ System takes note of pending handover
 
-STEP 2: DEVICE INSPECTION (3 minutes)
+STEP 2: CUSTOMER ARRIVES AT DISTRIBUTOR (2 minutes)
+├─ Customer arrives at selected distributor location
+└─ Distributor opens handover screen in admin portal
+
+STEP 3: CONFIRM DEVICE AVAILABILITY (1 minute)
+├─ Distributor checks device stock
+├─ Confirms requested device model is available
+└─ Retrieves device from secure storage
+
+STEP 4: VERIFY CUSTOMER IDENTITY (2 minutes)
+├─ Distributor verifies customer identity
+│  ├─ Check National ID
+│  └─ Verify ID matches loan application record
+└─ Identity verification recorded in system
+
+STEP 5: CUSTOMER PAYS DEPOSIT ⚠️ CRITICAL (5 minutes)
+├─ Distributor confirms deposit amount required
+├─ Customer pays deposit via mobile money
+│  ├─ EcoCash, OneMoney, Innbucks, or OneWallet
+│  └─ Transaction reference number collected
+├─ System verifies deposit payment (real-time check)
+└─ ⚠️ HANDOVER CANNOT PROCEED WITHOUT CONFIRMED DEPOSIT
+
+STEP 6: DISTRIBUTOR HANDS OVER DEVICE (3 minutes)
 ├─ Show device to customer
-├─ Power on device
+├─ Power on device and verify functionality
 ├─ Customer inspects for physical damage
 │  ├─ Screen condition
 │  ├─ Body/casing
 │  └─ Buttons and ports
+├─ Give device to customer with accessories
 └─ Customer signs device condition form
 
-STEP 3: APP SETUP (5 minutes)
-├─ Install Lynia Device Manager app (if not pre-installed)
-├─ Configure app with customer details
-│  ├─ Customer ID
-│  ├─ Loan ID
-│  ├─ Device IMEI
-│  └─ Emergency contact
-├─ Test lock/unlock functionality
-└─ Explain app purpose to customer
+STEP 7: MARK HANDOVER COMPLETE (2 minutes)
+├─ Distributor marks handover complete in admin portal
+├─ System updates loan status to 'active'
+├─ System marks device as 'sold'
+├─ First payment date calculated (30 days from handover)
+└─ Confirmation sent to customer via WhatsApp
 
-STEP 4: DOCUMENT SIGNING (3 minutes)
-├─ Review loan agreement
-│  ├─ Loan amount
-│  ├─ Monthly payment
-│  ├─ Interest rate
-│  └─ Payment schedule
-├─ Review device lock terms
-├─ Customer signs loan agreement (2 copies)
-│  ├─ Customer keeps 1 copy
-│  └─ Lynia keeps 1 copy (scanned and uploaded)
-└─ Distributor witnesses signature
-
-STEP 5: CUSTOMER EDUCATION (5 minutes)
-├─ Explain payment process
-│  ├─ How to pay via EcoCash/Omari/Innbucks/OneWallet
-│  └─ Payment reminders
-├─ Explain device lock policy
-│  ├─ Grace period (7 days)
-│  └─ How to avoid device lock
-├─ Provide support contact
-│  ├─ WhatsApp: +263 771 234 567
-│  └─ Email: support@lynia.finance
-└─ Answer customer questions
-
-STEP 6: HANDOVER COMPLETION (2 minutes)
-├─ Give device to customer
-├─ Give accessories (charger, case if included)
-├─ Give loan agreement copy
-├─ Update loan status to 'disbursed'
-├─ Mark device as 'sold'
-└─ Send confirmation to customer via WhatsApp
+STEP 8: DISTRIBUTOR COMMISSION CALCULATED
+├─ System calculates distributor commission
+├─ Commission based on device value and loan amount
+│  └─ Example: 5% of device retail price
+├─ Commission recorded for payment processing
+└─ Distributor can view commission in dashboard
 ```
 
 ---
@@ -561,42 +603,63 @@ To avoid lock:
 
 ## 7. Post-Handover Actions
 
-### 7.1 Update Loan Status
+### 7.1 Update Loan Status & Calculate Commission
 
 ```typescript
 async function completeHandover(
   loanId: string,
   deviceId: string,
+  distributorId: string,
   handoverData: HandoverRecord
 ): Promise<void> {
 
-  // Update loan status
+  // Update loan status to 'active'
   await supabase.from('loans').update({
-    status: 'disbursed',
+    status: 'active',  // Changed from 'disbursed' to 'active'
     disbursed_at: new Date(),
-    first_payment_date: calculateFirstPaymentDate(new Date(), 30)  // 30 days
+    next_payment_date: calculateFirstPaymentDate(new Date(), 30)  // 30 days
   }).eq('id', loanId);
 
   // Update device status
   await supabase.from('devices').update({
-    status: 'sold',
-    sold_at: new Date(),
-    sold_to_customer_id: handoverData.customer_id
+    status: 'assigned',
+    customer_id: handoverData.customer_id,
+    loan_id: loanId,
+    assigned_at: new Date()
   }).eq('id', deviceId);
 
-  // Create handover record
-  await supabase.from('device_handovers').insert({
+  // Update agent inventory record
+  await supabase.from('agent_inventory').update({
+    status: 'sold',
+    sold_date: new Date(),
+    sold_to_customer_id: handoverData.customer_id,
+    sold_loan_id: loanId
+  }).eq('device_id', deviceId);
+
+  // Calculate and record distributor commission
+  const commission = await calculateDistributorCommission(
+    loanId,
+    deviceId,
+    distributorId
+  );
+
+  await supabase.from('distributor_commissions').insert({
+    distributor_id: distributorId,
     loan_id: loanId,
     device_id: deviceId,
-    customer_id: handoverData.customer_id,
-    handover_location: handoverData.location,
-    handed_over_by: handoverData.staff_id,
-    handed_over_at: new Date(),
-    device_condition: handoverData.device_condition,
-    app_installed: handoverData.app_installed,
-    lock_test_passed: handoverData.lock_test_passed,
-    customer_signature: handoverData.signature_url,
-    documents_signed: true
+    commission_amount_usd: commission.amount,
+    commission_percentage: commission.percentage,
+    device_retail_price_usd: commission.device_price,
+    calculation_date: new Date(),
+    payment_status: 'pending',
+    notes: `Commission for device handover - ${commission.device_model}`
+  });
+
+  // Update distributor totals
+  await supabase.rpc('increment_distributor_stats', {
+    dist_id: distributorId,
+    devices_sold: 1,
+    revenue: commission.amount
   });
 
   // Send confirmation to customer
@@ -605,6 +668,36 @@ async function completeHandover(
 
 function calculateFirstPaymentDate(handoverDate: Date, daysUntilFirstPayment: number): Date {
   return new Date(handoverDate.getTime() + daysUntilFirstPayment * 24 * 60 * 60 * 1000);
+}
+
+async function calculateDistributorCommission(
+  loanId: string,
+  deviceId: string,
+  distributorId: string
+): Promise<{
+  amount: number;
+  percentage: number;
+  device_price: number;
+  device_model: string;
+}> {
+
+  // Get device details
+  const { data: device } = await supabase
+    .from('devices')
+    .select('retail_price_usd, model')
+    .eq('id', deviceId)
+    .single();
+
+  // Commission rate: 5% of device retail price
+  const COMMISSION_RATE = 0.05;
+  const commissionAmount = device.retail_price_usd * COMMISSION_RATE;
+
+  return {
+    amount: commissionAmount,
+    percentage: COMMISSION_RATE * 100,
+    device_price: device.retail_price_usd,
+    device_model: device.model
+  };
 }
 ```
 
@@ -760,18 +853,29 @@ CREATE INDEX idx_handovers_date ON device_handovers(handed_over_at DESC);
 
 ## Summary
 
-**Device Handover Process Deliverables**:
-- ✅ **Handover Workflow**: 5-step process (15-20 minutes)
-- ✅ **Identity Verification**: National ID check before handover
-- ✅ **Device Setup**: Lynia Device Manager app installation and testing
-- ✅ **Documentation**: Loan agreement, device condition form, signatures
-- ✅ **Customer Education**: Payment process, device lock policy, support contacts
-- ✅ **Post-Handover**: Loan disbursement, confirmation notifications
+**Device Handover Process Deliverables** (UPDATED - Simplified):
+- ✅ **Handover Workflow**: 8-step simplified process (15-20 minutes)
+- ✅ **Identity Verification**: National ID check at handover location
+- ✅ **Deposit Payment at Handover**: Real-time payment verification (CRITICAL)
+- ✅ **Device Handover**: Physical inspection and condition documentation
+- ✅ **Distributor Commission**: Automatic calculation (5% of retail price)
+- ✅ **Loan Activation**: Status changes from 'approved' to 'active'
+- ✅ **Confirmation Notifications**: WhatsApp confirmation to customer
 
 **Key Features**:
 - 15-20 minute average handover time
-- 95%+ app installation success rate
-- Complete documentation trail
-- Customer satisfaction tracking
+- Deposit payment occurs AT handover location
+- Real-time payment verification via mobile money
+- Automatic distributor commission calculation
+- Loan status automatically updated to 'active'
+- Complete audit trail of handover process
+
+**Key Changes from Previous Version**:
+- ❌ Removed: Appointment scheduling (unnecessary)
+- ❌ Removed: Pre-payment requirement (deposit now at handover)
+- ❌ Removed: Device app installation (simplified for Phase 2)
+- ✅ Added: Real-time deposit verification at handover
+- ✅ Added: Distributor commission calculation
+- ✅ Simplified: 8 clear steps in logical order
 
 **Next Steps**: Implement Device Return/Repossession Flow (P1-T035)

@@ -625,44 +625,49 @@ Response: {
 
 ---
 
-### P2-T009: Device Handover Process Implementation
+### P2-T009: Device Handover Process Implementation (UPDATED - Simplified)
 **Priority**: High
 **Estimate**: 10 hours
 **Status**: Pending
 **Dependencies**: P2-T002, P2-T008
 
-**Objective**: Implement device handover process with mandatory deposit enforcement.
+**Objective**: Implement simplified device handover process with deposit payment at handover location.
 
-**Critical Business Rule**: NO CASH ON DELIVERY. Deposit MUST be paid and confirmed before device handover.
+**UPDATED Business Rule**: Deposit payment occurs AT distributor location. Device cannot be handed over without confirmed deposit payment.
 
-**Handover Flow**:
+**Simplified Handover Flow** (10 steps):
 1. Customer completes onboarding (loan approved)
-2. Customer pays deposit via mobile money (P2-T008)
-3. System verifies deposit payment
-4. System notifies distributor of pending handover
-5. Distributor confirms device availability
-6. System schedules handover appointment
-7. Customer arrives at distributor location
-8. Distributor verifies customer identity
-9. Distributor hands over device
-10. Distributor marks handover as complete in system
-11. System updates loan status to 'active'
-12. System starts repayment schedule
+2. System takes note of pending handover
+3. Customer arrives at distributor location
+4. Distributor confirms device availability
+5. Distributor verifies customer identity
+6. **Customer pays deposit via mobile money** ← AT HANDOVER LOCATION
+7. **System verifies deposit payment** ← CRITICAL CHECKPOINT
+8. Distributor hands over device
+9. Distributor marks handover complete → Loan status: 'active'
+10. Distributor commission calculated and recorded
+
+**Key Changes from Original**:
+- ❌ Removed: Appointment scheduling (unnecessary complexity)
+- ❌ Removed: Pre-payment requirement (deposit now paid at handover)
+- ✅ Simplified: 10 clear steps, all at distributor location
+- ✅ Added: Real-time deposit payment verification during handover
+- ✅ Added: Automatic distributor commission calculation (5% of retail price)
 
 **Tasks**:
-- [ ] Create handover workflow state machine
-- [ ] Implement deposit verification logic
-- [ ] Block handover if deposit not confirmed
-- [ ] Create distributor notification system
-- [ ] Implement appointment scheduling
+- [ ] Create simplified handover workflow (10 steps)
+- [ ] Implement real-time deposit verification at handover location
+- [ ] Create handover screen in distributor dashboard
+- [ ] Block device handover until deposit payment verified
+- [ ] Implement distributor commission calculation (5% formula)
+- [ ] Create distributor_commissions table (Migration 002)
+- [ ] Update loan status from 'approved' to 'active' on completion
 - [ ] Create handover verification checklist
-- [ ] Implement device serial number tracking
 - [ ] Link device to loan in database
-- [ ] Update loan status to 'active' after handover
-- [ ] Generate repayment schedule
+- [ ] Generate first payment date (30 days from handover)
 - [ ] Send customer confirmation WhatsApp message
-- [ ] Write integration tests for full flow
-- [ ] Document handover process
+- [ ] Write integration tests for simplified flow
+- [ ] Update handover process documentation
 
 **Deposit Enforcement**:
 ```typescript
