@@ -250,7 +250,7 @@ scripts/check-fineract-updates.sh
 ### Phase 2: Backend Infrastructure (COMPLETED)
 
 **Completed Tasks** (12/14):
-- ✅ P2-T002: Database Schema Deployment
+- ✅ P2-T002: [Database Schema Deployment](phase-2-backend-infrastructure/P2-T002-PROGRESS.md)
 - ✅ P2-T003: [Payment Service](phase-2-backend-infrastructure/P2-T003-PROGRESS.md)
 - ✅ P2-T004: [Credit Scoring Service](phase-2-backend-infrastructure/P2-T004-PROGRESS.md)
 - ✅ P2-T005: [KYC Service](phase-2-backend-infrastructure/P2-T005-PROGRESS.md)
