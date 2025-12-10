@@ -1,0 +1,10 @@
+{
+  "httpMethod": "GET",
+  "path": "/locks/device_test_001",
+  "pathParameters": {
+    "deviceId": "device_test_001"
+  },
+  "headers": {
+    "Content-Type": "application/json"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "httpMethod": "POST",
+  "path": "/whatsapp/send",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"to\":\"263771234567\",\"templateName\":\"loan_application_welcome\",\"templateParams\":{\"1\":\"John Doe\"}}",
+  "requestContext": {
+    "requestId": "test-request-id-template",
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  }
+}

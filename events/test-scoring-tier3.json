@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/scoring/calculate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"customer_id\":\"cust_tier3_001\",\"monthly_income_usd\":600,\"existing_debt_obligations_usd\":80,\"household_size\":2,\"dependents\":1,\"requested_loan_amount\":300,\"previous_loans_count\":2,\"on_time_payment_rate\":0.98,\"bill_payment_consistency\":0.95,\"communication_response_rate\":0.92,\"kyc_result\":{\"id_verification\":{\"status\":\"verified\"},\"face_match\":{\"confidence\":0.98},\"liveness\":{\"status\":\"passed\"}},\"mobile_money_profile\":{\"account_age_months\":36,\"avg_monthly_inflow_usd\":650,\"avg_monthly_outflow_usd\":550,\"transaction_count_3m\":120,\"balance_usd\":150,\"airtime_purchases_3m\":15,\"airtime_avg_per_purchase_usd\":10},\"external_credit_data\":{\"credit_bureau_score\":null,\"platform_verified\":true,\"platform_earnings_3m_usd\":1600,\"platform_rating\":4.7,\"bank_account_verified\":true,\"bank_account_age_months\":30}}"
+}

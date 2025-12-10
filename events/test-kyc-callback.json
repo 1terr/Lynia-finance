@@ -1,0 +1,9 @@
+{
+  "httpMethod": "POST",
+  "path": "/kyc/callback",
+  "headers": {
+    "Content-Type": "application/json",
+    "X-Signature": "test_signature_would_be_calculated"
+  },
+  "body": "{\"partner_id\":\"test_partner\",\"smile_job_id\":\"smile_abc123\",\"job_success\":true,\"job_complete\":true,\"result\":{\"confidence_value\":92,\"match_result\":\"Verified\",\"document_check\":{\"authentic\":true,\"tampered\":false,\"expired\":false,\"quality_score\":85},\"liveness_check\":{\"passed\":true,\"score\":88,\"spoof_type\":null},\"face_match\":{\"score\":94,\"match\":true},\"id_info\":{\"full_name\":\"Tendai Moyo\",\"id_number\":\"63-123456A47\",\"dob\":\"1990-03-15\",\"gender\":\"M\",\"address\":\"Harare, Zimbabwe\",\"nationality\":\"Zimbabwean\"}},\"timestamp\":\"2025-12-05T12:00:00Z\",\"created_at\":\"2025-12-05T11:59:00Z\",\"updated_at\":\"2025-12-05T12:00:00Z\",\"partner_params\":{\"user_id\":\"cust_test_001\",\"job_id\":\"job_1733400000_xyz123\",\"job_type\":5}}"
+}

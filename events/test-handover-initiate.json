@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/handovers/initiate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"loan_id\":\"loan_test_001\",\"device_id\":\"device_test_001\",\"customer_id\":\"cust_test_001\",\"distributor_id\":\"dist_test_001\",\"handover_location\":\"Harare Distribution Center\",\"handed_over_by\":\"John Mapfumo\"}"
+}

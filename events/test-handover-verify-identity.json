@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/handovers/verify-identity",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"handover_id\":\"handover_test_001\",\"id_number\":\"63-123456A47\"}"
+}

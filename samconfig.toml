@@ -1,0 +1,75 @@
+# AWS SAM Deployment Configuration
+# This file contains deployment settings for different environments
+
+version = 0.1
+
+[default]
+[default.global.parameters]
+stack_name = "lynia-finance-dev"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=development"
+
+[default.build.parameters]
+cached = true
+parallel = true
+
+[default.validate.parameters]
+lint = true
+
+[default.deploy.parameters]
+confirm_changeset = true
+fail_on_empty_changeset = false
+resolve_s3 = true
+s3_prefix = "lynia-finance"
+image_repositories = []
+
+[default.sync.parameters]
+watch = true
+
+# ============================================
+# STAGING ENVIRONMENT
+# ============================================
+[staging]
+[staging.global.parameters]
+stack_name = "lynia-finance-staging"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=staging"
+
+[staging.build.parameters]
+cached = true
+parallel = true
+
+[staging.deploy.parameters]
+confirm_changeset = false
+fail_on_empty_changeset = false
+resolve_s3 = true
+s3_prefix = "lynia-finance-staging"
+capabilities = "CAPABILITY_IAM"
+
+# ============================================
+# PRODUCTION ENVIRONMENT
+# ============================================
+[production]
+[production.global.parameters]
+stack_name = "lynia-finance-prod"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Environment=production"
+
+[production.build.parameters]
+cached = true
+parallel = true
+
+[production.deploy.parameters]
+confirm_changeset = true
+fail_on_empty_changeset = false
+resolve_s3 = true
+s3_prefix = "lynia-finance-prod"
+capabilities = "CAPABILITY_IAM"
+on_failure = "ROLLBACK"
+
+# Production requires manual confirmation
+[production.deploy]
+confirm_changeset = true

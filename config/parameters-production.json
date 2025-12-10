@@ -1,0 +1,21 @@
+{
+  "Parameters": {
+    "Environment": "production",
+    "SupabaseUrl": "https://ghdrnxlsupbzoddtyxcp.supabase.co",
+    "SupabaseServiceRoleKey": "REPLACE_WITH_PRODUCTION_SUPABASE_KEY",
+    "WhatsAppPhoneNumberId": "REPLACE_WITH_PRODUCTION_WHATSAPP_PHONE_ID",
+    "WhatsAppAccessToken": "REPLACE_WITH_PRODUCTION_WHATSAPP_TOKEN",
+    "WhatsAppWebhookVerifyToken": "REPLACE_WITH_PRODUCTION_WEBHOOK_TOKEN",
+    "SmilePartnerId": "REPLACE_WITH_PRODUCTION_SMILE_PARTNER_ID",
+    "SmileApiKey": "REPLACE_WITH_PRODUCTION_SMILE_API_KEY",
+    "SmileEnvironment": "production",
+    "EcocashMerchantId": "REPLACE_WITH_PRODUCTION_ECOCASH_MERCHANT_ID",
+    "EcocashApiKey": "REPLACE_WITH_PRODUCTION_ECOCASH_API_KEY",
+    "OnemoneyMerchantId": "REPLACE_WITH_PRODUCTION_ONEMONEY_MERCHANT_ID",
+    "OnemoneyApiKey": "REPLACE_WITH_PRODUCTION_ONEMONEY_API_KEY",
+    "TrustonicApiKey": "REPLACE_WITH_PRODUCTION_TRUSTONIC_API_KEY",
+    "TrustonicApiSecret": "REPLACE_WITH_PRODUCTION_TRUSTONIC_API_SECRET",
+    "SmsProvider": "twilio",
+    "SmsApiKey": "REPLACE_WITH_PRODUCTION_SMS_API_KEY"
+  }
+}

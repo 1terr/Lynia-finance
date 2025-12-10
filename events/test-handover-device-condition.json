@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/handovers/device-condition",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"handover_id\":\"handover_test_001\",\"device_condition\":{\"screen_condition\":\"excellent\",\"body_condition\":\"excellent\",\"buttons_functional\":true,\"ports_functional\":true,\"cameras_functional\":true,\"powers_on\":true,\"touch_responsive\":true,\"wifi_works\":true,\"cellular_works\":true,\"calls_work\":true,\"accessories_included\":[\"charger\",\"usb_cable\",\"protective_case\"],\"notes\":\"Device in perfect condition, all tests passed\"}}"
+}

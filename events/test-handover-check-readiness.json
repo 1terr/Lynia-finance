@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/handovers/check-readiness",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"loan_id\":\"loan_test_001\"}"
+}

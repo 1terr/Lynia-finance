@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/scoring/calculate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"customer_id\":\"cust_test_001\",\"monthly_income_usd\":350,\"existing_debt_obligations_usd\":50,\"household_size\":3,\"dependents\":2,\"requested_loan_amount\":250,\"kyc_result\":{\"id_verification\":{\"status\":\"verified\"},\"face_match\":{\"confidence\":0.96},\"liveness\":{\"status\":\"passed\"}},\"mobile_money_profile\":{\"account_age_months\":18,\"avg_monthly_inflow_usd\":400,\"avg_monthly_outflow_usd\":350,\"transaction_count_3m\":75,\"balance_usd\":60,\"airtime_purchases_3m\":9,\"airtime_avg_per_purchase_usd\":5}}"
+}

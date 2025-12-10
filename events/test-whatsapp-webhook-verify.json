@@ -1,0 +1,18 @@
+{
+  "httpMethod": "GET",
+  "path": "/whatsapp/webhook",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "queryStringParameters": {
+    "hub.mode": "subscribe",
+    "hub.verify_token": "lynia_webhook_2025",
+    "hub.challenge": "1234567890"
+  },
+  "requestContext": {
+    "requestId": "test-webhook-verify",
+    "identity": {
+      "sourceIp": "31.13.84.1"
+    }
+  }
+}

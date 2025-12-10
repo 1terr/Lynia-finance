@@ -1,0 +1,21 @@
+{
+  "Parameters": {
+    "Environment": "staging",
+    "SupabaseUrl": "https://ghdrnxlsupbzoddtyxcp.supabase.co",
+    "SupabaseServiceRoleKey": "REPLACE_WITH_STAGING_SUPABASE_KEY",
+    "WhatsAppPhoneNumberId": "REPLACE_WITH_STAGING_WHATSAPP_PHONE_ID",
+    "WhatsAppAccessToken": "REPLACE_WITH_STAGING_WHATSAPP_TOKEN",
+    "WhatsAppWebhookVerifyToken": "REPLACE_WITH_STAGING_WEBHOOK_TOKEN",
+    "SmilePartnerId": "REPLACE_WITH_STAGING_SMILE_PARTNER_ID",
+    "SmileApiKey": "REPLACE_WITH_STAGING_SMILE_API_KEY",
+    "SmileEnvironment": "sandbox",
+    "EcocashMerchantId": "REPLACE_WITH_STAGING_ECOCASH_MERCHANT_ID",
+    "EcocashApiKey": "REPLACE_WITH_STAGING_ECOCASH_API_KEY",
+    "OnemoneyMerchantId": "REPLACE_WITH_STAGING_ONEMONEY_MERCHANT_ID",
+    "OnemoneyApiKey": "REPLACE_WITH_STAGING_ONEMONEY_API_KEY",
+    "TrustonicApiKey": "REPLACE_WITH_STAGING_TRUSTONIC_API_KEY",
+    "TrustonicApiSecret": "REPLACE_WITH_STAGING_TRUSTONIC_API_SECRET",
+    "SmsProvider": "twilio",
+    "SmsApiKey": "REPLACE_WITH_STAGING_SMS_API_KEY"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/locks/lock",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"device_id\":\"device_test_001\",\"reason\":\"Payment 7 days overdue\",\"admin_user_id\":\"admin_001\"}"
+}

@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/whatsapp/webhook",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"object\":\"whatsapp_business_account\",\"entry\":[{\"id\":\"WHATSAPP_BUSINESS_ACCOUNT_ID\",\"changes\":[{\"value\":{\"messaging_product\":\"whatsapp\",\"metadata\":{\"display_phone_number\":\"PHONE_NUMBER\",\"phone_number_id\":\"PHONE_NUMBER_ID\"},\"contacts\":[{\"profile\":{\"name\":\"Tendai Moyo\"},\"wa_id\":\"263771234567\"}],\"messages\":[{\"from\":\"263771234567\",\"id\":\"wamid.test123\",\"timestamp\":\"1672531200\",\"text\":{\"body\":\"Hi\"},\"type\":\"text\"}]},\"field\":\"messages\"}]}]}"
+}

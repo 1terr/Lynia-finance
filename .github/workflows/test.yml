@@ -1,0 +1,166 @@
+name: Test & Build
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+env:
+  NODE_ENV: test
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install pnpm
+        run: npm install -g pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Jest globally
+        run: npm install -g jest ts-jest @types/jest
+
+      - name: Run linter
+        run: pnpm run lint
+        continue-on-error: true
+
+      - name: Run unit tests
+        run: pnpm run test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_KEY }}
+
+      - name: Generate coverage report
+        run: pnpm run test -- --coverage
+        continue-on-error: true
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          lcov-file: ./coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build Lambda Functions
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: SAM Build
+        run: sam build
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: SAM Validate
+        run: sam validate
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: sam-build
+          path: .aws-sam/build/
+          retention-days: 7
+
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: sam-build
+          path: .aws-sam/build/
+
+      - name: Start SAM Local API
+        run: |
+          sam local start-api --port 3000 --env-vars env.json &
+          sleep 30
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          API_BASE_URL: http://localhost:3000
+          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_KEY }}
+
+      - name: Stop SAM Local
+        if: always()
+        run: pkill -f "sam local start-api"
+
+  notify:
+    name: Notify Status
+    runs-on: ubuntu-latest
+    needs: [test, build, e2e-tests]
+    if: always()
+
+    steps:
+      - name: Send success notification
+        if: success()
+        run: echo "✅ All tests passed and build successful!"
+
+      - name: Send failure notification
+        if: failure()
+        run: echo "❌ Tests failed or build error. Check logs."

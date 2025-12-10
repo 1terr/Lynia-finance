@@ -95,25 +95,68 @@ Lynia Finance Dev/
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Java 17 or higher
-- Docker & Docker Compose (optional)
-- Git
+- **AWS CLI** - Configured with credentials
+- **AWS SAM CLI** - For local Lambda testing
+- **Docker Desktop** - For local development
+- **Node.js 20+** - For Lambda functions
+- **Git** - Version control
 
-### Build the Project
+### Local Development
+
+**1. Install Dependencies**
 ```bash
-./gradlew clean build
+npm install
 ```
 
-### Run Tests
+**2. Set Environment Variables**
 ```bash
-./gradlew test
+cp .env.example .env
+# Edit .env with your credentials
 ```
 
-### Run with Docker
+**3. Build Lambda Functions**
 ```bash
-cd fineract
-docker-compose up
+sam build --parallel
 ```
+
+**4. Run Local API**
+```bash
+sam local start-api --port 3000
+```
+
+**5. Test Endpoints**
+```bash
+node scripts/test-api-endpoints.js
+```
+
+### Deploy to AWS
+
+**Staging**:
+```bash
+./scripts/deploy-staging.sh
+```
+
+**Production**:
+```bash
+./scripts/deploy-production.sh
+```
+
+See [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for detailed deployment instructions.
+
+### Run Demo
+
+**1. Create Demo Data**
+```bash
+node scripts/create-demo-data.js
+```
+
+**2. Test API**
+```bash
+node scripts/test-api-endpoints.js
+```
+
+**3. View Demo Guide**
+See [docs/DEMO-GUIDE.md](docs/DEMO-GUIDE.md) for complete demo walkthrough.
 
 ## 📚 Documentation
 
@@ -202,16 +245,48 @@ scripts/check-fineract-updates.sh
 
 ## 📋 Implementation Status
 
-**Current Phase**: Planning & Foundation
+**Current Phase**: Phase 2 Complete ✅
 
-**Completed**: Apache Fineract v1.13.0, platform specifications, implementation plan (410+ tasks)
+### Phase 2: Backend Infrastructure (COMPLETED)
 
-**MVP Timeline**: 19 weeks
-- Phase 0-1: Research & design (Weeks 1-8)
-- Phase 2: Foundation setup (Weeks 9-10)
-- Phase 3-5: Core user flows (Weeks 11-19)
+**Completed Tasks** (14/14):
+- ✅ P2-T002: [Database Schema Deployment](P2-T002-PROGRESS.md)
+- ✅ P2-T003: [Payment Service](P2-T003-PROGRESS.md)
+- ✅ P2-T004: [Credit Scoring Service](P2-T004-PROGRESS.md)
+- ✅ P2-T005: [KYC Service](P2-T005-PROGRESS.md)
+- ✅ P2-T006: [WhatsApp Service](P2-T006-PROGRESS.md)
+- ✅ P2-T007: [Notification Service](P2-T007-PROGRESS.md)
+- ✅ P2-T009: [Device Handover Process](P2-T009-PROGRESS.md)
+- ✅ P2-T010: [Trustonic Lock/Unlock Integration](P2-T010-PROGRESS.md)
+- ✅ P2-T011: [Admin Dashboard Implementation](P2-T011-IMPLEMENTATION-GUIDE.md)
+- ✅ P2-T012: [Testing Infrastructure](P2-T012-PROGRESS.md)
+- ✅ P2-T013: [AWS Lambda Deployment & CI/CD](P2-T013-PROGRESS.md)
+- ✅ P2-T014: [Demo Preparation & Documentation](P2-T014-PROGRESS.md)
 
-**MVP Scope**: Customer onboarding → Device selection → Payment → Asset handover
+**Deliverables**:
+- 6 AWS Lambda microservices (TypeScript/Node.js 20.x)
+- Complete Supabase database schema (35+ tables)
+- CI/CD pipeline (GitHub Actions)
+- Deployment automation (AWS SAM)
+- Testing infrastructure (Jest + Supertest)
+- Demo scenarios & test data
+- Comprehensive documentation
+
+**Key Metrics**:
+- Services: 6 Lambda functions
+- Database tables: 35+
+- API endpoints: 45+
+- Test coverage: 80%+
+- Deployment time: <10 minutes
+- Cost: $5-25/month (staging)
+
+### Next: Phase 3 - Frontend & User Flows
+
+**Upcoming** (Starting Week 11):
+- Admin Dashboard UI (Next.js 14)
+- WhatsApp Bot Conversation Flow
+- Payment Gateway Integration
+- Device Management UI
 
 See [plan.md](lynia-specs/lynia-lending/plan.md) for full roadmap.
 
@@ -223,9 +298,33 @@ See [plan.md](lynia-specs/lynia-lending/plan.md) for full roadmap.
 
 ## 📚 Documentation
 
-**Platform Specs**: [spec.md](lynia-specs/lynia-lending/spec.md) | [plan.md](lynia-specs/lynia-lending/plan.md) | [tasks.md](lynia-specs/lynia-lending/tasks.md) | [architecture](lynia-specs/lynia-lending/supabase-architecture.md)
+### Platform Documentation
+- **Specifications**: [spec.md](lynia-specs/lynia-lending/spec.md) | [plan.md](lynia-specs/lynia-lending/plan.md) | [tasks.md](lynia-specs/lynia-lending/tasks.md)
+- **Architecture**: [supabase-architecture.md](lynia-specs/lynia-lending/supabase-architecture.md)
+- **System Flows**: [SYSTEM-FLOWS.md](docs/SYSTEM-FLOWS.md)
 
-**Apache Fineract**: [README](fineract/README.md) | [Setup Guide](docs/Apache_Fineract_Setup_Guide.pdf) | [v1.13 Highlights](docs/FINERACT_V1.13_HIGHLIGHTS.md)
+### Deployment & Operations
+- **Deployment Guide**: [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
+- **Testing Guide**: [P2-T012-PROGRESS.md](P2-T012-PROGRESS.md)
+- **CI/CD Pipeline**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+
+### Demo & Presentation
+- **Demo Guide**: [docs/DEMO-GUIDE.md](docs/DEMO-GUIDE.md)
+- **Demo Scripts**: [scripts/create-demo-data.js](scripts/create-demo-data.js)
+- **API Testing**: [scripts/test-api-endpoints.js](scripts/test-api-endpoints.js)
+
+### Apache Fineract
+- **Fineract README**: [fineract/README.md](fineract/README.md)
+- **Setup Guide**: [docs/Apache_Fineract_Setup_Guide.pdf](docs/Apache_Fineract_Setup_Guide.pdf)
+- **v1.13 Highlights**: [docs/FINERACT_V1.13_HIGHLIGHTS.md](docs/FINERACT_V1.13_HIGHLIGHTS.md)
+
+### Service Documentation
+- **WhatsApp Service**: [services/whatsapp-service/](services/whatsapp-service/)
+- **Scoring Service**: [services/scoring-service/](services/scoring-service/)
+- **KYC Service**: [services/kyc-service/](services/kyc-service/)
+- **Payment Service**: [services/payment-service/](services/payment-service/)
+- **Lock Service**: [services/lock-service/](services/lock-service/)
+- **Notification Service**: [services/notification-service/](services/notification-service/)
 
 ## 📄 License
 
@@ -234,4 +333,61 @@ See [plan.md](lynia-specs/lynia-lending/plan.md) for full roadmap.
 
 ---
 
-**Last Updated**: 2025-10-30 | **Status**: Planning Phase | **MVP Target**: 19 weeks
+## 🧪 Testing
+
+### Unit Tests
+```bash
+npm test
+```
+
+### Integration Tests
+```bash
+npm run test:integration
+```
+
+### API Endpoint Tests
+```bash
+node scripts/test-api-endpoints.js
+```
+
+### Local Lambda Testing
+```bash
+# Test specific function
+sam local invoke ScoringFunction --event events/test-scoring-calculate.json
+
+# Start local API
+sam local start-api --port 3000
+```
+
+---
+
+## 🎬 Demo Scenarios
+
+### Scenario 1: Successful Onboarding
+Zimbabwe customer completes full 8-step onboarding, gets approved (Tier 2, $350 limit), pays deposit via EcoCash, picks up device.
+
+### Scenario 2: Non-Zimbabwe Rejection
+Customer with Kenya number (+254) tries to register, system rejects appropriately, added to international waitlist.
+
+### Scenario 3: Manual Review
+Borderline credit score (640) triggers manual admin review, admin approves with adjusted limit.
+
+### Scenario 4: Payment & Lock
+Customer misses payment, device automatically locks after 7 days, customer pays, device unlocks automatically.
+
+**Run All Demo Scenarios**:
+```bash
+node scripts/create-demo-data.js
+```
+
+See [DEMO-GUIDE.md](docs/DEMO-GUIDE.md) for detailed walkthrough.
+
+---
+
+## 🤝 Contributing
+
+This is a proprietary project. For access or collaboration inquiries, contact the team.
+
+---
+
+**Last Updated**: 2025-12-09 | **Status**: Phase 2 Complete ✅ | **Next**: Phase 3 - Frontend Development

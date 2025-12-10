@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/payments/initiate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"loan_id\":\"loan_test_001\",\"customer_id\":\"cust_test_001\",\"amount\":50.00,\"currency\":\"USD\",\"customer_phone\":\"+263771234567\",\"gateway\":\"ecocash\",\"payment_type\":\"deposit\",\"description\":\"Smartphone deposit payment\"}"
+}

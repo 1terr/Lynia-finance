@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/scoring/calculate",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"customer_id\":\"cust_reject_001\",\"monthly_income_usd\":80,\"existing_debt_obligations_usd\":60,\"household_size\":5,\"dependents\":3,\"requested_loan_amount\":200,\"kyc_result\":{\"id_verification\":{\"status\":\"review\"},\"face_match\":{\"confidence\":0.72},\"liveness\":{\"status\":\"failed\"}}}"
+}

@@ -1,0 +1,14 @@
+{
+  "httpMethod": "POST",
+  "path": "/whatsapp/webhook",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"object\":\"whatsapp_business_account\",\"entry\":[{\"id\":\"WHATSAPP_BUSINESS_ACCOUNT_ID\",\"changes\":[{\"value\":{\"messaging_product\":\"whatsapp\",\"metadata\":{\"display_phone_number\":\"15551234567\",\"phone_number_id\":\"PHONE_NUMBER_ID\"},\"contacts\":[{\"profile\":{\"name\":\"John Doe\"},\"wa_id\":\"263771234567\"}],\"messages\":[{\"from\":\"263771234567\",\"id\":\"wamid.HBgNMjYzNzcxMjM0NTY3FQIAERgSMEIwQTBBOUQwRjA5MjU1MjYzAA==\",\"timestamp\":\"1234567890\",\"type\":\"text\",\"text\":{\"body\":\"Hi, I want to apply for a loan\"}}]},\"field\":\"messages\"}]}]}",
+  "requestContext": {
+    "requestId": "test-webhook-message",
+    "identity": {
+      "sourceIp": "31.13.84.1"
+    }
+  }
+}

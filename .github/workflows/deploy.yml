@@ -1,0 +1,268 @@
+name: Deploy to AWS
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+  push:
+    branches:
+      - master
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/**'
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '20.x'
+  PYTHON_VERSION: '3.11'
+
+jobs:
+  test:
+    name: Run Tests Before Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm run test
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_KEY }}
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://staging-api.lyniafinance.co.zw
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM Build
+        run: sam build --config-env staging --cached --parallel
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: SAM Validate
+        run: sam validate --lint
+
+      - name: SAM Deploy to Staging
+        run: |
+          sam deploy \
+            --config-env staging \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              Environment=staging \
+              SupabaseUrl=${{ secrets.STAGING_SUPABASE_URL }} \
+              SupabaseServiceRoleKey=${{ secrets.STAGING_SUPABASE_KEY }} \
+              WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID }} \
+              WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN }} \
+              WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN }} \
+              SmilePartnerId=${{ secrets.STAGING_SMILE_PARTNER_ID }} \
+              SmileApiKey=${{ secrets.STAGING_SMILE_API_KEY }} \
+              SmileEnvironment=sandbox \
+              EcocashMerchantId=${{ secrets.STAGING_ECOCASH_MERCHANT_ID }} \
+              EcocashApiKey=${{ secrets.STAGING_ECOCASH_API_KEY }} \
+              OnemoneyMerchantId=${{ secrets.STAGING_ONEMONEY_MERCHANT_ID }} \
+              OnemoneyApiKey=${{ secrets.STAGING_ONEMONEY_API_KEY }} \
+              TrustonicApiKey=${{ secrets.STAGING_TRUSTONIC_API_KEY }} \
+              TrustonicApiSecret=${{ secrets.STAGING_TRUSTONIC_API_SECRET }} \
+              SmsProvider=twilio \
+              SmsApiKey=${{ secrets.STAGING_SMS_API_KEY }}
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: Get API Gateway URL
+        id: get-url
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name lynia-finance-staging \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
+            --output text)
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "API Gateway URL: $API_URL"
+
+      - name: Test Deployed Endpoints
+        run: |
+          echo "Testing staging endpoints..."
+          curl -f ${{ steps.get-url.outputs.api_url }}/health || echo "Health check failed"
+        continue-on-error: true
+
+      - name: Comment PR with deployment info
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `### ✅ Deployed to Staging\n\n**API URL**: ${{ steps.get-url.outputs.api_url }}\n\n**Environment**: staging\n**Commit**: ${context.sha.substring(0, 7)}\n\nTest your changes at the URL above.`
+            })
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
+    environment:
+      name: production
+      url: https://api.lyniafinance.co.zw
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: SAM Build
+        run: sam build --config-env production --cached --parallel
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: SAM Validate
+        run: sam validate --lint
+
+      - name: SAM Deploy to Production
+        run: |
+          sam deploy \
+            --config-env production \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              Environment=production \
+              SupabaseUrl=${{ secrets.PRODUCTION_SUPABASE_URL }} \
+              SupabaseServiceRoleKey=${{ secrets.PRODUCTION_SUPABASE_KEY }} \
+              WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }} \
+              WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN }} \
+              WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN }} \
+              SmilePartnerId=${{ secrets.PRODUCTION_SMILE_PARTNER_ID }} \
+              SmileApiKey=${{ secrets.PRODUCTION_SMILE_API_KEY }} \
+              SmileEnvironment=production \
+              EcocashMerchantId=${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }} \
+              EcocashApiKey=${{ secrets.PRODUCTION_ECOCASH_API_KEY }} \
+              OnemoneyMerchantId=${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }} \
+              OnemoneyApiKey=${{ secrets.PRODUCTION_ONEMONEY_API_KEY }} \
+              TrustonicApiKey=${{ secrets.PRODUCTION_TRUSTONIC_API_KEY }} \
+              TrustonicApiSecret=${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET }} \
+              SmsProvider=twilio \
+              SmsApiKey=${{ secrets.PRODUCTION_SMS_API_KEY }}
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: Get Production API Gateway URL
+        id: get-prod-url
+        run: |
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name lynia-finance-prod \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
+            --output text)
+          echo "api_url=$API_URL" >> $GITHUB_OUTPUT
+          echo "Production API Gateway URL: $API_URL"
+
+      - name: Test Production Endpoints
+        run: |
+          echo "Testing production endpoints..."
+          curl -f ${{ steps.get-prod-url.outputs.api_url }}/health || echo "Health check failed"
+
+      - name: Create GitHub Release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: Production Release v${{ github.run_number }}
+          body: |
+            **Deployed to Production**
+
+            API URL: ${{ steps.get-prod-url.outputs.api_url }}
+            Commit: ${{ github.sha }}
+
+            ### Changes
+            See commit history for details.
+          draft: false
+          prerelease: false
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+      - name: Send success notification
+        if: success()
+        run: echo "✅ Deployment successful!"
+
+      - name: Send failure notification
+        if: failure()
+        run: echo "❌ Deployment failed. Check logs."

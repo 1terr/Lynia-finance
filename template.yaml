@@ -1,0 +1,387 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Lynia Finance - Serverless Microservices
+  6 Lambda functions for Phase 2: Scoring, WhatsApp, KYC, Payment, Lock, Notification
+
+# Global configuration for all functions
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        SUPABASE_URL: !Ref SupabaseUrl
+        SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
+        LOG_LEVEL: info
+
+Parameters:
+  Environment:
+    Type: String
+    Default: development
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Deployment environment
+
+  SupabaseUrl:
+    Type: String
+    Description: Supabase project URL
+    Default: https://ghdrnxlsupbzoddtyxcp.supabase.co
+
+  SupabaseServiceRoleKey:
+    Type: String
+    Description: Supabase service role key
+    NoEcho: true
+
+Resources:
+  # =====================================================
+  # 1. SCORING SERVICE
+  # =====================================================
+  ScoringFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-scoring-service
+      CodeUri: services/scoring-service/
+      Handler: dist/index.handler
+      Description: Credit scoring and loan assessment service
+      Environment:
+        Variables:
+          SCORING_MODEL_VERSION: v1
+      Events:
+        CalculateScore:
+          Type: Api
+          Properties:
+            Path: /scoring/calculate
+            Method: POST
+        GetScore:
+          Type: Api
+          Properties:
+            Path: /scoring/{customerId}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+          - src/index.ts
+
+  # =====================================================
+  # 2. WHATSAPP SERVICE
+  # =====================================================
+  WhatsAppFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-whatsapp-service
+      CodeUri: services/whatsapp-service/
+      Handler: dist/index.handler
+      Description: WhatsApp messaging and webhook service
+      Environment:
+        Variables:
+          WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
+          WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
+          WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
+      Events:
+        SendMessage:
+          Type: Api
+          Properties:
+            Path: /whatsapp/send
+            Method: POST
+        Webhook:
+          Type: Api
+          Properties:
+            Path: /whatsapp/webhook
+            Method: POST
+        WebhookVerify:
+          Type: Api
+          Properties:
+            Path: /whatsapp/webhook
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+          - src/index.ts
+
+  # =====================================================
+  # 3. KYC SERVICE
+  # =====================================================
+  KYCFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-kyc-service
+      CodeUri: services/kyc-service/
+      Handler: dist/index.handler
+      Description: KYC verification service (Smile Identity integration)
+      Environment:
+        Variables:
+          SMILE_PARTNER_ID: !Ref SmilePartnerId
+          SMILE_API_KEY: !Ref SmileApiKey
+          SMILE_ENVIRONMENT: !Ref SmileEnvironment
+      Events:
+        InitiateKYC:
+          Type: Api
+          Properties:
+            Path: /kyc/initiate
+            Method: POST
+        KYCCallback:
+          Type: Api
+          Properties:
+            Path: /kyc/callback
+            Method: POST
+        GetKYCStatus:
+          Type: Api
+          Properties:
+            Path: /kyc/{customerId}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+          - src/index.ts
+
+  # =====================================================
+  # 4. PAYMENT SERVICE
+  # =====================================================
+  PaymentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-payment-service
+      CodeUri: services/payment-service/
+      Handler: dist/index.handler
+      Description: Payment processing service (EcoCash, OneMoney integration)
+      Environment:
+        Variables:
+          ECOCASH_MERCHANT_ID: !Ref EcocashMerchantId
+          ECOCASH_API_KEY: !Ref EcocashApiKey
+          ONEMONEY_MERCHANT_ID: !Ref OnemoneyMerchantId
+          ONEMONEY_API_KEY: !Ref OnemoneyApiKey
+      Events:
+        ProcessPayment:
+          Type: Api
+          Properties:
+            Path: /payments/process
+            Method: POST
+        PaymentWebhook:
+          Type: Api
+          Properties:
+            Path: /payments/webhook
+            Method: POST
+        GetPaymentStatus:
+          Type: Api
+          Properties:
+            Path: /payments/{paymentId}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+          - src/index.ts
+
+  # =====================================================
+  # 5. LOCK SERVICE
+  # =====================================================
+  LockFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-lock-service
+      CodeUri: services/lock-service/
+      Handler: dist/index.handler
+      Description: Device lock/unlock service (Trustonic integration)
+      Environment:
+        Variables:
+          TRUSTONIC_API_KEY: !Ref TrustonicApiKey
+          TRUSTONIC_API_SECRET: !Ref TrustonicApiSecret
+      Events:
+        LockDevice:
+          Type: Api
+          Properties:
+            Path: /locks/lock
+            Method: POST
+        UnlockDevice:
+          Type: Api
+          Properties:
+            Path: /locks/unlock
+            Method: POST
+        GetLockStatus:
+          Type: Api
+          Properties:
+            Path: /locks/{deviceId}
+            Method: GET
+        ScheduledLockProcessing:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 8 * * ? *)  # Daily at 8 AM UTC
+            Description: Process automated device locks
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+          - src/index.ts
+
+  # =====================================================
+  # 6. NOTIFICATION SERVICE
+  # =====================================================
+  NotificationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-notification-service
+      CodeUri: services/notification-service/
+      Handler: dist/index.handler
+      Description: Multi-channel notification service (SMS, WhatsApp, Email)
+      Environment:
+        Variables:
+          SMS_PROVIDER: !Ref SmsProvider
+          SMS_API_KEY: !Ref SmsApiKey
+      Events:
+        SendNotification:
+          Type: Api
+          Properties:
+            Path: /notifications/send
+            Method: POST
+        GetNotificationHistory:
+          Type: Api
+          Properties:
+            Path: /notifications/{customerId}
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2020
+        EntryPoints:
+          - src/index.ts
+
+# Additional Parameters (Sensitive)
+  WhatsAppPhoneNumberId:
+    Type: String
+    Description: WhatsApp Cloud API Phone Number ID
+    NoEcho: true
+    Default: ""
+
+  WhatsAppAccessToken:
+    Type: String
+    Description: WhatsApp Cloud API Access Token
+    NoEcho: true
+    Default: ""
+
+  WhatsAppWebhookVerifyToken:
+    Type: String
+    Description: WhatsApp Webhook Verification Token
+    NoEcho: true
+    Default: ""
+
+  SmilePartnerId:
+    Type: String
+    Description: Smile Identity Partner ID
+    NoEcho: true
+    Default: ""
+
+  SmileApiKey:
+    Type: String
+    Description: Smile Identity API Key
+    NoEcho: true
+    Default: ""
+
+  SmileEnvironment:
+    Type: String
+    Description: Smile Identity Environment (sandbox/production)
+    Default: sandbox
+    AllowedValues:
+      - sandbox
+      - production
+
+  EcocashMerchantId:
+    Type: String
+    Description: EcoCash Merchant ID
+    NoEcho: true
+    Default: ""
+
+  EcocashApiKey:
+    Type: String
+    Description: EcoCash API Key
+    NoEcho: true
+    Default: ""
+
+  OnemoneyMerchantId:
+    Type: String
+    Description: OneMoney Merchant ID
+    NoEcho: true
+    Default: ""
+
+  OnemoneyApiKey:
+    Type: String
+    Description: OneMoney API Key
+    NoEcho: true
+    Default: ""
+
+  TrustonicApiKey:
+    Type: String
+    Description: Trustonic API Key
+    NoEcho: true
+    Default: ""
+
+  TrustonicApiSecret:
+    Type: String
+    Description: Trustonic API Secret
+    NoEcho: true
+    Default: ""
+
+  SmsProvider:
+    Type: String
+    Description: SMS Provider (twilio/africas_talking)
+    Default: twilio
+    AllowedValues:
+      - twilio
+      - africas_talking
+
+  SmsApiKey:
+    Type: String
+    Description: SMS Provider API Key
+    NoEcho: true
+    Default: ""
+
+Outputs:
+  # API Gateway Endpoint
+  ApiGatewayUrl:
+    Description: API Gateway endpoint URL
+    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+
+  # Function ARNs
+  ScoringFunctionArn:
+    Description: Scoring Service Lambda Function ARN
+    Value: !GetAtt ScoringFunction.Arn
+
+  WhatsAppFunctionArn:
+    Description: WhatsApp Service Lambda Function ARN
+    Value: !GetAtt WhatsAppFunction.Arn
+
+  KYCFunctionArn:
+    Description: KYC Service Lambda Function ARN
+    Value: !GetAtt KYCFunction.Arn
+
+  PaymentFunctionArn:
+    Description: Payment Service Lambda Function ARN
+    Value: !GetAtt PaymentFunction.Arn
+
+  LockFunctionArn:
+    Description: Lock Service Lambda Function ARN
+    Value: !GetAtt LockFunction.Arn
+
+  NotificationFunctionArn:
+    Description: Notification Service Lambda Function ARN
+    Value: !GetAtt NotificationFunction.Arn

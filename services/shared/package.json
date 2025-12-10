@@ -8,9 +8,11 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.38.0"
+    "@supabase/supabase-js": "2.39.0"
   },
   "devDependencies": {
-    "typescript": "^5.2.0"
+    "@types/aws-lambda": "^8.10.131",
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3"
   }
 }

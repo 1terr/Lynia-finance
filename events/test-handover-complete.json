@@ -1,0 +1,8 @@
+{
+  "httpMethod": "POST",
+  "path": "/handovers/complete",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"handover_id\":\"handover_test_001\"}"
+}

@@ -1,0 +1,14 @@
+{
+  "httpMethod": "POST",
+  "path": "/whatsapp/webhook",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"object\":\"whatsapp_business_account\",\"entry\":[{\"id\":\"WHATSAPP_BUSINESS_ACCOUNT_ID\",\"changes\":[{\"value\":{\"messaging_product\":\"whatsapp\",\"metadata\":{\"display_phone_number\":\"15551234567\",\"phone_number_id\":\"PHONE_NUMBER_ID\"},\"statuses\":[{\"id\":\"wamid.HBgNMjYzNzcxMjM0NTY3FQIAERgSMEIwQTBBOUQwRjA5MjU1MjYzAA==\",\"status\":\"delivered\",\"timestamp\":\"1234567890\",\"recipient_id\":\"263771234567\"}]},\"field\":\"messages\"}]}]}",
+  "requestContext": {
+    "requestId": "test-webhook-status",
+    "identity": {
+      "sourceIp": "31.13.84.1"
+    }
+  }
+}

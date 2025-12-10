@@ -1,0 +1,14 @@
+{
+  "httpMethod": "POST",
+  "path": "/whatsapp/send",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "body": "{\"to\":\"263771234567\",\"message\":\"Hello from Lynia Finance! This is a test message.\"}",
+  "requestContext": {
+    "requestId": "test-request-id",
+    "identity": {
+      "sourceIp": "127.0.0.1"
+    }
+  }
+}
