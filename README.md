@@ -249,19 +249,21 @@ scripts/check-fineract-updates.sh
 
 ### Phase 2: Backend Infrastructure (COMPLETED)
 
-**Completed Tasks** (14/14):
-- ✅ P2-T002: [Database Schema Deployment](P2-T002-PROGRESS.md)
-- ✅ P2-T003: [Payment Service](P2-T003-PROGRESS.md)
-- ✅ P2-T004: [Credit Scoring Service](P2-T004-PROGRESS.md)
-- ✅ P2-T005: [KYC Service](P2-T005-PROGRESS.md)
-- ✅ P2-T006: [WhatsApp Service](P2-T006-PROGRESS.md)
-- ✅ P2-T007: [Notification Service](P2-T007-PROGRESS.md)
-- ✅ P2-T009: [Device Handover Process](P2-T009-PROGRESS.md)
-- ✅ P2-T010: [Trustonic Lock/Unlock Integration](P2-T010-PROGRESS.md)
-- ✅ P2-T011: [Admin Dashboard Implementation](P2-T011-IMPLEMENTATION-GUIDE.md)
-- ✅ P2-T012: [Testing Infrastructure](P2-T012-PROGRESS.md)
-- ✅ P2-T013: [AWS Lambda Deployment & CI/CD](P2-T013-PROGRESS.md)
-- ✅ P2-T014: [Demo Preparation & Documentation](P2-T014-PROGRESS.md)
+**Completed Tasks** (12/14):
+- ✅ P2-T002: Database Schema Deployment
+- ✅ P2-T003: [Payment Service](phase-2-backend-infrastructure/P2-T003-PROGRESS.md)
+- ✅ P2-T004: [Credit Scoring Service](phase-2-backend-infrastructure/P2-T004-PROGRESS.md)
+- ✅ P2-T005: [KYC Service](phase-2-backend-infrastructure/P2-T005-PROGRESS.md)
+- ✅ P2-T006: [WhatsApp Service](phase-2-backend-infrastructure/P2-T006-PROGRESS.md)
+- ✅ P2-T007: [Notification Service](phase-2-backend-infrastructure/P2-T007-PROGRESS.md)
+- ✅ P2-T009: [Device Handover Process](phase-2-backend-infrastructure/P2-T009-PROGRESS.md)
+- ✅ P2-T010: [Trustonic Lock/Unlock Integration](phase-2-backend-infrastructure/P2-T010-PROGRESS.md)
+- ✅ P2-T011: [Admin Dashboard Implementation](phase-2-backend-infrastructure/P2-T011-IMPLEMENTATION-GUIDE.md)
+- ✅ P2-T012: [Testing Infrastructure](phase-2-backend-infrastructure/P2-T012-PROGRESS.md)
+- ✅ P2-T013: [AWS Lambda Deployment & CI/CD](phase-2-backend-infrastructure/P2-T013-PROGRESS.md)
+- ✅ P2-T014: [Demo Preparation & Documentation](phase-2-backend-infrastructure/P2-T014-PROGRESS.md)
+
+**📊 Phase 2 Summary**: See [Phase 2 Summary Report](phase-2-backend-infrastructure/PHASE-2-SUMMARY-REPORT.md) for complete details
 
 **Deliverables**:
 - 6 AWS Lambda microservices (TypeScript/Node.js 20.x)
@@ -305,8 +307,12 @@ See [plan.md](lynia-specs/lynia-lending/plan.md) for full roadmap.
 
 ### Deployment & Operations
 - **Deployment Guide**: [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
-- **Testing Guide**: [P2-T012-PROGRESS.md](P2-T012-PROGRESS.md)
+- **Testing Guide**: [P2-T012-PROGRESS.md](phase-2-backend-infrastructure/P2-T012-PROGRESS.md)
 - **CI/CD Pipeline**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+
+### Phase 2 Reports
+- **Phase 2 Summary**: [PHASE-2-SUMMARY-REPORT.md](phase-2-backend-infrastructure/PHASE-2-SUMMARY-REPORT.md)
+- **All Phase 2 Reports**: [phase-2-backend-infrastructure/](phase-2-backend-infrastructure/)
 
 ### Demo & Presentation
 - **Demo Guide**: [docs/DEMO-GUIDE.md](docs/DEMO-GUIDE.md)
