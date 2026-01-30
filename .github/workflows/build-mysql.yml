@@ -1,6 +1,18 @@
 name: Fineract Cargo & Unit- & Integration tests - MySQL
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-mysql.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-mysql.yml'
 
 permissions:
   contents: read

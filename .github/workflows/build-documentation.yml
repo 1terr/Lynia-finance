@@ -1,5 +1,17 @@
 name: Fineract Documentation build
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-documentation.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-documentation.yml'
 permissions:
   contents: read
 jobs:

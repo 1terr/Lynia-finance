@@ -1,6 +1,18 @@
 name: Fineract Cargo & Unit- & Integration tests - MariaDB
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-mariadb.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-mariadb.yml'
 
 permissions:
   contents: read

@@ -1,6 +1,18 @@
 name: Fineract Messaging Smoke Tests
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/smoke-messaging.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/smoke-messaging.yml'
 
 permissions:
   contents: read

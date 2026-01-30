@@ -1,6 +1,18 @@
 name: Fineract Build & Cucumber tests (without E2E tests)
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-cucumber.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-cucumber.yml'
 
 permissions:
   contents: read
