@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: fineract
+
 jobs:
   smoke-test:
     name: Smoke Test with ${{ matrix.messaging }}

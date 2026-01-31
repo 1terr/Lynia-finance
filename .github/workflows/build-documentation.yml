@@ -14,6 +14,10 @@ on:
       - '.github/workflows/build-documentation.yml'
 permissions:
   contents: read
+defaults:
+  run:
+    working-directory: fineract
+
 jobs:
   build:
     runs-on: ubuntu-24.04

@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    working-directory: fineract
+
 jobs:
   test:
     name: E2E Tests (Shard ${{ matrix.shard_index }} of ${{ matrix.total_shards }})
