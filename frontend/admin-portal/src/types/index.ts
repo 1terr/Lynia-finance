@@ -86,18 +86,35 @@ export interface Loan {
 export type DeviceStatus = 'in_stock' | 'allocated' | 'active' | 'locked' | 'returned' | 'damaged';
 export type LockStatus = 'unlocked' | 'locked' | 'pending';
 
+export type DeviceCondition = 'new' | 'grade_a' | 'grade_b' | 'grade_c';
+
 export interface Device {
   id: string;
   device_imei: string;
+  serial_number: string | null;
   device_brand: string;
   device_model: string;
+  device_type: string;
+  storage_gb: number | null;
+  color: string | null;
+  condition: DeviceCondition;
+  purchase_price_usd: number | null;
   device_value_usd: number;
+  loan_id: string | null;
+  customer_id: string | null;
+  assigned_at: string | null;
   lock_status: LockStatus;
+  locked_at: string | null;
+  lock_reason: string | null;
   status: DeviceStatus;
+  location: string | null;
   trustonic_device_id: string | null;
   trustonic_enrolled: boolean;
+  trustonic_enrolled_at: string | null;
   created_at: string;
   updated_at: string;
+  customer?: Customer;
+  loan?: Loan;
 }
 
 // --- Payments ---
@@ -115,8 +132,17 @@ export interface Payment {
   payment_type: PaymentType;
   payment_status: PaymentStatus;
   transaction_reference: string | null;
+  reference_number: string | null;
   payment_date: string;
+  confirmed_at: string | null;
+  failed_at: string | null;
+  failure_reason: string | null;
+  reconciled: boolean;
+  reconciled_at: string | null;
+  reconciled_by: string | null;
+  provider_response: Record<string, unknown> | null;
   created_at: string;
+  updated_at: string;
   customer?: Customer;
   loan?: Loan;
 }
@@ -158,6 +184,93 @@ export interface CreditScore {
   credit_limit: number;
   tier: 'Tier 1' | 'Tier 2' | 'Tier 3';
   calculated_at: string;
+}
+
+// --- Device Locks ---
+
+export interface DeviceLock {
+  id: string;
+  device_id: string;
+  loan_id: string | null;
+  customer_id: string | null;
+  action: 'lock' | 'unlock' | 'emergency_unlock';
+  reason: string | null;
+  lock_type: 'auto_payment_missed' | 'manual_admin' | 'test';
+  days_past_due: number | null;
+  executed_at: string | null;
+  executed_by: string | null;
+  execution_status: 'pending' | 'success' | 'failed';
+  lock_provider: string | null;
+  provider_response: Record<string, unknown> | null;
+  created_at: string;
+}
+
+// --- Distributors ---
+
+export type DistributorStatus = 'pending' | 'approved' | 'suspended' | 'rejected';
+
+export interface Distributor {
+  id: string;
+  business_name: string;
+  contact_person: string;
+  phone_number: string;
+  email: string | null;
+  physical_address: string | null;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  commission_rate: number;
+  status: DistributorStatus;
+  approved_at: string | null;
+  approved_by: string | null;
+  total_devices_sold: number;
+  total_commission_earned_usd: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- System Config ---
+
+export interface SystemConfig {
+  id: string;
+  config_key: string;
+  config_value: Record<string, unknown>;
+  description: string | null;
+  updated_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// --- Audit Log ---
+
+export interface AuditLog {
+  id: string;
+  user_id: string | null;
+  user_type: 'admin' | 'customer' | 'system';
+  user_email: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  description: string | null;
+  changes: Record<string, unknown> | null;
+  ip_address: string | null;
+  created_at: string;
+}
+
+// --- Loan Products ---
+
+export interface LoanProduct {
+  id: string;
+  product_name: string;
+  product_code: string;
+  min_amount_usd: number;
+  max_amount_usd: number;
+  min_term_months: number;
+  max_term_months: number;
+  interest_rate_annual: number;
+  deposit_percentage: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 // --- Notifications ---
