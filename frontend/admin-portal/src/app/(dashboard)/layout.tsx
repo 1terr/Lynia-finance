@@ -1,11 +1,11 @@
 import Link from 'next/link';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Customers', href: '/dashboard/customers' },
-  { name: 'Loans', href: '/dashboard/loans' },
-  { name: 'Payments', href: '/dashboard/payments' },
-  { name: 'Devices', href: '/dashboard/devices' },
+  { name: 'Dashboard', href: '/' },
+  { name: 'Customers', href: '/customers' },
+  { name: 'Loans', href: '/loans' },
+  { name: 'Payments', href: '/payments' },
+  { name: 'Devices', href: '/devices' },
 ];
 
 export default function DashboardLayout({
@@ -20,7 +20,7 @@ export default function DashboardLayout({
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center">
-              <Link href="/dashboard" className="text-xl font-bold text-primary-600">
+              <Link href="/" className="text-xl font-bold text-primary-600">
                 Lynia Admin
               </Link>
               <div className="ml-10 hidden md:flex items-center space-x-4">
