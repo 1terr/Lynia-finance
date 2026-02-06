@@ -4,6 +4,8 @@ import type {
   InventoryDevice,
   CommissionEntry,
   DashboardStats,
+  HandoverResult,
+  DeviceCondition,
 } from '@/types/distributor';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -129,4 +131,78 @@ export async function loginDistributor(email: string, _password: string): Promis
     return { ...mockDistributor };
   }
   throw new Error('Invalid credentials');
+}
+
+// ── Handover API ──
+
+export async function verifyCustomerIdentity(
+  handoverId: string,
+  nationalId: string,
+): Promise<{ verified: boolean; message: string }> {
+  await delay(800);
+  const handover = mockPendingHandovers.find((h) => h.id === handoverId);
+  if (!handover) return { verified: false, message: 'Handover not found' };
+  // Simulate: any valid-looking Zim ID passes
+  const valid = /^\d{2}-\d{6,7}[A-Z]\d{2}$/.test(nationalId);
+  return {
+    verified: valid,
+    message: valid ? 'Identity verified successfully' : 'Invalid National ID format',
+  };
+}
+
+export async function verifyImei(
+  _handoverId: string,
+  imei: string,
+  expectedImei: string,
+): Promise<{ verified: boolean; message: string }> {
+  await delay(600);
+  const valid = imei.length === 15 && /^\d{15}$/.test(imei);
+  if (!valid) return { verified: false, message: 'IMEI must be exactly 15 digits' };
+  const matches = imei === expectedImei;
+  return {
+    verified: matches,
+    message: matches ? 'IMEI verified — matches device record' : 'IMEI does not match the assigned device',
+  };
+}
+
+export async function verifyDepositPayment(
+  _handoverId: string,
+  paymentMethod: string,
+  transactionRef: string,
+): Promise<{ verified: boolean; amount: number; message: string }> {
+  await delay(1000);
+  if (!transactionRef || transactionRef.length < 4) {
+    return { verified: false, amount: 0, message: 'Invalid transaction reference' };
+  }
+  return {
+    verified: true,
+    amount: 40,
+    message: `Deposit of $40.00 verified via ${paymentMethod}`,
+  };
+}
+
+export async function submitHandover(data: {
+  handover_id: string;
+  customer_national_id: string;
+  scanned_imei: string;
+  device_condition: DeviceCondition;
+  device_photos: string[];
+  signature_data_url: string;
+  deposit_payment_method: string;
+  deposit_transaction_ref: string;
+}): Promise<HandoverResult> {
+  await delay(1200);
+  const handover = mockPendingHandovers.find((h) => h.id === data.handover_id);
+  if (!handover) throw new Error('Handover not found');
+  const commission = handover.loan_amount * 0.05;
+  const nextPayment = new Date();
+  nextPayment.setDate(nextPayment.getDate() + 30);
+  return {
+    success: true,
+    handover_id: data.handover_id,
+    loan_id: handover.loan_id,
+    commission_amount: commission,
+    next_payment_date: nextPayment.toISOString(),
+    message: `Device handed over to ${handover.customer_name}. Loan ${handover.loan_id} is now active.`,
+  };
 }
