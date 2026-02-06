@@ -135,6 +135,9 @@ export interface Payment {
   payment_date: string;
   phone_number: string | null;
   payer_name: string | null;
+  reconciled: boolean;
+  reconciled_at: string | null;
+  reconciled_by: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
