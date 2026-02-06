@@ -1,18 +1,103 @@
+'use client';
+
+import { useState } from 'react';
+import type { ReportType, DateRange, ReportFilters, ReportMeta } from '@/types/reports';
+import { DateRangeFilter, getPresetDates } from '@/components/reports/date-range-filter';
+import { LoanDisbursementReport } from '@/components/reports/loan-disbursement-report';
+import { PaymentCollectionReport } from '@/components/reports/payment-collection-report';
+import { DefaultRateReport } from '@/components/reports/default-rate-report';
+import { KycStatusReport } from '@/components/reports/kyc-status-report';
+import { DeviceManagementReport } from '@/components/reports/device-management-report';
+import { CustomerAcquisitionReport } from '@/components/reports/customer-acquisition-report';
+import { PortfolioHealthReport } from '@/components/reports/portfolio-health-report';
+import { cn } from '@/lib/utils';
+import {
+  Banknote,
+  CreditCard,
+  AlertTriangle,
+  ShieldCheck,
+  Smartphone,
+  Users,
+  PieChart,
+} from 'lucide-react';
+
+const REPORT_TYPES: ReportMeta[] = [
+  { type: 'loan_disbursement', title: 'Loan Disbursement', description: 'Loan volumes, values & approval rates', icon: 'banknote', color: 'text-blue-600' },
+  { type: 'payment_collection', title: 'Payment Collection', description: 'Collection rates & payment methods', icon: 'credit-card', color: 'text-green-600' },
+  { type: 'default_rate', title: 'Default Rate / PAR', description: 'Portfolio at risk & aging buckets', icon: 'alert-triangle', color: 'text-red-600' },
+  { type: 'kyc_status', title: 'KYC Status', description: 'KYC submissions & approval rates', icon: 'shield-check', color: 'text-yellow-600' },
+  { type: 'device_management', title: 'Device Management', description: 'Device status & lock operations', icon: 'smartphone', color: 'text-cyan-600' },
+  { type: 'customer_acquisition', title: 'Customer Acquisition', description: 'Funnel conversion & source analysis', icon: 'users', color: 'text-purple-600' },
+  { type: 'portfolio_health', title: 'Portfolio Health', description: 'Portfolio composition & health metrics', icon: 'pie-chart', color: 'text-orange-600' },
+];
+
+const iconMap: Record<string, React.ElementType> = {
+  'banknote': Banknote,
+  'credit-card': CreditCard,
+  'alert-triangle': AlertTriangle,
+  'shield-check': ShieldCheck,
+  'smartphone': Smartphone,
+  'users': Users,
+  'pie-chart': PieChart,
+};
+
+function getDefaultDateRange(): DateRange {
+  const dates = getPresetDates('30d');
+  return { ...dates, preset: '30d' };
+}
+
 export default function ReportsPage() {
+  const [activeReport, setActiveReport] = useState<ReportType>('loan_disbursement');
+  const [dateRange, setDateRange] = useState<DateRange>(getDefaultDateRange);
+
+  const filters: ReportFilters = { dateRange };
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold">Reports</h1>
-        <p className="text-muted-foreground">Reports & analytics will be implemented in P3-T008</p>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Reports & Analytics</h1>
+        <p className="text-muted-foreground mt-1">View and export operational reports for Lynia Finance</p>
       </div>
-      <div className="rounded-xl border bg-card p-12 shadow-sm">
-        <div className="flex flex-col items-center justify-center text-center">
-          <div className="rounded-full bg-muted p-4 mb-4">
-            <svg className="h-8 w-8 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-          </div>
-          <h2 className="text-lg font-semibold">Coming Soon</h2>
-          <p className="text-sm text-muted-foreground mt-1">Reports & analytics will be implemented in P3-T008</p>
-        </div>
+
+      {/* Report type selector */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 mb-6">
+        {REPORT_TYPES.map((report) => {
+          const Icon = iconMap[report.icon] ?? PieChart;
+          const isActive = activeReport === report.type;
+          return (
+            <button
+              key={report.type}
+              onClick={() => setActiveReport(report.type)}
+              className={cn(
+                'flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition-all',
+                isActive
+                  ? 'border-primary bg-primary/5 shadow-sm'
+                  : 'border-border bg-card hover:border-primary/40 hover:bg-muted/50'
+              )}
+            >
+              <Icon className={cn('h-5 w-5', isActive ? report.color : 'text-muted-foreground')} />
+              <span className={cn('text-xs font-semibold leading-tight', isActive ? 'text-foreground' : 'text-muted-foreground')}>
+                {report.title}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Date range filter */}
+      <div className="mb-6">
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
+      </div>
+
+      {/* Active report */}
+      <div>
+        {activeReport === 'loan_disbursement' && <LoanDisbursementReport filters={filters} />}
+        {activeReport === 'payment_collection' && <PaymentCollectionReport filters={filters} />}
+        {activeReport === 'default_rate' && <DefaultRateReport filters={filters} />}
+        {activeReport === 'kyc_status' && <KycStatusReport filters={filters} />}
+        {activeReport === 'device_management' && <DeviceManagementReport filters={filters} />}
+        {activeReport === 'customer_acquisition' && <CustomerAcquisitionReport filters={filters} />}
+        {activeReport === 'portfolio_health' && <PortfolioHealthReport filters={filters} />}
       </div>
     </div>
   );
