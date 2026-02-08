@@ -1,9 +1,25 @@
 name: Fineract Docker Builds
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-docker.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-docker.yml'
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: fineract
 
 jobs:
   build:
