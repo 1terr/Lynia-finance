@@ -1,0 +1,120 @@
+name: Auto-Merge Claude Branches
+
+on:
+  push:
+    branches:
+      - 'claude/**'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  create-and-merge-pr:
+    name: Create PR & Auto-Merge
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get branch info
+        id: branch
+        run: |
+          BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+          echo "name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH_NAME"
+
+          # Count commits ahead of master
+          AHEAD=$(git rev-list --count origin/master..HEAD)
+          echo "ahead=$AHEAD" >> $GITHUB_OUTPUT
+          echo "Commits ahead of master: $AHEAD"
+
+      - name: Skip if no new commits
+        if: steps.branch.outputs.ahead == '0'
+        run: echo "No new commits ahead of master. Skipping."
+
+      - name: Check for existing PR
+        if: steps.branch.outputs.ahead != '0'
+        id: check-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          EXISTING_PR=$(gh pr list --head "${{ steps.branch.outputs.name }}" --base master --state open --json number --jq '.[0].number // empty')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "number=$EXISTING_PR" >> $GITHUB_OUTPUT
+            echo "PR #$EXISTING_PR already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No existing PR found"
+          fi
+
+      - name: Create Pull Request
+        if: steps.branch.outputs.ahead != '0' && steps.check-pr.outputs.exists == 'false'
+        id: create-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Build PR title from branch name
+          BRANCH="${{ steps.branch.outputs.name }}"
+          # Extract descriptive part: claude/some-description-XYZ -> some-description
+          TITLE=$(echo "$BRANCH" | sed 's|claude/||' | sed 's|-[A-Za-z0-9]*$||' | tr '-' ' ' | sed 's/.*/\L&/' | sed 's/^./\U&/')
+
+          # Get commit summaries for PR body
+          COMMITS=$(git log --oneline origin/master..HEAD | head -20)
+
+          PR_URL=$(gh pr create \
+            --base master \
+            --head "${{ steps.branch.outputs.name }}" \
+            --title "$TITLE" \
+            --body "$(cat <<EOF
+          ## Auto-generated PR from Claude branch
+
+          **Branch:** \`${{ steps.branch.outputs.name }}\`
+          **Commits ahead of master:** ${{ steps.branch.outputs.ahead }}
+
+          ### Commits included
+          \`\`\`
+          $COMMITS
+          \`\`\`
+
+          ---
+          *This PR was automatically created by the auto-merge workflow.*
+          EOF
+          )")
+
+          PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+          echo "url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "Created PR #$PR_NUMBER: $PR_URL"
+
+      - name: Get PR number
+        if: steps.branch.outputs.ahead != '0'
+        id: pr
+        run: |
+          if [ "${{ steps.check-pr.outputs.exists }}" == "true" ]; then
+            echo "number=${{ steps.check-pr.outputs.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "number=${{ steps.create-pr.outputs.number }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Enable auto-merge
+        if: steps.branch.outputs.ahead != '0'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Merging PR #${{ steps.pr.outputs.number }}..."
+          gh pr merge ${{ steps.pr.outputs.number }} \
+            --merge \
+            --auto \
+            --delete-branch || {
+              echo "Auto-merge not available (likely no branch protection rules)."
+              echo "Attempting direct merge..."
+              gh pr merge ${{ steps.pr.outputs.number }} \
+                --merge \
+                --delete-branch
+            }
+          echo "PR #${{ steps.pr.outputs.number }} merged successfully!"
