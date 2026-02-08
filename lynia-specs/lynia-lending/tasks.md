@@ -353,6 +353,16 @@ Dashboard wireframes, user roles & permissions, reporting requirements, manual r
 **Files Modified:**
 - `src/app/(dashboard)/customers/kyc-review/page.tsx` - Enhanced with document viewer, SLA stats, review history tab
 
+**Implementation Notes:**
+- Built with Next.js 14 App Router + TypeScript + Tailwind CSS
+- Components: KYCReviewCard, DocumentViewer, SLAIndicator, ReviewHistory, KYCQueueStats
+- Supabase realtime subscription for live queue updates
+- Approve/reject with required rejection reason
+- 24-hour SLA tracking with progress bar
+- Fullscreen document viewer with zoom/rotate
+- Search by name, ID number, submission number
+- Filter by status, confidence range, and sort order
+
 ---
 
 #### P3-T008: Reports & Analytics ✅
