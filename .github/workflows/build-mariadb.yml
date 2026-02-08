@@ -1,9 +1,25 @@
 name: Fineract Cargo & Unit- & Integration tests - MariaDB
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-mariadb.yml'
+  pull_request:
+    paths:
+      - 'fineract/**'
+      - 'build.gradle'
+      - 'settings.gradle'
+      - '.github/workflows/build-mariadb.yml'
 
 permissions:
   contents: read
+
+defaults:
+  run:
+    working-directory: fineract
 
 jobs:
   test:
@@ -44,13 +60,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
       - name: Set up JDK 21
-        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v4
+        uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v4
         with:
           java-version: '21'
           distribution: 'zulu'

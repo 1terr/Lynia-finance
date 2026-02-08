@@ -2,20 +2,20 @@
   "Parameters": {
     "Environment": "staging",
     "SupabaseUrl": "https://ghdrnxlsupbzoddtyxcp.supabase.co",
-    "SupabaseServiceRoleKey": "REPLACE_WITH_STAGING_SUPABASE_KEY",
-    "WhatsAppPhoneNumberId": "REPLACE_WITH_STAGING_WHATSAPP_PHONE_ID",
-    "WhatsAppAccessToken": "REPLACE_WITH_STAGING_WHATSAPP_TOKEN",
-    "WhatsAppWebhookVerifyToken": "REPLACE_WITH_STAGING_WEBHOOK_TOKEN",
-    "SmilePartnerId": "REPLACE_WITH_STAGING_SMILE_PARTNER_ID",
-    "SmileApiKey": "REPLACE_WITH_STAGING_SMILE_API_KEY",
+    "SupabaseServiceRoleKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZHJueGxzdXBiem9kZHR5eGNwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDc0MDY0MCwiZXhwIjoyMDgwMzE2NjQwfQ.dkjNfok20WRZW7eOjNoiyrgOJgci7swzMWpV4IV1Yfc",
+    "WhatsAppPhoneNumberId": "PENDING_PHONE_NUMBER_ID",
+    "WhatsAppAccessToken": "EAANEiba967IBQrXYRS4bONUJPh6hZAPvr7cMIT8NBkr5v6ECGdhpFqxXdCuIugsccTgzjoawXTkSDgZBaJ1GwVBJSgGchBPBOEp1yJPuTnj4GcZCwHSN8Iw5IMDIyfEzmZCKcRG9f3vZC4S33UqfcpjVYfSdO5mysdwvkJXqxybgMz9FW6KLh5Aaayx3mWo8lHhKMBNvn1ZCuvGdd4WGfWJKCAvT6ZCLGxiiQLpBYRBLODLZBZB7rGDSuosWEVQFeOeqcmNFwZB2jMDUlZAJyXMmezS",
+    "WhatsAppWebhookVerifyToken": "lynia_webhook_2025",
+    "SmilePartnerId": "mock_smile_partner",
+    "SmileApiKey": "mock_smile_api_key",
     "SmileEnvironment": "sandbox",
-    "EcocashMerchantId": "REPLACE_WITH_STAGING_ECOCASH_MERCHANT_ID",
-    "EcocashApiKey": "REPLACE_WITH_STAGING_ECOCASH_API_KEY",
-    "OnemoneyMerchantId": "REPLACE_WITH_STAGING_ONEMONEY_MERCHANT_ID",
-    "OnemoneyApiKey": "REPLACE_WITH_STAGING_ONEMONEY_API_KEY",
-    "TrustonicApiKey": "REPLACE_WITH_STAGING_TRUSTONIC_API_KEY",
-    "TrustonicApiSecret": "REPLACE_WITH_STAGING_TRUSTONIC_API_SECRET",
+    "EcocashMerchantId": "mock_ecocash_merchant",
+    "EcocashApiKey": "mock_ecocash_api_key",
+    "OnemoneyMerchantId": "mock_onemoney_merchant",
+    "OnemoneyApiKey": "mock_onemoney_api_key",
+    "TrustonicApiKey": "mock_trustonic_api_key",
+    "TrustonicApiSecret": "mock_trustonic_api_secret",
     "SmsProvider": "twilio",
-    "SmsApiKey": "REPLACE_WITH_STAGING_SMS_API_KEY"
+    "SmsApiKey": "mock_sms_api_key"
   }
 }
