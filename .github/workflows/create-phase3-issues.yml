@@ -69,55 +69,55 @@ jobs:
               title: 'P3-T001: Core Setup & Layout',
               labels: ['phase-3', 'priority: critical', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🔴 Critical | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P2-T011 (Admin Dashboard Specs)
-**Blocks:** P3-T002, P3-T003, P3-T004, P3-T005, P3-T006, P3-T007, P3-T008, P3-T009
+            **Priority:** 🔴 Critical | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P2-T011 (Admin Dashboard Specs)
+            **Blocks:** P3-T002, P3-T003, P3-T004, P3-T005, P3-T006, P3-T007, P3-T008, P3-T009
 
-## Description
-Initialize Next.js 14 project with TypeScript, Tailwind CSS, shadcn/ui components, and Supabase Auth integration. Create reusable layout components including sidebar, header, and protected route wrapper.
+            ## Description
+            Initialize Next.js 14 project with TypeScript, Tailwind CSS, shadcn/ui components, and Supabase Auth integration. Create reusable layout components including sidebar, header, and protected route wrapper.
 
-## Tasks
-- [ ] Initialize Next.js 14 project with App Router
-- [ ] Configure TypeScript with strict mode
-- [ ] Set up Tailwind CSS with custom theme (Lynia brand colors)
-- [ ] Install and configure shadcn/ui components (10+ components)
-- [ ] Set up Supabase client for SSR
-- [ ] Implement login page with email/password
-- [ ] Implement forgot password flow
-- [ ] Create Sidebar component with navigation items
-- [ ] Create Header component with user menu
-- [ ] Create Footer component
-- [ ] Create Breadcrumbs component
-- [ ] Implement ProtectedRoute wrapper with auth check
-- [ ] Add dark mode support with theme toggle
-- [ ] Configure middleware for auth redirect
-- [ ] Set up error boundary components
+            ## Tasks
+            - [ ] Initialize Next.js 14 project with App Router
+            - [ ] Configure TypeScript with strict mode
+            - [ ] Set up Tailwind CSS with custom theme (Lynia brand colors)
+            - [ ] Install and configure shadcn/ui components (10+ components)
+            - [ ] Set up Supabase client for SSR
+            - [ ] Implement login page with email/password
+            - [ ] Implement forgot password flow
+            - [ ] Create Sidebar component with navigation items
+            - [ ] Create Header component with user menu
+            - [ ] Create Footer component
+            - [ ] Create Breadcrumbs component
+            - [ ] Implement ProtectedRoute wrapper with auth check
+            - [ ] Add dark mode support with theme toggle
+            - [ ] Configure middleware for auth redirect
+            - [ ] Set up error boundary components
 
-## Acceptance Criteria
-- [ ] Next.js 14 project initialized with App Router
-- [ ] Tailwind CSS configured with custom Lynia theme
-- [ ] 10+ shadcn/ui components installed and configured
-- [ ] Login/logout flow working with Supabase Auth
-- [ ] Protected route wrapper redirecting unauthenticated users
-- [ ] Responsive sidebar navigation (collapsible on mobile)
-- [ ] Dark mode support with persistent preference
-- [ ] All components have TypeScript types
+            ## Acceptance Criteria
+            - [ ] Next.js 14 project initialized with App Router
+            - [ ] Tailwind CSS configured with custom Lynia theme
+            - [ ] 10+ shadcn/ui components installed and configured
+            - [ ] Login/logout flow working with Supabase Auth
+            - [ ] Protected route wrapper redirecting unauthenticated users
+            - [ ] Responsive sidebar navigation (collapsible on mobile)
+            - [ ] Dark mode support with persistent preference
+            - [ ] All components have TypeScript types
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 25 | Components, utils, hooks |
-| Integration Tests | 12 | Auth flow, navigation |
-| E2E Tests | 8 | Login, logout, protected routes |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 25 | Components, utils, hooks |
+            | Integration Tests | 12 | Auth flow, navigation |
+            | E2E Tests | 8 | Login, logout, protected routes |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/\`
-**Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, shadcn/ui, Supabase Auth
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/\`
+            **Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, shadcn/ui, Supabase Auth
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`phase-3-frontend/PHASE-3-TDD-SUBTASKS.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`phase-3-frontend/PHASE-3-TDD-SUBTASKS.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T002 Issue
@@ -130,51 +130,51 @@ Initialize Next.js 14 project with TypeScript, Tailwind CSS, shadcn/ui component
               title: 'P3-T002: Dashboard Home & KPIs',
               labels: ['phase-3', 'priority: critical', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🔴 Critical | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T001
-**Blocks:** P3-T003, P3-T004, P3-T005, P3-T006, P3-T007, P3-T008, P3-T009
+            **Priority:** 🔴 Critical | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T001
+            **Blocks:** P3-T003, P3-T004, P3-T005, P3-T006, P3-T007, P3-T008, P3-T009
 
-## Description
-Build the main dashboard home page with 12 KPI metric cards, trend charts, recent activity feed, and system alerts panel. Implement real-time data fetching with React Query.
+            ## Description
+            Build the main dashboard home page with 12 KPI metric cards, trend charts, recent activity feed, and system alerts panel. Implement real-time data fetching with React Query.
 
-## Tasks
-- [ ] Create MetricCard component with icon, value, trend indicator
-- [ ] Create MetricsGrid component (responsive 4x3 grid)
-- [ ] Implement 12 KPI cards (loans, customers, devices, revenue)
-- [ ] Create TrendChart component using Recharts
-- [ ] Create RecentActivity component with activity feed
-- [ ] Create AlertsPanel component for system notifications
-- [ ] Create DateRangePicker component for filtering
-- [ ] Set up React Query for data fetching
-- [ ] Implement auto-refresh every 30 seconds
-- [ ] Add loading skeletons for all data components
-- [ ] Create dashboard data hooks
-- [ ] Implement date range filtering (today, 7d, 30d, custom)
+            ## Tasks
+            - [ ] Create MetricCard component with icon, value, trend indicator
+            - [ ] Create MetricsGrid component (responsive 4x3 grid)
+            - [ ] Implement 12 KPI cards (loans, customers, devices, revenue)
+            - [ ] Create TrendChart component using Recharts
+            - [ ] Create RecentActivity component with activity feed
+            - [ ] Create AlertsPanel component for system notifications
+            - [ ] Create DateRangePicker component for filtering
+            - [ ] Set up React Query for data fetching
+            - [ ] Implement auto-refresh every 30 seconds
+            - [ ] Add loading skeletons for all data components
+            - [ ] Create dashboard data hooks
+            - [ ] Implement date range filtering (today, 7d, 30d, custom)
 
-## Acceptance Criteria
-- [ ] 12 KPI cards displaying real-time data from API
-- [ ] Trend indicators showing up/down with percentage
-- [ ] Date range filter working (today, 7 days, 30 days, custom)
-- [ ] Recent activity feed showing last 10 activities
-- [ ] System alerts panel with dismiss functionality
-- [ ] Auto-refresh every 30 seconds
-- [ ] Loading skeletons during data fetch
-- [ ] Responsive layout on all screen sizes
+            ## Acceptance Criteria
+            - [ ] 12 KPI cards displaying real-time data from API
+            - [ ] Trend indicators showing up/down with percentage
+            - [ ] Date range filter working (today, 7 days, 30 days, custom)
+            - [ ] Recent activity feed showing last 10 activities
+            - [ ] System alerts panel with dismiss functionality
+            - [ ] Auto-refresh every 30 seconds
+            - [ ] Loading skeletons during data fetch
+            - [ ] Responsive layout on all screen sizes
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 30 | MetricCard, charts, hooks |
-| Integration Tests | 15 | Data fetching, filtering |
-| E2E Tests | 5 | Dashboard load, refresh |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 30 | MetricCard, charts, hooks |
+            | Integration Tests | 15 | Data fetching, filtering |
+            | E2E Tests | 5 | Dashboard load, refresh |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/\`
-**Components:** MetricCard, MetricsGrid, TrendChart, RecentActivity, AlertsPanel
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/\`
+            **Components:** MetricCard, MetricsGrid, TrendChart, RecentActivity, AlertsPanel
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T003 Issue
@@ -187,51 +187,51 @@ Build the main dashboard home page with 12 KPI metric cards, trend charts, recen
               title: 'P3-T003: Loan Management',
               labels: ['phase-3', 'priority: critical', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🔴 Critical | **Estimate:** 20 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010
+            **Priority:** 🔴 Critical | **Estimate:** 20 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010
 
-## Description
-Build comprehensive loan management interface with list view, detail view, approval workflow, and payment schedule visualization.
+            ## Description
+            Build comprehensive loan management interface with list view, detail view, approval workflow, and payment schedule visualization.
 
-## Tasks
-- [ ] Create loan list page with DataTable (TanStack Table)
-- [ ] Implement advanced filtering (status, tier, date range, amount)
-- [ ] Add search by customer name, phone, loan ID
-- [ ] Create loan detail page with all loan information
-- [ ] Build payment schedule component with timeline visualization
-- [ ] Implement approval workflow (approve/reject with notes)
-- [ ] Create pending approvals queue page
-- [ ] Create overdue loans page with priority sorting
-- [ ] Add comments/notes system for loans
-- [ ] Implement export to CSV functionality
-- [ ] Create loan status badges component
-- [ ] Add audit trail display for loan actions
+            ## Tasks
+            - [ ] Create loan list page with DataTable (TanStack Table)
+            - [ ] Implement advanced filtering (status, tier, date range, amount)
+            - [ ] Add search by customer name, phone, loan ID
+            - [ ] Create loan detail page with all loan information
+            - [ ] Build payment schedule component with timeline visualization
+            - [ ] Implement approval workflow (approve/reject with notes)
+            - [ ] Create pending approvals queue page
+            - [ ] Create overdue loans page with priority sorting
+            - [ ] Add comments/notes system for loans
+            - [ ] Implement export to CSV functionality
+            - [ ] Create loan status badges component
+            - [ ] Add audit trail display for loan actions
 
-## Acceptance Criteria
-- [ ] Loan list with 10+ columns and sorting
-- [ ] Advanced filters (status, tier, date range, amount range)
-- [ ] Export to CSV functionality
-- [ ] Loan detail page with full information
-- [ ] Payment schedule visualization (timeline/table)
-- [ ] Approval workflow with confirmation dialog
-- [ ] Audit trail for all actions
-- [ ] Responsive design on all screens
+            ## Acceptance Criteria
+            - [ ] Loan list with 10+ columns and sorting
+            - [ ] Advanced filters (status, tier, date range, amount range)
+            - [ ] Export to CSV functionality
+            - [ ] Loan detail page with full information
+            - [ ] Payment schedule visualization (timeline/table)
+            - [ ] Approval workflow with confirmation dialog
+            - [ ] Audit trail for all actions
+            - [ ] Responsive design on all screens
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 35 | Table, filters, components |
-| Integration Tests | 18 | CRUD operations, workflow |
-| E2E Tests | 8 | Approval flow, export |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 35 | Table, filters, components |
+            | Integration Tests | 18 | CRUD operations, workflow |
+            | E2E Tests | 8 | Approval flow, export |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/loans/\`
-**Pages:** List, Detail, Pending Approval, Overdue
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/loans/\`
+            **Pages:** List, Detail, Pending Approval, Overdue
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T004 Issue
@@ -244,50 +244,50 @@ Build comprehensive loan management interface with list view, detail view, appro
               title: 'P3-T004: Customer Management',
               labels: ['phase-3', 'priority: high', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010, P3-T025
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010, P3-T025
 
-## Description
-Build customer management interface with list, profile view, KYC status display, and credit score history.
+            ## Description
+            Build customer management interface with list, profile view, KYC status display, and credit score history.
 
-## Tasks
-- [ ] Create customer list page with search and filters
-- [ ] Implement quick search (name, phone, National ID)
-- [ ] Add KYC status filter (pending, verified, rejected)
-- [ ] Add credit tier filter (low, medium, high)
-- [ ] Create customer profile page with tabs
-- [ ] Build KYC document viewer component
-- [ ] Create credit score history chart
-- [ ] Build loan history per customer
-- [ ] Create communication history (WhatsApp messages)
-- [ ] Implement customer timeline (all interactions)
-- [ ] Add edit customer information form
-- [ ] Create customer notes section
+            ## Tasks
+            - [ ] Create customer list page with search and filters
+            - [ ] Implement quick search (name, phone, National ID)
+            - [ ] Add KYC status filter (pending, verified, rejected)
+            - [ ] Add credit tier filter (low, medium, high)
+            - [ ] Create customer profile page with tabs
+            - [ ] Build KYC document viewer component
+            - [ ] Create credit score history chart
+            - [ ] Build loan history per customer
+            - [ ] Create communication history (WhatsApp messages)
+            - [ ] Implement customer timeline (all interactions)
+            - [ ] Add edit customer information form
+            - [ ] Create customer notes section
 
-## Acceptance Criteria
-- [ ] Customer list with pagination (20 per page)
-- [ ] Quick search functionality (<100ms response)
-- [ ] Customer profile with all details in tabs
-- [ ] KYC document viewer (ID front/back, selfie)
-- [ ] Credit score graph over time
-- [ ] Loan history per customer
-- [ ] Edit customer information with validation
+            ## Acceptance Criteria
+            - [ ] Customer list with pagination (20 per page)
+            - [ ] Quick search functionality (<100ms response)
+            - [ ] Customer profile with all details in tabs
+            - [ ] KYC document viewer (ID front/back, selfie)
+            - [ ] Credit score graph over time
+            - [ ] Loan history per customer
+            - [ ] Edit customer information with validation
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 28 | Profile components, search |
-| Integration Tests | 14 | Search, filtering, CRUD |
-| E2E Tests | 6 | Profile view, edit flow |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 28 | Profile components, search |
+            | Integration Tests | 14 | Search, filtering, CRUD |
+            | E2E Tests | 6 | Profile view, edit flow |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/customers/\`
-**Pages:** List, Profile, Edit
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/customers/\`
+            **Pages:** List, Profile, Edit
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T005 Issue
@@ -300,47 +300,47 @@ Build customer management interface with list, profile view, KYC status display,
               title: 'P3-T005: Payment Management',
               labels: ['phase-3', 'priority: high', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010
 
-## Description
-Build payment management interface with list view, reconciliation workflow, collections queue, and refund processing.
+            ## Description
+            Build payment management interface with list view, reconciliation workflow, collections queue, and refund processing.
 
-## Tasks
-- [ ] Create payment list page with status filters
-- [ ] Implement payment detail view
-- [ ] Build reconciliation interface (match transactions)
-- [ ] Create collections queue with priority sorting
-- [ ] Implement manual payment recording form
-- [ ] Add failed payment retry functionality
-- [ ] Create refund request handling workflow
-- [ ] Build payment reports/export
-- [ ] Create payment method badges
-- [ ] Implement batch operations (mark as reconciled)
+            ## Tasks
+            - [ ] Create payment list page with status filters
+            - [ ] Implement payment detail view
+            - [ ] Build reconciliation interface (match transactions)
+            - [ ] Create collections queue with priority sorting
+            - [ ] Implement manual payment recording form
+            - [ ] Add failed payment retry functionality
+            - [ ] Create refund request handling workflow
+            - [ ] Build payment reports/export
+            - [ ] Create payment method badges
+            - [ ] Implement batch operations (mark as reconciled)
 
-## Acceptance Criteria
-- [ ] Payment list with status filters
-- [ ] Reconciliation workflow functional
-- [ ] Collections queue sorted by priority (days overdue)
-- [ ] Manual payment recording with validation
-- [ ] Refund processing workflow
-- [ ] Export to CSV/Excel
+            ## Acceptance Criteria
+            - [ ] Payment list with status filters
+            - [ ] Reconciliation workflow functional
+            - [ ] Collections queue sorted by priority (days overdue)
+            - [ ] Manual payment recording with validation
+            - [ ] Refund processing workflow
+            - [ ] Export to CSV/Excel
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 25 | Payment components, forms |
-| Integration Tests | 12 | Reconciliation, refunds |
-| E2E Tests | 5 | Payment recording, export |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 25 | Payment components, forms |
+            | Integration Tests | 12 | Reconciliation, refunds |
+            | E2E Tests | 5 | Payment recording, export |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/payments/\`
-**Pages:** List, Detail, Collections, Reconciliation
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/payments/\`
+            **Pages:** List, Detail, Collections, Reconciliation
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T006 Issue
@@ -353,47 +353,47 @@ Build payment management interface with list view, reconciliation workflow, coll
               title: 'P3-T006: Device Management',
               labels: ['phase-3', 'priority: high', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010
 
-## Description
-Build device inventory management with lock/unlock controls, handover tracking, and distributor assignment.
+            ## Description
+            Build device inventory management with lock/unlock controls, handover tracking, and distributor assignment.
 
-## Tasks
-- [ ] Create device inventory list page
-- [ ] Implement device status filters (available, assigned, locked)
-- [ ] Create device detail page with full history
-- [ ] Build lock/unlock control panel with confirmation
-- [ ] Create handover scheduling interface
-- [ ] Build handover tracking page
-- [ ] Implement distributor assignment interface
-- [ ] Create device history timeline
-- [ ] Add bulk operations (assign multiple, lock multiple)
-- [ ] Create IMEI search functionality
+            ## Tasks
+            - [ ] Create device inventory list page
+            - [ ] Implement device status filters (available, assigned, locked)
+            - [ ] Create device detail page with full history
+            - [ ] Build lock/unlock control panel with confirmation
+            - [ ] Create handover scheduling interface
+            - [ ] Build handover tracking page
+            - [ ] Implement distributor assignment interface
+            - [ ] Create device history timeline
+            - [ ] Add bulk operations (assign multiple, lock multiple)
+            - [ ] Create IMEI search functionality
 
-## Acceptance Criteria
-- [ ] Device inventory list with all statuses
-- [ ] Lock/unlock controls with confirmation and reason
-- [ ] Handover tracking with status updates
-- [ ] Distributor assignment interface
-- [ ] Device status history timeline
-- [ ] Bulk operations functional
+            ## Acceptance Criteria
+            - [ ] Device inventory list with all statuses
+            - [ ] Lock/unlock controls with confirmation and reason
+            - [ ] Handover tracking with status updates
+            - [ ] Distributor assignment interface
+            - [ ] Device status history timeline
+            - [ ] Bulk operations functional
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 26 | Device components, controls |
-| Integration Tests | 13 | Lock/unlock, handovers |
-| E2E Tests | 6 | Lock flow, bulk operations |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 26 | Device components, controls |
+            | Integration Tests | 13 | Lock/unlock, handovers |
+            | E2E Tests | 6 | Lock flow, bulk operations |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/devices/\`
-**Pages:** Inventory, Detail, Handovers, Lock/Unlock
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/devices/\`
+            **Pages:** Inventory, Detail, Handovers, Lock/Unlock
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T007 Issue
@@ -406,47 +406,47 @@ Build device inventory management with lock/unlock controls, handover tracking, 
               title: 'P3-T007: KYC Review Queue',
               labels: ['phase-3', 'priority: high', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010
 
-## Description
-Build KYC review queue with document viewer, side-by-side comparison, approve/reject workflow, and SLA tracking.
+            ## Description
+            Build KYC review queue with document viewer, side-by-side comparison, approve/reject workflow, and SLA tracking.
 
-## Tasks
-- [ ] Create KYC queue page sorted by submission date
-- [ ] Build document viewer component (zoom, rotate)
-- [ ] Create side-by-side comparison (ID photo vs selfie)
-- [ ] Implement approve/reject workflow with reason selection
-- [ ] Add review history per submission
-- [ ] Create SLA indicators (time in queue, overdue)
-- [ ] Build escalation interface for edge cases
-- [ ] Implement keyboard shortcuts for quick review
-- [ ] Add reviewer assignment functionality
-- [ ] Create rejection reason templates
+            ## Tasks
+            - [ ] Create KYC queue page sorted by submission date
+            - [ ] Build document viewer component (zoom, rotate)
+            - [ ] Create side-by-side comparison (ID photo vs selfie)
+            - [ ] Implement approve/reject workflow with reason selection
+            - [ ] Add review history per submission
+            - [ ] Create SLA indicators (time in queue, overdue)
+            - [ ] Build escalation interface for edge cases
+            - [ ] Implement keyboard shortcuts for quick review
+            - [ ] Add reviewer assignment functionality
+            - [ ] Create rejection reason templates
 
-## Acceptance Criteria
-- [ ] KYC queue with priority sorting
-- [ ] Document viewer with zoom/rotate
-- [ ] Side-by-side comparison functional
-- [ ] Approve/reject with reason selection
-- [ ] Review history visible
-- [ ] SLA tracking and alerts (>24h warning)
+            ## Acceptance Criteria
+            - [ ] KYC queue with priority sorting
+            - [ ] Document viewer with zoom/rotate
+            - [ ] Side-by-side comparison functional
+            - [ ] Approve/reject with reason selection
+            - [ ] Review history visible
+            - [ ] SLA tracking and alerts (>24h warning)
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 20 | Document viewer, queue |
-| Integration Tests | 10 | Review workflow |
-| E2E Tests | 5 | Full review flow |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 20 | Document viewer, queue |
+            | Integration Tests | 10 | Review workflow |
+            | E2E Tests | 5 | Full review flow |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/kyc/\`
-**Components:** DocumentViewer, ComparisonView, ReviewForm
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/kyc/\`
+            **Components:** DocumentViewer, ComparisonView, ReviewForm
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T008 Issue
@@ -459,49 +459,49 @@ Build KYC review queue with document viewer, side-by-side comparison, approve/re
               title: 'P3-T008: Reports & Analytics',
               labels: ['phase-3', 'priority: medium', 'admin-dashboard', 'frontend', 'analytics', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010, P3-T023, P3-T024, P3-T028
+            **Priority:** 🟢 Medium | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010, P3-T023, P3-T024, P3-T028
 
-## Description
-Build reports dashboard with multiple report types, chart visualizations, date range selection, and export functionality.
+            ## Description
+            Build reports dashboard with multiple report types, chart visualizations, date range selection, and export functionality.
 
-## Tasks
-- [ ] Create reports dashboard page
-- [ ] Build Portfolio Report (loan summary, risk distribution)
-- [ ] Build Collection Report (payment rates, overdue analysis)
-- [ ] Build Disbursement Report (daily/monthly disbursements)
-- [ ] Build KYC Report (approval rates, processing times)
-- [ ] Build Device Report (inventory, lock/unlock activity)
-- [ ] Build Default Report (rates by tier, geography)
-- [ ] Implement date range selection for all reports
-- [ ] Add chart visualizations (bar, line, pie)
-- [ ] Create export to PDF functionality
-- [ ] Create export to CSV/Excel functionality
-- [ ] Implement scheduled report emails (configuration)
+            ## Tasks
+            - [ ] Create reports dashboard page
+            - [ ] Build Portfolio Report (loan summary, risk distribution)
+            - [ ] Build Collection Report (payment rates, overdue analysis)
+            - [ ] Build Disbursement Report (daily/monthly disbursements)
+            - [ ] Build KYC Report (approval rates, processing times)
+            - [ ] Build Device Report (inventory, lock/unlock activity)
+            - [ ] Build Default Report (rates by tier, geography)
+            - [ ] Implement date range selection for all reports
+            - [ ] Add chart visualizations (bar, line, pie)
+            - [ ] Create export to PDF functionality
+            - [ ] Create export to CSV/Excel functionality
+            - [ ] Implement scheduled report emails (configuration)
 
-## Acceptance Criteria
-- [ ] Reports dashboard with 6+ report types
-- [ ] Date range selection for all reports
-- [ ] Chart visualizations (bar, line, pie)
-- [ ] Export to PDF functional
-- [ ] Export to CSV/Excel functional
-- [ ] Scheduled report configuration
+            ## Acceptance Criteria
+            - [ ] Reports dashboard with 6+ report types
+            - [ ] Date range selection for all reports
+            - [ ] Chart visualizations (bar, line, pie)
+            - [ ] Export to PDF functional
+            - [ ] Export to CSV/Excel functional
+            - [ ] Scheduled report configuration
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 22 | Charts, report components |
-| Integration Tests | 11 | Data aggregation |
-| E2E Tests | 4 | Report generation, export |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 22 | Charts, report components |
+            | Integration Tests | 11 | Data aggregation |
+            | E2E Tests | 4 | Report generation, export |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/reports/\`
-**Reports:** Portfolio, Collection, Disbursement, KYC, Device, Default
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/reports/\`
+            **Reports:** Portfolio, Collection, Disbursement, KYC, Device, Default
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T009 Issue
@@ -514,47 +514,47 @@ Build reports dashboard with multiple report types, chart visualizations, date r
               title: 'P3-T009: Settings & Configuration',
               labels: ['phase-3', 'priority: medium', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P3-T002
-**Blocks:** P3-T010
+            **Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P3-T002
+            **Blocks:** P3-T010
 
-## Description
-Build system settings page with user management, role/permission management, notification templates, and system configuration.
+            ## Description
+            Build system settings page with user management, role/permission management, notification templates, and system configuration.
 
-## Tasks
-- [ ] Create settings page with tabs/sections
-- [ ] Build user management interface (CRUD admins)
-- [ ] Create role management (Admin, Manager, Reviewer, Finance)
-- [ ] Build permission matrix editor
-- [ ] Create notification template editor (WhatsApp, SMS)
-- [ ] Build system configuration editor (loan limits, rates)
-- [ ] Create audit log viewer with filters
-- [ ] Implement password change functionality
-- [ ] Add two-factor authentication setup
-- [ ] Create API key management
+            ## Tasks
+            - [ ] Create settings page with tabs/sections
+            - [ ] Build user management interface (CRUD admins)
+            - [ ] Create role management (Admin, Manager, Reviewer, Finance)
+            - [ ] Build permission matrix editor
+            - [ ] Create notification template editor (WhatsApp, SMS)
+            - [ ] Build system configuration editor (loan limits, rates)
+            - [ ] Create audit log viewer with filters
+            - [ ] Implement password change functionality
+            - [ ] Add two-factor authentication setup
+            - [ ] Create API key management
 
-## Acceptance Criteria
-- [ ] User management interface (add, edit, deactivate)
-- [ ] Role creation and assignment
-- [ ] Permission management (granular)
-- [ ] Notification template editor with preview
-- [ ] System config editor with validation
-- [ ] Audit log with filters (user, action, date)
+            ## Acceptance Criteria
+            - [ ] User management interface (add, edit, deactivate)
+            - [ ] Role creation and assignment
+            - [ ] Permission management (granular)
+            - [ ] Notification template editor with preview
+            - [ ] System config editor with validation
+            - [ ] Audit log with filters (user, action, date)
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 18 | Forms, permission logic |
-| Integration Tests | 9 | User CRUD, roles |
-| E2E Tests | 4 | Settings update flow |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 18 | Forms, permission logic |
+            | Integration Tests | 9 | User CRUD, roles |
+            | E2E Tests | 4 | Settings update flow |
 
-## Technical Details
-**Directory:** \`frontend/admin-portal/app/(dashboard)/settings/\`
-**Sections:** Users, Roles, Templates, Config, Audit
+            ## Technical Details
+            **Directory:** \`frontend/admin-portal/app/(dashboard)/settings/\`
+            **Sections:** Users, Roles, Templates, Config, Audit
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T010 Issue
@@ -567,49 +567,49 @@ Build system settings page with user management, role/permission management, not
               title: 'P3-T010: Admin Dashboard Testing & Optimization',
               labels: ['phase-3', 'priority: high', 'admin-dashboard', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P3-T001 through P3-T009
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P3-T001 through P3-T009
 
-## Description
-Write comprehensive tests for all admin dashboard components, implement E2E tests for critical flows, and optimize performance.
+            ## Description
+            Write comprehensive tests for all admin dashboard components, implement E2E tests for critical flows, and optimize performance.
 
-## Tasks
-- [ ] Write unit tests for all components (80%+ coverage)
-- [ ] Create integration tests for all pages
-- [ ] Implement E2E tests for critical flows
-- [ ] Run Lighthouse audit and fix issues
-- [ ] Optimize bundle size (<500KB)
-- [ ] Implement code splitting for routes
-- [ ] Add image optimization
-- [ ] Verify WCAG 2.1 AA accessibility compliance
-- [ ] Performance test with large datasets
-- [ ] Create test fixtures and mock data
+            ## Tasks
+            - [ ] Write unit tests for all components (80%+ coverage)
+            - [ ] Create integration tests for all pages
+            - [ ] Implement E2E tests for critical flows
+            - [ ] Run Lighthouse audit and fix issues
+            - [ ] Optimize bundle size (<500KB)
+            - [ ] Implement code splitting for routes
+            - [ ] Add image optimization
+            - [ ] Verify WCAG 2.1 AA accessibility compliance
+            - [ ] Performance test with large datasets
+            - [ ] Create test fixtures and mock data
 
-## Critical E2E Flows
-1. Login and navigate to dashboard
-2. Approve a loan application
-3. Complete KYC review (approve/reject)
-4. Lock a device with reason
-5. Generate and export a report
+            ## Critical E2E Flows
+            1. Login and navigate to dashboard
+            2. Approve a loan application
+            3. Complete KYC review (approve/reject)
+            4. Lock a device with reason
+            5. Generate and export a report
 
-## Acceptance Criteria
-- [ ] 80%+ unit test coverage
-- [ ] Integration tests for all pages
-- [ ] E2E tests for 5 critical flows
-- [ ] Lighthouse performance score 90+
-- [ ] WCAG 2.1 AA compliance
-- [ ] Bundle size < 500KB
+            ## Acceptance Criteria
+            - [ ] 80%+ unit test coverage
+            - [ ] Integration tests for all pages
+            - [ ] E2E tests for 5 critical flows
+            - [ ] Lighthouse performance score 90+
+            - [ ] WCAG 2.1 AA compliance
+            - [ ] Bundle size < 500KB
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 50 | Coverage completion |
-| Integration Tests | 25 | Page-level tests |
-| E2E Tests | 10 | Critical flows |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 50 | Coverage completion |
+            | Integration Tests | 25 | Page-level tests |
+            | E2E Tests | 10 | Critical flows |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-TDD-SUBTASKS.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-TDD-SUBTASKS.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -626,47 +626,47 @@ Write comprehensive tests for all admin dashboard components, implement E2E test
               title: 'P3-T011: Distributor Portal Setup',
               labels: ['phase-3', 'priority: high', 'distributor-portal', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** None
-**Blocks:** P3-T012, P3-T013
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** None
+            **Blocks:** P3-T012, P3-T013
 
-## Description
-Initialize separate Next.js 14 project for distributors with mobile-first responsive design, distributor authentication, and PWA capability.
+            ## Description
+            Initialize separate Next.js 14 project for distributors with mobile-first responsive design, distributor authentication, and PWA capability.
 
-## Tasks
-- [ ] Initialize Next.js 14 project (separate from admin)
-- [ ] Configure mobile-first Tailwind CSS
-- [ ] Install shadcn/ui with mobile-optimized variants
-- [ ] Implement distributor authentication (separate user type)
-- [ ] Create mobile bottom navigation component
-- [ ] Create dashboard layout for mobile
-- [ ] Add PWA manifest and service worker
-- [ ] Implement offline support foundation
-- [ ] Create SwipeCard component for mobile interactions
-- [ ] Set up camera capture utility
+            ## Tasks
+            - [ ] Initialize Next.js 14 project (separate from admin)
+            - [ ] Configure mobile-first Tailwind CSS
+            - [ ] Install shadcn/ui with mobile-optimized variants
+            - [ ] Implement distributor authentication (separate user type)
+            - [ ] Create mobile bottom navigation component
+            - [ ] Create dashboard layout for mobile
+            - [ ] Add PWA manifest and service worker
+            - [ ] Implement offline support foundation
+            - [ ] Create SwipeCard component for mobile interactions
+            - [ ] Set up camera capture utility
 
-## Acceptance Criteria
-- [ ] Mobile-first responsive design
-- [ ] Distributor login flow working
-- [ ] Bottom navigation for mobile
-- [ ] PWA installable on mobile devices
-- [ ] Offline support for key screens
-- [ ] Touch-friendly UI elements
+            ## Acceptance Criteria
+            - [ ] Mobile-first responsive design
+            - [ ] Distributor login flow working
+            - [ ] Bottom navigation for mobile
+            - [ ] PWA installable on mobile devices
+            - [ ] Offline support for key screens
+            - [ ] Touch-friendly UI elements
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 15 | Mobile components |
-| Integration Tests | 8 | Auth, navigation |
-| E2E Tests | 4 | Login, PWA install |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 15 | Mobile components |
+            | Integration Tests | 8 | Auth, navigation |
+            | E2E Tests | 4 | Login, PWA install |
 
-## Technical Details
-**Directory:** \`frontend/distributor-dashboard/\`
-**Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, PWA
+            ## Technical Details
+            **Directory:** \`frontend/distributor-dashboard/\`
+            **Tech Stack:** Next.js 14, TypeScript, Tailwind CSS, PWA
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T012 Issue
@@ -679,57 +679,57 @@ Initialize separate Next.js 14 project for distributors with mobile-first respon
               title: 'P3-T012: Device Handover Interface',
               labels: ['phase-3', 'priority: critical', 'distributor-portal', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🔴 Critical | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T011
+            **Priority:** 🔴 Critical | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T011
 
-## Description
-Build 7-step device handover workflow with camera integration for ID/device photos, IMEI scanner, condition checklist, and signature capture.
+            ## Description
+            Build 7-step device handover workflow with camera integration for ID/device photos, IMEI scanner, condition checklist, and signature capture.
 
-## Tasks
-- [ ] Create multi-step wizard component
-- [ ] Build Step 1: Customer Search (by phone/ID)
-- [ ] Build Step 2: ID Capture (camera integration)
-- [ ] Build Step 3: Device Selection (from assigned inventory)
-- [ ] Build Step 4: IMEI Scanner (camera barcode reading)
-- [ ] Build Step 5: Device Photo Capture (4 angles)
-- [ ] Build Step 6: Condition Checklist (screen, body, buttons)
-- [ ] Build Step 7: Signature Capture (touch canvas)
-- [ ] Implement photo upload to Supabase Storage
-- [ ] Create offline queue with sync
-- [ ] Add handover confirmation screen
-- [ ] Implement handover receipt generation
+            ## Tasks
+            - [ ] Create multi-step wizard component
+            - [ ] Build Step 1: Customer Search (by phone/ID)
+            - [ ] Build Step 2: ID Capture (camera integration)
+            - [ ] Build Step 3: Device Selection (from assigned inventory)
+            - [ ] Build Step 4: IMEI Scanner (camera barcode reading)
+            - [ ] Build Step 5: Device Photo Capture (4 angles)
+            - [ ] Build Step 6: Condition Checklist (screen, body, buttons)
+            - [ ] Build Step 7: Signature Capture (touch canvas)
+            - [ ] Implement photo upload to Supabase Storage
+            - [ ] Create offline queue with sync
+            - [ ] Add handover confirmation screen
+            - [ ] Implement handover receipt generation
 
-## 7-Step Handover Flow
-1. Select Customer - Search by phone/ID
-2. Verify ID - Capture ID document
-3. Select Device - Choose from inventory
-4. Scan IMEI - Barcode scanner
-5. Device Photos - 4 angles
-6. Condition Check - Checklist
-7. Signature - Digital signature
+            ## 7-Step Handover Flow
+            1. Select Customer - Search by phone/ID
+            2. Verify ID - Capture ID document
+            3. Select Device - Choose from inventory
+            4. Scan IMEI - Barcode scanner
+            5. Device Photos - 4 angles
+            6. Condition Check - Checklist
+            7. Signature - Digital signature
 
-## Acceptance Criteria
-- [ ] 7-step wizard workflow complete
-- [ ] Camera capture for ID/photos working
-- [ ] IMEI scanner (barcode) functional
-- [ ] Condition checklist with all items
-- [ ] Signature capture working
-- [ ] Offline queue with background sync
+            ## Acceptance Criteria
+            - [ ] 7-step wizard workflow complete
+            - [ ] Camera capture for ID/photos working
+            - [ ] IMEI scanner (barcode) functional
+            - [ ] Condition checklist with all items
+            - [ ] Signature capture working
+            - [ ] Offline queue with background sync
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 22 | Step components, camera |
-| Integration Tests | 12 | Full flow, offline |
-| E2E Tests | 6 | Complete handover |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 22 | Step components, camera |
+            | Integration Tests | 12 | Full flow, offline |
+            | E2E Tests | 6 | Complete handover |
 
-## Technical Details
-**Directory:** \`frontend/distributor-dashboard/app/(dashboard)/handover/\`
-**Components:** Wizard, CameraCapture, SignatureCanvas, OfflineQueue
+            ## Technical Details
+            **Directory:** \`frontend/distributor-dashboard/app/(dashboard)/handover/\`
+            **Components:** Wizard, CameraCapture, SignatureCanvas, OfflineQueue
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T013 Issue
@@ -742,45 +742,45 @@ Build 7-step device handover workflow with camera integration for ID/device phot
               title: 'P3-T013: Inventory & Commission Tracking',
               labels: ['phase-3', 'priority: high', 'distributor-portal', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P3-T011
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P3-T011
 
-## Description
-Build assigned device inventory view, handover history, commission dashboard, and performance metrics for distributors.
+            ## Description
+            Build assigned device inventory view, handover history, commission dashboard, and performance metrics for distributors.
 
-## Tasks
-- [ ] Create assigned device inventory page
-- [ ] Build device card component with status
-- [ ] Create handover history page with filters
-- [ ] Build commission dashboard with summary cards
-- [ ] Implement commission breakdown (earned, pending, paid)
-- [ ] Create performance metrics display
-- [ ] Build payout schedule page
-- [ ] Add earnings export functionality
-- [ ] Create notifications for new assignments
-- [ ] Implement device return request
+            ## Tasks
+            - [ ] Create assigned device inventory page
+            - [ ] Build device card component with status
+            - [ ] Create handover history page with filters
+            - [ ] Build commission dashboard with summary cards
+            - [ ] Implement commission breakdown (earned, pending, paid)
+            - [ ] Create performance metrics display
+            - [ ] Build payout schedule page
+            - [ ] Add earnings export functionality
+            - [ ] Create notifications for new assignments
+            - [ ] Implement device return request
 
-## Acceptance Criteria
-- [ ] Device inventory view with status
-- [ ] Handover history with details
-- [ ] Commission dashboard with breakdown
-- [ ] Performance metrics (handovers/day, completion rate)
-- [ ] Payout schedule visible
+            ## Acceptance Criteria
+            - [ ] Device inventory view with status
+            - [ ] Handover history with details
+            - [ ] Commission dashboard with breakdown
+            - [ ] Performance metrics (handovers/day, completion rate)
+            - [ ] Payout schedule visible
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 16 | Dashboard, cards |
-| Integration Tests | 8 | Data fetching |
-| E2E Tests | 3 | Commission view |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 16 | Dashboard, cards |
+            | Integration Tests | 8 | Data fetching |
+            | E2E Tests | 3 | Commission view |
 
-## Technical Details
-**Directory:** \`frontend/distributor-dashboard/app/(dashboard)/\`
-**Pages:** Inventory, Earnings, History
+            ## Technical Details
+            **Directory:** \`frontend/distributor-dashboard/app/(dashboard)/\`
+            **Pages:** Inventory, Earnings, History
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -797,50 +797,50 @@ Build assigned device inventory view, handover history, commission dashboard, an
               title: 'P3-T014: Payment Reminders & Smart Notifications',
               labels: ['phase-3', 'priority: high', 'whatsapp-features', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 8 hours | **Phase:** Phase 3
-**Depends On:** P2-T006 (WhatsApp Service), P2-T007 (Notification Service)
+            **Priority:** 🟡 High | **Estimate:** 8 hours | **Phase:** Phase 3
+            **Depends On:** P2-T006 (WhatsApp Service), P2-T007 (Notification Service)
 
-## Description
-Build automated payment reminder system with smart scheduling, escalation flow, and payment link generation.
+            ## Description
+            Build automated payment reminder system with smart scheduling, escalation flow, and payment link generation.
 
-## Tasks
-- [ ] Create reminder scheduler service
-- [ ] Implement reminder templates (friendly, urgent, final)
-- [ ] Build smart scheduling based on payment history
-- [ ] Create escalation flow logic
-- [ ] Implement payment link generation (deep links)
-- [ ] Add opt-out handling
-- [ ] Create reminder status tracking
-- [ ] Build admin override for reminders
-- [ ] Implement reminder analytics
+            ## Tasks
+            - [ ] Create reminder scheduler service
+            - [ ] Implement reminder templates (friendly, urgent, final)
+            - [ ] Build smart scheduling based on payment history
+            - [ ] Create escalation flow logic
+            - [ ] Implement payment link generation (deep links)
+            - [ ] Add opt-out handling
+            - [ ] Create reminder status tracking
+            - [ ] Build admin override for reminders
+            - [ ] Implement reminder analytics
 
-## Reminder Schedule
-| Timing | Type | Template |
-|--------|------|----------|
-| 3 days before | Friendly | payment_reminder_friendly |
-| 1 day before | Reminder | payment_due_tomorrow |
-| Due date | Due today | payment_due_today |
-| 1 day after | Missed | payment_missed |
-| 3 days after | Urgent | payment_urgent |
-| 7 days after | Final | payment_final_warning |
+            ## Reminder Schedule
+            | Timing | Type | Template |
+            |--------|------|----------|
+            | 3 days before | Friendly | payment_reminder_friendly |
+            | 1 day before | Reminder | payment_due_tomorrow |
+            | Due date | Due today | payment_due_today |
+            | 1 day after | Missed | payment_missed |
+            | 3 days after | Urgent | payment_urgent |
+            | 7 days after | Final | payment_final_warning |
 
-## Acceptance Criteria
-- [ ] Automated reminders sent on schedule
-- [ ] Smart scheduling adjusts based on history
-- [ ] Escalation flow working (friendly → urgent → final)
-- [ ] Payment links included in messages
-- [ ] Opt-out respected
+            ## Acceptance Criteria
+            - [ ] Automated reminders sent on schedule
+            - [ ] Smart scheduling adjusts based on history
+            - [ ] Escalation flow working (friendly → urgent → final)
+            - [ ] Payment links included in messages
+            - [ ] Opt-out respected
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 12 | Scheduler, templates |
-| Integration Tests | 6 | End-to-end flow |
-| E2E Tests | 2 | Reminder delivery |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 12 | Scheduler, templates |
+            | Integration Tests | 6 | End-to-end flow |
+            | E2E Tests | 2 | Reminder delivery |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T015 Issue
@@ -853,51 +853,51 @@ Build automated payment reminder system with smart scheduling, escalation flow, 
               title: 'P3-T015: Loan Management Commands',
               labels: ['phase-3', 'priority: medium', 'whatsapp-features', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 8 hours | **Phase:** Phase 3
-**Depends On:** P2-T006 (WhatsApp Service)
+            **Priority:** 🟢 Medium | **Estimate:** 8 hours | **Phase:** Phase 3
+            **Depends On:** P2-T006 (WhatsApp Service)
 
-## Description
-Implement WhatsApp commands for customers to check balance, view history, request extensions, and manage their account.
+            ## Description
+            Implement WhatsApp commands for customers to check balance, view history, request extensions, and manage their account.
 
-## Tasks
-- [ ] Implement BALANCE command (loan balance, next payment)
-- [ ] Implement HISTORY command (last 5 payments)
-- [ ] Implement SCHEDULE command (full payment schedule)
-- [ ] Implement HELP command (list available commands)
-- [ ] Implement UPDATE command (update phone/email)
-- [ ] Implement DEVICE command (view device lock status)
-- [ ] Create command parser with fuzzy matching
-- [ ] Build response formatters for each command
-- [ ] Add rate limiting for commands
-- [ ] Implement error handling and user feedback
+            ## Tasks
+            - [ ] Implement BALANCE command (loan balance, next payment)
+            - [ ] Implement HISTORY command (last 5 payments)
+            - [ ] Implement SCHEDULE command (full payment schedule)
+            - [ ] Implement HELP command (list available commands)
+            - [ ] Implement UPDATE command (update phone/email)
+            - [ ] Implement DEVICE command (view device lock status)
+            - [ ] Create command parser with fuzzy matching
+            - [ ] Build response formatters for each command
+            - [ ] Add rate limiting for commands
+            - [ ] Implement error handling and user feedback
 
-## Commands
-| Command | Description |
-|---------|-------------|
-| BALANCE | View loan balance and next payment |
-| HISTORY | View last 5 payments |
-| SCHEDULE | View full payment schedule |
-| HELP | List available commands |
-| UPDATE | Update phone/email |
-| DEVICE | View device lock status |
+            ## Commands
+            | Command | Description |
+            |---------|-------------|
+            | BALANCE | View loan balance and next payment |
+            | HISTORY | View last 5 payments |
+            | SCHEDULE | View full payment schedule |
+            | HELP | List available commands |
+            | UPDATE | Update phone/email |
+            | DEVICE | View device lock status |
 
-## Acceptance Criteria
-- [ ] All 6 commands working
-- [ ] Clear, formatted responses
-- [ ] Fuzzy matching for typos
-- [ ] Rate limiting prevents abuse
-- [ ] Error messages are helpful
+            ## Acceptance Criteria
+            - [ ] All 6 commands working
+            - [ ] Clear, formatted responses
+            - [ ] Fuzzy matching for typos
+            - [ ] Rate limiting prevents abuse
+            - [ ] Error messages are helpful
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 10 | Command parser, formatters |
-| Integration Tests | 5 | Command flow |
-| E2E Tests | 2 | Command responses |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 10 | Command parser, formatters |
+            | Integration Tests | 5 | Command flow |
+            | E2E Tests | 2 | Command responses |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T016 Issue
@@ -910,45 +910,45 @@ Implement WhatsApp commands for customers to check balance, view history, reques
               title: 'P3-T016: Multi-Language Support',
               labels: ['phase-3', 'priority: low', 'whatsapp-features', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Low | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P2-T006 (WhatsApp Service)
+            **Priority:** 🟢 Low | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P2-T006 (WhatsApp Service)
 
-## Description
-Add multi-language support for WhatsApp messages with language selection flow and templates in Shona and Ndebele.
+            ## Description
+            Add multi-language support for WhatsApp messages with language selection flow and templates in Shona and Ndebele.
 
-## Tasks
-- [ ] Create language selection flow (first interaction)
-- [ ] Build language preference storage
-- [ ] Translate all templates to Shona
-- [ ] Translate all templates to Ndebele
-- [ ] Implement language detection (optional)
-- [ ] Create language switch command (LANGUAGE)
-- [ ] Build localized error messages
-- [ ] Add language preference to customer profile
-- [ ] Test all flows in all languages
+            ## Tasks
+            - [ ] Create language selection flow (first interaction)
+            - [ ] Build language preference storage
+            - [ ] Translate all templates to Shona
+            - [ ] Translate all templates to Ndebele
+            - [ ] Implement language detection (optional)
+            - [ ] Create language switch command (LANGUAGE)
+            - [ ] Build localized error messages
+            - [ ] Add language preference to customer profile
+            - [ ] Test all flows in all languages
 
-## Languages
-1. English (default)
-2. Shona
-3. Ndebele
+            ## Languages
+            1. English (default)
+            2. Shona
+            3. Ndebele
 
-## Acceptance Criteria
-- [ ] Language selection on first contact
-- [ ] All templates available in 3 languages
-- [ ] Language preference persisted
-- [ ] LANGUAGE command to switch
-- [ ] Localized error messages
+            ## Acceptance Criteria
+            - [ ] Language selection on first contact
+            - [ ] All templates available in 3 languages
+            - [ ] Language preference persisted
+            - [ ] LANGUAGE command to switch
+            - [ ] Localized error messages
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 8 | Translation, selection |
-| Integration Tests | 4 | Language flow |
-| E2E Tests | 2 | Multi-language journey |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 8 | Translation, selection |
+            | Integration Tests | 4 | Language flow |
+            | E2E Tests | 2 | Multi-language journey |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -965,47 +965,47 @@ Add multi-language support for WhatsApp messages with language selection flow an
               title: 'P3-T017: ML Model Training Pipeline',
               labels: ['phase-3', 'priority: medium', 'credit-scoring', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 20 hours | **Phase:** Phase 3
-**Depends On:** P2-T004 (Scoring Service)
+            **Priority:** 🟢 Medium | **Estimate:** 20 hours | **Phase:** Phase 3
+            **Depends On:** P2-T004 (Scoring Service)
 
-## Description
-Build Python ML training pipeline for credit scoring model with feature engineering, evaluation metrics, and continuous learning.
+            ## Description
+            Build Python ML training pipeline for credit scoring model with feature engineering, evaluation metrics, and continuous learning.
 
-## Tasks
-- [ ] Set up Python ML environment (scikit-learn, XGBoost)
-- [ ] Create feature engineering pipeline
-- [ ] Implement data preprocessing and cleaning
-- [ ] Build model training script
-- [ ] Create model evaluation metrics (AUC, precision, recall)
-- [ ] Set up MLflow for experiment tracking
-- [ ] Implement A/B testing framework
-- [ ] Create model versioning system
-- [ ] Build model deployment pipeline (AWS SageMaker)
-- [ ] Implement continuous learning with feedback loop
+            ## Tasks
+            - [ ] Set up Python ML environment (scikit-learn, XGBoost)
+            - [ ] Create feature engineering pipeline
+            - [ ] Implement data preprocessing and cleaning
+            - [ ] Build model training script
+            - [ ] Create model evaluation metrics (AUC, precision, recall)
+            - [ ] Set up MLflow for experiment tracking
+            - [ ] Implement A/B testing framework
+            - [ ] Create model versioning system
+            - [ ] Build model deployment pipeline (AWS SageMaker)
+            - [ ] Implement continuous learning with feedback loop
 
-## Tech Stack
-- Python 3.11
-- scikit-learn / XGBoost
-- MLflow for experiment tracking
-- AWS SageMaker for training/deployment
+            ## Tech Stack
+            - Python 3.11
+            - scikit-learn / XGBoost
+            - MLflow for experiment tracking
+            - AWS SageMaker for training/deployment
 
-## Acceptance Criteria
-- [ ] Training pipeline runs end-to-end
-- [ ] Model achieves target metrics (AUC > 0.75)
-- [ ] MLflow tracking experiments
-- [ ] A/B testing framework ready
-- [ ] Deployment to SageMaker automated
+            ## Acceptance Criteria
+            - [ ] Training pipeline runs end-to-end
+            - [ ] Model achieves target metrics (AUC > 0.75)
+            - [ ] MLflow tracking experiments
+            - [ ] A/B testing framework ready
+            - [ ] Deployment to SageMaker automated
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 15 | Feature engineering, preprocessing |
-| Integration Tests | 8 | Pipeline flow |
-| E2E Tests | 2 | Full training run |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 15 | Feature engineering, preprocessing |
+            | Integration Tests | 8 | Pipeline flow |
+            | E2E Tests | 2 | Full training run |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T018 Issue
@@ -1018,47 +1018,47 @@ Build Python ML training pipeline for credit scoring model with feature engineer
               title: 'P3-T018: Alternative Data Integration',
               labels: ['phase-3', 'priority: low', 'credit-scoring', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Low | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P2-T004 (Scoring Service)
+            **Priority:** 🟢 Low | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P2-T004 (Scoring Service)
 
-## Description
-Integrate alternative data sources for credit scoring including mobile money transactions, location data, and transaction patterns.
+            ## Description
+            Integrate alternative data sources for credit scoring including mobile money transactions, location data, and transaction patterns.
 
-## Tasks
-- [ ] Design alternative data schema
-- [ ] Implement mobile money transaction analysis
-- [ ] Create transaction pattern detection
-- [ ] Build location data integration (if available)
-- [ ] Implement feature store for ML features
-- [ ] Create data quality monitoring
-- [ ] Build data consent management
-- [ ] Implement data refresh pipeline
-- [ ] Create feature importance analysis
-- [ ] Add privacy-preserving features
+            ## Tasks
+            - [ ] Design alternative data schema
+            - [ ] Implement mobile money transaction analysis
+            - [ ] Create transaction pattern detection
+            - [ ] Build location data integration (if available)
+            - [ ] Implement feature store for ML features
+            - [ ] Create data quality monitoring
+            - [ ] Build data consent management
+            - [ ] Implement data refresh pipeline
+            - [ ] Create feature importance analysis
+            - [ ] Add privacy-preserving features
 
-## Alternative Data Sources
-1. Mobile money transaction history (EcoCash, OneMoney)
-2. Transaction patterns (frequency, amounts, timing)
-3. Phone usage patterns (if permitted)
-4. Location stability (residence history)
+            ## Alternative Data Sources
+            1. Mobile money transaction history (EcoCash, OneMoney)
+            2. Transaction patterns (frequency, amounts, timing)
+            3. Phone usage patterns (if permitted)
+            4. Location stability (residence history)
 
-## Acceptance Criteria
-- [ ] Mobile money data integration working
-- [ ] Transaction pattern features computed
-- [ ] Feature store populated
-- [ ] Data quality monitoring active
-- [ ] Privacy compliance verified
+            ## Acceptance Criteria
+            - [ ] Mobile money data integration working
+            - [ ] Transaction pattern features computed
+            - [ ] Feature store populated
+            - [ ] Data quality monitoring active
+            - [ ] Privacy compliance verified
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 12 | Data processing, features |
-| Integration Tests | 6 | Data pipeline |
-| E2E Tests | 2 | Full data flow |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 12 | Data processing, features |
+            | Integration Tests | 6 | Data pipeline |
+            | E2E Tests | 2 | Full data flow |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -1075,41 +1075,41 @@ Integrate alternative data sources for credit scoring including mobile money tra
               title: 'P3-T019: Payment Plans & Restructuring',
               labels: ['phase-3', 'priority: medium', 'payments', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P2-T003 (Payment Service)
+            **Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P2-T003 (Payment Service)
 
-## Description
-Implement payment plan restructuring for customers in difficulty, including extension requests and modified payment schedules.
+            ## Description
+            Implement payment plan restructuring for customers in difficulty, including extension requests and modified payment schedules.
 
-## Tasks
-- [ ] Create payment plan modification interface
-- [ ] Implement extension request workflow
-- [ ] Build restructuring calculator
-- [ ] Create approval workflow for restructuring
-- [ ] Implement partial payment handling
-- [ ] Build payment plan history
-- [ ] Create customer communication for changes
-- [ ] Implement grace period management
-- [ ] Add restructuring limits and rules
-- [ ] Build restructuring reports
+            ## Tasks
+            - [ ] Create payment plan modification interface
+            - [ ] Implement extension request workflow
+            - [ ] Build restructuring calculator
+            - [ ] Create approval workflow for restructuring
+            - [ ] Implement partial payment handling
+            - [ ] Build payment plan history
+            - [ ] Create customer communication for changes
+            - [ ] Implement grace period management
+            - [ ] Add restructuring limits and rules
+            - [ ] Build restructuring reports
 
-## Acceptance Criteria
-- [ ] Extension requests can be submitted
-- [ ] Restructuring calculator accurate
-- [ ] Approval workflow working
-- [ ] Partial payments tracked correctly
-- [ ] Customer notified of changes
+            ## Acceptance Criteria
+            - [ ] Extension requests can be submitted
+            - [ ] Restructuring calculator accurate
+            - [ ] Approval workflow working
+            - [ ] Partial payments tracked correctly
+            - [ ] Customer notified of changes
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 10 | Calculator, rules |
-| Integration Tests | 5 | Restructuring flow |
-| E2E Tests | 2 | Full restructuring |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 10 | Calculator, rules |
+            | Integration Tests | 5 | Restructuring flow |
+            | E2E Tests | 2 | Full restructuring |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T020 Issue
@@ -1122,47 +1122,47 @@ Implement payment plan restructuring for customers in difficulty, including exte
               title: 'P3-T020: Additional Payment Methods',
               labels: ['phase-3', 'priority: low', 'payments', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Low | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P2-T003 (Payment Service)
+            **Priority:** 🟢 Low | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P2-T003 (Payment Service)
 
-## Description
-Integrate additional payment methods beyond EcoCash and OneMoney, including bank transfers and card payments.
+            ## Description
+            Integrate additional payment methods beyond EcoCash and OneMoney, including bank transfers and card payments.
 
-## Tasks
-- [ ] Research additional payment providers (Zimbabwe)
-- [ ] Integrate ZimSwitch for bank transfers
-- [ ] Implement bank payment verification
-- [ ] Add card payment option (if available)
-- [ ] Create payment method selection UI
-- [ ] Implement payment method preferences
-- [ ] Build payment method reconciliation
-- [ ] Add payment method analytics
-- [ ] Create fallback handling between methods
-- [ ] Implement payment method limits
+            ## Tasks
+            - [ ] Research additional payment providers (Zimbabwe)
+            - [ ] Integrate ZimSwitch for bank transfers
+            - [ ] Implement bank payment verification
+            - [ ] Add card payment option (if available)
+            - [ ] Create payment method selection UI
+            - [ ] Implement payment method preferences
+            - [ ] Build payment method reconciliation
+            - [ ] Add payment method analytics
+            - [ ] Create fallback handling between methods
+            - [ ] Implement payment method limits
 
-## Payment Methods
-1. EcoCash (existing)
-2. OneMoney (existing)
-3. ZimSwitch bank transfer
-4. InnBucks (if available)
-5. Card payments (future)
+            ## Payment Methods
+            1. EcoCash (existing)
+            2. OneMoney (existing)
+            3. ZimSwitch bank transfer
+            4. InnBucks (if available)
+            5. Card payments (future)
 
-## Acceptance Criteria
-- [ ] At least one new payment method integrated
-- [ ] Payment method selection working
-- [ ] Reconciliation for all methods
-- [ ] Fallback handling implemented
+            ## Acceptance Criteria
+            - [ ] At least one new payment method integrated
+            - [ ] Payment method selection working
+            - [ ] Reconciliation for all methods
+            - [ ] Fallback handling implemented
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 8 | Payment handlers |
-| Integration Tests | 5 | Provider integration |
-| E2E Tests | 2 | Payment flow |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 8 | Payment handlers |
+            | Integration Tests | 5 | Provider integration |
+            | E2E Tests | 2 | Payment flow |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -1179,41 +1179,41 @@ Integrate additional payment methods beyond EcoCash and OneMoney, including bank
               title: 'P3-T021: Device Repossession Workflow',
               labels: ['phase-3', 'priority: medium', 'device-management', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P2-T010 (Lock Service)
+            **Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P2-T010 (Lock Service)
 
-## Description
-Build device repossession workflow for defaulted loans including scheduling, agent assignment, and return tracking.
+            ## Description
+            Build device repossession workflow for defaulted loans including scheduling, agent assignment, and return tracking.
 
-## Tasks
-- [ ] Create repossession queue for defaulted devices
-- [ ] Build repossession scheduling interface
-- [ ] Implement agent assignment (field staff)
-- [ ] Create repossession attempt tracking
-- [ ] Build return receipt workflow
-- [ ] Implement device condition on return
-- [ ] Create repossession reports
-- [ ] Add repossession SLA tracking
-- [ ] Build customer communication for repossession
-- [ ] Implement legal notice generation
+            ## Tasks
+            - [ ] Create repossession queue for defaulted devices
+            - [ ] Build repossession scheduling interface
+            - [ ] Implement agent assignment (field staff)
+            - [ ] Create repossession attempt tracking
+            - [ ] Build return receipt workflow
+            - [ ] Implement device condition on return
+            - [ ] Create repossession reports
+            - [ ] Add repossession SLA tracking
+            - [ ] Build customer communication for repossession
+            - [ ] Implement legal notice generation
 
-## Acceptance Criteria
-- [ ] Repossession queue populated from defaults
-- [ ] Scheduling interface working
-- [ ] Agent assignment functional
-- [ ] Return tracking complete
-- [ ] Legal notices generated
+            ## Acceptance Criteria
+            - [ ] Repossession queue populated from defaults
+            - [ ] Scheduling interface working
+            - [ ] Agent assignment functional
+            - [ ] Return tracking complete
+            - [ ] Legal notices generated
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 10 | Queue, scheduling |
-| Integration Tests | 5 | Workflow |
-| E2E Tests | 2 | Full repossession |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 10 | Queue, scheduling |
+            | Integration Tests | 5 | Workflow |
+            | E2E Tests | 2 | Full repossession |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T022 Issue
@@ -1226,47 +1226,47 @@ Build device repossession workflow for defaulted loans including scheduling, age
               title: 'P3-T022: Device Condition Monitoring',
               labels: ['phase-3', 'priority: low', 'device-management', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Low | **Estimate:** 8 hours | **Phase:** Phase 3
-**Depends On:** P2-T010 (Lock Service)
+            **Priority:** 🟢 Low | **Estimate:** 8 hours | **Phase:** Phase 3
+            **Depends On:** P2-T010 (Lock Service)
 
-## Description
-Implement device condition monitoring through Trustonic integration for battery health, storage, and system integrity.
+            ## Description
+            Implement device condition monitoring through Trustonic integration for battery health, storage, and system integrity.
 
-## Tasks
-- [ ] Integrate Trustonic device monitoring API
-- [ ] Create device health dashboard
-- [ ] Implement battery health tracking
-- [ ] Add storage monitoring
-- [ ] Create system integrity checks
-- [ ] Build alert system for issues
-- [ ] Implement device health history
-- [ ] Create health reports
-- [ ] Add threshold configuration
-- [ ] Build admin notifications for critical issues
+            ## Tasks
+            - [ ] Integrate Trustonic device monitoring API
+            - [ ] Create device health dashboard
+            - [ ] Implement battery health tracking
+            - [ ] Add storage monitoring
+            - [ ] Create system integrity checks
+            - [ ] Build alert system for issues
+            - [ ] Implement device health history
+            - [ ] Create health reports
+            - [ ] Add threshold configuration
+            - [ ] Build admin notifications for critical issues
 
-## Monitored Metrics
-1. Battery health percentage
-2. Storage available
-3. System integrity (rooted/modified)
-4. Screen condition (if detectable)
-5. Last check-in time
+            ## Monitored Metrics
+            1. Battery health percentage
+            2. Storage available
+            3. System integrity (rooted/modified)
+            4. Screen condition (if detectable)
+            5. Last check-in time
 
-## Acceptance Criteria
-- [ ] Trustonic integration working
-- [ ] Device health visible in admin
-- [ ] Alerts for critical issues
-- [ ] Health history tracked
+            ## Acceptance Criteria
+            - [ ] Trustonic integration working
+            - [ ] Device health visible in admin
+            - [ ] Alerts for critical issues
+            - [ ] Health history tracked
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 6 | Health calculations |
-| Integration Tests | 4 | Trustonic API |
-| E2E Tests | 1 | Health check |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 6 | Health calculations |
+            | Integration Tests | 4 | Trustonic API |
+            | E2E Tests | 1 | Health check |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -1283,41 +1283,41 @@ Implement device condition monitoring through Trustonic integration for battery 
               title: 'P3-T023: Advanced Analytics Dashboard',
               labels: ['phase-3', 'priority: medium', 'analytics', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T008 (Reports & Analytics)
+            **Priority:** 🟢 Medium | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T008 (Reports & Analytics)
 
-## Description
-Build advanced analytics dashboard with cohort analysis, predictive metrics, and executive summary views.
+            ## Description
+            Build advanced analytics dashboard with cohort analysis, predictive metrics, and executive summary views.
 
-## Tasks
-- [ ] Create executive summary dashboard
-- [ ] Build cohort analysis for loan performance
-- [ ] Implement customer segmentation analytics
-- [ ] Create predictive default indicators
-- [ ] Build geographic distribution map
-- [ ] Implement trend analysis and forecasting
-- [ ] Create comparison views (period over period)
-- [ ] Build drill-down capabilities
-- [ ] Add custom dashboard builder
-- [ ] Implement real-time analytics streaming
+            ## Tasks
+            - [ ] Create executive summary dashboard
+            - [ ] Build cohort analysis for loan performance
+            - [ ] Implement customer segmentation analytics
+            - [ ] Create predictive default indicators
+            - [ ] Build geographic distribution map
+            - [ ] Implement trend analysis and forecasting
+            - [ ] Create comparison views (period over period)
+            - [ ] Build drill-down capabilities
+            - [ ] Add custom dashboard builder
+            - [ ] Implement real-time analytics streaming
 
-## Acceptance Criteria
-- [ ] Executive summary with key metrics
-- [ ] Cohort analysis functional
-- [ ] Predictive indicators displayed
-- [ ] Geographic visualization working
-- [ ] Drill-down navigation working
+            ## Acceptance Criteria
+            - [ ] Executive summary with key metrics
+            - [ ] Cohort analysis functional
+            - [ ] Predictive indicators displayed
+            - [ ] Geographic visualization working
+            - [ ] Drill-down navigation working
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 12 | Analytics components |
-| Integration Tests | 6 | Data aggregation |
-| E2E Tests | 2 | Dashboard navigation |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 12 | Analytics components |
+            | Integration Tests | 6 | Data aggregation |
+            | E2E Tests | 2 | Dashboard navigation |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T024 Issue
@@ -1330,49 +1330,49 @@ Build advanced analytics dashboard with cohort analysis, predictive metrics, and
               title: 'P3-T024: Data Export & API',
               labels: ['phase-3', 'priority: medium', 'analytics', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P3-T008 (Reports & Analytics)
+            **Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P3-T008 (Reports & Analytics)
 
-## Description
-Build data export functionality and external API for third-party integrations.
+            ## Description
+            Build data export functionality and external API for third-party integrations.
 
-## Tasks
-- [ ] Create bulk data export functionality
-- [ ] Implement scheduled exports (daily, weekly)
-- [ ] Build export format options (CSV, Excel, JSON)
-- [ ] Create external REST API for data access
-- [ ] Implement API authentication (API keys)
-- [ ] Add rate limiting for API
-- [ ] Create API documentation (OpenAPI/Swagger)
-- [ ] Build webhook system for events
-- [ ] Implement data access audit logging
-- [ ] Create API usage analytics
+            ## Tasks
+            - [ ] Create bulk data export functionality
+            - [ ] Implement scheduled exports (daily, weekly)
+            - [ ] Build export format options (CSV, Excel, JSON)
+            - [ ] Create external REST API for data access
+            - [ ] Implement API authentication (API keys)
+            - [ ] Add rate limiting for API
+            - [ ] Create API documentation (OpenAPI/Swagger)
+            - [ ] Build webhook system for events
+            - [ ] Implement data access audit logging
+            - [ ] Create API usage analytics
 
-## API Endpoints
-- GET /api/v1/loans
-- GET /api/v1/customers
-- GET /api/v1/payments
-- GET /api/v1/devices
-- GET /api/v1/reports/{type}
-- POST /api/v1/webhooks
+            ## API Endpoints
+            - GET /api/v1/loans
+            - GET /api/v1/customers
+            - GET /api/v1/payments
+            - GET /api/v1/devices
+            - GET /api/v1/reports/{type}
+            - POST /api/v1/webhooks
 
-## Acceptance Criteria
-- [ ] Bulk export working (all formats)
-- [ ] Scheduled exports functional
-- [ ] External API accessible
-- [ ] API documentation complete
-- [ ] Webhook system working
+            ## Acceptance Criteria
+            - [ ] Bulk export working (all formats)
+            - [ ] Scheduled exports functional
+            - [ ] External API accessible
+            - [ ] API documentation complete
+            - [ ] Webhook system working
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 10 | Export, API handlers |
-| Integration Tests | 6 | API flow |
-| E2E Tests | 2 | Export, API calls |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 10 | Export, API handlers |
+            | Integration Tests | 6 | API flow |
+            | E2E Tests | 2 | Export, API calls |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -1389,48 +1389,48 @@ Build data export functionality and external API for third-party integrations.
               title: 'P3-T025: Customer Support Ticketing',
               labels: ['phase-3', 'priority: high', 'operations', 'frontend', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
-**Depends On:** P3-T004 (Customer Management)
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 3
+            **Depends On:** P3-T004 (Customer Management)
 
-## Description
-Build customer support ticketing system with ticket creation, assignment, SLA tracking, and resolution workflow.
+            ## Description
+            Build customer support ticketing system with ticket creation, assignment, SLA tracking, and resolution workflow.
 
-## Tasks
-- [ ] Create ticket list page with filters
-- [ ] Build ticket creation form
-- [ ] Implement ticket assignment (to agents)
-- [ ] Create ticket detail view with history
-- [ ] Build SLA tracking (response time, resolution time)
-- [ ] Implement ticket status workflow
-- [ ] Create customer communication from tickets
-- [ ] Build ticket categories and tags
-- [ ] Implement escalation rules
-- [ ] Create support metrics dashboard
+            ## Tasks
+            - [ ] Create ticket list page with filters
+            - [ ] Build ticket creation form
+            - [ ] Implement ticket assignment (to agents)
+            - [ ] Create ticket detail view with history
+            - [ ] Build SLA tracking (response time, resolution time)
+            - [ ] Implement ticket status workflow
+            - [ ] Create customer communication from tickets
+            - [ ] Build ticket categories and tags
+            - [ ] Implement escalation rules
+            - [ ] Create support metrics dashboard
 
-## Ticket Statuses
-1. Open - New ticket
-2. In Progress - Being worked on
-3. Pending Customer - Awaiting response
-4. Resolved - Solution provided
-5. Closed - Verified resolved
+            ## Ticket Statuses
+            1. Open - New ticket
+            2. In Progress - Being worked on
+            3. Pending Customer - Awaiting response
+            4. Resolved - Solution provided
+            5. Closed - Verified resolved
 
-## Acceptance Criteria
-- [ ] Ticket creation working
-- [ ] Assignment functional
-- [ ] SLA tracking displayed
-- [ ] Status workflow complete
-- [ ] Metrics dashboard shows KPIs
+            ## Acceptance Criteria
+            - [ ] Ticket creation working
+            - [ ] Assignment functional
+            - [ ] SLA tracking displayed
+            - [ ] Status workflow complete
+            - [ ] Metrics dashboard shows KPIs
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 14 | Ticket components |
-| Integration Tests | 7 | Workflow |
-| E2E Tests | 3 | Ticket lifecycle |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 14 | Ticket components |
+            | Integration Tests | 7 | Workflow |
+            | E2E Tests | 3 | Ticket lifecycle |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T026 Issue
@@ -1443,47 +1443,47 @@ Build customer support ticketing system with ticket creation, assignment, SLA tr
               title: 'P3-T026: Referral Program',
               labels: ['phase-3', 'priority: low', 'operations', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟢 Low | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** None
+            **Priority:** 🟢 Low | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** None
 
-## Description
-Implement customer referral program with referral code generation, tracking, and reward distribution.
+            ## Description
+            Implement customer referral program with referral code generation, tracking, and reward distribution.
 
-## Tasks
-- [ ] Create referral code generation system
-- [ ] Build referral tracking (who referred whom)
-- [ ] Implement referral reward calculation
-- [ ] Create referral status workflow
-- [ ] Build referral dashboard for customers (WhatsApp)
-- [ ] Create admin referral management
-- [ ] Implement reward distribution
-- [ ] Build referral analytics
-- [ ] Add fraud detection for referrals
-- [ ] Create referral terms and conditions
+            ## Tasks
+            - [ ] Create referral code generation system
+            - [ ] Build referral tracking (who referred whom)
+            - [ ] Implement referral reward calculation
+            - [ ] Create referral status workflow
+            - [ ] Build referral dashboard for customers (WhatsApp)
+            - [ ] Create admin referral management
+            - [ ] Implement reward distribution
+            - [ ] Build referral analytics
+            - [ ] Add fraud detection for referrals
+            - [ ] Create referral terms and conditions
 
-## Referral Flow
-1. Existing customer gets referral code
-2. New customer uses code during signup
-3. New customer completes first loan
-4. Referrer receives reward (credit or cash)
+            ## Referral Flow
+            1. Existing customer gets referral code
+            2. New customer uses code during signup
+            3. New customer completes first loan
+            4. Referrer receives reward (credit or cash)
 
-## Acceptance Criteria
-- [ ] Referral codes generated
-- [ ] Tracking working
-- [ ] Rewards calculated correctly
-- [ ] Admin can manage referrals
-- [ ] Analytics available
+            ## Acceptance Criteria
+            - [ ] Referral codes generated
+            - [ ] Tracking working
+            - [ ] Rewards calculated correctly
+            - [ ] Admin can manage referrals
+            - [ ] Analytics available
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 8 | Code generation, rewards |
-| Integration Tests | 4 | Referral flow |
-| E2E Tests | 2 | Full referral cycle |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 8 | Code generation, rewards |
+            | Integration Tests | 4 | Referral flow |
+            | E2E Tests | 2 | Full referral cycle |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T027 Issue
@@ -1496,48 +1496,48 @@ Implement customer referral program with referral code generation, tracking, and
               title: 'P3-T027: Fraud Detection System',
               labels: ['phase-3', 'priority: high', 'operations', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 20 hours | **Phase:** Phase 3
-**Depends On:** P2-T004 (Scoring Service)
+            **Priority:** 🟡 High | **Estimate:** 20 hours | **Phase:** Phase 3
+            **Depends On:** P2-T004 (Scoring Service)
 
-## Description
-Build fraud detection system with rule-based detection, anomaly detection, and alert management.
+            ## Description
+            Build fraud detection system with rule-based detection, anomaly detection, and alert management.
 
-## Tasks
-- [ ] Create fraud detection rule engine
-- [ ] Implement velocity checks (multiple applications)
-- [ ] Build device fingerprinting
-- [ ] Create anomaly detection for transactions
-- [ ] Implement fraud score calculation
-- [ ] Build fraud alert queue
-- [ ] Create fraud investigation interface
-- [ ] Implement blocklist management
-- [ ] Build fraud reports and analytics
-- [ ] Create real-time fraud monitoring
+            ## Tasks
+            - [ ] Create fraud detection rule engine
+            - [ ] Implement velocity checks (multiple applications)
+            - [ ] Build device fingerprinting
+            - [ ] Create anomaly detection for transactions
+            - [ ] Implement fraud score calculation
+            - [ ] Build fraud alert queue
+            - [ ] Create fraud investigation interface
+            - [ ] Implement blocklist management
+            - [ ] Build fraud reports and analytics
+            - [ ] Create real-time fraud monitoring
 
-## Fraud Signals
-1. Multiple applications from same device
-2. Velocity of applications (too many too fast)
-3. Mismatched device/location
-4. Suspicious payment patterns
-5. Known fraudster connections
+            ## Fraud Signals
+            1. Multiple applications from same device
+            2. Velocity of applications (too many too fast)
+            3. Mismatched device/location
+            4. Suspicious payment patterns
+            5. Known fraudster connections
 
-## Acceptance Criteria
-- [ ] Rule engine working
-- [ ] Velocity checks active
-- [ ] Fraud alerts generated
-- [ ] Investigation interface usable
-- [ ] Blocklist functional
+            ## Acceptance Criteria
+            - [ ] Rule engine working
+            - [ ] Velocity checks active
+            - [ ] Fraud alerts generated
+            - [ ] Investigation interface usable
+            - [ ] Blocklist functional
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 15 | Rules, scoring |
-| Integration Tests | 8 | Detection flow |
-| E2E Tests | 3 | Full fraud detection |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 15 | Rules, scoring |
+            | Integration Tests | 8 | Detection flow |
+            | E2E Tests | 3 | Full fraud detection |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
@@ -1554,47 +1554,47 @@ Build fraud detection system with rule-based detection, anomaly detection, and a
               title: 'P3-T028: Regulatory Reporting (RBZ)',
               labels: ['phase-3', 'priority: high', 'compliance', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** P3-T008 (Reports & Analytics)
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** P3-T008 (Reports & Analytics)
 
-## Description
-Build regulatory reporting system for Reserve Bank of Zimbabwe (RBZ) compliance requirements.
+            ## Description
+            Build regulatory reporting system for Reserve Bank of Zimbabwe (RBZ) compliance requirements.
 
-## Tasks
-- [ ] Research RBZ reporting requirements
-- [ ] Create RBZ report templates
-- [ ] Implement data aggregation for reports
-- [ ] Build report scheduling (monthly/quarterly)
-- [ ] Create report approval workflow
-- [ ] Implement report export in required format
-- [ ] Build compliance calendar
-- [ ] Create audit trail for reports
-- [ ] Implement data retention policies
-- [ ] Build regulatory dashboard
+            ## Tasks
+            - [ ] Research RBZ reporting requirements
+            - [ ] Create RBZ report templates
+            - [ ] Implement data aggregation for reports
+            - [ ] Build report scheduling (monthly/quarterly)
+            - [ ] Create report approval workflow
+            - [ ] Implement report export in required format
+            - [ ] Build compliance calendar
+            - [ ] Create audit trail for reports
+            - [ ] Implement data retention policies
+            - [ ] Build regulatory dashboard
 
-## RBZ Reports (examples)
-1. Monthly lending activity report
-2. Quarterly portfolio quality report
-3. Annual compliance certification
-4. Suspicious activity reports (SARs)
+            ## RBZ Reports (examples)
+            1. Monthly lending activity report
+            2. Quarterly portfolio quality report
+            3. Annual compliance certification
+            4. Suspicious activity reports (SARs)
 
-## Acceptance Criteria
-- [ ] Report templates match RBZ requirements
-- [ ] Data aggregation accurate
-- [ ] Scheduling working
-- [ ] Export in correct format
-- [ ] Audit trail complete
+            ## Acceptance Criteria
+            - [ ] Report templates match RBZ requirements
+            - [ ] Data aggregation accurate
+            - [ ] Scheduling working
+            - [ ] Export in correct format
+            - [ ] Audit trail complete
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 10 | Report generation |
-| Integration Tests | 5 | Data aggregation |
-| E2E Tests | 2 | Full report cycle |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 10 | Report generation |
+            | Integration Tests | 5 | Data aggregation |
+            | E2E Tests | 2 | Full report cycle |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       - name: Create P3-T029 Issue
@@ -1607,48 +1607,48 @@ Build regulatory reporting system for Reserve Bank of Zimbabwe (RBZ) compliance 
               title: 'P3-T029: Data Privacy Features',
               labels: ['phase-3', 'priority: high', 'compliance', 'tdd'],
               body: `## Task Overview
-**Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
-**Depends On:** None
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 3
+            **Depends On:** None
 
-## Description
-Implement data privacy features including consent management, data access requests, and data deletion.
+            ## Description
+            Implement data privacy features including consent management, data access requests, and data deletion.
 
-## Tasks
-- [ ] Create consent management system
-- [ ] Build consent tracking (what, when, how)
-- [ ] Implement data access request workflow
-- [ ] Create personal data export functionality
-- [ ] Build data deletion (right to be forgotten)
-- [ ] Implement data anonymization
-- [ ] Create privacy policy version tracking
-- [ ] Build consent audit trail
-- [ ] Implement data retention enforcement
-- [ ] Create privacy dashboard for admins
+            ## Tasks
+            - [ ] Create consent management system
+            - [ ] Build consent tracking (what, when, how)
+            - [ ] Implement data access request workflow
+            - [ ] Create personal data export functionality
+            - [ ] Build data deletion (right to be forgotten)
+            - [ ] Implement data anonymization
+            - [ ] Create privacy policy version tracking
+            - [ ] Build consent audit trail
+            - [ ] Implement data retention enforcement
+            - [ ] Create privacy dashboard for admins
 
-## Privacy Features
-1. Consent collection and tracking
-2. Data access requests (DSAR)
-3. Data portability (export)
-4. Right to deletion
-5. Data retention policies
+            ## Privacy Features
+            1. Consent collection and tracking
+            2. Data access requests (DSAR)
+            3. Data portability (export)
+            4. Right to deletion
+            5. Data retention policies
 
-## Acceptance Criteria
-- [ ] Consent management working
-- [ ] Data access requests processed
-- [ ] Data export functional
-- [ ] Data deletion working
-- [ ] Audit trail complete
+            ## Acceptance Criteria
+            - [ ] Consent management working
+            - [ ] Data access requests processed
+            - [ ] Data export functional
+            - [ ] Data deletion working
+            - [ ] Audit trail complete
 
-## TDD Requirements
-| Type | Count | Focus |
-|------|-------|-------|
-| Unit Tests | 10 | Privacy logic |
-| Integration Tests | 5 | Request workflow |
-| E2E Tests | 2 | Privacy requests |
+            ## TDD Requirements
+            | Type | Count | Focus |
+            |------|-------|-------|
+            | Unit Tests | 10 | Privacy logic |
+            | Integration Tests | 5 | Request workflow |
+            | E2E Tests | 2 | Privacy requests |
 
-## Related Documents
-- \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
-- \`infrastructure/admin/PHASE-3-TASKS.md\``
+            ## Related Documents
+            - \`phase-3-frontend/PHASE-3-IMPLEMENTATION-PLAN.md\`
+            - \`infrastructure/admin/PHASE-3-TASKS.md\``
             });
 
       # ============================================
