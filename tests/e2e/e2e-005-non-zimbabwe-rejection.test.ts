@@ -22,7 +22,7 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
 
   describe('Step 1: WhatsApp Registration Attempt', () => {
     it('should receive message from Kenya phone number (+254)', async () => {
-      const whatsappEvent = {
+      const _whatsappEvent = {
         httpMethod: 'POST',
         path: '/whatsapp/webhook',
         body: JSON.stringify({
@@ -57,7 +57,7 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
 
   describe('Step 2: Rejection Response', () => {
     it('should send rejection message via WhatsApp', async () => {
-      const expectedMessage = {
+      const _expectedMessage = {
         from: kenyaCustomer.phone_number,
         message: expect.stringContaining('Zimbabwe'),
         type: 'rejection'

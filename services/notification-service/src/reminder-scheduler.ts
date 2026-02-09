@@ -227,7 +227,7 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
   const payments: PaymentDue[] = [];
 
   for (const loan of loans) {
-    const customer = loan.customers as any;
+    const customer = loan.customers as Record<string, unknown>;
     if (!customer?.phone_number) continue;
 
     const dueDate = new Date(loan.next_payment_date);

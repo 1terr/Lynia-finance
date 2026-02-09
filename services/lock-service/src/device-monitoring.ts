@@ -231,7 +231,7 @@ export async function getDevicesNeedingAttention(): Promise<Array<{
 
   return (data || []).map(d => ({
     device_id: d.device_id,
-    imei: (d.devices as any)?.imei || '',
+    imei: (d.devices as Record<string, unknown>)?.imei || '',
     health_score: d.health_score,
     critical_alerts: d.critical_alerts,
     last_checked: d.checked_at,

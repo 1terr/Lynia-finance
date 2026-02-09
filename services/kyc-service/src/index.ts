@@ -278,7 +278,7 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
     console.log(`KYC decision for ${customer_id}: ${decision} - ${reason}`);
 
     // Update KYC submission
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       verification_decision: decision,
       verification_reason: reason,
       verification_confidence: payload.result.confidence_value,

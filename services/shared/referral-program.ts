@@ -165,7 +165,7 @@ export async function createReferral(
     // Fallback: manual increment
     supabase
       .from('referral_codes')
-      .update({ total_referrals: (codeRecord as any).total_referrals + 1 })
+      .update({ total_referrals: (codeRecord as Record<string, unknown>).total_referrals + 1 })
       .eq('code', referralCode);
   });
 
@@ -224,7 +224,7 @@ export async function convertReferral(
     .from('referral_codes')
     .update({
       successful_referrals: successCount,
-      total_rewards_earned: (codeRecord as any)?.total_rewards_earned + totalReward,
+      total_rewards_earned: (codeRecord as Record<string, unknown>)?.total_rewards_earned + totalReward,
     })
     .eq('customer_id', referral.referrer_id);
 

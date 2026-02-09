@@ -32,7 +32,7 @@ export function isValidNationalID(id: string): boolean {
 }
 
 export function validateRequired(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   requiredFields: string[]
 ): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
