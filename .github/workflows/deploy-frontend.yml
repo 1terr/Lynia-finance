@@ -1,0 +1,185 @@
+name: Deploy Frontend to S3/CloudFront
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      application:
+        description: 'Application to deploy'
+        required: true
+        default: 'admin-portal'
+        type: choice
+        options:
+          - admin-portal
+          - distributor-dashboard
+          - both
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '20.x'
+  PNPM_VERSION: '9'
+
+jobs:
+  deploy-admin-portal:
+    name: Deploy Admin Portal
+    runs-on: ubuntu-latest
+    if: inputs.application == 'admin-portal' || inputs.application == 'both'
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.get-url.outputs.url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build admin portal
+        run: pnpm --filter admin-portal build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ inputs.environment }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync frontend/admin-portal/out/ \
+            s3://${{ inputs.environment }}-lynia-admin-portal/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.json"
+
+          # HTML files with short cache
+          aws s3 sync frontend/admin-portal/out/ \
+            s3://${{ inputs.environment }}-lynia-admin-portal/ \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "sw.js" \
+            --include "manifest.json"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalDistributionId`].OutputValue' \
+            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalUrl`].OutputValue' \
+            --output text)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Admin Portal URL: $URL"
+
+  deploy-distributor-dashboard:
+    name: Deploy Distributor Dashboard
+    runs-on: ubuntu-latest
+    if: inputs.application == 'distributor-dashboard' || inputs.application == 'both'
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.get-url.outputs.url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build distributor dashboard
+        run: pnpm --filter distributor-dashboard build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ inputs.environment }}
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          aws s3 sync frontend/distributor-dashboard/out/ \
+            s3://${{ inputs.environment }}-lynia-distributor-dashboard/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.json"
+
+          aws s3 sync frontend/distributor-dashboard/out/ \
+            s3://${{ inputs.environment }}-lynia-distributor-dashboard/ \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "sw.js" \
+            --include "manifest.json"
+
+      - name: Invalidate CloudFront cache
+        run: |
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardDistributionId`].OutputValue' \
+            --output text)
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardUrl`].OutputValue' \
+            --output text)
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Distributor Dashboard URL: $URL"
