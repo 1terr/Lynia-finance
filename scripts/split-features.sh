@@ -10,7 +10,7 @@ SHARD_INDEX_ZERO_BASED=$((${2:-1} - 1))
 SHARD_INDEX=${2:-1}  # Keep original 1-based index for output
 
 # Directory containing feature files
-FEATURES_DIR="fineract-e2e-tests-runner/src/test/resources/features"
+FEATURES_DIR="fineract/modules/fineract-e2e-tests-runner/src/test/resources/features"
 TEMP_FILE="/tmp/feature_scenarios_$(date +%s).txt"
 
 # Check if features directory exists
@@ -31,8 +31,8 @@ echo "Analyzing feature files to count scenarios..."
 > "$TEMP_FILE"
 
 while IFS= read -r -d $'\0' file; do
-  # Remove the 'fineract-e2e-tests-runner/' prefix
-  rel_path="${file#fineract-e2e-tests-runner/}"
+  # Remove the 'fineract/modules/fineract-e2e-tests-runner/' prefix
+  rel_path="${file#fineract/modules/fineract-e2e-tests-runner/}"
   scenario_count=$(count_scenarios "$file")
   echo "$scenario_count $rel_path"
 done < <(find "$FEATURES_DIR" -type f -name '*.feature' -print0) | sort -nr > "$TEMP_FILE"

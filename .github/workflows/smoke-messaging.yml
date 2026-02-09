@@ -17,10 +17,6 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: fineract
-
 jobs:
   smoke-test:
     name: Smoke Test with ${{ matrix.messaging }}
@@ -54,10 +50,10 @@ jobs:
         uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4.4.1
 
       - name: Build the image
-        run: ./gradlew --no-daemon --console=plain :fineract-provider:jibDockerBuild -Djib.to.image=$IMAGE_NAME -x test -x cucumber
+        run: ./gradlew --no-daemon --console=plain :fineract:modules:fineract-provider:jibDockerBuild -Djib.to.image=$IMAGE_NAME -x test -x cucumber
 
       - name: Start the ${{ matrix.messaging }} Stack
-        run: docker compose -f ${{ matrix.compose_file }} up --scale fineract-worker=1 -d
+        run: docker compose -f fineract/${{ matrix.compose_file }} up --scale fineract-worker=1 -d
 
       - name: Check the stack
         run: docker ps
@@ -75,4 +71,4 @@ jobs:
         run: (( $(curl -f -k --retry 5 --retry-all-errors --connect-timeout 30 --retry-delay 30 https://localhost:8444/fineract-provider/actuator/info | wc --chars) > 100 ))
 
       - name: Run Smoke Test with Remote COB
-        run: ./gradlew --no-daemon --console=plain :integration-tests:cleanTest :integration-tests:test --tests "org.apache.fineract.integrationtests.investor.externalassetowner.InitiateExternalAssetOwnerTransferTest.saleActiveLoanToExternalAssetOwnerAndBuybackADayLater" -PcargoDisabled
+        run: ./gradlew --no-daemon --console=plain :fineract:tests:integration-tests:cleanTest :fineract:tests:integration-tests:test --tests "org.apache.fineract.integrationtests.investor.externalassetowner.InitiateExternalAssetOwnerTransferTest.saleActiveLoanToExternalAssetOwnerAndBuybackADayLater" -PcargoDisabled
