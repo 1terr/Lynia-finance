@@ -294,7 +294,7 @@ Last checked: ${new Date().toLocaleDateString('en-ZW', { month: 'short', day: 'n
 Reply *BALANCE* to check your account.`;
 }
 
-async function handleUpdate(phoneNumber: string): Promise<string> {
+async function handleUpdate(_phoneNumber: string): Promise<string> {
   return `✏️ *Update Contact Details*
 
 What would you like to update?

@@ -2,9 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { createClient } from '@supabase/supabase-js';
 import { SmileIdentityService, SmileWebhookPayload } from './smile-identity-service';
 import {
-  validateImage,
-  bufferToBase64,
-  downloadWhatsAppImage,
+  validateImage as _validateImage,
+  bufferToBase64 as _bufferToBase64,
+  downloadWhatsAppImage as _downloadWhatsAppImage,
   validateZimbabweIDNumber
 } from './image-processor';
 

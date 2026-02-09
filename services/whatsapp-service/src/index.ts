@@ -269,7 +269,7 @@ async function processIncomingMessage(
     });
 
     // Find or create customer
-    const customer = await findOrCreateCustomer(phoneNumber, contactName);
+    const _customer = await findOrCreateCustomer(phoneNumber, contactName);
 
     // Create message context for onboarding flow
     const context: MessageContext = {
@@ -424,7 +424,7 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
 /**
  * Helper: Get conversation state
  */
-async function getConversation(customerId: string, phoneNumber: string): Promise<any> {
+async function _getConversation(customerId: string, phoneNumber: string): Promise<any> {
   try {
     let { data: conversation } = await supabase
       .from('whatsapp_conversations')
@@ -457,7 +457,7 @@ async function getConversation(customerId: string, phoneNumber: string): Promise
 /**
  * Helper: Update conversation state
  */
-async function updateConversationState(
+async function _updateConversationState(
   customerId: string,
   phoneNumber: string,
   state: string
@@ -479,7 +479,7 @@ async function updateConversationState(
 /**
  * Helper: Get customer's active loan
  */
-async function getCustomerLoan(customerId: string): Promise<any> {
+async function _getCustomerLoan(customerId: string): Promise<any> {
   try {
     const { data: loan } = await supabase
       .from('loans')
