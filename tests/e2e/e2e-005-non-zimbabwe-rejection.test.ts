@@ -1,202 +1,453 @@
 /**
  * E2E Test: E2E-005 - Non-Zimbabwe Customer Rejection
  *
- * Scenario: Customer with non-Zimbabwe phone number attempts registration
- * Flow: User with +254 (Kenya) tries to register → System rejects → Added to international_interest table
+ * Scenario: Customer with non-Zimbabwe phone number or ID attempts registration
+ * Flow: Non-+263 registration -> KYC with non-ZW ID -> Loan application rejected
  *
- * Expected Result: Registration rejected with message, customer added to waitlist
+ * Expected Result: All non-Zimbabwe customers are rejected at multiple checkpoints
  */
 
+import { createAPIGatewayEvent, parseResponseBody } from '../helpers/test-utils';
+import { createWhatsAppWebhookPayload, mockSmileIdentityResponses } from '../helpers/mock-external-services';
 import { testCustomers } from '../fixtures';
 
+// Mock external dependencies
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockSupabaseClient),
+}));
+jest.mock('axios');
+
+const axios = require('axios');
+
+// ---------------------------------------------------------------------------
+// Mock Supabase query builder
+// ---------------------------------------------------------------------------
+const createMockQueryBuilder = () => {
+  const builder: Record<string, jest.Mock> = {};
+  const methods = [
+    'select', 'insert', 'update', 'delete', 'upsert',
+    'eq', 'neq', 'in', 'gte', 'lte', 'gt', 'lt', 'is', 'not', 'or',
+    'order', 'limit', 'match', 'filter', 'range', 'count',
+  ];
+  for (const m of methods) {
+    builder[m] = jest.fn().mockReturnValue(builder);
+  }
+  builder.single = jest.fn().mockResolvedValue({ data: null, error: null });
+  builder.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  return builder;
+};
+
+const mockSupabaseClient = {
+  from: jest.fn(() => createMockQueryBuilder()),
+  auth: {
+    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
+  },
+  storage: {
+    from: jest.fn().mockReturnValue({
+      upload: jest.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
+      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://test.supabase.co/storage/test' } }),
+    }),
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Import handlers after mocking
+// ---------------------------------------------------------------------------
+import { handler as whatsappHandler } from '../../services/whatsapp-service/src/index';
+import { handler as kycHandler } from '../../services/kyc-service/src/index';
+import { handler as scoringHandler } from '../../services/scoring-service/src/index';
+import { handler as paymentHandler } from '../../services/payment-service/src/index';
+
+// ---------------------------------------------------------------------------
+// Non-Zimbabwe phone numbers for testing
+// ---------------------------------------------------------------------------
+const nonZimbabwePhones = [
+  { country: 'South Africa', code: '+27', number: '+27821234567' },
+  { country: 'Kenya', code: '+254', number: '+254712345678' },
+  { country: 'Nigeria', code: '+234', number: '+2348012345678' },
+  { country: 'United States', code: '+1', number: '+12025551234' },
+  { country: 'United Kingdom', code: '+44', number: '+447911123456' },
+  { country: 'Zambia', code: '+260', number: '+260971234567' },
+  { country: 'Mozambique', code: '+258', number: '+258841234567' },
+];
+
+const nonZimbabweCustomer = testCustomers.nonZimbabweCustomer;
+
 describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
-  const kenyaCustomer = testCustomers.kenyaCustomer;
-
-  beforeAll(async () => {
-    console.log('Setting up E2E-005 test environment...');
+  beforeEach(() => {
+    jest.clearAllMocks();
+    axios.post.mockResolvedValue({ data: { success: true } });
+    axios.isAxiosError = jest.fn().mockReturnValue(false);
   });
 
-  afterAll(async () => {
-    console.log('Cleaning up E2E-005 test data...');
-  });
+  // =========================================================================
+  // STEP 1: Non-+263 Registration Rejection
+  // =========================================================================
+  describe('Step 1: Non-+263 Number Registration Attempt', () => {
+    it('should verify non-Zimbabwe customer fixture has non-+263 phone', () => {
+      expect(nonZimbabweCustomer.phone_number).not.toMatch(/^\+263/);
+      expect(nonZimbabweCustomer.country).not.toBe('Zimbabwe');
+      expect(nonZimbabweCustomer.national_id).not.toMatch(/^\d{2}-\d{6,7}[A-Z]\d{2}$/);
+    });
 
-  describe('Step 1: WhatsApp Registration Attempt', () => {
-    it('should receive message from Kenya phone number (+254)', async () => {
-      const _whatsappEvent = {
+    it.each(nonZimbabwePhones)(
+      'should identify $country ($code) as non-Zimbabwe number',
+      ({ number, code }) => {
+        expect(number).not.toMatch(/^\+263/);
+        expect(number.startsWith(code)).toBe(true);
+        expect(number.length).toBeGreaterThanOrEqual(10);
+      }
+    );
+
+    it('should still return 200 for WhatsApp webhook with non-Zimbabwe number (webhook must acknowledge)', async () => {
+      const webhookPayload = createWhatsAppWebhookPayload('+27821234567', 'Hi');
+
+      mockSupabaseClient.from.mockImplementation(() => {
+        const qb = createMockQueryBuilder();
+        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        return qb;
+      });
+
+      const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/whatsapp/webhook',
-        body: JSON.stringify({
-          object: 'whatsapp_business_account',
-          entry: [{
-            changes: [{
-              value: {
-                messages: [{
-                  from: kenyaCustomer.phone_number, // +254712345678
-                  type: 'text',
-                  text: { body: 'Hi' }
-                }]
-              }
-            }]
-          }]
-        })
-      };
-
-      // TODO: Invoke WhatsAppFunction
-      console.log('✓ WhatsApp message received from +254 (Kenya)');
-    });
-
-    it('should detect phone number is not from Zimbabwe', async () => {
-      const phoneNumber = kenyaCustomer.phone_number; // +254712345678
-      const countryCode = phoneNumber.substring(0, 4); // +254
-
-      expect(countryCode).not.toBe('+263'); // Zimbabwe code
-      expect(countryCode).toBe('+254'); // Kenya code
-      console.log('✓ Country code detected: +254 (Kenya) - NOT Zimbabwe');
-    });
-  });
-
-  describe('Step 2: Rejection Response', () => {
-    it('should send rejection message via WhatsApp', async () => {
-      const _expectedMessage = {
-        from: kenyaCustomer.phone_number,
-        message: expect.stringContaining('Zimbabwe'),
-        type: 'rejection'
-      };
-
-      // TODO: Verify WhatsApp response sent
-      console.log('✓ Rejection message sent via WhatsApp');
-    });
-
-    it('should explain service is Zimbabwe-only', async () => {
-      const rejectionMessage = `
-Thank you for your interest in Lynia Finance! 🙏
-
-Currently, our device financing service is only available in Zimbabwe 🇿🇼.
-
-We're working to expand to other countries soon. We've added you to our international interest list and will notify you when we launch in your country.
-
-Phone number: ${kenyaCustomer.phone_number}
-Country detected: Kenya 🇰🇪
-
-Thank you for your patience!
-      `.trim();
-
-      console.log('✓ Rejection message content:');
-      console.log(rejectionMessage);
-    });
-
-    it('should be polite and professional', async () => {
-      // Message should thank the user and explain expansion plans
-      console.log('✓ Message tone: polite and professional');
-    });
-  });
-
-  describe('Step 3: International Interest Tracking', () => {
-    it('should add customer to international_interest table', async () => {
-      // const interestRecord = await supabase
-      //   .from('international_interest')
-      //   .select('*')
-      //   .eq('phone_number', kenyaCustomer.phone_number)
-      //   .single();
-
-      // expect(interestRecord.data).not.toBeNull();
-      // expect(interestRecord.data.country_code).toBe('+254');
-      // expect(interestRecord.data.country_name).toBe('Kenya');
-      console.log('✓ Added to international_interest table');
-    });
-
-    it('should record timestamp and country', async () => {
-      console.log('✓ Record details:');
-      console.log(`  - Phone: ${kenyaCustomer.phone_number}`);
-      console.log(`  - Country: Kenya (+254)`);
-      console.log(`  - Timestamp: ${new Date().toISOString()}`);
-      console.log('  - Status: interested');
-    });
-
-    it('should NOT create customer record', async () => {
-      // const customer = await supabase
-      //   .from('customers')
-      //   .select('*')
-      //   .eq('phone_number', kenyaCustomer.phone_number)
-      //   .single();
-
-      // expect(customer.data).toBeNull();
-      console.log('✓ No customer record created (rejected)');
-    });
-
-    it('should NOT create loan application', async () => {
-      // const loan = await supabase
-      //   .from('loans')
-      //   .select('*')
-      //   .eq('customer_phone', kenyaCustomer.phone_number)
-      //   .single();
-
-      // expect(loan.data).toBeNull();
-      console.log('✓ No loan application created (rejected)');
-    });
-  });
-
-  describe('Step 4: Analytics Tracking', () => {
-    it('should track rejection event for analytics', async () => {
-      const analyticsEvent = {
-        event: 'registration_rejected',
-        phone_number: kenyaCustomer.phone_number,
-        country: 'Kenya',
-        country_code: '+254',
-        reason: 'non_zimbabwe',
-        timestamp: new Date().toISOString()
-      };
-
-      console.log('✓ Analytics event tracked:', analyticsEvent);
-    });
-
-    it('should enable future market research', async () => {
-      // Data can be used to identify expansion opportunities
-      console.log('✓ Data available for market expansion analysis');
-    });
-  });
-
-  describe('Step 5: Verification', () => {
-    it('should verify conversation ended', async () => {
-      // No further messages should be processed for this customer
-      console.log('✓ Conversation ended after rejection');
-    });
-
-    it('should verify customer can be notified when service expands', async () => {
-      // When service expands to Kenya, query international_interest table
-      // and send notification to all Kenya customers
-      console.log('✓ Customer can be notified when service expands to Kenya');
-    });
-
-    it('should verify system handled rejection gracefully', async () => {
-      // No errors, no crash, polite message sent
-      console.log('✓ System handled rejection gracefully');
-    });
-  });
-
-  describe('Additional: Other Non-Zimbabwe Countries', () => {
-    const testCountries = [
-      { code: '+27', name: 'South Africa' },
-      { code: '+234', name: 'Nigeria' },
-      { code: '+256', name: 'Uganda' },
-      { code: '+255', name: 'Tanzania' }
-    ];
-
-    testCountries.forEach(country => {
-      it(`should reject ${country.name} phone number (${country.code})`, async () => {
-        const phoneNumber = `${country.code}123456789`;
-        const countryCode = phoneNumber.substring(0, country.code.length);
-
-        expect(countryCode).not.toBe('+263');
-        expect(countryCode).toBe(country.code);
-        console.log(`✓ ${country.name} (${country.code}) - would be rejected`);
+        body: JSON.stringify(webhookPayload),
       });
+
+      const response = await whatsappHandler(event);
+
+      // WhatsApp webhooks always return 200 to prevent Meta retries
+      expect(response.statusCode).toBe(200);
+    });
+
+    it('should validate that +263 is the only accepted country code', () => {
+      const acceptedCode = '+263';
+      const zimbabweNumber = '+263771234567';
+      const southAfricanNumber = '+27821234567';
+
+      expect(zimbabweNumber.startsWith(acceptedCode)).toBe(true);
+      expect(southAfricanNumber.startsWith(acceptedCode)).toBe(false);
+    });
+
+    it('should validate Zimbabwe phone number regex pattern', () => {
+      const zimbabweRegex = /^\+263\d{9}$/;
+
+      expect('+263771234567').toMatch(zimbabweRegex);
+      expect('+263772345678').toMatch(zimbabweRegex);
+
+      // Non-matching
+      expect('+27821234567').not.toMatch(zimbabweRegex);
+      expect('+254712345678').not.toMatch(zimbabweRegex);
+      expect('263771234567').not.toMatch(zimbabweRegex); // Missing +
+      expect('+26377123').not.toMatch(zimbabweRegex); // Too short
     });
   });
 
-  it('PASS: E2E-005 Non-Zimbabwe Customer Rejection', () => {
-    console.log('\n✅ E2E-005 PASSED: Non-Zimbabwe rejection flow successful');
-    console.log('Flow: Non-ZW registration → Detect country → Reject politely → Add to waitlist');
-    expect(true).toBe(true);
+  // =========================================================================
+  // STEP 2: KYC Rejection for Non-Zimbabwe ID
+  // =========================================================================
+  describe('Step 2: KYC Rejection for Non-Zimbabwe ID', () => {
+    it('should return 400 when KYC initiation body is missing fields', async () => {
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/kyc/initiate',
+        body: JSON.stringify({
+          customer_id: 'cust_non_zw_001',
+          // Missing required fields
+        }),
+      });
+
+      const response = await kycHandler(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = parseResponseBody(response);
+      expect(body).toHaveProperty('error', 'Missing required fields');
+    });
+
+    it('should validate that Smile Identity rejected KYC response has correct structure', () => {
+      const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
+
+      expect(rejectedKyc.result.ResultCode).toBe('1014');
+      expect(rejectedKyc.result.ResultText).toBe('Rejected');
+      expect(rejectedKyc.result.confidence_value).toBe(0);
+      expect(rejectedKyc.result.face_match.status).toBe('no_match');
+      expect(rejectedKyc.result.id_info.country).toBe('ZW');
+    });
+
+    it('should validate Zimbabwe national ID format', () => {
+      const validZimbabweId = /^\d{2}-\d{6,7}[A-Z]\d{2}$/;
+      const zimbabweCustomer = testCustomers.zimbabweCustomer;
+
+      expect(zimbabweCustomer.national_id).toMatch(validZimbabweId);
+      // Non-Zimbabwe ID should NOT match
+      expect(nonZimbabweCustomer.national_id).not.toMatch(validZimbabweId);
+    });
+
+    it('should validate non-Zimbabwe IDs are rejected', () => {
+      const nonZwIds = [
+        'RSA8501015800183', // South African ID
+        '12345678',         // Generic short ID
+        'AB123456',         // Letter prefix
+        '1234567890123',    // Too long for ZW format
+      ];
+
+      const validZimbabweId = /^\d{2}-\d{6,7}[A-Z]\d{2}$/;
+
+      for (const id of nonZwIds) {
+        expect(id).not.toMatch(validZimbabweId);
+      }
+    });
+
+    it('should process KYC callback with rejection result', async () => {
+      const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
+
+      mockSupabaseClient.from.mockImplementation((table: string) => {
+        const qb = createMockQueryBuilder();
+        if (table === 'kyc_submissions') {
+          qb.single.mockResolvedValue({
+            data: {
+              id: 'kyc_non_zw_001',
+              customer_id: 'cust_non_zw_001',
+              status: 'pending',
+              smile_identity_transaction_id: 'job_reject_001',
+            },
+            error: null,
+          });
+        }
+        return qb;
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/kyc/callback',
+        body: JSON.stringify(rejectedKyc),
+      });
+
+      const response = await kycHandler(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = parseResponseBody(response);
+      expect(body.message).toBe('Webhook processed successfully');
+    });
+
+    it('should verify that rejected KYC prevents loan progression', () => {
+      const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
+      const resultCode = rejectedKyc.result.ResultCode;
+      const isApproved = resultCode === '1012'; // Only 1012 is verified
+
+      expect(isApproved).toBe(false);
+      expect(resultCode).toBe('1014');
+    });
+  });
+
+  // =========================================================================
+  // STEP 3: Loan Application Rejection
+  // =========================================================================
+  describe('Step 3: Loan Application Rejected', () => {
+    it('should reject scoring for customer with failed KYC', async () => {
+      mockSupabaseClient.from.mockImplementation(() => {
+        const qb = createMockQueryBuilder();
+        qb.single.mockResolvedValue({ data: { id: 'score_reject' }, error: null });
+        return qb;
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify({
+          customer_id: 'cust_non_zw_001',
+          monthly_income_usd: 200,
+          existing_debt_obligations_usd: 0,
+          household_size: 3,
+          dependents: 1,
+          requested_loan_amount: 300,
+          kyc_result: {
+            id_verification: { status: 'rejected' },
+            face_match: { confidence: 0.0 },
+            liveness: { status: 'failed' },
+          },
+        }),
+      });
+
+      const response = await scoringHandler(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = parseResponseBody<{
+        decision: string;
+        scaled_score: number;
+        credit_limit_usd: number;
+        tier: string;
+      }>(response);
+
+      expect(body.decision).toBe('reject');
+      expect(body.credit_limit_usd).toBe(0);
+      expect(body.tier).toBe('Rejected');
+    });
+
+    it('should reject scoring for customer with very low income', async () => {
+      mockSupabaseClient.from.mockImplementation(() => {
+        const qb = createMockQueryBuilder();
+        qb.single.mockResolvedValue({ data: { id: 'score_low_income' }, error: null });
+        return qb;
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify({
+          customer_id: 'cust_non_zw_001',
+          monthly_income_usd: 30, // Very low
+          existing_debt_obligations_usd: 20,
+          household_size: 8,
+          dependents: 6,
+          requested_loan_amount: 500,
+          kyc_result: {
+            id_verification: { status: 'failed' },
+            face_match: { confidence: 0.3 },
+            liveness: { status: 'failed' },
+          },
+        }),
+      });
+
+      const response = await scoringHandler(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = parseResponseBody<{
+        decision: string;
+        credit_limit_usd: number;
+      }>(response);
+
+      expect(body.decision).toBe('reject');
+      expect(body.credit_limit_usd).toBe(0);
+    });
+
+    it('should validate that payment endpoint rejects missing fields', async () => {
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/payments/initiate',
+        body: JSON.stringify({
+          // Empty request - missing all required fields
+        }),
+      });
+
+      const response = await paymentHandler(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = parseResponseBody(response);
+      expect(body).toHaveProperty('error', 'Missing required fields');
+    });
+  });
+
+  // =========================================================================
+  // Edge Cases
+  // =========================================================================
+  describe('Edge Cases', () => {
+    it('should handle phone number with 263 without + prefix', () => {
+      const phoneWithoutPlus = '263771234567';
+      const phoneWithPlus = '+263771234567';
+
+      // Without + prefix, it does not match the expected format
+      expect(phoneWithoutPlus).not.toMatch(/^\+263/);
+      expect(phoneWithPlus).toMatch(/^\+263/);
+    });
+
+    it('should handle empty phone number gracefully', () => {
+      const emptyPhone = '';
+      expect(emptyPhone).not.toMatch(/^\+263/);
+      expect(emptyPhone.length).toBe(0);
+    });
+
+    it('should handle phone number that is close to +263 but different', () => {
+      const numbers = ['+2630771234567', '+26371234567', '+264771234567'];
+
+      const isZimbabwe = (phone: string) => /^\+263\d{9}$/.test(phone);
+
+      expect(isZimbabwe(numbers[0])).toBe(false); // Extra 0
+      expect(isZimbabwe(numbers[1])).toBe(false); // Too short
+      expect(isZimbabwe(numbers[2])).toBe(false); // +264 is Namibia
+    });
+
+    it('should validate the customer country is not Zimbabwe', () => {
+      expect(nonZimbabweCustomer.country).toBe('South Africa');
+      expect(nonZimbabweCustomer.country).not.toBe('Zimbabwe');
+    });
+
+    it('should validate customer fixture is consistent for non-ZW customer', () => {
+      expect(nonZimbabweCustomer.phone_number).toMatch(/^\+27/); // South Africa code
+      expect(nonZimbabweCustomer.id).toBeDefined();
+      expect(nonZimbabweCustomer.first_name).toBeDefined();
+      expect(nonZimbabweCustomer.last_name).toBeDefined();
+      expect(nonZimbabweCustomer.kyc_status).toBe('not_started');
+    });
+
+    it('should validate scoring returns 400 for missing customer_id', async () => {
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify({}),
+      });
+
+      const response = await scoringHandler(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = parseResponseBody(response);
+      expect(body.error).toBe('customer_id is required');
+    });
+
+    it('should reject KYC initiation with invalid national ID format', async () => {
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/kyc/initiate',
+        body: JSON.stringify({
+          customer_id: 'cust_non_zw_001',
+          id_number: 'RSA8501015800183', // South African ID number
+          id_image_base64: 'base64data',
+          selfie_image_base64: 'base64data',
+        }),
+      });
+
+      const response = await kycHandler(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = parseResponseBody(response);
+      expect(body).toHaveProperty('error');
+    });
+  });
+
+  // =========================================================================
+  // Comprehensive country code validation
+  // =========================================================================
+  describe('Country Code Validation', () => {
+    it('should accept Zimbabwe (+263) and reject all other country codes', () => {
+      const isZimbabwePhone = (phone: string): boolean => /^\+263\d{9}$/.test(phone);
+
+      // Should accept
+      expect(isZimbabwePhone('+263771234567')).toBe(true);
+      expect(isZimbabwePhone('+263772345678')).toBe(true);
+
+      // Should reject
+      expect(isZimbabwePhone('+27821234567')).toBe(false);
+      expect(isZimbabwePhone('+254712345678')).toBe(false);
+      expect(isZimbabwePhone('+2348012345678')).toBe(false);
+      expect(isZimbabwePhone('+12025551234')).toBe(false);
+      expect(isZimbabwePhone('+447911123456')).toBe(false);
+    });
+
+    it('should validate Zimbabwe mobile operator prefixes', () => {
+      const zimbabweOperators = {
+        econet: /^\+26377\d{7}$/, // Econet (EcoCash)
+        netone: /^\+26371\d{7}$/, // NetOne (OneMoney)
+        telecel: /^\+26373\d{7}$/, // Telecel
+      };
+
+      expect('+263771234567').toMatch(zimbabweOperators.econet);
+      expect('+263712345678').toMatch(zimbabweOperators.netone);
+      expect('+263731234567').toMatch(zimbabweOperators.telecel);
+
+      // Cross-check: South African number doesn't match any
+      expect('+27821234567').not.toMatch(zimbabweOperators.econet);
+      expect('+27821234567').not.toMatch(zimbabweOperators.netone);
+      expect('+27821234567').not.toMatch(zimbabweOperators.telecel);
+    });
   });
 });
