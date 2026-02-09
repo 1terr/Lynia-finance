@@ -1,0 +1,584 @@
+name: Create Phase 4 GitHub Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "create" to confirm issue creation'
+        required: true
+        default: ''
+
+jobs:
+  create-labels:
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'create'
+    steps:
+      - name: Create Phase 4 Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = [
+              { name: 'phase-4', color: '0e8a16', description: 'Phase 4: Integration Testing & Production Deployment' },
+              { name: 'testing', color: 'BFD4F2', description: 'Integration and E2E testing' },
+              { name: 'performance', color: 'D4C5F9', description: 'Performance and load testing' },
+              { name: 'security', color: 'B60205', description: 'Security audit and hardening' },
+              { name: 'compliance', color: 'FBCA04', description: 'Regulatory compliance' },
+              { name: 'infrastructure', color: '0052CC', description: 'Production infrastructure' },
+              { name: 'monitoring', color: '006B75', description: 'Monitoring and observability' },
+              { name: 'uat', color: 'C2E0C6', description: 'User acceptance testing' },
+              { name: 'deployment', color: '5319E7', description: 'Deployment and go-live' }
+            ];
+
+            for (const label of labels) {
+              try {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label.name,
+                  color: label.color,
+                  description: label.description
+                });
+                console.log(`Created label: ${label.name}`);
+              } catch (error) {
+                if (error.status === 422) {
+                  console.log(`Label already exists: ${label.name}`);
+                } else {
+                  throw error;
+                }
+              }
+            }
+
+  create-issues:
+    needs: create-labels
+    runs-on: ubuntu-latest
+    steps:
+      # ============================================
+      # CATEGORY 4.1: INTEGRATION TESTING (P4-T001 to P4-T003)
+      # ============================================
+
+      - name: Create P4-T001 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T001: End-to-End Integration Test Suite',
+              labels: ['phase-4', 'critical', 'testing'],
+              body: `## Task Overview
+            **Priority:** 🔴 Critical | **Estimate:** 20 hours | **Phase:** Phase 4
+            **Depends On:** Phase 3 complete
+            **Blocks:** P4-T002, P4-T003, P4-T004, P4-T006, P4-T012
+
+            ## Description
+            Build comprehensive E2E integration tests covering all critical user journeys across the full service stack (6 Lambda services, 47+ database tables, 2 frontend applications).
+
+            ## Acceptance Criteria
+            - [ ] E2E test framework set up (Jest + Supertest + Supabase test helpers)
+            - [ ] Customer onboarding flow test passes (WhatsApp → KYC → Approval)
+            - [ ] Loan application lifecycle test passes (Apply → Score → Approve → Disburse)
+            - [ ] Payment processing test passes (Initiate → Confirm → Update balance → Receipt)
+            - [ ] Device handover & lock/unlock cycle test passes
+            - [ ] Admin loan approval workflow test passes
+            - [ ] Distributor inventory & commission flow test passes
+            - [ ] Test database seeding and teardown automated
+            - [ ] Test coverage >= 80% on integration paths
+            - [ ] Tests run in CI pipeline within 5 minutes
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T001-PROGRESS.md\``
+            });
+
+      - name: Create P4-T002 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T002: API Contract Testing & Validation',
+              labels: ['phase-4', 'high-priority', 'testing'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 4
+            **Depends On:** P4-T001
+
+            ## Description
+            Validate that all API contracts between services, frontend, and external providers match specifications. Define OpenAPI specs and write contract tests for all 6 services.
+
+            ## Acceptance Criteria
+            - [ ] OpenAPI/Swagger specs defined for all service endpoints
+            - [ ] Contract tests written for all 6 services
+            - [ ] Frontend API client validated against backend contracts
+            - [ ] Error responses follow standard ErrorResponse format
+            - [ ] No breaking changes detected between frontend and backend
+            - [ ] External API sandbox integrations verified
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T002-PROGRESS.md\``
+            });
+
+      - name: Create P4-T003 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T003: Cross-Service Data Flow Testing',
+              labels: ['phase-4', 'high-priority', 'testing'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T001
+
+            ## Description
+            Verify data integrity and consistency across service boundaries, database transactions, and event flows. Ensure RLS policies enforce proper data isolation.
+
+            ## Acceptance Criteria
+            - [ ] Customer data propagation verified (WhatsApp → KYC → Scoring → Loan)
+            - [ ] Payment reconciliation correct across services
+            - [ ] Device status synchronization verified
+            - [ ] Audit trail captures all CRUD operations on sensitive tables
+            - [ ] RLS policies pass all isolation tests
+            - [ ] Concurrent operations do not cause race conditions
+            - [ ] Materialized views reflect accurate data within 5-minute window
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T003-PROGRESS.md\``
+            });
+
+      # ============================================
+      # CATEGORY 4.2: PERFORMANCE & LOAD TESTING (P4-T004 to P4-T005)
+      # ============================================
+
+      - name: Create P4-T004 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T004: Performance Benchmarking & Load Testing',
+              labels: ['phase-4', 'critical', 'performance'],
+              body: `## Task Overview
+            **Priority:** 🔴 Critical | **Estimate:** 16 hours | **Phase:** Phase 4
+            **Depends On:** P4-T001
+            **Blocks:** P4-T005
+
+            ## Description
+            Establish performance baselines and validate the system handles projected load under normal (100 concurrent), peak (500), and stress (1000) conditions.
+
+            ## Acceptance Criteria
+            - [ ] Load testing framework set up (k6 or Artillery)
+            - [ ] API p95 latency < 300ms under normal load
+            - [ ] API p99 latency < 1000ms under peak load
+            - [ ] Lambda cold start < 3 seconds for all services
+            - [ ] Zero errors under normal load (100 concurrent)
+            - [ ] Error rate < 1% under peak load (500 concurrent)
+            - [ ] Admin dashboard FCP < 1.5s, TTI < 3s
+            - [ ] Bottleneck analysis documented
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T004-PROGRESS.md\``
+            });
+
+      - name: Create P4-T005 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T005: Database Query Optimization & Stress Testing',
+              labels: ['phase-4', 'high-priority', 'database'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T004
+
+            ## Description
+            Optimize slow queries identified during load testing and validate database resilience under stress.
+
+            ## Acceptance Criteria
+            - [ ] EXPLAIN ANALYZE run on all critical queries
+            - [ ] Missing indexes added on frequently queried columns
+            - [ ] All critical queries execute in < 100ms
+            - [ ] Reporting queries execute in < 500ms
+            - [ ] Connection pool handles 200 concurrent connections
+            - [ ] Database handles 10,000 transactions/hour without degradation
+            - [ ] Table partitioning validated for transactions and audit_logs
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T005-PROGRESS.md\``
+            });
+
+      # ============================================
+      # CATEGORY 4.3: SECURITY & COMPLIANCE (P4-T006 to P4-T007)
+      # ============================================
+
+      - name: Create P4-T006 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T006: Security Audit & Vulnerability Assessment',
+              labels: ['phase-4', 'critical', 'security'],
+              body: `## Task Overview
+            **Priority:** 🔴 Critical | **Estimate:** 20 hours | **Phase:** Phase 4
+            **Depends On:** P4-T001
+            **Blocks:** P4-T007
+
+            ## Description
+            Conduct comprehensive security review covering OWASP Top 10, authentication, data protection, and infrastructure hardening.
+
+            ## Acceptance Criteria
+            - [ ] OWASP ZAP automated scan run against all API endpoints
+            - [ ] JWT token validation reviewed across all services
+            - [ ] TLS 1.3 enforcement verified
+            - [ ] SQL injection resistance confirmed (parameterized queries)
+            - [ ] XSS protection verified on both frontends
+            - [ ] Rate limiting verified on auth, OTP, and payment endpoints
+            - [ ] No hardcoded secrets in codebase
+            - [ ] PII encrypted at rest (AES-256) and in transit (TLS 1.3)
+            - [ ] Security headers configured (CSP, HSTS, X-Frame-Options)
+            - [ ] bcrypt hashing verified (cost factor >= 12)
+            - [ ] Zero critical or high vulnerabilities remaining
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T006-PROGRESS.md\``
+            });
+
+      - name: Create P4-T007 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T007: Compliance Verification & Regulatory Checklist',
+              labels: ['phase-4', 'high-priority', 'compliance'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T006
+
+            ## Description
+            Verify compliance with Reserve Bank of Zimbabwe (RBZ) regulations, data privacy requirements (POPIA), and financial services standards.
+
+            ## Acceptance Criteria
+            - [ ] KYC data collection matches RBZ requirements
+            - [ ] Transaction limits enforced (daily $5K, monthly $50K, single $2K)
+            - [ ] Record retention automated (transactions: 7yr, KYC: 10yr, audit: 5yr)
+            - [ ] STR generation functional within 24 hours
+            - [ ] Multi-currency handling correct (USD, ZWL, ZAR)
+            - [ ] Customer data export functional (GDPR-style rights)
+            - [ ] Consent tracking verified
+            - [ ] Audit trail complete for regulatory inspections
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T007-PROGRESS.md\``
+            });
+
+      # ============================================
+      # CATEGORY 4.4: PRODUCTION INFRASTRUCTURE (P4-T008 to P4-T009)
+      # ============================================
+
+      - name: Create P4-T008 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T008: Production Environment Provisioning',
+              labels: ['phase-4', 'critical', 'infrastructure'],
+              body: `## Task Overview
+            **Priority:** 🔴 Critical | **Estimate:** 16 hours | **Phase:** Phase 4
+            **Depends On:** None
+            **Blocks:** P4-T009, P4-T010, P4-T014
+
+            ## Description
+            Provision and configure production AWS infrastructure with proper security, networking, scaling policies, and frontend deployment.
+
+            ## Acceptance Criteria
+            - [ ] Production AWS account with proper IAM roles
+            - [ ] Production Supabase project deployed (separate from staging)
+            - [ ] All 6 Lambda functions deployed with production config
+            - [ ] API Gateway with custom domain and SSL certificates
+            - [ ] CloudFront CDN serving frontend applications
+            - [ ] AWS Secrets Manager storing all production secrets
+            - [ ] Database connection pooling configured (PgBouncer)
+            - [ ] Auto-scaling policies tested and verified
+            - [ ] AWS WAF rules active
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T008-PROGRESS.md\``
+            });
+
+      - name: Create P4-T009 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T009: CI/CD Pipeline Hardening & Deployment Automation',
+              labels: ['phase-4', 'high-priority', 'infrastructure'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T008
+
+            ## Description
+            Harden CI/CD pipeline for production deployments with automated testing gates, manual approval, canary deployments, and automated rollback.
+
+            ## Acceptance Criteria
+            - [ ] Multi-stage pipeline configured (dev → staging → production)
+            - [ ] Automated test gates block deployment on failure
+            - [ ] Manual approval required for production deployments
+            - [ ] Canary deployments detect errors and auto-roll back
+            - [ ] Full deployment completes in < 15 minutes
+            - [ ] Rollback completes in < 5 minutes
+            - [ ] Zero-downtime deployments verified
+            - [ ] Security scanning step included
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T009-PROGRESS.md\``
+            });
+
+      # ============================================
+      # CATEGORY 4.5: MONITORING & OBSERVABILITY (P4-T010 to P4-T011)
+      # ============================================
+
+      - name: Create P4-T010 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T010: Production Monitoring & Alerting Setup',
+              labels: ['phase-4', 'high-priority', 'monitoring'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 4
+            **Depends On:** P4-T008
+            **Blocks:** P4-T011
+
+            ## Description
+            Set up comprehensive production monitoring, alerting, and dashboards covering all SLOs, business metrics, and technical health.
+
+            ## Acceptance Criteria
+            - [ ] CloudWatch metrics configured for all Lambda functions
+            - [ ] 5 dashboards created: real-time, business, technical, security, cost
+            - [ ] Error rate alerts active (> 5% critical, > 1% warning)
+            - [ ] Latency alerts active (p95 > 500ms warning, p99 > 1000ms critical)
+            - [ ] Availability monitoring for 99.9% SLO target
+            - [ ] Payment service health checks configured
+            - [ ] Critical alerts trigger within 60 seconds
+            - [ ] On-call runbook created
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T010-PROGRESS.md\``
+            });
+
+      - name: Create P4-T011 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T011: Logging Infrastructure & Audit Trail Verification',
+              labels: ['phase-4', 'high-priority', 'monitoring'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T010
+
+            ## Description
+            Verify structured logging across all services, ensure audit trail completeness, and validate that sensitive data is never logged.
+
+            ## Acceptance Criteria
+            - [ ] Structured log format verified across all services
+            - [ ] NEVER_LOG fields confirmed masked/excluded
+            - [ ] Correlation IDs propagate across all 6 service boundaries
+            - [ ] Audit trail covers 100% of financial operations
+            - [ ] Log retention matches regulatory requirements (5+ years)
+            - [ ] Log queries return results within 10 seconds
+            - [ ] Zero instances of sensitive data in logs
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T011-PROGRESS.md\``
+            });
+
+      # ============================================
+      # CATEGORY 4.6: USER ACCEPTANCE TESTING (P4-T012 to P4-T013)
+      # ============================================
+
+      - name: Create P4-T012 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T012: UAT Test Plan & Execution',
+              labels: ['phase-4', 'high-priority', 'uat'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 16 hours | **Phase:** Phase 4
+            **Depends On:** P4-T001, P4-T006
+            **Blocks:** P4-T013
+
+            ## Description
+            Execute user acceptance testing with stakeholders covering all 8 critical business scenarios.
+
+            ## Acceptance Criteria
+            - [ ] Scenario 1: Customer onboarding via WhatsApp (Shona) passes
+            - [ ] Scenario 2: Loan application, scoring, and approval passes
+            - [ ] Scenario 3: Payment processing (EcoCash, OneMoney) passes
+            - [ ] Scenario 4: Device handover and activation passes
+            - [ ] Scenario 5: Overdue → lock → payment → unlock passes
+            - [ ] Scenario 6: Admin loan review and approval passes
+            - [ ] Scenario 7: Distributor inventory and commission passes
+            - [ ] Scenario 8: Regulatory report generation passes
+            - [ ] No critical or high-severity bugs remaining
+            - [ ] Stakeholder sign-off obtained
+            - [ ] Multi-language support verified (EN, SN, ND)
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T012-PROGRESS.md\``
+            });
+
+      - name: Create P4-T013 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T013: Pilot User Onboarding & Feedback Collection',
+              labels: ['phase-4', 'medium-priority', 'uat'],
+              body: `## Task Overview
+            **Priority:** 🟢 Medium | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T012
+
+            ## Description
+            Onboard pilot users (5-10 distributors, 20-30 customers) in the Harare area to validate real-world usage and collect feedback.
+
+            ## Acceptance Criteria
+            - [ ] 5-10 pilot distributors selected and onboarded
+            - [ ] Pilot onboarding guide created (multi-language)
+            - [ ] >= 80% pilot onboarding completion rate
+            - [ ] Zero critical system failures during pilot
+            - [ ] Average customer onboarding < 20 minutes
+            - [ ] Distributor feedback score >= 7/10
+            - [ ] All payment transactions reconcile correctly
+            - [ ] Go/no-go recommendation created
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T013-PROGRESS.md\``
+            });
+
+      # ============================================
+      # CATEGORY 4.7: GO-LIVE PREPARATION (P4-T014 to P4-T015)
+      # ============================================
+
+      - name: Create P4-T014 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T014: Production Deployment Runbook & Rollback Plan',
+              labels: ['phase-4', 'critical', 'deployment'],
+              body: `## Task Overview
+            **Priority:** 🔴 Critical | **Estimate:** 12 hours | **Phase:** Phase 4
+            **Depends On:** P4-T008, P4-T009
+
+            ## Description
+            Create comprehensive deployment runbook, tested rollback procedures, and incident response playbook.
+
+            ## Acceptance Criteria
+            - [ ] Step-by-step deployment runbook (pre/deploy/post)
+            - [ ] Database migration procedures (forward and rollback)
+            - [ ] Service-level rollback procedures for each Lambda
+            - [ ] Frontend rollback documented (CloudFront + S3)
+            - [ ] Incident response playbook covers P1/P2 scenarios
+            - [ ] Full deployment + rollback tested in staging
+            - [ ] Communication plan and escalation matrix documented
+            - [ ] Rollback completes within 5 minutes
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T014-PROGRESS.md\``
+            });
+
+      - name: Create P4-T015 Issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'P4-T015: Go-Live Checklist & Launch Readiness Review',
+              labels: ['phase-4', 'high-priority', 'deployment'],
+              body: `## Task Overview
+            **Priority:** 🟡 High | **Estimate:** 8 hours | **Phase:** Phase 4
+            **Depends On:** All P4 tasks
+
+            ## Description
+            Final launch readiness review ensuring all systems, processes, and teams are prepared for production go-live.
+
+            ## Acceptance Criteria
+            - [ ] All P4 tasks completed and signed off
+            - [ ] Production smoke tests passing
+            - [ ] Monitoring and alerting active and tested
+            - [ ] On-call rotation scheduled and team trained
+            - [ ] All critical/high bugs closed
+            - [ ] Backup and disaster recovery verified
+            - [ ] Regulatory filings complete (RBZ notification)
+            - [ ] Launch communication prepared
+            - [ ] Stakeholder approval for go-live obtained
+            - [ ] Phase 4 Summary Report completed
+
+            ## Progress Report
+            \`phase-4-integration/task-reports/P4-T015-PROGRESS.md\``
+            });
+
+      # ============================================
+      # SUMMARY
+      # ============================================
+
+      - name: Summary
+        run: |
+          echo "Created 15 Phase 4 GitHub issues:"
+          echo ""
+          echo "INTEGRATION TESTING (3 tasks | 48 hours):"
+          echo "  - P4-T001: End-to-End Integration Test Suite [CRITICAL]"
+          echo "  - P4-T002: API Contract Testing & Validation"
+          echo "  - P4-T003: Cross-Service Data Flow Testing"
+          echo ""
+          echo "PERFORMANCE & LOAD TESTING (2 tasks | 28 hours):"
+          echo "  - P4-T004: Performance Benchmarking & Load Testing [CRITICAL]"
+          echo "  - P4-T005: Database Query Optimization & Stress Testing"
+          echo ""
+          echo "SECURITY & COMPLIANCE (2 tasks | 32 hours):"
+          echo "  - P4-T006: Security Audit & Vulnerability Assessment [CRITICAL]"
+          echo "  - P4-T007: Compliance Verification & Regulatory Checklist"
+          echo ""
+          echo "PRODUCTION INFRASTRUCTURE (2 tasks | 28 hours):"
+          echo "  - P4-T008: Production Environment Provisioning [CRITICAL]"
+          echo "  - P4-T009: CI/CD Pipeline Hardening & Deployment Automation"
+          echo ""
+          echo "MONITORING & OBSERVABILITY (2 tasks | 28 hours):"
+          echo "  - P4-T010: Production Monitoring & Alerting Setup"
+          echo "  - P4-T011: Logging Infrastructure & Audit Trail Verification"
+          echo ""
+          echo "USER ACCEPTANCE TESTING (2 tasks | 28 hours):"
+          echo "  - P4-T012: UAT Test Plan & Execution"
+          echo "  - P4-T013: Pilot User Onboarding & Feedback Collection"
+          echo ""
+          echo "GO-LIVE PREPARATION (2 tasks | 20 hours):"
+          echo "  - P4-T014: Production Deployment Runbook & Rollback Plan [CRITICAL]"
+          echo "  - P4-T015: Go-Live Checklist & Launch Readiness Review"
+          echo ""
+          echo "TOTAL: 15 tasks | 212 hours | 7 categories | 5 critical"
+          echo ""
+          echo "Issues auto-close: Use 'Closes #NUMBER' in commit messages."
