@@ -8,6 +8,10 @@ on:
         required: true
         default: ''
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   create-labels:
     runs-on: ubuntu-latest
