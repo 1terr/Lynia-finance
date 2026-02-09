@@ -8,6 +8,10 @@ on:
         required: true
         default: ''
 
+permissions:
+  issues: write
+  contents: read
+
 jobs:
   create-labels:
     runs-on: ubuntu-latest
@@ -19,6 +23,9 @@ jobs:
           script: |
             const labels = [
               { name: 'phase-4', color: '0e8a16', description: 'Phase 4: Integration Testing & Production Deployment' },
+              { name: 'critical', color: 'B60205', description: 'Critical priority - must complete first' },
+              { name: 'high-priority', color: 'D93F0B', description: 'High priority' },
+              { name: 'medium-priority', color: 'FBCA04', description: 'Medium priority' },
               { name: 'testing', color: 'BFD4F2', description: 'Integration and E2E testing' },
               { name: 'performance', color: 'D4C5F9', description: 'Performance and load testing' },
               { name: 'security', color: 'B60205', description: 'Security audit and hardening' },
@@ -26,7 +33,8 @@ jobs:
               { name: 'infrastructure', color: '0052CC', description: 'Production infrastructure' },
               { name: 'monitoring', color: '006B75', description: 'Monitoring and observability' },
               { name: 'uat', color: 'C2E0C6', description: 'User acceptance testing' },
-              { name: 'deployment', color: '5319E7', description: 'Deployment and go-live' }
+              { name: 'deployment', color: '5319E7', description: 'Deployment and go-live' },
+              { name: 'database', color: '1D76DB', description: 'Database tasks' }
             ];
 
             for (const label of labels) {
@@ -40,10 +48,10 @@ jobs:
                 });
                 console.log(`Created label: ${label.name}`);
               } catch (error) {
-                if (error.status === 422) {
-                  console.log(`Label already exists: ${label.name}`);
+                if (error.status === 422 || error.message?.includes('already_exists')) {
+                  console.log(`Label already exists: ${label.name} - skipping`);
                 } else {
-                  throw error;
+                  console.log(`Warning: Could not create label ${label.name}: ${error.message}`);
                 }
               }
             }
