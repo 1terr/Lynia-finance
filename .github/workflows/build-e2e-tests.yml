@@ -17,10 +17,6 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: fineract
-
 jobs:
   test:
     name: E2E Tests (Shard ${{ matrix.shard_index }} of ${{ matrix.total_shards }})
@@ -73,10 +69,10 @@ jobs:
           cat feature_shard_${{ matrix.shard_index }}.txt
 
       - name: Build the image
-        run: ./gradlew --no-daemon --console=plain :fineract-provider:jibDockerBuild -Djib.to.image=$IMAGE_NAME -x test -x cucumber
+        run: ./gradlew --no-daemon --console=plain :fineract:modules:fineract-provider:jibDockerBuild -Djib.to.image=$IMAGE_NAME -x test -x cucumber
 
       - name: Start the Fineract stack
-        run: docker compose -f docker-compose-postgresql-test-activemq.yml up -d
+        run: docker compose -f fineract/docker-compose-postgresql-test-activemq.yml up -d
 
       - name: Check the stack
         run: docker ps
@@ -129,7 +125,7 @@ jobs:
 
             # Run tests with individual allure results directory
             if ! ./gradlew --no-daemon --console=plain \
-              :fineract-e2e-tests-runner:cucumber \
+              :fineract:modules:fineract-e2e-tests-runner:cucumber \
               -Pcucumber.features="$feature_file" \
               -Dallure.results.directory="allure-results-shard-${{ matrix.shard_index }}/$safe_name" \
               allureReport; then
@@ -150,7 +146,7 @@ jobs:
           if [ -d "allure-results-merged" ] && [ "$(ls -A allure-results-merged)" ]; then
             echo "Generating Allure report..."
             mkdir -p "allure-report-shard-${{ matrix.shard_index }}"
-            ./fineract-e2e-tests-runner/build/allure/commandline/bin/allure generate "allure-results-merged" --clean -o "allure-report-shard-${{ matrix.shard_index }}" || \
+            ./fineract/modules/fineract-e2e-tests-runner/build/allure/commandline/bin/allure generate "allure-results-merged" --clean -o "allure-report-shard-${{ matrix.shard_index }}" || \
               echo "::warning::Failed to generate Allure report for shard ${{ matrix.shard_index }}"
           fi
 
@@ -195,5 +191,5 @@ jobs:
       - name: Clean up
         if: always()
         run: |
-          docker compose -f docker-compose-postgresql-test-activemq.yml down -v
+          docker compose -f fineract/docker-compose-postgresql-test-activemq.yml down -v
           docker system prune -f

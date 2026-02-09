@@ -78,10 +78,10 @@ jobs:
           FINERACT_REPORT_EXPORT_S3_BUCKET_NAME: fineract-reports
         run: |
           ./gradlew --no-daemon --console=plain build -x cucumber -x test -x doc
-          ./gradlew --no-daemon --console=plain cucumber -x :fineract-e2e-tests-runner:cucumber
-          ./gradlew --no-daemon --console=plain test -x :twofactor-tests:test -x :oauth2-test:test -x :fineract-e2e-tests-runner:test -PdbType=postgresql
-          ./gradlew --no-daemon --console=plain :twofactor-tests:test -PdbType=postgresql
-          ./gradlew --no-daemon --console=plain :oauth2-tests:test -PdbType=postgresql
+          ./gradlew --no-daemon --console=plain cucumber -x :fineract:modules:fineract-e2e-tests-runner:cucumber
+          ./gradlew --no-daemon --console=plain test -x :fineract:tests:twofactor-tests:test -x :fineract:tests:oauth2-tests:test -x :fineract:modules:fineract-e2e-tests-runner:test -PdbType=postgresql
+          ./gradlew --no-daemon --console=plain :fineract:tests:twofactor-tests:test -PdbType=postgresql
+          ./gradlew --no-daemon --console=plain :fineract:tests:oauth2-tests:test -PdbType=postgresql
       - name: Archive test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -89,10 +89,7 @@ jobs:
           name: test-results
           retention-days: 5
           path: |
-            build/reports/
-            integration-tests/build/reports/
-            twofactor-tests/build/reports/
-            oauth2-tests/build/reports/
+            fineract/**/build/reports/
       - name: Archive server logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -100,6 +97,4 @@ jobs:
           name: server-logs
           retention-days: 5
           path: |
-            integration-tests/build/cargo/
-            twofactor-tests/build/cargo/
-            oauth2-tests/build/cargo/
+            fineract/**/build/cargo/

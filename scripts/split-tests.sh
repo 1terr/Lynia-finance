@@ -12,7 +12,7 @@ fi
 
 echo "🔍 Searching for eligible JUnit test classes..."
 
-ALL_TESTS=$(find . -type f -path "*/src/test/java/*.java" \
+ALL_TESTS=$(find fineract -type f -path "*/src/test/java/*.java" \
   | while read filepath; do
       filename=$(basename "$filepath")
 
@@ -29,8 +29,8 @@ ALL_TESTS=$(find . -type f -path "*/src/test/java/*.java" \
 
       # Extract module directory path (everything before /src/test/java)
       module_path="${filepath%%/src/test/java/*}"
-      # Convert from ./custom/acme/loan/job to :custom:acme:loan:job
-      module_name=$(echo "$module_path" | sed 's|^\./||; s|/|:|g; s|^|:|')
+      # Convert from fineract/modules/fineract-core to :fineract:modules:fineract-core
+      module_name=$(echo "$module_path" | sed 's|/|:|g; s|^|:|')
 
       # Extract fully qualified test class name
       class_name=$(echo "$filepath" | sed 's|^.*src/test/java/||; s|/|.|g; s|.java$||')

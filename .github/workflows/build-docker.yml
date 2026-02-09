@@ -17,10 +17,6 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: fineract
-
 jobs:
   build:
     runs-on: ubuntu-24.04
@@ -56,10 +52,10 @@ jobs:
         uses: gradle/actions/setup-gradle@ac638b010cf58a27ee6c972d7336334ccaf61c96 # v4.4.1
 
       - name: Build the image
-        run: ./gradlew --no-daemon --console=plain :fineract-provider:jibDockerBuild -Djib.to.image=$IMAGE_NAME -x test -x cucumber
+        run: ./gradlew --no-daemon --console=plain :fineract:modules:fineract-provider:jibDockerBuild -Djib.to.image=$IMAGE_NAME -x test -x cucumber
 
       - name: Start the ${{ matrix.db_type }} stack
-        run: docker compose -f ${{ matrix.compose_file }} up -d
+        run: docker compose -f fineract/${{ matrix.compose_file }} up -d
 
       - name: Check the stack
         run: docker ps

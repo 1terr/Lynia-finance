@@ -17,10 +17,6 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: fineract
-
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -80,7 +76,7 @@ jobs:
               ./gradlew --no-daemon build -x test -x cucumber -x doc
               ;;
             cucumber)
-              ./gradlew --no-daemon cucumber -x :fineract-e2e-tests-runner:cucumber -x checkstyleJmh -x checkstyleMain -x checkstyleTest -x spotlessCheck -x spotlessApply -x spotbugsMain -x spotbugsTest -x javadoc -x javadocJar -x modernizer
+              ./gradlew --no-daemon cucumber -x :fineract:modules:fineract-e2e-tests-runner:cucumber -x checkstyleJmh -x checkstyleMain -x checkstyleTest -x spotlessCheck -x spotlessApply -x spotbugsMain -x spotbugsTest -x javadoc -x javadocJar -x modernizer
               ;;
           esac
 
@@ -88,19 +84,19 @@ jobs:
         if: matrix.job_type == 'progressive-loan'
         run: |
           # Build the JAR
-          ./gradlew --no-daemon --console=plain :fineract-progressive-loan-embeddable-schedule-generator:shadowJar
+          ./gradlew --no-daemon --console=plain :fineract:modules:fineract-progressive-loan-embeddable-schedule-generator:shadowJar
 
           # Store the JAR filename in an environment variable
-          EMBEDDABLE_JAR_FILE=$(ls fineract-progressive-loan-embeddable-schedule-generator/build/libs/*-all.jar | head -n 1)
+          EMBEDDABLE_JAR_FILE=$(ls fineract/modules/fineract-progressive-loan-embeddable-schedule-generator/build/libs/*-all.jar | head -n 1)
           echo "EMBEDDABLE_JAR_FILE=$EMBEDDABLE_JAR_FILE" >> $GITHUB_ENV
           echo "JAR file: $EMBEDDABLE_JAR_FILE"
 
           # Run unit tests
-          ./gradlew --no-daemon --console=plain :fineract-progressive-loan-embeddable-schedule-generator:test
+          ./gradlew --no-daemon --console=plain :fineract:modules:fineract-progressive-loan-embeddable-schedule-generator:test
 
           # Build and run sample application
           mkdir -p sample-app
-          javac -cp "$EMBEDDABLE_JAR_FILE" -d sample-app fineract-progressive-loan-embeddable-schedule-generator/misc/Main.java
+          javac -cp "$EMBEDDABLE_JAR_FILE" -d sample-app fineract/modules/fineract-progressive-loan-embeddable-schedule-generator/misc/Main.java
           java -cp "$EMBEDDABLE_JAR_FILE:sample-app" Main
           java -cp "$EMBEDDABLE_JAR_FILE:sample-app" Main 25
 

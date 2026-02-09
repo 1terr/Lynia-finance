@@ -17,10 +17,6 @@ on:
 permissions:
   contents: read
 
-defaults:
-  run:
-    working-directory: fineract
-
 jobs:
   test:
     runs-on: ubuntu-24.04
