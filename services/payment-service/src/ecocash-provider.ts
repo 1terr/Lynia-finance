@@ -99,7 +99,7 @@ export class EcoCashProvider {
    */
   async initiatePayment(request: PaymentRequest): Promise<PaymentResponse> {
     try {
-      console.log(`Initiating EcoCash payment for ${request.customer_phone}, amount: ${request.amount}`);
+      console.log(`Initiating EcoCash payment, reference: ${request.reference}`);
 
       // Validate phone number format (Zimbabwe)
       if (!this.validatePhoneNumber(request.customer_phone)) {
