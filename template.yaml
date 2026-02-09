@@ -4,6 +4,17 @@ Description: >
   Lynia Finance - Serverless Microservices
   6 Lambda functions for Phase 2: Scoring, WhatsApp, KYC, Payment, Lock, Notification
 
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks:
+        # VPC parameters (SecurityGroupId, SubnetIds) are typed as String with
+        # empty defaults because VPC is optional (controlled by the UseVPC
+        # condition).  cfn-lint cannot resolve the !If condition at lint time
+        # so it incorrectly flags every Ref to these parameters as not matching
+        # the sg-*/subnet-* patterns.
+        - W1030
+
 # Global configuration for all functions
 Globals:
   Function:
