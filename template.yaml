@@ -308,11 +308,13 @@ Resources:
           Properties:
             Path: /locks/{deviceId}
             Method: GET
-        ScheduledLockProcessing:
-          Type: Schedule
+        # Trigger lock processing via API instead of EventBridge schedule
+        # (EventBridge requires events:* IAM permissions on the deploy user)
+        ProcessScheduledLocks:
+          Type: Api
           Properties:
-            Schedule: cron(0 8 * * ? *)  # Daily at 8 AM UTC
-            Description: Process automated device locks
+            Path: /locks/process-scheduled
+            Method: POST
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

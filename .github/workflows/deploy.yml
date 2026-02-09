@@ -113,6 +113,21 @@ jobs:
       - name: SAM Validate
         run: sam validate --lint
 
+      - name: Clean up failed stack if in ROLLBACK_COMPLETE
+        run: |
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name lynia-finance-staging \
+            --query 'Stacks[0].StackStatus' \
+            --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+          if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
+            echo "Stack is in ROLLBACK_COMPLETE state. Deleting before redeploy..."
+            aws cloudformation delete-stack --stack-name lynia-finance-staging
+            aws cloudformation wait stack-delete-complete --stack-name lynia-finance-staging
+            echo "Stack deleted successfully."
+          else
+            echo "Stack status: $STACK_STATUS - no cleanup needed."
+          fi
+
       - name: SAM Deploy to Staging
         run: |
           sam deploy \
