@@ -74,11 +74,7 @@ jobs:
           # Build file change summary
           FILES_CHANGED=$(git diff --stat origin/master..HEAD | tail -1)
 
-          PR_URL=$(gh pr create \
-            --base master \
-            --head "${{ steps.branch.outputs.name }}" \
-            --title "$TITLE" \
-            --body "$(cat <<EOF
+          PR_BODY=$(cat <<EOF
           ## Auto-generated PR from Claude branch
 
           **Branch:** \`${{ steps.branch.outputs.name }}\`
@@ -96,7 +92,30 @@ jobs:
           ---
           *Automatically created by the Claude automation workflow.*
           EOF
-          )")
+          )
+
+          # Retry PR creation up to 4 times with exponential backoff
+          # to handle transient GitHub GraphQL API errors
+          MAX_RETRIES=4
+          RETRY_DELAY=2
+          for attempt in $(seq 1 $MAX_RETRIES); do
+            echo "Attempt $attempt of $MAX_RETRIES to create PR..."
+            PR_URL=$(gh pr create \
+              --base master \
+              --head "${{ steps.branch.outputs.name }}" \
+              --title "$TITLE" \
+              --body "$PR_BODY" 2>&1) && break
+
+            echo "PR creation failed: $PR_URL"
+            if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+              echo "Retrying in ${RETRY_DELAY}s..."
+              sleep $RETRY_DELAY
+              RETRY_DELAY=$((RETRY_DELAY * 2))
+            else
+              echo "All $MAX_RETRIES attempts failed."
+              exit 1
+            fi
+          done
 
           PR_NUMBER=$(echo "$PR_URL" | grep -o '[0-9]*$')
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
