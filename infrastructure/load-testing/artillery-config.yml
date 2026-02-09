@@ -1,0 +1,125 @@
+# Artillery Load Testing Configuration for Lynia Finance
+# Usage: npx artillery run infrastructure/load-testing/artillery-config.yml
+
+config:
+  target: "{{ $processEnvironment.API_URL }}"
+  phases:
+    # Phase 1: Warm-up (2 min, 5 req/s)
+    - duration: 120
+      arrivalRate: 5
+      name: "Warm-up"
+    # Phase 2: Ramp-up (3 min, 5 -> 50 req/s)
+    - duration: 180
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp-up"
+    # Phase 3: Sustained load (5 min, 50 req/s)
+    - duration: 300
+      arrivalRate: 50
+      name: "Sustained Load"
+    # Phase 4: Spike test (1 min, 100 req/s)
+    - duration: 60
+      arrivalRate: 100
+      name: "Spike Test"
+    # Phase 5: Cool-down (2 min, 10 req/s)
+    - duration: 120
+      arrivalRate: 10
+      name: "Cool-down"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+  plugins:
+    ensure:
+      thresholds:
+        - http.response_time.p95: 3000  # p95 < 3 seconds
+        - http.response_time.p99: 5000  # p99 < 5 seconds
+        - http.codes.5xx: 0             # Zero 5XX errors during test
+  apdex:
+    threshold: 500  # Satisfactory response time threshold (ms)
+
+scenarios:
+  # Scenario 1: Credit Score Check (most common)
+  - name: "Credit Score Lookup"
+    weight: 30
+    flow:
+      - get:
+          url: "/scoring/test-customer-123"
+          expect:
+            - statusCode: 200
+
+  # Scenario 2: Payment Processing
+  - name: "Payment Processing"
+    weight: 20
+    flow:
+      - post:
+          url: "/payments/process"
+          json:
+            loanId: "test-loan-{{ $randomNumber(1000, 9999) }}"
+            customerId: "test-customer-{{ $randomNumber(100, 999) }}"
+            amount: "{{ $randomNumber(10, 500) }}"
+            paymentMethod: "ecocash"
+            phoneNumber: "+263771234567"
+          expect:
+            - statusCode:
+                - 200
+                - 400  # Validation errors expected in test
+
+  # Scenario 3: WhatsApp Webhook (highest traffic)
+  - name: "WhatsApp Webhook"
+    weight: 25
+    flow:
+      - post:
+          url: "/whatsapp/webhook"
+          json:
+            object: "whatsapp_business_account"
+            entry:
+              - id: "test-entry"
+                changes:
+                  - value:
+                      messaging_product: "whatsapp"
+                      metadata:
+                        display_phone_number: "+263771234567"
+                        phone_number_id: "test-phone-id"
+                      messages:
+                        - from: "+263771234567"
+                          id: "test-msg-{{ $randomNumber(1000, 9999) }}"
+                          timestamp: "{{ $timestamp }}"
+                          type: "text"
+                          text:
+                            body: "Hello"
+                    field: "messages"
+          expect:
+            - statusCode: 200
+
+  # Scenario 4: KYC Status Check
+  - name: "KYC Status Check"
+    weight: 10
+    flow:
+      - get:
+          url: "/kyc/test-customer-{{ $randomNumber(100, 999) }}"
+          expect:
+            - statusCode:
+                - 200
+                - 404
+
+  # Scenario 5: Device Lock Status
+  - name: "Device Lock Status"
+    weight: 10
+    flow:
+      - get:
+          url: "/locks/test-device-{{ $randomNumber(100, 999) }}"
+          expect:
+            - statusCode:
+                - 200
+                - 404
+
+  # Scenario 6: Notification History
+  - name: "Notification History"
+    weight: 5
+    flow:
+      - get:
+          url: "/notifications/test-customer-{{ $randomNumber(100, 999) }}"
+          expect:
+            - statusCode:
+                - 200
+                - 404
