@@ -25,42 +25,42 @@ jobs:
               labels: ['priority: critical', 'phase: pre-phase-3', 'type: infrastructure'],
               body: `## Task Overview
 
-**Priority:** 🔴 Critical | **Estimate:** 2 hours | **Phase:** Pre-Phase 3
-**Blocks:** P3-T002, P3-T003, P3-T004, P3-T005, P3-T006, P3-T007
+            **Priority:** 🔴 Critical | **Estimate:** 2 hours | **Phase:** Pre-Phase 3
+            **Blocks:** P3-T002, P3-T003, P3-T004, P3-T005, P3-T006, P3-T007
 
-## Description
+            ## Description
 
-Deploy the complete database schema (35+ tables) from Phase 2 to the production Supabase instance.
+            Deploy the complete database schema (35+ tables) from Phase 2 to the production Supabase instance.
 
-## Tasks
+            ## Tasks
 
-- [ ] Set up Supabase environment variables
-- [ ] Run database deployment script: \`node database/deploy-database.js\`
-- [ ] Verify deployment: \`node database/verify-deployment.js\`
-- [ ] Confirm all 35+ tables created
-- [ ] Test basic CRUD operations
-- [ ] Document connection details in \`.env.example\`
+            - [ ] Set up Supabase environment variables
+            - [ ] Run database deployment script: \`node database/deploy-database.js\`
+            - [ ] Verify deployment: \`node database/verify-deployment.js\`
+            - [ ] Confirm all 35+ tables created
+            - [ ] Test basic CRUD operations
+            - [ ] Document connection details in \`.env.example\`
 
-## Acceptance Criteria
+            ## Acceptance Criteria
 
-- [ ] All migrations (001, 002, 003) applied successfully
-- [ ] Tables verified: customers, loans, payments, devices, kyc_verifications
-- [ ] Row Level Security (RLS) policies active
-- [ ] Indexes created for performance
+            - [ ] All migrations (001, 002, 003) applied successfully
+            - [ ] Tables verified: customers, loans, payments, devices, kyc_verifications
+            - [ ] Row Level Security (RLS) policies active
+            - [ ] Indexes created for performance
 
-## Technical Details
+            ## Technical Details
 
-**Migration Files:**
-- \`database/migrations/001_initial_schema.sql\`
-- \`database/migrations/002_add_distributor_commissions.sql\`
-- \`database/migrations/003_add_trustonic_fields.sql\`
+            **Migration Files:**
+            - \`database/migrations/001_initial_schema.sql\`
+            - \`database/migrations/002_add_distributor_commissions.sql\`
+            - \`database/migrations/003_add_trustonic_fields.sql\`
 
-**Scripts:** \`database/deploy-database.js\`, \`database/verify-deployment.js\`
+            **Scripts:** \`database/deploy-database.js\`, \`database/verify-deployment.js\`
 
-## Related Documents
+            ## Related Documents
 
-- \`infrastructure/task-reports/P2-T002-PROGRESS.md\`
-- \`planning/architecture/database-schema.md\``
+            - \`infrastructure/task-reports/P2-T002-PROGRESS.md\`
+            - \`planning/architecture/database-schema.md\``
             });
 
       - name: Create PRE-P3-002 Issue
@@ -74,43 +74,43 @@ Deploy the complete database schema (35+ tables) from Phase 2 to the production 
               labels: ['priority: critical', 'phase: pre-phase-3', 'type: infrastructure'],
               body: `## Task Overview
 
-**Priority:** 🔴 Critical | **Estimate:** 3 hours | **Phase:** Pre-Phase 3
-**Depends On:** PRE-P3-001
-**Blocks:** P3-T002, P3-T003, P3-T004, P3-T005, P3-T006, P3-T007, P3-T011, P3-T012
+            **Priority:** 🔴 Critical | **Estimate:** 3 hours | **Phase:** Pre-Phase 3
+            **Depends On:** PRE-P3-001
+            **Blocks:** P3-T002, P3-T003, P3-T004, P3-T005, P3-T006, P3-T007, P3-T011, P3-T012
 
-## Description
+            ## Description
 
-Deploy all 6 Lambda microservices to AWS using SAM CLI.
+            Deploy all 6 Lambda microservices to AWS using SAM CLI.
 
-## Services to Deploy
+            ## Services to Deploy
 
-| Service | Function Name | API Endpoint |
-|---------|--------------|--------------|
-| WhatsApp Service | lynia-whatsapp-service | /api/whatsapp/* |
-| Scoring Service | lynia-scoring-service | /api/scoring/* |
-| KYC Service | lynia-kyc-service | /api/kyc/* |
-| Payment Service | lynia-payment-service | /api/payments/* |
-| Lock Service | lynia-lock-service | /api/devices/* |
-| Notification Service | lynia-notification-service | /api/notifications/* |
+            | Service | Function Name | API Endpoint |
+            |---------|--------------|--------------|
+            | WhatsApp Service | lynia-whatsapp-service | /api/whatsapp/* |
+            | Scoring Service | lynia-scoring-service | /api/scoring/* |
+            | KYC Service | lynia-kyc-service | /api/kyc/* |
+            | Payment Service | lynia-payment-service | /api/payments/* |
+            | Lock Service | lynia-lock-service | /api/devices/* |
+            | Notification Service | lynia-notification-service | /api/notifications/* |
 
-## Tasks
+            ## Tasks
 
-- [ ] Configure AWS credentials
-- [ ] Set environment variables in \`env.json\`
-- [ ] Build SAM application: \`sam build\`
-- [ ] Validate SAM template: \`sam validate\`
-- [ ] Deploy to staging: \`./scripts/deploy-staging.sh\`
-- [ ] Verify all 6 functions deployed
-- [ ] Test each endpoint with smoke tests
-- [ ] Document API Gateway URL
+            - [ ] Configure AWS credentials
+            - [ ] Set environment variables in \`env.json\`
+            - [ ] Build SAM application: \`sam build\`
+            - [ ] Validate SAM template: \`sam validate\`
+            - [ ] Deploy to staging: \`./scripts/deploy-staging.sh\`
+            - [ ] Verify all 6 functions deployed
+            - [ ] Test each endpoint with smoke tests
+            - [ ] Document API Gateway URL
 
-## Acceptance Criteria
+            ## Acceptance Criteria
 
-- [ ] All 6 Lambda functions deployed and running
-- [ ] API Gateway endpoints accessible
-- [ ] Environment variables configured correctly
-- [ ] CloudWatch logging enabled
-- [ ] Basic health checks passing`
+            - [ ] All 6 Lambda functions deployed and running
+            - [ ] API Gateway endpoints accessible
+            - [ ] Environment variables configured correctly
+            - [ ] CloudWatch logging enabled
+            - [ ] Basic health checks passing`
             });
 
       - name: Create PRE-P3-003 Issue
@@ -124,40 +124,40 @@ Deploy all 6 Lambda microservices to AWS using SAM CLI.
               labels: ['priority: critical', 'phase: pre-phase-3', 'type: documentation'],
               body: `## Task Overview
 
-**Priority:** 🔴 Critical | **Estimate:** 1 hour | **Phase:** Pre-Phase 3
-**Blocks:** P3-T005 (Payment Management)
+            **Priority:** 🔴 Critical | **Estimate:** 1 hour | **Phase:** Pre-Phase 3
+            **Blocks:** P3-T005 (Payment Management)
 
-## Description
+            ## Description
 
-Document the Mobile Money Payment Service implementation that was completed during Phase 2 but never formally documented.
+            Document the Mobile Money Payment Service implementation that was completed during Phase 2 but never formally documented.
 
-## Background
+            ## Background
 
-The payment service code exists in \`/services/payment-service/\` but has no progress report (\`P2-T008-PROGRESS.md\`). This creates a documentation gap.
+            The payment service code exists in \`/services/payment-service/\` but has no progress report (\`P2-T008-PROGRESS.md\`). This creates a documentation gap.
 
-## Files to Review
+            ## Files to Review
 
-- \`/services/payment-service/src/index.ts\`
-- \`/services/payment-service/src/handlers/\`
-- \`/services/payment-service/src/providers/\`
-- \`/planning/payment-processing/\`
+            - \`/services/payment-service/src/index.ts\`
+            - \`/services/payment-service/src/handlers/\`
+            - \`/services/payment-service/src/providers/\`
+            - \`/planning/payment-processing/\`
 
-## Tasks
+            ## Tasks
 
-- [ ] Review payment-service source code
-- [ ] Document EcoCash integration status
-- [ ] Document OneMoney integration status
-- [ ] List all payment API endpoints
-- [ ] Document webhook handlers
-- [ ] Note any TODO items or limitations
-- [ ] Create \`infrastructure/task-reports/P2-T008-PROGRESS.md\`
+            - [ ] Review payment-service source code
+            - [ ] Document EcoCash integration status
+            - [ ] Document OneMoney integration status
+            - [ ] List all payment API endpoints
+            - [ ] Document webhook handlers
+            - [ ] Note any TODO items or limitations
+            - [ ] Create \`infrastructure/task-reports/P2-T008-PROGRESS.md\`
 
-## Acceptance Criteria
+            ## Acceptance Criteria
 
-- [ ] Progress report follows standard format
-- [ ] All payment methods documented (EcoCash, OneMoney)
-- [ ] API endpoints listed with request/response examples
-- [ ] Integration status clear (complete/partial/mock)`
+            - [ ] Progress report follows standard format
+            - [ ] All payment methods documented (EcoCash, OneMoney)
+            - [ ] API endpoints listed with request/response examples
+            - [ ] Integration status clear (complete/partial/mock)`
             });
 
       - name: Create PRE-P3-004 Issue
@@ -171,29 +171,29 @@ The payment service code exists in \`/services/payment-service/\` but has no pro
               labels: ['priority: high', 'phase: pre-phase-3', 'type: testing'],
               body: `## Task Overview
 
-**Priority:** 🟡 High | **Estimate:** 1 hour | **Phase:** Pre-Phase 3
-**Depends On:** PRE-P3-002
+            **Priority:** 🟡 High | **Estimate:** 1 hour | **Phase:** Pre-Phase 3
+            **Depends On:** PRE-P3-002
 
-## Description
+            ## Description
 
-Run the complete test suite to verify backend code quality before frontend integration.
+            Run the complete test suite to verify backend code quality before frontend integration.
 
-## Tasks
+            ## Tasks
 
-- [ ] Install test dependencies: \`pnpm install\`
-- [ ] Run unit tests: \`pnpm run test\`
-- [ ] Run integration tests: \`pnpm run test:integration\`
-- [ ] Generate coverage report: \`pnpm run test -- --coverage\`
-- [ ] Fix any failing tests
-- [ ] Document test results
+            - [ ] Install test dependencies: \`pnpm install\`
+            - [ ] Run unit tests: \`pnpm run test\`
+            - [ ] Run integration tests: \`pnpm run test:integration\`
+            - [ ] Generate coverage report: \`pnpm run test -- --coverage\`
+            - [ ] Fix any failing tests
+            - [ ] Document test results
 
-## Acceptance Criteria
+            ## Acceptance Criteria
 
-- [ ] All unit tests passing
-- [ ] Integration tests passing
-- [ ] Coverage report generated (target: 80%+)
-- [ ] No critical test failures
-- [ ] Test results documented`
+            - [ ] All unit tests passing
+            - [ ] Integration tests passing
+            - [ ] Coverage report generated (target: 80%+)
+            - [ ] No critical test failures
+            - [ ] Test results documented`
             });
 
       - name: Create PRE-P3-005 Issue
@@ -207,38 +207,38 @@ Run the complete test suite to verify backend code quality before frontend integ
               labels: ['priority: high', 'phase: pre-phase-3', 'type: data'],
               body: `## Task Overview
 
-**Priority:** 🟡 High | **Estimate:** 30 minutes | **Phase:** Pre-Phase 3
-**Depends On:** PRE-P3-001
+            **Priority:** 🟡 High | **Estimate:** 30 minutes | **Phase:** Pre-Phase 3
+            **Depends On:** PRE-P3-001
 
-## Description
+            ## Description
 
-Populate the database with realistic demo data for testing and demonstration.
+            Populate the database with realistic demo data for testing and demonstration.
 
-## Demo Data Requirements
+            ## Demo Data Requirements
 
-| Entity | Count | Notes |
-|--------|-------|-------|
-| Customers | 20 | Various KYC statuses |
-| Loans | 15 | Active, paid, defaulted |
-| Payments | 50 | Various statuses |
-| Devices | 30 | Assigned, available, locked |
-| Distributors | 5 | With commission history |
+            | Entity | Count | Notes |
+            |--------|-------|-------|
+            | Customers | 20 | Various KYC statuses |
+            | Loans | 15 | Active, paid, defaulted |
+            | Payments | 50 | Various statuses |
+            | Devices | 30 | Assigned, available, locked |
+            | Distributors | 5 | With commission history |
 
-## Tasks
+            ## Tasks
 
-- [ ] Verify database is deployed (PRE-P3-001 complete)
-- [ ] Run demo data creation: \`node scripts/create-demo-data.js\`
-- [ ] Verify data created correctly
-- [ ] Test queries against demo data
-- [ ] Document demo accounts for testing
+            - [ ] Verify database is deployed (PRE-P3-001 complete)
+            - [ ] Run demo data creation: \`node scripts/create-demo-data.js\`
+            - [ ] Verify data created correctly
+            - [ ] Test queries against demo data
+            - [ ] Document demo accounts for testing
 
-## Acceptance Criteria
+            ## Acceptance Criteria
 
-- [ ] 20 demo customers with various credit tiers
-- [ ] 15 loans with different statuses
-- [ ] 50 payments with realistic history
-- [ ] 30 devices in various states
-- [ ] Data is consistent and realistic`
+            - [ ] 20 demo customers with various credit tiers
+            - [ ] 15 loans with different statuses
+            - [ ] 50 payments with realistic history
+            - [ ] 30 devices in various states
+            - [ ] Data is consistent and realistic`
             });
 
       - name: Create PRE-P3-006 Issue
@@ -252,38 +252,38 @@ Populate the database with realistic demo data for testing and demonstration.
               labels: ['priority: high', 'phase: pre-phase-3', 'type: documentation'],
               body: `## Task Overview
 
-**Priority:** 🟡 High | **Estimate:** 30 minutes | **Phase:** Pre-Phase 3
+            **Priority:** 🟡 High | **Estimate:** 30 minutes | **Phase:** Pre-Phase 3
 
-## Description
+            ## Description
 
-Create a comprehensive \`.env.example\` file documenting all required environment variables.
+            Create a comprehensive \`.env.example\` file documenting all required environment variables.
 
-## Environment Variables to Document
+            ## Environment Variables to Document
 
-- Supabase (URL, keys)
-- AWS (region, credentials)
-- WhatsApp Cloud API (phone ID, tokens)
-- Smile Identity (API key, partner ID)
-- Payment Gateways (EcoCash, OneMoney)
-- Trustonic (API key, partner ID)
-- Application settings
+            - Supabase (URL, keys)
+            - AWS (region, credentials)
+            - WhatsApp Cloud API (phone ID, tokens)
+            - Smile Identity (API key, partner ID)
+            - Payment Gateways (EcoCash, OneMoney)
+            - Trustonic (API key, partner ID)
+            - Application settings
 
-## Tasks
+            ## Tasks
 
-- [ ] Review all services for environment variables
-- [ ] Create \`.env.example\` at project root
-- [ ] Add comments explaining each variable
-- [ ] Document required vs optional variables
-- [ ] Group variables by service
-- [ ] Update README with setup instructions
+            - [ ] Review all services for environment variables
+            - [ ] Create \`.env.example\` at project root
+            - [ ] Add comments explaining each variable
+            - [ ] Document required vs optional variables
+            - [ ] Group variables by service
+            - [ ] Update README with setup instructions
 
-## Acceptance Criteria
+            ## Acceptance Criteria
 
-- [ ] All environment variables documented
-- [ ] Clear descriptions for each variable
-- [ ] Variables grouped by service
-- [ ] Required vs optional clearly marked
-- [ ] File committed to repository`
+            - [ ] All environment variables documented
+            - [ ] Clear descriptions for each variable
+            - [ ] Variables grouped by service
+            - [ ] Required vs optional clearly marked
+            - [ ] File committed to repository`
             });
 
       - name: Summary
