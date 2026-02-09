@@ -18,6 +18,7 @@ Globals:
         SUPABASE_URL: !Ref SupabaseUrl
         SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
         LOG_LEVEL: info
+        SECRETS_PREFIX: !Sub "${Environment}/lynia"
 
 Parameters:
   Environment:
@@ -138,6 +139,14 @@ Resources:
       CodeUri: services/scoring-service/
       Handler: dist/index.handler
       Description: Credit scoring and loan assessment service
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
       Environment:
         Variables:
           SCORING_MODEL_VERSION: v1
@@ -170,6 +179,15 @@ Resources:
       CodeUri: services/whatsapp-service/
       Handler: dist/index.handler
       Description: WhatsApp messaging and webhook service
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/whatsapp-*"
       Environment:
         Variables:
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
@@ -209,6 +227,15 @@ Resources:
       CodeUri: services/kyc-service/
       Handler: dist/index.handler
       Description: KYC verification service (Smile Identity integration)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/smile-identity-*"
       Environment:
         Variables:
           SMILE_PARTNER_ID: !Ref SmilePartnerId
@@ -248,6 +275,16 @@ Resources:
       CodeUri: services/payment-service/
       Handler: dist/index.handler
       Description: Payment processing service (EcoCash, OneMoney integration)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/ecocash-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/onemoney-*"
       Environment:
         Variables:
           ECOCASH_MERCHANT_ID: !Ref EcocashMerchantId
@@ -288,6 +325,15 @@ Resources:
       CodeUri: services/lock-service/
       Handler: dist/index.handler
       Description: Device lock/unlock service (Trustonic integration)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/trustonic-*"
       Environment:
         Variables:
           TRUSTONIC_API_KEY: !Ref TrustonicApiKey
@@ -333,6 +379,15 @@ Resources:
       CodeUri: services/notification-service/
       Handler: dist/index.handler
       Description: Multi-channel notification service (SMS, WhatsApp, Email)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/sms-*"
       Environment:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
