@@ -39,6 +39,94 @@ Parameters:
     Description: Supabase service role key
     NoEcho: true
 
+  WhatsAppPhoneNumberId:
+    Type: String
+    Description: WhatsApp Cloud API Phone Number ID
+    NoEcho: true
+    Default: ""
+
+  WhatsAppAccessToken:
+    Type: String
+    Description: WhatsApp Cloud API Access Token
+    NoEcho: true
+    Default: ""
+
+  WhatsAppWebhookVerifyToken:
+    Type: String
+    Description: WhatsApp Webhook Verification Token
+    NoEcho: true
+    Default: ""
+
+  SmilePartnerId:
+    Type: String
+    Description: Smile Identity Partner ID
+    NoEcho: true
+    Default: ""
+
+  SmileApiKey:
+    Type: String
+    Description: Smile Identity API Key
+    NoEcho: true
+    Default: ""
+
+  SmileEnvironment:
+    Type: String
+    Description: Smile Identity Environment (sandbox/production)
+    Default: sandbox
+    AllowedValues:
+      - sandbox
+      - production
+
+  EcocashMerchantId:
+    Type: String
+    Description: EcoCash Merchant ID
+    NoEcho: true
+    Default: ""
+
+  EcocashApiKey:
+    Type: String
+    Description: EcoCash API Key
+    NoEcho: true
+    Default: ""
+
+  OnemoneyMerchantId:
+    Type: String
+    Description: OneMoney Merchant ID
+    NoEcho: true
+    Default: ""
+
+  OnemoneyApiKey:
+    Type: String
+    Description: OneMoney API Key
+    NoEcho: true
+    Default: ""
+
+  TrustonicApiKey:
+    Type: String
+    Description: Trustonic API Key
+    NoEcho: true
+    Default: ""
+
+  TrustonicApiSecret:
+    Type: String
+    Description: Trustonic API Secret
+    NoEcho: true
+    Default: ""
+
+  SmsProvider:
+    Type: String
+    Description: SMS Provider (twilio/africas_talking)
+    Default: twilio
+    AllowedValues:
+      - twilio
+      - africas_talking
+
+  SmsApiKey:
+    Type: String
+    Description: SMS Provider API Key
+    NoEcho: true
+    Default: ""
+
 Resources:
   # =====================================================
   # 1. SCORING SERVICE
@@ -265,95 +353,6 @@ Resources:
         Target: es2020
         EntryPoints:
           - src/index.ts
-
-# Additional Parameters (Sensitive)
-  WhatsAppPhoneNumberId:
-    Type: String
-    Description: WhatsApp Cloud API Phone Number ID
-    NoEcho: true
-    Default: ""
-
-  WhatsAppAccessToken:
-    Type: String
-    Description: WhatsApp Cloud API Access Token
-    NoEcho: true
-    Default: ""
-
-  WhatsAppWebhookVerifyToken:
-    Type: String
-    Description: WhatsApp Webhook Verification Token
-    NoEcho: true
-    Default: ""
-
-  SmilePartnerId:
-    Type: String
-    Description: Smile Identity Partner ID
-    NoEcho: true
-    Default: ""
-
-  SmileApiKey:
-    Type: String
-    Description: Smile Identity API Key
-    NoEcho: true
-    Default: ""
-
-  SmileEnvironment:
-    Type: String
-    Description: Smile Identity Environment (sandbox/production)
-    Default: sandbox
-    AllowedValues:
-      - sandbox
-      - production
-
-  EcocashMerchantId:
-    Type: String
-    Description: EcoCash Merchant ID
-    NoEcho: true
-    Default: ""
-
-  EcocashApiKey:
-    Type: String
-    Description: EcoCash API Key
-    NoEcho: true
-    Default: ""
-
-  OnemoneyMerchantId:
-    Type: String
-    Description: OneMoney Merchant ID
-    NoEcho: true
-    Default: ""
-
-  OnemoneyApiKey:
-    Type: String
-    Description: OneMoney API Key
-    NoEcho: true
-    Default: ""
-
-  TrustonicApiKey:
-    Type: String
-    Description: Trustonic API Key
-    NoEcho: true
-    Default: ""
-
-  TrustonicApiSecret:
-    Type: String
-    Description: Trustonic API Secret
-    NoEcho: true
-    Default: ""
-
-  SmsProvider:
-    Type: String
-    Description: SMS Provider (twilio/africas_talking)
-    Default: twilio
-    AllowedValues:
-      - twilio
-      - africas_talking
-
-  SmsApiKey:
-    Type: String
-    Description: SMS Provider API Key
-    NoEcho: true
-    Default: ""
 
 Outputs:
   # API Gateway Endpoint
