@@ -160,7 +160,8 @@ Parameters:
 
   LambdaSecurityGroupId:
     Type: String
-    Default: ""
+    Default: "sg-00000000"
+    AllowedPattern: "^sg-[a-fA-F0-9]{8,17}$"
     Description: Lambda Security Group ID from VPC stack
 
 Conditions:
