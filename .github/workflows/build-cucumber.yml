@@ -67,6 +67,9 @@ jobs:
         with:
           validate-wrappers: true
 
+      - name: Ensure Gradle wrapper is executable
+        run: chmod +x ./gradlew
+
       - name: Run Gradle Task
         if: matrix.job_type == 'main'
         run: |
