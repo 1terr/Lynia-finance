@@ -8,7 +8,9 @@
       "Bash(git pull:*)",
       "Bash(git push:*)",
       "Bash(git update-ref:*)",
-      "Bash(.claude/scripts/update-master.sh)"
+      "Bash(.claude/scripts/update-master.sh)",
+      "Bash(.claude/scripts/pre-commit-check.sh)",
+      "Bash(.claude/scripts/auto-push.sh)"
     ],
     "deny": [],
     "ask": []
@@ -21,6 +23,30 @@
           {
             "type": "command",
             "command": "bash .claude/scripts/update-master.sh"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'ARGS=\"$CLAUDE_TOOL_INPUT\"; if echo \"$ARGS\" | grep -q '\"'\"'git commit'\"'\"'; then bash .claude/scripts/pre-commit-check.sh; fi'",
+            "timeout": 10000
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'ARGS=\"$CLAUDE_TOOL_INPUT\"; if echo \"$ARGS\" | grep -q '\"'\"'git commit'\"'\"'; then bash .claude/scripts/auto-push.sh; fi'",
+            "timeout": 30000
           }
         ]
       }

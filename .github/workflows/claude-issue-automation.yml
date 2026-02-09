@@ -1,0 +1,77 @@
+name: Claude Issue Automation
+
+on:
+  issues:
+    types: [labeled]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  prepare-for-claude:
+    name: Prepare Branch for Claude
+    if: github.event.label.name == 'claude-auto'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Create Claude branch
+        id: branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ISSUE_NUMBER="${{ github.event.issue.number }}"
+          ISSUE_TITLE="${{ github.event.issue.title }}"
+
+          # Sanitize title for branch name
+          SLUG=$(echo "$ISSUE_TITLE" | tr '[:upper:]' '[:lower:]' | tr -cs 'a-z0-9' '-' | sed 's/^-//;s/-$//' | cut -c1-40)
+          BRANCH_NAME="claude/issue-${ISSUE_NUMBER}-${SLUG}"
+
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "issue=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+
+          # Create and push the branch
+          git checkout -b "$BRANCH_NAME"
+          git push -u origin "$BRANCH_NAME"
+
+          echo "Created branch: $BRANCH_NAME"
+
+      - name: Comment on issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="${{ steps.branch.outputs.branch }}"
+          ISSUE="${{ steps.branch.outputs.issue }}"
+
+          gh issue comment "$ISSUE" --body "$(cat <<EOF
+          **Claude automation branch created**
+
+          Branch: \`$BRANCH\`
+
+          **Next steps:**
+          1. Open Claude Code and checkout this branch:
+             \`\`\`
+             git checkout $BRANCH
+             \`\`\`
+          2. Ask Claude to work on this issue — it will read the issue context and implement the changes.
+          3. When Claude commits and pushes, the [auto-merge workflow](.github/workflows/auto-merge-claude-branches.yml) will:
+             - Create a PR linking back to this issue
+             - Run CI checks (lint + tests)
+             - Auto-merge into master after checks pass
+
+          The branch will be deleted automatically after merge.
+          EOF
+          )"
+
+      - name: Add in-progress label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue edit "${{ steps.branch.outputs.issue }}" \
+            --add-label "in-progress" \
+            2>/dev/null || true
