@@ -1,0 +1,226 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Route 53, Custom Domain, and SSL/TLS Certificates
+  DNS management, ACM certificates, and API Gateway custom domain mapping
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  DomainName:
+    Type: String
+    Default: lyniafinance.co.zw
+    Description: Root domain name
+
+  HostedZoneId:
+    Type: String
+    Default: ""
+    Description: Existing Route 53 Hosted Zone ID (leave empty to create new)
+
+  ApiGatewayRestApiId:
+    Type: String
+    Description: API Gateway REST API ID
+
+  ApiGatewayStageName:
+    Type: String
+    Default: Prod
+    Description: API Gateway stage name
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+  IsStaging: !Equals [!Ref Environment, staging]
+  CreateHostedZone: !Equals [!Ref HostedZoneId, ""]
+
+Resources:
+  # ==========================================================
+  # ROUTE 53 HOSTED ZONE
+  # ==========================================================
+
+  HostedZone:
+    Type: AWS::Route53::HostedZone
+    Condition: CreateHostedZone
+    Properties:
+      Name: !Ref DomainName
+      HostedZoneConfig:
+        Comment: !Sub "Lynia Finance ${Environment} hosted zone"
+
+  # ==========================================================
+  # ACM CERTIFICATE (API Gateway - regional)
+  # ==========================================================
+
+  ApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !If
+        - IsProduction
+        - !Sub "api.${DomainName}"
+        - !Sub "${Environment}-api.${DomainName}"
+      SubjectAlternativeNames:
+        - !If
+          - IsProduction
+          - !Sub "*.api.${DomainName}"
+          - !Sub "*.${Environment}-api.${DomainName}"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !If
+            - IsProduction
+            - !Sub "api.${DomainName}"
+            - !Sub "${Environment}-api.${DomainName}"
+          HostedZoneId: !If
+            - CreateHostedZone
+            - !Ref HostedZone
+            - !Ref HostedZoneId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: api-gateway
+
+  # ACM Certificate for frontend (CloudFront - must be us-east-1)
+  FrontendCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !If
+        - IsProduction
+        - !Ref DomainName
+        - !Sub "${Environment}.${DomainName}"
+      SubjectAlternativeNames:
+        - !If
+          - IsProduction
+          - !Sub "*.${DomainName}"
+          - !Sub "*.${Environment}.${DomainName}"
+        - !If
+          - IsProduction
+          - !Sub "admin.${DomainName}"
+          - !Sub "admin-${Environment}.${DomainName}"
+        - !If
+          - IsProduction
+          - !Sub "distributor.${DomainName}"
+          - !Sub "distributor-${Environment}.${DomainName}"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: !If
+            - IsProduction
+            - !Ref DomainName
+            - !Sub "${Environment}.${DomainName}"
+          HostedZoneId: !If
+            - CreateHostedZone
+            - !Ref HostedZone
+            - !Ref HostedZoneId
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: frontend
+
+  # ==========================================================
+  # API GATEWAY CUSTOM DOMAIN
+  # ==========================================================
+
+  ApiCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !If
+        - IsProduction
+        - !Sub "api.${DomainName}"
+        - !Sub "${Environment}-api.${DomainName}"
+      RegionalCertificateArn: !Ref ApiCertificate
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      SecurityPolicy: TLS_1_2
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  ApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref ApiCustomDomain
+      RestApiId: !Ref ApiGatewayRestApiId
+      Stage: !Ref ApiGatewayStageName
+
+  # ==========================================================
+  # DNS RECORDS
+  # ==========================================================
+
+  # API Gateway DNS record
+  ApiDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !If
+        - CreateHostedZone
+        - !Ref HostedZone
+        - !Ref HostedZoneId
+      Name: !If
+        - IsProduction
+        - !Sub "api.${DomainName}"
+        - !Sub "${Environment}-api.${DomainName}"
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ApiCustomDomain.RegionalDomainName
+        HostedZoneId: !GetAtt ApiCustomDomain.RegionalHostedZoneId
+
+  # Health check for API (production only)
+  ApiHealthCheck:
+    Type: AWS::Route53::HealthCheck
+    Condition: IsProduction
+    Properties:
+      HealthCheckConfig:
+        FullyQualifiedDomainName: !Sub "api.${DomainName}"
+        Port: 443
+        Type: HTTPS
+        ResourcePath: /health
+        RequestInterval: 30
+        FailureThreshold: 3
+        EnableSNI: true
+      HealthCheckTags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-api-health"
+
+Outputs:
+  ApiDomainName:
+    Description: API custom domain name
+    Value: !If
+      - IsProduction
+      - !Sub "api.${DomainName}"
+      - !Sub "${Environment}-api.${DomainName}"
+
+  ApiCertificateArn:
+    Description: API certificate ARN
+    Value: !Ref ApiCertificate
+    Export:
+      Name: !Sub "${Environment}-lynia-api-certificate-arn"
+
+  FrontendCertificateArn:
+    Description: Frontend certificate ARN
+    Value: !Ref FrontendCertificate
+    Export:
+      Name: !Sub "${Environment}-lynia-frontend-certificate-arn"
+
+  HostedZoneIdOutput:
+    Description: Route 53 Hosted Zone ID
+    Value: !If
+      - CreateHostedZone
+      - !Ref HostedZone
+      - !Ref HostedZoneId
+    Export:
+      Name: !Sub "${Environment}-lynia-hosted-zone-id"
+
+  ApiUrl:
+    Description: API URL with custom domain
+    Value: !If
+      - IsProduction
+      - !Sub "https://api.${DomainName}"
+      - !Sub "https://${Environment}-api.${DomainName}"
+
+  NameServers:
+    Description: Name servers (update domain registrar with these)
+    Condition: CreateHostedZone
+    Value: !Join
+      - ", "
+      - !GetAtt HostedZone.NameServers

@@ -1,0 +1,243 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - API Gateway Throttling, Usage Plans, and API Keys
+  Rate limiting, quota management, and API key authentication for partner integrations
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  ApiGatewayRestApiId:
+    Type: String
+    Description: API Gateway REST API ID
+
+  ApiGatewayStageName:
+    Type: String
+    Default: Prod
+    Description: API Gateway stage name
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # API GATEWAY ACCOUNT SETTINGS (throttling defaults)
+  # ==========================================================
+
+  ApiGatewayAccount:
+    Type: AWS::ApiGateway::Account
+    Properties:
+      CloudWatchRoleArn: !GetAtt ApiGatewayCloudWatchRole.Arn
+
+  ApiGatewayCloudWatchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-apigw-cloudwatch-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: apigateway.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
+  # ==========================================================
+  # USAGE PLANS
+  # ==========================================================
+
+  # Internal usage plan (admin portal, distributor dashboard)
+  InternalUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub "${Environment}-lynia-internal"
+      Description: Usage plan for internal services (admin portal, dashboards)
+      Throttle:
+        BurstLimit: 200
+        RateLimit: 100
+      Quota:
+        Limit: 100000
+        Period: DAY
+      ApiStages:
+        - ApiId: !Ref ApiGatewayRestApiId
+          Stage: !Ref ApiGatewayStageName
+          Throttle:
+            # Higher limits for admin dashboard endpoints
+            "/scoring/calculate/POST":
+              BurstLimit: 50
+              RateLimit: 25
+            "/scoring/*/GET":
+              BurstLimit: 100
+              RateLimit: 50
+
+  # Partner usage plan (WhatsApp webhooks, payment provider callbacks)
+  PartnerUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub "${Environment}-lynia-partner"
+      Description: Usage plan for external partners (WhatsApp, EcoCash, etc.)
+      Throttle:
+        BurstLimit: 500
+        RateLimit: 200
+      Quota:
+        Limit: 500000
+        Period: DAY
+      ApiStages:
+        - ApiId: !Ref ApiGatewayRestApiId
+          Stage: !Ref ApiGatewayStageName
+          Throttle:
+            "/whatsapp/webhook/POST":
+              BurstLimit: 500
+              RateLimit: 200
+            "/payments/webhook/POST":
+              BurstLimit: 300
+              RateLimit: 100
+            "/kyc/callback/POST":
+              BurstLimit: 100
+              RateLimit: 50
+
+  # Public usage plan (customer-facing, most restrictive)
+  PublicUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    Properties:
+      UsagePlanName: !Sub "${Environment}-lynia-public"
+      Description: Usage plan for public/customer-facing access
+      Throttle:
+        BurstLimit: 50
+        RateLimit: 20
+      Quota:
+        Limit: 10000
+        Period: DAY
+      ApiStages:
+        - ApiId: !Ref ApiGatewayRestApiId
+          Stage: !Ref ApiGatewayStageName
+
+  # ==========================================================
+  # API KEYS
+  # ==========================================================
+
+  # Internal API Key (admin portal)
+  AdminPortalApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub "${Environment}-lynia-admin-portal"
+      Description: API key for Lynia Finance admin portal
+      Enabled: true
+
+  AdminPortalUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref AdminPortalApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref InternalUsagePlan
+
+  # Distributor Dashboard API Key
+  DistributorDashboardApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub "${Environment}-lynia-distributor-dashboard"
+      Description: API key for Lynia Finance distributor dashboard
+      Enabled: true
+
+  DistributorDashboardUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref DistributorDashboardApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref InternalUsagePlan
+
+  # WhatsApp Webhook API Key
+  WhatsAppWebhookApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub "${Environment}-lynia-whatsapp-webhook"
+      Description: API key for WhatsApp Cloud API webhook callbacks
+      Enabled: true
+
+  WhatsAppWebhookUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref WhatsAppWebhookApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref PartnerUsagePlan
+
+  # Payment Provider API Key (EcoCash/OneMoney callbacks)
+  PaymentProviderApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub "${Environment}-lynia-payment-providers"
+      Description: API key for payment provider webhook callbacks
+      Enabled: true
+
+  PaymentProviderUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref PaymentProviderApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref PartnerUsagePlan
+
+  # KYC Provider API Key (Smile Identity callbacks)
+  KYCProviderApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    Properties:
+      Name: !Sub "${Environment}-lynia-kyc-provider"
+      Description: API key for KYC provider (Smile Identity) callbacks
+      Enabled: true
+
+  KYCProviderUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref KYCProviderApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref PartnerUsagePlan
+
+  # ==========================================================
+  # STAGE METHOD SETTINGS (per-endpoint throttling)
+  # ==========================================================
+
+  ApiGatewayMethodSettings:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      StageName: !Ref ApiGatewayStageName
+      RestApiId: !Ref ApiGatewayRestApiId
+      MethodSettings:
+        # Default settings for all methods
+        - HttpMethod: "*"
+          ResourcePath: "/*"
+          ThrottlingBurstLimit: !If [IsProduction, 500, 100]
+          ThrottlingRateLimit: !If [IsProduction, 200, 50]
+          LoggingLevel: !If [IsProduction, ERROR, INFO]
+          DataTraceEnabled: !If [IsProduction, false, true]
+          MetricsEnabled: true
+
+Outputs:
+  InternalUsagePlanId:
+    Description: Internal usage plan ID
+    Value: !Ref InternalUsagePlan
+    Export:
+      Name: !Sub "${Environment}-lynia-internal-usage-plan"
+
+  PartnerUsagePlanId:
+    Description: Partner usage plan ID
+    Value: !Ref PartnerUsagePlan
+    Export:
+      Name: !Sub "${Environment}-lynia-partner-usage-plan"
+
+  PublicUsagePlanId:
+    Description: Public usage plan ID
+    Value: !Ref PublicUsagePlan
+    Export:
+      Name: !Sub "${Environment}-lynia-public-usage-plan"
+
+  AdminPortalApiKeyId:
+    Description: Admin portal API key ID
+    Value: !Ref AdminPortalApiKey
+
+  DistributorDashboardApiKeyId:
+    Description: Distributor dashboard API key ID
+    Value: !Ref DistributorDashboardApiKey

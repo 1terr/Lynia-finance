@@ -1,0 +1,560 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - CloudWatch Alarms and Operational Dashboards
+  Monitoring for Lambda functions, API Gateway, and business metrics
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  AlertEmail:
+    Type: String
+    Default: alerts@lynia.co.zw
+    Description: Email address for critical alerts
+
+  AlertPhone:
+    Type: String
+    Default: ""
+    Description: Phone number for SMS critical alerts (E.164 format)
+
+Conditions:
+  HasAlertPhone: !Not [!Equals [!Ref AlertPhone, ""]]
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # SNS TOPICS
+  # ==========================================================
+
+  CriticalAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-lynia-critical-alerts"
+      DisplayName: "Lynia Critical Alerts"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  CriticalAlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref CriticalAlertsTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  CriticalAlertsSmsSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: HasAlertPhone
+    Properties:
+      TopicArn: !Ref CriticalAlertsTopic
+      Protocol: sms
+      Endpoint: !Ref AlertPhone
+
+  WarningAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-lynia-warning-alerts"
+      DisplayName: "Lynia Warning Alerts"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  WarningAlertsEmailSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref WarningAlertsTopic
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+
+  # ==========================================================
+  # LAMBDA ERROR RATE ALARMS (one per function)
+  # ==========================================================
+
+  ScoringErrorAlarmCritical:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-scoring-error-critical"
+      AlarmDescription: "Scoring service error rate > 5%"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-scoring-service"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref CriticalAlertsTopic
+
+  PaymentErrorAlarmCritical:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-payment-error-critical"
+      AlarmDescription: "Payment service error rate > 5% - CRITICAL financial operations"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-payment-service"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref CriticalAlertsTopic
+
+  WhatsAppErrorAlarmCritical:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-whatsapp-error-critical"
+      AlarmDescription: "WhatsApp service error rate critical"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-whatsapp-service"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref CriticalAlertsTopic
+
+  KYCErrorAlarmWarning:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-kyc-error-warning"
+      AlarmDescription: "KYC service error rate elevated"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-kyc-service"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  LockErrorAlarmWarning:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-lock-error-warning"
+      AlarmDescription: "Lock service error rate elevated"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-lock-service"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  NotificationErrorAlarmWarning:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-notification-error-warning"
+      AlarmDescription: "Notification service error rate elevated"
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-notification-service"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  # ==========================================================
+  # LAMBDA DURATION ALARMS (p95 latency)
+  # ==========================================================
+
+  PaymentDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-payment-duration-p95"
+      AlarmDescription: "Payment service p95 latency > 10 seconds"
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-payment-service"
+      ExtendedStatistic: p95
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  ScoringDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-scoring-duration-p95"
+      AlarmDescription: "Scoring service p95 latency > 10 seconds"
+      Namespace: AWS/Lambda
+      MetricName: Duration
+      Dimensions:
+        - Name: FunctionName
+          Value: !Sub "${Environment}-lynia-scoring-service"
+      ExtendedStatistic: p95
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  # ==========================================================
+  # LAMBDA THROTTLE ALARMS
+  # ==========================================================
+
+  LambdaThrottleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-lambda-throttles"
+      AlarmDescription: "Lambda functions being throttled"
+      Namespace: AWS/Lambda
+      MetricName: Throttles
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref CriticalAlertsTopic
+
+  # ==========================================================
+  # API GATEWAY ALARMS
+  # ==========================================================
+
+  ApiGateway5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-api-5xx-critical"
+      AlarmDescription: "API Gateway 5XX error rate critical"
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref CriticalAlertsTopic
+
+  ApiGateway4xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-api-4xx-warning"
+      AlarmDescription: "API Gateway 4XX error rate elevated (possible attack)"
+      Namespace: AWS/ApiGateway
+      MetricName: 4XXError
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 100
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  ApiGatewayLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-api-latency-p95"
+      AlarmDescription: "API Gateway p95 latency > 5 seconds"
+      Namespace: AWS/ApiGateway
+      MetricName: Latency
+      ExtendedStatistic: p95
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  # ==========================================================
+  # OPERATIONS DASHBOARD
+  # ==========================================================
+
+  OperationsDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-lynia-operations"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 24, "height": 3,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${Environment}-lynia-scoring-service", {"label": "Scoring"}],
+                  ["...", "${Environment}-lynia-payment-service", {"label": "Payment"}],
+                  ["...", "${Environment}-lynia-whatsapp-service", {"label": "WhatsApp"}],
+                  ["...", "${Environment}-lynia-kyc-service", {"label": "KYC"}],
+                  ["...", "${Environment}-lynia-lock-service", {"label": "Lock"}],
+                  ["...", "${Environment}-lynia-notification-service", {"label": "Notification"}]
+                ],
+                "view": "timeSeries",
+                "title": "Lambda Invocations",
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 3, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Errors", "FunctionName", "${Environment}-lynia-scoring-service", {"label": "Scoring"}],
+                  ["...", "${Environment}-lynia-payment-service", {"label": "Payment"}],
+                  ["...", "${Environment}-lynia-whatsapp-service", {"label": "WhatsApp"}],
+                  ["...", "${Environment}-lynia-kyc-service", {"label": "KYC"}],
+                  ["...", "${Environment}-lynia-lock-service", {"label": "Lock"}],
+                  ["...", "${Environment}-lynia-notification-service", {"label": "Notification"}]
+                ],
+                "view": "timeSeries",
+                "title": "Lambda Errors",
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 3, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-lynia-scoring-service", {"label": "Scoring"}],
+                  ["...", "${Environment}-lynia-payment-service", {"label": "Payment"}],
+                  ["...", "${Environment}-lynia-whatsapp-service", {"label": "WhatsApp"}],
+                  ["...", "${Environment}-lynia-kyc-service", {"label": "KYC"}],
+                  ["...", "${Environment}-lynia-lock-service", {"label": "Lock"}],
+                  ["...", "${Environment}-lynia-notification-service", {"label": "Notification"}]
+                ],
+                "view": "timeSeries",
+                "title": "Lambda Duration (p95)",
+                "period": 60,
+                "stat": "p95"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 9, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "Throttles", "FunctionName", "${Environment}-lynia-scoring-service", {"label": "Scoring"}],
+                  ["...", "${Environment}-lynia-payment-service", {"label": "Payment"}],
+                  ["...", "${Environment}-lynia-whatsapp-service", {"label": "WhatsApp"}]
+                ],
+                "view": "timeSeries",
+                "title": "Lambda Throttles",
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 9, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Lambda", "ConcurrentExecutions", "FunctionName", "${Environment}-lynia-scoring-service", {"label": "Scoring"}],
+                  ["...", "${Environment}-lynia-payment-service", {"label": "Payment"}],
+                  ["...", "${Environment}-lynia-whatsapp-service", {"label": "WhatsApp"}]
+                ],
+                "view": "timeSeries",
+                "title": "Concurrent Executions",
+                "period": 60,
+                "stat": "Maximum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 15, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "5XXError", {"label": "5XX Errors"}],
+                  [".", "4XXError", {"label": "4XX Errors"}]
+                ],
+                "view": "timeSeries",
+                "title": "API Gateway Errors",
+                "period": 60,
+                "stat": "Sum"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 15, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/ApiGateway", "Latency", {"label": "p50", "stat": "p50"}],
+                  [".", "Latency", {"label": "p95", "stat": "p95"}],
+                  [".", "Latency", {"label": "p99", "stat": "p99"}]
+                ],
+                "view": "timeSeries",
+                "title": "API Gateway Latency",
+                "period": 60
+              }
+            }
+          ]
+        }
+
+  # ==========================================================
+  # BUSINESS METRICS DASHBOARD
+  # ==========================================================
+
+  BusinessDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "${Environment}-lynia-business"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 8, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["Lynia/${Environment}", "LoanApplicationsSubmitted", {"label": "Submitted", "stat": "Sum"}],
+                  [".", "LoanApplicationsApproved", {"label": "Approved", "stat": "Sum"}],
+                  [".", "LoanApplicationsRejected", {"label": "Rejected", "stat": "Sum"}]
+                ],
+                "view": "timeSeries",
+                "title": "Loan Applications",
+                "period": 3600
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8, "y": 0, "width": 8, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["Lynia/${Environment}", "PaymentsProcessed", {"label": "Processed", "stat": "Sum"}],
+                  [".", "PaymentsFailed", {"label": "Failed", "stat": "Sum"}]
+                ],
+                "view": "timeSeries",
+                "title": "Payments",
+                "period": 3600
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16, "y": 0, "width": 8, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["Lynia/${Environment}", "KYCVerificationsInitiated", {"label": "Initiated", "stat": "Sum"}],
+                  [".", "KYCVerificationsCompleted", {"label": "Completed", "stat": "Sum"}],
+                  [".", "KYCVerificationsFailed", {"label": "Failed", "stat": "Sum"}]
+                ],
+                "view": "timeSeries",
+                "title": "KYC Verifications",
+                "period": 3600
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["Lynia/${Environment}", "TotalDisbursedAmount", {"label": "Disbursed ($)", "stat": "Sum"}],
+                  [".", "TotalCollectedAmount", {"label": "Collected ($)", "stat": "Sum"}]
+                ],
+                "view": "timeSeries",
+                "title": "Financial Volume (USD)",
+                "period": 86400
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["Lynia/${Environment}", "ActiveLoans", {"label": "Active Loans", "stat": "Maximum"}],
+                  [".", "DefaultedLoans", {"label": "Defaulted", "stat": "Maximum"}]
+                ],
+                "view": "timeSeries",
+                "title": "Loan Portfolio",
+                "period": 86400
+              }
+            }
+          ]
+        }
+
+  # ==========================================================
+  # COST DASHBOARD
+  # ==========================================================
+
+  CostDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: IsProduction
+    Properties:
+      DashboardName: !Sub "${Environment}-lynia-cost"
+      DashboardBody: |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 24, "height": 6,
+              "properties": {
+                "metrics": [
+                  ["AWS/Billing", "EstimatedCharges", "Currency", "USD"]
+                ],
+                "view": "timeSeries",
+                "title": "Estimated AWS Charges (USD)",
+                "period": 86400,
+                "stat": "Maximum",
+                "region": "us-east-1"
+              }
+            }
+          ]
+        }
+
+Outputs:
+  CriticalAlertsTopicArn:
+    Description: Critical alerts SNS topic ARN
+    Value: !Ref CriticalAlertsTopic
+    Export:
+      Name: !Sub "${Environment}-lynia-critical-alerts-topic"
+
+  WarningAlertsTopicArn:
+    Description: Warning alerts SNS topic ARN
+    Value: !Ref WarningAlertsTopic
+    Export:
+      Name: !Sub "${Environment}-lynia-warning-alerts-topic"
+
+  OperationsDashboardName:
+    Description: Operations dashboard name
+    Value: !Sub "${Environment}-lynia-operations"
+
+  BusinessDashboardName:
+    Description: Business metrics dashboard name
+    Value: !Sub "${Environment}-lynia-business"

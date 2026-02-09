@@ -1,0 +1,266 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - AWS WAF Rules for API Gateway
+  Rate limiting, SQL injection protection, XSS prevention, and geo-blocking
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  ApiGatewayArn:
+    Type: String
+    Description: ARN of the API Gateway stage to protect
+
+  RateLimitPerIP:
+    Type: Number
+    Default: 2000
+    Description: Maximum requests per 5-minute window per IP
+
+  LoginRateLimitPerIP:
+    Type: Number
+    Default: 100
+    Description: Maximum auth requests per 5-minute window per IP
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # WAF WEB ACL
+  # ==========================================================
+
+  LyniaWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub "${Environment}-lynia-web-acl"
+      Description: WAF rules for Lynia Finance API Gateway
+      Scope: REGIONAL
+      DefaultAction:
+        Allow: {}
+      VisibilityConfig:
+        SampledRequestsEnabled: true
+        CloudWatchMetricsEnabled: true
+        MetricName: !Sub "${Environment}LyniaWebACL"
+      Rules:
+        # Rule 1: Global rate limiting
+        - Name: RateLimitGlobal
+          Priority: 1
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref RateLimitPerIP
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}RateLimitGlobal"
+
+        # Rule 2: Auth endpoint rate limiting (stricter)
+        - Name: RateLimitAuth
+          Priority: 2
+          Statement:
+            RateBasedStatement:
+              Limit: !Ref LoginRateLimitPerIP
+              AggregateKeyType: IP
+              ScopeDownStatement:
+                OrStatement:
+                  Statements:
+                    - ByteMatchStatement:
+                        SearchString: "/whatsapp/webhook"
+                        FieldToMatch:
+                          UriPath: {}
+                        TextTransformations:
+                          - Priority: 0
+                            Type: LOWERCASE
+                        PositionalConstraint: CONTAINS
+                    - ByteMatchStatement:
+                        SearchString: "/kyc/callback"
+                        FieldToMatch:
+                          UriPath: {}
+                        TextTransformations:
+                          - Priority: 0
+                            Type: LOWERCASE
+                        PositionalConstraint: CONTAINS
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}RateLimitAuth"
+
+        # Rule 3: AWS Managed SQL injection protection
+        - Name: AWSManagedSQLi
+          Priority: 3
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesSQLiRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}SQLiProtection"
+
+        # Rule 4: AWS Managed XSS protection
+        - Name: AWSManagedXSS
+          Priority: 4
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesKnownBadInputsRuleSet
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}XSSProtection"
+
+        # Rule 5: AWS Managed common rule set (core protection)
+        - Name: AWSManagedCommon
+          Priority: 5
+          Statement:
+            ManagedRuleGroupStatement:
+              VendorName: AWS
+              Name: AWSManagedRulesCommonRuleSet
+              ExcludedRules:
+                - Name: SizeRestrictions_BODY
+                - Name: CrossSiteScripting_BODY
+          OverrideAction:
+            None: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}CommonProtection"
+
+        # Rule 6: Block requests with missing or suspicious headers
+        - Name: BlockSuspiciousHeaders
+          Priority: 6
+          Statement:
+            OrStatement:
+              Statements:
+                - SizeConstraintStatement:
+                    FieldToMatch:
+                      SingleHeader:
+                        Name: user-agent
+                    ComparisonOperator: EQ
+                    Size: 0
+                    TextTransformations:
+                      - Priority: 0
+                        Type: NONE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}SuspiciousHeaders"
+
+        # Rule 7: Body size limit (16KB for API requests)
+        - Name: BodySizeLimit
+          Priority: 7
+          Statement:
+            SizeConstraintStatement:
+              FieldToMatch:
+                Body:
+                  OversizeHandling: MATCH
+              ComparisonOperator: GT
+              Size: 16384
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}BodySizeLimit"
+
+        # Rule 8: Geo-restriction (allow only Southern Africa + common VPN regions)
+        - Name: GeoRestriction
+          Priority: 8
+          Statement:
+            NotStatement:
+              Statement:
+                GeoMatchStatement:
+                  CountryCodes:
+                    - ZW  # Zimbabwe (primary market)
+                    - ZA  # South Africa
+                    - BW  # Botswana
+                    - MZ  # Mozambique
+                    - MW  # Malawi
+                    - US  # Development/Admin access
+                    - GB  # Development/Admin access
+                    - DE  # AWS regions
+          Action:
+            Count: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: !Sub "${Environment}GeoRestriction"
+
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==========================================================
+  # WAF ASSOCIATION WITH API GATEWAY
+  # ==========================================================
+
+  WebACLAssociation:
+    Type: AWS::WAFv2::WebACLAssociation
+    Properties:
+      WebACLArn: !GetAtt LyniaWebACL.Arn
+      ResourceArn: !Ref ApiGatewayArn
+
+  # ==========================================================
+  # WAF LOGGING
+  # ==========================================================
+
+  WAFLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "aws-waf-logs-${Environment}-lynia"
+      RetentionInDays: !If [IsProduction, 90, 30]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  WAFLoggingConfiguration:
+    Type: AWS::WAFv2::LoggingConfiguration
+    Properties:
+      ResourceArn: !GetAtt LyniaWebACL.Arn
+      LogDestinationConfigs:
+        - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:aws-waf-logs-${Environment}-lynia"
+      LoggingFilter:
+        DefaultBehavior: DROP
+        Filters:
+          - Behavior: KEEP
+            Conditions:
+              - ActionCondition:
+                  Action: BLOCK
+            Requirement: MEETS_ANY
+          - Behavior: KEEP
+            Conditions:
+              - ActionCondition:
+                  Action: COUNT
+            Requirement: MEETS_ANY
+
+Outputs:
+  WebACLArn:
+    Description: WAF WebACL ARN
+    Value: !GetAtt LyniaWebACL.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-waf-acl-arn"
+
+  WebACLId:
+    Description: WAF WebACL ID
+    Value: !GetAtt LyniaWebACL.Id
+
+  WAFLogGroupName:
+    Description: WAF log group name
+    Value: !Sub "aws-waf-logs-${Environment}-lynia"

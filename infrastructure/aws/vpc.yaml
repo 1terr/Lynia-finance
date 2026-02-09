@@ -1,0 +1,370 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - VPC Configuration
+  Private subnets for Lambda functions with NAT Gateway for outbound internet access
+  and VPC Endpoints for AWS service calls
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  VpcCidr:
+    Type: String
+    Default: "10.0.0.0/16"
+    Description: CIDR block for the VPC
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # VPC
+  # ==========================================================
+  LyniaVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-vpc"
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==========================================================
+  # INTERNET GATEWAY
+  # ==========================================================
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-igw"
+
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref LyniaVPC
+
+  # ==========================================================
+  # PUBLIC SUBNETS (for NAT Gateways)
+  # ==========================================================
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LyniaVPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-public-1a"
+        - Key: Type
+          Value: public
+
+  PublicSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LyniaVPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: "10.0.2.0/24"
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-public-1b"
+        - Key: Type
+          Value: public
+
+  # ==========================================================
+  # PRIVATE SUBNETS (for Lambda functions)
+  # ==========================================================
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LyniaVPC
+      AvailabilityZone: !Select [0, !GetAZs ""]
+      CidrBlock: "10.0.10.0/24"
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-private-1a"
+        - Key: Type
+          Value: private
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref LyniaVPC
+      AvailabilityZone: !Select [1, !GetAZs ""]
+      CidrBlock: "10.0.11.0/24"
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-private-1b"
+        - Key: Type
+          Value: private
+
+  # ==========================================================
+  # NAT GATEWAY (single for cost optimization, dual for production)
+  # ==========================================================
+  NatGateway1EIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-nat-eip-1"
+
+  NatGateway1:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGateway1EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-nat-1a"
+
+  # Second NAT Gateway for production HA
+  NatGateway2EIP:
+    Type: AWS::EC2::EIP
+    Condition: IsProduction
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-nat-eip-2"
+
+  NatGateway2:
+    Type: AWS::EC2::NatGateway
+    Condition: IsProduction
+    Properties:
+      AllocationId: !GetAtt NatGateway2EIP.AllocationId
+      SubnetId: !Ref PublicSubnet2
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-nat-1b"
+
+  # ==========================================================
+  # ROUTE TABLES
+  # ==========================================================
+
+  # Public Route Table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref LyniaVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-public-rt"
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: "0.0.0.0/0"
+      GatewayId: !Ref InternetGateway
+
+  PublicSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  # Private Route Table 1
+  PrivateRouteTable1:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref LyniaVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-private-rt-1"
+
+  PrivateRoute1:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable1
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !Ref NatGateway1
+
+  PrivateSubnet1RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable1
+
+  # Private Route Table 2
+  PrivateRouteTable2:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref LyniaVPC
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-private-rt-2"
+
+  PrivateRoute2:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable2
+      DestinationCidrBlock: "0.0.0.0/0"
+      NatGatewayId: !If [IsProduction, !Ref NatGateway2, !Ref NatGateway1]
+
+  PrivateSubnet2RouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable2
+
+  # ==========================================================
+  # SECURITY GROUPS
+  # ==========================================================
+
+  # Lambda Security Group
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-lambda-sg"
+      GroupDescription: Security group for Lambda functions in private subnets
+      VpcId: !Ref LyniaVPC
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTPS outbound for external APIs and AWS services"
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: "0.0.0.0/0"
+          Description: "PostgreSQL outbound for Supabase"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-lambda-sg"
+
+  # VPC Endpoint Security Group
+  VPCEndpointSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-vpce-sg"
+      GroupDescription: Security group for VPC Endpoints
+      VpcId: !Ref LyniaVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref LambdaSecurityGroup
+          Description: "HTTPS from Lambda functions"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-vpce-sg"
+
+  # ==========================================================
+  # VPC ENDPOINTS (reduce NAT Gateway costs for AWS services)
+  # ==========================================================
+
+  # Secrets Manager VPC Endpoint
+  SecretsManagerEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.secretsmanager"
+      VpcEndpointType: Interface
+      VpcId: !Ref LyniaVPC
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+  # CloudWatch Logs VPC Endpoint
+  CloudWatchLogsEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.logs"
+      VpcEndpointType: Interface
+      VpcId: !Ref LyniaVPC
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+  # SQS VPC Endpoint
+  SQSEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.sqs"
+      VpcEndpointType: Interface
+      VpcId: !Ref LyniaVPC
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+  # X-Ray VPC Endpoint
+  XRayEndpoint:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.xray"
+      VpcEndpointType: Interface
+      VpcId: !Ref LyniaVPC
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+      SecurityGroupIds:
+        - !Ref VPCEndpointSecurityGroup
+      PrivateDnsEnabled: true
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !Ref LyniaVPC
+    Export:
+      Name: !Sub "${Environment}-lynia-vpc-id"
+
+  PrivateSubnet1Id:
+    Description: Private Subnet 1 ID
+    Value: !Ref PrivateSubnet1
+    Export:
+      Name: !Sub "${Environment}-lynia-private-subnet-1"
+
+  PrivateSubnet2Id:
+    Description: Private Subnet 2 ID
+    Value: !Ref PrivateSubnet2
+    Export:
+      Name: !Sub "${Environment}-lynia-private-subnet-2"
+
+  LambdaSecurityGroupId:
+    Description: Lambda Security Group ID
+    Value: !Ref LambdaSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-lynia-lambda-sg-id"
+
+  PublicSubnet1Id:
+    Description: Public Subnet 1 ID
+    Value: !Ref PublicSubnet1
+    Export:
+      Name: !Sub "${Environment}-lynia-public-subnet-1"
+
+  PublicSubnet2Id:
+    Description: Public Subnet 2 ID
+    Value: !Ref PublicSubnet2
+    Export:
+      Name: !Sub "${Environment}-lynia-public-subnet-2"

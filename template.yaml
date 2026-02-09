@@ -11,13 +11,25 @@ Globals:
     MemorySize: 512
     Runtime: nodejs20.x
     Architectures:
-      - x86_64
+      - arm64
+    Tracing: Active
+    EphemeralStorage:
+      Size: 512
     Environment:
       Variables:
         NODE_ENV: !Ref Environment
         SUPABASE_URL: !Ref SupabaseUrl
         SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
         LOG_LEVEL: info
+        SECRETS_PREFIX: !Sub "${Environment}/lynia"
+    VpcConfig: !If
+      - UseVPC
+      - SecurityGroupIds:
+          - !Ref LambdaSecurityGroupId
+        SubnetIds:
+          - !Ref PrivateSubnet1Id
+          - !Ref PrivateSubnet2Id
+      - !Ref "AWS::NoValue"
 
 Parameters:
   Environment:
@@ -127,6 +139,33 @@ Parameters:
     NoEcho: true
     Default: ""
 
+  # VPC Configuration (from VPC stack outputs)
+  VpcEnabled:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable VPC configuration for Lambda functions
+
+  PrivateSubnet1Id:
+    Type: String
+    Default: ""
+    Description: Private Subnet 1 ID from VPC stack
+
+  PrivateSubnet2Id:
+    Type: String
+    Default: ""
+    Description: Private Subnet 2 ID from VPC stack
+
+  LambdaSecurityGroupId:
+    Type: String
+    Default: ""
+    Description: Lambda Security Group ID from VPC stack
+
+Conditions:
+  UseVPC: !Equals [!Ref VpcEnabled, "true"]
+
 Resources:
   # =====================================================
   # 1. SCORING SERVICE
@@ -138,6 +177,24 @@ Resources:
       CodeUri: services/scoring-service/
       Handler: dist/index.handler
       Description: Credit scoring and loan assessment service
+      MemorySize: 1024
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
       Environment:
         Variables:
           SCORING_MODEL_VERSION: v1
@@ -156,7 +213,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -170,6 +231,25 @@ Resources:
       CodeUri: services/whatsapp-service/
       Handler: dist/index.handler
       Description: WhatsApp messaging and webhook service
+      ReservedConcurrentExecutions: 100
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/whatsapp-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
       Environment:
         Variables:
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
@@ -195,7 +275,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -209,6 +293,27 @@ Resources:
       CodeUri: services/kyc-service/
       Handler: dist/index.handler
       Description: KYC verification service (Smile Identity integration)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/smile-identity-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-kyc-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
       Environment:
         Variables:
           SMILE_PARTNER_ID: !Ref SmilePartnerId
@@ -234,7 +339,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -248,6 +357,32 @@ Resources:
       CodeUri: services/payment-service/
       Handler: dist/index.handler
       Description: Payment processing service (EcoCash, OneMoney integration)
+      MemorySize: 1024
+      Timeout: 60
+      ReservedConcurrentExecutions: 50
+      AutoPublishAlias: live
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/ecocash-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/onemoney-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-payment-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
       Environment:
         Variables:
           ECOCASH_MERCHANT_ID: !Ref EcocashMerchantId
@@ -274,7 +409,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -288,6 +427,27 @@ Resources:
       CodeUri: services/lock-service/
       Handler: dist/index.handler
       Description: Device lock/unlock service (Trustonic integration)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/trustonic-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-device-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
       Environment:
         Variables:
           TRUSTONIC_API_KEY: !Ref TrustonicApiKey
@@ -319,7 +479,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -333,6 +497,27 @@ Resources:
       CodeUri: services/notification-service/
       Handler: dist/index.handler
       Description: Multi-channel notification service (SMS, WhatsApp, Email)
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/sms-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-notification*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
       Environment:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
@@ -352,7 +537,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 

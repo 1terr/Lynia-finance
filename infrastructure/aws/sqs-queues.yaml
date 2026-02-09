@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - SQS Queues for Asynchronous Processing
+  Decoupled messaging for notifications, payment callbacks, KYC processing, and device lock operations
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # 1. NOTIFICATION QUEUE
+  # ==========================================================
+
+  NotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-notifications"
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20  # Long polling
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt NotificationDLQ.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: notification-service
+
+  NotificationDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-notifications-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # 2. PAYMENT CALLBACK QUEUE
+  # ==========================================================
+
+  PaymentCallbackQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-payment-callbacks"
+      VisibilityTimeout: 120  # Longer for payment processing
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt PaymentCallbackDLQ.Arn
+        maxReceiveCount: 5  # More retries for payments
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: payment-service
+
+  PaymentCallbackDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-payment-callbacks-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # 3. KYC PROCESSING QUEUE
+  # ==========================================================
+
+  KYCProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-kyc-processing"
+      VisibilityTimeout: 120
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt KYCProcessingDLQ.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: kyc-service
+
+  KYCProcessingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-kyc-processing-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # 4. DEVICE LOCK QUEUE
+  # ==========================================================
+
+  DeviceLockQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-device-locks"
+      VisibilityTimeout: 90
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeviceLockDLQ.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: lock-service
+
+  DeviceLockDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-device-locks-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # 5. CREDIT SCORING QUEUE
+  # ==========================================================
+
+  CreditScoringQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-credit-scoring"
+      VisibilityTimeout: 90
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt CreditScoringDLQ.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: scoring-service
+
+  CreditScoringDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-credit-scoring-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # DLQ ALARM (alert on DLQ messages)
+  # ==========================================================
+
+  DLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-dlq-messages"
+      AlarmDescription: "Messages landing in dead-letter queues require investigation"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt PaymentCallbackDLQ.QueueName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  NotificationQueueUrl:
+    Description: Notification queue URL
+    Value: !Ref NotificationQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-notification-queue-url"
+
+  NotificationQueueArn:
+    Description: Notification queue ARN
+    Value: !GetAtt NotificationQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-notification-queue-arn"
+
+  PaymentCallbackQueueUrl:
+    Description: Payment callback queue URL
+    Value: !Ref PaymentCallbackQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-payment-callback-queue-url"
+
+  PaymentCallbackQueueArn:
+    Description: Payment callback queue ARN
+    Value: !GetAtt PaymentCallbackQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-payment-callback-queue-arn"
+
+  KYCProcessingQueueUrl:
+    Description: KYC processing queue URL
+    Value: !Ref KYCProcessingQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-kyc-processing-queue-url"
+
+  KYCProcessingQueueArn:
+    Description: KYC processing queue ARN
+    Value: !GetAtt KYCProcessingQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-kyc-processing-queue-arn"
+
+  DeviceLockQueueUrl:
+    Description: Device lock queue URL
+    Value: !Ref DeviceLockQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-device-lock-queue-url"
+
+  DeviceLockQueueArn:
+    Description: Device lock queue ARN
+    Value: !GetAtt DeviceLockQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-device-lock-queue-arn"
+
+  CreditScoringQueueUrl:
+    Description: Credit scoring queue URL
+    Value: !Ref CreditScoringQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-credit-scoring-queue-url"
+
+  CreditScoringQueueArn:
+    Description: Credit scoring queue ARN
+    Value: !GetAtt CreditScoringQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-credit-scoring-queue-arn"
