@@ -11,8 +11,10 @@ Globals:
     MemorySize: 512
     Runtime: nodejs20.x
     Architectures:
-      - x86_64
+      - arm64
     Tracing: Active
+    EphemeralStorage:
+      Size: 512
     Environment:
       Variables:
         NODE_ENV: !Ref Environment
@@ -175,6 +177,7 @@ Resources:
       CodeUri: services/scoring-service/
       Handler: dist/index.handler
       Description: Credit scoring and loan assessment service
+      MemorySize: 1024
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -210,7 +213,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -224,6 +231,7 @@ Resources:
       CodeUri: services/whatsapp-service/
       Handler: dist/index.handler
       Description: WhatsApp messaging and webhook service
+      ReservedConcurrentExecutions: 100
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -267,7 +275,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -327,7 +339,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -341,6 +357,10 @@ Resources:
       CodeUri: services/payment-service/
       Handler: dist/index.handler
       Description: Payment processing service (EcoCash, OneMoney integration)
+      MemorySize: 1024
+      Timeout: 60
+      ReservedConcurrentExecutions: 50
+      AutoPublishAlias: live
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -389,7 +409,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -455,7 +479,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
@@ -509,7 +537,11 @@ Resources:
       BuildMethod: esbuild
       BuildProperties:
         Minify: true
-        Target: es2020
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
         EntryPoints:
           - src/index.ts
 
