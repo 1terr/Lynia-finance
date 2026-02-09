@@ -292,7 +292,7 @@ export function scoreCustomer(
   const contributions: Record<string, number> = {};
 
   for (const [feature, coeff] of Object.entries(weights.coefficients)) {
-    const value = (features as any)[feature] || 0;
+    const value = (features as Record<string, number>)[feature] || 0;
     const contribution = coeff * value;
     logit += contribution;
     contributions[feature] = contribution;

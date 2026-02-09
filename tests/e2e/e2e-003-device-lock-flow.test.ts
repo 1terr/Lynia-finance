@@ -11,7 +11,7 @@ import { testLoans, testCustomers, testDevices } from '../fixtures';
 
 describe('E2E-003: Device Lock Flow', () => {
   const overdueLoan = testLoans.overdueLoan;
-  const customer = testCustomers.lowScoreCustomer;
+  const _customer = testCustomers.lowScoreCustomer;
   const device = testDevices.assignedDevice;
 
   beforeAll(async () => {
@@ -34,7 +34,7 @@ describe('E2E-003: Device Lock Flow', () => {
     });
 
     it('should run automated lock cron job', async () => {
-      const cronEvent = {
+      const _cronEvent = {
         httpMethod: 'POST',
         path: '/locks/process-automated',
         body: JSON.stringify({})
@@ -78,7 +78,7 @@ describe('E2E-003: Device Lock Flow', () => {
   describe('Step 3: Execute Device Lock', () => {
     it('should execute lock after grace period expires', async () => {
       // Simulate grace period expiration
-      const lockEvent = {
+      const _lockEvent = {
         httpMethod: 'POST',
         path: '/locks/lock',
         body: JSON.stringify({
@@ -155,7 +155,7 @@ describe('E2E-003: Device Lock Flow', () => {
 
   describe('Step 5: Verification', () => {
     it('should verify device is locked on Trustonic platform', async () => {
-      const statusEvent = {
+      const _statusEvent = {
         httpMethod: 'GET',
         path: `/locks/${device.id}`,
         pathParameters: {

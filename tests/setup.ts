@@ -29,7 +29,7 @@ global.console = {
 declare global {
   namespace NodeJS {
     interface Global {
-      testDb: any;
+      testDb: unknown;
     }
   }
 }

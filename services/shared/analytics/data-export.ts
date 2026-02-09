@@ -62,7 +62,7 @@ const PII_FIELDS = new Set([
   'mobile_money_number', 'account_number',
 ]);
 
-function maskValue(key: string, value: any): any {
+function maskValue(key: string, value: unknown): unknown {
   if (!PII_FIELDS.has(key) || value == null) return value;
 
   const str = String(value);
@@ -82,9 +82,9 @@ function maskValue(key: string, value: any): any {
   return '***';
 }
 
-function maskRecord(record: Record<string, any>, maskPii: boolean): Record<string, any> {
+function maskRecord(record: Record<string, unknown>, maskPii: boolean): Record<string, unknown> {
   if (!maskPii) return record;
-  const masked: Record<string, any> = {};
+  const masked: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(record)) {
     masked[key] = maskValue(key, value);
   }
@@ -203,7 +203,7 @@ export async function generateExport(request: ExportRequest): Promise<ExportResu
   };
 }
 
-function convertToCSV(records: Record<string, any>[], fields: string[]): string {
+function convertToCSV(records: Record<string, unknown>[], fields: string[]): string {
   if (records.length === 0) return fields.join(',') + '\n';
 
   const header = fields.join(',');

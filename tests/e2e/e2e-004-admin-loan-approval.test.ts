@@ -104,7 +104,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
 
   describe('Step 3: Admin Manual Approval', () => {
     it('should allow admin to approve with custom loan limit', async () => {
-      const adminApprovalEvent = {
+      const _adminApprovalEvent = {
         httpMethod: 'POST',
         path: '/admin/loans/approve',
         headers: {

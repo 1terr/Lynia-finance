@@ -3,7 +3,7 @@
  * Tests payment service Lambda function with real database interactions
  */
 
-import { testLoans, testCustomers, testPayments } from '../fixtures';
+import { testLoans, testCustomers, testPayments as _testPayments } from '../fixtures';
 
 describe('Payment Service Integration Tests', () => {
   const activeLoan = testLoans.activeLoan;
@@ -21,7 +21,7 @@ describe('Payment Service Integration Tests', () => {
 
   describe('POST /payments/initiate', () => {
     it('should initiate deposit payment successfully', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/initiate',
         body: JSON.stringify({
@@ -46,7 +46,7 @@ describe('Payment Service Integration Tests', () => {
     });
 
     it('should initiate installment payment successfully', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/initiate',
         body: JSON.stringify({
@@ -62,7 +62,7 @@ describe('Payment Service Integration Tests', () => {
     });
 
     it('should reject invalid payment amount', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/initiate',
         body: JSON.stringify({
@@ -79,7 +79,7 @@ describe('Payment Service Integration Tests', () => {
     });
 
     it('should reject payment for non-existent loan', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/initiate',
         body: JSON.stringify({
@@ -98,7 +98,7 @@ describe('Payment Service Integration Tests', () => {
 
   describe('POST /payments/verify', () => {
     it('should verify completed payment', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/verify',
         body: JSON.stringify({
@@ -116,7 +116,7 @@ describe('Payment Service Integration Tests', () => {
     });
 
     it('should handle pending payment', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/verify',
         body: JSON.stringify({
@@ -130,7 +130,7 @@ describe('Payment Service Integration Tests', () => {
     });
 
     it('should handle failed payment', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/verify',
         body: JSON.stringify({
@@ -147,7 +147,7 @@ describe('Payment Service Integration Tests', () => {
 
   describe('POST /payments/webhook', () => {
     it('should handle OneMoney webhook for completed payment', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/payments/webhook',
         body: JSON.stringify({
@@ -180,7 +180,7 @@ describe('Payment Service Integration Tests', () => {
 
   describe('GET /payments/{paymentId}', () => {
     it('should get payment details', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'GET',
         path: '/payments/payment_test_001',
         pathParameters: {
@@ -194,7 +194,7 @@ describe('Payment Service Integration Tests', () => {
 
   describe('GET /payments/loan/{loanId}', () => {
     it('should get payment history for loan', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'GET',
         path: `/payments/loan/${activeLoan.id}`,
         pathParameters: {

@@ -13,7 +13,7 @@ const DEFAULT_HEADERS = {
 };
 
 export function successResponse(
-  data: any,
+  data: unknown,
   statusCode: number = 200
 ): APIGatewayProxyResult {
   return {
@@ -29,7 +29,7 @@ export function successResponse(
 export function errorResponse(
   error: string,
   statusCode: number = 500,
-  details?: any
+  details?: Record<string, unknown>
 ): APIGatewayProxyResult {
   return {
     statusCode,

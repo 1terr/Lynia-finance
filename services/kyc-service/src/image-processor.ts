@@ -94,7 +94,7 @@ export async function downloadWhatsAppImage(
   imageId: string,
   accessToken: string
 ): Promise<Buffer> {
-  const axios = require('axios');
+  const { default: axios } = await import('axios');
 
   try {
     // Step 1: Get image URL from WhatsApp API

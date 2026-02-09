@@ -223,7 +223,7 @@ export async function getPortfolioBreakdown(): Promise<PortfolioBreakdown> {
     t.count++; t.value += outstanding;
     byTier.set(tier, t);
 
-    const province = (loan.customers as any)?.province || 'Unknown';
+    const province = (loan.customers as Record<string, unknown>)?.province || 'Unknown';
     const p = byProvince.get(province) || { count: 0, value: 0 };
     p.count++; p.value += outstanding;
     byProvince.set(province, p);

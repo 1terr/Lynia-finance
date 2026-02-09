@@ -31,7 +31,7 @@ export interface HandoverRecord {
   app_installed: boolean;
   app_configured: boolean;
   lock_test_passed: boolean;
-  device_condition?: any;
+  device_condition?: Record<string, unknown>;
   customer_signature_url?: string;
   loan_agreement_url?: string;
   device_condition_form_url?: string;

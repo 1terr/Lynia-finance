@@ -7,7 +7,7 @@
  * Expected Result: Customer gets approved, pays deposit, and receives device
  */
 
-import { testCustomers, testDevices } from '../fixtures';
+import { testCustomers, testDevices as _testDevices } from '../fixtures';
 
 describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
   const customerId: string = 'test-customer-001';
@@ -28,7 +28,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
   describe('Step 1: WhatsApp Registration', () => {
     it('should register Zimbabwe phone number (+263)', async () => {
       // Simulate WhatsApp message: "Hi" from +263771234567
-      const whatsappEvent = {
+      const _whatsappEvent = {
         httpMethod: 'POST',
         path: '/whatsapp/webhook',
         body: JSON.stringify({
@@ -59,7 +59,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
     it('should complete 18-step onboarding conversation', async () => {
       // Simulate full conversation flow
-      const conversationSteps = [
+      const _conversationSteps = [
         { input: zimbabweCustomer.first_name, expect: 'last name' },
         { input: zimbabweCustomer.last_name, expect: 'date of birth' },
         { input: '1990-05-15', expect: 'gender' },
@@ -75,7 +75,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
   describe('Step 2: KYC Verification', () => {
     it('should submit ID document and selfie', async () => {
-      const kycEvent = {
+      const _kycEvent = {
         httpMethod: 'POST',
         path: '/kyc/verify',
         body: JSON.stringify({
@@ -113,7 +113,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
   describe('Step 3: Credit Scoring & Loan Decision', () => {
     it('should calculate credit score', async () => {
-      const scoringEvent = {
+      const _scoringEvent = {
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
@@ -132,7 +132,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should auto-approve loan application', async () => {
-      const decisionEvent = {
+      const _decisionEvent = {
         httpMethod: 'POST',
         path: '/scoring/decision',
         body: JSON.stringify({
@@ -169,7 +169,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
   describe('Step 4: Deposit Payment', () => {
     it('should initiate deposit payment (20% = $70)', async () => {
-      const paymentEvent = {
+      const _paymentEvent = {
         httpMethod: 'POST',
         path: '/payments/initiate',
         body: JSON.stringify({
@@ -192,7 +192,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should verify deposit payment completion', async () => {
-      const verifyEvent = {
+      const _verifyEvent = {
         httpMethod: 'POST',
         path: '/payments/verify',
         body: JSON.stringify({
@@ -227,7 +227,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
   describe('Step 5: Device Handover', () => {
     it('should check handover readiness', async () => {
-      const readinessEvent = {
+      const _readinessEvent = {
         httpMethod: 'POST',
         path: '/handovers/check-readiness',
         body: JSON.stringify({
@@ -246,7 +246,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should initiate handover process', async () => {
-      const handoverEvent = {
+      const _handoverEvent = {
         httpMethod: 'POST',
         path: '/handovers/initiate',
         body: JSON.stringify({
@@ -271,7 +271,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should verify deposit payment (CRITICAL)', async () => {
-      const verifyDepositEvent = {
+      const _verifyDepositEvent = {
         httpMethod: 'POST',
         path: '/handovers/verify-deposit',
         body: JSON.stringify({
@@ -289,7 +289,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should complete handover and activate loan', async () => {
-      const completeEvent = {
+      const _completeEvent = {
         httpMethod: 'POST',
         path: '/handovers/complete',
         body: JSON.stringify({

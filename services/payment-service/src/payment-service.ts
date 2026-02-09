@@ -300,7 +300,7 @@ export class PaymentService {
     paymentId: string,
     statusResponse: PaymentStatusResponse
   ): Promise<void> {
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       status: statusResponse.status,
       gateway_reference: statusResponse.reference,
       updated_at: new Date().toISOString()

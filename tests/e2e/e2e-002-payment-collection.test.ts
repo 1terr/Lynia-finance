@@ -7,7 +7,7 @@
  * Expected Result: Payment processed successfully, loan balance reduced
  */
 
-import { testLoans, testCustomers, testPayments } from '../fixtures';
+import { testLoans, testCustomers, testPayments as _testPayments } from '../fixtures';
 
 describe('E2E-002: Payment Collection Flow', () => {
   const activeLoan = testLoans.activeLoan;
@@ -24,7 +24,7 @@ describe('E2E-002: Payment Collection Flow', () => {
 
   describe('Step 1: Initiate Payment', () => {
     it('should initiate installment payment via OneMoney', async () => {
-      const paymentEvent = {
+      const _paymentEvent = {
         httpMethod: 'POST',
         path: '/payments/initiate',
         body: JSON.stringify({
@@ -57,7 +57,7 @@ describe('E2E-002: Payment Collection Flow', () => {
 
   describe('Step 2: Payment Verification', () => {
     it('should verify payment with OneMoney', async () => {
-      const verifyEvent = {
+      const _verifyEvent = {
         httpMethod: 'POST',
         path: '/payments/verify',
         body: JSON.stringify({

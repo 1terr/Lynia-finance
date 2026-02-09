@@ -386,7 +386,7 @@ async function updateMessageStatus(messageId: string, status: string): Promise<v
 /**
  * Helper: Find or create customer
  */
-async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise<any> {
+async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise<Record<string, unknown> | null> {
   try {
     // Try to find existing customer
     let { data: customer } = await supabase
@@ -424,7 +424,7 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
 /**
  * Helper: Get conversation state
  */
-async function _getConversation(customerId: string, phoneNumber: string): Promise<any> {
+async function _getConversation(customerId: string, phoneNumber: string): Promise<Record<string, unknown> | null> {
   try {
     let { data: conversation } = await supabase
       .from('whatsapp_conversations')
@@ -479,7 +479,7 @@ async function _updateConversationState(
 /**
  * Helper: Get customer's active loan
  */
-async function _getCustomerLoan(customerId: string): Promise<any> {
+async function _getCustomerLoan(customerId: string): Promise<Record<string, unknown> | null> {
   try {
     const { data: loan } = await supabase
       .from('loans')
