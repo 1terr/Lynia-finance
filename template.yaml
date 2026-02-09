@@ -12,6 +12,7 @@ Globals:
     Runtime: nodejs20.x
     Architectures:
       - x86_64
+    Tracing: Active
     Environment:
       Variables:
         NODE_ENV: !Ref Environment
@@ -19,6 +20,14 @@ Globals:
         SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"
+    VpcConfig: !If
+      - UseVPC
+      - SecurityGroupIds:
+          - !Ref LambdaSecurityGroupId
+        SubnetIds:
+          - !Ref PrivateSubnet1Id
+          - !Ref PrivateSubnet2Id
+      - !Ref "AWS::NoValue"
 
 Parameters:
   Environment:
@@ -127,6 +136,33 @@ Parameters:
     Description: SMS Provider API Key
     NoEcho: true
     Default: ""
+
+  # VPC Configuration (from VPC stack outputs)
+  VpcEnabled:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable VPC configuration for Lambda functions
+
+  PrivateSubnet1Id:
+    Type: String
+    Default: ""
+    Description: Private Subnet 1 ID from VPC stack
+
+  PrivateSubnet2Id:
+    Type: String
+    Default: ""
+    Description: Private Subnet 2 ID from VPC stack
+
+  LambdaSecurityGroupId:
+    Type: String
+    Default: ""
+    Description: Lambda Security Group ID from VPC stack
+
+Conditions:
+  UseVPC: !Equals [!Ref VpcEnabled, "true"]
 
 Resources:
   # =====================================================
