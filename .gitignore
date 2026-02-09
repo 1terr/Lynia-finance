@@ -38,3 +38,9 @@ gradleExp/
 
 # Node modules
 node_modules/
+
+# npm lockfile (project uses pnpm)
+package-lock.json
+
+# SAM build artifacts
+.aws-sam/
