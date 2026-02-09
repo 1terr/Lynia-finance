@@ -1,4 +1,4 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult, ScheduledEvent } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { createClient } from '@supabase/supabase-js';
 import { HandoverService, InitiateHandoverRequest } from './handover-service';
 import { LockManagementService } from './lock-management-service';
@@ -16,46 +16,41 @@ const lockService = new LockManagementService();
  * Handles device lock/unlock operations (Trustonic integration)
  */
 export const handler = async (
-  event: APIGatewayProxyEvent | ScheduledEvent
-): Promise<APIGatewayProxyResult | void> => {
+  event: APIGatewayProxyEvent
+): Promise<APIGatewayProxyResult> => {
   try {
-    // Handle scheduled event (cron job for automated lock processing)
-    if ('source' in event && event.source === 'aws.events') {
-      return await processAutomatedLocks();
-    }
+    console.log('Event:', JSON.stringify(event, null, 2));
 
-    // Handle API Gateway events
-    const apiEvent = event as APIGatewayProxyEvent;
-    console.log('Event:', JSON.stringify(apiEvent, null, 2));
-
-    const path = apiEvent.path;
-    const method = apiEvent.httpMethod;
+    const path = event.path;
+    const method = event.httpMethod;
 
     // Lock/Unlock endpoints
     if (path === '/locks/lock' && method === 'POST') {
-      return await lockDevice(apiEvent);
+      return await lockDevice(event);
     } else if (path === '/locks/unlock' && method === 'POST') {
-      return await unlockDevice(apiEvent);
+      return await unlockDevice(event);
+    } else if (path === '/locks/process-scheduled' && method === 'POST') {
+      return await processAutomatedLocksApi();
     } else if (path.startsWith('/locks/') && method === 'GET') {
-      const deviceId = apiEvent.pathParameters?.deviceId;
+      const deviceId = event.pathParameters?.deviceId;
       return await getLockStatus(deviceId!);
     }
 
     // Handover endpoints
     else if (path === '/handovers/check-readiness' && method === 'POST') {
-      return await checkHandoverReadiness(apiEvent);
+      return await checkHandoverReadiness(event);
     } else if (path === '/handovers/initiate' && method === 'POST') {
-      return await initiateHandover(apiEvent);
+      return await initiateHandover(event);
     } else if (path === '/handovers/verify-identity' && method === 'POST') {
-      return await verifyIdentity(apiEvent);
+      return await verifyIdentity(event);
     } else if (path === '/handovers/verify-deposit' && method === 'POST') {
-      return await verifyDeposit(apiEvent);
+      return await verifyDeposit(event);
     } else if (path === '/handovers/device-condition' && method === 'POST') {
-      return await recordDeviceCondition(apiEvent);
+      return await recordDeviceCondition(event);
     } else if (path === '/handovers/complete' && method === 'POST') {
-      return await completeHandover(apiEvent);
+      return await completeHandover(event);
     } else if (path.match(/\/handovers\/[^/]+$/) && method === 'GET') {
-      const handoverId = apiEvent.pathParameters?.handoverId;
+      const handoverId = event.pathParameters?.handoverId;
       return await getHandoverStatus(handoverId!);
     }
 
@@ -206,16 +201,29 @@ async function getLockStatus(deviceId: string): Promise<APIGatewayProxyResult> {
   }
 }
 
-async function processAutomatedLocks(): Promise<void> {
+async function processAutomatedLocksApi(): Promise<APIGatewayProxyResult> {
   try {
     console.log('Processing automated device locks...');
 
     const result = await lockService.processAutomatedLocks();
 
-    console.log(`Automated lock processing complete:`, result);
+    console.log('Automated lock processing complete:', result);
 
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ success: true, result }),
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    };
   } catch (error) {
     console.error('Error during automated lock processing:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: 'Failed to process automated locks',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    };
   }
 }
 
