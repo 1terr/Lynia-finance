@@ -23,7 +23,7 @@ function shouldLog(level: LogLevel): boolean {
   return logLevels[level] >= logLevels[currentLogLevel];
 }
 
-export function log(level: LogLevel, message: string, meta?: any): void {
+export function log(level: LogLevel, message: string, meta?: Record<string, unknown>): void {
   if (!shouldLog(level)) return;
 
   const logEntry = {
@@ -39,10 +39,10 @@ export function log(level: LogLevel, message: string, meta?: any): void {
 }
 
 export const logger = {
-  debug: (message: string, meta?: any) => log(LogLevel.DEBUG, message, meta),
-  info: (message: string, meta?: any) => log(LogLevel.INFO, message, meta),
-  warn: (message: string, meta?: any) => log(LogLevel.WARN, message, meta),
-  error: (message: string, meta?: any) => log(LogLevel.ERROR, message, meta)
+  debug: (message: string, meta?: Record<string, unknown>) => log(LogLevel.DEBUG, message, meta),
+  info: (message: string, meta?: Record<string, unknown>) => log(LogLevel.INFO, message, meta),
+  warn: (message: string, meta?: Record<string, unknown>) => log(LogLevel.WARN, message, meta),
+  error: (message: string, meta?: Record<string, unknown>) => log(LogLevel.ERROR, message, meta)
 };
 
 export default logger;

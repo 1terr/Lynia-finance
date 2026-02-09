@@ -3,7 +3,7 @@
  * Tests credit scoring service Lambda function with real database interactions
  */
 
-import { testCustomers, testCreditScores } from '../fixtures';
+import { testCustomers, testCreditScores as _testCreditScores } from '../fixtures';
 
 describe('Scoring Service Integration Tests', () => {
   const highScoreCustomer = testCustomers.highScoreCustomer;
@@ -19,7 +19,7 @@ describe('Scoring Service Integration Tests', () => {
 
   describe('POST /scoring/calculate', () => {
     it('should calculate high credit score (Tier 1)', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
@@ -39,7 +39,7 @@ describe('Scoring Service Integration Tests', () => {
     });
 
     it('should calculate medium credit score (Tier 2)', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
@@ -55,7 +55,7 @@ describe('Scoring Service Integration Tests', () => {
     });
 
     it('should calculate low credit score (manual review)', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
@@ -72,7 +72,7 @@ describe('Scoring Service Integration Tests', () => {
 
     it('should include all 23 scoring factors', async () => {
       // Check all factors included
-      const factors = [
+      const _factors = [
         'kyc_quality',
         'income_stability',
         'affordability',
@@ -95,7 +95,7 @@ describe('Scoring Service Integration Tests', () => {
 
   describe('POST /scoring/decision', () => {
     it('should auto-approve high score customer', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/decision',
         body: JSON.stringify({
@@ -112,7 +112,7 @@ describe('Scoring Service Integration Tests', () => {
     });
 
     it('should send to manual review for borderline score', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/decision',
         body: JSON.stringify({
@@ -126,7 +126,7 @@ describe('Scoring Service Integration Tests', () => {
     });
 
     it('should auto-reject very low score', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/decision',
         body: JSON.stringify({
@@ -153,7 +153,7 @@ describe('Scoring Service Integration Tests', () => {
     });
 
     it('should cap loan amount at tier limit', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'POST',
         path: '/scoring/decision',
         body: JSON.stringify({
@@ -169,7 +169,7 @@ describe('Scoring Service Integration Tests', () => {
 
   describe('GET /scoring/history/{customerId}', () => {
     it('should get credit score history', async () => {
-      const event = {
+      const _event = {
         httpMethod: 'GET',
         path: `/scoring/history/${highScoreCustomer.id}`,
         pathParameters: {

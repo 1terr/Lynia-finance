@@ -251,7 +251,7 @@ export class TrustonicProvider {
   /**
    * Generate HMAC signature for Trustonic API requests
    */
-  private generateSignature(payload: any): string {
+  private generateSignature(payload: Record<string, unknown>): string {
     const payloadString = JSON.stringify(payload);
     return createHmac('sha256', this.config.api_secret)
       .update(payloadString)

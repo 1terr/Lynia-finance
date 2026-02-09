@@ -295,7 +295,7 @@ export class SmileIdentityService {
   /**
    * Handle Smile Identity error codes
    */
-  handleSmileError(error: any): KYCErrorResponse {
+  handleSmileError(error: { response?: { data?: { code?: string; message?: string } } }): KYCErrorResponse {
     const errorCode = error.response?.data?.code;
     const errorMessage = error.response?.data?.message;
 
