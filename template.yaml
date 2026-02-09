@@ -243,7 +243,6 @@ Resources:
       CodeUri: services/whatsapp-service/
       Handler: dist/index.handler
       Description: WhatsApp messaging and webhook service
-      ReservedConcurrentExecutions: 100
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -371,7 +370,6 @@ Resources:
       Description: Payment processing service (EcoCash, OneMoney integration)
       MemorySize: 1024
       Timeout: 60
-      ReservedConcurrentExecutions: 50
       AutoPublishAlias: live
       Policies:
         - Version: "2012-10-17"
