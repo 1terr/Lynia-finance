@@ -10,9 +10,9 @@
 import { testCustomers, testDevices } from '../fixtures';
 
 describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
-  let customerId: string = 'test-customer-001';
-  let loanId: string = 'test-loan-001';
-  let deviceId: string = 'test-device-001';
+  const customerId: string = 'test-customer-001';
+  const loanId: string = 'test-loan-001';
+  const deviceId: string = 'test-device-001';
   const zimbabweCustomer = testCustomers.zimbabweCustomer;
 
   beforeAll(async () => {

@@ -511,7 +511,7 @@ export class HandoverService {
   private async calculateDistributorCommission(
     loanId: string,
     deviceId: string,
-    distributorId: string
+    _distributorId: string
   ): Promise<{
     amount: number;
     percentage: number;

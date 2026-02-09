@@ -243,7 +243,7 @@ export async function generateDelinquencyReport(
   const loans = delinquentLoans || [];
 
   // Total active portfolio for percentage calculation
-  const { count: totalActiveCount } = await supabase
+  const { count: _totalActiveCount } = await supabase
     .from('loans')
     .select('*', { count: 'exact', head: true })
     .in('loan_status', ['active', 'delinquent']);

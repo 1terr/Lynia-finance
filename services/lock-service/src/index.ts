@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { HandoverService, InitiateHandoverRequest } from './handover-service';
 import { LockManagementService } from './lock-management-service';
 
-const supabase = createClient(
+const _supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
