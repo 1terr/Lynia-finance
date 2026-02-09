@@ -98,6 +98,9 @@ jobs:
       - name: Install esbuild globally
         run: npm install -g esbuild
 
+      - name: Install cfn-lint
+        run: pip install cfn-lint
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -222,6 +225,9 @@ jobs:
 
       - name: Install esbuild globally
         run: npm install -g esbuild
+
+      - name: Install cfn-lint
+        run: pip install cfn-lint
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
