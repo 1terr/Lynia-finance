@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - AWS X-Ray Distributed Tracing Configuration
+  Sampling rules, group definitions, and tracing policies
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # X-RAY SAMPLING RULES
+  # ==========================================================
+
+  # Default sampling rule (5% of requests)
+  DefaultSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub "${Environment}-lynia-default"
+        Priority: 10000
+        FixedRate: 0.05
+        ReservoirSize: 1
+        ServiceName: "*"
+        ServiceType: "*"
+        Host: "*"
+        ResourceARN: "*"
+        HTTPMethod: "*"
+        URLPath: "*"
+        Version: 1
+
+  # Payment service - 100% tracing (critical financial operations)
+  PaymentSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub "${Environment}-lynia-payment"
+        Priority: 100
+        FixedRate: 1.0
+        ReservoirSize: 10
+        ServiceName: !Sub "${Environment}-lynia-payment-service"
+        ServiceType: "AWS::Lambda::Function"
+        Host: "*"
+        ResourceARN: "*"
+        HTTPMethod: "*"
+        URLPath: "/payments/*"
+        Version: 1
+
+  # KYC service - 50% tracing (important verification flows)
+  KYCSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub "${Environment}-lynia-kyc"
+        Priority: 200
+        FixedRate: 0.5
+        ReservoirSize: 5
+        ServiceName: !Sub "${Environment}-lynia-kyc-service"
+        ServiceType: "AWS::Lambda::Function"
+        Host: "*"
+        ResourceARN: "*"
+        HTTPMethod: "*"
+        URLPath: "/kyc/*"
+        Version: 1
+
+  # Scoring service - 25% tracing
+  ScoringSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub "${Environment}-lynia-scoring"
+        Priority: 300
+        FixedRate: 0.25
+        ReservoirSize: 3
+        ServiceName: !Sub "${Environment}-lynia-scoring-service"
+        ServiceType: "AWS::Lambda::Function"
+        Host: "*"
+        ResourceARN: "*"
+        HTTPMethod: "*"
+        URLPath: "/scoring/*"
+        Version: 1
+
+  # Error traces - 100% sampling (always capture errors)
+  ErrorSamplingRule:
+    Type: AWS::XRay::SamplingRule
+    Properties:
+      SamplingRule:
+        RuleName: !Sub "${Environment}-lynia-errors"
+        Priority: 50
+        FixedRate: 1.0
+        ReservoirSize: 10
+        ServiceName: "*"
+        ServiceType: "*"
+        Host: "*"
+        ResourceARN: "*"
+        HTTPMethod: "*"
+        URLPath: "*"
+        Version: 1
+
+  # ==========================================================
+  # X-RAY GROUPS (for filtering in console)
+  # ==========================================================
+
+  PaymentTracingGroup:
+    Type: AWS::XRay::Group
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-payments"
+      FilterExpression: !Sub 'service("${Environment}-lynia-payment-service")'
+      InsightsConfiguration:
+        InsightsEnabled: true
+        NotificationsEnabled: !If [IsProduction, true, false]
+
+  ErrorTracingGroup:
+    Type: AWS::XRay::Group
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-errors"
+      FilterExpression: '!ok'
+      InsightsConfiguration:
+        InsightsEnabled: true
+        NotificationsEnabled: !If [IsProduction, true, false]
+
+  HighLatencyGroup:
+    Type: AWS::XRay::Group
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-high-latency"
+      FilterExpression: 'responsetime > 5'
+      InsightsConfiguration:
+        InsightsEnabled: true
+        NotificationsEnabled: false
+
+Outputs:
+  DefaultSamplingRuleName:
+    Description: Default sampling rule name
+    Value: !Sub "${Environment}-lynia-default"
+
+  PaymentSamplingRuleName:
+    Description: Payment sampling rule name (100%)
+    Value: !Sub "${Environment}-lynia-payment"
+
+  PaymentTracingGroupName:
+    Description: Payment tracing group name
+    Value: !Sub "${Environment}-lynia-payments"
+
+  ErrorTracingGroupName:
+    Description: Error tracing group name
+    Value: !Sub "${Environment}-lynia-errors"
