@@ -42,6 +42,16 @@ export interface Payment {
 }
 
 /**
+ * RBZ Transaction Limits (in USD equivalent)
+ * As per Reserve Bank of Zimbabwe regulations
+ */
+const TRANSACTION_LIMITS = {
+  SINGLE_TRANSACTION_USD: 2000,
+  DAILY_LIMIT_USD: 5000,
+  MONTHLY_LIMIT_USD: 50000,
+};
+
+/**
  * Unified Payment Service
  * Handles all payment operations across multiple gateways
  */
@@ -63,6 +73,72 @@ export class PaymentService {
   }
 
   /**
+   * Validate transaction against RBZ regulatory limits.
+   * Checks single transaction, daily aggregate, and monthly aggregate.
+   */
+  async validateTransactionLimits(
+    customerId: string,
+    amount: number,
+    currency: string
+  ): Promise<{ allowed: boolean; reason?: string }> {
+    // Convert to USD equivalent for limit checking
+    const amountUsd = currency === 'USD' ? amount : amount; // TODO: Add exchange rate conversion for ZWL/ZAR
+
+    // 1. Single transaction limit
+    if (amountUsd > TRANSACTION_LIMITS.SINGLE_TRANSACTION_USD) {
+      return {
+        allowed: false,
+        reason: `Single transaction limit exceeded. Maximum: $${TRANSACTION_LIMITS.SINGLE_TRANSACTION_USD} USD.`,
+      };
+    }
+
+    // 2. Daily aggregate limit
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const { data: dailyPayments } = await this.supabase
+      .from('payments')
+      .select('amount, currency')
+      .eq('customer_id', customerId)
+      .in('status', ['pending', 'processing', 'completed'])
+      .gte('initiated_at', today.toISOString());
+
+    const dailyTotal = (dailyPayments || []).reduce(
+      (sum, p) => sum + (p.amount || 0), 0
+    );
+
+    if (dailyTotal + amountUsd > TRANSACTION_LIMITS.DAILY_LIMIT_USD) {
+      return {
+        allowed: false,
+        reason: `Daily transaction limit exceeded. Daily limit: $${TRANSACTION_LIMITS.DAILY_LIMIT_USD} USD. Today's total: $${dailyTotal.toFixed(2)}.`,
+      };
+    }
+
+    // 3. Monthly aggregate limit
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const { data: monthlyPayments } = await this.supabase
+      .from('payments')
+      .select('amount, currency')
+      .eq('customer_id', customerId)
+      .in('status', ['pending', 'processing', 'completed'])
+      .gte('initiated_at', monthStart.toISOString());
+
+    const monthlyTotal = (monthlyPayments || []).reduce(
+      (sum, p) => sum + (p.amount || 0), 0
+    );
+
+    if (monthlyTotal + amountUsd > TRANSACTION_LIMITS.MONTHLY_LIMIT_USD) {
+      return {
+        allowed: false,
+        reason: `Monthly transaction limit exceeded. Monthly limit: $${TRANSACTION_LIMITS.MONTHLY_LIMIT_USD} USD. This month's total: $${monthlyTotal.toFixed(2)}.`,
+      };
+    }
+
+    return { allowed: true };
+  }
+
+  /**
    * Initiate a payment
    */
   async initiatePayment(request: InitiatePaymentRequest): Promise<{
@@ -74,6 +150,17 @@ export class PaymentService {
     instructions: string;
   }> {
     try {
+      // Validate RBZ transaction limits
+      const limitCheck = await this.validateTransactionLimits(
+        request.customer_id,
+        request.amount,
+        request.currency
+      );
+
+      if (!limitCheck.allowed) {
+        throw new Error(limitCheck.reason || 'Transaction limit exceeded');
+      }
+
       // Select payment gateway
       const gateway = request.gateway || await this.selectGateway(request.customer_id);
 

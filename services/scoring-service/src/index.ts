@@ -424,8 +424,6 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log('Event:', JSON.stringify(event, null, 2));
-
     const path = event.path;
     const method = event.httpMethod;
 
@@ -442,7 +440,7 @@ export const handler = async (
       body: JSON.stringify({ error: 'Not Found' }),
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': 'https://admin.lynia.finance'
       }
     };
   } catch (error) {
@@ -451,11 +449,11 @@ export const handler = async (
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': 'https://admin.lynia.finance'
       }
     };
   }
@@ -474,7 +472,7 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'customer_id is required' }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 
@@ -484,7 +482,7 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
       body: JSON.stringify({
         error: 'Missing required fields: monthly_income_usd, requested_loan_amount, kyc_result'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 
@@ -520,7 +518,7 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
   return {
     statusCode: 200,
     body: JSON.stringify(scoreResult),
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
   };
 }
 
@@ -534,7 +532,7 @@ async function handleGetScore(customerId: string): Promise<APIGatewayProxyResult
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'customerId is required' }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 
@@ -552,14 +550,14 @@ async function handleGetScore(customerId: string): Promise<APIGatewayProxyResult
       return {
         statusCode: 404,
         body: JSON.stringify({ error: 'Credit score not found for this customer' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
     return {
       statusCode: 200,
       body: JSON.stringify(data),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   } catch (error) {
     console.error('Database error:', error);
@@ -567,9 +565,9 @@ async function handleGetScore(customerId: string): Promise<APIGatewayProxyResult
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to fetch credit score',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }

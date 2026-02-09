@@ -63,7 +63,7 @@ export class OneMoneyProvider {
    */
   async initiatePayment(request: PaymentRequest): Promise<PaymentResponse> {
     try {
-      console.log(`Initiating OneMoney payment for ${request.customer_phone}, amount: ${request.amount}`);
+      console.log(`Initiating OneMoney payment, reference: ${request.reference}`);
 
       // Validate phone number format (Zimbabwe)
       if (!this.validatePhoneNumber(request.customer_phone)) {

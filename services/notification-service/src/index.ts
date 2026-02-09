@@ -7,7 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' };
+const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' };
 
 /**
  * Notification Service Lambda Handler
@@ -75,7 +75,7 @@ export const handler = async (
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
       headers
     };

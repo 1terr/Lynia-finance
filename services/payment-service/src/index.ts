@@ -15,8 +15,6 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log('Event:', JSON.stringify(event, null, 2));
-
     const path = event.path;
     const method = event.httpMethod;
 
@@ -37,7 +35,7 @@ export const handler = async (
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   } catch (error) {
     console.error('Error:', error);
@@ -45,9 +43,9 @@ export const handler = async (
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 };
@@ -69,7 +67,7 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
           error: 'Missing required fields',
           required: ['loan_id', 'customer_id', 'amount', 'customer_phone', 'payment_type']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -87,7 +85,7 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
         payment_url: result.payment_url,
         instructions: result.instructions
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -96,9 +94,9 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
       statusCode: 500,
       body: JSON.stringify({
         error: 'Payment initiation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -217,7 +215,7 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Payment ID required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -238,7 +236,7 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
         completed_at: payment.completed_at,
         failed_at: payment.failed_at
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -247,9 +245,9 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to fetch payment status',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -271,7 +269,7 @@ async function reconcilePayments(event: APIGatewayProxyEvent): Promise<APIGatewa
         success: true,
         ...result
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -280,9 +278,9 @@ async function reconcilePayments(event: APIGatewayProxyEvent): Promise<APIGatewa
       statusCode: 500,
       body: JSON.stringify({
         error: 'Reconciliation failed',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }

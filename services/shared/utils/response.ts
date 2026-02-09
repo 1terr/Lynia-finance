@@ -1,20 +1,58 @@
 /**
  * API Response Utilities
- * Standardized Lambda response formatters
+ * Standardized Lambda response formatters with security headers
  */
 
-import { APIGatewayProxyResult } from 'aws-lambda';
+import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 
-const DEFAULT_HEADERS = {
-  'Content-Type': 'application/json',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-  'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS'
-};
+/**
+ * Allowed CORS origins for API access.
+ * Only trusted frontend domains are permitted.
+ */
+const ALLOWED_ORIGINS: string[] = [
+  'https://admin.lynia.finance',
+  'https://app.lynia.finance',
+  'https://distributor.lynia.finance',
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:3000', 'http://localhost:3001']
+    : []),
+];
+
+/**
+ * Resolve the CORS origin header based on the incoming request.
+ * Returns the request origin if it is whitelisted, otherwise returns
+ * the primary frontend domain to prevent open CORS.
+ */
+export function getCorsOrigin(event?: APIGatewayProxyEvent): string {
+  const requestOrigin = event?.headers?.origin || event?.headers?.Origin;
+  if (requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+  return ALLOWED_ORIGINS[0];
+}
+
+/**
+ * Build standard security response headers.
+ */
+export function getSecurityHeaders(event?: APIGatewayProxyEvent): Record<string, string> {
+  return {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': getCorsOrigin(event),
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+    'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'Access-Control-Allow-Credentials': 'true',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'X-XSS-Protection': '1; mode=block',
+    'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+    'Cache-Control': 'no-store',
+  };
+}
 
 export function successResponse(
   data: unknown,
-  statusCode: number = 200
+  statusCode: number = 200,
+  event?: APIGatewayProxyEvent
 ): APIGatewayProxyResult {
   return {
     statusCode,
@@ -22,14 +60,15 @@ export function successResponse(
       success: true,
       data
     }),
-    headers: DEFAULT_HEADERS
+    headers: getSecurityHeaders(event)
   };
 }
 
 export function errorResponse(
   error: string,
   statusCode: number = 500,
-  details?: Record<string, unknown>
+  details?: Record<string, unknown>,
+  event?: APIGatewayProxyEvent
 ): APIGatewayProxyResult {
   return {
     statusCode,
@@ -38,13 +77,14 @@ export function errorResponse(
       error,
       ...(details && { details })
     }),
-    headers: DEFAULT_HEADERS
+    headers: getSecurityHeaders(event)
   };
 }
 
 export function validationErrorResponse(
   message: string,
-  errors?: Record<string, string>
+  errors?: Record<string, string>,
+  event?: APIGatewayProxyEvent
 ): APIGatewayProxyResult {
   return {
     statusCode: 400,
@@ -54,11 +94,11 @@ export function validationErrorResponse(
       message,
       ...(errors && { errors })
     }),
-    headers: DEFAULT_HEADERS
+    headers: getSecurityHeaders(event)
   };
 }
 
-export function notFoundResponse(resource: string = 'Resource'): APIGatewayProxyResult {
+export function notFoundResponse(resource: string = 'Resource', event?: APIGatewayProxyEvent): APIGatewayProxyResult {
   return {
     statusCode: 404,
     body: JSON.stringify({
@@ -66,11 +106,11 @@ export function notFoundResponse(resource: string = 'Resource'): APIGatewayProxy
       error: 'Not Found',
       message: `${resource} not found`
     }),
-    headers: DEFAULT_HEADERS
+    headers: getSecurityHeaders(event)
   };
 }
 
-export function unauthorizedResponse(message: string = 'Unauthorized'): APIGatewayProxyResult {
+export function unauthorizedResponse(message: string = 'Unauthorized', event?: APIGatewayProxyEvent): APIGatewayProxyResult {
   return {
     statusCode: 401,
     body: JSON.stringify({
@@ -78,6 +118,6 @@ export function unauthorizedResponse(message: string = 'Unauthorized'): APIGatew
       error: 'Unauthorized',
       message
     }),
-    headers: DEFAULT_HEADERS
+    headers: getSecurityHeaders(event)
   };
 }

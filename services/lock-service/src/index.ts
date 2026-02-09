@@ -19,8 +19,6 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log('Event:', JSON.stringify(event, null, 2));
-
     const path = event.path;
     const method = event.httpMethod;
 
@@ -57,7 +55,7 @@ export const handler = async (
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   } catch (error) {
     console.error('Error:', error);
@@ -65,9 +63,9 @@ export const handler = async (
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 };
@@ -84,7 +82,7 @@ async function lockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
           error: 'Missing required fields',
           required: ['device_id', 'reason']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -105,7 +103,7 @@ async function lockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
         lock_status: status.lock_status,
         locked_at: status.locked_at
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -114,9 +112,9 @@ async function lockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to lock device',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -133,7 +131,7 @@ async function unlockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProx
           error: 'Missing required fields',
           required: ['device_id', 'reason']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -154,7 +152,7 @@ async function unlockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProx
         lock_status: status.lock_status,
         unlocked_at: status.unlocked_at
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -163,9 +161,9 @@ async function unlockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProx
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to unlock device',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -176,7 +174,7 @@ async function getLockStatus(deviceId: string): Promise<APIGatewayProxyResult> {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'device_id is required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -185,7 +183,7 @@ async function getLockStatus(deviceId: string): Promise<APIGatewayProxyResult> {
     return {
       statusCode: 200,
       body: JSON.stringify(status),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -194,9 +192,9 @@ async function getLockStatus(deviceId: string): Promise<APIGatewayProxyResult> {
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to get lock status',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -212,7 +210,7 @@ async function processAutomatedLocksApi(): Promise<APIGatewayProxyResult> {
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true, result }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   } catch (error) {
     console.error('Error during automated lock processing:', error);
@@ -220,9 +218,9 @@ async function processAutomatedLocksApi(): Promise<APIGatewayProxyResult> {
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to process automated locks',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -240,7 +238,7 @@ async function checkHandoverReadiness(event: APIGatewayProxyEvent): Promise<APIG
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'loan_id is required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -249,7 +247,7 @@ async function checkHandoverReadiness(event: APIGatewayProxyEvent): Promise<APIG
     return {
       statusCode: 200,
       body: JSON.stringify(readiness),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -258,9 +256,9 @@ async function checkHandoverReadiness(event: APIGatewayProxyEvent): Promise<APIG
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to check handover readiness',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -285,7 +283,7 @@ async function initiateHandover(event: APIGatewayProxyEvent): Promise<APIGateway
           error: 'Missing required fields',
           required: missing
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -298,7 +296,7 @@ async function initiateHandover(event: APIGatewayProxyEvent): Promise<APIGateway
         handover_id: handover.id,
         status: handover.status
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -307,9 +305,9 @@ async function initiateHandover(event: APIGatewayProxyEvent): Promise<APIGateway
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to initiate handover',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -330,7 +328,7 @@ async function verifyIdentity(event: APIGatewayProxyEvent): Promise<APIGatewayPr
           error: 'Missing required fields',
           required: ['handover_id', 'id_number']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -339,7 +337,7 @@ async function verifyIdentity(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     return {
       statusCode: result.verified ? 200 : 400,
       body: JSON.stringify(result),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -348,9 +346,9 @@ async function verifyIdentity(event: APIGatewayProxyEvent): Promise<APIGatewayPr
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to verify identity',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -368,7 +366,7 @@ async function verifyDeposit(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'handover_id is required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -377,7 +375,7 @@ async function verifyDeposit(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     return {
       statusCode: result.verified ? 200 : 400,
       body: JSON.stringify(result),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -386,9 +384,9 @@ async function verifyDeposit(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to verify deposit',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -409,7 +407,7 @@ async function recordDeviceCondition(event: APIGatewayProxyEvent): Promise<APIGa
           error: 'Missing required fields',
           required: ['handover_id', 'device_condition']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -421,7 +419,7 @@ async function recordDeviceCondition(event: APIGatewayProxyEvent): Promise<APIGa
         success: true,
         message: 'Device condition recorded'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -430,9 +428,9 @@ async function recordDeviceCondition(event: APIGatewayProxyEvent): Promise<APIGa
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to record device condition',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -450,7 +448,7 @@ async function completeHandover(event: APIGatewayProxyEvent): Promise<APIGateway
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'handover_id is required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -459,7 +457,7 @@ async function completeHandover(event: APIGatewayProxyEvent): Promise<APIGateway
     return {
       statusCode: 200,
       body: JSON.stringify(result),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -468,9 +466,9 @@ async function completeHandover(event: APIGatewayProxyEvent): Promise<APIGateway
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to complete handover',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }
@@ -485,7 +483,7 @@ async function getHandoverStatus(handoverId: string): Promise<APIGatewayProxyRes
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'handover_id is required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
       };
     }
 
@@ -494,7 +492,7 @@ async function getHandoverStatus(handoverId: string): Promise<APIGatewayProxyRes
     return {
       statusCode: 200,
       body: JSON.stringify(handover),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
 
   } catch (error) {
@@ -503,9 +501,9 @@ async function getHandoverStatus(handoverId: string): Promise<APIGatewayProxyRes
       statusCode: 500,
       body: JSON.stringify({
         error: 'Failed to get handover status',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
     };
   }
 }

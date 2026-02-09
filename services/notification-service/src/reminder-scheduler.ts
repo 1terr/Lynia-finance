@@ -317,7 +317,7 @@ async function sendReminder(
     record.sent_at = new Date();
     record.whatsapp_message_id = response.data.messageId;
   } catch (error) {
-    console.error(`Failed to send reminder to ${payment.phone_number}:`, error);
+    console.error(`Failed to send reminder for loan ${payment.loan_id}:`, error instanceof Error ? error.message : 'Unknown error');
     record.status = 'failed';
   }
 

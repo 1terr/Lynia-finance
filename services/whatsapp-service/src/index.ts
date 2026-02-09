@@ -26,8 +26,6 @@ export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
   try {
-    console.log('Event:', JSON.stringify(event, null, 2));
-
     const path = event.path;
     const method = event.httpMethod;
 
@@ -44,8 +42,7 @@ export const handler = async (
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': 'application/json'
       }
     };
   } catch (error) {
@@ -54,11 +51,10 @@ export const handler = async (
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: 'An unexpected error occurred. Please try again later.'
       }),
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        'Content-Type': 'application/json'
       }
     };
   }
@@ -136,19 +132,18 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         messageId,
         waId: response.data.contacts[0].wa_id
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      headers: { 'Content-Type': 'application/json' }
     };
   } catch (error) {
-    console.error('Error sending message:', error);
+    console.error('Error sending message:', error instanceof Error ? error.message : 'Unknown');
     if (axios.isAxiosError(error)) {
-      console.error('WhatsApp API error:', error.response?.data);
+      console.error('WhatsApp API error:', error.response?.status);
       return {
         statusCode: error.response?.status || 500,
         body: JSON.stringify({
-          error: 'Failed to send WhatsApp message',
-          details: error.response?.data
+          error: 'Failed to send WhatsApp message'
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+        headers: { 'Content-Type': 'application/json' }
       };
     }
     throw error;
@@ -163,7 +158,7 @@ function verifyWebhook(event: APIGatewayProxyEvent): APIGatewayProxyResult {
   const token = event.queryStringParameters?.['hub.verify_token'];
   const challenge = event.queryStringParameters?.['hub.challenge'];
 
-  console.log('Webhook verification request:', { mode, token, challenge });
+  console.log('Webhook verification request:', { mode });
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
     console.log('Webhook verified successfully');
@@ -188,7 +183,7 @@ function verifyWebhook(event: APIGatewayProxyEvent): APIGatewayProxyResult {
 async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     const webhookEvent: WhatsAppWebhookEvent = JSON.parse(event.body || '{}');
-    console.log('WhatsApp webhook received:', JSON.stringify(webhookEvent, null, 2));
+    console.log('WhatsApp webhook received:', { entryCount: webhookEvent.entry?.length });
 
     // Process each entry in the webhook
     for (const entry of webhookEvent.entry) {
@@ -256,7 +251,7 @@ async function processIncomingMessage(
       console.log(`Image received: ${imageUrl}`);
     }
 
-    console.log(`Message from ${phoneNumber} (${contactName}): ${messageText}`);
+    console.log(`Incoming message processed: type=${message.type}`);
 
     // Store incoming message
     await storeMessage({
