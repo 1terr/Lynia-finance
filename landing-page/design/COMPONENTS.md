@@ -534,7 +534,7 @@ Used in Section 10 (Bottom CTA).
 | Gap: headline → description | `var(--space-6)` |
 | Gap: description → buttons | `var(--space-8)` |
 | Button row | Flex, center, `gap: 16px` |
-| Primary CTA | Large white button (`background: white`, `color: var(--color-cta)`) |
+| Primary CTA | Large white button (`background: white`, `color: var(--color-primary)`) |
 | Secondary CTA | Ghost button or white text link |
 
 ---
@@ -548,7 +548,7 @@ Used in Section 10 (Bottom CTA).
 | Height | `48px` |
 | Background | `var(--color-white)` |
 | Border | `1px solid var(--color-gray-300)` / `#c4cdd6` |
-| Border (focus) | `1px solid var(--color-cta)` / `#635BFF` |
+| Border (focus) | `1px solid var(--color-primary)` / `#635BFF` |
 | Box shadow (focus) | `var(--shadow-input)` / `0px 3px 10px rgba(18, 42, 66, 0.08)` |
 | Border radius | `var(--radius-sm)` / `6px` |
 | Padding | `12px 16px` |

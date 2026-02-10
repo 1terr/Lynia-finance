@@ -144,7 +144,7 @@ Stagger: `150ms` between each stat.
 
 | Type | Hover Animation | Active Animation |
 |------|----------------|-----------------|
-| Primary | Background darkens (`cta→cta-hover`), `var(--shadow-md)` appears, `150ms` | `scale(0.98)`, shadow reduces, `100ms` |
+| Primary | Background darkens (`primary→primary-hover`), `var(--shadow-md)` appears, `150ms` | `scale(0.98)`, shadow reduces, `100ms` |
 | Secondary (text) | Color darkens, arrow shifts right `4px`, `150ms` | `opacity: 0.8`, `100ms` |
 | Ghost | Background gains `rgba(255,255,255,0.1)`, border brightens, `150ms` | `scale(0.98)`, `100ms` |
 | Disabled | No hover effect | No active effect |
