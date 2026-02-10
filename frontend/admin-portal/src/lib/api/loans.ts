@@ -112,3 +112,42 @@ export async function rejectLoan(loanId: string, adminId: string, reason: string
     details: { reason },
   });
 }
+
+export async function getPendingLoans(page = 1, limit = 25) {
+  const supabase = createClient();
+  const offset = (page - 1) * limit;
+
+  const { data, count, error } = await supabase
+    .from('loans')
+    .select('*, customer:customers(id, first_name, last_name, phone_number, kyc_status, credit_score), device:devices(id, brand, model, imei)', { count: 'exact' })
+    .in('status', ['pending', 'pending_approval', 'submitted'])
+    .order('created_at', { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+
+  return {
+    data: (data || []) as LoanWithCustomer[],
+    total: count || 0,
+    page,
+    limit,
+    total_pages: Math.ceil((count || 0) / limit),
+  };
+}
+
+export async function getLoanStats() {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('loans')
+    .select('status');
+
+  if (error) throw error;
+
+  const loans = data || [];
+  return {
+    pending: loans.filter((l) => ['pending', 'pending_approval', 'submitted'].includes(l.status)).length,
+    approved: loans.filter((l) => l.status === 'approved').length,
+    active: loans.filter((l) => ['active', 'disbursed'].includes(l.status)).length,
+    rejected: loans.filter((l) => l.status === 'rejected').length,
+  };
+}

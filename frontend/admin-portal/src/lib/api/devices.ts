@@ -173,6 +173,91 @@ export interface DeviceStats {
   damaged: number;
 }
 
+export interface DeviceInventorySummary {
+  total_devices: number;
+  available: number;
+  reserved: number;
+  assigned: number;
+  sold: number;
+  damaged: number;
+  returned: number;
+}
+
+export interface HandoverWithRelations {
+  id: string;
+  loan_id: string;
+  customer_id: string;
+  device_id: string;
+  distributor_id: string;
+  status: 'initiated' | 'identity_verified' | 'deposit_verified' | 'device_inspected' | 'completed' | 'cancelled';
+  identity_verified: boolean;
+  deposit_verified: boolean;
+  device_inspected: boolean;
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  customers?: { id: string; first_name: string; last_name: string; phone_number: string } | null;
+  devices?: { id: string; brand: string; model: string; imei: string | null } | null;
+  distributors?: { id: string; business_name: string } | null;
+}
+
+export interface DeviceHandoverRow {
+  id: string;
+  loan_id: string;
+  customer_id: string;
+  device_id: string;
+  distributor_id: string;
+  status: 'initiated' | 'identity_verified' | 'deposit_verified' | 'device_inspected' | 'completed' | 'cancelled';
+  scheduled_date: string | null;
+  scheduled_time: string | null;
+  completed_at: string | null;
+  cancelled_at: string | null;
+  cancellation_reason: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  customer?: { id: string; first_name: string; last_name: string; phone_number: string } | null;
+  device?: { id: string; brand: string; model: string; imei: string | null } | null;
+  distributor?: { id: string; business_name: string; contact_person: string } | null;
+}
+
+export async function getDeviceHandovers(filters: { status?: string; search?: string; page?: number; limit?: number } = {}) {
+  const supabase = createClient();
+  const { status, search, page = 1, limit = 25 } = filters;
+  const offset = (page - 1) * limit;
+
+  let query = supabase
+    .from('device_handovers')
+    .select('*, customer:customers(id, first_name, last_name, phone_number), device:devices(id, brand, model, imei), distributor:distributors(id, business_name, contact_person)', { count: 'exact' });
+
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  if (search) {
+    query = query.or(`customer.first_name.ilike.%${search}%,customer.last_name.ilike.%${search}%,device.imei.ilike.%${search}%`);
+  }
+
+  const { data, count, error } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw error;
+
+  return {
+    data: (data || []) as DeviceHandoverRow[],
+    total: count || 0,
+    page,
+    limit,
+    total_pages: Math.ceil((count || 0) / limit),
+  };
+}
+
 export async function getDeviceStats(): Promise<DeviceStats> {
   const supabase = createClient();
   const { data, error } = await supabase
