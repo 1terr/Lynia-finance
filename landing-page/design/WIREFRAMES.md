@@ -364,8 +364,8 @@ Padding: 120px vertical
 │  │ Approved in  │  │ Repay via    │  │
 │  │ minutes      │  │ mobile money │  │
 │  │              │  │              │  │
-│  │ Apply via    │  │ EcoCash or   │  │
-│  │ WhatsApp.    │  │ OneMoney.    │  │
+│  │ Apply via    │  │ Your mobile  │  │
+│  │ WhatsApp.    │  │ wallet.      │  │
 │  └──────────────┘  └──────────────┘  │
 │                                      │
 │  ┌──────────────────────────────┐    │
@@ -436,8 +436,8 @@ Padding: 80px vertical (compact — reduced from 120px)
 │  it most                             │   28px
 │                                      │
 │  Digital loans deposited             │   white 70% opacity
-│  directly into your EcoCash          │
-│  or OneMoney wallet. Apply           │
+│  directly into your mobile            │
+│  wallet. Apply                       │
 │  once, get funded in under           │
 │  10 minutes.                         │
 │                                      │
@@ -486,8 +486,8 @@ Padding: 64px vertical (compact)
 │  │                          │ │  it most                     │   │
 │  │                          │ │                              │   │
 │  │                          │ │  Digital loans deposited     │   │
-│  │                          │ │  directly into your EcoCash  │   │
-│  │                          │ │  or OneMoney wallet.         │   │
+│  │                          │ │  directly into your mobile   │   │
+│  │                          │ │  wallet.                     │   │
 │  │                          │ │                              │   │
 │  │                          │ │  [Fast]  [Mobile money]      │   │
 │  │                          │ │                              │   │
@@ -529,7 +529,7 @@ Padding: 80px vertical (compact)
 │  ┌──────────────────────────────┐    │
 │  │ [icon] Mobile money native    │    │
 │  │ Transactions settle instantly │    │
-│  │ through EcoCash and OneMoney. │    │
+│  │ through your mobile wallet.   │    │
 │  └──────────────────────────────┘    │
 │                                      │
 │  ┌──────────────────────────────┐    │

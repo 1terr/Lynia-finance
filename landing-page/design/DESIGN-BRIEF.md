@@ -105,7 +105,7 @@ Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 | Product | Headline | Subtext |
 |---------|----------|---------|
 | **Asset Financing** | "Own the tools that power your trade" | Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money. |
-| **Digital Credit** | "Cash when you need it most" | Digital loans deposited directly into your EcoCash or OneMoney wallet. Apply once, get funded in under 10 minutes. |
+| **Digital Credit** | "Cash when you need it most" | Digital loans deposited directly into your mobile wallet. Apply once, get funded in under 10 minutes. |
 | **Enterprise Partnerships** | "Embed credit into your platform" | Offer your customers financing at the point of need. Lynia handles underwriting, disbursement, and collections — you earn on every transaction. |
 
 Full copy in [`CONTENT.md`](./CONTENT.md).
@@ -118,7 +118,7 @@ Full copy in [`CONTENT.md`](./CONTENT.md).
 | Own asset after paying a deposit | Asset Financing features |
 | Repay using mobile money | Asset Financing + Digital Credit |
 | Funds in less than 10 minutes | Digital Credit features |
-| Mobile money friendly (EcoCash/Omari) | Digital Credit features |
+| Mobile money friendly | Digital Credit features |
 | API friendly platform | Enterprise Partnerships features |
 | Mobile money first | Enterprise Partnerships features |
 

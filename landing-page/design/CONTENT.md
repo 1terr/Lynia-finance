@@ -124,7 +124,7 @@ The stats section is placed early to establish the problem before presenting pro
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Content**: Partner logos, payment provider logos (EcoCash, OneMoney), or trust indicators.
+**Content**: Partner logos, payment provider logos, or trust indicators.
 
 - If logos available: no label text — just the logo row (Stripe pattern)
 - If logos not yet available, use stats-as-proof (no label needed):
@@ -234,7 +234,7 @@ If a label is required:
 | **Pay a deposit, own the device** | Start with a small deposit. The device is yours from day one. |
 | **Pick up locally** | Collect your device from any Lynia agent in your area. |
 | **Approved in minutes** | Apply via WhatsApp. Get a decision in under 5 minutes. |
-| **Repay via mobile money** | Pay back through EcoCash or OneMoney. No bank account needed. |
+| **Repay via mobile money** | Pay back through your mobile wallet. No bank account needed. |
 
 **CTAs**:
 - Primary: `[Start your application]`
@@ -254,7 +254,7 @@ If a label is required:
 > Cash when you need it most
 
 **Subtext**:
-> Digital loans deposited directly into your EcoCash or OneMoney wallet. Apply once, get funded in under 10 minutes.
+> Digital loans deposited directly into your mobile wallet. Apply once, get funded in under 10 minutes.
 
 **Features** (2-column grid):
 
@@ -286,7 +286,7 @@ If a label is required:
 
 | Feature | Description |
 |---------|-------------|
-| **Mobile money native** | Transactions settle instantly through EcoCash and OneMoney. |
+| **Mobile money native** | Transactions settle instantly through your mobile wallet. |
 | **Developer-ready APIs** | Integrate credit products with a few API calls. Monitor disbursements, repayments, and risk in real time. |
 | **Shared growth** | Your customers access more. Your platform retains more. Lynia handles underwriting, collections, and risk. |
 
@@ -435,7 +435,7 @@ If a label is required:
 | Stripe Section | Lynia Equivalent | Notes |
 |---------------|-----------------|-------|
 | Hero with gradient + animated UI | Hero with gradient + WhatsApp UI illustration | CSS gradient default, WebGL progressive enhancement |
-| Customer logos bar | Partner/trust logos bar | EcoCash, OneMoney, or stat numbers |
+| Customer logos bar | Partner/trust logos bar | Mobile wallet providers or stat numbers |
 | "Why Stripe" + global numbers | "80% of Zimbabwe works..." + underbanked stats | Moved early (position 3) to establish stakes |
 | Product suite grid | 3 product cards (Asset, Digital, Enterprise) | Icons + one-liner + link |
 | Individual product sections | 3 product deep-dives | Alternating backgrounds, compact padding |

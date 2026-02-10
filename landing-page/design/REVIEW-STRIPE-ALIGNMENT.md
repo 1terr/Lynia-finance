@@ -140,7 +140,7 @@ Two sentences. Tells you exactly what happens. No filler.
 | 1 | Ownership | Own asset after paying a deposit | Pay a deposit, own the device | Start with as little as $X down. The device is yours from day one. |
 | 2 | Collection | Collect asset at your nearest agent | Pick up locally | Collect your device from any Lynia agent in your area. |
 | 3 | Application | Get approved in less than 5 minutes | Approved in minutes | Apply via WhatsApp. Get a decision in under 5 minutes. |
-| 4 | Repayment | Repay using mobile money | Repay via mobile money | Pay back through EcoCash or OneMoney. No bank account needed. |
+| 4 | Repayment | Repay using mobile money | Repay via mobile money | Pay back through your mobile wallet. No bank account needed. |
 
 **Key pattern:** Stripe feature titles are 2-4 words max. Descriptions are one sentence that answers "how does this work?", not "what is this?"
 
@@ -152,14 +152,14 @@ Two sentences. Tells you exactly what happens. No filler.
 > "Quick, secure digital loans delivered straight to your mobile wallet. Designed to cover everyday needs or business growth, with repayment made simple via EcoCash or Omari"
 
 **Issues:**
-1. "Omari" — is this a typo for "OneMoney"? If it's a brand name, it's not introduced elsewhere in the docs. This needs verification.
+1. "Omari" — was a typo. Resolved.
 2. "Designed to cover everyday needs or business growth" — vague. Stripe would state the specific range or use case.
 3. "With repayment made simple" — passive construction, filler.
 4. Missing period at end of sentence.
 
 **Recommended rewrite:**
 
-> "Digital loans deposited directly into your EcoCash or OneMoney wallet. Apply once, get funded in under 10 minutes."
+> "Digital loans deposited directly into your mobile wallet. Apply once, get funded in under 10 minutes."
 
 **Feature descriptions — current vs recommended:**
 
@@ -188,7 +188,7 @@ Two sentences. Tells you exactly what happens. No filler.
 
 | Feature | Current Title | Current Description | Recommended Title | Recommended Description |
 |---------|--------------|-------------------|-------------------|----------------------|
-| 1 | Mobile money first | "We are a mobile money first platform for speed of transactions." | Mobile money native | Transactions settle instantly through EcoCash and OneMoney. |
+| 1 | Mobile money first | "We are a mobile money first platform for speed of transactions." | Mobile money native | Transactions settle instantly through your mobile wallet. |
 | 2 | API friendly platform | "We are a modern platform that is ready to plug into any third party system. Monitor key metrics in real time" | Developer-ready APIs | Integrate credit products with a few API calls. Monitor disbursements, repayments, and risk in real time. |
 | 3 | Value creation | "We move downstream of value creation. We understand customers' needs, we understand the risks and we leverage our insights to help your business grow. Our mission is building ecosystems to expand our product offerings." | Shared growth | Your customers access more. Your platform retains more. Lynia handles underwriting, collections, and risk. |
 
@@ -232,7 +232,7 @@ Last sentence reframes "alternative financing bridges this gap" into a specific,
 | 80% | "Of Zimbabwe's workforce is informal and excluded from traditional credit" | "of Zimbabwe's workforce is informal" |
 | <5% | "Of informal workers have access to bank credit" | "have access to bank credit" |
 | $14B | "Estimated unserved credit demand in Zimbabwe's informal sector" | "unserved credit demand" |
-| 70%+ | "Mobile money adoption rate (EcoCash, OneMoney)" | "mobile money adoption" |
+| 70%+ | "Mobile money adoption rate" | "mobile money adoption" |
 
 **Rule:** Stat descriptions should be 3-5 words. The number does the heavy lifting. The label just provides context.
 
@@ -468,7 +468,7 @@ This diversifies the conversion paths instead of duplicating one.
 | Use numbers over adjectives | "Fast approval" | "Approved in 5 minutes" |
 | End every sentence with a period | "Repay using mobile money" | "Repay using mobile money." |
 | Contractions are fine | "We would love to" | "We'd love to" |
-| Name the product, not the category | "Mobile money services" | "EcoCash and OneMoney" |
+| Name the product, not the category | "Mobile money services" | "your mobile wallet" |
 | Apostrophe on "Let's" | "Lets chat" | "Let's chat" |
 | No trailing ellipsis in production copy | "Learn more..." | "Learn more" |
 
@@ -504,7 +504,7 @@ Avoid:
 |---|------|---------|--------|
 | 1 | Rewrite hero headline and subtext | Hero | First impression — defines positioning |
 | 2 | Fix "Lets" → "Let's" everywhere | Hero, Section 4, Section 10 | Grammar error on primary CTA |
-| 3 | Verify "Omari" reference | Section 5 (Digital Credit) | Possible typo — should this be "OneMoney"? |
+| 3 | Verify "Omari" reference | Section 5 (Digital Credit) | Resolved — replaced with "mobile wallet" |
 | 4 | Rewrite Enterprise Partnership feature descriptions | Section 6 | Currently reads as internal pitch deck |
 | 5 | Add missing periods to all copy | Sections 4, 5, 6 | Multiple sentences missing terminal punctuation |
 | 6 | Add nav CTA button | Navigation | Missing primary conversion path |
@@ -568,7 +568,7 @@ Features:
 - Pay a deposit, own the device: Start with a small deposit. The device is yours from day one.
 - Pick up locally: Collect your device from any Lynia agent in your area.
 - Approved in minutes: Apply via WhatsApp. Get a decision in under 5 minutes.
-- Repay via mobile money: Pay back through EcoCash or OneMoney. No bank account needed.
+- Repay via mobile money: Pay back through your mobile wallet. No bank account needed.
 
 Primary CTA: Start your application
 Secondary CTA: Learn more →
@@ -579,7 +579,7 @@ Secondary CTA: Learn more →
 ```
 Label: DIGITAL CREDIT
 Headline: Cash when you need it most
-Subtext: Digital loans deposited directly into your EcoCash or OneMoney wallet. Apply once, get funded in under 10 minutes.
+Subtext: Digital loans deposited directly into your mobile wallet. Apply once, get funded in under 10 minutes.
 
 Features:
 - Application to wallet in minutes: From application to cash in your wallet — under 10 minutes.
@@ -596,7 +596,7 @@ Headline: Embed credit into your platform
 Subtext: Offer your customers financing at the point of need. Lynia handles underwriting, disbursement, and collections — you earn on every transaction.
 
 Features:
-- Mobile money native: Transactions settle instantly through EcoCash and OneMoney.
+- Mobile money native: Transactions settle instantly through your mobile wallet.
 - Developer-ready APIs: Integrate credit products with a few API calls. Monitor disbursements, repayments, and risk in real time.
 - Shared growth: Your customers access more. Your platform retains more. Lynia handles underwriting, collections, and risk.
 
