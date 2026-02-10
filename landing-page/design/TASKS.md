@@ -26,13 +26,13 @@ All inputs received and recorded in `DESIGN-BRIEF.md`.
 - [x] Write Digital Credit product section
 - [x] Write Enterprise Partnerships product section
 - [x] Define footer structure (Products + Connect links)
-- [x] Define Research page structure (Stripe blog-inspired, Sanity CMS)
+- [x] Define Editorial page structure (Stripe blog-inspired, Sanity CMS)
 - [x] Define Contact page layout (Stripe contact/sales-inspired, split layout)
 - [x] Select CMS → **Sanity** (free tier)
 - [ ] Prepare legal text (privacy policy, terms, RBZ regulatory disclaimers)
 - [ ] Commission/source flat illustrations (Stripe-like style)
 - [ ] Design logo (SVG + PNG, light + dark variants)
-- [ ] Write initial Research page content (first blog posts)
+- [ ] Write initial Editorial page content (first blog posts)
 
 ## Phase 1C: Design Execution (Claude) - COMPLETE
 

@@ -67,7 +67,7 @@
 
 | Page | Layout | Key Components |
 |------|--------|---------------|
-| Research | Featured post + 3-col grid | Blog Post Card, category pills |
+| Editorial | Featured post + 3-col grid | Blog Post Card, category pills |
 | Contact | Split (info L, form R) + partnership form | Form Elements, buttons |
 | Products | Detailed product pages | Product Deep Dive sections |
 | About | Company mission/vision/values | Text sections |
@@ -120,7 +120,7 @@ Phase 4: Page sections
 
 Phase 5: Page assembly
 ├── Homepage (compose all 11 sections)
-├── Research page (Sanity integration)
+├── Editorial page (Sanity integration)
 ├── Contact page (forms)
 └── Remaining pages
 ```
@@ -163,8 +163,8 @@ landing-page/frontend/
 ├── app/
 │   ├── layout.tsx              # Root layout (nav + footer + WhatsApp FAB)
 │   ├── page.tsx                # Homepage (11 sections)
-│   ├── research/
-│   │   ├── page.tsx            # Research listing
+│   ├── editorial/
+│   │   ├── page.tsx            # Editorial listing
 │   │   └── [slug]/page.tsx     # Individual post
 │   ├── contact/page.tsx        # Contact + partnership forms
 │   ├── products/page.tsx       # Products overview

@@ -257,14 +257,14 @@ Or simply:
 | Segment | Current | Recommended |
 |---------|---------|-------------|
 | For Individuals | "Get the tools you need to earn more. Smartphones, assets, and cash — all via WhatsApp." | "Smartphones, assets, and cash. Apply via WhatsApp in under 5 minutes." *(Cut the abstract "earn more", add specificity)* |
-| For Businesses | "Grow your business with instant digital credit. No paperwork, no bank visits." | "Digital credit with no paperwork and no bank visits. Apply and receive funds on your phone." *(Lead with what they get, not what they'll do with it)* |
+| For Distributors | "Grow your business with instant digital credit. No paperwork, no bank visits." | "Sell smartphones and assets in your community. Earn commission on every sale." *(Reframed — Lynia doesn't offer loans to businesses; distributors sell assets for commission)* |
 | For Partners | "Embed credit into your platform and help your customers access more." | "Embed credit into your platform. Offer financing at the point of sale through our APIs." *(Specific mechanism, not vague "access more")* |
 
 ---
 
-### Section 9: Editorial / Research
+### Section 9: Editorial
 
-**Current headline:** "From our Research"
+**Current headline:** "From our Editorial"
 
 **This is fine.** Clean, understated. Matches Stripe's blog presentation. No changes needed.
 
@@ -307,7 +307,7 @@ Or simply:
 
 **Recommendation:** This is clean. One adjustment — consider renaming "Mission" to "About" for broader utility (investors, press, job seekers all look for "About"). "Mission" is a subset of what that page should contain.
 
-> `Products | About | Partnerships | Research`
+> `Products | About | Partnerships | Editorial`
 
 ---
 
@@ -364,7 +364,7 @@ Either way — pick one naming convention and commit to it across nav, hero, car
 **Recommendation:** Add a single nav CTA button on desktop:
 
 ```
-[Logo]     Products   About   Partnerships   Research     [Apply now]
+[Logo]     Products   About   Partnerships   Editorial     [Start your application]
 ```
 
 On mobile, add it as the last item in the hamburger menu. This is a high-impact conversion optimization that Stripe, Paystack, and every successful fintech landing page uses.
@@ -626,9 +626,9 @@ For Individuals:
 Smartphones, assets, and cash. Apply via WhatsApp in under 5 minutes.
 CTA: Start your application →
 
-For Businesses:
-Digital credit with no paperwork and no bank visits. Apply and receive funds on your phone.
-CTA: Coming soon →
+For Distributors:
+Sell smartphones and assets in your community. Earn commission on every sale.
+CTA: Become a distributor →
 
 For Partners:
 Embed credit into your platform. Offer financing at the point of sale through our APIs.

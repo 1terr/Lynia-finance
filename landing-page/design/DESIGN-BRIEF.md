@@ -35,7 +35,7 @@
 ### Navigation Bar
 
 ```
-Lynia Finance (logo)    Products    About    Partnerships    Research    [Start your application]
+Lynia Finance (logo)    Products    About    Partnerships    Editorial    [Start your application]
 ```
 
 - CTA button on the right provides persistent conversion path from any scroll position (Stripe pattern)
@@ -55,7 +55,7 @@ Lynia Finance (logo)    Products    About    Partnerships    Research    [Start 
 | 6 | **Digital Credit** | Product deep dive | Split: visual left, text right (dark bg, lead capture CTA) |
 | 7 | **Enterprise Partnerships** | Product deep dive | Split: text left, visual right (compact padding) |
 | 8 | **Customer Segments** | Startup / Enterprise / Platform cards | 3-column cards |
-| 9 | **Featured Research** | Editorial content | 3-column blog card grid (from Sanity) |
+| 9 | **Editorial** | Featured articles | 3-column blog card grid (from Sanity) |
 | 10 | **Bottom CTA** | Bottom CTA + pricing | Dark/gradient bg, final conversion |
 | 11 | **Footer** | Multi-column footer | Products, Company, Connect, Legal |
 
@@ -78,7 +78,7 @@ Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 | **Products** | Detailed product pages (Asset Financing, Digital Credit, Enterprise Partnerships) |
 | **About** | Company mission, vision, and values |
 | **Partnerships** | Distributor and B2B partnership information + application form |
-| **Research** | Blog / research articles and news |
+| **Editorial** | Blog / articles and news |
 | **Privacy Policy / Terms** | Legal pages (footer links) |
 
 ### Footer
@@ -251,7 +251,7 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 ---
 
-## 8. Research Page (Blog)
+## 8. Editorial Page (Blog)
 
 **Inspiration**: [stripe.com/blog](https://stripe.com/blog)
 
@@ -359,7 +359,7 @@ Separate section or tab on the same page:
 | Website | Design Takeaways |
 |---------|-----------------|
 | **Stripe.com** (primary reference) | Deep navy `#0A2540` + blurple `#635BFF` (accent AND CTA). Söhne font (we use Inter). Medium-weight headings (500), light body (300). Flat illustrations. WebGL mesh gradient hero (`#6ec3f4, #3a3aff, #ff61ab, #E63946`). Layered subtle shadows. Generous section padding (120px). Narrow container (~1080px). Content-heavy but uncluttered. **Our primary design language.** |
-| **Stripe.com/blog** | Featured hero post, category pill filters, 2-3 column card grid, custom illustrations per post, clean hierarchy. **Model for Research page.** |
+| **Stripe.com/blog** | Featured hero post, category pill filters, 2-3 column card grid, custom illustrations per post, clean hierarchy. **Model for Editorial page.** |
 | **Stripe.com/contact/sales** | Split layout (info left, form right), single-column form, qualifying fields, clean labels, trust indicators. **Model for Contact page.** |
 | **Paystack.com** | Vibrant, uncluttered, animated illustrations. African fintech (Stripe-owned). Simple navigation. Quick onboarding feel. |
 
@@ -407,9 +407,9 @@ Separate section or tab on the same page:
 | Headlines / taglines | **Done** | Confirmed from wireframes |
 | CTA button text | **Done** | Confirmed from wireframes |
 | CMS selection | **Done** | Sanity (free tier) |
-| Research page structure | **Done** | Stripe blog-inspired, spec in Section 8 |
+| Editorial page structure | **Done** | Stripe blog-inspired, spec in Section 8 |
 | Contact page layout | **Done** | Stripe contact/sales-inspired, spec in Section 9 |
 | Logo design | Not started | Part of design phase |
 | Illustrations | Not started | To be created in Stripe-like flat style |
 | Sanity schema setup | Not started | Post, Author, Category content types |
-| Research initial content | Not started | First blog posts / articles needed |
+| Editorial initial content | Not started | First blog posts / articles needed |

@@ -10,7 +10,7 @@
 ## Navigation
 
 ```
-Lynia Finance (logo)    Products    About    Partnerships    Research    [Start your application]
+Lynia Finance (logo)    Products    About    Partnerships    Editorial    [Start your application]
 ```
 
 - Text links for primary nav items
@@ -44,7 +44,7 @@ The stats section is placed early to establish the problem before presenting pro
 ├─────────────────────────────────────────────────────────┤
 │ 8. CUSTOMER SEGMENTS (who we serve)                     │
 ├─────────────────────────────────────────────────────────┤
-│ 9. EDITORIAL (featured Research posts)                  │
+│ 9. EDITORIAL (featured Editorial posts)                 │
 ├─────────────────────────────────────────────────────────┤
 │ 10. BOTTOM CTA (final conversion)                      │
 ├─────────────────────────────────────────────────────────┤
@@ -307,18 +307,18 @@ If a label is required:
 │  Built for how Zimbabwe works                           │
 │                                                         │
 │  ┌─────────────────┐ ┌─────────────────┐ ┌────────────────┐ │
-│  │ FOR INDIVIDUALS │ │ FOR BUSINESSES  │ │ FOR PARTNERS    │ │
+│  │ FOR INDIVIDUALS │ │ FOR DISTRIBUTORS│ │ FOR PARTNERS    │ │
 │  │                 │ │                 │ │                 │ │
-│  │ Smartphones,    │ │ Digital credit  │ │ Embed credit    │ │
-│  │ assets, and  │ │ with no         │ │ into your       │ │
-│  │ cash. Apply     │ │ paperwork and   │ │ platform.       │ │
-│  │ via WhatsApp    │ │ no bank visits. │ │ Offer financing │ │
-│  │ in under 5      │ │ Apply and       │ │ at the point    │ │
-│  │ minutes.        │ │ receive funds   │ │ of sale through │ │
-│  │                 │ │ on your phone.  │ │ our APIs.       │ │
+│  │ Smartphones,    │ │ Sell smart-     │ │ Embed credit    │ │
+│  │ assets, and     │ │ phones and      │ │ into your       │ │
+│  │ cash. Apply     │ │ assets in your  │ │ platform.       │ │
+│  │ via WhatsApp    │ │ community. Earn │ │ Offer financing │ │
+│  │ in under 5      │ │ commission on   │ │ at the point    │ │
+│  │ minutes.        │ │ every sale.     │ │ of sale through │ │
+│  │                 │ │                 │ │ our APIs.       │ │
 │  │                 │ │                 │ │                 │ │
-│  │ Start your      │ │ Coming soon →   │ │ Partner with    │ │
-│  │ application →   │ │                 │ │ us →            │ │
+│  │ Start your      │ │ Become a        │ │ Partner with    │ │
+│  │ application →   │ │ distributor →   │ │ us →            │ │
 │  └─────────────────┘ └─────────────────┘ └────────────────┘ │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -329,14 +329,14 @@ If a label is required:
 
 ---
 
-## Section 9: Editorial / Featured Research
+## Section 9: Editorial
 
-**Design**: 2-3 column card grid showing latest Research posts. Stripe features curated editorial content (reports, interviews, announcements).
+**Design**: 2-3 column card grid showing latest Editorial posts. Stripe features curated editorial content (reports, interviews, announcements).
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                                                         │
-│  From our Research                                      │
+│  From our Editorial                                     │
 │                                                         │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
 │  │ [Image]  │  │ [Image]  │  │ [Image]  │              │
@@ -346,7 +346,7 @@ If a label is required:
 │  │ Date     │  │ Date     │  │ Date     │              │
 │  └──────────┘  └──────────┘  └──────────┘              │
 │                                                         │
-│                 View all research →                      │
+│                 View all articles →                      │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -440,7 +440,7 @@ If a label is required:
 | Product suite grid | 3 product cards (Asset, Digital, Enterprise) | Icons + one-liner + link |
 | Individual product sections | 3 product deep-dives | Alternating backgrounds, compact padding |
 | Customer segments | For Individuals / Businesses / Partners | 3-column cards |
-| Editorial content | Featured Research posts | Pulls from Sanity |
+| Editorial content | Featured Editorial posts | Pulls from Sanity |
 | Bottom CTA + pricing | Bottom CTA | Apply now + Talk to our team |
 | Nav with CTA button | Nav with "Start your application" button | Persistent conversion path |
 | Multi-column footer | Multi-column footer | Products, Company, Connect, Legal |
@@ -460,7 +460,7 @@ If a label is required:
 
 ---
 
-## Research Page (Blog)
+## Editorial Page (Blog)
 
 **CMS**: Sanity (free tier)
 **Inspiration**: stripe.com/blog
@@ -592,5 +592,5 @@ If a label is required:
 - **Products** → Detailed product pages for the 3 product lines
 - **About** → Company mission, vision, and values
 - **Partnerships** → Distributor and B2B partnership info + application form
-- **Research** → Blog / research articles and news (Sanity CMS)
+- **Editorial** → Blog / articles and news (Sanity CMS)
 - **Privacy Policy / Terms** → Legal pages (footer links)
