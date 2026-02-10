@@ -1,5 +1,6 @@
 export type AdminRole =
   | 'super_admin'
+  | 'admin'
   | 'operations_manager'
   | 'kyc_reviewer'
   | 'finance_team'
@@ -55,6 +56,17 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'payments:read', 'payments:reconcile', 'payments:refund',
     'reports:read', 'reports:export',
     'settings:read', 'settings:write',
+    'notifications:send',
+  ],
+  admin: [
+    'dashboard:view',
+    'customers:read', 'customers:write', 'customers:delete',
+    'loans:read', 'loans:approve', 'loans:reject', 'loans:write',
+    'kyc:read', 'kyc:approve', 'kyc:reject',
+    'devices:read', 'devices:write', 'devices:delete', 'devices:lock', 'devices:unlock',
+    'payments:read', 'payments:reconcile', 'payments:refund',
+    'reports:read', 'reports:export',
+    'settings:read',
     'notifications:send',
   ],
   operations_manager: [
