@@ -26,7 +26,7 @@ Wireframes, mockups, brand assets, and design system for lyniafinance.com.
 
 | Area | Decision |
 |------|----------|
-| Color | Stripe.com palette — navy `#0A2540`, blurple `#635BFF`, CTA `#0048E5` |
+| Color | Stripe.com palette — navy `#0A2540`, blurple `#635BFF` (accent + CTA), gradient `#6ec3f4, #3a3aff, #ff61ab, #E63946` |
 | Typography | Inter (variable weight, Stripe-like, headings 500, body 300) |
 | Icons | Lucide React |
 | Illustrations | Flat, modern vectors (Stripe aesthetic) |

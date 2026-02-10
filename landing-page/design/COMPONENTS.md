@@ -96,14 +96,14 @@
 
 | Property | Value |
 |----------|-------|
-| Background | `var(--color-cta)` / `#0048E5` |
+| Background | `var(--color-primary)` / `#635BFF` |
 | Text color | `var(--color-white)` |
 | Font | `var(--text-body-sm)` / `15px`, `var(--font-medium)` / `500` |
 | Padding | `12px 24px` |
 | Border radius | `var(--radius-md)` / `8px` |
 | Min width | `120px` |
 | Height | `44px` |
-| Hover | Background `var(--color-cta-hover)` / `#003ECB`, shadow `var(--shadow-md)` |
+| Hover | Background `var(--color-primary-hover)` / `#5651E5`, shadow `var(--shadow-md)` |
 | Active | Scale `0.98`, shadow `var(--shadow-sm)` |
 | Focus | `2px` outline, `var(--color-primary)` / `#635BFF`, `2px` offset |
 | Disabled | `opacity: 0.5`, `cursor: not-allowed` |
@@ -114,11 +114,11 @@
 | Property | Value |
 |----------|-------|
 | Background | Transparent |
-| Text color | `var(--color-cta)` / `#0048E5` |
+| Text color | `var(--color-primary)` / `#635BFF` |
 | Font | `var(--text-body-sm)` / `15px`, `var(--font-medium)` |
 | Padding | `12px 0` |
 | Icon | Right arrow `→` (`16px`), `4px` gap |
-| Hover | Text color `var(--color-cta-hover)`, arrow shifts right `4px` |
+| Hover | Text color `var(--color-primary-hover)`, arrow shifts right `4px` |
 | Transition | All `var(--duration-fast)` |
 
 ### Ghost Button (on dark backgrounds)
@@ -137,7 +137,7 @@
 | Property | Value |
 |----------|-------|
 | Background | `var(--color-border)` / `#E0E6EB` |
-| Text color | `var(--color-gray-400)` / `#aab7c4` |
+| Text color | `var(--color-gray-400)` / `#ADBDCC` |
 | Cursor | `not-allowed` |
 | No hover effects | |
 
@@ -173,7 +173,7 @@
 | Gap headline → subtext | `var(--space-6)` / `24px` |
 | Gap subtext → CTAs | `var(--space-8)` / `32px` |
 | CTA row | Flex, `gap: 16px`, items center-aligned |
-| Primary CTA | Primary button (large size, white bg with `var(--color-cta)` text on dark hero) |
+| Primary CTA | Primary button (large size, white bg with `var(--color-primary)` text on dark hero) |
 | Secondary CTA | Text link, white color, arrow right |
 
 ### Right Column (Visual)
@@ -199,9 +199,9 @@
 
 | Property | Value |
 |----------|-------|
-| Colors | `#0A2540`, `#635BFF`, `#0048E5`, `#1A3550` |
+| Colors | `#6ec3f4` (light blue), `#3a3aff` (vivid blue), `#ff61ab` (pink), `#E63946` (red) |
 | Animation | Slow-moving gradient mesh, `0.3` speed factor |
-| Fallback | `background: linear-gradient(135deg, #0A2540 0%, #635BFF 50%, #0048E5 100%)` |
+| Fallback | `background: linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%)` |
 | Performance | Reduce to CSS gradient on `prefers-reduced-motion` or low-end devices |
 
 ---
@@ -215,7 +215,7 @@
 | Background | `var(--color-white)` or `var(--color-gray-100)` / `#F6F9FC` |
 | Padding | `var(--space-10)` vertical |
 | Content | Centered label + horizontal logo row |
-| Label | `var(--text-caption)`, `var(--color-text-muted)` / `#aab7c4`, uppercase, `var(--tracking-wide)` |
+| Label | `var(--text-caption)`, `var(--color-text-muted)` / `#ADBDCC`, uppercase, `var(--tracking-wide)` |
 | Logo container | Flex, `gap: 48px`, center-aligned, `flex-wrap: wrap` |
 | Logo height | `28px–36px`, grayscale by default |
 | Logo hover | Full color, `var(--duration-normal)` transition |
@@ -259,10 +259,10 @@ Used in Section 3 (Product Suite Overview).
 | Element | Specification |
 |---------|--------------|
 | Illustration | `64px` height area, centered, flat SVG illustration |
-| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-cta)` / `#0048E5` |
+| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-primary)` / `#635BFF` |
 | Headline | `var(--text-h3)`, `var(--font-medium)`, `var(--color-primary-dark)` / `#0A2540` |
 | Description | `var(--text-body)`, `var(--color-text-body)` / `#425466`, max 2 lines |
-| Link | Secondary button style, `var(--color-cta)`, arrow right |
+| Link | Secondary button style, `var(--color-primary)`, arrow right |
 
 ### Grid
 
@@ -323,7 +323,7 @@ Desktop:
 
 | Element | Specification |
 |---------|--------------|
-| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-cta)` (or `var(--color-primary)` / `#635BFF` on dark bg) |
+| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-primary)` (or `var(--color-primary)` / `#635BFF` on dark bg) |
 | Headline | `var(--text-h1)`, `var(--font-medium)` / `500`, `letter-spacing: 0` |
 | Description | `var(--text-body-lg)`, `var(--color-text-body)` / `#425466` (or `rgba(255,255,255,0.7)` on dark) |
 | Gap: label → headline | `var(--space-4)` |
@@ -369,7 +369,7 @@ Used inside product deep-dive sections.
 | Property | Value |
 |----------|-------|
 | Layout | Grid item in a 2, 3, or 4-column grid (responsive) |
-| Icon | Lucide icon, `var(--icon-lg)` / `24px`, `var(--color-cta)` / `#0048E5` (or `var(--color-primary)` / `#635BFF` on dark bg) |
+| Icon | Lucide icon, `var(--icon-lg)` / `24px`, `var(--color-primary)` / `#635BFF` (or `var(--color-primary)` / `#635BFF` on dark bg) |
 | Title | `var(--text-h5)` / `18px`, `var(--font-medium)` / `500` |
 | Description | `var(--text-body-sm)` / `15px`, `var(--color-text-body)` / `#425466` (or `rgba(255,255,255,0.7)`) |
 | Gap: icon → title | `var(--space-3)` / `12px` |
@@ -456,7 +456,7 @@ Used in Section 8 (Customer Segments).
 | Hover shadow | `var(--shadow-lg)` |
 | Hover transform | `translateY(-4px)` |
 | Transition | All `var(--duration-normal)` |
-| Overline | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-cta)` / `#0048E5` |
+| Overline | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-primary)` / `#635BFF` |
 | Description | `var(--text-body)`, `var(--color-text-body)` / `#425466` |
 | Link | Secondary button style |
 | Grid | 3 columns (desktop) → 1 column (mobile) |
@@ -510,10 +510,10 @@ Used in Section 9 (Editorial) and Research page.
 | Property | Value |
 |----------|-------|
 | Padding | `var(--space-6)` / `24px` |
-| Category tag | Pill style — `var(--text-caption)`, `var(--font-medium)`, `var(--color-cta)` / `#0048E5`, `background: var(--color-primary-50)` / `#EBEEF8`, `padding: 4px 12px`, `border-radius: var(--radius-full)` |
+| Category tag | Pill style — `var(--text-caption)`, `var(--font-medium)`, `var(--color-primary)` / `#635BFF`, `background: var(--color-primary-50)` / `#EBEEF8`, `padding: 4px 12px`, `border-radius: var(--radius-full)` |
 | Headline | `var(--text-h4)`, `var(--font-medium)`, `var(--color-primary-dark)` / `#0A2540` |
 | Excerpt | `var(--text-body-sm)`, `var(--color-text-body)` / `#425466`, max 2 lines (`-webkit-line-clamp: 2`) |
-| Date | `var(--text-caption)`, `var(--color-text-muted)` / `#aab7c4` |
+| Date | `var(--text-caption)`, `var(--color-text-muted)` / `#ADBDCC` |
 | Gaps | Tag → headline: `var(--space-3)`, headline → excerpt: `var(--space-2)`, excerpt → date: `var(--space-4)` |
 
 ---
@@ -548,13 +548,13 @@ Used in Section 10 (Bottom CTA).
 | Height | `48px` |
 | Background | `var(--color-white)` |
 | Border | `1px solid var(--color-gray-300)` / `#c4cdd6` |
-| Border (focus) | `1px solid var(--color-cta)` / `#0048E5` |
+| Border (focus) | `1px solid var(--color-cta)` / `#635BFF` |
 | Box shadow (focus) | `var(--shadow-input)` / `0px 3px 10px rgba(18, 42, 66, 0.08)` |
 | Border radius | `var(--radius-sm)` / `6px` |
 | Padding | `12px 16px` |
 | Font | `var(--text-body)` / `18px`, `var(--font-regular)` / `400` |
 | Color | `var(--color-primary-dark)` / `#0A2540` |
-| Placeholder | `var(--color-text-muted)` / `#aab7c4` |
+| Placeholder | `var(--color-text-muted)` / `#ADBDCC` |
 | Transition | Border and shadow `var(--duration-fast)` |
 
 ### Label
@@ -690,7 +690,7 @@ Reusable overline label used in product sections and other areas.
 | Weight | `var(--font-medium)` / `500` |
 | Case | Uppercase |
 | Letter spacing | `var(--tracking-wider)` / `0.1em` |
-| Color (light bg) | `var(--color-cta)` / `#0048E5` |
+| Color (light bg) | `var(--color-primary)` / `#635BFF` |
 | Color (dark bg) | `var(--color-primary)` / `#635BFF` |
 | Margin bottom | `var(--space-4)` (before headline) |
 

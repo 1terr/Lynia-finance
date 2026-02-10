@@ -27,13 +27,14 @@
 | **Framework** | Next.js (App Router) |
 | **Hosting** | AWS |
 | **CMS** | Sanity (free tier) |
-| **Font** | Inter (variable, 400–700) |
+| **Font** | Inter (variable, 300–600) |
 | **Icon library** | Lucide React |
-| **Brand accent** | `#635BFF` (Stripe "blurple") |
+| **Brand accent / CTA** | `#635BFF` (Stripe "blurple" — used for both brand accent and buttons) |
 | **Primary dark** | `#0A2540` (Stripe "Downriver" navy) |
-| **CTA blue** | `#0048E5` (buttons, links) |
 | **Body text** | `#425466` (Stripe blue-gray) |
+| **Muted text** | `#ADBDCC` (secondary text on dark backgrounds) |
 | **Light BG** | `#F6F9FC` (Stripe "Black Squeeze") |
+| **Hero gradient** | WebGL: `#6ec3f4`, `#3a3aff`, `#ff61ab`, `#E63946` (Stripe's vibrant multi-hue) |
 | **CSS framework** | Tailwind CSS (config in DESIGN-TOKENS.md) |
 | **Breakpoints** | 640 / 768 / 1024 / 1280 / 1536 px |
 | **Max container** | 1080px |

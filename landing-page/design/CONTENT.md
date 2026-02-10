@@ -95,7 +95,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 **Visual**: Animated flat illustration showing a WhatsApp loan approval flow or mobile money transaction on a phone mockup (CSS-rendered device, Stripe style).
 
 **Technical notes**:
-- Animated gradient using WebGL canvas (blue hues: `#0A2540`, `#635BFF`, `#0048E5`, `#1A3550`)
+- Animated gradient using WebGL canvas (blue hues: `#6ec3f4`, `#3a3aff`, `#ff61ab`, `#E63946`)
 - CSS Grid layout: 2 columns (text left, visual right)
 - On mobile: stacks (text on top, visual below or hidden)
 
@@ -421,7 +421,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 | Pattern | Implementation |
 |---------|---------------|
-| **Gradient background** | WebGL canvas with animated blue hues (`#0A2540`, `#635BFF`, `#0048E5`, `#1A3550`) |
+| **Gradient background** | WebGL canvas with animated blue hues (`#6ec3f4`, `#3a3aff`, `#ff61ab`, `#E63946`) |
 | **Device mockups** | CSS-rendered phones/laptops (<1KB, hardware-accelerated, responsive) |
 | **Section transitions** | Scroll-triggered fade-in animations using Intersection Observer API |
 | **Layout** | CSS Grid throughout, 2-column splits for product sections |
