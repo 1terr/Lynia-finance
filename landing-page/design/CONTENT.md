@@ -260,7 +260,6 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 │  │          │  │  credit  │  │  demand  │  │ adoption │ │
 │  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │
 │                                                         │
-│  The underbanked aren't high risk — they're unmodeled.  │
 │  Traditional banks don't serve them. We do.             │
 │                                                         │
 │  Zimbabwe's informal workforce is 80% of the economy   │
@@ -279,9 +278,6 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 **Section headline**:
 > Building credit rails for the underbanked
-
-**Supporting headline**:
-> The underbanked aren't high risk — they're unmodeled.
 
 **Supporting text**:
 > Traditional banks don't serve them. We do. Zimbabwe's informal workforce is 80% of the economy yet almost entirely excluded from credit. Mobile money penetration is high, but financial products haven't followed. Alternative financing bridges this gap.
