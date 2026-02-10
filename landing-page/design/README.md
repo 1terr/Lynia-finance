@@ -5,16 +5,21 @@ Wireframes, mockups, brand assets, and design system for lyniafinance.com.
 ## Status
 
 - **Phase 1A** (Inputs): Complete
-- **Phase 1B** (Content): Homepage copy done, remaining items in progress
-- **Phase 1C** (Design execution): Up next
+- **Phase 1B** (Content): Complete (legal text and illustrations outstanding)
+- **Phase 1C** (Design execution): Complete
 - **Phase 1D** (Review): Pending
 
 ## Documents
 
 | File | Purpose |
 |------|---------|
-| [`DESIGN-BRIEF.md`](./DESIGN-BRIEF.md) | All design decisions, brand direction, and technical choices |
-| [`CONTENT.md`](./CONTENT.md) | Full page copy extracted from wireframes (source of truth) |
+| [`HANDOFF.md`](./HANDOFF.md) | Design handoff summary — start here for development |
+| [`DESIGN-BRIEF.md`](./DESIGN-BRIEF.md) | Project overview, brand direction, audience, and technical choices |
+| [`CONTENT.md`](./CONTENT.md) | Full page copy for all sections and pages (source of truth) |
+| [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md) | Colors, typography, spacing, shadows, breakpoints, Tailwind config |
+| [`COMPONENTS.md`](./COMPONENTS.md) | Detailed specs for all 16 reusable UI components |
+| [`WIREFRAMES.md`](./WIREFRAMES.md) | Mobile-first and desktop wireframes for all pages |
+| [`ANIMATIONS.md`](./ANIMATIONS.md) | Motion, transitions, scroll animations, hover/focus states |
 | [`TASKS.md`](./TASKS.md) | Step-by-step checklist for the entire design phase |
 
 ## Key Decisions
@@ -22,16 +27,18 @@ Wireframes, mockups, brand assets, and design system for lyniafinance.com.
 | Area | Decision |
 |------|----------|
 | Color | Vibrant blue (`#0052FF`), Coinbase/Moniepoint-inspired |
-| Typography | Stripe-like (Inter or Geist) |
+| Typography | Inter (variable weight, Stripe-like) |
+| Icons | Lucide React |
 | Illustrations | Flat, modern vectors (Stripe aesthetic) |
-| Framework | Next.js on AWS |
+| Framework | Next.js (App Router) on AWS |
+| CSS | Tailwind CSS |
+| CMS | Sanity (free tier) |
 | Products | Asset Financing, Digital Credit, Enterprise Partnerships |
 
-## Remaining Work
+## Outstanding Assets (client-provided)
 
-- Logo design
+- Logo design (SVG + PNG, light + dark variants)
 - Flat illustrations for each product section
-- Blog/Contact page content
-- Legal text (privacy, terms, RBZ disclaimers)
-- CMS selection
-- Design tokens, wireframes, and mockups
+- Partner/trust logos
+- Legal text (privacy policy, terms, RBZ disclaimers)
+- Initial Research page blog posts
