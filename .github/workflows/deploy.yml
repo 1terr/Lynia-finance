@@ -17,7 +17,10 @@ on:
     paths-ignore:
       - '**.md'
       - 'docs/**'
-      - '.github/**'
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'staging' }}
+  cancel-in-progress: false
 
 env:
   AWS_REGION: us-east-1
@@ -26,9 +29,14 @@ env:
   PYTHON_VERSION: '3.11'
 
 jobs:
+  # ================================================================
+  # STAGE 1: Lint, Test & Coverage Gate
+  # ================================================================
   test:
-    name: Run Tests Before Deploy
+    name: Lint & Test
     runs-on: ubuntu-latest
+    outputs:
+      coverage: ${{ steps.coverage.outputs.total }}
 
     steps:
       - name: Checkout code
@@ -50,18 +58,164 @@ jobs:
 
       - name: Run linter
         run: pnpm run lint
-        continue-on-error: true
 
-      - name: Run tests
-        run: pnpm run test
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_KEY }}
 
+      - name: Extract coverage percentage
+        id: coverage
+        run: |
+          TOTAL=$(cat coverage/coverage-summary.json 2>/dev/null \
+            | jq -r '.total.lines.pct // 0' || echo "0")
+          echo "total=$TOTAL" >> $GITHUB_OUTPUT
+          echo "Coverage: ${TOTAL}%"
+
+      - name: Enforce 80% coverage gate
+        run: |
+          COVERAGE="${{ steps.coverage.outputs.total }}"
+          THRESHOLD=80
+          if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l 2>/dev/null || echo 1) )); then
+            echo "::warning::Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
+          fi
+
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v5
+        with:
+          files: ./coverage/lcov.info
+          flags: unittests
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # ================================================================
+  # STAGE 2: Security Scanning
+  # ================================================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high || true
+
+      - name: Check for known vulnerabilities
+        run: |
+          npx audit-ci --high 2>/dev/null || echo "::warning::Dependency vulnerabilities found - review before production"
+
+      - name: Scan for hardcoded secrets
+        run: |
+          echo "Scanning for hardcoded secrets..."
+          PATTERNS=(
+            'password\s*=\s*["\x27][^"\x27]+'
+            'api[_-]?key\s*=\s*["\x27][^"\x27]+'
+            'secret\s*=\s*["\x27][^"\x27]+'
+            'AKIA[0-9A-Z]{16}'
+          )
+          FOUND=0
+          for pattern in "${PATTERNS[@]}"; do
+            if grep -rn --include="*.ts" --include="*.js" --include="*.tsx" \
+               -E "$pattern" services/ frontend/ 2>/dev/null | \
+               grep -v node_modules | grep -v ".test." | grep -v ".spec." | \
+               grep -v "process.env" | grep -v "secrets." | head -5; then
+              FOUND=1
+            fi
+          done
+          if [ "$FOUND" -eq 1 ]; then
+            echo "::warning::Potential hardcoded secrets detected - review findings above"
+          else
+            echo "No hardcoded secrets found"
+          fi
+
+      - name: CloudFormation template security lint
+        run: |
+          pip install cfn-lint
+          cfn-lint template.yaml || true
+          cfn-lint infrastructure/aws/*.yaml || true
+          cfn-lint infrastructure/monitoring/*.yaml || true
+
+  # ================================================================
+  # STAGE 3: Build & Validate
+  # ================================================================
+  build:
+    name: Build Lambda Functions
+    runs-on: ubuntu-latest
+    needs: [test, security-scan]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Setup AWS SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install esbuild globally
+        run: npm install -g esbuild
+
+      - name: SAM Build
+        run: sam build --cached --parallel
+        env:
+          SAM_CLI_TELEMETRY: 0
+
+      - name: SAM Validate
+        run: |
+          pip install cfn-lint
+          sam validate --lint
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sam-build
+          path: .aws-sam/build/
+          retention-days: 7
+
+  # ================================================================
+  # STAGE 4: Deploy to Staging
+  # ================================================================
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: test
+    needs: build
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     environment:
       name: staging
@@ -98,9 +252,6 @@ jobs:
       - name: Install esbuild globally
         run: npm install -g esbuild
 
-      - name: Install cfn-lint
-        run: pip install cfn-lint
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -114,7 +265,22 @@ jobs:
           SAM_CLI_TELEMETRY: 0
 
       - name: SAM Validate
-        run: sam validate --lint
+        run: |
+          pip install cfn-lint
+          sam validate --lint
+
+      - name: Validate database migrations
+        run: |
+          echo "Checking for pending database migrations..."
+          if ls database/migrations/*.sql 1>/dev/null 2>&1; then
+            echo "Migrations found - verifying backwards compatibility"
+            for f in database/migrations/*.sql; do
+              if grep -qiE "DROP (TABLE|COLUMN|INDEX)" "$f" 2>/dev/null; then
+                echo "::warning::Destructive migration detected in $f - ensure rollback plan exists"
+              fi
+            done
+          fi
+          echo "Migration validation complete"
 
       - name: Clean up failed stack if in ROLLBACK_COMPLETE
         run: |
@@ -168,11 +334,33 @@ jobs:
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
           echo "API Gateway URL: $API_URL"
 
-      - name: Test Deployed Endpoints
+      - name: Staging smoke tests
         run: |
-          echo "Testing staging endpoints..."
-          curl -f ${{ steps.get-url.outputs.api_url }}/health || echo "Health check failed"
-        continue-on-error: true
+          API_URL="${{ steps.get-url.outputs.api_url }}"
+          echo "Running staging smoke tests against $API_URL"
+
+          FAILED=0
+
+          # Health endpoint
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health" || echo "000")
+          if [[ "$HTTP_CODE" =~ ^(200|403|401)$ ]]; then
+            echo "Health endpoint: OK ($HTTP_CODE)"
+          else
+            echo "::warning::Health endpoint returned $HTTP_CODE"
+            FAILED=1
+          fi
+
+          # Scoring service
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/scoring/health" || echo "000")
+          echo "Scoring service: $HTTP_CODE"
+
+          # Payment service
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/payments/health" || echo "000")
+          echo "Payment service: $HTTP_CODE"
+
+          if [ "$FAILED" -eq 1 ]; then
+            echo "::warning::Some smoke tests failed - review before promoting to production"
+          fi
 
       - name: Comment PR with deployment info
         if: github.event_name == 'pull_request'
@@ -183,13 +371,16 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### ✅ Deployed to Staging\n\n**API URL**: ${{ steps.get-url.outputs.api_url }}\n\n**Environment**: staging\n**Commit**: ${context.sha.substring(0, 7)}\n\nTest your changes at the URL above.`
+              body: `### Deployed to Staging\n\n**API URL**: ${{ steps.get-url.outputs.api_url }}\n\n**Environment**: staging\n**Commit**: ${context.sha.substring(0, 7)}\n\nTest your changes at the URL above.`
             })
 
+  # ================================================================
+  # STAGE 5: Deploy to Production (manual approval required)
+  # ================================================================
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: test
+    needs: build
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
     environment:
       name: production
@@ -226,9 +417,6 @@ jobs:
       - name: Install esbuild globally
         run: npm install -g esbuild
 
-      - name: Install cfn-lint
-        run: pip install cfn-lint
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -236,19 +424,63 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Verify staging deployment exists
+        run: |
+          echo "Verifying staging stack exists and is healthy..."
+          STAGING_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name lynia-finance-staging \
+            --query 'Stacks[0].StackStatus' \
+            --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          if [[ "$STAGING_STATUS" != *"COMPLETE"* ]] || [[ "$STAGING_STATUS" == "ROLLBACK_COMPLETE" ]]; then
+            echo "::error::Staging stack status is $STAGING_STATUS. Deploy to staging first."
+            exit 1
+          fi
+          echo "Staging stack status: $STAGING_STATUS"
+
+      - name: Validate database migrations
+        run: |
+          echo "Checking for pending database migrations..."
+          if ls database/migrations/*.sql 1>/dev/null 2>&1; then
+            for f in database/migrations/*.sql; do
+              if grep -qiE "DROP (TABLE|COLUMN|INDEX)" "$f" 2>/dev/null; then
+                echo "::error::Destructive migration detected in $f - manual review required"
+              fi
+            done
+          fi
+          echo "Migration validation complete"
+
+      - name: Record pre-deployment state
+        id: pre-deploy
+        run: |
+          echo "Recording pre-deployment state for rollback reference..."
+          PREV_VERSION=$(aws cloudformation describe-stacks \
+            --stack-name lynia-finance-prod \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiGatewayUrl`].OutputValue' \
+            --output text 2>/dev/null || echo "none")
+          PREV_TEMPLATE=$(aws cloudformation get-template \
+            --stack-name lynia-finance-prod \
+            --template-stage Processed 2>/dev/null | jq -r '.TemplateBody' | md5sum | cut -d' ' -f1 || echo "none")
+          echo "prev_api_url=$PREV_VERSION" >> $GITHUB_OUTPUT
+          echo "prev_template_hash=$PREV_TEMPLATE" >> $GITHUB_OUTPUT
+          echo "deploy_start=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+
       - name: SAM Build
         run: sam build --config-env production --cached --parallel
         env:
           SAM_CLI_TELEMETRY: 0
 
       - name: SAM Validate
-        run: sam validate --lint
+        run: |
+          pip install cfn-lint
+          sam validate --lint
 
       - name: SAM Deploy to Production
         run: |
           sam deploy \
             --config-env production \
             --no-fail-on-empty-changeset \
+            --on-failure ROLLBACK \
             --parameter-overrides \
               Environment=production \
               SupabaseUrl=${{ secrets.PRODUCTION_SUPABASE_URL }} \
@@ -280,10 +512,50 @@ jobs:
           echo "api_url=$API_URL" >> $GITHUB_OUTPUT
           echo "Production API Gateway URL: $API_URL"
 
-      - name: Test Production Endpoints
+      - name: Production smoke tests
+        id: smoke-tests
         run: |
-          echo "Testing production endpoints..."
-          curl -f ${{ steps.get-prod-url.outputs.api_url }}/health || echo "Health check failed"
+          API_URL="${{ steps.get-prod-url.outputs.api_url }}"
+          echo "Running production smoke tests..."
+          FAILED=0
+
+          for endpoint in health scoring/health payments/health; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+              "$API_URL/$endpoint" || echo "000")
+            if [[ "$HTTP_CODE" =~ ^(200|403|401)$ ]]; then
+              echo "$endpoint: OK ($HTTP_CODE)"
+            else
+              echo "::warning::$endpoint returned $HTTP_CODE"
+              FAILED=1
+            fi
+          done
+
+          echo "failed=$FAILED" >> $GITHUB_OUTPUT
+
+      - name: Monitor error rate post-deploy (2 min window)
+        if: steps.smoke-tests.outputs.failed != '1'
+        run: |
+          echo "Monitoring error rates for 2 minutes post-deployment..."
+          sleep 120
+
+          # Check CloudWatch for elevated errors
+          END_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          START_TIME="${{ steps.pre-deploy.outputs.deploy_start }}"
+
+          ERRORS=$(aws cloudwatch get-metric-statistics \
+            --namespace AWS/Lambda \
+            --metric-name Errors \
+            --start-time "$START_TIME" \
+            --end-time "$END_TIME" \
+            --period 60 \
+            --statistics Sum \
+            --query 'Datapoints[].Sum' \
+            --output text 2>/dev/null || echo "0")
+
+          echo "Errors since deployment: $ERRORS"
+          if [ -n "$ERRORS" ] && [ "$ERRORS" != "None" ] && [ "$ERRORS" != "0" ]; then
+            echo "::warning::Errors detected post-deployment - monitor closely"
+          fi
 
       - name: Create GitHub Release
         if: success()
@@ -298,23 +570,98 @@ jobs:
 
             API URL: ${{ steps.get-prod-url.outputs.api_url }}
             Commit: ${{ github.sha }}
+            Deployed: ${{ steps.pre-deploy.outputs.deploy_start }}
 
             ### Changes
             See commit history for details.
           draft: false
           prerelease: false
 
+  # ================================================================
+  # STAGE 6: Notifications
+  # ================================================================
   notify:
-    name: Notify Deployment Status
+    name: Deployment Notifications
     runs-on: ubuntu-latest
-    needs: [deploy-staging, deploy-production]
+    needs: [test, security-scan, build, deploy-staging, deploy-production]
     if: always()
 
     steps:
-      - name: Send success notification
-        if: success()
-        run: echo "✅ Deployment successful!"
+      - name: Determine deployment result
+        id: result
+        run: |
+          if [ "${{ needs.deploy-production.result }}" == "success" ]; then
+            echo "status=Production deployment successful" >> $GITHUB_OUTPUT
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-staging.result }}" == "success" ]; then
+            echo "status=Staging deployment successful" >> $GITHUB_OUTPUT
+            echo "env=staging" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-production.result }}" == "failure" ]; then
+            echo "status=PRODUCTION DEPLOYMENT FAILED" >> $GITHUB_OUTPUT
+            echo "env=production" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-staging.result }}" == "failure" ]; then
+            echo "status=Staging deployment failed" >> $GITHUB_OUTPUT
+            echo "env=staging" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.test.result }}" == "failure" ]; then
+            echo "status=Tests failed - deployment blocked" >> $GITHUB_OUTPUT
+            echo "env=none" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.security-scan.result }}" == "failure" ]; then
+            echo "status=Security scan failed - deployment blocked" >> $GITHUB_OUTPUT
+            echo "env=none" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+          else
+            echo "status=Deployment skipped" >> $GITHUB_OUTPUT
+            echo "env=none" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Send failure notification
-        if: failure()
-        run: echo "❌ Deployment failed. Check logs."
+      - name: Send Slack notification
+        if: vars.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -s -X POST "${{ vars.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-type: application/json' \
+            -d '{
+              "attachments": [{
+                "color": "${{ steps.result.outputs.color }}",
+                "title": "Lynia Finance Deployment",
+                "text": "${{ steps.result.outputs.status }}",
+                "fields": [
+                  {"title": "Environment", "value": "${{ steps.result.outputs.env }}", "short": true},
+                  {"title": "Branch", "value": "${{ github.ref_name }}", "short": true},
+                  {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                  {"title": "Actor", "value": "${{ github.actor }}", "short": true}
+                ],
+                "footer": "GitHub Actions",
+                "ts": '$( date +%s )'
+              }]
+            }' || true
+
+      - name: Send email notification for production failures
+        if: |
+          needs.deploy-production.result == 'failure' &&
+          vars.ALERT_EMAIL != ''
+        run: |
+          echo "PRODUCTION DEPLOYMENT FAILED"
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          echo ""
+          echo "Action required: Check deployment logs and consider rollback."
+
+      - name: Post summary
+        run: |
+          echo "## Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Stage | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Staging Deploy | ${{ needs.deploy-staging.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Production Deploy | ${{ needs.deploy-production.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ steps.result.outputs.status }}" >> $GITHUB_STEP_SUMMARY

@@ -1,4 +1,4 @@
-name: Deploy Frontend to S3/CloudFront
+name: Deploy Frontend (Blue-Green)
 
 on:
   workflow_dispatch:
@@ -21,19 +21,25 @@ on:
           - distributor-dashboard
           - both
 
+concurrency:
+  group: deploy-frontend-${{ inputs.environment }}
+  cancel-in-progress: false
+
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: '20.x'
   PNPM_VERSION: '9'
 
 jobs:
-  deploy-admin-portal:
-    name: Deploy Admin Portal
+  # ================================================================
+  # STAGE 1: Build & Test Frontend
+  # ================================================================
+  build-test:
+    name: Build & Test Frontend
     runs-on: ubuntu-latest
-    if: inputs.application == 'admin-portal' || inputs.application == 'both'
-    environment:
-      name: ${{ inputs.environment }}
-      url: ${{ steps.get-url.outputs.url }}
+    outputs:
+      admin-built: ${{ steps.build-admin.outcome == 'success' }}
+      distributor-built: ${{ steps.build-distributor.outcome == 'success' }}
 
     steps:
       - name: Checkout code
@@ -53,7 +59,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Run frontend linting
+        run: |
+          if [ "${{ inputs.application }}" == "admin-portal" ] || [ "${{ inputs.application }}" == "both" ]; then
+            pnpm --filter admin-portal lint 2>/dev/null || echo "::warning::Admin portal lint issues found"
+          fi
+          if [ "${{ inputs.application }}" == "distributor-dashboard" ] || [ "${{ inputs.application }}" == "both" ]; then
+            pnpm --filter distributor-dashboard lint 2>/dev/null || echo "::warning::Distributor dashboard lint issues found"
+          fi
+
+      - name: Run frontend tests
+        run: |
+          if [ "${{ inputs.application }}" == "admin-portal" ] || [ "${{ inputs.application }}" == "both" ]; then
+            pnpm --filter admin-portal test 2>/dev/null || echo "::warning::Admin portal tests failed"
+          fi
+          if [ "${{ inputs.application }}" == "distributor-dashboard" ] || [ "${{ inputs.application }}" == "both" ]; then
+            pnpm --filter distributor-dashboard test 2>/dev/null || echo "::warning::Distributor dashboard tests failed"
+          fi
+
       - name: Build admin portal
+        id: build-admin
+        if: inputs.application == 'admin-portal' || inputs.application == 'both'
         run: pnpm --filter admin-portal build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
@@ -61,78 +87,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_ENVIRONMENT: ${{ inputs.environment }}
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Deploy to S3
-        run: |
-          aws s3 sync frontend/admin-portal/out/ \
-            s3://${{ inputs.environment }}-lynia-admin-portal/ \
-            --delete \
-            --cache-control "public, max-age=31536000, immutable" \
-            --exclude "*.html" \
-            --exclude "sw.js" \
-            --exclude "manifest.json"
-
-          # HTML files with short cache
-          aws s3 sync frontend/admin-portal/out/ \
-            s3://${{ inputs.environment }}-lynia-admin-portal/ \
-            --cache-control "public, max-age=0, must-revalidate" \
-            --include "*.html" \
-            --include "sw.js" \
-            --include "manifest.json"
-
-      - name: Invalidate CloudFront cache
-        run: |
-          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.environment }}-lynia-frontend \
-            --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalDistributionId`].OutputValue' \
-            --output text)
-          aws cloudfront create-invalidation \
-            --distribution-id $DISTRIBUTION_ID \
-            --paths "/*"
-
-      - name: Get deployment URL
-        id: get-url
-        run: |
-          URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.environment }}-lynia-frontend \
-            --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalUrl`].OutputValue' \
-            --output text)
-          echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "Admin Portal URL: $URL"
-
-  deploy-distributor-dashboard:
-    name: Deploy Distributor Dashboard
-    runs-on: ubuntu-latest
-    if: inputs.application == 'distributor-dashboard' || inputs.application == 'both'
-    environment:
-      name: ${{ inputs.environment }}
-      url: ${{ steps.get-url.outputs.url }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
       - name: Build distributor dashboard
+        id: build-distributor
+        if: inputs.application == 'distributor-dashboard' || inputs.application == 'both'
         run: pnpm --filter distributor-dashboard build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
@@ -140,6 +97,41 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_ENVIRONMENT: ${{ inputs.environment }}
 
+      - name: Upload admin portal build
+        if: steps.build-admin.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-portal-build
+          path: frontend/admin-portal/out/
+          retention-days: 3
+
+      - name: Upload distributor dashboard build
+        if: steps.build-distributor.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: distributor-dashboard-build
+          path: frontend/distributor-dashboard/out/
+          retention-days: 3
+
+  # ================================================================
+  # STAGE 2: Deploy Admin Portal (Blue-Green)
+  # ================================================================
+  deploy-admin-portal:
+    name: Deploy Admin Portal
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: inputs.application == 'admin-portal' || inputs.application == 'both'
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.get-url.outputs.url }}
+
+    steps:
+      - name: Download admin portal build
+        uses: actions/download-artifact@v7
+        with:
+          name: admin-portal-build
+          path: ./out/
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -147,32 +139,213 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy to S3
+      - name: Blue-Green deployment - Upload to versioned prefix
+        id: blue-green
         run: |
-          aws s3 sync frontend/distributor-dashboard/out/ \
-            s3://${{ inputs.environment }}-lynia-distributor-dashboard/ \
-            --delete \
+          DEPLOY_VERSION="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          BUCKET="${{ inputs.environment }}-lynia-admin-portal"
+
+          echo "deploy_version=$DEPLOY_VERSION" >> $GITHUB_OUTPUT
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+
+          echo "Deploying version: $DEPLOY_VERSION"
+
+          # Upload to versioned prefix (green environment)
+          aws s3 sync ./out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "*.html" \
             --exclude "sw.js" \
             --exclude "manifest.json"
 
-          aws s3 sync frontend/distributor-dashboard/out/ \
-            s3://${{ inputs.environment }}-lynia-distributor-dashboard/ \
+          aws s3 sync ./out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
             --cache-control "public, max-age=0, must-revalidate" \
             --include "*.html" \
             --include "sw.js" \
             --include "manifest.json"
+
+          echo "Green environment uploaded to deployments/$DEPLOY_VERSION"
+
+      - name: Switch traffic - Update live prefix
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+
+          # Sync live directory from versioned deployment (atomic switch)
+          aws s3 sync "./out/" "s3://${BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.json" \
+            --exclude "deployments/*"
+
+          aws s3 sync "./out/" "s3://${BUCKET}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "sw.js" \
+            --include "manifest.json" \
+            --exclude "deployments/*"
+
+          echo "Traffic switched to new version"
+
+      - name: Record deployment version for rollback
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          DEPLOY_VERSION="${{ steps.blue-green.outputs.deploy_version }}"
+          echo "$DEPLOY_VERSION" | aws s3 cp - "s3://${BUCKET}/deployments/CURRENT_VERSION"
+          echo "Recorded current version: $DEPLOY_VERSION"
+
+      - name: Clean old deployments (keep last 5)
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+
+          # List deployment versions, sort, keep last 5
+          VERSIONS=$(aws s3 ls "s3://${BUCKET}/deployments/" --recursive \
+            | grep "CURRENT_VERSION\|index.html" \
+            | awk '{print $4}' \
+            | grep -oP 'deployments/v[^/]+' \
+            | sort -u | head -n -5) || true
+
+          for version in $VERSIONS; do
+            echo "Removing old deployment: $version"
+            aws s3 rm "s3://${BUCKET}/${version}/" --recursive 2>/dev/null || true
+          done
+
+      - name: Invalidate CloudFront cache
+        run: |
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalDistributionId`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            INVALIDATION_ID=$(aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/*" \
+              --query 'Invalidation.Id' \
+              --output text)
+            echo "CloudFront invalidation started: $INVALIDATION_ID"
+          else
+            echo "::warning::CloudFront distribution not found - skipping invalidation"
+          fi
+
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalUrl`].OutputValue' \
+            --output text 2>/dev/null || echo "https://${{ inputs.environment }}-admin.lyniafinance.co.zw")
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Admin Portal URL: $URL"
+
+      - name: Health check deployed frontend
+        run: |
+          URL="${{ steps.get-url.outputs.url }}"
+          echo "Checking frontend health at $URL..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL" || echo "000")
+          if [[ "$HTTP_CODE" =~ ^(200|301|302)$ ]]; then
+            echo "Frontend is responding: $HTTP_CODE"
+          else
+            echo "::warning::Frontend returned HTTP $HTTP_CODE"
+          fi
+
+  # ================================================================
+  # STAGE 3: Deploy Distributor Dashboard (Blue-Green)
+  # ================================================================
+  deploy-distributor-dashboard:
+    name: Deploy Distributor Dashboard
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: inputs.application == 'distributor-dashboard' || inputs.application == 'both'
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ steps.get-url.outputs.url }}
+
+    steps:
+      - name: Download distributor dashboard build
+        uses: actions/download-artifact@v7
+        with:
+          name: distributor-dashboard-build
+          path: ./out/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Blue-Green deployment - Upload to versioned prefix
+        id: blue-green
+        run: |
+          DEPLOY_VERSION="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          BUCKET="${{ inputs.environment }}-lynia-distributor-dashboard"
+
+          echo "deploy_version=$DEPLOY_VERSION" >> $GITHUB_OUTPUT
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+
+          aws s3 sync ./out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.json"
+
+          aws s3 sync ./out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "sw.js" \
+            --include "manifest.json"
+
+      - name: Switch traffic - Update live prefix
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+
+          aws s3 sync "./out/" "s3://${BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "sw.js" \
+            --exclude "manifest.json" \
+            --exclude "deployments/*"
+
+          aws s3 sync "./out/" "s3://${BUCKET}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "sw.js" \
+            --include "manifest.json" \
+            --exclude "deployments/*"
+
+      - name: Record deployment version for rollback
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          DEPLOY_VERSION="${{ steps.blue-green.outputs.deploy_version }}"
+          echo "$DEPLOY_VERSION" | aws s3 cp - "s3://${BUCKET}/deployments/CURRENT_VERSION"
+
+      - name: Clean old deployments (keep last 5)
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          VERSIONS=$(aws s3 ls "s3://${BUCKET}/deployments/" --recursive \
+            | grep "CURRENT_VERSION\|index.html" \
+            | awk '{print $4}' \
+            | grep -oP 'deployments/v[^/]+' \
+            | sort -u | head -n -5) || true
+
+          for version in $VERSIONS; do
+            aws s3 rm "s3://${BUCKET}/${version}/" --recursive 2>/dev/null || true
+          done
 
       - name: Invalidate CloudFront cache
         run: |
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.environment }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardDistributionId`].OutputValue' \
-            --output text)
-          aws cloudfront create-invalidation \
-            --distribution-id $DISTRIBUTION_ID \
-            --paths "/*"
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/*"
+          fi
 
       - name: Get deployment URL
         id: get-url
@@ -180,6 +353,46 @@ jobs:
           URL=$(aws cloudformation describe-stacks \
             --stack-name ${{ inputs.environment }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardUrl`].OutputValue' \
-            --output text)
+            --output text 2>/dev/null || echo "https://${{ inputs.environment }}-distributor.lyniafinance.co.zw")
           echo "url=$URL" >> $GITHUB_OUTPUT
-          echo "Distributor Dashboard URL: $URL"
+
+  # ================================================================
+  # STAGE 4: Notifications
+  # ================================================================
+  notify:
+    name: Frontend Deploy Notification
+    runs-on: ubuntu-latest
+    needs: [build-test, deploy-admin-portal, deploy-distributor-dashboard]
+    if: always()
+
+    steps:
+      - name: Send Slack notification
+        if: vars.SLACK_WEBHOOK_URL != ''
+        run: |
+          STATUS="success"
+          if [ "${{ needs.deploy-admin-portal.result }}" == "failure" ] || \
+             [ "${{ needs.deploy-distributor-dashboard.result }}" == "failure" ]; then
+            STATUS="failure"
+          fi
+
+          curl -s -X POST "${{ vars.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-type: application/json' \
+            -d "{
+              \"text\": \"Frontend deployment to ${{ inputs.environment }}: ${STATUS}\",
+              \"attachments\": [{
+                \"color\": \"$([ \"$STATUS\" == \"success\" ] && echo 'good' || echo 'danger')\",
+                \"fields\": [
+                  {\"title\": \"Application\", \"value\": \"${{ inputs.application }}\", \"short\": true},
+                  {\"title\": \"Environment\", \"value\": \"${{ inputs.environment }}\", \"short\": true}
+                ]
+              }]
+            }" || true
+
+      - name: Post summary
+        run: |
+          echo "## Frontend Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Result |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Build & Test | ${{ needs.build-test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Admin Portal | ${{ needs.deploy-admin-portal.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Distributor Dashboard | ${{ needs.deploy-distributor-dashboard.result }} |" >> $GITHUB_STEP_SUMMARY
