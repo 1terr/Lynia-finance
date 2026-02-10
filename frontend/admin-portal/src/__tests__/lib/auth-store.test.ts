@@ -65,6 +65,14 @@ describe('useAuthStore', () => {
       expect(useAuthStore.getState().hasPermission('loans:approve')).toBe(false);
       expect(useAuthStore.getState().hasPermission('settings:write')).toBe(false);
     });
+
+    it('returns false for unknown role instead of crashing', () => {
+      useAuthStore.getState().setUser({
+        ...mockSuperAdmin,
+        role: 'unknown_role' as AdminUser['role'],
+      });
+      expect(useAuthStore.getState().hasPermission('dashboard:view')).toBe(false);
+    });
   });
 
   describe('hasAnyPermission', () => {
@@ -80,6 +88,14 @@ describe('useAuthStore', () => {
     it('returns false when user has none of the permissions', () => {
       useAuthStore.getState().setUser(mockKycReviewer);
       expect(useAuthStore.getState().hasAnyPermission(['settings:write', 'loans:approve'])).toBe(false);
+    });
+
+    it('returns false for unknown role instead of crashing', () => {
+      useAuthStore.getState().setUser({
+        ...mockSuperAdmin,
+        role: 'unknown_role' as AdminUser['role'],
+      });
+      expect(useAuthStore.getState().hasAnyPermission(['dashboard:view'])).toBe(false);
     });
   });
 });

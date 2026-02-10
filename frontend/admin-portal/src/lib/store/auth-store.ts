@@ -20,12 +20,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get();
     if (!user) return false;
     const perms = ROLE_PERMISSIONS[user.role];
+    if (!perms) return false;
     return perms.includes(permission);
   },
   hasAnyPermission: (permissions) => {
     const { user } = get();
     if (!user) return false;
     const perms = ROLE_PERMISSIONS[user.role];
+    if (!perms) return false;
     return permissions.some((p) => perms.includes(p));
   },
 }));

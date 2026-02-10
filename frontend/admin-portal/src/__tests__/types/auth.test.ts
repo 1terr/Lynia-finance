@@ -3,12 +3,12 @@ import type { AdminRole, Permission } from '@/types/auth';
 
 describe('ROLE_PERMISSIONS', () => {
   const allRoles: AdminRole[] = [
-    'super_admin', 'operations_manager', 'kyc_reviewer',
+    'super_admin', 'admin', 'operations_manager', 'kyc_reviewer',
     'finance_team', 'inventory_manager', 'customer_support', 'reports_viewer',
   ];
 
-  it('defines permissions for all 7 roles', () => {
-    expect(Object.keys(ROLE_PERMISSIONS)).toHaveLength(7);
+  it('defines permissions for all 8 roles', () => {
+    expect(Object.keys(ROLE_PERMISSIONS)).toHaveLength(8);
     allRoles.forEach((role) => {
       expect(ROLE_PERMISSIONS[role]).toBeDefined();
       expect(Array.isArray(ROLE_PERMISSIONS[role])).toBe(true);
@@ -59,6 +59,14 @@ describe('ROLE_PERMISSIONS', () => {
     expect(ROLE_PERMISSIONS.reports_viewer).toContain('reports:read');
     expect(ROLE_PERMISSIONS.reports_viewer).toContain('reports:export');
     expect(ROLE_PERMISSIONS.reports_viewer).toHaveLength(3); // dashboard:view + reports:read + reports:export
+  });
+
+  it('admin has nearly all permissions except settings:write', () => {
+    expect(ROLE_PERMISSIONS.admin).toContain('dashboard:view');
+    expect(ROLE_PERMISSIONS.admin).toContain('customers:read');
+    expect(ROLE_PERMISSIONS.admin).toContain('loans:approve');
+    expect(ROLE_PERMISSIONS.admin).toContain('settings:read');
+    expect(ROLE_PERMISSIONS.admin).not.toContain('settings:write');
   });
 
   it('no role has duplicate permissions', () => {
