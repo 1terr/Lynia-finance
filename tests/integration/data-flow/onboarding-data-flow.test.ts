@@ -9,17 +9,13 @@
  */
 
 import {
-  createMockSupabaseClient,
   seedMockTable,
   getMockTable,
   resetMockDataStore,
   createTestCustomer,
   createTestLoan,
-  createAPIGatewayEvent,
-  parseResponseBody,
   generateTestId,
 } from '../../helpers/test-utils';
-import { testCustomers, testLoans } from '../../fixtures';
 
 // ---------------------------------------------------------------------------
 // Mock Supabase before importing any service handlers
@@ -433,7 +429,7 @@ describe('Onboarding Data Flow Tests', () => {
     });
 
     it('should reject out-of-order timestamps (scoring before KYC)', () => {
-      const createdAt = '2025-06-01T10:00:00.000Z';
+      const _createdAt = '2025-06-01T10:00:00.000Z';
       const scoredAt = '2025-06-01T10:05:00.000Z'; // Before KYC
       const kycSubmittedAt = '2025-06-01T10:10:00.000Z'; // After scoring -- invalid
 

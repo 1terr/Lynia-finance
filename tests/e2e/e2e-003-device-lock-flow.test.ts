@@ -17,6 +17,7 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 jest.mock('axios');
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require('axios');
 
 // ---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ import { handler as lockHandler } from '../../services/lock-service/src/index';
 // Constants
 // ---------------------------------------------------------------------------
 const overdueLoan = testLoans.overdueLoan;
-const customer = testCustomers.lowScoreCustomer;
+const _customer = testCustomers.lowScoreCustomer;
 const assignedDevice = testDevices.assignedDevice;
 const lockedDevice = testDevices.lockedDevice;
 

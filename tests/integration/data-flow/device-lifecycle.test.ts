@@ -10,19 +10,14 @@
  */
 
 import {
-  createMockSupabaseClient,
   seedMockTable,
   getMockTable,
   resetMockDataStore,
-  createTestCustomer,
   createTestLoan,
   createTestPayment,
   createTestDevice,
-  createAPIGatewayEvent,
-  parseResponseBody,
   generateTestId,
 } from '../../helpers/test-utils';
-import { testDevices, testLoans, testLockHistory, testHandovers } from '../../fixtures';
 
 // ---------------------------------------------------------------------------
 // Mock Supabase
@@ -198,7 +193,7 @@ describe('Device Lifecycle Data Flow Tests', () => {
         createTestDevice({ id: deviceId, lock_status: 'unlocked' }),
       ]);
 
-      const device = getMockTable('devices')[0];
+      const _device = getMockTable('devices')[0];
       const allowedNextStates = ['locked'];
       const requestedState = 'locked';
 
@@ -210,7 +205,7 @@ describe('Device Lifecycle Data Flow Tests', () => {
         createTestDevice({ id: deviceId, lock_status: 'locked' }),
       ]);
 
-      const device = getMockTable('devices')[0];
+      const _device = getMockTable('devices')[0];
       const allowedNextStates = ['unlocked'];
       const requestedState = 'unlocked';
 

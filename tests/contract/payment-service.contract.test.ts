@@ -6,7 +6,6 @@
  * status codes, headers, and error handling.
  */
 
-import { APIGatewayProxyResult } from 'aws-lambda';
 import {
   createAPIGatewayEvent,
   parseResponseBody,
@@ -115,7 +114,7 @@ describe('Payment Service Contract Tests', () => {
     });
 
     it('should return 400 when loan_id is missing', async () => {
-      const event = buildPaymentEvent({ loan_id: undefined });
+      const _event = buildPaymentEvent({ loan_id: undefined });
       // Need to re-build body without loan_id
       const body = {
         customer_id: 'cust_001',

@@ -146,7 +146,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
     const result = await simulateColdStart(
       'scoring-service',
       async () => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'GET',
           path: '/scoring/cold-cust-1',
           pathParameters: { customerId: 'cold-cust-1' },
@@ -163,7 +163,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
     const result = await simulateColdStart(
       'payment-service',
       async () => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'POST',
           path: '/payments/process',
           body: JSON.stringify({
@@ -185,7 +185,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
     const result = await simulateColdStart(
       'whatsapp-service',
       async () => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'POST',
           path: '/whatsapp/webhook',
           body: JSON.stringify({
@@ -205,7 +205,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
     const result = await simulateColdStart(
       'kyc-service',
       async () => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'GET',
           path: '/kyc/cold-cust-1',
           pathParameters: { customerId: 'cold-cust-1' },
@@ -222,7 +222,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
     const result = await simulateColdStart(
       'lock-service',
       async () => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'GET',
           path: '/locks/test-device-001',
           pathParameters: { deviceId: 'test-device-001' },
@@ -239,7 +239,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
     const result = await simulateColdStart(
       'notification-service',
       async () => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'GET',
           path: '/notifications/cold-cust-1',
           pathParameters: { customerId: 'cold-cust-1' },

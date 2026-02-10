@@ -12,16 +12,13 @@
  */
 
 import {
-  createMockSupabaseClient,
   seedMockTable,
   getMockTable,
   resetMockDataStore,
-  createTestCustomer,
   createTestLoan,
   createTestPayment,
   generateTestId,
 } from '../../helpers/test-utils';
-import { testCustomers, testLoans, testPayments } from '../../fixtures';
 
 // ---------------------------------------------------------------------------
 // Mock Supabase

@@ -154,6 +154,7 @@ import { handler as notificationHandler } from '../../services/notification-serv
 
 interface ServiceEntry {
   name: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   handler: (event: any) => Promise<APIGatewayProxyResult | void>;
   unknownPath: string;
   errorPath: string;
