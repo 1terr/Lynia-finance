@@ -20,6 +20,7 @@ export const mockSmileIdentityResponses = {
       ResultCode: '1012',
       ResultText: 'Verified',
       confidence_value: 99.5,
+      match_result: 'Verified',
       id_info: {
         full_name: 'Tendai Moyo',
         dob: '1990-05-15',
@@ -34,6 +35,12 @@ export const mockSmileIdentityResponses = {
       liveness_check: {
         score: 0.99,
         status: 'passed',
+        passed: true,
+      },
+      document_check: {
+        authentic: true,
+        tampered: false,
+        expired: false,
       },
     },
     partner_params: {
@@ -49,6 +56,7 @@ export const mockSmileIdentityResponses = {
       ResultCode: '1014',
       ResultText: 'Face Not Matched',
       confidence_value: 35.2,
+      match_result: 'Not Verified',
       id_info: {
         full_name: 'Unknown',
         dob: null,
@@ -63,6 +71,12 @@ export const mockSmileIdentityResponses = {
       liveness_check: {
         score: 0.45,
         status: 'failed',
+        passed: false,
+      },
+      document_check: {
+        authentic: false,
+        tampered: false,
+        expired: false,
       },
     },
     partner_params: {
@@ -78,6 +92,7 @@ export const mockSmileIdentityResponses = {
       ResultCode: '1013',
       ResultText: 'Needs Review',
       confidence_value: 72.0,
+      match_result: 'Uncertain',
       id_info: {
         full_name: 'Grace Chiweshe',
         dob: '1995-03-10',
@@ -92,6 +107,12 @@ export const mockSmileIdentityResponses = {
       liveness_check: {
         score: 0.85,
         status: 'passed',
+        passed: true,
+      },
+      document_check: {
+        authentic: true,
+        tampered: false,
+        expired: false,
       },
     },
     partner_params: {

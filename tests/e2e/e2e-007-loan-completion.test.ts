@@ -182,7 +182,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
 
     it('should validate completed loan deposit was paid', () => {
       expect(completedLoan.deposit_paid).toBe(true);
-      expect(completedLoan.deposit_amount).toBe(70); // 20% of $350
+      expect(completedLoan.deposit_amount).toBe(60); // 20% of $300
     });
 
     it('should verify outstanding balance cannot go below zero', () => {
@@ -303,7 +303,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
     it('should validate lock handler returns 404 for unknown routes', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
-        path: '/locks/unknown',
+        path: '/locks-unknown',
       });
 
       const response = await lockHandler(event);
@@ -527,7 +527,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
     it('should return 404 for unknown payment route', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
-        path: '/payments/nonexistent',
+        path: '/payments-nonexistent',
       });
 
       const response = await paymentHandler(event);

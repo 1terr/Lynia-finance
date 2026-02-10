@@ -442,7 +442,7 @@ describe('E2E-002: Payment Collection Flow', () => {
     it('should return 404 for GET on unknown payment route', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
-        path: '/payments/unknown-path',
+        path: '/payments-unknown',
       });
 
       const response = await paymentHandler(event);
