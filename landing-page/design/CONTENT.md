@@ -19,7 +19,7 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 
 ## Homepage Structure (Stripe-inspired)
 
-The homepage follows Stripe's proven section flow: Hero → Product suite → Why us → Scale/impact → Customer segments → Testimonial → Editorial → Bottom CTA → Footer.
+The homepage follows Stripe's proven section flow: Hero → Product suite → Why alternative financing → Customer segments → Editorial → Bottom CTA → Footer.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -35,17 +35,15 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 ├─────────────────────────────────────────────────────────┤
 │ 6. PRODUCT DEEP DIVE: Enterprise Partnerships           │
 ├─────────────────────────────────────────────────────────┤
-│ 7. WHY LYNIA (value props + impact numbers)             │
+│ 7. WHY ALTERNATIVE FINANCING (underbanked stats)        │
 ├─────────────────────────────────────────────────────────┤
 │ 8. CUSTOMER SEGMENTS (who we serve)                     │
 ├─────────────────────────────────────────────────────────┤
-│ 9. TESTIMONIAL (featured customer story)                │
+│ 9. EDITORIAL (featured Research posts)                  │
 ├─────────────────────────────────────────────────────────┤
-│ 10. EDITORIAL (featured Research posts)                 │
+│ 10. BOTTOM CTA (final conversion)                       │
 ├─────────────────────────────────────────────────────────┤
-│ 11. BOTTOM CTA (final conversion)                       │
-├─────────────────────────────────────────────────────────┤
-│ 12. FOOTER                                              │
+│ 11. FOOTER                                              │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -241,39 +239,49 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 ---
 
-## Section 7: Why Lynia / Impact Numbers
+## Section 7: Why Alternative Financing
 
-**Design**: Full-width section with brand blue gradient background. Large stat numbers in a grid. Stripe shows global reach with impressive numbers — Lynia shows impact.
+**Design**: Full-width section with brand blue gradient background. Large stat numbers in a grid. Stripe shows global reach with impressive numbers — Lynia shows the underbanked opportunity.
 
 **Stripe pattern**: The "Why Stripe" / global scale section with big numbers and concise supporting text.
+
+**Purpose**: Make the case for alternative financing by highlighting the scale of the underbanked population and the gap in traditional financial services.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                (brand blue gradient bg)                  │
 │                                                         │
-│  Why Lynia Finance                                      │
+│  Why Alternative Financing                              │
 │                                                         │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
-│  │  <5 min  │  │  100%    │  │  $100+   │  │  24/7   │ │
-│  │  Approval │  │  Mobile  │  │  Device  │  │ WhatsApp│ │
-│  │  time    │  │  money   │  │ financing│  │ support │ │
+│  │   80%    │  │   <5%    │  │  $14B    │  │  70%+   │ │
+│  │ Informal │  │  Have    │  │ Unserved │  │  Mobile  │ │
+│  │ workforce│  │  bank    │  │  credit  │  │  money   │ │
+│  │          │  │  credit  │  │  demand  │  │ adoption │ │
 │  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │
 │                                                         │
 │  The underbanked aren't high risk — they're unmodeled.  │
-│  We're building alternative financial rails to power    │
-│  financial mobility in Zimbabwe.                        │
+│  Traditional banks don't serve them. We do.             │
+│                                                         │
+│  Zimbabwe's informal workforce is 80% of the economy   │
+│  yet almost entirely excluded from credit. Mobile money │
+│  penetration is high, but financial products haven't    │
+│  followed. Alternative financing bridges this gap.      │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Stats to feature**:
-- `<5 min` — Approval time
-- `100%` — Mobile money based
-- `$100+` — Device financing starting point
-- `24/7` — WhatsApp support
+**Stats to feature** (underbanked focus):
+- `80%` — Of Zimbabwe's workforce is informal and excluded from traditional credit
+- `<5%` — Of informal workers have access to bank credit
+- `$14B` — Estimated unserved credit demand in Zimbabwe's informal sector
+- `70%+` — Mobile money adoption rate (EcoCash, OneMoney)
+
+**Supporting headline**:
+> The underbanked aren't high risk — they're unmodeled.
 
 **Supporting text**:
-> The underbanked aren't high risk — they're unmodeled. We're building alternative financial rails to power financial mobility in Zimbabwe.
+> Traditional banks don't serve them. We do. Zimbabwe's informal workforce is 80% of the economy yet almost entirely excluded from credit. Mobile money penetration is high, but financial products haven't followed. Alternative financing bridges this gap.
 
 ---
 
@@ -307,27 +315,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 ---
 
-## Section 9: Testimonial
-
-**Design**: Full-width with subtle background. Large quote with attribution. Stripe features a single powerful customer quote.
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  "Lynia Finance helped me get the smartphone I needed   │
-│   to run my business. The whole process took less       │
-│   than 5 minutes on WhatsApp."                          │
-│                                                         │
-│  — [Customer Name], [Occupation], Harare                │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Note**: Placeholder — real testimonial to be sourced.
-
----
-
-## Section 10: Editorial / Featured Research
+## Section 9: Editorial / Featured Research
 
 **Design**: 2-3 column card grid showing latest Research posts. Stripe features curated editorial content (reports, interviews, announcements).
 
@@ -353,7 +341,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 ---
 
-## Section 11: Bottom CTA
+## Section 10: Bottom CTA
 
 **Design**: Full-width section with gradient or dark background. Final push to convert. Stripe ends with "Ready to get started?" + pricing mention.
 
@@ -424,9 +412,8 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 | Customer logos bar | Partner/trust logos bar | EcoCash, OneMoney, or stats |
 | Product suite grid | 3 product cards (Asset, Digital, Enterprise) | Icons + one-liner + link |
 | Individual product sections | 3 product deep-dives | Alternating backgrounds |
-| "Why Stripe" + global numbers | "Why Lynia" + impact numbers | Stats on gradient bg |
+| "Why Stripe" + global numbers | "Why Alternative Financing" + underbanked stats | Stats on gradient bg |
 | Customer segments | For Individuals / Businesses / Partners | 3-column cards |
-| Customer testimonial | Customer quote | Placeholder for now |
 | Editorial content | Featured Research posts | Pulls from Sanity |
 | Bottom CTA + pricing | Bottom CTA | Apply now + WhatsApp |
 | Multi-column footer | Multi-column footer | Products, Company, Connect, Legal |

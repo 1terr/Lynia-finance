@@ -51,12 +51,11 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 | 4 | **Asset Financing** | Product deep dive | Split: text left, visual right |
 | 5 | **Digital Credit** | Product deep dive | Split: visual left, text right (dark bg) |
 | 6 | **Enterprise Partnerships** | Product deep dive | Split: text left, visual right |
-| 7 | **Why Lynia** | "Why Stripe" + global numbers | Stats on gradient background |
+| 7 | **Why Alternative Financing** | "Why Stripe" + global numbers | Stats on gradient background |
 | 8 | **Customer Segments** | Startup / Enterprise / Platform cards | 3-column cards |
-| 9 | **Testimonial** | Customer quote | Full-width, large quote |
-| 10 | **Featured Research** | Editorial content | 3-column blog card grid (from Sanity) |
-| 11 | **Bottom CTA** | Bottom CTA + pricing | Dark/gradient bg, final conversion |
-| 12 | **Footer** | Multi-column footer | Products, Company, Connect, Legal |
+| 9 | **Featured Research** | Editorial content | 3-column blog card grid (from Sanity) |
+| 10 | **Bottom CTA** | Bottom CTA + pricing | Dark/gradient bg, final conversion |
+| 11 | **Footer** | Multi-column footer | Products, Company, Connect, Legal |
 
 Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 
