@@ -193,6 +193,7 @@ Phase 4 focused on validating the full Lynia Finance system through integration 
 | 008_query_optimization.sql | 22 indexes, 3 materialized views |
 | 009_table_partitioning.sql | audit_log + whatsapp_messages partitioning |
 | 010_compliance_tables.sql | Transaction limits, retention, security audit |
+| 013_manual_verification_fields.sql | Manual payment verification + KYC review for stub-mode ops |
 
 ### CI/CD Workflows (Modified)
 
@@ -280,4 +281,5 @@ Phase 4 focused on validating the full Lynia Finance system through integration 
 ---
 
 **Report prepared:** 2026-02-10
+**Last updated:** 2026-02-10 (v1.2 - OneMoney naming fix, Paynow deletion, migration 013 added)
 **Next review:** After P4-T011 and P4-T014 completion
