@@ -69,14 +69,16 @@ const observer = new IntersectionObserver(callback, {
 
 All sections below the hero use scroll-triggered entrance animations.
 
+**Note**: Section order updated — stats section now at position 3 (after social proof, before products). See [`CONTENT.md`](./CONTENT.md) for full section order.
+
 | Section | Animation | Duration | Easing |
 |---------|-----------|----------|--------|
-| Social Proof logos | `opacity: 0→1`, logos stagger `50ms` each | `400ms` | `var(--easing-out)` |
+| Social Proof logos/stats | `opacity: 0→1`, logos stagger `50ms` each | `400ms` | `var(--easing-out)` |
+| Stats headline + numbers | `opacity: 0→1` + count-up animation | `800ms` | `var(--easing-out)` |
 | Product Suite headline | `opacity: 0→1`, `translateY: 24px→0` | `500ms` | `var(--easing-out)` |
 | Product cards | `opacity: 0→1`, `translateY: 32px→0`, stagger `100ms` per card | `500ms` | `var(--easing-out)` |
 | Product deep-dive text | `opacity: 0→1`, `translateY: 24px→0` | `600ms` | `var(--easing-out)` |
 | Product deep-dive visual | `opacity: 0→1`, `translateX: ±40px→0` (direction matches layout) | `700ms` | `var(--easing-out)` |
-| Stat numbers | `opacity: 0→1` + count-up animation | `800ms` | `var(--easing-out)` |
 | Segment cards | `opacity: 0→1`, `translateY: 32px→0`, stagger `100ms` | `500ms` | `var(--easing-out)` |
 | Blog cards | `opacity: 0→1`, `translateY: 32px→0`, stagger `100ms` | `500ms` | `var(--easing-out)` |
 | Bottom CTA text | `opacity: 0→1`, `translateY: 24px→0` | `500ms` | `var(--easing-out)` |
@@ -212,16 +214,18 @@ Stagger: `150ms` between each stat.
 - Pause when hero is not visible (Intersection Observer)
 - Respect `prefers-reduced-motion`: disable entirely
 
-### Hero WebGL Gradient
+### Hero Gradient Background
+
+**Default**: CSS gradient (works on all devices, zero JS, within performance budget).
+**Enhancement**: WebGL animated mesh loaded as progressive enhancement on capable devices.
 
 | Property | Value |
 |----------|-------|
-| Type | Animated gradient mesh (WebGL canvas or CSS fallback) |
-| Speed | Very slow — `0.3` speed factor, organic movement |
-| Colors | `#6ec3f4` (light blue), `#3a3aff` (vivid blue), `#ff61ab` (pink), `#E63946` (red) |
-| Fallback | `linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%)` |
-| Performance | Check `navigator.hardwareConcurrency` — disable WebGL if < 4 cores |
-| Reduced motion | Static gradient only |
+| Default (all devices) | `linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%)` |
+| WebGL enhancement | Animated gradient mesh with colors `#6ec3f4`, `#3a3aff`, `#ff61ab`, `#E63946` |
+| WebGL speed | Very slow — `0.3` speed factor, organic movement |
+| WebGL condition | Load only if `navigator.hardwareConcurrency >= 4` |
+| Reduced motion | Static CSS gradient only (no WebGL, no animation) |
 
 **Library options** (pick one during development):
 - `meshgradient` (lightweight, ~5KB)
