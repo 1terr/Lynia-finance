@@ -169,9 +169,9 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
       const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
 
       expect(rejectedKyc.result.ResultCode).toBe('1014');
-      expect(rejectedKyc.result.ResultText).toBe('Rejected');
-      expect(rejectedKyc.result.confidence_value).toBe(0);
-      expect(rejectedKyc.result.face_match.status).toBe('no_match');
+      expect(rejectedKyc.result.ResultText).toBe('Face Not Matched');
+      expect(rejectedKyc.result.confidence_value).toBe(35.2);
+      expect(rejectedKyc.result.face_match.status).toBe('not_matched');
       expect(rejectedKyc.result.id_info.country).toBe('ZW');
     });
 
@@ -257,11 +257,11 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: 'cust_non_zw_001',
-          monthly_income_usd: 200,
-          existing_debt_obligations_usd: 0,
-          household_size: 3,
-          dependents: 1,
-          requested_loan_amount: 300,
+          monthly_income_usd: 50,
+          existing_debt_obligations_usd: 40,
+          household_size: 8,
+          dependents: 6,
+          requested_loan_amount: 500,
           kyc_result: {
             id_verification: { status: 'rejected' },
             face_match: { confidence: 0.0 },

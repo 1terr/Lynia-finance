@@ -52,6 +52,15 @@ jest.mock('../../services/notification-service/src/reminder-scheduler', () => ({
   handleReminderOptIn: mockHandleReminderOptIn,
 }));
 
+jest.mock('axios', () => ({
+  __esModule: true,
+  default: {
+    post: jest.fn().mockResolvedValue({ data: {} }),
+    isAxiosError: jest.fn().mockReturnValue(false),
+  },
+  isAxiosError: jest.fn().mockReturnValue(false),
+}));
+
 import { handler } from '../../services/notification-service/src/index';
 
 // ---------------------------------------------------------------------------
@@ -598,7 +607,7 @@ describe('Notification Service Contract Tests', () => {
     it('should return 404 for unknown paths', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
-        path: '/notifications/unknown/endpoint',
+        path: '/notifications-unknown',
       });
 
       const response = (await handler(event))!;
