@@ -66,6 +66,31 @@ Full details in GO-LIVE-CHECKLIST.md and LAUNCH-READINESS-REVIEW.md.
 - Logging verification (implementation exists, formal verification pending)
 - Deployment runbook consolidation (components exist, formal document pending)
 - Pilot user validation (no real-world usage data yet)
+- External API credentials not yet obtained (all providers in stub mode)
+- No remote device lock capability until Trustonic API access
+
+### External Integration Alignment (v1.1 Update)
+
+Based on review of `docs/external-integrations/`, the following codebase changes were made to align with the integration master plan:
+
+**Payment Service Changes:**
+| Change | File | Description |
+|--------|------|-------------|
+| NEW | `omari-provider.ts` | O'mari direct integration provider (USSD *707#, ~1% fees) |
+| NEW | `onewallet-provider.ts` | OneWallet provider (renamed from OneMoney, USSD *111#) |
+| MODIFIED | `payment-service.ts` | PaymentGateway type: `'ecocash' \| 'onewallet' \| 'omari' \| 'innbucks'`; removed Paynow imports/routing |
+| MODIFIED | `index.ts` | Webhook routes: `/webhook/onewallet`, `/webhook/omari` replacing `/webhook/onemoney`, `/webhook/paynow` |
+| MODIFIED | `payment-analytics.ts` | Direct fee rates (2% standard, 1% O'mari); removed Paynow 3.5% fee references |
+
+**Database Changes:**
+| Change | File | Description |
+|--------|------|-------------|
+| NEW | `013_manual_verification_fields.sql` | Manual payment verification + KYC review columns for stub-mode operations |
+
+**Documentation Changes:**
+| Change | File | Description |
+|--------|------|-------------|
+| MODIFIED | `GO-LIVE-CHECKLIST.md` | Added Section 5: External Integrations (8 items, stub-mode launch strategy) |
 
 ## Progress Log
 
@@ -78,6 +103,11 @@ Full details in GO-LIVE-CHECKLIST.md and LAUNCH-READINESS-REVIEW.md.
 | 2026-02-10 | Created Phase 4 Summary Report | 🔵 In Progress |
 | 2026-02-10 | Created Phase 5 Planning Recommendations (16 tasks, 3 tracks) | 🔵 In Progress |
 | 2026-02-10 | All 4 deliverables complete | ✅ Completed |
+| 2026-02-10 | v1.1: Reviewed external integrations docs, aligned codebase | 🔵 In Progress |
+| 2026-02-10 | v1.1: Created O'mari provider, renamed OneMoney→OneWallet | 🔵 In Progress |
+| 2026-02-10 | v1.1: Removed Paynow from payment service, updated webhook routes | 🔵 In Progress |
+| 2026-02-10 | v1.1: Created migration 013 (manual verification fields) | 🔵 In Progress |
+| 2026-02-10 | v1.1: Updated Go-Live Checklist with external integration section | ✅ Completed |
 
 ---
 

@@ -1,10 +1,10 @@
 # Lynia Finance - Go-Live Checklist
 
 **Document:** P4-T015 Deliverable - Go-Live Checklist
-**Version:** 1.0
-**Date:** 2026-02-10
+**Version:** 1.1
+**Date:** 2026-02-10 (Updated)
 **Prepared by:** Engineering Team
-**Review Status:** CONDITIONAL GO - Items requiring resolution before launch
+**Review Status:** CONDITIONAL GO - Stub-mode launch with manual workflows
 
 ---
 
@@ -16,9 +16,10 @@
 | 2. Security & Compliance | 12 | 12 | 0 | 0 | 100% |
 | 3. Infrastructure & Operations | 14 | 11 | 0 | 3 | 79% |
 | 4. Business Readiness | 10 | 6 | 0 | 4 | 60% |
-| **TOTAL** | **54** | **44** | **0** | **10** | **81%** |
+| 5. External Integrations | 8 | 4 | 0 | 4 | 50% |
+| **TOTAL** | **62** | **48** | **0** | **14** | **77%** |
 
-**Overall Verdict:** CONDITIONAL GO - 10 items blocked pending 3 incomplete tasks (P4-T011, P4-T013, P4-T014)
+**Overall Verdict:** CONDITIONAL GO - Stub-mode launch with manual workflows. 14 items blocked pending 3 incomplete tasks (P4-T011, P4-T013, P4-T014) and external API access.
 
 ---
 
@@ -155,6 +156,45 @@
 | 4.2.2 | Pilot customers onboarded (20-30) | BLOCKED | P4-T013 not started | Operations |
 | 4.2.3 | Pilot feedback collected and analyzed | BLOCKED | P4-T013 not started | Operations |
 | 4.2.4 | Go/no-go recommendation from pilot results | BLOCKED | P4-T013 not started | Operations |
+
+---
+
+## 5. External Integrations (Stub-Mode Launch Strategy)
+
+Per the [Integration Master Plan](../docs/external-integrations/INTEGRATION-MASTER-PLAN.md), initial go-live uses stub providers with manual workflows. External API integrations activate in Phase 4B/4C.
+
+### 5.1 Payment Providers
+
+| # | Item | Status | Evidence | Owner |
+|---|------|--------|----------|-------|
+| 5.1.1 | Paynow aggregator removed; direct provider integrations adopted | PASS | payment-service.ts updated, omari-provider.ts created | Engineering |
+| 5.1.2 | EcoCash provider code ready (stub mode) | PASS | ecocash-provider.ts, API credentials pending | Engineering |
+| 5.1.3 | OneWallet provider code ready (renamed from OneMoney) | PASS | onewallet-provider.ts created | Engineering |
+| 5.1.4 | O'mari provider code ready (new direct integration) | PASS | omari-provider.ts created | Engineering |
+| 5.1.5 | EcoCash API credentials obtained (~70% market share) | BLOCKED | Pending provider agreement | Operations |
+| 5.1.6 | Manual payment verification workflow supported (migration 013) | PASS | 013_manual_verification_fields.sql | Engineering |
+
+### 5.2 KYC & Device Lock
+
+| # | Item | Status | Evidence | Owner |
+|---|------|--------|----------|-------|
+| 5.2.1 | Smile Identity KYC: manual review fallback ready | PASS | Admin KYC review queue documented | Engineering |
+| 5.2.2 | Trustonic device lock: manual tracking operational | BLOCKED | No remote lock until API access obtained | Operations |
+
+### 5.3 Communication
+
+| # | Item | Status | Evidence | Owner |
+|---|------|--------|----------|-------|
+| 5.3.1 | WhatsApp Cloud API: deferred to post-launch | BLOCKED | Meta Business verification pending | Operations |
+| 5.3.2 | SMS fallback via Africa's Talking configured | BLOCKED | API key pending | Operations |
+
+### Launch Mode: Stub Providers with Manual Workflows
+
+All external integrations launch in **stub mode** per [DEPLOY-WITHOUT-INTEGRATIONS.md](../docs/external-integrations/DEPLOY-WITHOUT-INTEGRATIONS.md):
+- Payments: USSD manual flow (customer pays via USSD, admin verifies in merchant portal)
+- KYC: Manual document review by admin
+- Device Lock: Manual tracking only (no remote lock capability)
+- Communication: Phone calls + SMS (no WhatsApp initially)
 
 ---
 

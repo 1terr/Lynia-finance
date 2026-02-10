@@ -1,17 +1,17 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PaymentService, InitiatePaymentRequest } from './payment-service';
 import { EcoCashProvider, EcoCashWebhook } from './ecocash-provider';
-import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
-import { PaynowProvider, PaynowWebhook } from './paynow-provider';
+import { OneWalletProvider, OneWalletWebhook } from './onewallet-provider';
+import { OmariProvider, OmariWebhook } from './omari-provider';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
-const onemoneyProvider = new OneMoneyProvider();
-const paynowProvider = new PaynowProvider();
+const onewalletProvider = new OneWalletProvider();
+const omariProvider = new OmariProvider();
 
 /**
  * Payment Service Lambda Handler
- * Handles payment processing (EcoCash, OneMoney)
+ * Handles payment processing (EcoCash, OneWallet, O'mari, InnBucks)
  */
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -25,10 +25,10 @@ export const handler = async (
       return await initiatePayment(event);
     } else if (path === '/payments/webhook/ecocash' && method === 'POST') {
       return await handleEcoCashWebhook(event);
-    } else if (path === '/payments/webhook/onemoney' && method === 'POST') {
-      return await handleOneMoneyWebhook(event);
-    } else if (path === '/payments/webhook/paynow' && method === 'POST') {
-      return await handlePaynowWebhook(event);
+    } else if (path === '/payments/webhook/onewallet' && method === 'POST') {
+      return await handleOneWalletWebhook(event);
+    } else if (path === '/payments/webhook/omari' && method === 'POST') {
+      return await handleOmariWebhook(event);
     } else if (path.match(/\/payments\/[^/]+$/) && method === 'GET') {
       const paymentId = event.pathParameters?.paymentId;
       return await getPaymentStatus(paymentId!);
@@ -113,14 +113,11 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
   try {
     const payload: EcoCashWebhook = JSON.parse(event.body || '{}');
 
-    console.log(`Processing EcoCash webhook for transaction ${payload.transaction_id}`);
-
     // Verify webhook signature
     const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
     if (receivedSignature) {
       const isValid = ecocashProvider.verifyWebhookSignature(receivedSignature, event.body!);
       if (!isValid) {
-        console.error('Invalid EcoCash webhook signature');
         return {
           statusCode: 401,
           body: JSON.stringify({ error: 'Invalid signature' }),
@@ -129,15 +126,13 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
       }
     }
 
-    // Process webhook based on status
     const paymentId = payload.merchant_reference;
 
     if (payload.status === 'SUCCESS') {
-      // Update payment to completed
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
+      await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
-      // Update payment to failed
       await paymentService.checkPaymentStatus(paymentId);
     }
 
@@ -158,21 +153,18 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
 }
 
 /**
- * POST /payments/webhook/onemoney
- * Handle OneMoney webhook
+ * POST /payments/webhook/onewallet
+ * Handle OneWallet webhook (formerly OneMoney)
  */
-async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+async function handleOneWalletWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    const payload: OneMoneyWebhook = JSON.parse(event.body || '{}');
-
-    console.log(`Processing OneMoney webhook for transaction ${payload.transaction_id}`);
+    const payload: OneWalletWebhook = JSON.parse(event.body || '{}');
 
     // Verify webhook signature
     const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
     if (receivedSignature) {
-      const isValid = onemoneyProvider.verifyWebhookSignature(receivedSignature, event.body!);
+      const isValid = onewalletProvider.verifyWebhookSignature(receivedSignature, event.body!);
       if (!isValid) {
-        console.error('Invalid OneMoney webhook signature');
         return {
           statusCode: 401,
           body: JSON.stringify({ error: 'Invalid signature' }),
@@ -181,15 +173,13 @@ async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGa
       }
     }
 
-    // Process webhook based on status
     const paymentId = payload.merchant_reference;
 
     if (payload.status === 'SUCCESS') {
-      // Update payment to completed
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
+      await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
-      // Update payment to failed
       await paymentService.checkPaymentStatus(paymentId);
     }
 
@@ -200,7 +190,54 @@ async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGa
     };
 
   } catch (error) {
-    console.error('Error processing OneMoney webhook:', error);
+    console.error('Error processing OneWallet webhook:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Webhook processing failed' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+}
+
+/**
+ * POST /payments/webhook/omari
+ * Handle O'mari webhook (direct integration, replacing Paynow aggregator)
+ */
+async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    const payload: OmariWebhook = JSON.parse(event.body || '{}');
+
+    // Verify webhook signature
+    const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
+    if (receivedSignature) {
+      const isValid = omariProvider.verifyWebhookSignature(receivedSignature, event.body!);
+      if (!isValid) {
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ error: 'Invalid signature' }),
+          headers: { 'Content-Type': 'application/json' }
+        };
+      }
+    }
+
+    const paymentId = payload.merchant_reference;
+
+    if (payload.status === 'SUCCESS') {
+      await paymentService.checkPaymentStatus(paymentId);
+      await paymentService.processPaymentCompletion(paymentId);
+      await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
+    } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
+      await paymentService.checkPaymentStatus(paymentId);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Webhook processed successfully' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
+
+  } catch (error) {
+    console.error('Error processing O\'mari webhook:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Webhook processing failed' }),
@@ -252,70 +289,6 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
         message: 'An unexpected error occurred. Please try again later.'
       }),
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
-    };
-  }
-}
-
-/**
- * POST /payments/webhook/paynow
- * Handle Paynow webhook callback (T014)
- *
- * Paynow aggregates EcoCash, OneMoney, O'mari, Visa/Mastercard, and ZimSwitch.
- * A single webhook handler processes all payment methods.
- */
-async function handlePaynowWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-  try {
-    // Paynow sends URL-encoded form data
-    const body = event.body || '';
-    const params = new URLSearchParams(body);
-    const payload: PaynowWebhook = {
-      reference: params.get('reference') || '',
-      paynowreference: params.get('paynowreference') || '',
-      amount: params.get('amount') || '0',
-      status: (params.get('status') || 'Created') as PaynowWebhook['status'],
-      pollurl: params.get('pollurl') || '',
-      hash: params.get('hash') || '',
-    };
-
-    console.log(`Processing Paynow webhook: ref=${payload.reference}, status=${payload.status}`);
-
-    // Verify webhook signature
-    const isValid = paynowProvider.verifyWebhookSignature(payload);
-    if (!isValid) {
-      console.error('Invalid Paynow webhook signature');
-      return {
-        statusCode: 401,
-        body: JSON.stringify({ error: 'Invalid signature' }),
-        headers: { 'Content-Type': 'application/json' },
-      };
-    }
-
-    const paymentId = payload.reference;
-
-    if (payload.status === 'Paid' || payload.status === 'Delivered') {
-      await paymentService.checkPaymentStatus(paymentId);
-      await paymentService.processPaymentCompletion(paymentId);
-
-      // Track payment method analytics (T014)
-      await paymentService.trackCompletedPayment(
-        paymentId,
-        payload.paynowreference
-      );
-    } else if (payload.status === 'Failed' || payload.status === 'Cancelled') {
-      await paymentService.checkPaymentStatus(paymentId);
-    }
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({ message: 'Webhook processed successfully' }),
-      headers: { 'Content-Type': 'application/json' },
-    };
-  } catch (error) {
-    console.error('Error processing Paynow webhook:', error);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Webhook processing failed' }),
-      headers: { 'Content-Type': 'application/json' },
     };
   }
 }

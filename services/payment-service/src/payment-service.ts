@@ -1,14 +1,15 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { EcoCashProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
-import { OneMoneyProvider } from './onemoney-provider';
-import { PaynowProvider } from './paynow-provider';
+import { OneWalletProvider } from './onewallet-provider';
+import { OmariProvider } from './omari-provider';
 import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-analytics';
 
 /**
  * Payment Gateway Type
- * Includes 'paynow' which aggregates EcoCash, OneMoney, O'mari, and cards (T014)
+ * Direct integrations with all 4 Zimbabwe mobile money providers.
+ * Paynow aggregator removed in favour of direct provider APIs (lower fees, better control).
  */
-export type PaymentGateway = 'ecocash' | 'onemoney' | 'paynow';
+export type PaymentGateway = 'ecocash' | 'onewallet' | 'omari' | 'innbucks';
 
 /**
  * Payment Initiation Request
@@ -61,8 +62,8 @@ const TRANSACTION_LIMITS = {
 export class PaymentService {
   private supabase: SupabaseClient;
   private ecocashProvider: EcoCashProvider;
-  private onemoneyProvider: OneMoneyProvider;
-  private paynowProvider: PaynowProvider;
+  private onewalletProvider: OneWalletProvider;
+  private omariProvider: OmariProvider;
   private analytics: PaymentAnalyticsService;
 
   constructor() {
@@ -72,11 +73,9 @@ export class PaymentService {
     );
 
     this.ecocashProvider = new EcoCashProvider();
-    this.onemoneyProvider = new OneMoneyProvider();
-    this.paynowProvider = new PaynowProvider();
+    this.onewalletProvider = new OneWalletProvider();
+    this.omariProvider = new OmariProvider();
     this.analytics = new PaymentAnalyticsService();
-
-    console.log('PaymentService initialized (with Paynow/O\'mari support - T014)');
   }
 
   /**
@@ -213,16 +212,19 @@ export class PaymentService {
       let response: PaymentResponse;
       let instructions: string;
 
-      if (gateway === 'paynow') {
-        // Paynow handles EcoCash, OneMoney, O'mari, and cards (T014)
-        response = await this.paynowProvider.initiatePayment(paymentReq);
-        instructions = this.paynowProvider.generatePaymentInstructions(request.amount, paymentReference);
-      } else if (gateway === 'ecocash') {
+      if (gateway === 'ecocash') {
         response = await this.ecocashProvider.initiatePayment(paymentReq);
         instructions = this.ecocashProvider.generatePaymentInstructions(request.amount, paymentReference);
+      } else if (gateway === 'omari') {
+        response = await this.omariProvider.initiatePayment(paymentReq);
+        instructions = this.omariProvider.generatePaymentInstructions(request.amount, paymentReference);
+      } else if (gateway === 'onewallet') {
+        response = await this.onewalletProvider.initiatePayment(paymentReq);
+        instructions = this.onewalletProvider.generatePaymentInstructions(request.amount, paymentReference);
       } else {
-        response = await this.onemoneyProvider.initiatePayment(paymentReq);
-        instructions = this.onemoneyProvider.generatePaymentInstructions(request.amount, paymentReference);
+        // InnBucks or fallback to EcoCash
+        response = await this.ecocashProvider.initiatePayment(paymentReq);
+        instructions = this.ecocashProvider.generatePaymentInstructions(request.amount, paymentReference);
       }
 
       // Update payment record with gateway transaction ID
@@ -277,14 +279,15 @@ export class PaymentService {
       if (payment.gateway_transaction_id) {
         let statusResponse: PaymentStatusResponse;
 
-        if (payment.gateway === 'paynow') {
-          // Paynow uses poll URL stored in gateway_reference
-          const pollUrl = payment.gateway_reference || payment.gateway_transaction_id;
-          statusResponse = await this.paynowProvider.checkPaymentStatus(pollUrl);
-        } else if (payment.gateway === 'ecocash') {
+        if (payment.gateway === 'ecocash') {
           statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);
+        } else if (payment.gateway === 'omari') {
+          statusResponse = await this.omariProvider.checkPaymentStatus(payment.gateway_transaction_id);
+        } else if (payment.gateway === 'onewallet') {
+          statusResponse = await this.onewalletProvider.checkPaymentStatus(payment.gateway_transaction_id);
         } else {
-          statusResponse = await this.onemoneyProvider.checkPaymentStatus(payment.gateway_transaction_id);
+          // InnBucks or unknown - use EcoCash as fallback
+          statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);
         }
 
         // Update database if status changed
@@ -427,11 +430,10 @@ export class PaymentService {
   /**
    * Select payment gateway based on customer preference or availability.
    *
-   * Default is Paynow (T014 recommendation) which handles all methods
-   * including EcoCash, OneMoney, and O'mari through a single integration.
+   * Default is EcoCash (~70% market share in Zimbabwe).
+   * Direct integrations with all 4 providers replace the Paynow aggregator.
    */
   private async selectGateway(customerId: string): Promise<PaymentGateway> {
-    // Check customer preference
     const { data: customer } = await this.supabase
       .from('customers')
       .select('preferred_payment_gateway')
@@ -442,17 +444,16 @@ export class PaymentService {
       return customer.preferred_payment_gateway as PaymentGateway;
     }
 
-    // Default to Paynow which supports all methods including O'mari (T014)
-    return 'paynow';
+    // Default to EcoCash (highest market share ~70%)
+    return 'ecocash';
   }
 
   /**
-   * Track payment method analytics after webhook confirms payment (T014)
+   * Track payment method analytics after webhook confirms payment
    */
   async trackCompletedPayment(
     paymentId: string,
-    paynowReference: string,
-    customerPhone?: string
+    providerReference: string
   ): Promise<void> {
     try {
       const { data: payment } = await this.supabase
@@ -463,13 +464,11 @@ export class PaymentService {
 
       if (!payment) return;
 
-      const method: TrackedPaymentMethod = payment.gateway === 'paynow'
-        ? this.analytics.detectPaymentMethod(paynowReference, customerPhone)
-        : payment.gateway as TrackedPaymentMethod;
+      const method: TrackedPaymentMethod = payment.gateway as TrackedPaymentMethod;
 
       const feeAmount = this.analytics.calculateFee(
         payment.amount,
-        payment.gateway,
+        'direct',
         method
       );
 
