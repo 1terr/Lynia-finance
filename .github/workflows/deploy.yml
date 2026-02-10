@@ -219,7 +219,7 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
     environment:
       name: staging
-      url: https://staging-api.lyniafinance.co.zw
+      url: https://staging-api.lyniafinance.com
 
     steps:
       - name: Checkout code
@@ -384,7 +384,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production'
     environment:
       name: production
-      url: https://api.lyniafinance.co.zw
+      url: https://api.lyniafinance.com
 
     steps:
       - name: Checkout code

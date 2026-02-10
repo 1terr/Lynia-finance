@@ -462,9 +462,9 @@ main() {
   echo "============================================"
   echo ""
   log "Production URLs:"
-  echo "  API:          https://api.lyniafinance.co.zw"
-  echo "  Admin Portal: https://admin.lyniafinance.co.zw"
-  echo "  Distributor:  https://distributor.lyniafinance.co.zw"
+  echo "  API:          https://api.lyniafinance.com"
+  echo "  Admin Portal: https://admin.lyniafinance.com"
+  echo "  Distributor:  https://distributor.lyniafinance.com"
   echo ""
 }
 

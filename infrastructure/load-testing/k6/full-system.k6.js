@@ -12,7 +12,7 @@
  *   10% - Device Lock Status (lock-service)
  *    5% - Notification History (notification-service)
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw full-system.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com full-system.k6.js
  */
 
 import http from 'k6/http';

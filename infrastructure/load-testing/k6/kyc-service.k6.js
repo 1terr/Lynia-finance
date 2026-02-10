@@ -4,7 +4,7 @@
  * Tests KYC submission, status check, and document verification endpoints.
  * External API dependent (Smile Identity) - tests with mocked responses.
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw kyc-service.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com kyc-service.k6.js
  */
 
 import http from 'k6/http';

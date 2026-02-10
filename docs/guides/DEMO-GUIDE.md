@@ -28,7 +28,7 @@ docker-compose up -d
 sam local start-api --port 3000
 
 # Option B: Staging environment
-# Already running at: https://staging-api.lyniafinance.co.zw
+# Already running at: https://staging-api.lyniafinance.com
 ```
 
 **Database**:

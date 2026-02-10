@@ -55,7 +55,7 @@ User -> CloudFront (CDN, TLS, HTTP/2+3) -> S3 (Static Files)
 
 | Header | Value |
 |--------|-------|
-| Content-Security-Policy | `default-src 'self'; connect-src 'self' *.lyniafinance.co.zw *.supabase.co` |
+| Content-Security-Policy | `default-src 'self'; connect-src 'self' *.lyniafinance.com *.supabase.co` |
 | Strict-Transport-Security | max-age=31536000; includeSubDomains; preload |
 | X-Content-Type-Options | nosniff |
 | X-Frame-Options | DENY |
@@ -66,8 +66,8 @@ User -> CloudFront (CDN, TLS, HTTP/2+3) -> S3 (Static Files)
 
 | Environment | Admin Portal | Distributor Dashboard |
 |-------------|-------------|----------------------|
-| Production | `admin.lyniafinance.co.zw` | `distributor.lyniafinance.co.zw` |
-| Staging | `admin-staging.lyniafinance.co.zw` | `distributor-staging.lyniafinance.co.zw` |
+| Production | `admin.lyniafinance.com` | `distributor.lyniafinance.com` |
+| Staging | `admin-staging.lyniafinance.com` | `distributor-staging.lyniafinance.com` |
 | Development | CloudFront default domain | CloudFront default domain |
 
 ## CI/CD Workflow

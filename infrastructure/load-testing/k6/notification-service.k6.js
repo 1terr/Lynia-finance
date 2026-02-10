@@ -4,7 +4,7 @@
  * Tests notification sending, history retrieval, and reminder scheduling.
  * Async/queue-based - focuses on throughput and queue acceptance rate.
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw notification-service.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com notification-service.k6.js
  */
 
 import http from 'k6/http';

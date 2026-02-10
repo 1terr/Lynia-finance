@@ -6,7 +6,7 @@
  */
 
 // Environment detection
-const BASE_URL = __ENV.API_URL || 'https://staging-api.lyniafinance.co.zw';
+const BASE_URL = __ENV.API_URL || 'https://staging-api.lyniafinance.com';
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || 'test-jwt-token';
 
 export const config = {

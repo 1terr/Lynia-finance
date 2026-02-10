@@ -79,7 +79,7 @@ T+90min  Post-incident review scheduled
    # Check all service health
    for svc in health scoring/health payments/health; do
      curl -s -o /dev/null -w "%{http_code} $svc\n" \
-       "https://api.lyniafinance.co.zw/$svc"
+       "https://api.lyniafinance.com/$svc"
    done
 
    # Check error rates
@@ -216,7 +216,7 @@ aws cloudwatch get-metric-statistics \
   --period 60 --statistics Sum
 
 # Check webhook verification
-curl -s "https://api.lyniafinance.co.zw/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=<token>&hub.challenge=test"
+curl -s "https://api.lyniafinance.com/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=<token>&hub.challenge=test"
 ```
 
 **Mitigation:**

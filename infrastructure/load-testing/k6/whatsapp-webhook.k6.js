@@ -4,7 +4,7 @@
  * Tests webhook ingestion throughput - highest volume endpoint (25% weight).
  * Simulates various message types: text, button replies, media.
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw whatsapp-webhook.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com whatsapp-webhook.k6.js
  */
 
 import http from 'k6/http';

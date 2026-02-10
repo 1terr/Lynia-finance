@@ -629,7 +629,7 @@ Error Details: {{error_message}}
 
 Please try again or contact support:
 📞 0771234567
-📧 support@lyniafinance.co.zw
+📧 support@lyniafinance.com
 ```
 
 ---

@@ -123,9 +123,9 @@ This phase established the complete AWS production infrastructure for Lynia Fina
 - **4 VPC Endpoints**: Secrets Manager, CloudWatch Logs, SQS, X-Ray
 
 ### DNS & Custom Domains (#188)
-- **API**: `api.lyniafinance.co.zw` (production), `staging-api.lyniafinance.co.zw`
-- **Admin**: `admin.lyniafinance.co.zw` (production)
-- **Distributor**: `distributor.lyniafinance.co.zw` (production)
+- **API**: `api.lyniafinance.com` (production), `staging-api.lyniafinance.com`
+- **Admin**: `admin.lyniafinance.com` (production)
+- **Distributor**: `distributor.lyniafinance.com` (production)
 - **Health check**: HTTPS on /health, 30s interval (production)
 
 ---

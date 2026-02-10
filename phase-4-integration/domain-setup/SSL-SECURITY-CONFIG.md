@@ -209,8 +209,8 @@ All Lambda services must update their CORS allowed origins:
 ### Current CORS Origins
 ```typescript
 const ALLOWED_ORIGINS = [
-  'https://admin.lyniafinance.co.zw',
-  'https://distributor.lyniafinance.co.zw',
+  'https://admin.lyniafinance.com',
+  'https://distributor.lyniafinance.com',
   'http://localhost:3000',
   'http://localhost:3001',
 ];
@@ -222,8 +222,8 @@ const ALLOWED_ORIGINS = [
   'https://admin.lyniafinance.com',
   'https://distributor.lyniafinance.com',
   // Keep old domain during migration period
-  'https://admin.lyniafinance.co.zw',
-  'https://distributor.lyniafinance.co.zw',
+  'https://admin.lyniafinance.com',
+  'https://distributor.lyniafinance.com',
   // Development
   'http://localhost:3000',
   'http://localhost:3001',

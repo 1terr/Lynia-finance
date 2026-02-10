@@ -369,7 +369,7 @@ After any rollback, verify the system is in a healthy state:
 # 1. All services responding
 for svc in health scoring/health payments/health; do
   curl -s -o /dev/null -w "%{http_code} $svc\n" \
-    "https://api.lyniafinance.co.zw/$svc"
+    "https://api.lyniafinance.com/$svc"
 done
 
 # 2. No errors in last 5 minutes
@@ -390,8 +390,8 @@ aws sqs get-queue-attributes \
   --attribute-names ApproximateNumberOfMessagesVisible
 
 # 5. Frontend accessible
-curl -s -o /dev/null -w "%{http_code}" https://admin.lyniafinance.co.zw
-curl -s -o /dev/null -w "%{http_code}" https://distributor.lyniafinance.co.zw
+curl -s -o /dev/null -w "%{http_code}" https://admin.lyniafinance.com
+curl -s -o /dev/null -w "%{http_code}" https://distributor.lyniafinance.com
 ```
 
 ### Post-Rollback Communication

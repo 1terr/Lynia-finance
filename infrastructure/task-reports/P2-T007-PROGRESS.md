@@ -279,7 +279,7 @@ Customer submits ID + Selfie
     { image_type_id: 0, image: "data:image/jpeg;base64,..." },  // Selfie
     { image_type_id: 1, image: "data:image/jpeg;base64,..." }   // ID front
   ],
-  callback_url: "https://api.lyniafinance.co.zw/kyc/callback",
+  callback_url: "https://api.lyniafinance.com/kyc/callback",
   use_enrolled_image: false
 }
 ```

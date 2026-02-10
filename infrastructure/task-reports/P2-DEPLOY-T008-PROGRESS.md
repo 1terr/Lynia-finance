@@ -16,16 +16,16 @@ Configured Route 53 hosted zone, ACM certificates with DNS validation, API Gatew
 
 | Environment | API Domain | Admin Portal | Distributor Dashboard |
 |-------------|-----------|-------------|----------------------|
-| Production | `api.lyniafinance.co.zw` | `admin.lyniafinance.co.zw` | `distributor.lyniafinance.co.zw` |
-| Staging | `staging-api.lyniafinance.co.zw` | `admin-staging.lyniafinance.co.zw` | `distributor-staging.lyniafinance.co.zw` |
-| Development | `development-api.lyniafinance.co.zw` | `admin-development.lyniafinance.co.zw` | `distributor-development.lyniafinance.co.zw` |
+| Production | `api.lyniafinance.com` | `admin.lyniafinance.com` | `distributor.lyniafinance.com` |
+| Staging | `staging-api.lyniafinance.com` | `admin-staging.lyniafinance.com` | `distributor-staging.lyniafinance.com` |
+| Development | `development-api.lyniafinance.com` | `admin-development.lyniafinance.com` | `distributor-development.lyniafinance.com` |
 
 ## SSL/TLS Certificates
 
 | Certificate | Domains | Purpose |
 |------------|---------|---------|
-| API Certificate (Regional) | `api.lyniafinance.co.zw`, `*.api.lyniafinance.co.zw` | API Gateway custom domain |
-| Frontend Certificate (Global) | `lyniafinance.co.zw`, `*.lyniafinance.co.zw`, `admin.*`, `distributor.*` | CloudFront distributions |
+| API Certificate (Regional) | `api.lyniafinance.com`, `*.api.lyniafinance.com` | API Gateway custom domain |
+| Frontend Certificate (Global) | `lyniafinance.com`, `*.lyniafinance.com`, `admin.*`, `distributor.*` | CloudFront distributions |
 
 ## Security Configuration
 
@@ -37,8 +37,8 @@ Configured Route 53 hosted zone, ACM certificates with DNS validation, API Gatew
 
 | Record | Type | Target |
 |--------|------|--------|
-| `api.lyniafinance.co.zw` | A (Alias) | API Gateway regional domain |
-| Health check | HTTPS | `api.lyniafinance.co.zw:443/health` |
+| `api.lyniafinance.com` | A (Alias) | API Gateway regional domain |
+| Health check | HTTPS | `api.lyniafinance.com:443/health` |
 
 ## Deployment Notes
 
