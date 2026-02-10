@@ -2,34 +2,36 @@
 
 Wireframes, mockups, brand assets, and design system for lyniafinance.com.
 
-## Getting Started
+## Status
 
-1. **Fill out the design brief** - Open [`DESIGN-BRIEF.md`](./DESIGN-BRIEF.md) and provide input on all `[NEEDS INPUT]` items
-2. **Track progress** - Use [`TASKS.md`](./TASKS.md) to follow the phase checklist
-3. **Design execution** begins once the brief is complete
+- **Phase 1A** (Inputs): Complete
+- **Phase 1B** (Content): Homepage copy done, remaining items in progress
+- **Phase 1C** (Design execution): Up next
+- **Phase 1D** (Review): Pending
 
 ## Documents
 
 | File | Purpose |
 |------|---------|
-| `DESIGN-BRIEF.md` | All decisions and inputs needed from you |
-| `TASKS.md` | Step-by-step checklist for the entire design phase |
+| [`DESIGN-BRIEF.md`](./DESIGN-BRIEF.md) | All design decisions, brand direction, and technical choices |
+| [`CONTENT.md`](./CONTENT.md) | Full page copy extracted from wireframes (source of truth) |
+| [`TASKS.md`](./TASKS.md) | Step-by-step checklist for the entire design phase |
 
-## What's Already Known
+## Key Decisions
 
-From the existing codebase, we have:
-- Brand color palette (blue primary: `#2563eb`)
-- System font stack
-- Brand voice guidelines (friendly, clear, 8th-grade reading level)
-- 19 WhatsApp message templates with established tone
-- Value propositions and target market definition
-- Status color conventions (yellow/green/red/orange)
+| Area | Decision |
+|------|----------|
+| Color | Vibrant blue (`#0052FF`), Coinbase/Moniepoint-inspired |
+| Typography | Stripe-like (Inter or Geist) |
+| Illustrations | Flat, modern vectors (Stripe aesthetic) |
+| Framework | Next.js on AWS |
+| Products | Asset Financing, Digital Credit, Enterprise Partnerships |
 
-## What's Missing
+## Remaining Work
 
-- Logo files
-- Landing page copy (headlines, descriptions)
-- Photography / illustration assets
-- Font selection for the public site
-- Page structure decisions
-- Technical stack choice
+- Logo design
+- Flat illustrations for each product section
+- Blog/Contact page content
+- Legal text (privacy, terms, RBZ disclaimers)
+- CMS selection
+- Design tokens, wireframes, and mockups
