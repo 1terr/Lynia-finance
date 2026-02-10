@@ -2,10 +2,12 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PaymentService, InitiatePaymentRequest } from './payment-service';
 import { EcoCashProvider, EcoCashWebhook } from './ecocash-provider';
 import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
+import { PaynowProvider, PaynowWebhook } from './paynow-provider';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
 const onemoneyProvider = new OneMoneyProvider();
+const paynowProvider = new PaynowProvider();
 
 /**
  * Payment Service Lambda Handler
@@ -25,6 +27,8 @@ export const handler = async (
       return await handleEcoCashWebhook(event);
     } else if (path === '/payments/webhook/onemoney' && method === 'POST') {
       return await handleOneMoneyWebhook(event);
+    } else if (path === '/payments/webhook/paynow' && method === 'POST') {
+      return await handlePaynowWebhook(event);
     } else if (path.match(/\/payments\/[^/]+$/) && method === 'GET') {
       const paymentId = event.pathParameters?.paymentId;
       return await getPaymentStatus(paymentId!);
@@ -248,6 +252,70 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
         message: 'An unexpected error occurred. Please try again later.'
       }),
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+    };
+  }
+}
+
+/**
+ * POST /payments/webhook/paynow
+ * Handle Paynow webhook callback (T014)
+ *
+ * Paynow aggregates EcoCash, OneMoney, O'mari, Visa/Mastercard, and ZimSwitch.
+ * A single webhook handler processes all payment methods.
+ */
+async function handlePaynowWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Paynow sends URL-encoded form data
+    const body = event.body || '';
+    const params = new URLSearchParams(body);
+    const payload: PaynowWebhook = {
+      reference: params.get('reference') || '',
+      paynowreference: params.get('paynowreference') || '',
+      amount: params.get('amount') || '0',
+      status: (params.get('status') || 'Created') as PaynowWebhook['status'],
+      pollurl: params.get('pollurl') || '',
+      hash: params.get('hash') || '',
+    };
+
+    console.log(`Processing Paynow webhook: ref=${payload.reference}, status=${payload.status}`);
+
+    // Verify webhook signature
+    const isValid = paynowProvider.verifyWebhookSignature(payload);
+    if (!isValid) {
+      console.error('Invalid Paynow webhook signature');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid signature' }),
+        headers: { 'Content-Type': 'application/json' },
+      };
+    }
+
+    const paymentId = payload.reference;
+
+    if (payload.status === 'Paid' || payload.status === 'Delivered') {
+      await paymentService.checkPaymentStatus(paymentId);
+      await paymentService.processPaymentCompletion(paymentId);
+
+      // Track payment method analytics (T014)
+      await paymentService.trackCompletedPayment(
+        paymentId,
+        payload.paynowreference
+      );
+    } else if (payload.status === 'Failed' || payload.status === 'Cancelled') {
+      await paymentService.checkPaymentStatus(paymentId);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Webhook processed successfully' }),
+      headers: { 'Content-Type': 'application/json' },
+    };
+  } catch (error) {
+    console.error('Error processing Paynow webhook:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Webhook processing failed' }),
+      headers: { 'Content-Type': 'application/json' },
     };
   }
 }
