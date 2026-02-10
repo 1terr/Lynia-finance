@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import { AdminRole, type AdminUser, type PermissionAction } from '@/types';
+import type { AdminRole, AdminUser, PermissionAction } from '@/types';
 import { hasPermission } from './permissions';
 
 interface AuthContextValue {

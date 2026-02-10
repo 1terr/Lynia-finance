@@ -14,6 +14,63 @@ export type AdminRole =
   | 'inventory_manager'
   | 'reports_viewer';
 
+export type PermissionAction =
+  | 'view'
+  | 'read'
+  | 'write'
+  | 'delete'
+  | 'approve'
+  | 'reject'
+  | 'lock'
+  | 'unlock'
+  | 'reconcile'
+  | 'refund'
+  | 'export'
+  | 'send';
+
+export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
+  super_admin: ['*'],
+  admin: ['*'],
+  operations_manager: [
+    'dashboard:view',
+    'customers:read', 'customers:write',
+    'loans:read', 'loans:approve', 'loans:reject', 'loans:write',
+    'kyc:read', 'kyc:approve', 'kyc:reject',
+    'devices:read', 'devices:write', 'devices:lock', 'devices:unlock',
+    'payments:read', 'payments:reconcile',
+    'reports:read', 'reports:export',
+    'notifications:send',
+  ],
+  kyc_reviewer: [
+    'dashboard:view',
+    'customers:read',
+    'kyc:read', 'kyc:approve', 'kyc:reject',
+  ],
+  finance_team: [
+    'dashboard:view',
+    'customers:read',
+    'loans:read',
+    'payments:read', 'payments:reconcile', 'payments:refund',
+    'reports:read', 'reports:export',
+  ],
+  inventory_manager: [
+    'dashboard:view',
+    'devices:read', 'devices:write', 'devices:delete',
+  ],
+  customer_support: [
+    'dashboard:view',
+    'customers:read',
+    'loans:read',
+    'kyc:read',
+    'payments:read',
+    'notifications:send',
+  ],
+  reports_viewer: [
+    'dashboard:view',
+    'reports:read', 'reports:export',
+  ],
+};
+
 export interface AdminUser {
   id: string;
   email: string;
