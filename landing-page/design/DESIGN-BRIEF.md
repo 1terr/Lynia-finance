@@ -35,8 +35,10 @@
 ### Navigation Bar
 
 ```
-Lynia Finance (logo)    Products    Blog    Contact    [Apply now]
+Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Apply now]
 ```
+
+- **No Contact in nav** - Contact lives in the footer / bottom of page only
 
 ### Homepage Structure (single scrolling page)
 
@@ -46,7 +48,8 @@ Lynia Finance (logo)    Products    Blog    Contact    [Apply now]
 | 2 | **Asset Financing** | Product label + headline + subtext + 4 features + 2 CTAs |
 | 3 | **Digital Credit** | Product label + headline + subtext + 2 features + CTA (Coming soon) |
 | 4 | **Enterprise Partnerships** | Product label + headline + subtext + 3 features + CTA (Partner with us) |
-| 5 | **Footer** | Product links + social links |
+| 5 | **Contact Section** | Contact form + partnership application form (bottom of page, above footer) |
+| 6 | **Footer** | Product links + social links + legal links |
 
 ### Three Core Products
 
@@ -60,18 +63,20 @@ Lynia Finance (logo)    Products    Blog    Contact    [Apply now]
 
 | Page | Purpose |
 |------|---------|
-| **Products** | Detailed product pages or anchors to homepage sections |
-| **Blog** | Research and news content |
-| **Contact** | Contact form (name, phone, email) + partnership application form |
+| **Products** | Detailed product pages (Asset Financing, Digital Credit, Enterprise Partnerships) |
+| **Mission** | Company mission, vision, and values |
+| **Partnerships** | Distributor and B2B partnership information + application form |
+| **Research** | Blog / research articles and news |
 | **Privacy Policy / Terms** | Legal pages (footer links) |
 
 ### Footer
 
-| Products | Connect |
-|----------|---------|
-| Smartphone financing | X (Twitter) |
-| Digital loans | LinkedIn |
-| Embedded financing | WhatsApp |
+| Products | Connect | Legal |
+|----------|---------|-------|
+| Smartphone financing | X (Twitter) | Privacy Policy |
+| Digital loans | LinkedIn | Terms |
+| Embedded financing | WhatsApp | |
+| | | Contact info |
 
 ---
 

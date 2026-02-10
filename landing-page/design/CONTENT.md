@@ -7,8 +7,10 @@
 ## Navigation
 
 ```
-Lynia Finance (logo)    Products    Blog    Contact    [Apply now]
+Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Apply now]
 ```
+
+- Contact is **not** in the nav - it lives at the bottom of the page / in the footer
 
 ---
 
@@ -115,16 +117,18 @@ Lynia Finance (logo)    Products    Blog    Contact    [Apply now]
 The homepage is a single scrolling page with this order:
 
 ```
-1. Navigation bar (sticky)
+1. Navigation bar (sticky): Products | Mission | Partnerships | Research | [Apply now]
 2. Hero section (headline + subtext + 2 CTAs)
 3. Asset Financing section (label + headline + subtext + 4 features + 2 CTAs)
 4. Digital Credit section (label + headline + subtext + 2 features + CTA)
 5. Enterprise Partnerships section (label + headline + subtext + 3 features + CTA)
-6. Footer (Products links + Social links)
+6. Contact section (contact form + partnership form - bottom of page)
+7. Footer (Products links + Social links + Legal links)
 ```
 
 Separate pages (linked from nav):
-- **Products** → likely anchors to the 3 product sections or a dedicated products page
-- **Blog** → Research/blog content
-- **Contact** → Contact form page
-- **Privacy Policy / Terms** → Legal pages (from footer)
+- **Products** → Detailed product pages for the 3 product lines
+- **Mission** → Company mission, vision, and values
+- **Partnerships** → Distributor and B2B partnership info + application form
+- **Research** → Blog / research articles and news
+- **Privacy Policy / Terms** → Legal pages (footer links)
