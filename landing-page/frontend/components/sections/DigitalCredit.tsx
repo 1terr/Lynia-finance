@@ -1,0 +1,88 @@
+'use client';
+
+import { Clock, Wallet } from 'lucide-react';
+import { useScrollAnimation } from '@/lib/useScrollAnimation';
+
+const features = [
+  { icon: Clock, title: 'Application to wallet in minutes', description: 'From application to cash in your wallet — under 10 minutes.' },
+  { icon: Wallet, title: 'Works with your mobile money', description: 'Receive and repay through the mobile money wallet you already use.' },
+];
+
+export function DigitalCredit() {
+  const { ref, isVisible } = useScrollAnimation();
+
+  return (
+    <section ref={ref} id="digital-credit" className="bg-navy py-16 lg:py-20">
+      <div className="container-main">
+        <div className="grid lg:grid-cols-2 gap-12 items-center">
+          {/* Visual placeholder (left on desktop) */}
+          <div
+            className={`hidden lg:flex justify-center order-2 lg:order-1 transition-all duration-700 ${
+              isVisible ? 'opacity-100 -translate-x-0' : 'opacity-0 -translate-x-10'
+            }`}
+            style={{ transitionDelay: '300ms' }}
+          >
+            <div className="w-full max-w-[420px] aspect-square rounded-xl bg-navy-light flex items-center justify-center">
+              <Wallet className="w-24 h-24 text-primary/30" />
+            </div>
+          </div>
+
+          {/* Text column */}
+          <div
+            className={`order-1 lg:order-2 transition-all duration-600 ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            }`}
+          >
+            <span className="text-overline uppercase tracking-wider text-primary">
+              DIGITAL CREDIT
+            </span>
+            <h2 className="text-h1-mobile lg:text-h1 text-white font-medium mt-4">
+              Cash when you need it most
+            </h2>
+            <p className="text-body-lg text-white/70 mt-6">
+              Digital loans deposited directly into your mobile wallet. Apply
+              once, get funded in under 10 minutes.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
+              {features.map((f, i) => {
+                const Icon = f.icon;
+                return (
+                  <div
+                    key={f.title}
+                    className={`transition-all duration-400 ${
+                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+                    }`}
+                    style={{ transitionDelay: `${400 + i * 75}ms` }}
+                  >
+                    <Icon className="w-6 h-6 text-primary mb-3" />
+                    <h4 className="text-h5 text-white font-medium">{f.title}</h4>
+                    <p className="text-body-sm text-white/70 mt-2">{f.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Lead capture */}
+            <div className="mt-8">
+              <p className="text-body-sm text-white/50 mb-3">Coming soon</p>
+              <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => e.preventDefault()}>
+                <input
+                  type="tel"
+                  placeholder="+263 7XX XXX XXX"
+                  className="h-11 px-4 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-body-sm focus:border-primary focus:outline-none flex-1"
+                />
+                <button
+                  type="submit"
+                  className="h-11 px-6 rounded-md bg-primary text-white text-body-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
+                >
+                  Get notified when we launch &rarr;
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
