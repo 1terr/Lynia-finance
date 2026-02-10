@@ -70,25 +70,25 @@ jobs:
       - name: Run frontend linting
         run: |
           if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
-            pnpm --filter admin-portal lint 2>/dev/null || echo "::warning::Admin portal lint issues found"
+            pnpm --filter "@lynia/admin-portal" lint 2>/dev/null || echo "::warning::Admin portal lint issues found"
           fi
           if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
-            pnpm --filter distributor-dashboard lint 2>/dev/null || echo "::warning::Distributor dashboard lint issues found"
+            pnpm --filter lynia-distributor-portal lint 2>/dev/null || echo "::warning::Distributor dashboard lint issues found"
           fi
 
       - name: Run frontend tests
         run: |
           if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
-            pnpm --filter admin-portal test 2>/dev/null || echo "::warning::Admin portal tests failed"
+            pnpm --filter "@lynia/admin-portal" test 2>/dev/null || echo "::warning::Admin portal tests failed"
           fi
           if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
-            pnpm --filter distributor-dashboard test 2>/dev/null || echo "::warning::Distributor dashboard tests failed"
+            pnpm --filter lynia-distributor-portal test 2>/dev/null || echo "::warning::Distributor dashboard tests failed"
           fi
 
       - name: Build admin portal
         id: build-admin
         if: env.DEPLOY_APP == 'admin-portal' || env.DEPLOY_APP == 'both'
-        run: pnpm --filter admin-portal build
+        run: pnpm --filter "@lynia/admin-portal" build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
@@ -98,7 +98,7 @@ jobs:
       - name: Build distributor dashboard
         id: build-distributor
         if: env.DEPLOY_APP == 'distributor-dashboard' || env.DEPLOY_APP == 'both'
-        run: pnpm --filter distributor-dashboard build
+        run: pnpm --filter lynia-distributor-portal build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
