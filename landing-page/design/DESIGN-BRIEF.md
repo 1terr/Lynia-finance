@@ -41,16 +41,24 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 - **Clean nav only** - no buttons, no Contact, no Careers in the nav
 - Contact, Careers, and other links live in the footer
 
-### Homepage Structure (single scrolling page)
+### Homepage Structure (Stripe-inspired flow)
 
-| # | Section | Content |
-|---|---------|---------|
-| 1 | **Hero** | Headline + subtext + 2 CTAs (Apply now / WhatsApp) |
-| 2 | **Asset Financing** | Product label + headline + subtext + 4 features + 2 CTAs |
-| 3 | **Digital Credit** | Product label + headline + subtext + 2 features + CTA (Coming soon) |
-| 4 | **Enterprise Partnerships** | Product label + headline + subtext + 3 features + CTA (Partner with us) |
-| 5 | **Contact Section** | Contact form + partnership application form (bottom of page, above footer) |
-| 6 | **Footer** | Product links + social links + legal links |
+| # | Section | Stripe Equivalent | Layout |
+|---|---------|-------------------|--------|
+| 1 | **Hero** | Hero with gradient + animated UI | Full-viewport, WebGL gradient, 2-col split |
+| 2 | **Social Proof** | Customer logos bar | Horizontal logo strip |
+| 3 | **Product Suite** | Product showcase grid | 3-column card grid |
+| 4 | **Asset Financing** | Product deep dive | Split: text left, visual right |
+| 5 | **Digital Credit** | Product deep dive | Split: visual left, text right (dark bg) |
+| 6 | **Enterprise Partnerships** | Product deep dive | Split: text left, visual right |
+| 7 | **Why Lynia** | "Why Stripe" + global numbers | Stats on gradient background |
+| 8 | **Customer Segments** | Startup / Enterprise / Platform cards | 3-column cards |
+| 9 | **Testimonial** | Customer quote | Full-width, large quote |
+| 10 | **Featured Research** | Editorial content | 3-column blog card grid (from Sanity) |
+| 11 | **Bottom CTA** | Bottom CTA + pricing | Dark/gradient bg, final conversion |
+| 12 | **Footer** | Multi-column footer | Products, Company, Connect, Legal |
+
+Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 
 ### Three Core Products
 
