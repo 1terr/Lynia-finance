@@ -13,7 +13,7 @@ Parameters:
 
   DomainName:
     Type: String
-    Default: lyniafinance.co.zw
+    Default: lyniafinance.com
     Description: Root domain name
 
   HostedZoneId:
