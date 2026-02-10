@@ -73,7 +73,7 @@ export interface KYCVerification {
     verification_type: 'national_id' | 'selfie' | 'liveness';
     verification_status: 'pending' | 'verified' | 'rejected';
     smile_job_id?: string;
-    smile_result?: Record<string, any>;
+    smile_result?: Record<string, unknown>;
     verified_at?: string;
     created_at: string;
     updated_at: string;
@@ -101,7 +101,7 @@ export interface Notification {
     error_message?: string;
     created_at: string;
 }
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
     success: boolean;
     data?: T;
     error?: string;
