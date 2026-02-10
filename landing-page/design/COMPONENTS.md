@@ -455,7 +455,7 @@ Used in Section 8 (Customer Segments).
 │  FOR INDIVIDUALS       │  Overline label
 │                        │
 │  Smartphones,          │  Description
-│  equipment, and cash.  │
+│  assets, and cash.  │
 │  Apply via WhatsApp    │
 │  in under 5 minutes.   │
 │                        │

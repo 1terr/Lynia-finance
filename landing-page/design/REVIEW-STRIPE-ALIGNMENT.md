@@ -47,7 +47,7 @@ Stripe's copy style has four rules:
 
 > **Headline**: "Financial tools for the underbanked"
 >
-> **Subtext**: "Smartphones, equipment, and cash — delivered through WhatsApp with approval in under 5 minutes."
+> **Subtext**: "Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes."
 >
 > **Primary CTA**: `Start your application`
 >
@@ -129,7 +129,7 @@ Or:
 
 **Recommended rewrite:**
 
-> "Finance a smartphone or equipment with a small deposit. Collect from a local agent, repay via mobile money."
+> "Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money."
 
 Two sentences. Tells you exactly what happens. No filler.
 
@@ -256,7 +256,7 @@ Or simply:
 
 | Segment | Current | Recommended |
 |---------|---------|-------------|
-| For Individuals | "Get the tools you need to earn more. Smartphones, equipment, and cash — all via WhatsApp." | "Smartphones, equipment, and cash. Apply via WhatsApp in under 5 minutes." *(Cut the abstract "earn more", add specificity)* |
+| For Individuals | "Get the tools you need to earn more. Smartphones, assets, and cash — all via WhatsApp." | "Smartphones, assets, and cash. Apply via WhatsApp in under 5 minutes." *(Cut the abstract "earn more", add specificity)* |
 | For Businesses | "Grow your business with instant digital credit. No paperwork, no bank visits." | "Digital credit with no paperwork and no bank visits. Apply and receive funds on your phone." *(Lead with what they get, not what they'll do with it)* |
 | For Partners | "Embed credit into your platform and help your customers access more." | "Embed credit into your platform. Offer financing at the point of sale through our APIs." *(Specific mechanism, not vague "access more")* |
 
@@ -463,7 +463,7 @@ This diversifies the conversion paths instead of duplicating one.
 |------|--------------|----------------|
 | Never start with "We" | "We are a mobile money first platform" | "Transactions settle via mobile money" |
 | Lead with outcome, not mechanism | "Our system processes your application quickly" | "Get approved in under 5 minutes" |
-| One idea per sentence | "Get smartphones, tools of your trade through flexible financing that helps you earn more" | "Finance a smartphone or equipment with a small deposit." |
+| One idea per sentence | "Get smartphones, tools of your trade through flexible financing that helps you earn more" | "Finance smartphones and assets with a small deposit." |
 | Cut "helping", "enabling", "allowing" | "Helping businesses grow" | "Your business grows" (or better: state *how*) |
 | Use numbers over adjectives | "Fast approval" | "Approved in 5 minutes" |
 | End every sentence with a period | "Repay using mobile money" | "Repay using mobile money." |
@@ -539,7 +539,7 @@ Below is the full rewritten copy for CONTENT.md. All changes follow the Stripe c
 
 ```
 Headline: Financial tools for the underbanked
-Subtext: Smartphones, equipment, and cash — delivered through WhatsApp with approval in under 5 minutes.
+Subtext: Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes.
 Primary CTA: Start your application
 Secondary CTA: See how it works →
 ```
@@ -562,7 +562,7 @@ Headline: Three products. One mission.
 ```
 Label: ASSET FINANCING
 Headline: Own the tools that power your trade
-Subtext: Finance a smartphone or equipment with a small deposit. Collect from a local agent, repay via mobile money.
+Subtext: Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money.
 
 Features:
 - Pay a deposit, own the device: Start with a small deposit. The device is yours from day one.
@@ -623,7 +623,7 @@ Supporting text: Traditional banks don't serve them. We do. Mobile money is ever
 Headline: Built for how Zimbabwe works
 
 For Individuals:
-Smartphones, equipment, and cash. Apply via WhatsApp in under 5 minutes.
+Smartphones, assets, and cash. Apply via WhatsApp in under 5 minutes.
 CTA: Start your application →
 
 For Businesses:
