@@ -194,7 +194,7 @@ Comprehensive automated deployment workflow with 4 jobs:
 10. Comment on PR with deployment info (if PR)
 
 **GitHub Environments Used**:
-- `staging` (with URL: https://staging-api.lyniafinance.co.zw)
+- `staging` (with URL: https://staging-api.lyniafinance.com)
 
 #### Job 3: Deploy to Production (manual only)
 **Triggers**:
@@ -205,7 +205,7 @@ Comprehensive automated deployment workflow with 4 jobs:
 11. Create GitHub Release with tag (v{run_number})
 
 **GitHub Environments Used**:
-- `production` (with URL: https://api.lyniafinance.co.zw)
+- `production` (with URL: https://api.lyniafinance.com)
 - Requires manual approval in GitHub UI
 
 #### Job 4: Notify Deployment Status

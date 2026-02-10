@@ -772,7 +772,7 @@ return {
 - **Documentation**: This file + `P2-T013-PROGRESS.md`
 - **Issues**: GitHub Issues tracker
 - **Slack**: #lynia-devops channel
-- **Email**: devops@lyniafinance.co.zw
+- **Email**: devops@lyniafinance.com
 
 ---
 

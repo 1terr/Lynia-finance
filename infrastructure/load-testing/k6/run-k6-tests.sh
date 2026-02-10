@@ -26,13 +26,13 @@ REPORT_DIR="${SCRIPT_DIR}/reports"
 # API URLs per environment
 case $ENVIRONMENT in
   staging)
-    API_URL="https://staging-api.lyniafinance.co.zw"
+    API_URL="https://staging-api.lyniafinance.com"
     ;;
   production)
-    API_URL="https://api.lyniafinance.co.zw"
+    API_URL="https://api.lyniafinance.com"
     ;;
   development)
-    API_URL="https://development-api.lyniafinance.co.zw"
+    API_URL="https://development-api.lyniafinance.com"
     ;;
   *)
     echo "Unknown environment: $ENVIRONMENT"

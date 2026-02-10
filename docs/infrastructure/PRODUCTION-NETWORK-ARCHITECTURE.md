@@ -17,7 +17,7 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
                                                │              │
                                     ┌──────────▼──────┐  ┌───▼───────────────┐
                                     │  CloudFront CDN  │  │  Route 53 DNS     │
-                                    │  (Edge Locations) │  │  lyniafinance.co.zw│
+                                    │  (Edge Locations) │  │  lyniafinance.com│
                                     │                  │  └───────────────────┘
                                     │  admin.lynia...  │
                                     │  distributor...  │
@@ -112,9 +112,9 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
 
 | Record | Type | Target |
 |--------|------|--------|
-| `api.lyniafinance.co.zw` | A (Alias) | API Gateway Regional Domain |
-| `admin.lyniafinance.co.zw` | A (Alias) | CloudFront Distribution |
-| `distributor.lyniafinance.co.zw` | A (Alias) | CloudFront Distribution |
+| `api.lyniafinance.com` | A (Alias) | API Gateway Regional Domain |
+| `admin.lyniafinance.com` | A (Alias) | CloudFront Distribution |
+| `distributor.lyniafinance.com` | A (Alias) | CloudFront Distribution |
 
 - Health check on API endpoint (30s interval, 3 failures = unhealthy)
 - TTL managed by Alias records (automatic)
@@ -123,8 +123,8 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
 
 | Certificate | Scope | Domains |
 |------------|-------|---------|
-| API Certificate | Regional (us-east-1) | `api.lyniafinance.co.zw`, `*.api.lyniafinance.co.zw` |
-| Frontend Certificate | Global (CloudFront) | `lyniafinance.co.zw`, `*.lyniafinance.co.zw`, `admin.*`, `distributor.*` |
+| API Certificate | Regional (us-east-1) | `api.lyniafinance.com`, `*.api.lyniafinance.com` |
+| Frontend Certificate | Global (CloudFront) | `lyniafinance.com`, `*.lyniafinance.com`, `admin.*`, `distributor.*` |
 
 - Minimum protocol: TLS 1.2
 - DNS validation (automatic renewal)
@@ -145,7 +145,7 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
 
 - Type: REST API (Regional)
 - Stage: `Prod`
-- Custom domain: `api.lyniafinance.co.zw`
+- Custom domain: `api.lyniafinance.com`
 - TLS 1.2 minimum
 - WAF protected
 

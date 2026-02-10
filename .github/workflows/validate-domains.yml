@@ -1,0 +1,69 @@
+name: Validate Domain References
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+jobs:
+  check-domains:
+    name: Check for deprecated .co.zw domains
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Scan for deprecated lyniafinance.co.zw references
+        run: |
+          echo "Scanning for deprecated .co.zw domain references..."
+          echo ""
+
+          # Directories/files to scan (source code, configs, workflows, scripts)
+          SCAN_PATHS=(
+            ".github/workflows/"
+            "services/"
+            "frontend/"
+            "infrastructure/aws/"
+            "infrastructure/load-testing/"
+            "scripts/"
+            "database/"
+          )
+
+          # Files/patterns to exclude (third-party provider URLs are .co.zw and correct)
+          # e.g., ecocash.co.zw, onemoney.co.zw, innbucks.co.zw, omari.co.zw
+          EXCLUDE_PATTERN="ecocash\.co\.zw|onemoney\.co\.zw|innbucks\.co\.zw|omari\.co\.zw"
+
+          FOUND=0
+          for scan_path in "${SCAN_PATHS[@]}"; do
+            if [ -e "$scan_path" ]; then
+              MATCHES=$(grep -rn "lyniafinance\.co\.zw" "$scan_path" 2>/dev/null \
+                | grep -v node_modules \
+                | grep -v ".next/" \
+                | grep -v dist/ \
+                || true)
+
+              if [ -n "$MATCHES" ]; then
+                echo "::error::Deprecated .co.zw domain found in $scan_path"
+                echo "$MATCHES"
+                FOUND=1
+              fi
+            fi
+          done
+
+          echo ""
+          if [ "$FOUND" -eq 1 ]; then
+            echo "::error::Deprecated lyniafinance.co.zw references found!"
+            echo ""
+            echo "The correct domains are:"
+            echo "  API:          api.lyniafinance.com"
+            echo "  Admin Portal: admin.lyniafinance.com"
+            echo "  Distributor:  distributor.lyniafinance.com"
+            echo "  Staging API:  staging-api.lyniafinance.com"
+            echo ""
+            echo "Please update all references to use lyniafinance.com"
+            exit 1
+          else
+            echo "All domain references are correct (lyniafinance.com)"
+          fi

@@ -4,7 +4,7 @@
  * Tests device lock/unlock operations and status checks.
  * Eventual consistency acceptable per CLAUDE.md architecture guidelines.
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw lock-service.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com lock-service.k6.js
  */
 
 import http from 'k6/http';

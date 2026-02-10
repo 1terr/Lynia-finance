@@ -52,8 +52,8 @@ GitHub (master) -> CI/CD Pipeline -> Staging -> Manual Approval -> Production
 
 | Application | Hosting | CDN |
 |------------|---------|-----|
-| Admin Portal | S3 + CloudFront | `admin.lyniafinance.co.zw` |
-| Distributor Dashboard | S3 + CloudFront | `distributor.lyniafinance.co.zw` |
+| Admin Portal | S3 + CloudFront | `admin.lyniafinance.com` |
+| Distributor Dashboard | S3 + CloudFront | `distributor.lyniafinance.com` |
 
 ### Deployment Methods
 
@@ -95,9 +95,9 @@ aws cloudformation describe-stacks \
 # Expected: CREATE_COMPLETE or UPDATE_COMPLETE
 
 # Run staging smoke tests
-curl -s -o /dev/null -w "%{http_code}" https://staging-api.lyniafinance.co.zw/health
-curl -s -o /dev/null -w "%{http_code}" https://staging-api.lyniafinance.co.zw/scoring/health
-curl -s -o /dev/null -w "%{http_code}" https://staging-api.lyniafinance.co.zw/payments/health
+curl -s -o /dev/null -w "%{http_code}" https://staging-api.lyniafinance.com/health
+curl -s -o /dev/null -w "%{http_code}" https://staging-api.lyniafinance.com/scoring/health
+curl -s -o /dev/null -w "%{http_code}" https://staging-api.lyniafinance.com/payments/health
 ```
 
 ### 2.3 Record Pre-Deployment State
@@ -230,7 +230,7 @@ aws cloudformation describe-stacks \
 # 2. Health check all services
 for endpoint in health scoring/health payments/health; do
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
-    "https://api.lyniafinance.co.zw/$endpoint")
+    "https://api.lyniafinance.com/$endpoint")
   echo "$endpoint: $HTTP_CODE"
 done
 
@@ -429,9 +429,9 @@ See [ROLLBACK-PROCEDURES.md](ROLLBACK-PROCEDURES.md) Section 4 for frontend-spec
 
 | Domain | Type | Target |
 |--------|------|--------|
-| `api.lyniafinance.co.zw` | A (Alias) | API Gateway |
-| `admin.lyniafinance.co.zw` | A (Alias) | CloudFront Distribution |
-| `distributor.lyniafinance.co.zw` | A (Alias) | CloudFront Distribution |
+| `api.lyniafinance.com` | A (Alias) | API Gateway |
+| `admin.lyniafinance.com` | A (Alias) | CloudFront Distribution |
+| `distributor.lyniafinance.com` | A (Alias) | CloudFront Distribution |
 
 ### 7.2 SSL Certificates
 

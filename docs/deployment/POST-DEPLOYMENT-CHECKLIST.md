@@ -25,7 +25,7 @@ Execute this checklist after every production deployment. All checks must pass b
     Command: aws lambda list-functions --query "Functions[?starts_with(FunctionName,'production-lynia')].{Name:FunctionName,Modified:LastModified}" --output table
 
 [ ] API Gateway is routing correctly
-    Command: curl -s -o /dev/null -w "%{http_code}" https://api.lyniafinance.co.zw/health
+    Command: curl -s -o /dev/null -w "%{http_code}" https://api.lyniafinance.com/health
 
 [ ] No Lambda throttling
     Command: aws cloudwatch describe-alarms --alarm-names production-lynia-lambda-throttles --query 'MetricAlarms[0].StateValue'
@@ -34,17 +34,17 @@ Execute this checklist after every production deployment. All checks must pass b
 ### Service Health Endpoints
 
 ```
-[ ] Scoring service:      curl -s -w "%{http_code}" https://api.lyniafinance.co.zw/scoring/health
-[ ] Payment service:      curl -s -w "%{http_code}" https://api.lyniafinance.co.zw/payments/health
-[ ] General health:       curl -s -w "%{http_code}" https://api.lyniafinance.co.zw/health
+[ ] Scoring service:      curl -s -w "%{http_code}" https://api.lyniafinance.com/scoring/health
+[ ] Payment service:      curl -s -w "%{http_code}" https://api.lyniafinance.com/payments/health
+[ ] General health:       curl -s -w "%{http_code}" https://api.lyniafinance.com/health
 ```
 
 ### Frontend Accessibility
 
 ```
-[ ] Admin portal loads:           curl -s -w "%{http_code}" https://admin.lyniafinance.co.zw
-[ ] Distributor dashboard loads:  curl -s -w "%{http_code}" https://distributor.lyniafinance.co.zw
-[ ] SSL certificates valid:       echo | openssl s_client -connect admin.lyniafinance.co.zw:443 2>/dev/null | openssl x509 -noout -dates
+[ ] Admin portal loads:           curl -s -w "%{http_code}" https://admin.lyniafinance.com
+[ ] Distributor dashboard loads:  curl -s -w "%{http_code}" https://distributor.lyniafinance.com
+[ ] SSL certificates valid:       echo | openssl s_client -connect admin.lyniafinance.com:443 2>/dev/null | openssl x509 -noout -dates
 ```
 
 ---

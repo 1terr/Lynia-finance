@@ -4,7 +4,7 @@
  * Tests payment processing, status checks, and reconciliation endpoints.
  * Critical path: requires strong consistency and idempotency.
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw payment-service.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com payment-service.k6.js
  */
 
 import http from 'k6/http';

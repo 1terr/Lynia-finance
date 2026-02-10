@@ -242,7 +242,7 @@ jobs:
           URL=$(aws cloudformation describe-stacks \
             --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalUrl`].OutputValue' \
-            --output text 2>/dev/null || echo "https://${{ env.DEPLOY_ENV }}-admin.lyniafinance.co.zw")
+            --output text 2>/dev/null || echo "https://admin.lyniafinance.com")
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "Admin Portal URL: $URL"
 
@@ -361,7 +361,7 @@ jobs:
           URL=$(aws cloudformation describe-stacks \
             --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardUrl`].OutputValue' \
-            --output text 2>/dev/null || echo "https://${{ env.DEPLOY_ENV }}-distributor.lyniafinance.co.zw")
+            --output text 2>/dev/null || echo "https://distributor.lyniafinance.com")
           echo "url=$URL" >> $GITHUB_OUTPUT
 
   # ================================================================

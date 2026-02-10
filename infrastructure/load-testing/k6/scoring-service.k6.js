@@ -4,7 +4,7 @@
  * Tests credit score calculation and lookup endpoints under load.
  * Critical path: highest traffic endpoint (30% of total requests).
  *
- * Run: k6 run --env API_URL=https://staging-api.lyniafinance.co.zw scoring-service.k6.js
+ * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com scoring-service.k6.js
  */
 
 import http from 'k6/http';
