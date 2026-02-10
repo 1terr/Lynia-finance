@@ -116,4 +116,74 @@ export const BusinessMetrics = {
 
   deviceUnlocked: () =>
     publishMetric({ name: 'DevicesUnlocked', value: 1 }),
+
+  whatsAppMessageSent: () =>
+    publishMetric({ name: 'WhatsAppMessagesSent', value: 1 }),
+
+  whatsAppMessageReceived: () =>
+    publishMetric({ name: 'WhatsAppMessagesReceived', value: 1 }),
+
+  whatsAppMessageFailed: () =>
+    publishMetric({ name: 'WhatsAppMessagesFailed', value: 1 }),
+
+  customerOnboarded: () =>
+    publishMetric({ name: 'NewCustomersOnboarded', value: 1 }),
+
+  onboardingCompletionRate: (percentage: number) =>
+    publishMetric({
+      name: 'OnboardingCompletionRate',
+      value: percentage,
+      unit: 'Percent',
+    }),
+
+  loanDefaulted: () =>
+    publishMetric({ name: 'DefaultedLoans', value: 1 }),
+};
+
+// Security metric helpers (feeds Security dashboard)
+
+export const SecurityMetrics = {
+  failedLogin: () =>
+    publishMetric({ name: 'FailedLoginAttempts', value: 1 }),
+
+  successfulLogin: () =>
+    publishMetric({ name: 'SuccessfulLogins', value: 1 }),
+
+  rateLimitHit: () =>
+    publishMetric({ name: 'RateLimitHits', value: 1 }),
+
+  wafBlocked: () =>
+    publishMetric({ name: 'WAFBlockedRequests', value: 1 }),
+
+  suspiciousActivity: () =>
+    publishMetric({ name: 'SuspiciousActivityFlags', value: 1 }),
+
+  invalidToken: () =>
+    publishMetric({ name: 'InvalidTokenAttempts', value: 1 }),
+
+  unauthorizedAccess: () =>
+    publishMetric({ name: 'UnauthorizedAccessAttempts', value: 1 }),
+
+  kycFraudDetected: () =>
+    publishMetric({ name: 'KYCFraudDetected', value: 1 }),
+
+  duplicateTransaction: () =>
+    publishMetric({ name: 'DuplicateTransactionAttempts', value: 1 }),
+
+  transactionLimitExceeded: () =>
+    publishMetric({ name: 'TransactionLimitExceeded', value: 1 }),
+};
+
+// Database metric helpers (feeds Technical dashboard)
+
+export const DatabaseMetrics = {
+  connectionCount: (count: number) =>
+    publishMetric({ name: 'DatabaseConnectionCount', value: count }),
+
+  queryLatency: (durationMs: number) =>
+    publishMetric({
+      name: 'DatabaseQueryLatency',
+      value: durationMs,
+      unit: 'Milliseconds',
+    }),
 };
