@@ -779,7 +779,7 @@ describe('KYC Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(404);
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', '*');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
     });
   });
 

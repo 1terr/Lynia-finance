@@ -31,6 +31,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const corsHeaders = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' };
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
@@ -72,9 +73,7 @@ export const handler = async (
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: corsHeaders
     };
   } catch (error) {
     console.error('Error:', error);
@@ -84,9 +83,7 @@ export const handler = async (
         error: 'Internal Server Error',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers: corsHeaders
     };
   }
 };
@@ -163,7 +160,7 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         messageId,
         waId: response.data.contacts[0].wa_id
       }),
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     };
   } catch (error) {
     console.error('Error sending message:', error instanceof Error ? error.message : 'Unknown');
@@ -174,7 +171,7 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         body: JSON.stringify({
           error: 'Failed to send WhatsApp message'
         }),
-        headers: { 'Content-Type': 'application/json' }
+        headers: corsHeaders
       };
     }
     throw error;
@@ -241,7 +238,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true }),
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     };
   } catch (error) {
     console.error('Error handling webhook:', error);
@@ -249,7 +246,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     return {
       statusCode: 200,
       body: JSON.stringify({ success: false, error: 'Processing error' }),
-      headers: { 'Content-Type': 'application/json' }
+      headers: corsHeaders
     };
   }
 }
@@ -268,7 +265,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
  * 8. Onboarding flow routing
  */
 async function processIncomingMessage(
-  message: WhatsAppWebhookEvent['entry'][0]['changes'][0]['value']['messages'][0],
+  message: NonNullable<WhatsAppWebhookEvent['entry'][number]['changes'][number]['value']['messages']>[number],
   contactName?: string
 ): Promise<void> {
   const phoneNumber = message.from;
@@ -402,7 +399,7 @@ async function processIncomingMessage(
       from: phoneNumber,
       message: messageText,
       messageId: message.id,
-      timestamp: message.timestamp
+      timestamp: parseInt(message.timestamp, 10)
     };
 
     const responseMessage = await routeOnboardingMessage(context, imageUrl);

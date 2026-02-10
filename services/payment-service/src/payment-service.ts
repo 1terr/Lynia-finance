@@ -110,7 +110,7 @@ export class PaymentService {
       .gte('initiated_at', today.toISOString());
 
     const dailyTotal = (dailyPayments || []).reduce(
-      (sum, p) => sum + (p.amount || 0), 0
+      (sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0
     );
 
     if (dailyTotal + amountUsd > TRANSACTION_LIMITS.DAILY_LIMIT_USD) {
@@ -131,7 +131,7 @@ export class PaymentService {
       .gte('initiated_at', monthStart.toISOString());
 
     const monthlyTotal = (monthlyPayments || []).reduce(
-      (sum, p) => sum + (p.amount || 0), 0
+      (sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0
     );
 
     if (monthlyTotal + amountUsd > TRANSACTION_LIMITS.MONTHLY_LIMIT_USD) {

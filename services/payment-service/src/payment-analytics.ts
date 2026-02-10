@@ -175,8 +175,8 @@ export class PaymentAnalyticsService {
       }
 
       const totalTransactions = analytics.length;
-      const totalVolume = analytics.reduce((sum, r) => sum + (r.amount || 0), 0);
-      const totalFees = analytics.reduce((sum, r) => sum + (r.fee_amount || 0), 0);
+      const totalVolume = analytics.reduce((sum: number, r: { amount?: number }) => sum + (r.amount || 0), 0);
+      const totalFees = analytics.reduce((sum: number, r: { fee_amount?: number }) => sum + (r.fee_amount || 0), 0);
 
       const breakdown: PaymentMethodBreakdown[] = [];
       for (const [method, data] of methodMap) {

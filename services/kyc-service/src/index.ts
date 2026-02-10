@@ -200,7 +200,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
 
     // Handle Smile Identity errors
     if (error instanceof Error && error.message.includes('KYC verification failed')) {
-      const errorResponse = smileService.handleSmileError(error);
+      const errorResponse = smileService.handleSmileError(error as unknown as { response?: { data?: { code?: string; message?: string } } });
 
       return {
         statusCode: 400,
