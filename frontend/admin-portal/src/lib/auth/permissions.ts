@@ -1,4 +1,4 @@
-import { AdminRole, ROLE_PERMISSIONS, type PermissionAction } from '@/types';
+import { ROLE_PERMISSIONS, type AdminRole, type PermissionAction } from '@/types';
 
 export function hasPermission(
   userRole: AdminRole,
@@ -8,11 +8,10 @@ export function hasPermission(
   const permissions = ROLE_PERMISSIONS[userRole];
   if (!permissions) return false;
 
-  // Super admin wildcard
-  if (permissions.some((p) => p.resource === '*')) return true;
+  // Wildcard means full access (super_admin, admin)
+  if (permissions.includes('*')) return true;
 
-  const resourcePermission = permissions.find((p) => p.resource === resource);
-  return resourcePermission?.actions.includes(action) ?? false;
+  return permissions.includes(`${resource}:${action}`);
 }
 
 export function hasAnyPermission(
@@ -26,13 +25,14 @@ export function hasAnyPermission(
 
 export function getRoleDisplayName(role: AdminRole): string {
   const names: Record<AdminRole, string> = {
-    [AdminRole.SUPER_ADMIN]: 'Super Admin',
-    [AdminRole.OPERATIONS_MANAGER]: 'Operations Manager',
-    [AdminRole.CUSTOMER_SUPPORT]: 'Customer Support',
-    [AdminRole.FINANCE_TEAM]: 'Finance Team',
-    [AdminRole.KYC_REVIEWER]: 'KYC Reviewer',
-    [AdminRole.INVENTORY_MANAGER]: 'Inventory Manager',
-    [AdminRole.REPORTS_VIEWER]: 'Reports Viewer',
+    super_admin: 'Super Admin',
+    admin: 'Admin',
+    operations_manager: 'Operations Manager',
+    customer_support: 'Customer Support',
+    finance_team: 'Finance Team',
+    kyc_reviewer: 'KYC Reviewer',
+    inventory_manager: 'Inventory Manager',
+    reports_viewer: 'Reports Viewer',
   };
   return names[role] ?? role;
 }
