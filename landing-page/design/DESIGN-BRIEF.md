@@ -1,9 +1,8 @@
 # Lynia Finance Landing Page - Design Brief
 
-> **Status**: All inputs received. Ready for content preparation and design execution.
+> **Status**: Content received. Ready for design execution.
 >
-> Items marked **[TODO]** still need content to be written/sourced.
-> Items marked **[PENDING]** require a separate deliverable (e.g., PDF content).
+> Full page copy available in [`CONTENT.md`](./CONTENT.md).
 
 ---
 
@@ -31,51 +30,81 @@
 
 ---
 
-## 3. Site Map
+## 3. Site Map & Navigation
 
-| Page / Section | Include | Name on Site |
-|----------------|---------|-------------|
-| Hero / Above the fold | Yes | _(homepage hero)_ |
-| How It Works | No | _(excluded)_ |
-| Features / Benefits | Yes | **Products** |
-| About Us / Mission | Yes | **Mission** |
-| For Distributors | Yes | **Partnerships** |
-| For Investors | No | _(excluded)_ |
-| Testimonials / Social Proof | No | _(excluded)_ |
-| FAQ | No | _(excluded)_ |
-| Contact / Get in Touch | Yes | **Contact** |
-| Blog / News | Yes | **Research** |
-| Careers | No | _(excluded)_ |
-| Privacy Policy / Terms | Yes | **Privacy Policy / Terms** |
-
-### Confirmed Navigation Structure
+### Navigation Bar
 
 ```
-Home (Hero)  |  Products  |  Mission  |  Partnerships  |  Research  |  Contact
+Lynia Finance (logo)    Products    Blog    Contact    [Apply now]
 ```
 
-Footer: Privacy Policy, Terms
+### Homepage Structure (single scrolling page)
+
+| # | Section | Content |
+|---|---------|---------|
+| 1 | **Hero** | Headline + subtext + 2 CTAs (Apply now / WhatsApp) |
+| 2 | **Asset Financing** | Product label + headline + subtext + 4 features + 2 CTAs |
+| 3 | **Digital Credit** | Product label + headline + subtext + 2 features + CTA (Coming soon) |
+| 4 | **Enterprise Partnerships** | Product label + headline + subtext + 3 features + CTA (Partner with us) |
+| 5 | **Footer** | Product links + social links |
+
+### Three Core Products
+
+| Product | Audience | Status |
+|---------|----------|--------|
+| **Asset Financing** | B2C (informal workers) | Live - "Apply now" |
+| **Digital Credit** | B2C (everyone) | Coming soon |
+| **Enterprise Partnerships** | B2B (ride-hailing, employers, platforms) | Active - "Partner with us" |
+
+### Separate Pages
+
+| Page | Purpose |
+|------|---------|
+| **Products** | Detailed product pages or anchors to homepage sections |
+| **Blog** | Research and news content |
+| **Contact** | Contact form (name, phone, email) + partnership application form |
+| **Privacy Policy / Terms** | Legal pages (footer links) |
+
+### Footer
+
+| Products | Connect |
+|----------|---------|
+| Smartphone financing | X (Twitter) |
+| Digital loans | LinkedIn |
+| Embedded financing | WhatsApp |
 
 ---
 
 ## 4. Key Messaging
 
-### 4.1 Value Propositions to Feature
+### 4.1 Hero Messaging (confirmed)
 
-| Value Proposition | Feature? | Display Text |
-|-------------------|----------|-------------|
-| Instant approval in under 5 minutes via WhatsApp | Yes | Instant approval in under 5 minutes via WhatsApp |
-| 100% WhatsApp-based, zero app downloads needed | Yes | _(feature on Products page)_ |
-| Designed for informal sector workers with no credit history | Yes | _(core messaging)_ |
-| AI/ML scoring based on mobile money behavior | No | _(internal, don't feature)_ |
-| Revenue-linked repayment adapts to irregular income | No | _(internal, don't feature)_ |
-| Device financing from $100, 8-month repayment | Yes | Device financing from $100, 8-month repayment |
+- **Headline**: "Credit that works for real people"
+- **Subtext**: "Lynia Finance helps you get the smartphone, tools, or cash you need—giving you the power to earn more and do more."
+- **Primary CTA**: `[Apply now]`
+- **Secondary CTA**: `Lets chat on whatsapp`
 
-### 4.2 Headline / Tagline
+### 4.2 Product Headlines (confirmed)
 
-- **Primary headline**: **[TODO]** - to be written during content phase
-- **Tagline / sub-headline**: **[TODO]** - to be written during content phase
-- **CTA button text**: **[TODO]** - to be written during content phase
+| Product | Headline | Subtext |
+|---------|----------|---------|
+| **Asset Financing** | "Own the tools that power your trade" | Get smartphones, tools of your trade through flexible financing... |
+| **Digital Credit** | "Cash when you need it most" | Quick, secure digital loans delivered straight to your mobile wallet... |
+| **Enterprise Partnerships** | "Credit built into your business" | We partner with enterprises to embed financing directly into their platforms... |
+
+Full copy in [`CONTENT.md`](./CONTENT.md).
+
+### 4.3 Value Propositions (as featured on page)
+
+| Value Proposition | Where Featured |
+|-------------------|---------------|
+| Approved in less than 5 minutes | Asset Financing features |
+| Own asset after paying a deposit | Asset Financing features |
+| Repay using mobile money | Asset Financing + Digital Credit |
+| Funds in less than 10 minutes | Digital Credit features |
+| Mobile money friendly (EcoCash/Omari) | Digital Credit features |
+| API friendly platform | Enterprise Partnerships features |
+| Mobile money first | Enterprise Partnerships features |
 
 ### 4.3 Tone of Voice
 
@@ -151,10 +180,15 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 ## 6. Functional Requirements
 
-### 6.1 Primary CTA
+### 6.1 CTAs (confirmed from wireframe)
 
-- **[TODO]** - CTA behavior to be defined during content phase
-- WhatsApp floating button confirmed (always visible)
+| CTA | Action | Location |
+|-----|--------|----------|
+| `[Apply now]` | Primary conversion (WhatsApp or application flow) | Nav bar, Hero, Asset Financing |
+| `Lets chat on whatsapp` | Opens WhatsApp chat | Hero, Asset Financing |
+| `[Coming soon]` | Disabled/waitlist for Digital Credit | Digital Credit section |
+| `[Partner with us]` | Partnership application form | Enterprise Partnerships section |
+| **WhatsApp floating button** | Opens WhatsApp chat | Persistent on all pages |
 
 ### 6.2 Forms & Interactions
 
@@ -244,9 +278,11 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 | Item | Status | Action |
 |------|--------|--------|
+| Page content (copy) | **Done** | All copy extracted to [`CONTENT.md`](./CONTENT.md) |
+| Headlines / taglines | **Done** | Confirmed from wireframes |
+| CTA button text | **Done** | Confirmed from wireframes |
 | Logo design | Not started | Part of design phase |
-| Page content (copy) | **[PENDING]** | User mentioned "attached PDF" with pages/sections content - needs to be provided |
-| Headline / tagline | Not started | To be written during content phase |
-| CTA button text | Not started | To be written during content phase |
 | CMS selection | Needs recommendation | Sanity or Keystatic suggested |
 | Illustrations | Not started | To be created in Stripe-like flat style |
+| Blog/Research page content | Not started | Blog post structure and initial content needed |
+| Contact page layout | Not started | Form design with fields defined in Section 6.2 |
