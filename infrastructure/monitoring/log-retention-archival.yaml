@@ -1,0 +1,557 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - CloudWatch Logs Retention, Archival & Metric Filters
+  Configures per-environment log retention policies, S3 archival for
+  regulatory compliance, and log-based metric filters for security events.
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  LogArchivalBucket:
+    Type: String
+    Default: ''
+    Description: S3 bucket for long-term log archival (production only)
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+  IsNotDevelopment: !Not [!Equals [!Ref Environment, development]]
+  HasArchivalBucket: !Not [!Equals [!Ref LogArchivalBucket, '']]
+  EnableArchival: !And
+    - !Condition IsProduction
+    - !Condition HasArchivalBucket
+
+Resources:
+  # ==========================================================
+  # CLOUDWATCH LOG GROUPS WITH RETENTION POLICIES
+  # Per CLAUDE.md: 5+ years for audit logs in production
+  # Production: 1827 days (5 years) for Lambda service logs
+  # Staging: 90 days
+  # Development: 14 days
+  # ==========================================================
+
+  ScoringServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-scoring-service'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: scoring-service
+        - Key: Compliance
+          Value: rbz-audit
+
+  PaymentServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: payment-service
+        - Key: Compliance
+          Value: rbz-audit
+
+  WhatsAppServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-whatsapp-service'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: whatsapp-service
+        - Key: Compliance
+          Value: rbz-audit
+
+  KYCServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-kyc-service'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: kyc-service
+        - Key: Compliance
+          Value: rbz-audit
+
+  LockServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-lock-service'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: lock-service
+        - Key: Compliance
+          Value: rbz-audit
+
+  NotificationServiceLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-notification-service'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: notification-service
+        - Key: Compliance
+          Value: rbz-audit
+
+  # API Gateway access log group
+  ApiGatewayAccessLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/apigateway/${Environment}-lynia-access-logs'
+      RetentionInDays: !If
+        - IsProduction
+        - 1827
+        - !If [IsNotDevelopment, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: api-gateway
+
+  # ==========================================================
+  # S3 LOG ARCHIVAL (Production Only)
+  # Exports CloudWatch Logs to S3 for long-term retention
+  # beyond CloudWatch Logs retention (regulatory: 7yr txn, 5yr audit)
+  # ==========================================================
+
+  LogArchivalBucketResource:
+    Type: AWS::S3::Bucket
+    Condition: IsProduction
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !Sub '${Environment}-lynia-log-archive-${AWS::AccountId}'
+      LifecycleConfiguration:
+        Rules:
+          # Move to Glacier after 90 days
+          - Id: GlacierTransition
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+          # Move to Deep Archive after 1 year
+          - Id: DeepArchiveTransition
+            Status: Enabled
+            Transitions:
+              - StorageClass: DEEP_ARCHIVE
+                TransitionInDays: 365
+          # Delete after 10 years (longest retention = KYC 10yr)
+          - Id: ExpirationPolicy
+            Status: Enabled
+            ExpirationInDays: 3650
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: log-archival
+        - Key: Compliance
+          Value: rbz-regulatory
+
+  # IAM role for CloudWatch Logs to export to S3
+  LogExportRole:
+    Type: AWS::IAM::Role
+    Condition: IsProduction
+    Properties:
+      RoleName: !Sub '${Environment}-lynia-log-export-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: !Sub 'logs.${AWS::Region}.amazonaws.com'
+            Action: 'sts:AssumeRole'
+      Policies:
+        - PolicyName: LogExportToS3
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:PutObject'
+                  - 's3:GetBucketAcl'
+                Resource:
+                  - !Sub 'arn:aws:s3:::${Environment}-lynia-log-archive-${AWS::AccountId}'
+                  - !Sub 'arn:aws:s3:::${Environment}-lynia-log-archive-${AWS::AccountId}/*'
+
+  # ==========================================================
+  # LOG-BASED METRIC FILTERS FOR SECURITY EVENTS
+  # These extract security-relevant patterns from structured
+  # JSON logs and publish CloudWatch custom metrics.
+  # ==========================================================
+
+  # --- Authentication Security Filters ---
+
+  FailedLoginFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-whatsapp-service'
+      FilterPattern: '{ $.message = "Authentication failed" || $.message = "*login failed*" || $.message = "*invalid credentials*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: FailedLoginFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  InvalidTokenFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-scoring-service'
+      FilterPattern: '{ $.message = "*invalid token*" || $.message = "*token expired*" || $.message = "*unauthorized*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: InvalidTokenFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- Rate Limiting Filters ---
+
+  RateLimitFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '{ $.message = "*rate limit*" || $.message = "*too many requests*" || $.message = "*Rate limit exceeded*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: RateLimitFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- Financial Security Filters ---
+
+  SuspiciousTransactionFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '{ $.message = "*suspicious*" || $.message = "*fraud*" || $.message = "*anomaly detected*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: SuspiciousTransactionFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  TransactionLimitExceededFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '{ $.message = "*limit exceeded*" || $.message = "*transaction limit*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: TransactionLimitExceededFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  DuplicateTransactionFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '{ $.message = "*duplicate*" || $.message = "*idempotency*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: DuplicateTransactionFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- KYC Fraud Filters ---
+
+  KYCFraudFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-kyc-service'
+      FilterPattern: '{ $.message = "*fraud*" || $.message = "*face mismatch*" || $.message = "*duplicate KYC*" || $.message = "*identity mismatch*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: KYCFraudFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- Device Security Filters ---
+
+  UnauthorizedDeviceAccessFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-lock-service'
+      FilterPattern: '{ $.message = "*unauthorized*" || $.message = "*device not found*" || $.message = "*lock failed*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: UnauthorizedDeviceAccessFromLogs
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- Error Level Filters (all services) ---
+
+  ScoringErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-scoring-service'
+      FilterPattern: '{ $.level = "error" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Logs'
+          MetricName: ScoringServiceErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  PaymentErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '{ $.level = "error" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Logs'
+          MetricName: PaymentServiceErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  WhatsAppErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-whatsapp-service'
+      FilterPattern: '{ $.level = "error" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Logs'
+          MetricName: WhatsAppServiceErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  KYCErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-kyc-service'
+      FilterPattern: '{ $.level = "error" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Logs'
+          MetricName: KYCServiceErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  LockErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-lock-service'
+      FilterPattern: '{ $.level = "error" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Logs'
+          MetricName: LockServiceErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  NotificationErrorFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-notification-service'
+      FilterPattern: '{ $.level = "error" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Logs'
+          MetricName: NotificationServiceErrors
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- Audit Trail Filters (financial operations) ---
+
+  LoanDecisionAuditFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-scoring-service'
+      FilterPattern: '{ $.meta.action = "loan.*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Audit'
+          MetricName: LoanDecisionEvents
+          MetricValue: '1'
+          DefaultValue: 0
+
+  PaymentAuditFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '{ $.meta.action = "payment.*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Audit'
+          MetricName: PaymentAuditEvents
+          MetricValue: '1'
+          DefaultValue: 0
+
+  DeviceLockAuditFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-lock-service'
+      FilterPattern: '{ $.meta.action = "device.*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Audit'
+          MetricName: DeviceLockAuditEvents
+          MetricValue: '1'
+          DefaultValue: 0
+
+  KYCReviewAuditFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsNotDevelopment
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-kyc-service'
+      FilterPattern: '{ $.meta.action = "kyc.*" }'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Audit'
+          MetricName: KYCReviewAuditEvents
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # --- PII Leak Detection Filter ---
+  # Detects if unmasked phone numbers or national IDs appear in logs
+
+  PIILeakDetectionFilter:
+    Type: AWS::Logs::MetricFilter
+    Condition: IsProduction
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
+      FilterPattern: '[..., w1 = /\+263\d{9}/, ...]'
+      MetricTransformations:
+        - MetricNamespace: !Sub 'Lynia/${Environment}/Security'
+          MetricName: PotentialPIILeak
+          MetricValue: '1'
+          DefaultValue: 0
+
+  # ==========================================================
+  # ALARMS ON LOG-BASED METRICS
+  # ==========================================================
+
+  PIILeakAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
+    Properties:
+      AlarmName: !Sub '${Environment}-lynia-pii-leak-critical'
+      AlarmDescription: 'Potential PII detected in logs - investigate immediately'
+      Namespace: !Sub 'Lynia/${Environment}/Security'
+      MetricName: PotentialPIILeak
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !ImportValue
+          Fn::Sub: '${Environment}-lynia-critical-alerts-topic'
+
+  SecurityEventSpikeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsNotDevelopment
+    Properties:
+      AlarmName: !Sub '${Environment}-lynia-security-event-spike-warning'
+      AlarmDescription: 'Elevated security events in logs (>20 in 5 min)'
+      Metrics:
+        - Id: failed_login
+          MetricStat:
+            Metric:
+              Namespace: !Sub 'Lynia/${Environment}/Security'
+              MetricName: FailedLoginFromLogs
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: invalid_token
+          MetricStat:
+            Metric:
+              Namespace: !Sub 'Lynia/${Environment}/Security'
+              MetricName: InvalidTokenFromLogs
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: rate_limit
+          MetricStat:
+            Metric:
+              Namespace: !Sub 'Lynia/${Environment}/Security'
+              MetricName: RateLimitFromLogs
+            Period: 300
+            Stat: Sum
+          ReturnData: false
+        - Id: total_security
+          Expression: 'SUM([failed_login, invalid_token, rate_limit])'
+          Label: 'Total Security Events'
+          ReturnData: true
+      EvaluationPeriods: 1
+      Threshold: 20
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !ImportValue
+          Fn::Sub: '${Environment}-lynia-warning-alerts-topic'
+
+Outputs:
+  LogArchivalBucketName:
+    Condition: IsProduction
+    Description: S3 bucket for long-term log archival
+    Value: !Ref LogArchivalBucketResource
+
+  LogRetentionDays:
+    Description: Log retention period in days
+    Value: !If
+      - IsProduction
+      - '1827'
+      - !If [IsNotDevelopment, '90', '14']
+
+  MetricFilterCount:
+    Description: Number of log-based metric filters deployed
+    Value: !If
+      - IsNotDevelopment
+      - '16'
+      - '0'
