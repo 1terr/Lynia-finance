@@ -1,6 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { EcoCashProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
-import { OneWalletProvider } from './onewallet-provider';
+import { OneMoneyProvider } from './onemoney-provider';
 import { OmariProvider } from './omari-provider';
 import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-analytics';
 
@@ -9,7 +9,7 @@ import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-an
  * Direct integrations with all 4 Zimbabwe mobile money providers.
  * Paynow aggregator removed in favour of direct provider APIs (lower fees, better control).
  */
-export type PaymentGateway = 'ecocash' | 'onewallet' | 'omari' | 'innbucks';
+export type PaymentGateway = 'ecocash' | 'onemoney' | 'omari' | 'innbucks';
 
 /**
  * Payment Initiation Request
@@ -62,7 +62,7 @@ const TRANSACTION_LIMITS = {
 export class PaymentService {
   private supabase: SupabaseClient;
   private ecocashProvider: EcoCashProvider;
-  private onewalletProvider: OneWalletProvider;
+  private onemoneyProvider: OneMoneyProvider;
   private omariProvider: OmariProvider;
   private analytics: PaymentAnalyticsService;
 
@@ -73,7 +73,7 @@ export class PaymentService {
     );
 
     this.ecocashProvider = new EcoCashProvider();
-    this.onewalletProvider = new OneWalletProvider();
+    this.onemoneyProvider = new OneMoneyProvider();
     this.omariProvider = new OmariProvider();
     this.analytics = new PaymentAnalyticsService();
   }
@@ -218,9 +218,9 @@ export class PaymentService {
       } else if (gateway === 'omari') {
         response = await this.omariProvider.initiatePayment(paymentReq);
         instructions = this.omariProvider.generatePaymentInstructions(request.amount, paymentReference);
-      } else if (gateway === 'onewallet') {
-        response = await this.onewalletProvider.initiatePayment(paymentReq);
-        instructions = this.onewalletProvider.generatePaymentInstructions(request.amount, paymentReference);
+      } else if (gateway === 'onemoney') {
+        response = await this.onemoneyProvider.initiatePayment(paymentReq);
+        instructions = this.onemoneyProvider.generatePaymentInstructions(request.amount, paymentReference);
       } else {
         // InnBucks or fallback to EcoCash
         response = await this.ecocashProvider.initiatePayment(paymentReq);
@@ -283,8 +283,8 @@ export class PaymentService {
           statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);
         } else if (payment.gateway === 'omari') {
           statusResponse = await this.omariProvider.checkPaymentStatus(payment.gateway_transaction_id);
-        } else if (payment.gateway === 'onewallet') {
-          statusResponse = await this.onewalletProvider.checkPaymentStatus(payment.gateway_transaction_id);
+        } else if (payment.gateway === 'onemoney') {
+          statusResponse = await this.onemoneyProvider.checkPaymentStatus(payment.gateway_transaction_id);
         } else {
           // InnBucks or unknown - use EcoCash as fallback
           statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);

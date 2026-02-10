@@ -77,9 +77,8 @@ Based on review of `docs/external-integrations/`, the following codebase changes
 | Change | File | Description |
 |--------|------|-------------|
 | NEW | `omari-provider.ts` | O'mari direct integration provider (USSD *707#, ~1% fees) |
-| NEW | `onewallet-provider.ts` | OneWallet provider (renamed from OneMoney, USSD *111#) |
-| MODIFIED | `payment-service.ts` | PaymentGateway type: `'ecocash' \| 'onewallet' \| 'omari' \| 'innbucks'`; removed Paynow imports/routing |
-| MODIFIED | `index.ts` | Webhook routes: `/webhook/onewallet`, `/webhook/omari` replacing `/webhook/onemoney`, `/webhook/paynow` |
+| MODIFIED | `payment-service.ts` | PaymentGateway type: `'ecocash' \| 'onemoney' \| 'omari' \| 'innbucks'`; removed Paynow imports/routing |
+| MODIFIED | `index.ts` | Webhook routes: `/webhook/onemoney`, `/webhook/omari` replacing `/webhook/paynow` |
 | MODIFIED | `payment-analytics.ts` | Direct fee rates (2% standard, 1% O'mari); removed Paynow 3.5% fee references |
 
 **Database Changes:**
@@ -91,6 +90,28 @@ Based on review of `docs/external-integrations/`, the following codebase changes
 | Change | File | Description |
 |--------|------|-------------|
 | MODIFIED | `GO-LIVE-CHECKLIST.md` | Added Section 5: External Integrations (8 items, stub-mode launch strategy) |
+
+### Codebase Cleanup (v1.2 Update)
+
+**Naming correction:** Reverted OneWallet naming back to OneMoney (original naming was correct per CLAUDE.md mobile money integration specs).
+
+**Payment Service Changes:**
+| Change | File | Description |
+|--------|------|-------------|
+| DELETED | `onewallet-provider.ts` | Removed duplicate; `onemoney-provider.ts` retained as canonical provider |
+| DELETED | `paynow-provider.ts` | Paynow aggregator fully removed from codebase |
+| MODIFIED | `payment-service.ts` | Reverted to `OneMoneyProvider` import from `./onemoney-provider`; `'onemoney'` in PaymentGateway type |
+| MODIFIED | `index.ts` | Reverted to `OneMoneyProvider`/`OneMoneyWebhook` imports; route `/webhook/onemoney` |
+| MODIFIED | `payment-analytics.ts` | Reverted to `'onemoney'` in TrackedPaymentMethod and FEE_RATES |
+
+**P4-T011 and P4-T014 Status:** Both remain NOT STARTED. No updates detected. Reports unchanged.
+
+**Documentation Changes:**
+| Change | File | Description |
+|--------|------|-------------|
+| MODIFIED | `GO-LIVE-CHECKLIST.md` | v1.2: Fixed OneMoney naming in Section 5, noted paynow-provider.ts deletion |
+| MODIFIED | `PHASE-4-SUMMARY-REPORT.md` | Added migration 013 to artifacts list |
+| MODIFIED | `LAUNCH-READINESS-REVIEW.md` | Added v1.1 version history entry |
 
 ## Progress Log
 
@@ -104,10 +125,16 @@ Based on review of `docs/external-integrations/`, the following codebase changes
 | 2026-02-10 | Created Phase 5 Planning Recommendations (16 tasks, 3 tracks) | 🔵 In Progress |
 | 2026-02-10 | All 4 deliverables complete | ✅ Completed |
 | 2026-02-10 | v1.1: Reviewed external integrations docs, aligned codebase | 🔵 In Progress |
-| 2026-02-10 | v1.1: Created O'mari provider, renamed OneMoney→OneWallet | 🔵 In Progress |
+| 2026-02-10 | v1.1: Created O'mari provider, aligned external integration naming | 🔵 In Progress |
 | 2026-02-10 | v1.1: Removed Paynow from payment service, updated webhook routes | 🔵 In Progress |
 | 2026-02-10 | v1.1: Created migration 013 (manual verification fields) | 🔵 In Progress |
 | 2026-02-10 | v1.1: Updated Go-Live Checklist with external integration section | ✅ Completed |
+| 2026-02-10 | v1.2: Reverted OneWallet naming back to OneMoney | 🔵 In Progress |
+| 2026-02-10 | v1.2: Deleted onewallet-provider.ts and paynow-provider.ts | 🔵 In Progress |
+| 2026-02-10 | v1.2: Updated payment-service.ts, index.ts, payment-analytics.ts | 🔵 In Progress |
+| 2026-02-10 | v1.2: Verified no broken imports (grep clean) | 🔵 In Progress |
+| 2026-02-10 | v1.2: Checked P4-T011/T014 — both still NOT STARTED | 🔵 In Progress |
+| 2026-02-10 | v1.2: Updated all deliverable documents | ✅ Completed |
 
 ---
 

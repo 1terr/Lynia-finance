@@ -1,7 +1,7 @@
 # Lynia Finance - Go-Live Checklist
 
 **Document:** P4-T015 Deliverable - Go-Live Checklist
-**Version:** 1.1
+**Version:** 1.2
 **Date:** 2026-02-10 (Updated)
 **Prepared by:** Engineering Team
 **Review Status:** CONDITIONAL GO - Stub-mode launch with manual workflows
@@ -167,9 +167,9 @@ Per the [Integration Master Plan](../docs/external-integrations/INTEGRATION-MAST
 
 | # | Item | Status | Evidence | Owner |
 |---|------|--------|----------|-------|
-| 5.1.1 | Paynow aggregator removed; direct provider integrations adopted | PASS | payment-service.ts updated, omari-provider.ts created | Engineering |
+| 5.1.1 | Paynow aggregator removed; direct provider integrations adopted | PASS | paynow-provider.ts deleted, payment-service.ts updated, omari-provider.ts created | Engineering |
 | 5.1.2 | EcoCash provider code ready (stub mode) | PASS | ecocash-provider.ts, API credentials pending | Engineering |
-| 5.1.3 | OneWallet provider code ready (renamed from OneMoney) | PASS | onewallet-provider.ts created | Engineering |
+| 5.1.3 | OneMoney provider code ready (direct integration) | PASS | onemoney-provider.ts (USSD *111#, NetOne) | Engineering |
 | 5.1.4 | O'mari provider code ready (new direct integration) | PASS | omari-provider.ts created | Engineering |
 | 5.1.5 | EcoCash API credentials obtained (~70% market share) | BLOCKED | Pending provider agreement | Operations |
 | 5.1.6 | Manual payment verification workflow supported (migration 013) | PASS | 013_manual_verification_fields.sql | Engineering |
@@ -234,3 +234,5 @@ All external integrations launch in **stub mode** per [DEPLOY-WITHOUT-INTEGRATIO
 | Version | Date | Author | Changes |
 |---------|------|--------|---------|
 | 1.0 | 2026-02-10 | Engineering Team | Initial go-live checklist |
+| 1.1 | 2026-02-10 | Engineering Team | Added Section 5: External Integrations (stub-mode launch) |
+| 1.2 | 2026-02-10 | Engineering Team | Fixed OneMoney naming (reverted OneWallet rename), deleted paynow-provider.ts |

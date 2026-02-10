@@ -1,17 +1,17 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { PaymentService, InitiatePaymentRequest } from './payment-service';
 import { EcoCashProvider, EcoCashWebhook } from './ecocash-provider';
-import { OneWalletProvider, OneWalletWebhook } from './onewallet-provider';
+import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
 import { OmariProvider, OmariWebhook } from './omari-provider';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
-const onewalletProvider = new OneWalletProvider();
+const onemoneyProvider = new OneMoneyProvider();
 const omariProvider = new OmariProvider();
 
 /**
  * Payment Service Lambda Handler
- * Handles payment processing (EcoCash, OneWallet, O'mari, InnBucks)
+ * Handles payment processing (EcoCash, OneMoney, O'mari, InnBucks)
  */
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -25,8 +25,8 @@ export const handler = async (
       return await initiatePayment(event);
     } else if (path === '/payments/webhook/ecocash' && method === 'POST') {
       return await handleEcoCashWebhook(event);
-    } else if (path === '/payments/webhook/onewallet' && method === 'POST') {
-      return await handleOneWalletWebhook(event);
+    } else if (path === '/payments/webhook/onemoney' && method === 'POST') {
+      return await handleOneMoneyWebhook(event);
     } else if (path === '/payments/webhook/omari' && method === 'POST') {
       return await handleOmariWebhook(event);
     } else if (path.match(/\/payments\/[^/]+$/) && method === 'GET') {
@@ -153,17 +153,17 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
 }
 
 /**
- * POST /payments/webhook/onewallet
- * Handle OneWallet webhook (formerly OneMoney)
+ * POST /payments/webhook/onemoney
+ * Handle OneMoney webhook
  */
-async function handleOneWalletWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    const payload: OneWalletWebhook = JSON.parse(event.body || '{}');
+    const payload: OneMoneyWebhook = JSON.parse(event.body || '{}');
 
     // Verify webhook signature
     const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
     if (receivedSignature) {
-      const isValid = onewalletProvider.verifyWebhookSignature(receivedSignature, event.body!);
+      const isValid = onemoneyProvider.verifyWebhookSignature(receivedSignature, event.body!);
       if (!isValid) {
         return {
           statusCode: 401,
@@ -190,7 +190,7 @@ async function handleOneWalletWebhook(event: APIGatewayProxyEvent): Promise<APIG
     };
 
   } catch (error) {
-    console.error('Error processing OneWallet webhook:', error);
+    console.error('Error processing OneMoney webhook:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Webhook processing failed' }),

@@ -1,7 +1,7 @@
 /**
  * Payment Method Analytics
  *
- * Tracks which payment methods customers use (EcoCash, OneWallet, O'mari, InnBucks)
+ * Tracks which payment methods customers use (EcoCash, OneMoney, O'mari, InnBucks)
  * for fee analysis, provider performance monitoring, and business reporting.
  *
  * All providers now use direct API integrations (Paynow aggregator removed).
@@ -15,7 +15,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export type TrackedPaymentMethod =
   | 'ecocash'
-  | 'onewallet'
+  | 'onemoney'
   | 'omari'
   | 'innbucks'
   | 'bank_transfer'
@@ -67,7 +67,7 @@ export interface PaymentAnalyticsSummary {
 const FEE_RATES: Record<string, Record<string, number>> = {
   direct: {
     ecocash: 0.02,     // Direct EcoCash fee ~2%
-    onewallet: 0.02,   // Direct OneWallet fee ~2%
+    onemoney: 0.02,    // Direct OneMoney fee ~2%
     omari: 0.01,       // Direct O'mari fee ~1% (0% promo on USD)
     innbucks: 0.02,    // Direct InnBucks fee ~2%
   },
@@ -122,8 +122,8 @@ export class PaymentAnalyticsService {
     const cleaned = customerPhone.replace(/\D/g, '');
     // Econet prefixes (EcoCash): 77, 78
     if (/^263(77|78)/.test(cleaned)) return 'ecocash';
-    // NetOne prefixes (OneWallet): 71
-    if (/^26371/.test(cleaned)) return 'onewallet';
+    // NetOne prefixes (OneMoney): 71
+    if (/^26371/.test(cleaned)) return 'onemoney';
     // Telecel prefixes: 73
     if (/^26373/.test(cleaned)) return 'ecocash';
     return 'unknown';
