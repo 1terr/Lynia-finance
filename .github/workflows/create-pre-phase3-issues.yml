@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Create PRE-P3-001 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -64,7 +64,7 @@ jobs:
             });
 
       - name: Create PRE-P3-002 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -114,7 +114,7 @@ jobs:
             });
 
       - name: Create PRE-P3-003 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -161,7 +161,7 @@ jobs:
             });
 
       - name: Create PRE-P3-004 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -197,7 +197,7 @@ jobs:
             });
 
       - name: Create PRE-P3-005 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -242,7 +242,7 @@ jobs:
             });
 
       - name: Create PRE-P3-006 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({

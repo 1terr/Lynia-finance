@@ -18,7 +18,7 @@ jobs:
     if: github.event.inputs.confirm == 'create'
     steps:
       - name: Create Phase 4 Labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const labels = [
@@ -65,7 +65,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T001 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -98,7 +98,7 @@ jobs:
             });
 
       - name: Create P4-T002 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -126,7 +126,7 @@ jobs:
             });
 
       - name: Create P4-T003 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -159,7 +159,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T004 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -190,7 +190,7 @@ jobs:
             });
 
       - name: Create P4-T005 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -223,7 +223,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T006 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -257,7 +257,7 @@ jobs:
             });
 
       - name: Create P4-T007 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -291,7 +291,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T008 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -323,7 +323,7 @@ jobs:
             });
 
       - name: Create P4-T009 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -357,7 +357,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T010 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -388,7 +388,7 @@ jobs:
             });
 
       - name: Create P4-T011 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -421,7 +421,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T012 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -455,7 +455,7 @@ jobs:
             });
 
       - name: Create P4-T013 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -489,7 +489,7 @@ jobs:
       # ============================================
 
       - name: Create P4-T014 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -519,7 +519,7 @@ jobs:
             });
 
       - name: Create P4-T015 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
