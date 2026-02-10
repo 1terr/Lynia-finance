@@ -143,32 +143,33 @@ Established brand voice applies:
 
 **Direction**: Follow Stripe.com's design language — deep navy paired with a refined blue-purple accent. Sophisticated, trustworthy, professional.
 
-#### Reference Palette (Stripe.com)
+#### Reference Palette (Stripe.com — current live site)
 
 | Element | Hex | Name |
 |---------|-----|------|
 | Primary Dark / Navy | `#0A2540` | "Downriver" — trust, stability, professionalism |
-| Brand Accent | `#635BFF` | "Blurple" — modernity, approachability |
-| CTA Blue | `#0048E5` | Buttons, links, interactive elements |
+| Brand Accent / CTA | `#635BFF` | "Blurple" — used for both brand identity AND CTA buttons |
+| CTA Hover | `#5651E5` | Darkened blurple for hover states |
 | Light Background | `#F6F9FC` | "Black Squeeze" — alternating section bg |
 | Body Text | `#425466` | Blue-gray body copy |
-| Muted Text | `#aab7c4` | Placeholders, timestamps |
+| Muted Text | `#ADBDCC` | Placeholders, timestamps, secondary text on dark bg |
 | Borders | `#E0E6EB` | Dividers, card outlines |
+| Hero Gradient | `#6ec3f4, #3a3aff, #ff61ab, #E63946` | WebGL animated mesh — vibrant multi-hue |
 
 #### Lynia Landing Page Palette
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Primary Accent | `#635BFF` | Brand accent — logo, highlights, gradient stops |
+| Primary / CTA | `#635BFF` | Brand accent — logo, highlights, buttons, links |
 | Primary Dark | `#0A2540` | Headings, dark sections, footer, nav text |
-| CTA Blue | `#0048E5` | Buttons, links, interactive elements |
-| CTA Hover | `#003ECB` | Button/link hover state |
+| Primary Hover | `#5651E5` | Button/link hover state (darkened blurple) |
 | Light BG | `#F6F9FC` | Light section backgrounds |
 | Body Text | `#425466` | Paragraph text |
+| Muted Text | `#ADBDCC` | Placeholders, timestamps, secondary labels |
 | White | `#FFFFFF` | Backgrounds, cards |
 
 - **Full token definitions**: See [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md)
-- **Colors to avoid**: Pink, bright green (off-brand)
+- **Colors note**: Hero gradient uses vibrant warm tones (per Stripe's actual WebGL implementation); brand palette remains cool navy/blurple
 
 ### 5.3 Typography
 
@@ -352,13 +353,13 @@ Separate section or tab on the same page:
 
 | Website | Design Takeaways |
 |---------|-----------------|
-| **Stripe.com** (primary reference) | Deep navy `#0A2540` + blurple `#635BFF` + CTA blue `#0048E5`. Söhne font (we use Inter). Medium-weight headings (500). Flat illustrations. WebGL mesh gradient hero. Layered subtle shadows. Generous section padding (120px). Narrow container (~1080px). Content-heavy but uncluttered. **Our primary design language.** |
+| **Stripe.com** (primary reference) | Deep navy `#0A2540` + blurple `#635BFF` (accent AND CTA). Söhne font (we use Inter). Medium-weight headings (500), light body (300). Flat illustrations. WebGL mesh gradient hero (`#6ec3f4, #3a3aff, #ff61ab, #E63946`). Layered subtle shadows. Generous section padding (120px). Narrow container (~1080px). Content-heavy but uncluttered. **Our primary design language.** |
 | **Stripe.com/blog** | Featured hero post, category pill filters, 2-3 column card grid, custom illustrations per post, clean hierarchy. **Model for Research page.** |
 | **Stripe.com/contact/sales** | Split layout (info left, form right), single-column form, qualifying fields, clean labels, trust indicators. **Model for Contact page.** |
 | **Paystack.com** | Vibrant, uncluttered, animated illustrations. African fintech (Stripe-owned). Simple navigation. Quick onboarding feel. |
 
 **Core design language (Stripe)**:
-- Deep navy (`#0A2540`) + blurple accent (`#635BFF`) + white
+- Deep navy (`#0A2540`) + blurple (`#635BFF`) for accent AND CTA + white
 - Medium-weight headings (500), light body text (300)
 - Flat/geometric illustrations (no stock photos)
 - Generous whitespace and section padding
@@ -375,7 +376,7 @@ Separate section or tab on the same page:
 |------------|--------|
 | **Budget** | Unlimited |
 | **Must-have for launch** | All confirmed pages and features |
-| **Colors to avoid** | Pink, purple - considered too minimalist / off-brand |
+| **Colors to avoid** | Standalone pink/purple as brand colors. Note: hero gradient includes pink/red per Stripe's actual WebGL implementation — this is acceptable as gradient accent, not as brand color |
 | **Regulatory disclaimers** | RBZ (Reserve Bank of Zimbabwe) compliance required |
 | **Design style** | NOT minimalist - should feel vibrant and substantial |
 

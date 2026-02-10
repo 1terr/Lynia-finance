@@ -218,8 +218,8 @@ Stagger: `150ms` between each stat.
 |----------|-------|
 | Type | Animated gradient mesh (WebGL canvas or CSS fallback) |
 | Speed | Very slow — `0.3` speed factor, organic movement |
-| Colors | `#0A2540`, `#635BFF`, `#0048E5`, `#1A3550` |
-| Fallback | `linear-gradient(135deg, #0A2540 0%, #635BFF 50%, #0048E5 100%)` |
+| Colors | `#6ec3f4` (light blue), `#3a3aff` (vivid blue), `#ff61ab` (pink), `#E63946` (red) |
+| Fallback | `linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%)` |
 | Performance | Check `navigator.hardwareConcurrency` — disable WebGL if < 4 cores |
 | Reduced motion | Static gradient only |
 

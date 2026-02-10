@@ -11,16 +11,16 @@
 ### Brand Colors (Stripe-derived)
 
 Stripe's palette centers on a deep navy (`#0A2540`) paired with a distinctive
-blue-purple accent (`#635BFF`). We adopt the same tonal foundation, swapping
-Stripe's purple-leaning accent for a slightly bluer variant that better suits
-a financial-inclusion brand while retaining the same refined feel.
+blue-purple accent (`#635BFF`, known as "blurple"). Stripe uses blurple for
+both brand identity **and** CTA buttons — there is no separate "CTA blue".
+This unified approach creates strong brand recognition across all interactive
+elements.
 
 | Token | Hex | RGB | Usage |
 |-------|-----|-----|-------|
-| `--color-primary` | `#635BFF` | `99, 91, 255` | Brand accent — logo mark, highlights, badges, gradient stops |
+| `--color-primary` | `#635BFF` | `99, 91, 255` | Brand accent — logo mark, highlights, badges, CTA buttons, links |
 | `--color-primary-dark` | `#0A2540` | `10, 37, 64` | Primary dark — headings, dark sections, nav text |
-| `--color-cta` | `#0048E5` | `0, 72, 229` | Buttons, links, interactive elements |
-| `--color-cta-hover` | `#003ECB` | `0, 62, 203` | Button/link hover state |
+| `--color-primary-hover` | `#5651E5` | `86, 81, 229` | Button/link hover state (darkened blurple) |
 | `--color-primary-light` | `#F6F9FC` | `246, 249, 252` | Light section backgrounds |
 | `--color-primary-50` | `#EBEEF8` | `235, 238, 248` | Subtle tinted backgrounds, card hover fills |
 
@@ -30,7 +30,7 @@ a financial-inclusion brand while retaining the same refined feel.
 |-------|-----|-------|
 | `--color-text-primary` | `#0A2540` | Headlines, primary headings |
 | `--color-text-body` | `#425466` | Body copy, paragraph text |
-| `--color-text-muted` | `#aab7c4` | Placeholders, timestamps, secondary labels |
+| `--color-text-muted` | `#ADBDCC` | Placeholders, timestamps, secondary labels |
 | `--color-text-white` | `#FFFFFF` | Text on dark backgrounds |
 | `--color-text-white-secondary` | `rgba(255,255,255,0.7)` | Secondary text on dark backgrounds |
 
@@ -41,7 +41,7 @@ a financial-inclusion brand while retaining the same refined feel.
 | `--color-navy` | `#0A2540` | Dark sections, footer, hero overlay |
 | `--color-navy-light` | `#1A3550` | Dark section secondary |
 | `--color-slate` | `#425466` | Body text, descriptions |
-| `--color-gray-400` | `#aab7c4` | Muted text, disabled states |
+| `--color-gray-400` | `#ADBDCC` | Muted text, disabled states |
 | `--color-gray-300` | `#c4cdd6` | Input borders (default) |
 | `--color-border` | `#E0E6EB` | Borders, dividers, card outlines |
 | `--color-gray-100` | `#F6F9FC` | Light backgrounds (Stripe "Black Squeeze") |
@@ -55,17 +55,21 @@ a financial-inclusion brand while retaining the same refined feel.
 | `--color-success` | `#1DB954` | Success states, approved |
 | `--color-warning` | `#F59E0B` | Warning states, pending |
 | `--color-error` | `#df1b41` | Error states, rejected (Stripe danger red) |
-| `--color-info` | `#0048E5` | Info states |
+| `--color-info` | `#635BFF` | Info states |
 
 ### Gradient Definitions
 
 ```css
-/* Hero gradient — WebGL mesh (Stripe-style animated gradient) */
-/* These are the color inputs for the WebGL shader, not a CSS gradient */
---gradient-hero-colors: #0A2540, #635BFF, #0048E5, #1A3550;
+/* Hero gradient — WebGL mesh (Stripe's actual animated gradient) */
+/* Reverse-engineered from stripe.com's WebGL canvas CSS custom properties */
+/* Note: Stripe rotates these colors periodically; these are the documented values */
+--gradient-color-zero: #6ec3f4;   /* Light blue */
+--gradient-color-one: #3a3aff;    /* Vivid blue */
+--gradient-color-two: #ff61ab;    /* Pink */
+--gradient-color-three: #E63946;  /* Red */
 
 /* Hero CSS fallback (when WebGL unavailable) */
---gradient-hero: linear-gradient(135deg, #0A2540 0%, #635BFF 50%, #0048E5 100%);
+--gradient-hero: linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%);
 
 /* CTA / bottom section */
 --gradient-cta: linear-gradient(135deg, #0A2540 0%, #1A3550 100%);
@@ -317,13 +321,9 @@ module.exports = {
           DEFAULT: '#0A2540',
           light: '#1A3550',
         },
-        cta: {
-          DEFAULT: '#0048E5',  // Button/link blue
-          hover: '#003ECB',
-        },
         slate: {
           DEFAULT: '#425466',  // Body text
-          light: '#aab7c4',    // Muted text
+          light: '#ADBDCC',    // Muted text
         },
         border: '#E0E6EB',
       },
@@ -372,10 +372,11 @@ module.exports = {
 | Stripe Pattern | Lynia Adaptation |
 |---------------|-----------------|
 | Navy `#0A2540` as primary dark | Same — used for headings, dark sections, footer |
-| Blurple `#635BFF` as accent | Same — brand mark, highlights, gradients |
-| CTA blue `#0048E5` for buttons/links | Same — all interactive elements |
+| Blurple `#635BFF` as accent + CTA | Same — brand mark, buttons, links, highlights |
 | Body text `#425466` (blue-gray) | Same — all paragraph text |
+| Muted text `#ADBDCC` on dark | Same — secondary text on dark backgrounds |
 | Light background `#F6F9FC` | Same — alternating section backgrounds |
+| WebGL gradient (`#6ec3f4, #3a3aff, #ff61ab, #E63946`) | Same — vibrant multi-hue hero gradient |
 | Söhne font | Inter (closest open-source equivalent) |
 | Heading weight 500 (medium) | Same — refined, not heavy |
 | Body weight 300 (light) | Same — elegant readability |
