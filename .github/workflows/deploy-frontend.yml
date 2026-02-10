@@ -20,15 +20,23 @@ on:
           - admin-portal
           - distributor-dashboard
           - both
+  push:
+    branches:
+      - master
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
 
 concurrency:
-  group: deploy-frontend-${{ inputs.environment }}
+  group: deploy-frontend-${{ inputs.environment || 'production' }}
   cancel-in-progress: false
 
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: '20.x'
   PNPM_VERSION: '9'
+  DEPLOY_ENV: ${{ inputs.environment || 'production' }}
+  DEPLOY_APP: ${{ inputs.application || 'both' }}
 
 jobs:
   # ================================================================
@@ -61,41 +69,41 @@ jobs:
 
       - name: Run frontend linting
         run: |
-          if [ "${{ inputs.application }}" == "admin-portal" ] || [ "${{ inputs.application }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
             pnpm --filter admin-portal lint 2>/dev/null || echo "::warning::Admin portal lint issues found"
           fi
-          if [ "${{ inputs.application }}" == "distributor-dashboard" ] || [ "${{ inputs.application }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
             pnpm --filter distributor-dashboard lint 2>/dev/null || echo "::warning::Distributor dashboard lint issues found"
           fi
 
       - name: Run frontend tests
         run: |
-          if [ "${{ inputs.application }}" == "admin-portal" ] || [ "${{ inputs.application }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
             pnpm --filter admin-portal test 2>/dev/null || echo "::warning::Admin portal tests failed"
           fi
-          if [ "${{ inputs.application }}" == "distributor-dashboard" ] || [ "${{ inputs.application }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
             pnpm --filter distributor-dashboard test 2>/dev/null || echo "::warning::Distributor dashboard tests failed"
           fi
 
       - name: Build admin portal
         id: build-admin
-        if: inputs.application == 'admin-portal' || inputs.application == 'both'
+        if: env.DEPLOY_APP == 'admin-portal' || env.DEPLOY_APP == 'both'
         run: pnpm --filter admin-portal build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_ENVIRONMENT: ${{ inputs.environment }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
 
       - name: Build distributor dashboard
         id: build-distributor
-        if: inputs.application == 'distributor-dashboard' || inputs.application == 'both'
+        if: env.DEPLOY_APP == 'distributor-dashboard' || env.DEPLOY_APP == 'both'
         run: pnpm --filter distributor-dashboard build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
-          NEXT_PUBLIC_ENVIRONMENT: ${{ inputs.environment }}
+          NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
 
       - name: Upload admin portal build
         if: steps.build-admin.outcome == 'success'
@@ -120,9 +128,9 @@ jobs:
     name: Deploy Admin Portal
     runs-on: ubuntu-latest
     needs: build-test
-    if: inputs.application == 'admin-portal' || inputs.application == 'both'
+    if: ${{ (inputs.application || 'both') == 'admin-portal' || (inputs.application || 'both') == 'both' }}
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.get-url.outputs.url }}
 
     steps:
@@ -143,7 +151,7 @@ jobs:
         id: blue-green
         run: |
           DEPLOY_VERSION="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
-          BUCKET="${{ inputs.environment }}-lynia-admin-portal"
+          BUCKET="${{ env.DEPLOY_ENV }}-lynia-admin-portal"
 
           echo "deploy_version=$DEPLOY_VERSION" >> $GITHUB_OUTPUT
           echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
@@ -213,7 +221,7 @@ jobs:
       - name: Invalidate CloudFront cache
         run: |
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalDistributionId`].OutputValue' \
             --output text 2>/dev/null || echo "")
 
@@ -232,9 +240,9 @@ jobs:
         id: get-url
         run: |
           URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalUrl`].OutputValue' \
-            --output text 2>/dev/null || echo "https://${{ inputs.environment }}-admin.lyniafinance.co.zw")
+            --output text 2>/dev/null || echo "https://${{ env.DEPLOY_ENV }}-admin.lyniafinance.co.zw")
           echo "url=$URL" >> $GITHUB_OUTPUT
           echo "Admin Portal URL: $URL"
 
@@ -256,9 +264,9 @@ jobs:
     name: Deploy Distributor Dashboard
     runs-on: ubuntu-latest
     needs: build-test
-    if: inputs.application == 'distributor-dashboard' || inputs.application == 'both'
+    if: ${{ (inputs.application || 'both') == 'distributor-dashboard' || (inputs.application || 'both') == 'both' }}
     environment:
-      name: ${{ inputs.environment }}
+      name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.get-url.outputs.url }}
 
     steps:
@@ -279,7 +287,7 @@ jobs:
         id: blue-green
         run: |
           DEPLOY_VERSION="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
-          BUCKET="${{ inputs.environment }}-lynia-distributor-dashboard"
+          BUCKET="${{ env.DEPLOY_ENV }}-lynia-distributor-dashboard"
 
           echo "deploy_version=$DEPLOY_VERSION" >> $GITHUB_OUTPUT
           echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
@@ -337,7 +345,7 @@ jobs:
       - name: Invalidate CloudFront cache
         run: |
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardDistributionId`].OutputValue' \
             --output text 2>/dev/null || echo "")
 
@@ -351,9 +359,9 @@ jobs:
         id: get-url
         run: |
           URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ inputs.environment }}-lynia-frontend \
+            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardUrl`].OutputValue' \
-            --output text 2>/dev/null || echo "https://${{ inputs.environment }}-distributor.lyniafinance.co.zw")
+            --output text 2>/dev/null || echo "https://${{ env.DEPLOY_ENV }}-distributor.lyniafinance.co.zw")
           echo "url=$URL" >> $GITHUB_OUTPUT
 
   # ================================================================
@@ -378,12 +386,12 @@ jobs:
           curl -s -X POST "${{ vars.SLACK_WEBHOOK_URL }}" \
             -H 'Content-type: application/json' \
             -d "{
-              \"text\": \"Frontend deployment to ${{ inputs.environment }}: ${STATUS}\",
+              \"text\": \"Frontend deployment to ${{ env.DEPLOY_ENV }}: ${STATUS}\",
               \"attachments\": [{
                 \"color\": \"$([ \"$STATUS\" == \"success\" ] && echo 'good' || echo 'danger')\",
                 \"fields\": [
-                  {\"title\": \"Application\", \"value\": \"${{ inputs.application }}\", \"short\": true},
-                  {\"title\": \"Environment\", \"value\": \"${{ inputs.environment }}\", \"short\": true}
+                  {\"title\": \"Application\", \"value\": \"${{ env.DEPLOY_APP }}\", \"short\": true},
+                  {\"title\": \"Environment\", \"value\": \"${{ env.DEPLOY_ENV }}\", \"short\": true}
                 ]
               }]
             }" || true
