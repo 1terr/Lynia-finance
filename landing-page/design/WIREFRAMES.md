@@ -1,6 +1,7 @@
 # Wireframes — Lynia Finance Landing Page
 
 > Mobile-first wireframes with desktop adaptations.
+> Design language follows [stripe.com](https://stripe.com).
 > Reference [`COMPONENTS.md`](./COMPONENTS.md) for detailed component specs.
 > Reference [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md) for all spacing and sizing values.
 
@@ -333,9 +334,9 @@ Features: 4 columns within text column (or 2×2)
 
 ```
 ┌─────────────────────────────────────┐
-│            (navy bg #0A1628)         │
+│            (navy bg #0A2540)         │
 │                                     │
-│  DIGITAL CREDIT                     │  (accent-2 color)
+│  DIGITAL CREDIT                     │  (#635BFF blurple on dark)
 │                                     │
 │  Cash when you need                 │  (white text)
 │  it most                            │
@@ -377,7 +378,7 @@ Features: single column (stacked)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                      (navy bg #0A1628)                        │
+│                      (navy bg #0A2540)                        │
 │                                                              │
 │  ┌────────────────────────┐ ┌────────────────────────────┐   │
 │  │                        │ │                            │   │
@@ -720,7 +721,7 @@ CTAs: inline row, centered
 
 ```
 ┌─────────────────────────────────────┐
-│             (navy bg)                │
+│             (navy bg #0A2540)                │
 │                                     │
 │  [Logo - white]                     │
 │                                     │
@@ -762,7 +763,7 @@ Layout: single column, stacked groups
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                            (navy bg)                          │
+│                            (navy bg #0A2540)                          │
 │                                                              │
 │  [Logo - white variant]                                      │
 │                                                              │

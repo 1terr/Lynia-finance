@@ -1,6 +1,7 @@
 # Animations & Interactions — Lynia Finance Landing Page
 
 > Detailed specifications for all motion, transitions, and interactive behaviors.
+> Design language follows [stripe.com](https://stripe.com).
 > Reference [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md) for timing and easing values.
 
 ---
@@ -143,7 +144,7 @@ Stagger: `150ms` between each stat.
 
 | Type | Hover Animation | Active Animation |
 |------|----------------|-----------------|
-| Primary | Background darkens (`primary→primary-dark`), `var(--shadow-md)` appears, `150ms` | `scale(0.98)`, shadow reduces, `100ms` |
+| Primary | Background darkens (`cta→cta-hover`), `var(--shadow-md)` appears, `150ms` | `scale(0.98)`, shadow reduces, `100ms` |
 | Secondary (text) | Color darkens, arrow shifts right `4px`, `150ms` | `opacity: 0.8`, `100ms` |
 | Ghost | Background gains `rgba(255,255,255,0.1)`, border brightens, `150ms` | `scale(0.98)`, `100ms` |
 | Disabled | No hover effect | No active effect |
@@ -217,8 +218,8 @@ Stagger: `150ms` between each stat.
 |----------|-------|
 | Type | Animated gradient mesh (WebGL canvas or CSS fallback) |
 | Speed | Very slow — `0.3` speed factor, organic movement |
-| Colors | `#0052FF`, `#003ECB`, `#0A1628`, `#3B7BF6`, `#60A5FA` |
-| Fallback | Static CSS gradient for no-JS or low-end devices |
+| Colors | `#0A2540`, `#635BFF`, `#0048E5`, `#1A3550` |
+| Fallback | `linear-gradient(135deg, #0A2540 0%, #635BFF 50%, #0048E5 100%)` |
 | Performance | Check `navigator.hardwareConcurrency` — disable WebGL if < 4 cores |
 | Reduced motion | Static gradient only |
 

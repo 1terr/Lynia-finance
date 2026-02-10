@@ -141,32 +141,34 @@ Established brand voice applies:
 
 ### 5.2 Color Palette
 
-**Direction**: Vibrant blue like Stanbic Bank or Coinbase - bold, trustworthy, modern.
+**Direction**: Follow Stripe.com's design language — deep navy paired with a refined blue-purple accent. Sophisticated, trustworthy, professional.
 
-#### Reference Palettes
+#### Reference Palette (Stripe.com)
 
-| Brand | Primary Blue | Dark | Light |
-|-------|-------------|------|-------|
-| Coinbase | `#0052FF` | `#0A0B0D` | `#FFFFFF` |
-| Moniepoint | `#0357EE` | `#02102D` | `#FFFFFF` |
-| Stanbic Bank | `#4881B0` | `#0A2240` | `#FFFFFF` |
-| Current Lynia (admin) | `#2563eb` | `#1e3a8a` | `#eff6ff` |
+| Element | Hex | Name |
+|---------|-----|------|
+| Primary Dark / Navy | `#0A2540` | "Downriver" — trust, stability, professionalism |
+| Brand Accent | `#635BFF` | "Blurple" — modernity, approachability |
+| CTA Blue | `#0048E5` | Buttons, links, interactive elements |
+| Light Background | `#F6F9FC` | "Black Squeeze" — alternating section bg |
+| Body Text | `#425466` | Blue-gray body copy |
+| Muted Text | `#aab7c4` | Placeholders, timestamps |
+| Borders | `#E0E6EB` | Dividers, card outlines |
 
-#### Recommended Lynia Landing Page Palette
+#### Lynia Landing Page Palette
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| Primary | `#0052FF` | Brand blue (Coinbase-inspired, vibrant) |
-| Primary Dark | `#003ECB` | Hover states, active elements |
-| Primary Light | `#E6EEFF` | Backgrounds, cards |
-| Dark / Navy | `#0A1628` | Text, headers, dark sections |
-| White | `#FFFFFF` | Backgrounds |
-| Black | `#0A0A0A` | Body text |
-| Accent Blue 1 | `#3B7BF6` | Secondary buttons, links |
-| Accent Blue 2 | `#60A5FA` | Highlights, badges |
+| Primary Accent | `#635BFF` | Brand accent — logo, highlights, gradient stops |
+| Primary Dark | `#0A2540` | Headings, dark sections, footer, nav text |
+| CTA Blue | `#0048E5` | Buttons, links, interactive elements |
+| CTA Hover | `#003ECB` | Button/link hover state |
+| Light BG | `#F6F9FC` | Light section backgrounds |
+| Body Text | `#425466` | Paragraph text |
+| White | `#FFFFFF` | Backgrounds, cards |
 
-- **Additional accents**: Blue variations, white, and black only
-- **Colors to avoid**: Pink, purple (too minimalist / off-brand)
+- **Full token definitions**: See [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md)
+- **Colors to avoid**: Pink, bright green (off-brand)
 
 ### 5.3 Typography
 
@@ -350,19 +352,19 @@ Separate section or tab on the same page:
 
 | Website | Design Takeaways |
 |---------|-----------------|
-| **Stripe.com** | Clean typography (Söhne), flat illustrations, gradient backgrounds, smooth animations, content-heavy but uncluttered. Premium fintech feel. |
+| **Stripe.com** (primary reference) | Deep navy `#0A2540` + blurple `#635BFF` + CTA blue `#0048E5`. Söhne font (we use Inter). Medium-weight headings (500). Flat illustrations. WebGL mesh gradient hero. Layered subtle shadows. Generous section padding (120px). Narrow container (~1080px). Content-heavy but uncluttered. **Our primary design language.** |
 | **Stripe.com/blog** | Featured hero post, category pill filters, 2-3 column card grid, custom illustrations per post, clean hierarchy. **Model for Research page.** |
 | **Stripe.com/contact/sales** | Split layout (info left, form right), single-column form, qualifying fields, clean labels, trust indicators. **Model for Contact page.** |
-| **Moniepoint.com** | Bold blue (`#0357EE`) + deep navy (`#02102D`). African fintech. Trust-focused. "Kamona" design system. Clean sections. |
 | **Paystack.com** | Vibrant, uncluttered, animated illustrations. African fintech (Stripe-owned). Simple navigation. Quick onboarding feel. |
 
-**Common patterns across all three**:
-- Bold blue primary color with dark navy + white
+**Core design language (Stripe)**:
+- Deep navy (`#0A2540`) + blurple accent (`#635BFF`) + white
+- Medium-weight headings (500), light body text (300)
 - Flat/geometric illustrations (no stock photos)
-- Clean sans-serif typography
-- Generous whitespace
-- Subtle animations on scroll
-- Strong hero section with clear CTA
+- Generous whitespace and section padding
+- Subtle layered shadows, restrained border radius
+- Smooth scroll-triggered animations
+- Strong hero section with WebGL gradient + clear CTA
 - Mobile-first responsive design
 
 ---

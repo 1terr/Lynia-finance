@@ -1,6 +1,7 @@
 # Component Specifications — Lynia Finance Landing Page
 
 > Detailed specs for every reusable UI component.
+> Design language follows [stripe.com](https://stripe.com).
 > Reference [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md) for all values.
 
 ---
@@ -44,7 +45,7 @@
 | Position | `sticky`, `top: 0` |
 | Background | Transparent at top → `rgba(255,255,255,0.95)` on scroll |
 | Backdrop filter | `blur(12px)` (on scroll) |
-| Border bottom | `1px solid var(--color-gray-200)` (on scroll, hidden at top) |
+| Border bottom | `1px solid var(--color-border)` (on scroll, hidden at top) |
 | Z-index | `var(--z-sticky)` (100) |
 | Container | `max-width: var(--container-max)` centered with `var(--container-padding)` |
 | Transition | Background `var(--duration-normal)` `var(--easing-default)` |
@@ -63,9 +64,9 @@
 |----------|-------|
 | Font | `var(--text-body-sm)` / `15px` |
 | Weight | `var(--font-medium)` / `500` |
-| Color (default) | `var(--color-gray-700)` |
-| Color (hover) | `var(--color-black)` |
-| Color (on dark hero) | `var(--color-white)` at top → `var(--color-gray-700)` on scroll |
+| Color (default) | `var(--color-slate)` / `#425466` |
+| Color (hover) | `var(--color-primary-dark)` / `#0A2540` |
+| Color (on dark hero) | `var(--color-white)` at top → `var(--color-slate)` on scroll |
 | Spacing | `32px` between items |
 | Transition | Color `var(--duration-fast)` |
 | Underline | None. Optional: 2px bottom border on active page |
@@ -85,7 +86,7 @@
 
 1. On page load (hero visible): transparent background, white text links
 2. On scroll past hero: solid white background, dark text links, bottom border visible
-3. Transition between states is smooth (`250ms`)
+3. Transition between states is smooth (`200ms`)
 
 ---
 
@@ -95,16 +96,16 @@
 
 | Property | Value |
 |----------|-------|
-| Background | `var(--color-primary)` |
+| Background | `var(--color-cta)` / `#0048E5` |
 | Text color | `var(--color-white)` |
-| Font | `var(--text-body-sm)` / `15px`, `var(--font-semibold)` |
+| Font | `var(--text-body-sm)` / `15px`, `var(--font-medium)` / `500` |
 | Padding | `12px 24px` |
 | Border radius | `var(--radius-md)` / `8px` |
 | Min width | `120px` |
 | Height | `44px` |
-| Hover | Background `var(--color-primary-dark)`, shadow `var(--shadow-md)` |
+| Hover | Background `var(--color-cta-hover)` / `#003ECB`, shadow `var(--shadow-md)` |
 | Active | Scale `0.98`, shadow `var(--shadow-sm)` |
-| Focus | `2px` outline, `var(--color-accent-2)`, `2px` offset |
+| Focus | `2px` outline, `var(--color-primary)` / `#635BFF`, `2px` offset |
 | Disabled | `opacity: 0.5`, `cursor: not-allowed` |
 | Transition | All `var(--duration-fast)` |
 
@@ -113,11 +114,11 @@
 | Property | Value |
 |----------|-------|
 | Background | Transparent |
-| Text color | `var(--color-primary)` |
+| Text color | `var(--color-cta)` / `#0048E5` |
 | Font | `var(--text-body-sm)` / `15px`, `var(--font-medium)` |
 | Padding | `12px 0` |
 | Icon | Right arrow `→` (`16px`), `4px` gap |
-| Hover | Text color `var(--color-primary-dark)`, arrow shifts right `4px` |
+| Hover | Text color `var(--color-cta-hover)`, arrow shifts right `4px` |
 | Transition | All `var(--duration-fast)` |
 
 ### Ghost Button (on dark backgrounds)
@@ -135,8 +136,8 @@
 
 | Property | Value |
 |----------|-------|
-| Background | `var(--color-gray-200)` |
-| Text color | `var(--color-gray-500)` |
+| Background | `var(--color-border)` / `#E0E6EB` |
+| Text color | `var(--color-gray-400)` / `#aab7c4` |
 | Cursor | `not-allowed` |
 | No hover effects | |
 
@@ -161,18 +162,18 @@
 | Content layout | CSS Grid, 2 columns (`1fr 1fr`), `gap: 48px` |
 | Container | `max-width: var(--container-max)`, centered |
 | Vertical alignment | Center |
-| Padding | `var(--space-40)` top, `var(--space-24)` bottom |
+| Padding | `var(--space-28)` top and bottom / `120px` |
 
 ### Left Column (Text)
 
 | Element | Specification |
 |---------|--------------|
-| Headline | `var(--text-display)` / `72px`, `var(--font-bold)`, `var(--color-white)`, `var(--tracking-tight)` |
-| Subtext | `var(--text-body-lg)` / `20px`, `var(--font-regular)`, `rgba(255,255,255,0.8)`, `max-width: 520px` |
+| Headline | `var(--text-display)` / `64px`, `var(--font-medium)` / `500`, `var(--color-white)`, `letter-spacing: 0` |
+| Subtext | `var(--text-body-lg)` / `20px`, `var(--font-regular)` / `400`, `rgba(255,255,255,0.7)`, `max-width: 520px` |
 | Gap headline → subtext | `var(--space-6)` / `24px` |
 | Gap subtext → CTAs | `var(--space-8)` / `32px` |
 | CTA row | Flex, `gap: 16px`, items center-aligned |
-| Primary CTA | Primary button (large size, white bg with primary text on dark hero) |
+| Primary CTA | Primary button (large size, white bg with `var(--color-cta)` text on dark hero) |
 | Secondary CTA | Text link, white color, arrow right |
 
 ### Right Column (Visual)
@@ -189,7 +190,7 @@
 | Change | Value |
 |--------|-------|
 | Grid | Single column |
-| Headline | `var(--text-h1)` mobile scale (`40px`) |
+| Headline | `36px` (mobile scale) |
 | Visual | Hidden or reduced size below hero text |
 | Padding | `var(--space-20)` top |
 | Min height | `auto` (not full viewport) |
@@ -198,9 +199,9 @@
 
 | Property | Value |
 |----------|-------|
-| Colors | `#0052FF`, `#003ECB`, `#0A1628`, `#3B7BF6`, `#60A5FA` |
-| Animation | Slow-moving gradient blobs, `0.3` speed factor |
-| Fallback | `background: linear-gradient(135deg, #0052FF 0%, #003ECB 50%, #0A1628 100%)` |
+| Colors | `#0A2540`, `#635BFF`, `#0048E5`, `#1A3550` |
+| Animation | Slow-moving gradient mesh, `0.3` speed factor |
+| Fallback | `background: linear-gradient(135deg, #0A2540 0%, #635BFF 50%, #0048E5 100%)` |
 | Performance | Reduce to CSS gradient on `prefers-reduced-motion` or low-end devices |
 
 ---
@@ -211,10 +212,10 @@
 
 | Property | Value |
 |----------|-------|
-| Background | `var(--color-gray-50)` or `var(--color-white)` |
+| Background | `var(--color-white)` or `var(--color-gray-100)` / `#F6F9FC` |
 | Padding | `var(--space-10)` vertical |
 | Content | Centered label + horizontal logo row |
-| Label | `var(--text-caption)`, `var(--color-gray-500)`, uppercase, `var(--tracking-wide)` |
+| Label | `var(--text-caption)`, `var(--color-text-muted)` / `#aab7c4`, uppercase, `var(--tracking-wide)` |
 | Logo container | Flex, `gap: 48px`, center-aligned, `flex-wrap: wrap` |
 | Logo height | `28px–36px`, grayscale by default |
 | Logo hover | Full color, `var(--duration-normal)` transition |
@@ -245,7 +246,7 @@ Used in Section 3 (Product Suite Overview).
 | Property | Value |
 |----------|-------|
 | Background | `var(--color-white)` |
-| Border | `1px solid var(--color-gray-200)` |
+| Border | `1px solid var(--color-border)` / `#E0E6EB` |
 | Border radius | `var(--radius-lg)` / `12px` |
 | Padding | `var(--space-8)` / `32px` |
 | Shadow (default) | `var(--shadow-sm)` |
@@ -258,10 +259,10 @@ Used in Section 3 (Product Suite Overview).
 | Element | Specification |
 |---------|--------------|
 | Illustration | `64px` height area, centered, flat SVG illustration |
-| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-primary)` |
-| Headline | `var(--text-h3)`, `var(--color-navy)` |
-| Description | `var(--text-body)`, `var(--color-gray-700)`, max 2 lines |
-| Link | Secondary button style, `var(--color-primary)`, arrow right |
+| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-cta)` / `#0048E5` |
+| Headline | `var(--text-h3)`, `var(--font-medium)`, `var(--color-primary-dark)` / `#0A2540` |
+| Description | `var(--text-body)`, `var(--color-text-body)` / `#425466`, max 2 lines |
+| Link | Secondary button style, `var(--color-cta)`, arrow right |
 
 ### Grid
 
@@ -298,7 +299,7 @@ Desktop:
 | Property | Value |
 |----------|-------|
 | Layout | CSS Grid, `1fr 1fr`, `gap: var(--grid-gap-xl)` / `48px` |
-| Vertical padding | `var(--space-24)` / `96px` |
+| Vertical padding | `var(--space-28)` / `120px` |
 | Container | `max-width: var(--container-max)`, centered |
 | Vertical align | Center both columns |
 
@@ -306,9 +307,9 @@ Desktop:
 
 | Section | Background | Text Color |
 |---------|-----------|------------|
-| Asset Financing (#4) | `var(--color-white)` | Dark text |
-| Digital Credit (#5) | `var(--color-navy)` | White text |
-| Enterprise (#6) | `var(--color-gray-50)` | Dark text |
+| Asset Financing (#4) | `var(--color-white)` | Dark text (`#0A2540` / `#425466`) |
+| Digital Credit (#5) | `var(--color-navy)` / `#0A2540` | White text |
+| Enterprise (#6) | `var(--color-gray-100)` / `#F6F9FC` | Dark text (`#0A2540` / `#425466`) |
 
 ### Alternating Layout Direction
 
@@ -322,9 +323,9 @@ Desktop:
 
 | Element | Specification |
 |---------|--------------|
-| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-primary)` (or `var(--color-accent-2)` on dark bg) |
-| Headline | `var(--text-h1)`, `var(--font-bold)`, `var(--tracking-tight)` |
-| Description | `var(--text-body-lg)`, `var(--color-gray-700)` (or `rgba(255,255,255,0.7)` on dark) |
+| Label | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-cta)` (or `var(--color-primary)` / `#635BFF` on dark bg) |
+| Headline | `var(--text-h1)`, `var(--font-medium)` / `500`, `letter-spacing: 0` |
+| Description | `var(--text-body-lg)`, `var(--color-text-body)` / `#425466` (or `rgba(255,255,255,0.7)` on dark) |
 | Gap: label → headline | `var(--space-4)` |
 | Gap: headline → description | `var(--space-6)` |
 | Gap: description → features | `var(--space-10)` |
@@ -368,9 +369,9 @@ Used inside product deep-dive sections.
 | Property | Value |
 |----------|-------|
 | Layout | Grid item in a 2, 3, or 4-column grid (responsive) |
-| Icon | Lucide icon, `var(--icon-lg)` / `24px`, `var(--color-primary)` (or `var(--color-accent-2)` on dark bg) |
-| Title | `var(--text-h5)` / `20px`, `var(--font-semibold)` |
-| Description | `var(--text-body-sm)` / `15px`, `var(--color-gray-700)` (or `rgba(255,255,255,0.7)`) |
+| Icon | Lucide icon, `var(--icon-lg)` / `24px`, `var(--color-cta)` / `#0048E5` (or `var(--color-primary)` / `#635BFF` on dark bg) |
+| Title | `var(--text-h5)` / `18px`, `var(--font-medium)` / `500` |
+| Description | `var(--text-body-sm)` / `15px`, `var(--color-text-body)` / `#425466` (or `rgba(255,255,255,0.7)`) |
 | Gap: icon → title | `var(--space-3)` / `12px` |
 | Gap: title → description | `var(--space-2)` / `8px` |
 
@@ -404,7 +405,7 @@ Used in Section 7 (Why Alternative Financing).
 | Property | Value |
 |----------|-------|
 | Layout | 4-column grid on desktop, 2-column on mobile |
-| Number | `var(--text-display)` / `72px`, `var(--font-bold)`, `var(--color-white)` |
+| Number | `var(--text-display)` / `64px`, `var(--font-medium)` / `500`, `var(--color-white)` |
 | Description | `var(--text-body)`, `rgba(255,255,255,0.7)` |
 | Gap: number → description | `var(--space-3)` |
 | Text alignment | Center (desktop), left (mobile) |
@@ -415,9 +416,9 @@ Used in Section 7 (Why Alternative Financing).
 | Property | Value |
 |----------|-------|
 | Background | `var(--gradient-stats)` |
-| Padding | `var(--space-24)` vertical |
-| Headline | `var(--text-h1)`, `var(--color-white)`, centered |
-| Supporting text | `var(--text-body-lg)`, `rgba(255,255,255,0.8)`, centered, `max-width: 680px` |
+| Padding | `var(--space-28)` / `120px` vertical |
+| Headline | `var(--text-h1)`, `var(--font-medium)`, `var(--color-white)`, centered |
+| Supporting text | `var(--text-body-lg)`, `rgba(255,255,255,0.7)`, centered, `max-width: 680px` |
 | Gap: headline → stats | `var(--space-16)` |
 | Gap: stats → supporting text | `var(--space-12)` |
 
@@ -448,15 +449,15 @@ Used in Section 8 (Customer Segments).
 | Property | Value |
 |----------|-------|
 | Background | `var(--color-white)` |
-| Border | `1px solid var(--color-gray-200)` |
+| Border | `1px solid var(--color-border)` / `#E0E6EB` |
 | Border radius | `var(--radius-lg)` |
 | Padding | `var(--space-8)` / `32px` |
 | Shadow | `var(--shadow-sm)` |
 | Hover shadow | `var(--shadow-lg)` |
 | Hover transform | `translateY(-4px)` |
 | Transition | All `var(--duration-normal)` |
-| Overline | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-primary)` |
-| Description | `var(--text-body)`, `var(--color-gray-700)` |
+| Overline | `var(--text-overline)`, uppercase, `var(--tracking-wider)`, `var(--color-cta)` / `#0048E5` |
+| Description | `var(--text-body)`, `var(--color-text-body)` / `#425466` |
 | Link | Secondary button style |
 | Grid | 3 columns (desktop) → 1 column (mobile) |
 
@@ -487,7 +488,7 @@ Used in Section 9 (Editorial) and Research page.
 | Property | Value |
 |----------|-------|
 | Background | `var(--color-white)` |
-| Border | `1px solid var(--color-gray-200)` |
+| Border | `1px solid var(--color-border)` |
 | Border radius | `var(--radius-lg)` |
 | Overflow | `hidden` (for image) |
 | Shadow (default) | None or `var(--shadow-sm)` |
@@ -502,17 +503,17 @@ Used in Section 9 (Editorial) and Research page.
 |----------|-------|
 | Aspect ratio | `16 / 9` |
 | Object fit | `cover` |
-| Background | `var(--color-primary-light)` (placeholder while loading) |
+| Background | `var(--color-primary-light)` / `#F6F9FC` (placeholder while loading) |
 
 ### Text Area
 
 | Property | Value |
 |----------|-------|
 | Padding | `var(--space-6)` / `24px` |
-| Category tag | Pill style — `var(--text-caption)`, `var(--font-medium)`, `var(--color-primary)`, `background: var(--color-primary-50)`, `padding: 4px 12px`, `border-radius: var(--radius-full)` |
-| Headline | `var(--text-h4)`, `var(--font-semibold)`, `var(--color-navy)` |
-| Excerpt | `var(--text-body-sm)`, `var(--color-gray-700)`, max 2 lines (`-webkit-line-clamp: 2`) |
-| Date | `var(--text-caption)`, `var(--color-gray-500)` |
+| Category tag | Pill style — `var(--text-caption)`, `var(--font-medium)`, `var(--color-cta)` / `#0048E5`, `background: var(--color-primary-50)` / `#EBEEF8`, `padding: 4px 12px`, `border-radius: var(--radius-full)` |
+| Headline | `var(--text-h4)`, `var(--font-medium)`, `var(--color-primary-dark)` / `#0A2540` |
+| Excerpt | `var(--text-body-sm)`, `var(--color-text-body)` / `#425466`, max 2 lines (`-webkit-line-clamp: 2`) |
+| Date | `var(--text-caption)`, `var(--color-text-muted)` / `#aab7c4` |
 | Gaps | Tag → headline: `var(--space-3)`, headline → excerpt: `var(--space-2)`, excerpt → date: `var(--space-4)` |
 
 ---
@@ -525,15 +526,15 @@ Used in Section 10 (Bottom CTA).
 
 | Property | Value |
 |----------|-------|
-| Background | `var(--gradient-cta)` or `var(--color-navy)` |
-| Padding | `var(--space-24)` vertical |
+| Background | `var(--gradient-cta)` or `var(--color-navy)` / `#0A2540` |
+| Padding | `var(--space-28)` / `120px` vertical |
 | Text align | Center |
-| Headline | `var(--text-h1)`, `var(--color-white)`, `var(--font-bold)` |
-| Description | `var(--text-body-lg)`, `rgba(255,255,255,0.8)`, `max-width: 560px`, centered |
+| Headline | `var(--text-h1)`, `var(--color-white)`, `var(--font-medium)` / `500` |
+| Description | `var(--text-body-lg)`, `rgba(255,255,255,0.7)`, `max-width: 560px`, centered |
 | Gap: headline → description | `var(--space-6)` |
 | Gap: description → buttons | `var(--space-8)` |
 | Button row | Flex, center, `gap: 16px` |
-| Primary CTA | Large white button (`background: white`, `color: var(--color-primary)`) |
+| Primary CTA | Large white button (`background: white`, `color: var(--color-cta)`) |
 | Secondary CTA | Ghost button or white text link |
 
 ---
@@ -546,20 +547,22 @@ Used in Section 10 (Bottom CTA).
 |----------|-------|
 | Height | `48px` |
 | Background | `var(--color-white)` |
-| Border | `1px solid var(--color-gray-300)` |
-| Border (focus) | `2px solid var(--color-primary)` |
+| Border | `1px solid var(--color-gray-300)` / `#c4cdd6` |
+| Border (focus) | `1px solid var(--color-cta)` / `#0048E5` |
+| Box shadow (focus) | `var(--shadow-input)` / `0px 3px 10px rgba(18, 42, 66, 0.08)` |
 | Border radius | `var(--radius-sm)` / `6px` |
 | Padding | `12px 16px` |
-| Font | `var(--text-body)` / `17px` |
-| Placeholder | `var(--color-gray-400)` |
-| Transition | Border `var(--duration-fast)` |
+| Font | `var(--text-body)` / `18px`, `var(--font-regular)` / `400` |
+| Color | `var(--color-primary-dark)` / `#0A2540` |
+| Placeholder | `var(--color-text-muted)` / `#aab7c4` |
+| Transition | Border and shadow `var(--duration-fast)` |
 
 ### Label
 
 | Property | Value |
 |----------|-------|
-| Font | `var(--text-body-sm)`, `var(--font-medium)` |
-| Color | `var(--color-gray-900)` |
+| Font | `var(--text-body-sm)`, `var(--font-medium)` / `500` |
+| Color | `var(--color-primary-dark)` / `#0A2540` |
 | Margin bottom | `var(--space-2)` / `8px` |
 | Required marker | `*` in `var(--color-error)` |
 
@@ -576,7 +579,7 @@ Used in Section 10 (Bottom CTA).
 | Property | Value |
 |----------|-------|
 | Same as text input |
-| Custom dropdown arrow | Lucide `chevron-down` icon, `var(--color-gray-500)` |
+| Custom dropdown arrow | Lucide `chevron-down` icon, `var(--color-text-muted)` |
 
 ### Phone Input
 
@@ -590,7 +593,7 @@ Used in Section 10 (Bottom CTA).
 
 | Property | Value |
 |----------|-------|
-| Border | `1px solid var(--color-error)` |
+| Border | `1px solid var(--color-error)` / `#df1b41` |
 | Error message | `var(--text-caption)`, `var(--color-error)`, below input |
 | Icon | Lucide `alert-circle`, `16px`, `var(--color-error)` |
 
@@ -618,17 +621,17 @@ Desktop (4-column grid):
 
 | Property | Value |
 |----------|-------|
-| Background | `var(--color-navy)` |
+| Background | `var(--color-navy)` / `#0A2540` |
 | Padding | `var(--space-16)` top, `var(--space-8)` bottom |
 | Container | `max-width: var(--container-max)`, centered |
 | Logo | White variant, `120px` width, margin-bottom `var(--space-10)` |
-| Column title | `var(--text-caption)`, uppercase, `var(--tracking-wide)`, `rgba(255,255,255,0.5)` |
+| Column title | `var(--text-caption)`, uppercase, `var(--tracking-wide)`, `rgba(255,255,255,0.4)` |
 | Column links | `var(--text-body-sm)`, `rgba(255,255,255,0.7)`, hover: `var(--color-white)` |
 | Link line height | `var(--space-10)` / `40px` vertical rhythm |
 | Grid | 4 columns (desktop), 2 columns (tablet), 1 column (mobile) |
 | Divider | `1px solid rgba(255,255,255,0.1)`, `margin: var(--space-10) 0` |
-| Copyright | `var(--text-caption)`, `rgba(255,255,255,0.4)` |
-| Regulatory | `var(--text-caption)`, `rgba(255,255,255,0.4)` |
+| Copyright | `var(--text-caption)`, `rgba(255,255,255,0.3)` |
+| Regulatory | `var(--text-caption)`, `rgba(255,255,255,0.3)` |
 
 ---
 
@@ -641,7 +644,7 @@ Desktop (4-column grid):
 | Position | Fixed, bottom-right |
 | Bottom offset | `24px` |
 | Right offset | `24px` |
-| Size | `56px` × `56px` |
+| Size | `56px` x `56px` |
 | Background | `#25D366` (WhatsApp green) |
 | Border radius | `var(--radius-full)` (circle) |
 | Icon | WhatsApp logo, white, `28px` |
@@ -684,11 +687,11 @@ Reusable overline label used in product sections and other areas.
 | Property | Value |
 |----------|-------|
 | Font | `var(--text-overline)` / `13px` |
-| Weight | `var(--font-semibold)` |
+| Weight | `var(--font-medium)` / `500` |
 | Case | Uppercase |
 | Letter spacing | `var(--tracking-wider)` / `0.1em` |
-| Color (light bg) | `var(--color-primary)` |
-| Color (dark bg) | `var(--color-accent-2)` |
+| Color (light bg) | `var(--color-cta)` / `#0048E5` |
+| Color (dark bg) | `var(--color-primary)` / `#635BFF` |
 | Margin bottom | `var(--space-4)` (before headline) |
 
 ---
@@ -701,19 +704,18 @@ Reusable wrapper for all homepage sections.
 
 | Property | Value |
 |----------|-------|
-| Max width | `var(--container-max)` / `1280px` |
+| Max width | `var(--container-max)` / `1080px` |
 | Padding horizontal | `var(--container-padding)` (mobile) / `var(--container-padding-lg)` (desktop) |
-| Padding vertical | `var(--space-24)` (desktop) / `var(--space-16)` (mobile) |
+| Padding vertical | `var(--space-28)` / `120px` (desktop) / `var(--space-16)` / `64px` (mobile) |
 | Margin | `0 auto` (centered) |
 
 ### Background Variants
 
 | Variant | Background |
 |---------|-----------|
-| White (default) | `var(--color-white)` |
-| Light | `var(--color-gray-50)` |
-| Primary light | `var(--color-primary-light)` |
-| Dark | `var(--color-navy)` |
+| White (default) | `var(--color-white)` / `#FFFFFF` |
+| Light | `var(--color-gray-100)` / `#F6F9FC` |
+| Dark | `var(--color-navy)` / `#0A2540` |
 | Gradient | `var(--gradient-stats)` or `var(--gradient-cta)` |
 
 ---

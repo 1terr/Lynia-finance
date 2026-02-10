@@ -1,6 +1,7 @@
 # Design Handoff — Lynia Finance Landing Page
 
 > Summary of all design deliverables for the frontend development phase.
+> Design language follows [stripe.com](https://stripe.com).
 > This document serves as the entry point to the complete design system.
 
 ---
@@ -28,11 +29,14 @@
 | **CMS** | Sanity (free tier) |
 | **Font** | Inter (variable, 400–700) |
 | **Icon library** | Lucide React |
-| **Primary color** | `#0052FF` |
-| **Dark color** | `#0A1628` |
+| **Brand accent** | `#635BFF` (Stripe "blurple") |
+| **Primary dark** | `#0A2540` (Stripe "Downriver" navy) |
+| **CTA blue** | `#0048E5` (buttons, links) |
+| **Body text** | `#425466` (Stripe blue-gray) |
+| **Light BG** | `#F6F9FC` (Stripe "Black Squeeze") |
 | **CSS framework** | Tailwind CSS (config in DESIGN-TOKENS.md) |
 | **Breakpoints** | 640 / 768 / 1024 / 1280 / 1536 px |
-| **Max container** | 1280px |
+| **Max container** | 1080px |
 | **Mobile-first** | Yes |
 
 ---
@@ -47,8 +51,8 @@
 | 2 | Social Proof | White/Gray-50 | Logo Strip |
 | 3 | Product Suite | White | Product Card (×3) |
 | 4 | Asset Financing | White | Product Deep Dive (text L, visual R) |
-| 5 | Digital Credit | Navy (#0A1628) | Product Deep Dive (visual L, text R) |
-| 6 | Enterprise Partnerships | Gray-50 | Product Deep Dive (text L, visual R) |
+| 5 | Digital Credit | Navy (#0A2540) | Product Deep Dive (visual L, text R) |
+| 6 | Enterprise Partnerships | Light (#F6F9FC) | Product Deep Dive (text L, visual R) |
 | 7 | Why Alternative Financing | Blue gradient | Stat Card (×4) |
 | 8 | Customer Segments | White | Segment Card (×3) |
 | 9 | Editorial | White | Blog Post Card (×3, from Sanity) |
