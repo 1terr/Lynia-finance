@@ -7,6 +7,24 @@ import type {
   WhatsAppSendMessageResponse
 } from '../../shared/types';
 import { routeOnboardingMessage, type MessageContext } from './onboarding';
+import {
+  sanitizeInput,
+  getSuspiciousInputResponse,
+  detectRapidMessages,
+  getRapidMessageResponse,
+  validateMessageLength,
+  checkInappropriateLanguage,
+  handleUnexpectedMessageType,
+  getExpectedInputType,
+  detectGlobalCommand,
+  detectOutOfContextCommand,
+  handleGlobalCommandResponse,
+  handleOutOfContextResponse,
+  trackError,
+  trackSecurityEvent,
+  mapWhatsAppApiError,
+} from './error-handler';
+import { CircuitBreaker, CircuitOpenError } from '../../shared/utils/circuit-breaker';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -17,6 +35,19 @@ const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'lynia_webhook_2025';
+
+/** Circuit breaker for WhatsApp Cloud API calls */
+const whatsappCircuitBreaker = new CircuitBreaker({
+  name: 'whatsapp-cloud-api',
+  failureThreshold: 5,
+  resetTimeout: 60000,
+  onOpen: (name, count) => {
+    console.error(`[CircuitBreaker] ${name} opened after ${count} failures`);
+  },
+  onClose: (name) => {
+    console.log(`[CircuitBreaker] ${name} recovered`);
+  },
+});
 
 /**
  * WhatsApp Service Lambda Handler
@@ -225,13 +256,24 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
 
 /**
  * Process incoming message from customer
+ *
+ * Applies T011 error handling layers in order:
+ * 1. Rapid message detection
+ * 2. Input sanitization (XSS/SQL injection)
+ * 3. Message length validation
+ * 4. Inappropriate language check
+ * 5. Unexpected message type handling
+ * 6. Global command detection (HELP, CANCEL, BACK, etc.)
+ * 7. Out-of-context loan command detection
+ * 8. Onboarding flow routing
  */
 async function processIncomingMessage(
   message: WhatsAppWebhookEvent['entry'][0]['changes'][0]['value']['messages'][0],
   contactName?: string
 ): Promise<void> {
+  const phoneNumber = message.from;
+
   try {
-    const phoneNumber = message.from;
     let messageText = '';
     let imageUrl: string | undefined;
 
@@ -245,9 +287,8 @@ async function processIncomingMessage(
         messageText = message.interactive.list_reply.title;
       }
     } else if (message.type === 'image' && message.image) {
-      // Handle image upload (for KYC)
       messageText = '[Image received]';
-      imageUrl = message.image.id; // Store image ID for later download
+      imageUrl = message.image.id;
       console.log(`Image received: ${imageUrl}`);
     }
 
@@ -263,10 +304,100 @@ async function processIncomingMessage(
       status: 'delivered'
     });
 
-    // Find or create customer
+    // --- T011 Error Handling Layers ---
+
+    // 1. Rapid message detection
+    if (detectRapidMessages(phoneNumber)) {
+      await sendTextMessage(phoneNumber, getRapidMessageResponse());
+      return;
+    }
+
+    // 2. Input sanitization (skip for non-text)
+    if (messageText && messageText !== '[Image received]') {
+      const { safe, sanitized } = sanitizeInput(messageText);
+      if (!safe) {
+        await trackSecurityEvent(phoneNumber, 'suspicious_input', {
+          original_input: messageText.substring(0, 100),
+        });
+        await sendTextMessage(phoneNumber, getSuspiciousInputResponse());
+        return;
+      }
+      messageText = sanitized;
+    }
+
+    // 3. Message length validation
+    if (messageText.length > 0) {
+      const lengthCheck = validateMessageLength(messageText);
+      if (!lengthCheck.valid && lengthCheck.userMessage) {
+        await sendTextMessage(phoneNumber, lengthCheck.userMessage);
+        return;
+      }
+    }
+
+    // 4. Inappropriate language check
+    if (messageText.length > 0) {
+      const inappropriateMsg = checkInappropriateLanguage(messageText);
+      if (inappropriateMsg) {
+        await trackError(phoneNumber, {
+          category: 'security',
+          severity: 'low',
+          code: 'INAPPROPRIATE_LANGUAGE',
+          userMessage: inappropriateMsg,
+          internalMessage: 'Inappropriate language detected',
+        });
+        await sendTextMessage(phoneNumber, inappropriateMsg);
+        return;
+      }
+    }
+
+    // 5. Unexpected message type handling
+    // Get current conversation state to determine expected input
+    const { data: session } = await supabase
+      .from('whatsapp_onboarding_sessions')
+      .select('current_state')
+      .eq('phone_number', phoneNumber)
+      .single();
+
+    const currentState = session?.current_state || 'welcome';
+    const expectedType = getExpectedInputType(currentState);
+    const typeError = handleUnexpectedMessageType(message.type, expectedType, currentState);
+    if (typeError) {
+      await sendTextMessage(phoneNumber, typeError);
+      return;
+    }
+
+    // 6. Global command detection
+    if (messageText.length > 0) {
+      const globalCmd = detectGlobalCommand(messageText);
+      if (globalCmd) {
+        const response = handleGlobalCommandResponse(globalCmd);
+        if (response) {
+          if (globalCmd === 'cancel') {
+            // Save progress and reset state
+            await supabase
+              .from('whatsapp_onboarding_sessions')
+              .update({ current_state: 'welcome', last_activity_at: new Date() })
+              .eq('phone_number', phoneNumber);
+          }
+          await sendTextMessage(phoneNumber, response);
+          return;
+        }
+        // 'back' and 'continue' fall through to onboarding router
+      }
+    }
+
+    // 7. Out-of-context loan command detection
+    if (messageText.length > 0 && currentState !== 'completed') {
+      const loanCmd = detectOutOfContextCommand(messageText);
+      if (loanCmd) {
+        await sendTextMessage(phoneNumber, handleOutOfContextResponse(loanCmd));
+        return;
+      }
+    }
+
+    // 8. Find or create customer and route to onboarding flow
     const _customer = await findOrCreateCustomer(phoneNumber, contactName);
 
-    // Create message context for onboarding flow
     const context: MessageContext = {
       from: phoneNumber,
       message: messageText,
@@ -274,19 +405,24 @@ async function processIncomingMessage(
       timestamp: message.timestamp
     };
 
-    // Route to onboarding flow
     const responseMessage = await routeOnboardingMessage(context, imageUrl);
-
-    // Send response back to customer
     await sendTextMessage(phoneNumber, responseMessage);
 
   } catch (error) {
     console.error('Error processing incoming message:', error);
-    // Send error message to customer
+
+    await trackError(phoneNumber, {
+      category: 'system',
+      severity: 'high',
+      code: 'PROCESSING_ERROR',
+      userMessage: '',
+      internalMessage: error instanceof Error ? error.message : 'Unknown error',
+    });
+
     try {
       await sendTextMessage(
-        message.from,
-        '⚠️ Technical error. Please try again or contact support@lynia.finance'
+        phoneNumber,
+        'Something went wrong, but your progress is saved. Reply *CONTINUE* to pick up where you left off.\n\nReference: SYS-' + Date.now()
       );
     } catch (sendError) {
       console.error('Failed to send error message:', sendError);
@@ -297,7 +433,7 @@ async function processIncomingMessage(
 // REMOVED: Old routeMessage function - replaced by onboarding flow module
 
 /**
- * Helper: Send text message
+ * Helper: Send text message with circuit breaker and WhatsApp API error handling (T011)
  */
 async function sendTextMessage(to: string, message: string): Promise<void> {
   try {
@@ -308,15 +444,17 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
       text: { body: message }
     };
 
-    const response = await axios.post<WhatsAppSendMessageResponse>(
-      `${WHATSAPP_API_URL}/${PHONE_NUMBER_ID}/messages`,
-      payload,
-      {
-        headers: {
-          'Authorization': `Bearer ${ACCESS_TOKEN}`,
-          'Content-Type': 'application/json'
+    const response = await whatsappCircuitBreaker.execute(() =>
+      axios.post<WhatsAppSendMessageResponse>(
+        `${WHATSAPP_API_URL}/${PHONE_NUMBER_ID}/messages`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${ACCESS_TOKEN}`,
+            'Content-Type': 'application/json'
+          }
         }
-      }
+      )
     );
 
     await storeMessage({
@@ -328,6 +466,38 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
       status: 'sent'
     });
   } catch (error) {
+    if (error instanceof CircuitOpenError) {
+      console.error(`WhatsApp API circuit open, message to ${to.substring(0, 6)}*** queued`);
+      await storeMessage({
+        phone_number: to,
+        message_type: 'text',
+        direction: 'outbound',
+        content: message,
+        status: 'failed'
+      });
+      return;
+    }
+
+    if (axios.isAxiosError(error)) {
+      const errorCode = error.response?.data?.error?.code;
+      if (errorCode) {
+        const mapped = mapWhatsAppApiError(errorCode);
+        console.error(`WhatsApp API error ${errorCode}: action=${mapped.internalAction}`);
+
+        if (mapped.internalAction === 'queue') {
+          // Rate limited - store for retry
+          await storeMessage({
+            phone_number: to,
+            message_type: 'text',
+            direction: 'outbound',
+            content: message,
+            status: 'failed'
+          });
+          return;
+        }
+      }
+    }
+
     console.error('Error sending text message:', error);
   }
 }

@@ -1,11 +1,14 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { EcoCashProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
 import { OneMoneyProvider } from './onemoney-provider';
+import { PaynowProvider } from './paynow-provider';
+import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-analytics';
 
 /**
  * Payment Gateway Type
+ * Includes 'paynow' which aggregates EcoCash, OneMoney, O'mari, and cards (T014)
  */
-export type PaymentGateway = 'ecocash' | 'onemoney';
+export type PaymentGateway = 'ecocash' | 'onemoney' | 'paynow';
 
 /**
  * Payment Initiation Request
@@ -59,6 +62,8 @@ export class PaymentService {
   private supabase: SupabaseClient;
   private ecocashProvider: EcoCashProvider;
   private onemoneyProvider: OneMoneyProvider;
+  private paynowProvider: PaynowProvider;
+  private analytics: PaymentAnalyticsService;
 
   constructor() {
     this.supabase = createClient(
@@ -68,8 +73,10 @@ export class PaymentService {
 
     this.ecocashProvider = new EcoCashProvider();
     this.onemoneyProvider = new OneMoneyProvider();
+    this.paynowProvider = new PaynowProvider();
+    this.analytics = new PaymentAnalyticsService();
 
-    console.log('PaymentService initialized');
+    console.log('PaymentService initialized (with Paynow/O\'mari support - T014)');
   }
 
   /**
@@ -206,7 +213,11 @@ export class PaymentService {
       let response: PaymentResponse;
       let instructions: string;
 
-      if (gateway === 'ecocash') {
+      if (gateway === 'paynow') {
+        // Paynow handles EcoCash, OneMoney, O'mari, and cards (T014)
+        response = await this.paynowProvider.initiatePayment(paymentReq);
+        instructions = this.paynowProvider.generatePaymentInstructions(request.amount, paymentReference);
+      } else if (gateway === 'ecocash') {
         response = await this.ecocashProvider.initiatePayment(paymentReq);
         instructions = this.ecocashProvider.generatePaymentInstructions(request.amount, paymentReference);
       } else {
@@ -266,7 +277,11 @@ export class PaymentService {
       if (payment.gateway_transaction_id) {
         let statusResponse: PaymentStatusResponse;
 
-        if (payment.gateway === 'ecocash') {
+        if (payment.gateway === 'paynow') {
+          // Paynow uses poll URL stored in gateway_reference
+          const pollUrl = payment.gateway_reference || payment.gateway_transaction_id;
+          statusResponse = await this.paynowProvider.checkPaymentStatus(pollUrl);
+        } else if (payment.gateway === 'ecocash') {
           statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);
         } else {
           statusResponse = await this.onemoneyProvider.checkPaymentStatus(payment.gateway_transaction_id);
@@ -410,7 +425,10 @@ export class PaymentService {
   }
 
   /**
-   * Select payment gateway based on customer preference or availability
+   * Select payment gateway based on customer preference or availability.
+   *
+   * Default is Paynow (T014 recommendation) which handles all methods
+   * including EcoCash, OneMoney, and O'mari through a single integration.
    */
   private async selectGateway(customerId: string): Promise<PaymentGateway> {
     // Check customer preference
@@ -424,8 +442,54 @@ export class PaymentService {
       return customer.preferred_payment_gateway as PaymentGateway;
     }
 
-    // Default to EcoCash (70% market share)
-    return 'ecocash';
+    // Default to Paynow which supports all methods including O'mari (T014)
+    return 'paynow';
+  }
+
+  /**
+   * Track payment method analytics after webhook confirms payment (T014)
+   */
+  async trackCompletedPayment(
+    paymentId: string,
+    paynowReference: string,
+    customerPhone?: string
+  ): Promise<void> {
+    try {
+      const { data: payment } = await this.supabase
+        .from('payments')
+        .select('id, loan_id, customer_id, amount, currency, gateway')
+        .eq('id', paymentId)
+        .single();
+
+      if (!payment) return;
+
+      const method: TrackedPaymentMethod = payment.gateway === 'paynow'
+        ? this.analytics.detectPaymentMethod(paynowReference, customerPhone)
+        : payment.gateway as TrackedPaymentMethod;
+
+      const feeAmount = this.analytics.calculateFee(
+        payment.amount,
+        payment.gateway,
+        method
+      );
+
+      await this.analytics.trackPaymentMethod({
+        payment_id: payment.id,
+        loan_id: payment.loan_id,
+        customer_id: payment.customer_id,
+        payment_method: method,
+        gateway: payment.gateway,
+        amount: payment.amount,
+        currency: payment.currency,
+        fee_amount: feeAmount,
+        fee_percentage: payment.amount > 0 ? (feeAmount / payment.amount) * 100 : 0,
+        status: 'completed',
+        created_at: new Date().toISOString(),
+      });
+    } catch (error) {
+      // Never let analytics tracking block the payment flow
+      console.error('Failed to track payment analytics:', error);
+    }
   }
 
   /**
