@@ -51,6 +51,18 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
   return data as Customer;
 }
 
+export const fetchCustomerById = getCustomerById;
+
+export async function updateCustomer(id: string, updates: Partial<Customer>) {
+  const supabase = createClient();
+  const { error } = await supabase
+    .from('customers')
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+}
+
 export async function getCustomerLoans(customerId: string): Promise<Loan[]> {
   const supabase = createClient();
   const { data } = await supabase
