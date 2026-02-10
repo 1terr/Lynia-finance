@@ -65,8 +65,7 @@ export default function LoginPage() {
         })
         .eq('id', user.id);
 
-      router.push('/');
-      router.refresh();
+      window.location.href = '/';
     } catch {
       setError('An unexpected error occurred');
     } finally {
