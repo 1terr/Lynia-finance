@@ -220,7 +220,7 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 |----------|--------|
 | **Framework** | Next.js |
 | **Hosting** | AWS (aligned with current stack) |
-| **CMS** | TBD - needs cost-effective and scalable option (recommended: **Sanity** free tier or **Keystatic** - both headless, scalable, generous free tiers) |
+| **CMS** | **Sanity** (free tier - 20 seats, GROQ API, real-time editing, Next.js native integration) |
 | **SEO priority** | High |
 | **Performance budget** | Must work excellently on 2G and 3G connections |
 
@@ -236,11 +236,116 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 ---
 
-## 8. Inspiration References
+## 8. Research Page (Blog)
+
+**Inspiration**: [stripe.com/blog](https://stripe.com/blog)
+
+### Structure
+
+| Element | Description |
+|---------|-------------|
+| **Hero / Featured post** | Full-width featured article at top with large image, headline, excerpt |
+| **Category filters** | Horizontal pill/tab navigation (e.g., All, Products, Engineering, Company, Partnerships) |
+| **Post grid** | 2-3 column responsive card grid below the featured post |
+| **Post card** | Thumbnail/illustration + category tag + headline + short excerpt + date |
+| **Pagination** | Load more or numbered pagination |
+
+### Post Card Design
+
+```
+┌─────────────────────────┐
+│  [Illustration/Image]   │
+│                         │
+│  CATEGORY TAG           │
+│  Post Headline Here     │
+│  Short excerpt text...  │
+│  12 Feb 2026            │
+└─────────────────────────┘
+```
+
+### CMS Integration (Sanity)
+
+| Content Type | Fields |
+|-------------|--------|
+| **Post** | Title, slug, featured image, excerpt, body (rich text), category, author, published date |
+| **Author** | Name, avatar, role |
+| **Category** | Name, slug, description |
+
+### Design Notes
+
+- Custom flat illustrations per post (Stripe style), not stock photos
+- Category tags use brand blue as accent color
+- Cards have subtle hover elevation/shadow
+- Clean typography with strong headline hierarchy
+- Generous whitespace between cards
+
+---
+
+## 9. Contact Page
+
+**Inspiration**: [stripe.com/contact/sales](https://stripe.com/contact/sales) for styling
+
+### Layout
+
+Split layout (Stripe-style):
+
+```
+┌──────────────────────┬──────────────────────┐
+│                      │                      │
+│  Left Column         │  Right Column        │
+│  (Info + trust)      │  (Form)              │
+│                      │                      │
+│  Headline            │  Name *              │
+│  Subtext explaining  │  Phone number *      │
+│  how to reach us     │  Email               │
+│                      │  Message             │
+│  Other ways:         │                      │
+│  • WhatsApp          │  [Send message]      │
+│  • Email address     │                      │
+│  • Office location   │                      │
+│                      │                      │
+└──────────────────────┴──────────────────────┘
+```
+
+### Contact Form Fields
+
+| Field | Required | Type |
+|-------|----------|------|
+| Name | Yes | Text input |
+| Phone number | Yes | Tel input (with country code) |
+| Email | No | Email input |
+| Message | No | Textarea |
+
+### Partnership Application Form
+
+Separate section or tab on the same page:
+
+| Field | Required | Type |
+|-------|----------|------|
+| Name | Yes | Text input |
+| Phone number | Yes | Tel input |
+| Email | Yes | Email input |
+| Type of partnership | Yes | Select: Distributor / B2B Partnership / Other |
+| Message / details | No | Textarea |
+
+### Design Notes
+
+- Single-column vertical form (Stripe best practice for conversion)
+- Clean labels above each field
+- Brand blue primary button
+- Left column provides context and alternative contact methods
+- Mobile: stacks to single column (info first, then form)
+- WhatsApp floating button also available as alternative
+
+---
+
+## 10. Inspiration References
 
 | Website | Design Takeaways |
 |---------|-----------------|
 | **Stripe.com** | Clean typography (Söhne), flat illustrations, gradient backgrounds, smooth animations, content-heavy but uncluttered. Premium fintech feel. |
+| **Stripe.com/blog** | Featured hero post, category pill filters, 2-3 column card grid, custom illustrations per post, clean hierarchy. **Model for Research page.** |
+| **Stripe.com/contact/sales** | Split layout (info left, form right), single-column form, qualifying fields, clean labels, trust indicators. **Model for Contact page.** |
 | **Moniepoint.com** | Bold blue (`#0357EE`) + deep navy (`#02102D`). African fintech. Trust-focused. "Kamona" design system. Clean sections. |
 | **Paystack.com** | Vibrant, uncluttered, animated illustrations. African fintech (Stripe-owned). Simple navigation. Quick onboarding feel. |
 
@@ -255,7 +360,7 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 ---
 
-## 9. Constraints & Non-Negotiables
+## 11. Constraints & Non-Negotiables
 
 | Constraint | Detail |
 |------------|--------|
@@ -267,7 +372,7 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 ---
 
-## 10. Success Metrics
+## 12. Success Metrics
 
 | Metric | Target |
 |--------|--------|
@@ -279,15 +384,17 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 ---
 
-## 11. Outstanding Items
+## 13. Outstanding Items
 
 | Item | Status | Action |
 |------|--------|--------|
 | Page content (copy) | **Done** | All copy extracted to [`CONTENT.md`](./CONTENT.md) |
 | Headlines / taglines | **Done** | Confirmed from wireframes |
 | CTA button text | **Done** | Confirmed from wireframes |
+| CMS selection | **Done** | Sanity (free tier) |
+| Research page structure | **Done** | Stripe blog-inspired, spec in Section 8 |
+| Contact page layout | **Done** | Stripe contact/sales-inspired, spec in Section 9 |
 | Logo design | Not started | Part of design phase |
-| CMS selection | Needs recommendation | Sanity or Keystatic suggested |
 | Illustrations | Not started | To be created in Stripe-like flat style |
-| Blog/Research page content | Not started | Blog post structure and initial content needed |
-| Contact page layout | Not started | Form design with fields defined in Section 6.2 |
+| Sanity schema setup | Not started | Post, Author, Category content types |
+| Research initial content | Not started | First blog posts / articles needed |
