@@ -7,10 +7,11 @@
 ## Navigation
 
 ```
-Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Apply now]
+Lynia Finance (logo)    Products    Mission    Partnerships    Research
 ```
 
-- Contact is **not** in the nav - it lives at the bottom of the page / in the footer
+- Nav is clean text links only - no buttons
+- Contact, Careers, and other links live in the footer
 
 ---
 
@@ -105,10 +106,18 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Appl
 - Digital loans
 - Embedded financing
 
+**Company column**:
+- Careers
+- Contact
+
 **Connect column**:
 - X (Twitter)
 - LinkedIn
 - WhatsApp
+
+**Legal column**:
+- Privacy Policy
+- Terms
 
 ---
 
@@ -117,7 +126,7 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Appl
 The homepage is a single scrolling page with this order:
 
 ```
-1. Navigation bar (sticky): Products | Mission | Partnerships | Research | [Apply now]
+1. Navigation bar (sticky): Products | Mission | Partnerships | Research
 2. Hero section (headline + subtext + 2 CTAs)
 3. Asset Financing section (label + headline + subtext + 4 features + 2 CTAs)
 4. Digital Credit section (label + headline + subtext + 2 features + CTA)
