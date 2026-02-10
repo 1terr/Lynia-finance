@@ -155,6 +155,120 @@ export interface PaymentStats {
   unreconciled_count: number;
 }
 
+export interface PaymentWithCustomer {
+  id: string;
+  loan_id: string;
+  customer_id: string;
+  payment_type: string;
+  amount_usd: number;
+  currency: string;
+  payment_method: string;
+  payment_provider: string | null;
+  transaction_id: string | null;
+  reference_number: string | null;
+  status: string;
+  confirmed_at: string | null;
+  failed_at: string | null;
+  failure_reason: string | null;
+  principal_amount: number | null;
+  interest_amount: number | null;
+  penalty_amount: number | null;
+  fee_amount: number | null;
+  payment_date: string;
+  phone_number: string | null;
+  payer_name: string | null;
+  reconciled: boolean;
+  reconciled_at: string | null;
+  reconciled_by: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  customers?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    phone_number: string;
+  } | null;
+  loans?: {
+    id: string;
+    principal: number;
+    status: string;
+  } | null;
+}
+
+export interface PaymentSummary {
+  total_confirmed: number;
+  total_pending: number;
+  total_failed: number;
+  total_refunded: number;
+  count_confirmed: number;
+  count_pending: number;
+  count_failed: number;
+  count_refunded: number;
+}
+
+export interface CollectionItem {
+  id: string;
+  loan_id: string;
+  customer_id: string;
+  customer_name: string;
+  customer_phone: string;
+  amount_due: number;
+  days_overdue: number;
+  missed_payments: number;
+  last_payment_date: string | null;
+  next_payment_date: string | null;
+  priority: 'critical' | 'high' | 'medium' | 'low';
+}
+
+export async function fetchUnreconciledPayments(): Promise<PaymentWithCustomer[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('payments')
+    .select('*, customers(id, first_name, last_name, phone_number), loans(id, principal, status)')
+    .eq('status', 'confirmed')
+    .eq('reconciled', false)
+    .order('payment_date', { ascending: false });
+
+  if (error) throw error;
+  return (data || []) as PaymentWithCustomer[];
+}
+
+export async function getOverdueCollections(): Promise<CollectionItem[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('loans')
+    .select('id, customer_id, outstanding_principal, outstanding_interest, days_overdue, missed_payments, last_payment_date, next_payment_date, customer:customers(id, first_name, last_name, phone_number)')
+    .gt('days_overdue', 0)
+    .in('status', ['active', 'disbursed'])
+    .order('days_overdue', { ascending: false });
+
+  if (error) throw error;
+
+  return (data || []).map((loan: Record<string, unknown>) => {
+    const customer = Array.isArray(loan.customer) ? loan.customer[0] : loan.customer;
+    const daysOverdue = loan.days_overdue as number;
+    let priority: 'critical' | 'high' | 'medium' | 'low' = 'low';
+    if (daysOverdue >= 60) priority = 'critical';
+    else if (daysOverdue >= 30) priority = 'high';
+    else if (daysOverdue >= 15) priority = 'medium';
+
+    return {
+      id: loan.id as string,
+      loan_id: loan.id as string,
+      customer_id: loan.customer_id as string,
+      customer_name: customer ? `${(customer as Record<string, string>).first_name} ${(customer as Record<string, string>).last_name}` : 'Unknown',
+      customer_phone: customer ? (customer as Record<string, string>).phone_number : '',
+      amount_due: ((loan.outstanding_principal as number) || 0) + ((loan.outstanding_interest as number) || 0),
+      days_overdue: daysOverdue,
+      missed_payments: (loan.missed_payments as number) || 0,
+      last_payment_date: loan.last_payment_date as string | null,
+      next_payment_date: loan.next_payment_date as string | null,
+      priority,
+    };
+  });
+}
+
 export async function getPaymentStats(): Promise<PaymentStats> {
   const supabase = createClient();
 
