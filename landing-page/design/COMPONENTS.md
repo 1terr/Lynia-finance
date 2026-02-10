@@ -33,7 +33,7 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│  [Logo]     Products   About   Partnerships   Research    [Start your application]  │
+│  [Logo]     Products   About   Partnerships   Editorial    [Start your application]  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -485,7 +485,7 @@ Used in Section 8 (Customer Segments).
 
 ## 10. Blog Post Card
 
-Used in Section 9 (Editorial) and Research page.
+Used in Section 9 (Editorial) and Editorial page.
 
 ### Layout
 

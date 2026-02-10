@@ -56,7 +56,7 @@ Background: transparent over hero → white on scroll
 │  ─────────────────────────────       │
 │  Partnerships                        │
 │  ─────────────────────────────       │
-│  Research                            │
+│  Editorial                           │
 │  ─────────────────────────────       │
 │                                      │
 │  ┌──────────────────────────────┐    │
@@ -73,7 +73,7 @@ CTA button appears as last item in mobile menu
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                                                                  │
-│  [Logo]       Products  About  Partnerships  Research     [Start your application]  │
+│  [Logo]       Products  About  Partnerships  Editorial     [Start your application]  │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 
@@ -615,14 +615,13 @@ Padding: 80px vertical (compact)
 │  └──────────────────────────────┘    │
 │                                      │
 │  ┌──────────────────────────────┐    │
-│  │  FOR BUSINESSES               │    │
+│  │  FOR DISTRIBUTORS             │    │
 │  │                               │    │
-│  │  Digital credit with no       │    │
-│  │  paperwork and no bank        │    │
-│  │  visits. Apply and receive    │    │
-│  │  funds on your phone.         │    │
+│  │  Sell smartphones and assets  │    │
+│  │  in your community. Earn      │    │
+│  │  commission on every sale.    │    │
 │  │                               │    │
-│  │  Coming soon →                │    │
+│  │  Become a distributor →       │    │
 │  └──────────────────────────────┘    │
 │                                      │
 │  ┌──────────────────────────────┐    │
@@ -650,16 +649,16 @@ Padding: 64px vertical
 │              Built for how Zimbabwe works                         │
 │                                                                  │
 │  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐│
-│  │  FOR INDIVIDUALS   │ │  FOR BUSINESSES    │ │  FOR PARTNERS     ││
+│  │  FOR INDIVIDUALS   │ │  FOR DISTRIBUTORS  │ │  FOR PARTNERS     ││
 │  │                    │ │                    │ │                    ││
-│  │  Smartphones,      │ │  Digital credit    │ │  Embed credit into ││
-│  │  assets, and    │ │  with no paperwork │ │  your platform.    ││
-│  │  cash. Apply via   │ │  and no bank       │ │  Offer financing   ││
-│  │  WhatsApp in under │ │  visits. Apply and │ │  at the point of   ││
-│  │  5 minutes.        │ │  receive funds on  │ │  sale through our  ││
-│  │                    │ │  your phone.       │ │  APIs.             ││
-│  │  Start your        │ │                    │ │                    ││
-│  │  application →     │ │  Coming soon →     │ │  Partner with us → ││
+│  │  Smartphones,      │ │  Sell smartphones  │ │  Embed credit into ││
+│  │  assets, and       │ │  and assets in     │ │  your platform.    ││
+│  │  cash. Apply via   │ │  your community.   │ │  Offer financing   ││
+│  │  WhatsApp in under │ │  Earn commission   │ │  at the point of   ││
+│  │  5 minutes.        │ │  on every sale.    │ │  sale through our  ││
+│  │                    │ │                    │ │  APIs.             ││
+│  │  Start your        │ │  Become a          │ │                    ││
+│  │  application →     │ │  distributor →     │ │  Partner with us → ││
 │  └────────────────────┘ └────────────────────┘ └────────────────────┘│
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
@@ -670,14 +669,14 @@ Padding: 120px vertical
 
 ---
 
-### Section 9: Editorial / Featured Research
+### Section 9: Editorial
 
 #### Mobile
 
 ```
 ┌──────────────────────────────────────┐
 │                                      │
-│  From our Research                   │
+│  From our Editorial                   │
 │                                      │
 │  ┌──────────────────────────────┐    │
 │  │  ┌────────────────────────┐  │    │
@@ -697,7 +696,7 @@ Padding: 120px vertical
 │  │  [Card 3]                     │    │
 │  └──────────────────────────────┘    │
 │                                      │
-│  View all research →                 │
+│  View all articles →                 │
 │                                      │
 └──────────────────────────────────────┘
 
@@ -710,7 +709,7 @@ Padding: 64px vertical
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │                                                                  │
-│  From our Research                                               │
+│  From our Editorial                                               │
 │                                                                  │
 │  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐│
 │  │  ┌──────────────┐  │ │  ┌──────────────┐  │ │  ┌──────────────┐  ││
@@ -722,7 +721,7 @@ Padding: 64px vertical
 │  │  12 Feb 2026       │ │  12 Feb 2026       │ │  12 Feb 2026       ││
 │  └────────────────────┘ └────────────────────┘ └────────────────────┘│
 │                                                                  │
-│                        View all research →                        │
+│                        View all articles →                        │
 │                                                                  │
 └──────────────────────────────────────────────────────────────────┘
 
@@ -855,7 +854,7 @@ Company column includes "About" (renamed from "Mission")
 
 ---
 
-## Research Page
+## Editorial Page
 
 ### Mobile
 
@@ -864,7 +863,7 @@ Company column includes "About" (renamed from "Mission")
 │  [Nav]                                │
 ├──────────────────────────────────────┤
 │                                      │
-│  RESEARCH                            │
+│  EDITORIAL                            │
 │                                      │
 │  ┌──────────────────────────────┐    │
 │  │  ┌────────────────────────┐  │    │
@@ -907,7 +906,7 @@ Category pills: horizontally scrollable
 │  [Nav]                                                            │
 ├──────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  RESEARCH                                                        │
+│  EDITORIAL                                                        │
 │                                                                  │
 │  ┌────────────────────────────────────────────────────────┐      │
 │  │  ┌──────────────────────────────────────────────────┐  │      │

@@ -56,4 +56,4 @@ Wireframes, mockups, brand assets, and design system for lyniafinance.com.
 - Flat illustrations for each product section
 - Partner/trust logos
 - Legal text (privacy policy, terms, RBZ disclaimers)
-- Initial Research page blog posts
+- Initial Editorial page blog posts
