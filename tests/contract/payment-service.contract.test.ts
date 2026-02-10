@@ -22,6 +22,7 @@ const mockInitiatePayment = jest.fn();
 const mockCheckPaymentStatus = jest.fn();
 const mockProcessPaymentCompletion = jest.fn();
 const mockReconcilePayments = jest.fn();
+const mockTrackCompletedPayment = jest.fn();
 
 jest.mock('../../services/payment-service/src/payment-service', () => ({
   PaymentService: jest.fn().mockImplementation(() => ({
@@ -29,6 +30,7 @@ jest.mock('../../services/payment-service/src/payment-service', () => ({
     checkPaymentStatus: mockCheckPaymentStatus,
     processPaymentCompletion: mockProcessPaymentCompletion,
     reconcilePayments: mockReconcilePayments,
+    trackCompletedPayment: mockTrackCompletedPayment,
   })),
 }));
 
@@ -234,7 +236,7 @@ describe('Payment Service Contract Tests', () => {
       const response = await handler(event);
 
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', '*');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
     });
   });
 
@@ -647,7 +649,7 @@ describe('Payment Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(404);
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', '*');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
     });
   });
 

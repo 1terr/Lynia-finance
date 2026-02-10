@@ -28,6 +28,28 @@ export const testCustomers = {
     created_at: new Date().toISOString()
   },
 
+  // Non-Zimbabwe customer - should be rejected
+  nonZimbabweCustomer: {
+    id: 'cust_test_non_zw',
+    phone_number: '+254712345678',
+    first_name: 'John',
+    last_name: 'Kamau',
+    date_of_birth: '1985-08-20',
+    gender: 'male',
+    national_id: 'KEN987654321',
+    address_line1: '456 Nairobi Road',
+    city: 'Nairobi',
+    province: 'Nairobi',
+    country: 'Kenya',
+    postal_code: '00100',
+    employment_status: 'full_time',
+    employer_name: 'Safaricom',
+    monthly_income: 600,
+    employment_duration_months: 36,
+    kyc_status: 'pending',
+    created_at: new Date().toISOString()
+  },
+
   // Kenya customer - should be rejected (non-Zimbabwe)
   kenyaCustomer: {
     id: 'cust_test_002',

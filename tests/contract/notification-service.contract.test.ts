@@ -98,7 +98,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       expectCORSHeaders(response);
@@ -118,7 +118,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectErrorResponse(response, 400);
       const body = parseResponseBody(response);
@@ -136,7 +136,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectErrorResponse(response, 400);
     });
@@ -151,7 +151,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectErrorResponse(response, 400);
     });
@@ -172,7 +172,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(404);
       const body = parseResponseBody(response);
@@ -200,7 +200,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
     });
@@ -226,7 +226,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
     });
@@ -252,7 +252,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
     });
@@ -278,7 +278,7 @@ describe('Notification Service Contract Tests', () => {
         }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(500);
       const body = parseResponseBody(response);
@@ -304,7 +304,7 @@ describe('Notification Service Contract Tests', () => {
         body: JSON.stringify({}),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       const body = parseResponseBody(response);
@@ -322,7 +322,7 @@ describe('Notification Service Contract Tests', () => {
         body: JSON.stringify({}),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(500);
       const body = parseResponseBody(response);
@@ -347,7 +347,7 @@ describe('Notification Service Contract Tests', () => {
         path: '/notifications/reminders/analytics',
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       const body = parseResponseBody(response);
@@ -397,7 +397,7 @@ describe('Notification Service Contract Tests', () => {
         path: '/notifications/reminders/analytics',
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(500);
     });
@@ -416,7 +416,7 @@ describe('Notification Service Contract Tests', () => {
         body: JSON.stringify({ customerId: 'cust_001' }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       const body = parseResponseBody(response);
@@ -447,7 +447,7 @@ describe('Notification Service Contract Tests', () => {
         body: JSON.stringify({ customerId: 'cust_001' }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(500);
     });
@@ -466,7 +466,7 @@ describe('Notification Service Contract Tests', () => {
         body: JSON.stringify({ customerId: 'cust_001' }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       const body = parseResponseBody(response);
@@ -497,7 +497,7 @@ describe('Notification Service Contract Tests', () => {
         body: JSON.stringify({ customerId: 'cust_001' }),
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(500);
     });
@@ -540,7 +540,7 @@ describe('Notification Service Contract Tests', () => {
         pathParameters: { customerId: 'cust_001' },
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       expectCORSHeaders(response);
@@ -563,7 +563,7 @@ describe('Notification Service Contract Tests', () => {
         pathParameters: { customerId: 'cust_new' },
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expectSuccessResponse(response);
       const body = parseResponseBody(response);
@@ -583,7 +583,7 @@ describe('Notification Service Contract Tests', () => {
         pathParameters: { customerId: 'cust_001' },
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(500);
       const body = parseResponseBody(response);
@@ -601,7 +601,7 @@ describe('Notification Service Contract Tests', () => {
         path: '/notifications/unknown/endpoint',
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(404);
       const body = parseResponseBody(response);
@@ -614,7 +614,7 @@ describe('Notification Service Contract Tests', () => {
         path: '/notifications/send',
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(404);
     });
@@ -625,11 +625,11 @@ describe('Notification Service Contract Tests', () => {
         path: '/nonexistent',
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response.statusCode).toBe(404);
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', '*');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
     });
   });
 
@@ -675,7 +675,7 @@ describe('Notification Service Contract Tests', () => {
         body: '<<<INVALID>>>',
       });
 
-      const response = await handler(event);
+      const response = (await handler(event))!;
 
       expect(response!.statusCode).toBe(500);
       const body = parseResponseBody(response!);

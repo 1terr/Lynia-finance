@@ -55,6 +55,7 @@ jest.mock('@supabase/supabase-js', () => ({
 // ---------------------------------------------------------------------------
 
 interface AuditLogEntry {
+  [key: string]: unknown;
   id: string;
   timestamp: string;
   action: string;

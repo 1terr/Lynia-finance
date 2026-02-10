@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 
 /**
@@ -283,7 +283,7 @@ export class SmileIdentityService {
 
     // Constant-time comparison to prevent timing attacks
     try {
-      return crypto.timingSafeEqual(
+      return timingSafeEqual(
         Buffer.from(receivedSignature, 'hex'),
         Buffer.from(expectedSignature, 'hex')
       );

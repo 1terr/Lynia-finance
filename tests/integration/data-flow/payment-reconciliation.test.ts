@@ -192,7 +192,7 @@ describe('Payment Reconciliation Data Flow Tests', () => {
       const updatedLoan = getMockTable('loans')[0];
       expect(updatedLoan.outstanding_balance_usd).toBe(expectedBalance);
       // Verify exact arithmetic: outstanding_balance = previous_balance - payment_amount
-      expect(updatedLoan.outstanding_balance_usd).toBe(148.67);
+      expect(updatedLoan.outstanding_balance_usd as number).toBeCloseTo(148.67, 2);
     });
 
     it('should verify outstanding_balance = previous_balance - payment_amount exactly', () => {

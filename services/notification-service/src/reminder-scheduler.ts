@@ -237,9 +237,9 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
 
     payments.push({
       loan_id: loan.id,
-      customer_id: customer.id,
+      customer_id: customer.id as string,
       customer_name: `${customer.first_name} ${customer.last_name}`,
-      phone_number: customer.phone_number,
+      phone_number: customer.phone_number as string,
       installment_number: 0, // determined from loan schedule
       amount_due: loan.monthly_installment_amount,
       due_date: loan.next_payment_date,
@@ -467,10 +467,10 @@ export async function getReminderAnalytics(dateRange?: { from: string; to: strin
     };
   }
 
-  const total_sent = reminders.filter(r => r.status === 'sent').length;
-  const total_delivered = reminders.filter(r => r.status === 'delivered').length;
-  const total_read = reminders.filter(r => r.status === 'read').length;
-  const total_failed = reminders.filter(r => r.status === 'failed').length;
+  const total_sent = reminders.filter((r: { status: string }) => r.status === 'sent').length;
+  const total_delivered = reminders.filter((r: { status: string }) => r.status === 'delivered').length;
+  const total_read = reminders.filter((r: { status: string }) => r.status === 'read').length;
+  const total_failed = reminders.filter((r: { status: string }) => r.status === 'failed').length;
 
   const by_type: Record<string, number> = {};
   for (const r of reminders) {

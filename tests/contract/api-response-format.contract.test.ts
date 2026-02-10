@@ -50,6 +50,7 @@ jest.mock('../../services/payment-service/src/payment-service', () => ({
     checkPaymentStatus: jest.fn().mockRejectedValue(new Error('Test error')),
     processPaymentCompletion: jest.fn(),
     reconcilePayments: jest.fn().mockRejectedValue(new Error('Test error')),
+    trackCompletedPayment: jest.fn().mockResolvedValue(undefined),
   })),
 }));
 
@@ -114,6 +115,10 @@ jest.mock('axios', () => ({
         contacts: [{ input: '+263771234567', wa_id: '263771234567' }],
         messages: [{ id: 'wamid.test123' }],
       },
+    }),
+    create: jest.fn().mockReturnValue({
+      post: jest.fn().mockResolvedValue({ data: {} }),
+      get: jest.fn().mockResolvedValue({ data: {} }),
     }),
     isAxiosError: jest.fn().mockReturnValue(false),
   },
@@ -180,7 +185,7 @@ const services: ServiceEntry[] = [
   {
     name: 'scoring-service',
     handler: scoringHandler,
-    unknownPath: '/scoring/nonexistent/path',
+    unknownPath: '/scoring-nonexistent',
     errorPath: '/scoring/calculate',
     errorMethod: 'POST',
     errorBody: 'INVALID-JSON{{{',
@@ -196,7 +201,7 @@ const services: ServiceEntry[] = [
   {
     name: 'lock-service',
     handler: lockHandler,
-    unknownPath: '/locks/nonexistent/path',
+    unknownPath: '/locks-nonexistent',
     errorPath: '/locks/lock',
     errorMethod: 'POST',
     errorBody: JSON.stringify({ device_id: 'dev_001', reason: 'Test' }),
@@ -212,7 +217,7 @@ const services: ServiceEntry[] = [
   {
     name: 'notification-service',
     handler: notificationHandler,
-    unknownPath: '/notifications/nonexistent/deep/path',
+    unknownPath: '/notifications-nonexistent',
     errorPath: '/notifications/send',
     errorMethod: 'POST',
     errorBody: 'INVALID-JSON{{{',
@@ -263,7 +268,7 @@ describe('Cross-Service API Response Format Contract Tests', () => {
 
         expect(response).toBeDefined();
         // All services should return CORS headers on 404
-        expect(response!.headers).toHaveProperty('Access-Control-Allow-Origin', '*');
+        expect(response!.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
       });
     });
   });

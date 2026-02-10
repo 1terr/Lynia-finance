@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
 
@@ -136,7 +136,7 @@ export class OmariProvider {
       .digest('hex');
 
     try {
-      return crypto.timingSafeEqual(
+      return timingSafeEqual(
         Buffer.from(receivedSignature, 'hex'),
         Buffer.from(expectedSignature, 'hex')
       );

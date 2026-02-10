@@ -69,6 +69,7 @@ jest.mock('axios', () => ({
 // ---------------------------------------------------------------------------
 
 interface NotificationRecord {
+  [key: string]: unknown;
   id: string;
   customer_id: string;
   channel: string;

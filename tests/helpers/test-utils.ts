@@ -471,7 +471,7 @@ export function expectErrorResponse(response: APIGatewayProxyResult, statusCode:
 
 /** Validate CORS headers */
 export function expectCORSHeaders(response: APIGatewayProxyResult): void {
-  expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', '*');
+  expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
 }
 
 // =====================================================

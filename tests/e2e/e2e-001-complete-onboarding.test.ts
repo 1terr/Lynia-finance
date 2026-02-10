@@ -41,7 +41,7 @@ const createMockQueryBuilder = () => {
 let mockQueryBuilder = createMockQueryBuilder();
 
 const mockSupabaseClient = {
-  from: jest.fn(() => {
+  from: jest.fn((_table: string) => {
     mockQueryBuilder = createMockQueryBuilder();
     return mockQueryBuilder;
   }),
@@ -203,9 +203,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required).toContain('id_number');
-      expect(body.required).toContain('id_image_base64');
-      expect(body.required).toContain('selfie_image_base64');
+      expect(body.required as string[]).toContain('id_number');
+      expect(body.required as string[]).toContain('id_image_base64');
+      expect(body.required as string[]).toContain('selfie_image_base64');
     });
 
     it('should return 400 for invalid Zimbabwe national ID format', async () => {
@@ -560,10 +560,10 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required).toContain('customer_id');
-      expect(body.required).toContain('amount');
-      expect(body.required).toContain('customer_phone');
-      expect(body.required).toContain('payment_type');
+      expect(body.required as string[]).toContain('customer_id');
+      expect(body.required as string[]).toContain('amount');
+      expect(body.required as string[]).toContain('customer_phone');
+      expect(body.required as string[]).toContain('payment_type');
     });
 
     it('should return 404 for unknown payment route', async () => {
@@ -636,7 +636,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'Missing required fields');
       expect(body.required).toBeDefined();
-      expect(body.required.length).toBeGreaterThan(0);
+      expect((body.required as string[]).length).toBeGreaterThan(0);
     });
 
     it('should return 400 when verifying identity without handover_id', async () => {
