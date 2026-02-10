@@ -9,6 +9,7 @@ permissions:
   contents: write
   pull-requests: write
   checks: read
+  actions: write
 
 jobs:
   create-pr:
@@ -193,3 +194,21 @@ jobs:
                 --delete-branch
             }
           echo "PR #${PR_NUMBER} merged successfully!"
+
+  deploy-frontend:
+    name: Trigger Frontend Deployment
+    needs: [create-pr, auto-merge]
+    if: needs.create-pr.outputs.has_commits == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger frontend deployment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Triggering frontend deployment after auto-merge..."
+          gh workflow run deploy-frontend.yml \
+            --repo "${{ github.repository }}" \
+            -f environment=production \
+            -f application=both
+          echo "Frontend deployment triggered for production (both portals)"
