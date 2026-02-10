@@ -407,7 +407,7 @@ describe('P4-T005: Database Query Optimization & Stress Testing', () => {
             ...l,
             customer: largeCustomerSet.find(c => c.id === l.customer_id),
           }))
-          .sort((a, b) => (b.days_past_due as number) - (a.days_past_due as number))
+          .sort((a, b) => ((b as Record<string, unknown>).days_past_due as number) - ((a as Record<string, unknown>).days_past_due as number))
           .slice(0, 50);
       });
 
