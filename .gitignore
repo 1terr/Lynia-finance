@@ -45,6 +45,9 @@ package-lock.json
 # SAM build artifacts
 .aws-sam/
 
+# Test coverage output
+coverage/
+
 # Build outputs
 **/.next/
 services/kyc-service/dist/
