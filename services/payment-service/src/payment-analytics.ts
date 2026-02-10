@@ -1,14 +1,10 @@
 /**
- * Payment Method Analytics (T014)
+ * Payment Method Analytics
  *
- * Tracks which payment methods customers use (EcoCash, OneMoney, O'mari, etc.)
- * to inform decisions about when direct O'mari integration is justified.
+ * Tracks which payment methods customers use (EcoCash, OneWallet, O'mari, InnBucks)
+ * for fee analysis, provider performance monitoring, and business reporting.
  *
- * Decision rule from T014 research:
- * Pursue direct O'mari API when:
- *   (Paynow fees - Direct fees) x 12 months > Development cost + $10,000 safety margin
- *
- * This module provides the data needed to evaluate that threshold.
+ * All providers now use direct API integrations (Paynow aggregator removed).
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
@@ -19,11 +15,8 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 export type TrackedPaymentMethod =
   | 'ecocash'
-  | 'onemoney'
+  | 'onewallet'
   | 'omari'
-  | 'visa'
-  | 'mastercard'
-  | 'zimswitch'
   | 'innbucks'
   | 'bank_transfer'
   | 'cash'
@@ -68,23 +61,15 @@ export interface PaymentAnalyticsSummary {
 // ===================================================================
 
 /**
- * Current fee structure by gateway/method.
- * Paynow charges 3.5% for all mobile money methods.
- * Direct integration estimates from T014 research.
+ * Fee structure for direct provider integrations.
+ * Paynow aggregator removed - all providers use direct APIs now.
  */
 const FEE_RATES: Record<string, Record<string, number>> = {
-  paynow: {
-    ecocash: 0.035,
-    onemoney: 0.035,
-    omari: 0.035,
-    visa: 0.035,
-    mastercard: 0.035,
-    zimswitch: 0.035,
-  },
   direct: {
-    ecocash: 0.02,     // Estimated direct EcoCash fee
-    onemoney: 0.02,    // Estimated direct OneMoney fee
-    omari: 0.01,       // Estimated direct O'mari fee (T014: 1%)
+    ecocash: 0.02,     // Direct EcoCash fee ~2%
+    onewallet: 0.02,   // Direct OneWallet fee ~2%
+    omari: 0.01,       // Direct O'mari fee ~1% (0% promo on USD)
+    innbucks: 0.02,    // Direct InnBucks fee ~2%
   },
 };
 
@@ -127,43 +112,20 @@ export class PaymentAnalyticsService {
   }
 
   /**
-   * Detect payment method from Paynow webhook data.
-   *
-   * Paynow doesn't directly report which mobile money provider was used,
-   * so we infer from available data (reference format, phone prefix, etc.)
+   * Detect payment method from phone number prefix.
+   * With direct integrations, the gateway field identifies the provider.
+   * This is a fallback for reconciliation scenarios.
    */
-  detectPaymentMethod(
-    paynowReference: string,
-    customerPhone?: string
+  detectPaymentMethodFromPhone(
+    customerPhone: string
   ): TrackedPaymentMethod {
-    const ref = paynowReference.toUpperCase();
-
-    // O'mari references typically contain OM or 707
-    if (ref.includes('OM') || ref.includes('707')) {
-      return 'omari';
-    }
-
-    // EcoCash references typically start with MP or EC
-    if (ref.startsWith('MP') || ref.startsWith('EC')) {
-      return 'ecocash';
-    }
-
-    // OneMoney references
-    if (ref.startsWith('ON') || ref.startsWith('OM1')) {
-      return 'onemoney';
-    }
-
-    // Infer from phone number prefix if reference doesn't tell us
-    if (customerPhone) {
-      const cleaned = customerPhone.replace(/\D/g, '');
-      // Econet prefixes (EcoCash): 77, 78
-      if (/^263(77|78)/.test(cleaned)) return 'ecocash';
-      // NetOne prefixes (OneMoney): 71
-      if (/^26371/.test(cleaned)) return 'onemoney';
-      // Telecel prefixes: 73
-      if (/^26373/.test(cleaned)) return 'ecocash'; // Telecel users often use EcoCash
-    }
-
+    const cleaned = customerPhone.replace(/\D/g, '');
+    // Econet prefixes (EcoCash): 77, 78
+    if (/^263(77|78)/.test(cleaned)) return 'ecocash';
+    // NetOne prefixes (OneWallet): 71
+    if (/^26371/.test(cleaned)) return 'onewallet';
+    // Telecel prefixes: 73
+    if (/^26373/.test(cleaned)) return 'ecocash';
     return 'unknown';
   }
 
@@ -171,8 +133,8 @@ export class PaymentAnalyticsService {
    * Calculate fee amount for a given payment
    */
   calculateFee(amount: number, gateway: string, method: TrackedPaymentMethod): number {
-    const gatewayRates = FEE_RATES[gateway] || FEE_RATES.paynow;
-    const rate = gatewayRates[method] || 0.035; // Default to Paynow's 3.5%
+    const gatewayRates = FEE_RATES[gateway] || FEE_RATES.direct;
+    const rate = gatewayRates[method] || 0.02; // Default to 2% direct fee
     return amount * rate;
   }
 
@@ -239,12 +201,10 @@ export class PaymentAnalyticsService {
         ? (omariData.count / totalTransactions) * 100
         : 0;
 
-      // ROI estimate: savings if O'mari transactions used direct API (1%) vs Paynow (3.5%)
+      // Fee efficiency: O'mari has lowest fees at 1% (vs 2% for others)
       const omariVolume = omariData?.totalAmount || 0;
-      const currentOmariFees = omariVolume * 0.035;
-      const directOmariFees = omariVolume * 0.01;
-      const monthlyEstimatedSavings = currentOmariFees - directOmariFees;
-      const annualROI = monthlyEstimatedSavings * 12;
+      const omariFeeSavings = omariVolume * 0.01; // 1% savings vs 2% standard
+      const annualROI = omariFeeSavings * 12;
 
       return {
         period_start: startDate,
@@ -263,18 +223,16 @@ export class PaymentAnalyticsService {
   }
 
   /**
-   * Check if direct O'mari integration is justified.
-   * Based on T014 decision rule:
-   *   annual savings > development cost ($2,750) + $10,000 safety margin
+   * Get provider performance summary for operational monitoring.
+   * All providers use direct integrations now.
    */
-  async shouldPursueDirectOmari(): Promise<{
-    recommended: boolean;
-    reason: string;
-    metrics: {
-      omari_percentage: number;
-      estimated_annual_savings: number;
-      threshold: number;
-    };
+  async getProviderPerformance(): Promise<{
+    providers: Array<{
+      provider: string;
+      percentage: number;
+      volume: number;
+      fees: number;
+    }>;
   }> {
     const now = new Date();
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -284,28 +242,13 @@ export class PaymentAnalyticsService {
       now.toISOString()
     );
 
-    const threshold = 12750; // $2,750 dev cost + $10,000 safety margin
-
-    if (summary.omari_percentage >= 10 && summary.direct_integration_roi_estimate >= threshold) {
-      return {
-        recommended: true,
-        reason: `O'mari is ${summary.omari_percentage.toFixed(1)}% of transactions with estimated annual savings of $${summary.direct_integration_roi_estimate.toFixed(0)}, exceeding the $${threshold} threshold.`,
-        metrics: {
-          omari_percentage: summary.omari_percentage,
-          estimated_annual_savings: summary.direct_integration_roi_estimate,
-          threshold,
-        },
-      };
-    }
-
     return {
-      recommended: false,
-      reason: `O'mari is only ${summary.omari_percentage.toFixed(1)}% of transactions. Continue using Paynow gateway.`,
-      metrics: {
-        omari_percentage: summary.omari_percentage,
-        estimated_annual_savings: summary.direct_integration_roi_estimate,
-        threshold,
-      },
+      providers: summary.breakdown.map(b => ({
+        provider: b.payment_method,
+        percentage: b.percentage_of_total,
+        volume: b.total_amount,
+        fees: b.total_fees,
+      })),
     };
   }
 }
