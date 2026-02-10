@@ -1,0 +1,402 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Production IAM Roles and Policies
+  Deployment roles, service boundaries, and least-privilege access for production environment
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  ArtifactBucketName:
+    Type: String
+    Description: S3 bucket for SAM deployment artifacts
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # DEPLOYMENT ROLE (used by CI/CD pipeline)
+  # ==========================================================
+
+  DeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-deployment-role"
+      Description: Role assumed by CI/CD pipeline for SAM deployments
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                "aws:PrincipalTag/Team": "lynia-devops"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: deployment
+
+  DeploymentPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${Environment}-lynia-deployment-policy"
+      Roles:
+        - !Ref DeploymentRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # CloudFormation stack operations
+          - Sid: CloudFormationAccess
+            Effect: Allow
+            Action:
+              - cloudformation:CreateStack
+              - cloudformation:UpdateStack
+              - cloudformation:DeleteStack
+              - cloudformation:DescribeStacks
+              - cloudformation:DescribeStackEvents
+              - cloudformation:DescribeStackResource
+              - cloudformation:DescribeStackResources
+              - cloudformation:GetTemplate
+              - cloudformation:ValidateTemplate
+              - cloudformation:CreateChangeSet
+              - cloudformation:DescribeChangeSet
+              - cloudformation:ExecuteChangeSet
+              - cloudformation:DeleteChangeSet
+              - cloudformation:ListStackResources
+            Resource:
+              - !Sub "arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${Environment}-lynia-*"
+
+          # Lambda function management
+          - Sid: LambdaManagement
+            Effect: Allow
+            Action:
+              - lambda:CreateFunction
+              - lambda:UpdateFunctionCode
+              - lambda:UpdateFunctionConfiguration
+              - lambda:DeleteFunction
+              - lambda:GetFunction
+              - lambda:GetFunctionConfiguration
+              - lambda:ListVersionsByFunction
+              - lambda:PublishVersion
+              - lambda:CreateAlias
+              - lambda:UpdateAlias
+              - lambda:DeleteAlias
+              - lambda:GetAlias
+              - lambda:AddPermission
+              - lambda:RemovePermission
+              - lambda:GetPolicy
+              - lambda:TagResource
+              - lambda:PutFunctionConcurrency
+              - lambda:DeleteFunctionConcurrency
+              - lambda:PutProvisionedConcurrencyConfig
+              - lambda:DeleteProvisionedConcurrencyConfig
+            Resource:
+              - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-lynia-*"
+
+          # API Gateway management
+          - Sid: ApiGatewayManagement
+            Effect: Allow
+            Action:
+              - apigateway:GET
+              - apigateway:POST
+              - apigateway:PUT
+              - apigateway:PATCH
+              - apigateway:DELETE
+            Resource:
+              - !Sub "arn:aws:apigateway:${AWS::Region}::/restapis/*"
+              - !Sub "arn:aws:apigateway:${AWS::Region}::/domainnames/*"
+
+          # S3 artifact access
+          - Sid: S3ArtifactAccess
+            Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              - s3:ListBucket
+              - s3:GetBucketLocation
+            Resource:
+              - !Sub "arn:aws:s3:::${ArtifactBucketName}"
+              - !Sub "arn:aws:s3:::${ArtifactBucketName}/*"
+
+          # IAM role management (for Lambda execution roles)
+          - Sid: IAMRoleManagement
+            Effect: Allow
+            Action:
+              - iam:CreateRole
+              - iam:DeleteRole
+              - iam:GetRole
+              - iam:PutRolePolicy
+              - iam:DeleteRolePolicy
+              - iam:GetRolePolicy
+              - iam:AttachRolePolicy
+              - iam:DetachRolePolicy
+              - iam:PassRole
+              - iam:TagRole
+              - iam:ListRolePolicies
+              - iam:ListAttachedRolePolicies
+            Resource:
+              - !Sub "arn:aws:iam::${AWS::AccountId}:role/${Environment}-lynia-*"
+
+          # CodeDeploy access
+          - Sid: CodeDeployAccess
+            Effect: Allow
+            Action:
+              - codedeploy:CreateDeployment
+              - codedeploy:GetDeployment
+              - codedeploy:GetDeploymentConfig
+              - codedeploy:RegisterApplicationRevision
+              - codedeploy:GetApplicationRevision
+            Resource:
+              - !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:application:${Environment}-lynia-*"
+              - !Sub "arn:aws:codedeploy:${AWS::Region}:${AWS::AccountId}:deploymentgroup:${Environment}-lynia-*/*"
+
+          # CloudWatch and logs
+          - Sid: MonitoringAccess
+            Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:DeleteLogGroup
+              - logs:PutRetentionPolicy
+              - logs:DescribeLogGroups
+              - logs:TagLogGroup
+              - cloudwatch:PutMetricAlarm
+              - cloudwatch:DeleteAlarms
+              - cloudwatch:DescribeAlarms
+              - cloudwatch:PutDashboard
+              - cloudwatch:DeleteDashboards
+            Resource: "*"
+
+  # ==========================================================
+  # ADMIN READ-ONLY ROLE (for production monitoring)
+  # ==========================================================
+
+  AdminReadOnlyRole:
+    Type: AWS::IAM::Role
+    Condition: IsProduction
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-admin-readonly"
+      Description: Read-only access for production monitoring and troubleshooting
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                "aws:MultiFactorAuthPresent": "true"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/ReadOnlyAccess
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: admin-monitoring
+
+  AdminReadOnlyDenyPolicy:
+    Type: AWS::IAM::Policy
+    Condition: IsProduction
+    Properties:
+      PolicyName: !Sub "${Environment}-lynia-admin-deny-sensitive"
+      Roles:
+        - !Ref AdminReadOnlyRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Deny access to secret values (can see metadata but not values)
+          - Sid: DenySecretValues
+            Effect: Deny
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:GetRandomPassword
+            Resource: "*"
+          # Deny access to raw database queries
+          - Sid: DenyDatabaseAccess
+            Effect: Deny
+            Action:
+              - rds-data:ExecuteStatement
+              - rds-data:BatchExecuteStatement
+            Resource: "*"
+
+  # ==========================================================
+  # INCIDENT RESPONSE ROLE (break-glass for production)
+  # ==========================================================
+
+  IncidentResponseRole:
+    Type: AWS::IAM::Role
+    Condition: IsProduction
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-incident-response"
+      Description: Emergency access for production incident response (break-glass)
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              Bool:
+                "aws:MultiFactorAuthPresent": "true"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: incident-response
+
+  IncidentResponsePolicy:
+    Type: AWS::IAM::Policy
+    Condition: IsProduction
+    Properties:
+      PolicyName: !Sub "${Environment}-lynia-incident-response-policy"
+      Roles:
+        - !Ref IncidentResponseRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          # Lambda function operations (invoke, read config, read logs)
+          - Sid: LambdaIncidentAccess
+            Effect: Allow
+            Action:
+              - lambda:GetFunction
+              - lambda:GetFunctionConfiguration
+              - lambda:InvokeFunction
+              - lambda:UpdateFunctionConfiguration
+              - lambda:ListAliases
+              - lambda:GetAlias
+              - lambda:UpdateAlias
+            Resource:
+              - !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${Environment}-lynia-*"
+          # Secrets read access (for credential rotation)
+          - Sid: SecretsReadAccess
+            Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+              - secretsmanager:DescribeSecret
+              - secretsmanager:UpdateSecret
+            Resource:
+              - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/*"
+          # CloudWatch for diagnostics
+          - Sid: CloudWatchDiagnostics
+            Effect: Allow
+            Action:
+              - logs:GetLogEvents
+              - logs:FilterLogEvents
+              - logs:DescribeLogStreams
+              - cloudwatch:GetMetricData
+              - cloudwatch:GetMetricStatistics
+              - cloudwatch:DescribeAlarms
+              - xray:GetTraceSummaries
+              - xray:BatchGetTraces
+            Resource: "*"
+          # SQS operations (purge stuck messages, redrive DLQ)
+          - Sid: SQSIncidentAccess
+            Effect: Allow
+            Action:
+              - sqs:GetQueueAttributes
+              - sqs:GetQueueUrl
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:PurgeQueue
+              - sqs:StartMessageMoveTask
+            Resource:
+              - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-*"
+
+  # ==========================================================
+  # FRONTEND DEPLOYMENT ROLE (S3 + CloudFront)
+  # ==========================================================
+
+  FrontendDeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-frontend-deployment"
+      Description: Role for deploying frontend assets to S3 and invalidating CloudFront
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                "aws:PrincipalTag/Team": "lynia-devops"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Purpose
+          Value: frontend-deployment
+
+  FrontendDeploymentPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub "${Environment}-lynia-frontend-deploy-policy"
+      Roles:
+        - !Ref FrontendDeploymentRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: S3FrontendAccess
+            Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+              - s3:DeleteObject
+              - s3:ListBucket
+            Resource:
+              - !Sub "arn:aws:s3:::${Environment}-lynia-admin-portal"
+              - !Sub "arn:aws:s3:::${Environment}-lynia-admin-portal/*"
+              - !Sub "arn:aws:s3:::${Environment}-lynia-distributor-dashboard"
+              - !Sub "arn:aws:s3:::${Environment}-lynia-distributor-dashboard/*"
+          - Sid: CloudFrontInvalidation
+            Effect: Allow
+            Action:
+              - cloudfront:CreateInvalidation
+              - cloudfront:GetInvalidation
+              - cloudfront:ListInvalidations
+            Resource: "*"
+
+Outputs:
+  DeploymentRoleArn:
+    Description: Deployment role ARN for CI/CD pipeline
+    Value: !GetAtt DeploymentRole.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-deployment-role-arn"
+
+  AdminReadOnlyRoleArn:
+    Description: Admin read-only role ARN
+    Condition: IsProduction
+    Value: !GetAtt AdminReadOnlyRole.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-admin-readonly-role-arn"
+
+  IncidentResponseRoleArn:
+    Description: Incident response role ARN
+    Condition: IsProduction
+    Value: !GetAtt IncidentResponseRole.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-incident-response-role-arn"
+
+  FrontendDeploymentRoleArn:
+    Description: Frontend deployment role ARN
+    Value: !GetAtt FrontendDeploymentRole.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-frontend-deployment-role-arn"
