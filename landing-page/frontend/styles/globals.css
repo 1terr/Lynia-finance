@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --gradient-hero: linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%);
+    --gradient-cta: linear-gradient(135deg, #0A2540 0%, #1A3550 100%);
+    --gradient-stats: linear-gradient(135deg, #0A2540 0%, #635BFF 100%);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-body text-slate antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-primary-dark;
+  }
+}
+
+@layer utilities {
+  .section-padding {
+    @apply py-16 lg:py-[120px];
+  }
+
+  .section-padding-compact {
+    @apply py-16 lg:py-20;
+  }
+
+  .container-main {
+    @apply mx-auto max-w-container px-6 lg:px-12;
+  }
+
+  .container-wide {
+    @apply mx-auto max-w-wide px-6 lg:px-12;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
