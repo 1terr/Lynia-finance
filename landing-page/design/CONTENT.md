@@ -121,6 +121,133 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 
 ---
 
+## Research Page (Blog)
+
+**CMS**: Sanity (free tier)
+**Inspiration**: stripe.com/blog
+
+### Page Layout
+
+```
+┌─────────────────────────────────────────────────────┐
+│  RESEARCH                                           │
+│                                                     │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  FEATURED POST                                │  │
+│  │  [Large illustration]                         │  │
+│  │  Category tag                                 │  │
+│  │  Featured Headline Here                       │  │
+│  │  Excerpt text describing the article...       │  │
+│  │  12 Feb 2026                                  │  │
+│  └───────────────────────────────────────────────┘  │
+│                                                     │
+│  [All] [Products] [Engineering] [Company] [Market]  │
+│                                                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐          │
+│  │ [Image]  │  │ [Image]  │  │ [Image]  │          │
+│  │ TAG      │  │ TAG      │  │ TAG      │          │
+│  │ Headline │  │ Headline │  │ Headline │          │
+│  │ Excerpt  │  │ Excerpt  │  │ Excerpt  │          │
+│  │ Date     │  │ Date     │  │ Date     │          │
+│  └──────────┘  └──────────┘  └──────────┘          │
+│                                                     │
+│  [Load more]                                        │
+└─────────────────────────────────────────────────────┘
+```
+
+### Suggested Categories
+
+- All
+- Products (asset financing, digital credit updates)
+- Engineering (tech behind the platform)
+- Company (team, milestones, culture)
+- Market (Zimbabwe fintech landscape, financial inclusion research)
+
+### Sanity Content Types
+
+| Type | Fields |
+|------|--------|
+| **Post** | Title, slug, featured image, excerpt, body (rich text), category, author, published date |
+| **Author** | Name, avatar, role |
+| **Category** | Name, slug, description |
+
+---
+
+## Contact Page
+
+**Inspiration**: stripe.com/contact/sales (styling only - our fields differ)
+
+### Page Layout
+
+```
+┌──────────────────────────┬──────────────────────────┐
+│                          │                          │
+│  Get in touch            │  CONTACT FORM            │
+│                          │                          │
+│  Have a question or      │  Name *                  │
+│  want to learn more?     │  ┌────────────────────┐  │
+│  We'd love to hear       │  └────────────────────┘  │
+│  from you.               │  Phone number *          │
+│                          │  ┌────────────────────┐  │
+│  ─────────────────       │  └────────────────────┘  │
+│                          │  Email                   │
+│  OTHER WAYS TO REACH US  │  ┌────────────────────┐  │
+│                          │  └────────────────────┘  │
+│  💬 WhatsApp             │  Message                 │
+│  Chat with us directly   │  ┌────────────────────┐  │
+│                          │  │                    │  │
+│  ✉ Email                 │  └────────────────────┘  │
+│  hello@lyniafinance.com  │                          │
+│                          │  [Send message]          │
+│  📍 Location             │                          │
+│  Harare, Zimbabwe        │                          │
+│                          │                          │
+└──────────────────────────┴──────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│                                                     │
+│  WANT TO PARTNER WITH US?                           │
+│                                                     │
+│  Name *    Phone number *    Email *                │
+│  Type of partnership *                              │
+│  [ Distributor / B2B Partnership / Other ]          │
+│  Message                                            │
+│                                                     │
+│  [Submit partnership application]                   │
+│                                                     │
+└─────────────────────────────────────────────────────┘
+```
+
+### Contact Form Fields
+
+| Field | Required | Type |
+|-------|----------|------|
+| Name | Yes | Text input |
+| Phone number | Yes | Tel input (with country code) |
+| Email | No | Email input |
+| Message | No | Textarea |
+
+### Partnership Application Fields
+
+| Field | Required | Type |
+|-------|----------|------|
+| Name | Yes | Text input |
+| Phone number | Yes | Tel input |
+| Email | Yes | Email input |
+| Type of partnership | Yes | Select: Distributor / B2B Partnership / Other |
+| Message / details | No | Textarea |
+
+### Design Notes
+
+- Split layout on desktop (info left, form right) - Stripe contact/sales style
+- Stacks to single column on mobile (info first, then form)
+- Partnership application as separate section below the main contact form
+- Brand blue primary buttons
+- Clean labels above each field
+- WhatsApp floating button also visible on this page
+
+---
+
 ## Page Structure Summary
 
 The homepage is a single scrolling page with this order:
