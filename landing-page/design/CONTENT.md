@@ -72,7 +72,7 @@ The stats section is placed early to establish the problem before presenting pro
 │  │  underbanked        │  │   showing loan approval  │  │
 │  │                     │  │   flow or mobile money   │  │
 │  │  Smartphones,       │  │   transaction]           │  │
-│  │  equipment, and     │  │                          │  │
+│  │  assets, and     │  │                          │  │
 │  │  cash — delivered   │  │                          │  │
 │  │  through WhatsApp   │  │                          │  │
 │  │  with approval in   │  │                          │  │
@@ -93,7 +93,7 @@ The stats section is placed early to establish the problem before presenting pro
 > Financial tools for the underbanked
 
 **Subtext**:
-> Smartphones, equipment, and cash — delivered through WhatsApp with approval in under 5 minutes.
+> Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes.
 
 **CTAs**:
 - Primary: `[Start your application]` (filled button, white bg with brand text on dark hero)
@@ -225,7 +225,7 @@ If a label is required:
 > Own the tools that power your trade
 
 **Subtext**:
-> Finance a smartphone or equipment with a small deposit. Collect from a local agent, repay via mobile money.
+> Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money.
 
 **Features** (4-column grid):
 
@@ -310,7 +310,7 @@ If a label is required:
 │  │ FOR INDIVIDUALS │ │ FOR BUSINESSES  │ │ FOR PARTNERS    │ │
 │  │                 │ │                 │ │                 │ │
 │  │ Smartphones,    │ │ Digital credit  │ │ Embed credit    │ │
-│  │ equipment, and  │ │ with no         │ │ into your       │ │
+│  │ assets, and  │ │ with no         │ │ into your       │ │
 │  │ cash. Apply     │ │ paperwork and   │ │ platform.       │ │
 │  │ via WhatsApp    │ │ no bank visits. │ │ Offer financing │ │
 │  │ in under 5      │ │ Apply and       │ │ at the point    │ │

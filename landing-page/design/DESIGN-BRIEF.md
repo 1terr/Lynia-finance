@@ -96,7 +96,7 @@ Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 ### 4.1 Hero Messaging (updated per Stripe alignment review)
 
 - **Headline**: "Financial tools for the underbanked"
-- **Subtext**: "Smartphones, equipment, and cash — delivered through WhatsApp with approval in under 5 minutes."
+- **Subtext**: "Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes."
 - **Primary CTA**: `[Start your application]`
 - **Secondary CTA**: `See how it works →`
 
@@ -104,7 +104,7 @@ Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 
 | Product | Headline | Subtext |
 |---------|----------|---------|
-| **Asset Financing** | "Own the tools that power your trade" | Finance a smartphone or equipment with a small deposit. Collect from a local agent, repay via mobile money. |
+| **Asset Financing** | "Own the tools that power your trade" | Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money. |
 | **Digital Credit** | "Cash when you need it most" | Digital loans deposited directly into your EcoCash or OneMoney wallet. Apply once, get funded in under 10 minutes. |
 | **Enterprise Partnerships** | "Embed credit into your platform" | Offer your customers financing at the point of need. Lynia handles underwriting, disbursement, and collections — you earn on every transaction. |
 

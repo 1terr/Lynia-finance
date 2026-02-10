@@ -98,7 +98,7 @@ Container: max-width 1280px, centered
 │  Financial tools                     │
 │  for the underbanked                 │   32px headline
 │                                      │
-│  Smartphones, equipment, and         │
+│  Smartphones, assets, and         │
 │  cash — delivered through            │   16px subtext
 │  WhatsApp with approval in           │
 │  under 5 minutes.                    │
@@ -133,7 +133,7 @@ Above the fold: headline + subtext + CTA must all appear on 375px screen
 │   │  Financial tools           │  │   ┌────────────────┐     │   │
 │   │  for the underbanked       │  │   │                │     │   │
 │   │                            │  │   │  [WhatsApp UI  │     │   │
-│   │  Smartphones, equipment,   │  │   │   phone mockup │     │   │
+│   │  Smartphones, assets,   │  │   │   phone mockup │     │   │
 │   │  and cash — delivered      │  │   │   with loan    │     │   │
 │   │  through WhatsApp with     │  │   │   approval     │     │   │
 │   │  approval in under         │  │   │   flow]        │     │   │
@@ -343,7 +343,7 @@ Padding: 120px vertical
 │  power your trade                    │   28px headline
 │                                      │
 │  Finance a smartphone or             │
-│  equipment with a small deposit.     │   16px subtext
+│  assets with a small deposit.     │   16px subtext
 │  Collect from a local agent,         │
 │  repay via mobile money.             │
 │                                      │
@@ -399,7 +399,7 @@ Padding: 64px vertical (compact)
 │  │  power your trade            │ │   approval animation]    │   │
 │  │                              │ │                          │   │
 │  │  Finance a smartphone or     │ │                          │   │
-│  │  equipment with a small      │ │                          │   │
+│  │  assets with a small      │ │                          │   │
 │  │  deposit. Collect from a     │ │                          │   │
 │  │  local agent, repay via      │ │                          │   │
 │  │  mobile money.               │ │                          │   │
@@ -607,7 +607,7 @@ Padding: 80px vertical (compact)
 │  ┌──────────────────────────────┐    │
 │  │  FOR INDIVIDUALS              │    │
 │  │                               │    │
-│  │  Smartphones, equipment, and  │    │
+│  │  Smartphones, assets, and  │    │
 │  │  cash. Apply via WhatsApp in  │    │
 │  │  under 5 minutes.             │    │
 │  │                               │    │
@@ -653,7 +653,7 @@ Padding: 64px vertical
 │  │  FOR INDIVIDUALS   │ │  FOR BUSINESSES    │ │  FOR PARTNERS     ││
 │  │                    │ │                    │ │                    ││
 │  │  Smartphones,      │ │  Digital credit    │ │  Embed credit into ││
-│  │  equipment, and    │ │  with no paperwork │ │  your platform.    ││
+│  │  assets, and    │ │  with no paperwork │ │  your platform.    ││
 │  │  cash. Apply via   │ │  and no bank       │ │  Offer financing   ││
 │  │  WhatsApp in under │ │  visits. Apply and │ │  at the point of   ││
 │  │  5 minutes.        │ │  receive funds on  │ │  sale through our  ││
