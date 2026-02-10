@@ -17,27 +17,11 @@ Phase 5 transitions Lynia Finance from development and testing into production o
 
 Complete the remaining Phase 4 items that block production go-live.
 
-### P5-T001: Production Deployment Runbook (Carry-over from P4-T014)
-**Priority:** Critical | **Estimate:** 12h
+### ~~P5-T001: Production Deployment Runbook~~ — COMPLETED IN PHASE 4
+> **Resolved:** P4-T014 completed 2026-02-10. 5 deployment documents created. No carry-over needed.
 
-- Consolidate existing deployment scripts, CI/CD docs, and on-call runbook into a single production runbook
-- Document database migration forward/rollback procedures
-- Define rollback trigger criteria (error rate thresholds, latency thresholds, business impact criteria)
-- Create emergency contact list and escalation matrix
-- Document DNS failover procedures
-- Test full deployment + rollback cycle in staging
-- Verify rollback completes within 5-minute target
-
-### P5-T002: Logging Infrastructure Verification (Carry-over from P4-T011)
-**Priority:** High | **Estimate:** 12h
-
-- Verify structured log format consistency across all 6 services
-- Confirm NEVER_LOG fields are masked/excluded in all code paths
-- Verify correlation ID (requestId) propagation across service boundaries
-- Configure CloudWatch Logs retention policies per environment (dev: 30d, staging: 90d, prod: 365d)
-- Configure log archival to S3 for regulatory retention (5+ years)
-- Verify log levels are correct per environment (INFO in production, no DEBUG)
-- Create log-based metric filters for security events
+### ~~P5-T002: Logging Infrastructure Verification~~ — COMPLETED IN PHASE 4
+> **Resolved:** P4-T011 completed 2026-02-10. Logger enhanced, 16 metric filters, 100% audit coverage. No carry-over needed.
 
 ### P5-T003: UAT Execution & Sign-Off
 **Priority:** High | **Estimate:** 16h
@@ -193,8 +177,8 @@ Expand functionality based on market needs and pilot feedback.
 
 ```
 Week 1-2:  Track 1 (Launch Completion)
-           - P5-T001: Deployment Runbook
-           - P5-T002: Logging Verification
+           - P5-T001: DONE IN P4 (Deployment Runbook)
+           - P5-T002: DONE IN P4 (Logging Verification)
            - P5-T003: UAT Execution
            - P5-T004: On-Call Training
            - P5-T005: Production Go-Live
@@ -224,10 +208,10 @@ Week 6-12: Track 3 Growth
 
 | Track | Estimated Hours | Team |
 |-------|----------------|------|
-| Track 1: Launch Completion | 56h | Engineering, DevOps, Product, QA |
+| Track 1: Launch Completion | 32h (was 56h; T001/T002 done in P4) | Engineering, DevOps, Product, QA |
 | Track 2: Operational Maturity | 68h | Engineering, DevOps |
 | Track 3: Growth Features | 124h+ | Engineering, Product, Data Science |
-| **Total Phase 5 Estimate** | **248h+** | **Full team** |
+| **Total Phase 5 Estimate** | **224h+** (reduced from 248h) | **Full team** |
 
 ---
 
@@ -259,4 +243,5 @@ Week 6-12: Track 3 Growth
 ---
 
 **Document prepared:** 2026-02-10
+**Last updated:** 2026-02-10 (P5-T001 and P5-T002 completed in Phase 4; Track 1 hours reduced)
 **Review cadence:** Bi-weekly during Phase 5 execution
