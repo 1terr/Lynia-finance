@@ -1,6 +1,7 @@
 # Landing Page Content - lyniafinance.com
 
-> Extracted from wireframe mockups. This is the source of truth for all page copy.
+> Source of truth for all page copy.
+> Homepage structure follows [stripe.com](https://stripe.com) design patterns.
 
 ---
 
@@ -12,10 +13,76 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 
 - Nav is clean text links only - no buttons
 - Contact, Careers, and other links live in the footer
+- Sticky nav with transparent → solid background on scroll
 
 ---
 
-## Hero Section
+## Homepage Structure (Stripe-inspired)
+
+The homepage follows Stripe's proven section flow: Hero → Product suite → Why us → Scale/impact → Customer segments → Testimonial → Editorial → Bottom CTA → Footer.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 1. HERO (animated gradient background)                  │
+├─────────────────────────────────────────────────────────┤
+│ 2. SOCIAL PROOF (partner/trust logos)                   │
+├─────────────────────────────────────────────────────────┤
+│ 3. PRODUCT SUITE (3 product cards in grid)              │
+├─────────────────────────────────────────────────────────┤
+│ 4. PRODUCT DEEP DIVE: Asset Financing                   │
+├─────────────────────────────────────────────────────────┤
+│ 5. PRODUCT DEEP DIVE: Digital Credit                    │
+├─────────────────────────────────────────────────────────┤
+│ 6. PRODUCT DEEP DIVE: Enterprise Partnerships           │
+├─────────────────────────────────────────────────────────┤
+│ 7. WHY LYNIA (value props + impact numbers)             │
+├─────────────────────────────────────────────────────────┤
+│ 8. CUSTOMER SEGMENTS (who we serve)                     │
+├─────────────────────────────────────────────────────────┤
+│ 9. TESTIMONIAL (featured customer story)                │
+├─────────────────────────────────────────────────────────┤
+│ 10. EDITORIAL (featured Research posts)                 │
+├─────────────────────────────────────────────────────────┤
+│ 11. BOTTOM CTA (final conversion)                       │
+├─────────────────────────────────────────────────────────┤
+│ 12. FOOTER                                              │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Section 1: Hero
+
+**Design**: Full-viewport height. Animated gradient background (WebGL canvas with brand blue hues). Bold headline left-aligned or centered with product UI illustration on the right.
+
+**Stripe pattern**: Big bold headline + short subtext + 2 CTAs + animated visual element.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  ┌─────────────────────┐  ┌──────────────────────────┐  │
+│  │                     │  │                          │  │
+│  │  Credit that works  │  │  [Animated illustration  │  │
+│  │  for real people    │  │   of WhatsApp phone UI   │  │
+│  │                     │  │   showing loan approval   │  │
+│  │  Lynia Finance      │  │   flow or mobile money   │  │
+│  │  helps you get the  │  │   transaction]           │  │
+│  │  smartphone, tools, │  │                          │  │
+│  │  or cash you need   │  │                          │  │
+│  │  —giving you the    │  │                          │  │
+│  │  power to earn more │  │                          │  │
+│  │  and do more.       │  │                          │  │
+│  │                     │  │                          │  │
+│  │  [Apply now]        │  │                          │  │
+│  │  Lets chat on       │  │                          │  │
+│  │  whatsapp           │  │                          │  │
+│  │                     │  │                          │  │
+│  └─────────────────────┘  └──────────────────────────┘  │
+│                                                         │
+│            ──── animated gradient background ────        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
 **Headline**:
 > Credit that works for real people
@@ -24,12 +91,77 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 > Lynia Finance helps you get the smartphone, tools, or cash you need—giving you the power to earn more and do more.
 
 **CTAs**:
-- Primary: `[Apply now]`
-- Secondary: `Lets chat on whatsapp`
+- Primary: `[Apply now]` (filled button, brand blue)
+- Secondary: `Lets chat on whatsapp` (text link with arrow)
+
+**Visual**: Animated flat illustration showing a WhatsApp loan approval flow or mobile money transaction on a phone mockup (CSS-rendered device, Stripe style).
+
+**Technical notes**:
+- Animated gradient using WebGL canvas (blue hues: `#0052FF`, `#003ECB`, `#0A1628`, `#60A5FA`)
+- CSS Grid layout: 2 columns (text left, visual right)
+- On mobile: stacks (text on top, visual below or hidden)
 
 ---
 
-## Product 1: Asset Financing
+## Section 2: Social Proof / Trust Bar
+
+**Design**: Narrow horizontal strip. Logos in a row. Subtle grey or light background.
+
+**Stripe pattern**: Row of major customer/partner logos to build immediate credibility.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  Trusted by partners across Zimbabwe                    │
+│                                                         │
+│  [Logo]   [Logo]   [Logo]   [Logo]   [Logo]   [Logo]   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Content**: Partner logos, payment provider logos (EcoCash, OneMoney), or trust indicators.
+- If logos not yet available, use stats instead: "500+ customers served | <5 min approval | 100% mobile money"
+
+---
+
+## Section 3: Product Suite Overview
+
+**Design**: Clean grid of 3 product cards. Each card has an icon/illustration, product name, one-line description, and a link. Like Stripe's product showcase grid.
+
+**Stripe pattern**: Show the breadth of offerings at a glance before deep-diving into each.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  A fully integrated suite of credit products            │
+│                                                         │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌────────────────┐ │
+│  │ [illustration]  │ │ [illustration]  │ │ [illustration]   │ │
+│  │                 │ │                 │ │                  │ │
+│  │ ASSET FINANCING │ │ DIGITAL CREDIT  │ │ ENTERPRISE       │ │
+│  │                 │ │                 │ │ PARTNERSHIPS     │ │
+│  │ Own the tools   │ │ Cash when you   │ │ Credit built     │ │
+│  │ that power      │ │ need it most    │ │ into your        │ │
+│  │ your trade      │ │                 │ │ business         │ │
+│  │                 │ │                 │ │                  │ │
+│  │ Learn more →    │ │ Learn more →    │ │ Learn more →     │ │
+│  └─────────────────┘ └─────────────────┘ └────────────────┘ │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Section headline**:
+> A fully integrated suite of credit products
+
+**Cards** link/scroll to the product deep-dive sections below.
+
+---
+
+## Section 4: Product Deep Dive — Asset Financing
+
+**Design**: Full-width section. Split layout: text left, product visual/illustration right. Alternating background (white or light blue). Feature grid below the headline.
+
+**Stripe pattern**: Each product gets a dedicated section with headline + description + features + CTA + visual.
 
 **Label**: ASSET FINANCING
 
@@ -39,7 +171,7 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 **Subtext**:
 > Get smartphones, tools of your trade through flexible financing. These assets are productive tools that help you earn more, while our system ensures fair repayment terms
 
-**Features** (4 columns):
+**Features** (4-column grid):
 
 | Feature | Description |
 |---------|-------------|
@@ -52,9 +184,13 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 - Primary: `[Apply now]`
 - Secondary: `Lets chat on whatsapp`
 
+**Visual**: Flat illustration of a smartphone with a checkmark / approval animation.
+
 ---
 
-## Product 2: Digital Credit
+## Section 5: Product Deep Dive — Digital Credit
+
+**Design**: Alternating background (dark navy `#0A1628` with light text, Stripe-style dark section). Split layout: visual left, text right.
 
 **Label**: DIGITAL CREDIT
 
@@ -64,7 +200,7 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 **Subtext**:
 > Quick, secure digital loans delivered straight to your mobile wallet. Designed to cover everyday needs or business growth, with repayment made simple via EcoCash or Omari
 
-**Features** (2 columns):
+**Features** (2-column grid):
 
 | Feature | Description |
 |---------|-------------|
@@ -72,11 +208,15 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 | **Mobile money friendly** | Your money is deposited directly into your mobile money wallet. You also repay using mobile. |
 
 **CTA**:
-- Primary: `[Coming soon]`
+- Primary: `[Coming soon]` (muted/disabled style)
+
+**Visual**: Flat illustration of mobile wallet receiving funds.
 
 ---
 
-## Product 3: Enterprise Partnerships
+## Section 6: Product Deep Dive — Enterprise Partnerships
+
+**Design**: White/light background. Split layout: text left, visual right.
 
 **Label**: ENTERPRISE PARTNERSHIPS
 
@@ -86,7 +226,7 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 **Subtext**:
 > We partner with enterprises to embed financing directly into their platforms. From distributors to service providers, Lynia Finance integrates credit at the point of need—helping businesses grow and customers access more
 
-**Features** (3 items):
+**Features** (3-item grid):
 
 | Feature | Description |
 |---------|-------------|
@@ -97,9 +237,162 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 **CTA**:
 - Primary: `[Partner with us]`
 
+**Visual**: Flat illustration of connected platforms / API integration diagram.
+
+---
+
+## Section 7: Why Lynia / Impact Numbers
+
+**Design**: Full-width section with brand blue gradient background. Large stat numbers in a grid. Stripe shows global reach with impressive numbers — Lynia shows impact.
+
+**Stripe pattern**: The "Why Stripe" / global scale section with big numbers and concise supporting text.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                (brand blue gradient bg)                  │
+│                                                         │
+│  Why Lynia Finance                                      │
+│                                                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
+│  │  <5 min  │  │  100%    │  │  $100+   │  │  24/7   │ │
+│  │  Approval │  │  Mobile  │  │  Device  │  │ WhatsApp│ │
+│  │  time    │  │  money   │  │ financing│  │ support │ │
+│  └──────────┘  └──────────┘  └──────────┘  └─────────┘ │
+│                                                         │
+│  The underbanked aren't high risk — they're unmodeled.  │
+│  We're building alternative financial rails to power    │
+│  financial mobility in Zimbabwe.                        │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Stats to feature**:
+- `<5 min` — Approval time
+- `100%` — Mobile money based
+- `$100+` — Device financing starting point
+- `24/7` — WhatsApp support
+
+**Supporting text**:
+> The underbanked aren't high risk — they're unmodeled. We're building alternative financial rails to power financial mobility in Zimbabwe.
+
+---
+
+## Section 8: Customer Segments
+
+**Design**: 3-column card layout. Each card targets a different audience with tailored messaging. Stripe does this for startups / enterprises / platforms.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  Built for everyone in the value chain                  │
+│                                                         │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌────────────────┐ │
+│  │ FOR INDIVIDUALS │ │ FOR BUSINESSES  │ │ FOR PARTNERS    │ │
+│  │                 │ │                 │ │                 │ │
+│  │ Get the tools   │ │ Grow your       │ │ Embed credit    │ │
+│  │ you need to     │ │ business with   │ │ into your       │ │
+│  │ earn more.      │ │ instant digital │ │ platform and    │ │
+│  │ Smartphones,    │ │ credit. No      │ │ help your       │ │
+│  │ equipment,      │ │ paperwork, no   │ │ customers       │ │
+│  │ and cash —      │ │ bank visits.    │ │ access more.    │ │
+│  │ all via         │ │                 │ │                 │ │
+│  │ WhatsApp.       │ │                 │ │                 │ │
+│  │                 │ │                 │ │                 │ │
+│  │ Apply now →     │ │ Coming soon →   │ │ Partner with    │ │
+│  │                 │ │                 │ │ us →            │ │
+│  └─────────────────┘ └─────────────────┘ └────────────────┘ │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Section 9: Testimonial
+
+**Design**: Full-width with subtle background. Large quote with attribution. Stripe features a single powerful customer quote.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  "Lynia Finance helped me get the smartphone I needed   │
+│   to run my business. The whole process took less       │
+│   than 5 minutes on WhatsApp."                          │
+│                                                         │
+│  — [Customer Name], [Occupation], Harare                │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Note**: Placeholder — real testimonial to be sourced.
+
+---
+
+## Section 10: Editorial / Featured Research
+
+**Design**: 2-3 column card grid showing latest Research posts. Stripe features curated editorial content (reports, interviews, announcements).
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  From our Research                                      │
+│                                                         │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐              │
+│  │ [Image]  │  │ [Image]  │  │ [Image]  │              │
+│  │ TAG      │  │ TAG      │  │ TAG      │              │
+│  │ Headline │  │ Headline │  │ Headline │              │
+│  │ Excerpt  │  │ Excerpt  │  │ Excerpt  │              │
+│  │ Date     │  │ Date     │  │ Date     │              │
+│  └──────────┘  └──────────┘  └──────────┘              │
+│                                                         │
+│                 View all research →                      │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Source**: Pulls latest 3 posts from Sanity CMS.
+
+---
+
+## Section 11: Bottom CTA
+
+**Design**: Full-width section with gradient or dark background. Final push to convert. Stripe ends with "Ready to get started?" + pricing mention.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│              (dark navy or gradient bg)                  │
+│                                                         │
+│  Ready to get started?                                  │
+│                                                         │
+│  Get the smartphone, tools, or cash you need.           │
+│  Apply in under 5 minutes via WhatsApp.                 │
+│                                                         │
+│  [Apply now]    Lets chat on whatsapp                   │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
+
 ---
 
 ## Footer
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│  Lynia Finance (logo)                                   │
+│                                                         │
+│  Products        Company        Connect       Legal     │
+│  ─────────       ───────        ───────       ─────     │
+│  Smartphone      Careers        X (Twitter)   Privacy   │
+│   financing      Contact        LinkedIn      Terms     │
+│  Digital loans                  WhatsApp                │
+│  Embedded                                               │
+│   financing                                             │
+│                                                         │
+│  © 2026 Lynia Finance. All rights reserved.             │
+│  Regulated by the Reserve Bank of Zimbabwe.             │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
+```
 
 **Products column**:
 - Smartphone financing
@@ -118,6 +411,37 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 **Legal column**:
 - Privacy Policy
 - Terms
+
+**Bottom line**: Copyright + RBZ regulatory disclaimer
+
+---
+
+## Design Pattern Reference (Stripe → Lynia mapping)
+
+| Stripe Section | Lynia Equivalent | Notes |
+|---------------|-----------------|-------|
+| Hero with gradient + animated UI | Hero with gradient + WhatsApp UI illustration | WebGL gradient canvas |
+| Customer logos bar | Partner/trust logos bar | EcoCash, OneMoney, or stats |
+| Product suite grid | 3 product cards (Asset, Digital, Enterprise) | Icons + one-liner + link |
+| Individual product sections | 3 product deep-dives | Alternating backgrounds |
+| "Why Stripe" + global numbers | "Why Lynia" + impact numbers | Stats on gradient bg |
+| Customer segments | For Individuals / Businesses / Partners | 3-column cards |
+| Customer testimonial | Customer quote | Placeholder for now |
+| Editorial content | Featured Research posts | Pulls from Sanity |
+| Bottom CTA + pricing | Bottom CTA | Apply now + WhatsApp |
+| Multi-column footer | Multi-column footer | Products, Company, Connect, Legal |
+
+## Technical Design Notes
+
+| Pattern | Implementation |
+|---------|---------------|
+| **Gradient background** | WebGL canvas with animated blue hues (`#0052FF`, `#003ECB`, `#0A1628`, `#60A5FA`) |
+| **Device mockups** | CSS-rendered phones/laptops (<1KB, hardware-accelerated, responsive) |
+| **Section transitions** | Scroll-triggered fade-in animations using Intersection Observer API |
+| **Layout** | CSS Grid throughout, 2-column splits for product sections |
+| **Dark sections** | Alternating light/dark backgrounds (white ↔ navy `#0A1628`) |
+| **Hover effects** | Subtle card elevation/shadow on hover, button color transitions |
+| **Mobile** | Single-column stack, hero visual below text or hidden, reduced animations |
 
 ---
 
@@ -193,13 +517,13 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 │                          │  Email                   │
 │  OTHER WAYS TO REACH US  │  ┌────────────────────┐  │
 │                          │  └────────────────────┘  │
-│  💬 WhatsApp             │  Message                 │
+│  WhatsApp                │  Message                 │
 │  Chat with us directly   │  ┌────────────────────┐  │
 │                          │  │                    │  │
-│  ✉ Email                 │  └────────────────────┘  │
+│  Email                   │  └────────────────────┘  │
 │  hello@lyniafinance.com  │                          │
 │                          │  [Send message]          │
-│  📍 Location             │                          │
+│  Location                │                          │
 │  Harare, Zimbabwe        │                          │
 │                          │                          │
 └──────────────────────────┴──────────────────────────┘
@@ -248,23 +572,10 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research
 
 ---
 
-## Page Structure Summary
+## Separate Pages (linked from nav)
 
-The homepage is a single scrolling page with this order:
-
-```
-1. Navigation bar (sticky): Products | Mission | Partnerships | Research
-2. Hero section (headline + subtext + 2 CTAs)
-3. Asset Financing section (label + headline + subtext + 4 features + 2 CTAs)
-4. Digital Credit section (label + headline + subtext + 2 features + CTA)
-5. Enterprise Partnerships section (label + headline + subtext + 3 features + CTA)
-6. Contact section (contact form + partnership form - bottom of page)
-7. Footer (Products links + Social links + Legal links)
-```
-
-Separate pages (linked from nav):
 - **Products** → Detailed product pages for the 3 product lines
 - **Mission** → Company mission, vision, and values
 - **Partnerships** → Distributor and B2B partnership info + application form
-- **Research** → Blog / research articles and news
+- **Research** → Blog / research articles and news (Sanity CMS)
 - **Privacy Policy / Terms** → Legal pages (footer links)
