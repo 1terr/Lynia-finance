@@ -44,3 +44,13 @@ package-lock.json
 
 # SAM build artifacts
 .aws-sam/
+
+# Build outputs
+**/.next/
+services/kyc-service/dist/
+services/lock-service/dist/
+services/notification-service/dist/
+services/payment-service/dist/
+services/scoring-service/dist/
+services/whatsapp-service/dist/
+frontend/distributor-dashboard/.next/
