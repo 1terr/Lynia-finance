@@ -1,0 +1,26 @@
+# =============================================================================
+# Lynia Finance — Cloudflare Terraform Variables
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars — it contains secrets.
+# =============================================================================
+
+# Cloudflare credentials
+cloudflare_api_token = "your-cloudflare-api-token-here"
+cloudflare_zone_id   = "your-zone-id-here"
+
+# Domain
+domain = "lyniafinance.com"
+
+# AWS targets — fill these in after deploying AWS infrastructure
+# Get these by running: bash ../scripts/aws-domain-setup.sh outputs
+admin_cloudfront_domain       = ""  # e.g., "d1234abcdef8.cloudfront.net"
+distributor_cloudfront_domain = ""  # e.g., "d5678ghijkl9.cloudfront.net"
+api_gateway_domain            = ""  # e.g., "d-abc123.execute-api.us-east-1.amazonaws.com"
+
+# ACM certificate validation records
+# Get these by running: bash ../scripts/aws-domain-setup.sh certificates
+acm_wildcard_validation_name  = ""  # e.g., "_abc123.lyniafinance.com"
+acm_wildcard_validation_value = ""  # e.g., "_def456.acm-validations.aws"
+acm_api_validation_name       = ""  # e.g., "_ghi789.api.lyniafinance.com"
+acm_api_validation_value      = ""  # e.g., "_jkl012.acm-validations.aws"

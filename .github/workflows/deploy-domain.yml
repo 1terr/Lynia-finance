@@ -1,0 +1,186 @@
+# =============================================================================
+# Lynia Finance — Domain & Cloudflare Deployment
+# =============================================================================
+# Deploys Cloudflare DNS, SSL, and security configuration via Terraform.
+# Also handles ACM certificate provisioning and CloudFront domain mapping.
+#
+# Trigger: Manual dispatch with required inputs
+# =============================================================================
+
+name: Deploy Domain Configuration
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - plan          # Terraform plan only (dry run)
+          - apply         # Apply Cloudflare changes
+          - aws-certs     # Request ACM certificates
+          - aws-cloudfront # Update CloudFront distributions
+          - aws-apigateway # Configure API Gateway custom domain
+          - aws-outputs   # Print AWS domain targets
+          - full-setup    # Run everything (certificates → Cloudflare → CloudFront → API Gateway)
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+
+# Only one domain deployment at a time
+concurrency:
+  group: domain-deploy-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write   # For AWS OIDC
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Terraform: Cloudflare Configuration
+  # ---------------------------------------------------------------------------
+  cloudflare:
+    name: Cloudflare Setup
+    if: contains(fromJSON('["plan", "apply", "full-setup"]'), github.event.inputs.action)
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    defaults:
+      run:
+        working-directory: phase-4-integration/domain-setup/terraform
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          TF_VAR_admin_cloudfront_domain: ${{ vars.ADMIN_CLOUDFRONT_DOMAIN }}
+          TF_VAR_distributor_cloudfront_domain: ${{ vars.DISTRIBUTOR_CLOUDFRONT_DOMAIN }}
+          TF_VAR_api_gateway_domain: ${{ vars.API_GATEWAY_DOMAIN }}
+          TF_VAR_acm_wildcard_validation_name: ${{ vars.ACM_WILDCARD_VALIDATION_NAME }}
+          TF_VAR_acm_wildcard_validation_value: ${{ vars.ACM_WILDCARD_VALIDATION_VALUE }}
+          TF_VAR_acm_api_validation_name: ${{ vars.ACM_API_VALIDATION_NAME }}
+          TF_VAR_acm_api_validation_value: ${{ vars.ACM_API_VALIDATION_VALUE }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        if: github.event.inputs.action == 'apply' || github.event.inputs.action == 'full-setup'
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          TF_VAR_cloudflare_zone_id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+        run: terraform apply -auto-approve tfplan
+
+  # ---------------------------------------------------------------------------
+  # AWS: Certificate & Domain Setup
+  # ---------------------------------------------------------------------------
+  aws-setup:
+    name: AWS Domain Setup
+    if: contains(fromJSON('["aws-certs", "aws-cloudfront", "aws-apigateway", "aws-outputs", "full-setup"]'), github.event.inputs.action)
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: us-east-1
+
+      - name: Make scripts executable
+        run: chmod +x phase-4-integration/domain-setup/scripts/*.sh
+
+      - name: Request ACM Certificates
+        if: github.event.inputs.action == 'aws-certs' || github.event.inputs.action == 'full-setup'
+        run: |
+          bash phase-4-integration/domain-setup/scripts/aws-domain-setup.sh certificates
+
+      - name: Check Certificate Status
+        if: github.event.inputs.action == 'full-setup'
+        run: |
+          echo "Waiting 30 seconds for certificate validation..."
+          sleep 30
+          bash phase-4-integration/domain-setup/scripts/aws-domain-setup.sh cert-status
+
+      - name: Update CloudFront Distributions
+        if: github.event.inputs.action == 'aws-cloudfront' || github.event.inputs.action == 'full-setup'
+        env:
+          SAM_STACK_NAME: lynia-finance-${{ github.event.inputs.environment == 'production' && 'prod' || 'staging' }}
+        run: |
+          bash phase-4-integration/domain-setup/scripts/aws-domain-setup.sh cloudfront
+
+      - name: Configure API Gateway
+        if: github.event.inputs.action == 'aws-apigateway' || github.event.inputs.action == 'full-setup'
+        env:
+          SAM_STACK_NAME: lynia-finance-${{ github.event.inputs.environment == 'production' && 'prod' || 'staging' }}
+        run: |
+          bash phase-4-integration/domain-setup/scripts/aws-domain-setup.sh apigateway
+
+      - name: Print Domain Outputs
+        if: github.event.inputs.action == 'aws-outputs' || github.event.inputs.action == 'full-setup'
+        run: |
+          bash phase-4-integration/domain-setup/scripts/aws-domain-setup.sh outputs
+
+  # ---------------------------------------------------------------------------
+  # Verification
+  # ---------------------------------------------------------------------------
+  verify:
+    name: Verify Domain Setup
+    needs: [cloudflare, aws-setup]
+    if: always() && (github.event.inputs.action == 'apply' || github.event.inputs.action == 'full-setup')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: DNS Resolution Check
+        run: |
+          echo "=== DNS Resolution ==="
+          for subdomain in admin distributor api; do
+            echo -n "$subdomain.lyniafinance.com: "
+            dig +short "$subdomain.lyniafinance.com" CNAME || echo "NOT FOUND"
+          done
+
+      - name: HTTPS Connectivity Check
+        continue-on-error: true
+        run: |
+          echo "=== HTTPS Connectivity ==="
+          for url in \
+            https://admin.lyniafinance.com \
+            https://distributor.lyniafinance.com \
+            https://api.lyniafinance.com/health; do
+            echo -n "$url: "
+            STATUS=$(curl -sI -o /dev/null -w "%{http_code}" --max-time 10 "$url" 2>/dev/null || echo "FAILED")
+            echo "$STATUS"
+          done
+
+      - name: TLS Version Check
+        continue-on-error: true
+        run: |
+          echo "=== TLS Check ==="
+          for domain in admin.lyniafinance.com api.lyniafinance.com; do
+            echo -n "$domain TLS: "
+            openssl s_client -connect "$domain:443" -tls1_2 </dev/null 2>&1 | grep "Protocol" || echo "Connection failed"
+          done
+
+      - name: Security Headers Check
+        continue-on-error: true
+        run: |
+          echo "=== Security Headers ==="
+          curl -sI https://admin.lyniafinance.com 2>/dev/null | grep -iE "strict-transport|x-frame|x-content-type|content-security" || echo "No headers found"
