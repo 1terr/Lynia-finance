@@ -1,51 +1,49 @@
 # Design Phase - Task Checklist
 
-## Phase 1A: Gather Inputs (You)
+## Phase 1A: Gather Inputs (You) - COMPLETE
 
-These tasks require your input before design work can begin.
-Fill out the corresponding sections in `DESIGN-BRIEF.md`.
+All inputs received and recorded in `DESIGN-BRIEF.md`.
 
-- [ ] Define primary and secondary goals for the site (Brief Section 1)
-- [ ] Rank target audiences by priority (Brief Section 2)
-- [ ] Decide which pages/sections to include (Brief Section 3)
-- [ ] Confirm or write headline, tagline, and CTA text (Brief Section 4.2)
-- [ ] Provide logo or confirm logo design is needed (Brief Section 5.1)
-- [ ] Confirm or adjust color palette (Brief Section 5.2)
-- [ ] Decide on typography / font choice (Brief Section 5.3)
-- [ ] Provide imagery direction and any existing photos (Brief Section 5.4)
-- [ ] Define primary CTA behavior - WhatsApp, form, or other (Brief Section 6.1)
-- [ ] Decide on language support (Brief Section 6.3)
-- [ ] State technical preferences - framework, hosting, CMS (Brief Section 7)
-- [ ] Share 2-5 inspiration/competitor websites (Brief Section 8)
-- [ ] List any constraints or non-negotiables (Brief Section 9)
-- [ ] Define success metrics (Brief Section 10)
+- [x] Define primary and secondary goals for the site
+- [x] Rank target audiences by priority
+- [x] Decide which pages/sections to include
+- [ ] ~~Confirm or write headline, tagline, and CTA text~~ → moved to Phase 1B
+- [x] Provide logo or confirm logo design is needed (logo not available, part of design phase)
+- [x] Confirm or adjust color palette (vibrant blue, Coinbase/Stanbic-inspired)
+- [x] Decide on typography (Stripe.com style)
+- [x] Provide imagery direction (flat illustrations, Stripe-like)
+- [x] Define primary CTA behavior (WhatsApp floating button confirmed)
+- [x] Decide on language support (English only)
+- [x] State technical preferences (Next.js, AWS, high SEO priority)
+- [x] Share 2-5 inspiration websites (Stripe, Moniepoint, Paystack)
+- [x] List constraints and non-negotiables (no pink/purple, RBZ disclaimers, not minimalist)
+- [x] Define success metrics (speed, signups, trust)
 
 ## Phase 1B: Content Preparation (You + Claude)
 
-Once the brief is filled, we prepare the actual content.
-
-- [ ] Write hero section copy (headline, subtext, CTA)
-- [ ] Write "How It Works" steps
-- [ ] Write feature/benefit descriptions
-- [ ] Write About Us / mission section
-- [ ] Collect or source testimonials / social proof
-- [ ] Write FAQ entries
-- [ ] Prepare legal text (privacy policy, terms, regulatory disclaimers)
-- [ ] Source or commission photography / illustrations
-- [ ] Finalize logo assets (SVG + PNG, light + dark variants)
+- [ ] **Provide page content PDF** (mentioned as "attached PDF" in brief responses)
+- [ ] Write hero section copy (headline, subtext, CTA button text)
+- [ ] Write Products page content (device financing, WhatsApp-based, no credit history)
+- [ ] Write Mission page content
+- [ ] Write Partnerships page content (distributor + B2B)
+- [ ] Write Contact page content
+- [ ] Set up Research/blog section structure
+- [ ] Prepare legal text (privacy policy, terms, RBZ regulatory disclaimers)
+- [ ] Commission/source flat illustrations (Stripe-like style)
+- [ ] Design logo (SVG + PNG, light + dark variants)
+- [ ] Select CMS (Sanity vs Keystatic - recommendation pending)
 
 ## Phase 1C: Design Execution (Claude)
 
-Once content is ready, I handle these.
-
 - [ ] Create sitemap / page hierarchy
-- [ ] Design wireframes (mobile-first)
-- [ ] Define design tokens (colors, spacing, typography scale)
+- [ ] Define design tokens (colors, spacing, typography scale, border radius)
+- [ ] Design wireframes - mobile first
+- [ ] Design wireframes - desktop
+- [ ] Design component specifications (nav, hero, cards, forms, buttons, footer)
 - [ ] Design high-fidelity mockups - mobile
 - [ ] Design high-fidelity mockups - desktop
-- [ ] Design component specifications (buttons, cards, nav, footer)
 - [ ] Document responsive breakpoints
-- [ ] Create interaction/animation notes
+- [ ] Create interaction/animation notes (scroll animations, hover states)
 - [ ] Compile final design handoff package
 
 ## Phase 1D: Review & Sign-off
@@ -53,4 +51,4 @@ Once content is ready, I handle these.
 - [ ] Review wireframes and provide feedback
 - [ ] Review mockups and provide feedback
 - [ ] Approve final designs for development
-- [ ] Confirm content is final and proofread
+- [ ] Confirm all content is final and proofread
