@@ -4,6 +4,7 @@
 > Design language follows [stripe.com](https://stripe.com).
 > Reference [`COMPONENTS.md`](./COMPONENTS.md) for detailed component specs.
 > Reference [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md) for all spacing and sizing values.
+> Reference [`CONTENT.md`](./CONTENT.md) for all copy (source of truth).
 
 ---
 
@@ -29,115 +30,126 @@
 #### Mobile (`< 768px`)
 
 ```
-┌─────────────────────────────────────┐
-│  [Logo]                        [☰]  │  64px tall
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│                                      │
+│  [Logo]                         [☰]  │
+│                                      │
+└──────────────────────────────────────┘
+
+Height: 64px
+Background: transparent over hero → white on scroll
 ```
 
-- Logo left, hamburger icon right
-- Transparent over hero, solid white on scroll
+- Logo left-aligned, hamburger icon right-aligned
+- Transparent over hero, solid white + backdrop blur on scroll
 - Hamburger opens full-screen overlay
 
 #### Mobile Nav Overlay
 
 ```
-┌─────────────────────────────────────┐
-│                                [✕]  │
-│                                     │
-│  Products                           │
-│  ─────────────────────────          │
-│  Mission                            │
-│  ─────────────────────────          │
-│  Partnerships                       │
-│  ─────────────────────────          │
-│  Research                           │
-│                                     │
-│                                     │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│                                 [✕]  │
+│                                      │
+│  Products                            │
+│  ─────────────────────────────       │
+│  About                               │
+│  ─────────────────────────────       │
+│  Partnerships                        │
+│  ─────────────────────────────       │
+│  Research                            │
+│  ─────────────────────────────       │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │     Start your application    │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+
+CTA button appears as last item in mobile menu
 ```
 
 #### Desktop (`≥ 1024px`)
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  [Logo]              Products   Mission   Partnerships   Research  │  72px tall
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  [Logo]       Products  About  Partnerships  Research     [Start your application]  │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+Height: 72px
+CTA: primary button style (blurple bg, white text)
+Container: max-width 1280px, centered
 ```
 
-- Logo left, links right, all in single row
-- Centered within `max-width: 1280px` container
+- Logo left, nav links center-right, CTA button far right
+- CTA button provides persistent conversion path from any scroll position (Stripe pattern)
 
 ---
 
 ### Section 1: Hero
 
-#### Mobile
+#### Mobile (`< 768px`)
 
 ```
-┌─────────────────────────────────────┐
-│          (gradient background)       │
-│                                     │
-│  Credit that works                  │
-│  for real people                    │
-│                                     │  40px headline
-│  Lynia Finance helps you get the    │
-│  smartphone, tools, or cash you     │  18px subtext
-│  need—giving you the power to       │
-│  earn more and do more.             │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │        Apply now             │    │  Primary CTA
-│  └─────────────────────────────┘    │
-│                                     │
-│  Lets chat on whatsapp →            │  Secondary CTA
-│                                     │
-│                                     │
-│  ┌─────────────────────────┐        │
-│  │  [Phone mockup,         │        │  Optional: visible
-│  │   reduced size]         │        │  on larger mobiles
-│  └─────────────────────────┘        │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│          (gradient background)        │
+│                                      │
+│  Financial tools                     │
+│  for the underbanked                 │   32px headline
+│                                      │
+│  Smartphones, equipment, and         │
+│  cash — delivered through            │   16px subtext
+│  WhatsApp with approval in           │
+│  under 5 minutes.                    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │     Start your application    │    │   Primary CTA
+│  └──────────────────────────────┘    │
+│                                      │
+│  See how it works →                  │   Secondary CTA
+│                                      │
+└──────────────────────────────────────┘
 
-Height: auto (content-driven)
-Padding: 80px top, 64px bottom
+Height: auto (content-driven, NOT full viewport)
+Padding: 48px top (after 64px nav), 48px bottom
+Phone mockup: HIDDEN on < 768px
+Above the fold: headline + subtext + CTA must all appear on 375px screen
 ```
 
-- Single column, text centered or left-aligned
-- CTAs stack vertically on very small screens, inline on `≥ 640px`
-- Phone mockup optional — hide on `< 640px`, show reduced at `≥ 640px`
+- Single column, text left-aligned
+- CTAs stack vertically
+- No phone mockup — prioritize content load speed and above-fold CTA
 
 #### Desktop (`≥ 1024px`)
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                     (WebGL gradient background)               │
-│                                                              │
-│   ┌──────────────────────┐  ┌────────────────────────────┐   │
-│   │                      │  │                            │   │
-│   │  Credit that works   │  │   ┌──────────────────┐     │   │
-│   │  for real people     │  │   │                  │     │   │
-│   │                      │  │   │   [WhatsApp UI   │     │   │
-│   │  Lynia Finance helps │  │   │    phone mockup  │     │   │
-│   │  you get the         │  │   │    with loan     │     │   │
-│   │  smartphone, tools,  │  │   │    approval      │     │   │
-│   │  or cash you need    │  │   │    flow]         │     │   │
-│   │  —giving you the     │  │   │                  │     │   │
-│   │  power to earn more  │  │   └──────────────────┘     │   │
-│   │  and do more.        │  │                            │   │
-│   │                      │  │                            │   │
-│   │  [Apply now]         │  │                            │   │
-│   │  Lets chat on        │  │                            │   │
-│   │  whatsapp →          │  │                            │   │
-│   │                      │  │                            │   │
-│   └──────────────────────┘  └────────────────────────────┘   │
-│           50%                         50%                     │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                       (CSS gradient background)                   │
+│                  (WebGL progressive enhancement)                  │
+│                                                                  │
+│   ┌────────────────────────────┐  ┌──────────────────────────┐   │
+│   │                            │  │                          │   │
+│   │  Financial tools           │  │   ┌────────────────┐     │   │
+│   │  for the underbanked       │  │   │                │     │   │
+│   │                            │  │   │  [WhatsApp UI  │     │   │
+│   │  Smartphones, equipment,   │  │   │   phone mockup │     │   │
+│   │  and cash — delivered      │  │   │   with loan    │     │   │
+│   │  through WhatsApp with     │  │   │   approval     │     │   │
+│   │  approval in under         │  │   │   flow]        │     │   │
+│   │  5 minutes.                │  │   │                │     │   │
+│   │                            │  │   └────────────────┘     │   │
+│   │  [Start your application]  │  │                          │   │
+│   │  See how it works →        │  │                          │   │
+│   │                            │  │                          │   │
+│   └────────────────────────────┘  └──────────────────────────┘   │
+│            50%                            50%                     │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Height: 100vh
-Grid: 1fr 1fr
+Grid: 1fr 1fr, gap 48px
+Gradient: CSS fallback default, WebGL if hardwareConcurrency >= 4
 ```
 
 - Two columns, vertically centered
@@ -151,396 +163,434 @@ Grid: 1fr 1fr
 #### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│  Trusted by partners across         │
-│  Zimbabwe                           │
-│                                     │
-│   [Logo]  [Logo]  [Logo]           │
-│   [Logo]  [Logo]  [Logo]           │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│                                      │
+│  500+ loans    <5 min     100%       │
+│  funded        approval   mobile     │
+│                                      │
+└──────────────────────────────────────┘
+
+Padding: 32px vertical
+Fallback: 3 stat items in flex row, centered
+```
+
+- Stats as proof when logos unavailable
+- No label text (Stripe pattern — logos/numbers speak for themselves)
+
+#### Desktop
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│    [Logo]    [Logo]    [Logo]    [Logo]    [Logo]    [Logo]      │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Padding: 40px vertical
-Logos: 3-column grid, grayscale
+Logos: single row, flex, centered, 48px gap, grayscale by default
 ```
 
-#### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│  Trusted by partners across Zimbabwe                         │
-│                                                              │
-│  [Logo]    [Logo]    [Logo]    [Logo]    [Logo]    [Logo]   │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Padding: 40px vertical
-Logos: single row, flex, centered, 48px gap
-```
+- When logos available: horizontal flex row, no label
+- When logos unavailable: stat numbers in flex row
 
 ---
 
-### Section 3: Product Suite Overview
+### Section 3: Why Alternative Financing (Stats)
+
+**Moved from position 7 to position 3** — establishes the problem before products.
 
 #### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│                                     │
-│  A fully integrated suite           │
-│  of credit products                 │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [illustration]              │    │
-│  │  ASSET FINANCING             │    │
-│  │  Own the tools that power    │    │
-│  │  your trade                  │    │
-│  │  Learn more →                │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [illustration]              │    │
-│  │  DIGITAL CREDIT              │    │
-│  │  Cash when you need it most  │    │
-│  │  Learn more →                │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [illustration]              │    │
-│  │  ENTERPRISE PARTNERSHIPS     │    │
-│  │  Credit built into your      │    │
-│  │  business                    │    │
-│  │  Learn more →                │    │
-│  └─────────────────────────────┘    │
-│                                     │
-└─────────────────────────────────────┘
-
-Cards: stacked, full width
-Gap: 16px between cards
-```
-
-#### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│             A fully integrated suite of credit products       │
-│                                                              │
-│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ │
-│  │  [illustration]  │ │  [illustration]  │ │  [illustration]  │ │
-│  │                  │ │                  │ │                  │ │
-│  │  ASSET FINANCING │ │  DIGITAL CREDIT  │ │  ENTERPRISE      │ │
-│  │  Own the tools   │ │  Cash when you   │ │  PARTNERSHIPS    │ │
-│  │  that power your │ │  need it most    │ │  Credit built    │ │
-│  │  trade           │ │                  │ │  into your biz   │ │
-│  │                  │ │                  │ │                  │ │
-│  │  Learn more →    │ │  Learn more →    │ │  Learn more →    │ │
-│  └──────────────────┘ └──────────────────┘ └──────────────────┘ │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Grid: 3 columns, equal width
-Gap: 32px
-```
-
----
-
-### Section 4: Asset Financing Deep Dive
-
-#### Mobile
-
-```
-┌─────────────────────────────────────┐
-│            (white bg)                │
-│                                     │
-│  ASSET FINANCING                    │
-│                                     │
-│  Own the tools that                 │
-│  power your trade                   │
-│                                     │
-│  Get smartphones, tools of your     │
-│  trade through flexible financing.  │
-│  These assets are productive tools  │
-│  that help you earn more...         │
-│                                     │
-│  ┌────────────┐  ┌────────────┐    │
-│  │ [icon]     │  │ [icon]     │    │
-│  │ Ownership  │  │ Collection │    │
-│  │ Own asset  │  │ Collect at │    │
-│  │ after a    │  │ nearest    │    │
-│  │ deposit    │  │ agent      │    │
-│  └────────────┘  └────────────┘    │
-│                                     │
-│  ┌────────────┐  ┌────────────┐    │
-│  │ [icon]     │  │ [icon]     │    │
-│  │ Application│  │ Repayment  │    │
-│  │ Approved   │  │ Repay via  │    │
-│  │ in < 5 min │  │ mobile     │    │
-│  └────────────┘  └────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │        Apply now             │    │
-│  └─────────────────────────────┘    │
-│  Lets chat on whatsapp →            │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [Flat illustration:        │    │
-│  │   smartphone with           │    │
-│  │   checkmark]                │    │
-│  └─────────────────────────────┘    │
-│                                     │
-└─────────────────────────────────────┘
-
-Features: 2-column grid
-Visual: below text, max 300px height
-```
-
-#### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                          (white bg)                           │
-│                                                              │
-│  ┌────────────────────────────┐ ┌────────────────────────┐   │
-│  │                            │ │                        │   │
-│  │  ASSET FINANCING           │ │                        │   │
-│  │                            │ │  [Flat illustration:   │   │
-│  │  Own the tools that        │ │   smartphone with      │   │
-│  │  power your trade          │ │   approval animation]  │   │
-│  │                            │ │                        │   │
-│  │  Get smartphones, tools... │ │                        │   │
-│  │                            │ │                        │   │
-│  │  [Ownership] [Collection]  │ │                        │   │
-│  │  [Application] [Repayment] │ │                        │   │
-│  │                            │ │                        │   │
-│  │  [Apply now]               │ │                        │   │
-│  │  Lets chat on whatsapp →   │ │                        │   │
-│  │                            │ │                        │   │
-│  └────────────────────────────┘ └────────────────────────┘   │
-│          TEXT LEFT                    VISUAL RIGHT            │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Grid: 1fr 1fr, gap 48px
-Features: 4 columns within text column (or 2×2)
-```
-
----
-
-### Section 5: Digital Credit Deep Dive
-
-#### Mobile
-
-```
-┌─────────────────────────────────────┐
-│            (navy bg #0A2540)         │
-│                                     │
-│  DIGITAL CREDIT                     │  (#635BFF blurple on dark)
-│                                     │
-│  Cash when you need                 │  (white text)
-│  it most                            │
-│                                     │
-│  Quick, secure digital loans        │  (white 70% opacity)
-│  delivered straight to your         │
-│  mobile wallet...                   │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ [icon]                       │    │
-│  │ Instant approval             │    │
-│  │ Apply, get approved and      │    │
-│  │ receive funds in < 10 min.   │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ [icon]                       │    │
-│  │ Mobile money friendly        │    │
-│  │ Deposited directly into      │    │
-│  │ your mobile wallet.          │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │       Coming soon            │    │  (disabled button)
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [Flat illustration:        │    │
-│  │   mobile wallet              │    │
-│  │   receiving funds]           │    │
-│  └─────────────────────────────┘    │
-│                                     │
-└─────────────────────────────────────┘
-
-Features: single column (stacked)
-```
-
-#### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                      (navy bg #0A2540)                        │
-│                                                              │
-│  ┌────────────────────────┐ ┌────────────────────────────┐   │
-│  │                        │ │                            │   │
-│  │  [Flat illustration:   │ │  DIGITAL CREDIT            │   │
-│  │   mobile wallet        │ │                            │   │
-│  │   receiving funds]     │ │  Cash when you need        │   │
-│  │                        │ │  it most                   │   │
-│  │                        │ │                            │   │
-│  │                        │ │  Quick, secure digital...  │   │
-│  │                        │ │                            │   │
-│  │                        │ │  [Instant] [Mobile money]  │   │
-│  │                        │ │                            │   │
-│  │                        │ │  [Coming soon]             │   │
-│  │                        │ │                            │   │
-│  └────────────────────────┘ └────────────────────────────┘   │
-│        VISUAL LEFT                   TEXT RIGHT              │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Grid: 1fr 1fr (REVERSED from Section 4)
-Features: 2 columns within text column
-```
-
----
-
-### Section 6: Enterprise Partnerships Deep Dive
-
-#### Mobile
-
-```
-┌─────────────────────────────────────┐
-│            (light gray bg)           │
-│                                     │
-│  ENTERPRISE PARTNERSHIPS            │
-│                                     │
-│  Credit built into                  │
-│  your business                      │
-│                                     │
-│  We partner with enterprises        │
-│  to embed financing directly        │
-│  into their platforms...            │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ [icon] Mobile money first    │    │
-│  │ Description text...          │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ [icon] API friendly          │    │
-│  │ Description text...          │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │ [icon] Value creation        │    │
-│  │ Description text...          │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │     Partner with us          │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [Flat illustration:        │    │
-│  │   connected platforms]      │    │
-│  └─────────────────────────────┘    │
-│                                     │
-└─────────────────────────────────────┘
-
-Features: single column (stacked)
-```
-
-#### Desktop
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│                       (light gray bg)                         │
-│                                                              │
-│  ┌────────────────────────────┐ ┌────────────────────────┐   │
-│  │                            │ │                        │   │
-│  │  ENTERPRISE PARTNERSHIPS   │ │  [Flat illustration:   │   │
-│  │                            │ │   connected platforms   │   │
-│  │  Credit built into         │ │   / API integration    │   │
-│  │  your business             │ │   diagram]             │   │
-│  │                            │ │                        │   │
-│  │  We partner with...        │ │                        │   │
-│  │                            │ │                        │   │
-│  │  [Mobile]  [API]  [Value]  │ │                        │   │
-│  │                            │ │                        │   │
-│  │  [Partner with us]         │ │                        │   │
-│  │                            │ │                        │   │
-│  └────────────────────────────┘ └────────────────────────┘   │
-│         TEXT LEFT                    VISUAL RIGHT             │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
-
-Grid: 1fr 1fr (same direction as Section 4)
-Features: 3 columns within text column
-```
-
----
-
-### Section 7: Why Alternative Financing
-
-#### Mobile
-
-```
-┌─────────────────────────────────────┐
-│         (blue gradient bg)           │
-│                                     │
-│  Building credit rails              │
-│  for the underbanked                │
-│                                     │
-│  ┌────────────┐  ┌────────────┐    │
-│  │    80%      │  │    <5%     │    │
-│  │  Informal   │  │  Have bank │    │
-│  │  workforce  │  │  credit    │    │
-│  └────────────┘  └────────────┘    │
-│                                     │
-│  ┌────────────┐  ┌────────────┐    │
-│  │   $14B     │  │   70%+     │    │
-│  │  Unserved  │  │  Mobile    │    │
-│  │  credit    │  │  money     │    │
-│  │  demand    │  │  adoption  │    │
-│  └────────────┘  └────────────┘    │
-│                                     │
-│  Traditional banks don't serve      │
-│  them. We do. Zimbabwe's informal   │
-│  workforce is 80% of the economy    │
-│  yet almost entirely excluded...    │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│          (blue gradient bg)           │
+│                                      │
+│  80% of Zimbabwe works.              │
+│  Less than 5% can                    │   28px headline
+│  borrow.                             │
+│                                      │
+│  ┌────────────┐  ┌────────────┐      │
+│  │    80%      │  │    <5%     │      │
+│  │  of the     │  │  have bank │      │
+│  │  workforce  │  │  credit    │      │
+│  │  is informal│  │            │      │
+│  └────────────┘  └────────────┘      │
+│                                      │
+│  ┌────────────┐  ┌────────────┐      │
+│  │   $14B     │  │   70%+     │      │
+│  │  unserved  │  │  mobile    │      │
+│  │  credit    │  │  money     │      │
+│  │  demand    │  │  adoption  │      │
+│  └────────────┘  └────────────┘      │
+│                                      │
+│  Traditional banks don't serve       │
+│  them. We do. Mobile money is        │
+│  everywhere — financial products     │
+│  should be too.                      │
+│                                      │
+└──────────────────────────────────────┘
 
 Stats: 2-column grid
 All text: white / white-70%
+Padding: 64px vertical
 ```
 
 #### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                      (blue gradient bg)                       │
-│                                                              │
-│          Building credit rails for the underbanked            │
-│                                                              │
-│  ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────┐ │
-│  │    80%      │  │    <5%     │  │   $14B     │  │  70%+  │ │
-│  │  Informal   │  │  Have bank │  │  Unserved  │  │ Mobile │ │
-│  │  workforce  │  │  credit    │  │  credit    │  │ money  │ │
-│  │             │  │  access    │  │  demand    │  │ adopt. │ │
-│  └────────────┘  └────────────┘  └────────────┘  └────────┘ │
-│                                                              │
-│  Traditional banks don't serve them. We do. Zimbabwe's       │
-│  informal workforce is 80% of the economy yet almost         │
-│  entirely excluded from credit. Mobile money penetration     │
-│  is high, but financial products haven't followed.           │
-│  Alternative financing bridges this gap.                     │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                       (blue gradient bg)                          │
+│                                                                  │
+│        80% of Zimbabwe works. Less than 5% can borrow.           │
+│                                                                  │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────┐│
+│  │     80%       │ │     <5%      │ │    $14B      │ │   70%+   ││
+│  │  of the       │ │  have bank   │ │  unserved    │ │  mobile  ││
+│  │  workforce    │ │  credit      │ │  credit      │ │  money   ││
+│  │  is informal  │ │              │ │  demand      │ │  adoption││
+│  └──────────────┘ └──────────────┘ └──────────────┘ └──────────┘│
+│                                                                  │
+│     Traditional banks don't serve them. We do. Mobile money      │
+│     is everywhere — financial products should be too.            │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Stats: 4-column grid, centered
 Headline: centered
 Supporting text: centered, max-width 680px
+Padding: 120px vertical
+```
+
+---
+
+### Section 4: Product Suite Overview
+
+#### Mobile
+
+```
+┌──────────────────────────────────────┐
+│                                      │
+│  Three products. One mission.        │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [illustration]               │    │
+│  │  ASSET FINANCING              │    │
+│  │  Own the tools that power     │    │
+│  │  your trade                   │    │
+│  │  Learn more →                 │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [illustration]               │    │
+│  │  DIGITAL CREDIT               │    │
+│  │  Cash when you need it most   │    │
+│  │  Learn more →                 │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [illustration]               │    │
+│  │  ENTERPRISE PARTNERSHIPS      │    │
+│  │  Embed credit into your       │    │
+│  │  platform                     │    │
+│  │  Learn more →                 │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+
+Cards: stacked, full width
+Gap: 16px between cards
+Padding: 64px vertical
+```
+
+#### Desktop
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│                Three products. One mission.                       │
+│                                                                  │
+│  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐│
+│  │  [illustration]    │ │  [illustration]    │ │  [illustration]    ││
+│  │                    │ │                    │ │                    ││
+│  │  ASSET FINANCING   │ │  DIGITAL CREDIT    │ │  ENTERPRISE        ││
+│  │  Own the tools     │ │  Cash when you     │ │  PARTNERSHIPS      ││
+│  │  that power your   │ │  need it most      │ │  Embed credit into ││
+│  │  trade             │ │                    │ │  your platform     ││
+│  │                    │ │                    │ │                    ││
+│  │  Learn more →      │ │  Learn more →      │ │  Learn more →      ││
+│  └────────────────────┘ └────────────────────┘ └────────────────────┘│
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+Grid: 3 columns, equal width
+Gap: 32px
+Padding: 120px vertical
+```
+
+---
+
+### Section 5: Asset Financing Deep Dive
+
+#### Mobile
+
+```
+┌──────────────────────────────────────┐
+│             (white bg)                │
+│                                      │
+│  ASSET FINANCING                     │
+│                                      │
+│  Own the tools that                  │
+│  power your trade                    │   28px headline
+│                                      │
+│  Finance a smartphone or             │
+│  equipment with a small deposit.     │   16px subtext
+│  Collect from a local agent,         │
+│  repay via mobile money.             │
+│                                      │
+│  ┌──────────────┐  ┌──────────────┐  │
+│  │ [icon]       │  │ [icon]       │  │
+│  │ Pay a        │  │ Pick up      │  │
+│  │ deposit,     │  │ locally      │  │
+│  │ own the      │  │              │  │
+│  │ device       │  │ Collect from │  │
+│  │              │  │ any Lynia    │  │
+│  │ Start with   │  │ agent.       │  │
+│  │ a small      │  │              │  │
+│  │ deposit.     │  │              │  │
+│  └──────────────┘  └──────────────┘  │
+│                                      │
+│  ┌──────────────┐  ┌──────────────┐  │
+│  │ [icon]       │  │ [icon]       │  │
+│  │ Approved in  │  │ Repay via    │  │
+│  │ minutes      │  │ mobile money │  │
+│  │              │  │              │  │
+│  │ Apply via    │  │ EcoCash or   │  │
+│  │ WhatsApp.    │  │ OneMoney.    │  │
+│  └──────────────┘  └──────────────┘  │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │    Start your application     │    │
+│  └──────────────────────────────┘    │
+│  Learn more →                        │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [Flat illustration:         │    │
+│  │   smartphone + checkmark]    │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+
+Features: 2-column grid
+Visual: below text, max 280px height
+Padding: 64px vertical (compact)
+```
+
+#### Desktop
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                            (white bg)                             │
+│                                                                  │
+│  ┌──────────────────────────────┐ ┌──────────────────────────┐   │
+│  │                              │ │                          │   │
+│  │  ASSET FINANCING             │ │                          │   │
+│  │                              │ │  [Flat illustration:     │   │
+│  │  Own the tools that          │ │   smartphone with        │   │
+│  │  power your trade            │ │   approval animation]    │   │
+│  │                              │ │                          │   │
+│  │  Finance a smartphone or     │ │                          │   │
+│  │  equipment with a small      │ │                          │   │
+│  │  deposit. Collect from a     │ │                          │   │
+│  │  local agent, repay via      │ │                          │   │
+│  │  mobile money.               │ │                          │   │
+│  │                              │ │                          │   │
+│  │  [Deposit] [Local] [Fast]    │ │                          │   │
+│  │  [Mobile]                    │ │                          │   │
+│  │                              │ │                          │   │
+│  │  [Start your application]    │ │                          │   │
+│  │  Learn more →                │ │                          │   │
+│  │                              │ │                          │   │
+│  └──────────────────────────────┘ └──────────────────────────┘   │
+│          TEXT LEFT                       VISUAL RIGHT             │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+Grid: 1fr 1fr, gap 48px
+Features: 2×2 grid within text column
+Padding: 80px vertical (compact — reduced from 120px)
+```
+
+---
+
+### Section 6: Digital Credit Deep Dive
+
+#### Mobile
+
+```
+┌──────────────────────────────────────┐
+│          (navy bg #0A2540)            │
+│                                      │
+│  DIGITAL CREDIT                      │   #635BFF blurple
+│                                      │
+│  Cash when you need                  │   white text
+│  it most                             │   28px
+│                                      │
+│  Digital loans deposited             │   white 70% opacity
+│  directly into your EcoCash          │
+│  or OneMoney wallet. Apply           │
+│  once, get funded in under           │
+│  10 minutes.                         │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ [icon]                        │    │
+│  │ Application to wallet         │    │
+│  │ in minutes                    │    │
+│  │ From application to cash      │    │
+│  │ — under 10 minutes.           │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ [icon]                        │    │
+│  │ Works with your mobile money  │    │
+│  │ Receive and repay through     │    │
+│  │ the wallet you already use.   │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ Get notified when we launch → │    │   Lead capture CTA
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [Flat illustration:         │    │
+│  │   mobile wallet + funds]     │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+
+Features: single column (stacked)
+CTA: lead capture (not disabled button)
+Padding: 64px vertical (compact)
+```
+
+#### Desktop
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                        (navy bg #0A2540)                          │
+│                                                                  │
+│  ┌──────────────────────────┐ ┌──────────────────────────────┐   │
+│  │                          │ │                              │   │
+│  │  [Flat illustration:     │ │  DIGITAL CREDIT              │   │
+│  │   mobile wallet          │ │                              │   │
+│  │   receiving funds]       │ │  Cash when you need          │   │
+│  │                          │ │  it most                     │   │
+│  │                          │ │                              │   │
+│  │                          │ │  Digital loans deposited     │   │
+│  │                          │ │  directly into your EcoCash  │   │
+│  │                          │ │  or OneMoney wallet.         │   │
+│  │                          │ │                              │   │
+│  │                          │ │  [Fast]  [Mobile money]      │   │
+│  │                          │ │                              │   │
+│  │                          │ │  [Get notified when we       │   │
+│  │                          │ │   launch →]                  │   │
+│  │                          │ │                              │   │
+│  └──────────────────────────┘ └──────────────────────────────┘   │
+│        VISUAL LEFT                     TEXT RIGHT                 │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+Grid: 1fr 1fr (REVERSED from Section 5)
+Features: 2 columns within text column
+CTA: lead capture (phone/email input + submit) — NOT disabled "Coming soon"
+Padding: 80px vertical (compact)
+```
+
+---
+
+### Section 7: Enterprise Partnerships Deep Dive
+
+#### Mobile
+
+```
+┌──────────────────────────────────────┐
+│          (light gray bg #F6F9FC)      │
+│                                      │
+│  ENTERPRISE PARTNERSHIPS             │
+│                                      │
+│  Embed credit into                   │
+│  your platform                       │   28px
+│                                      │
+│  Offer your customers financing      │
+│  at the point of need. Lynia         │
+│  handles underwriting,               │
+│  disbursement, and collections       │
+│  — you earn on every transaction.    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ [icon] Mobile money native    │    │
+│  │ Transactions settle instantly │    │
+│  │ through EcoCash and OneMoney. │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ [icon] Developer-ready APIs   │    │
+│  │ Integrate credit products     │    │
+│  │ with a few API calls.         │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │ [icon] Shared growth          │    │
+│  │ Your customers access more.   │    │
+│  │ Your platform retains more.   │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │       Partner with us         │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [Flat illustration:         │    │
+│  │   connected platforms]       │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
+
+Features: single column (stacked)
+Padding: 64px vertical (compact)
+```
+
+#### Desktop
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                       (light gray bg #F6F9FC)                     │
+│                                                                  │
+│  ┌──────────────────────────────┐ ┌──────────────────────────┐   │
+│  │                              │ │                          │   │
+│  │  ENTERPRISE PARTNERSHIPS     │ │  [Flat illustration:     │   │
+│  │                              │ │   connected platforms    │   │
+│  │  Embed credit into           │ │   / API integration     │   │
+│  │  your platform               │ │   diagram]              │   │
+│  │                              │ │                          │   │
+│  │  Offer your customers        │ │                          │   │
+│  │  financing at the point of   │ │                          │   │
+│  │  need. Lynia handles         │ │                          │   │
+│  │  underwriting, disbursement, │ │                          │   │
+│  │  and collections — you earn  │ │                          │   │
+│  │  on every transaction.       │ │                          │   │
+│  │                              │ │                          │   │
+│  │  [Mobile] [APIs] [Growth]    │ │                          │   │
+│  │                              │ │                          │   │
+│  │  [Partner with us]           │ │                          │   │
+│  │                              │ │                          │   │
+│  └──────────────────────────────┘ └──────────────────────────┘   │
+│          TEXT LEFT                       VISUAL RIGHT             │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+Grid: 1fr 1fr (same direction as Section 5)
+Features: 3 columns within text column
+Padding: 80px vertical (compact)
 ```
 
 ---
@@ -550,60 +600,72 @@ Supporting text: centered, max-width 680px
 #### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│                                     │
-│  Built for everyone in              │
-│  the value chain                    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  FOR INDIVIDUALS             │    │
-│  │                              │    │
-│  │  Get the tools you need to   │    │
-│  │  earn more. Smartphones,     │    │
-│  │  equipment, and cash — all   │    │
-│  │  via WhatsApp.               │    │
-│  │                              │    │
-│  │  Apply now →                 │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  FOR BUSINESSES              │    │
-│  │  ...                         │    │
-│  │  Coming soon →               │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  FOR PARTNERS                │    │
-│  │  ...                         │    │
-│  │  Partner with us →           │    │
-│  └─────────────────────────────┘    │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│                                      │
+│  Built for how Zimbabwe works        │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  FOR INDIVIDUALS              │    │
+│  │                               │    │
+│  │  Smartphones, equipment, and  │    │
+│  │  cash. Apply via WhatsApp in  │    │
+│  │  under 5 minutes.             │    │
+│  │                               │    │
+│  │  Start your application →     │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  FOR BUSINESSES               │    │
+│  │                               │    │
+│  │  Digital credit with no       │    │
+│  │  paperwork and no bank        │    │
+│  │  visits. Apply and receive    │    │
+│  │  funds on your phone.         │    │
+│  │                               │    │
+│  │  Coming soon →                │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  FOR PARTNERS                 │    │
+│  │                               │    │
+│  │  Embed credit into your       │    │
+│  │  platform. Offer financing    │    │
+│  │  at the point of sale through │    │
+│  │  our APIs.                    │    │
+│  │                               │    │
+│  │  Partner with us →            │    │
+│  └──────────────────────────────┘    │
+│                                      │
+└──────────────────────────────────────┘
 
 Cards: stacked, full width
+Padding: 64px vertical
 ```
 
 #### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│            Built for everyone in the value chain              │
-│                                                              │
-│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ │
-│  │  FOR INDIVIDUALS │ │  FOR BUSINESSES  │ │  FOR PARTNERS   │ │
-│  │                  │ │                  │ │                  │ │
-│  │  Get the tools   │ │  Grow your       │ │  Embed credit   │ │
-│  │  you need to     │ │  business with   │ │  into your      │ │
-│  │  earn more...    │ │  instant digital │ │  platform...    │ │
-│  │                  │ │  credit...       │ │                  │ │
-│  │  Apply now →     │ │  Coming soon →   │ │  Partner with   │ │
-│  │                  │ │                  │ │  us →            │ │
-│  └──────────────────┘ └──────────────────┘ └──────────────────┘ │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│              Built for how Zimbabwe works                         │
+│                                                                  │
+│  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐│
+│  │  FOR INDIVIDUALS   │ │  FOR BUSINESSES    │ │  FOR PARTNERS     ││
+│  │                    │ │                    │ │                    ││
+│  │  Smartphones,      │ │  Digital credit    │ │  Embed credit into ││
+│  │  equipment, and    │ │  with no paperwork │ │  your platform.    ││
+│  │  cash. Apply via   │ │  and no bank       │ │  Offer financing   ││
+│  │  WhatsApp in under │ │  visits. Apply and │ │  at the point of   ││
+│  │  5 minutes.        │ │  receive funds on  │ │  sale through our  ││
+│  │                    │ │  your phone.       │ │  APIs.             ││
+│  │  Start your        │ │                    │ │                    ││
+│  │  application →     │ │  Coming soon →     │ │  Partner with us → ││
+│  └────────────────────┘ └────────────────────┘ └────────────────────┘│
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Grid: 3 equal columns, 32px gap
+Padding: 120px vertical
 ```
 
 ---
@@ -613,57 +675,59 @@ Grid: 3 equal columns, 32px gap
 #### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│                                     │
-│  From our Research                  │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  ┌───────────────────────┐  │    │
-│  │  │  [Illustration]        │  │    │
-│  │  └───────────────────────┘  │    │
-│  │  CATEGORY                    │    │
-│  │  Post Headline               │    │
-│  │  Excerpt text...             │    │
-│  │  12 Feb 2026                 │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [Card 2]                    │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [Card 3]                    │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  View all research →                │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│                                      │
+│  From our Research                   │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  ┌────────────────────────┐  │    │
+│  │  │  [Illustration]         │  │    │
+│  │  └────────────────────────┘  │    │
+│  │  CATEGORY                     │    │
+│  │  Post Headline                │    │
+│  │  Excerpt text...              │    │
+│  │  12 Feb 2026                  │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [Card 2]                     │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [Card 3]                     │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  View all research →                 │
+│                                      │
+└──────────────────────────────────────┘
 
 Cards: stacked, full width
+Padding: 64px vertical
 ```
 
 #### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                                                              │
-│  From our Research                                           │
-│                                                              │
-│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────────┐ │
-│  │  ┌────────────┐  │ │  ┌────────────┐  │ │  ┌────────────┐  │ │
-│  │  │  [Image]   │  │ │  │  [Image]   │  │ │  │  [Image]   │  │ │
-│  │  └────────────┘  │ │  └────────────┘  │ │  └────────────┘  │ │
-│  │  CATEGORY        │ │  CATEGORY        │ │  CATEGORY        │ │
-│  │  Headline        │ │  Headline        │ │  Headline        │ │
-│  │  Excerpt text... │ │  Excerpt text... │ │  Excerpt text... │ │
-│  │  12 Feb 2026     │ │  12 Feb 2026     │ │  12 Feb 2026     │ │
-│  └──────────────────┘ └──────────────────┘ └──────────────────┘ │
-│                                                              │
-│                      View all research →                      │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  From our Research                                               │
+│                                                                  │
+│  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────────┐│
+│  │  ┌──────────────┐  │ │  ┌──────────────┐  │ │  ┌──────────────┐  ││
+│  │  │  [Image]     │  │ │  │  [Image]     │  │ │  │  [Image]     │  ││
+│  │  └──────────────┘  │ │  └──────────────┘  │ │  └──────────────┘  ││
+│  │  CATEGORY          │ │  CATEGORY          │ │  CATEGORY          ││
+│  │  Headline          │ │  Headline          │ │  Headline          ││
+│  │  Excerpt text...   │ │  Excerpt text...   │ │  Excerpt text...   ││
+│  │  12 Feb 2026       │ │  12 Feb 2026       │ │  12 Feb 2026       ││
+│  └────────────────────┘ └────────────────────┘ └────────────────────┘│
+│                                                                  │
+│                        View all research →                        │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Grid: 3 equal columns, 32px gap
+Padding: 120px vertical
 ```
 
 ---
@@ -673,44 +737,46 @@ Grid: 3 equal columns, 32px gap
 #### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│        (dark gradient bg)            │
-│                                     │
-│  Ready to get started?              │
-│                                     │
-│  Get the smartphone, tools, or      │
-│  cash you need. Apply in under      │
-│  5 minutes via WhatsApp.            │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │        Apply now             │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  Lets chat on whatsapp →            │
-│                                     │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│        (dark gradient bg)             │
+│                                      │
+│  Apply now. Get funded today.        │
+│                                      │
+│  No bank account required. No        │
+│  paperwork. Approval in under        │
+│  5 minutes.                          │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │    Start your application     │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  Talk to our team →                  │
+│                                      │
+└──────────────────────────────────────┘
 
 Text: centered
 CTAs: stacked
+Padding: 64px vertical
 ```
 
 #### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                      (dark gradient bg)                       │
-│                                                              │
-│               Ready to get started?                           │
-│                                                              │
-│       Get the smartphone, tools, or cash you need.            │
-│       Apply in under 5 minutes via WhatsApp.                  │
-│                                                              │
-│              [Apply now]   Lets chat on whatsapp →             │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                        (dark gradient bg)                         │
+│                                                                  │
+│                 Apply now. Get funded today.                      │
+│                                                                  │
+│       No bank account required. No paperwork.                    │
+│       Approval in under 5 minutes.                               │
+│                                                                  │
+│         [Start your application]   Talk to our team →            │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Text: centered
 CTAs: inline row, centered
+Padding: 120px vertical
 ```
 
 ---
@@ -720,41 +786,42 @@ CTAs: inline row, centered
 #### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│             (navy bg #0A2540)                │
-│                                     │
-│  [Logo - white]                     │
-│                                     │
-│  Products                           │
-│  ────────                           │
-│  Smartphone financing               │
-│  Digital loans                      │
-│  Embedded financing                 │
-│                                     │
-│  Company                            │
-│  ───────                            │
-│  Careers                            │
-│  Contact                            │
-│                                     │
-│  Connect                            │
-│  ───────                            │
-│  X (Twitter)                        │
-│  LinkedIn                           │
-│  WhatsApp                           │
-│                                     │
-│  Legal                              │
-│  ─────                              │
-│  Privacy Policy                     │
-│  Terms                              │
-│                                     │
-│  ────────────────────               │
-│                                     │
+┌──────────────────────────────────────┐
+│          (navy bg #0A2540)            │
+│                                      │
+│  [Logo - white]                      │
+│                                      │
+│  Products                            │
+│  ────────                            │
+│  Asset financing                     │
+│  Digital credit                      │
+│  Enterprise partnerships             │
+│                                      │
+│  Company                             │
+│  ───────                             │
+│  About                               │
+│  Careers                             │
+│  Contact                             │
+│                                      │
+│  Connect                             │
+│  ───────                             │
+│  X (Twitter)                         │
+│  LinkedIn                            │
+│  WhatsApp                            │
+│                                      │
+│  Legal                               │
+│  ─────                               │
+│  Privacy Policy                      │
+│  Terms                               │
+│                                      │
+│  ────────────────────                │
+│                                      │
 │  © 2026 Lynia Finance.              │
 │  All rights reserved.               │
 │  Regulated by the Reserve           │
 │  Bank of Zimbabwe.                  │
-│                                     │
-└─────────────────────────────────────┘
+│                                      │
+└──────────────────────────────────────┘
 
 Layout: single column, stacked groups
 ```
@@ -762,27 +829,28 @@ Layout: single column, stacked groups
 #### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                            (navy bg #0A2540)                          │
-│                                                              │
-│  [Logo - white variant]                                      │
-│                                                              │
-│  Products          Company       Connect       Legal         │
-│  ────────          ───────       ───────       ─────         │
-│  Smartphone        Careers       X (Twitter)   Privacy Policy│
-│   financing        Contact       LinkedIn      Terms         │
-│  Digital loans                   WhatsApp                    │
-│  Embedded                                                    │
-│   financing                                                  │
-│                                                              │
-│  ──────────────────────────────────────────────              │
-│                                                              │
-│  © 2026 Lynia Finance. All rights reserved.                  │
-│  Regulated by the Reserve Bank of Zimbabwe.                  │
-│                                                              │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         (navy bg #0A2540)                         │
+│                                                                  │
+│  [Logo - white variant]                                          │
+│                                                                  │
+│  Products             Company       Connect       Legal          │
+│  ────────             ───────       ───────       ─────          │
+│  Asset financing      About         X (Twitter)   Privacy Policy │
+│  Digital credit       Careers       LinkedIn      Terms          │
+│  Enterprise           Contact       WhatsApp                     │
+│   partnerships                                                   │
+│                                                                  │
+│  ────────────────────────────────────────────────                │
+│                                                                  │
+│  © 2026 Lynia Finance. All rights reserved.                      │
+│  Regulated by the Reserve Bank of Zimbabwe.                      │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
 
 Grid: 4 columns
+Product names match labels used across the site
+Company column includes "About" (renamed from "Mission")
 ```
 
 ---
@@ -792,41 +860,41 @@ Grid: 4 columns
 ### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│  [Nav]                               │
-├─────────────────────────────────────┤
-│                                     │
-│  RESEARCH                           │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  ┌───────────────────────┐  │    │
+┌──────────────────────────────────────┐
+│  [Nav]                                │
+├──────────────────────────────────────┤
+│                                      │
+│  RESEARCH                            │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  ┌────────────────────────┐  │    │
 │  │  │  [Featured image]      │  │    │
-│  │  └───────────────────────┘  │    │
-│  │  CATEGORY                    │    │
-│  │  Featured Headline           │    │  H2
-│  │  Excerpt text...             │    │
-│  │  12 Feb 2026                 │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────────┐│
-│  │ All │ Products │ Eng │ Company ││  Horizontal scroll
-│  └─────────────────────────────────┘│
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  [Post card 1]               │    │
-│  └─────────────────────────────┘    │
-│  ┌─────────────────────────────┐    │
-│  │  [Post card 2]               │    │
-│  └─────────────────────────────┘    │
-│  ┌─────────────────────────────┐    │
-│  │  [Post card 3]               │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  [Load more]                        │
-│                                     │
-├─────────────────────────────────────┤
-│  [Footer]                           │
-└─────────────────────────────────────┘
+│  │  └────────────────────────┘  │    │
+│  │  CATEGORY                     │    │
+│  │  Featured Headline            │    │   H2
+│  │  Excerpt text...              │    │
+│  │  12 Feb 2026                  │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────────┐│
+│  │ All │ Products │ Eng │ Company  ││   Horizontal scroll
+│  └──────────────────────────────────┘│
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  [Post card 1]                │    │
+│  └──────────────────────────────┘    │
+│  ┌──────────────────────────────┐    │
+│  │  [Post card 2]                │    │
+│  └──────────────────────────────┘    │
+│  ┌──────────────────────────────┐    │
+│  │  [Post card 3]                │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  [Load more]                         │
+│                                      │
+├──────────────────────────────────────┤
+│  [Footer]                            │
+└──────────────────────────────────────┘
 
 Post cards: stacked, full width
 Category pills: horizontally scrollable
@@ -835,36 +903,36 @@ Category pills: horizontally scrollable
 ### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  [Nav]                                                        │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  RESEARCH                                                    │
-│                                                              │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │  ┌────────────────────────────────────────────────┐  │    │
-│  │  │  [Featured post large image]                    │  │    │
-│  │  └────────────────────────────────────────────────┘  │    │
-│  │  CATEGORY                                            │    │
-│  │  Featured Headline Here in Large Text                │    │  H1
-│  │  Excerpt text describing the article...              │    │
-│  │  12 Feb 2026                                         │    │
-│  └──────────────────────────────────────────────────────┘    │
-│                                                              │
-│  [All] [Products] [Engineering] [Company] [Market]           │
-│                                                              │
-│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────┐ │
-│  │  [Post card]     │ │  [Post card]     │ │  [Post card]  │ │
-│  └──────────────────┘ └──────────────────┘ └──────────────┘ │
-│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────┐ │
-│  │  [Post card]     │ │  [Post card]     │ │  [Post card]  │ │
-│  └──────────────────┘ └──────────────────┘ └──────────────┘ │
-│                                                              │
-│  [Load more]                                                 │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│  [Footer]                                                    │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  [Nav]                                                            │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  RESEARCH                                                        │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────┐      │
+│  │  ┌──────────────────────────────────────────────────┐  │      │
+│  │  │  [Featured post large image]                      │  │      │
+│  │  └──────────────────────────────────────────────────┘  │      │
+│  │  CATEGORY                                              │      │
+│  │  Featured Headline Here in Large Text                  │      │   H1
+│  │  Excerpt text describing the article...                │      │
+│  │  12 Feb 2026                                           │      │
+│  └────────────────────────────────────────────────────────┘      │
+│                                                                  │
+│  [All] [Products] [Engineering] [Company] [Market]               │
+│                                                                  │
+│  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────┐│
+│  │  [Post card]       │ │  [Post card]       │ │  [Post card]   ││
+│  └────────────────────┘ └────────────────────┘ └────────────────┘│
+│  ┌────────────────────┐ ┌────────────────────┐ ┌────────────────┐│
+│  │  [Post card]       │ │  [Post card]       │ │  [Post card]   ││
+│  └────────────────────┘ └────────────────────┘ └────────────────┘│
+│                                                                  │
+│  [Load more]                                                     │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  [Footer]                                                        │
+└──────────────────────────────────────────────────────────────────┘
 
 Post grid: 3 columns
 Category pills: flex row, centered
@@ -877,80 +945,80 @@ Category pills: flex row, centered
 ### Mobile
 
 ```
-┌─────────────────────────────────────┐
-│  [Nav]                               │
-├─────────────────────────────────────┤
-│                                     │
-│  Get in touch                       │
-│                                     │
-│  Have a question or want to         │
-│  learn more? We'd love to hear      │
-│  from you.                          │
-│                                     │
-│  ──────────────                     │
-│                                     │
-│  OTHER WAYS TO REACH US             │
-│                                     │
-│  [WhatsApp icon] WhatsApp           │
-│  Chat with us directly              │
-│                                     │
-│  [Mail icon] Email                  │
-│  hello@lyniafinance.com             │
-│                                     │
-│  [Map icon] Location                │
-│  Harare, Zimbabwe                   │
-│                                     │
-│  ──────────────                     │
-│                                     │
-│  CONTACT FORM                       │
-│                                     │
-│  Name *                             │
-│  ┌─────────────────────────────┐    │
-│  └─────────────────────────────┘    │
-│  Phone number *                     │
-│  ┌─────────────────────────────┐    │
-│  └─────────────────────────────┘    │
-│  Email                              │
-│  ┌─────────────────────────────┐    │
-│  └─────────────────────────────┘    │
-│  Message                            │
-│  ┌─────────────────────────────┐    │
-│  │                              │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │       Send message           │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ══════════════════════════════     │
-│                                     │
-│  WANT TO PARTNER WITH US?           │
-│                                     │
-│  Name *                             │
-│  ┌─────────────────────────────┐    │
-│  └─────────────────────────────┘    │
-│  Phone number *                     │
-│  ┌─────────────────────────────┐    │
-│  └─────────────────────────────┘    │
-│  Email *                            │
-│  ┌─────────────────────────────┐    │
-│  └─────────────────────────────┘    │
-│  Type of partnership *              │
-│  ┌─────────────────────────────┐    │
-│  │ Distributor              ▼   │    │
-│  └─────────────────────────────┘    │
-│  Message                            │
-│  ┌─────────────────────────────┐    │
-│  │                              │    │
-│  └─────────────────────────────┘    │
-│                                     │
-│  ┌─────────────────────────────┐    │
-│  │  Submit partnership app      │    │
-│  └─────────────────────────────┘    │
-│                                     │
-├─────────────────────────────────────┤
-│  [Footer]                           │
-└─────────────────────────────────────┘
+┌──────────────────────────────────────┐
+│  [Nav]                                │
+├──────────────────────────────────────┤
+│                                      │
+│  Get in touch                        │
+│                                      │
+│  Have a question or want to          │
+│  learn more? We'd love to hear       │
+│  from you.                           │
+│                                      │
+│  ──────────────                      │
+│                                      │
+│  OTHER WAYS TO REACH US              │
+│                                      │
+│  [WhatsApp icon] WhatsApp            │
+│  Chat with us directly               │
+│                                      │
+│  [Mail icon] Email                   │
+│  hello@lyniafinance.com              │
+│                                      │
+│  [Map icon] Location                 │
+│  Harare, Zimbabwe                    │
+│                                      │
+│  ──────────────                      │
+│                                      │
+│  CONTACT FORM                        │
+│                                      │
+│  Name *                              │
+│  ┌──────────────────────────────┐    │
+│  └──────────────────────────────┘    │
+│  Phone number *                      │
+│  ┌──────────────────────────────┐    │
+│  └──────────────────────────────┘    │
+│  Email                               │
+│  ┌──────────────────────────────┐    │
+│  └──────────────────────────────┘    │
+│  Message                             │
+│  ┌──────────────────────────────┐    │
+│  │                               │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │        Send message           │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ══════════════════════════════      │
+│                                      │
+│  WANT TO PARTNER WITH US?            │
+│                                      │
+│  Name *                              │
+│  ┌──────────────────────────────┐    │
+│  └──────────────────────────────┘    │
+│  Phone number *                      │
+│  ┌──────────────────────────────┐    │
+│  └──────────────────────────────┘    │
+│  Email *                             │
+│  ┌──────────────────────────────┐    │
+│  └──────────────────────────────┘    │
+│  Type of partnership *               │
+│  ┌──────────────────────────────┐    │
+│  │ Distributor               ▼   │    │
+│  └──────────────────────────────┘    │
+│  Message                             │
+│  ┌──────────────────────────────┐    │
+│  │                               │    │
+│  └──────────────────────────────┘    │
+│                                      │
+│  ┌──────────────────────────────┐    │
+│  │  Submit partnership app       │    │
+│  └──────────────────────────────┘    │
+│                                      │
+├──────────────────────────────────────┤
+│  [Footer]                            │
+└──────────────────────────────────────┘
 
 Layout: single column, stacked
 Info section first, then contact form, then partnership form
@@ -959,50 +1027,50 @@ Info section first, then contact form, then partnership form
 ### Desktop
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│  [Nav]                                                        │
-├──────────────────────────────────────────────────────────────┤
-│                                                              │
-│  ┌──────────────────────────┬──────────────────────────┐     │
-│  │                          │                          │     │
-│  │  Get in touch            │  CONTACT FORM            │     │
-│  │                          │                          │     │
-│  │  Have a question or      │  Name *                  │     │
-│  │  want to learn more?     │  ┌────────────────────┐  │     │
-│  │  We'd love to hear       │  └────────────────────┘  │     │
-│  │  from you.               │  Phone number *          │     │
-│  │                          │  ┌────────────────────┐  │     │
-│  │  ─────────────           │  └────────────────────┘  │     │
-│  │                          │  Email                   │     │
-│  │  OTHER WAYS TO REACH US  │  ┌────────────────────┐  │     │
-│  │                          │  └────────────────────┘  │     │
-│  │  [WA] WhatsApp           │  Message                 │     │
-│  │  Chat with us directly   │  ┌────────────────────┐  │     │
-│  │                          │  │                    │  │     │
-│  │  [Mail] Email            │  └────────────────────┘  │     │
-│  │  hello@lyniafinance.com  │                          │     │
-│  │                          │  [Send message]          │     │
-│  │  [Pin] Location          │                          │     │
-│  │  Harare, Zimbabwe        │                          │     │
-│  │                          │                          │     │
-│  └──────────────────────────┴──────────────────────────┘     │
-│                                                              │
-│  ════════════════════════════════════                         │
-│                                                              │
-│  WANT TO PARTNER WITH US?                                    │
-│                                                              │
-│  ┌────────────────────────────────────────────────────┐      │
-│  │  Name *   Phone *   Email *   Type *               │      │
-│  │  [input]  [input]   [input]   [select]             │      │
-│  │  Message                                           │      │
-│  │  [textarea                                    ]    │      │
-│  │                                                    │      │
-│  │  [Submit partnership application]                  │      │
-│  └────────────────────────────────────────────────────┘      │
-│                                                              │
-├──────────────────────────────────────────────────────────────┤
-│  [Footer]                                                    │
-└──────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  [Nav]                                                            │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌────────────────────────────┬────────────────────────────┐     │
+│  │                            │                            │     │
+│  │  Get in touch              │  CONTACT FORM              │     │
+│  │                            │                            │     │
+│  │  Have a question or        │  Name *                    │     │
+│  │  want to learn more?       │  ┌──────────────────────┐  │     │
+│  │  We'd love to hear         │  └──────────────────────┘  │     │
+│  │  from you.                 │  Phone number *            │     │
+│  │                            │  ┌──────────────────────┐  │     │
+│  │  ─────────────             │  └──────────────────────┘  │     │
+│  │                            │  Email                     │     │
+│  │  OTHER WAYS TO REACH US    │  ┌──────────────────────┐  │     │
+│  │                            │  └──────────────────────┘  │     │
+│  │  [WA] WhatsApp             │  Message                   │     │
+│  │  Chat with us directly     │  ┌──────────────────────┐  │     │
+│  │                            │  │                      │  │     │
+│  │  [Mail] Email              │  └──────────────────────┘  │     │
+│  │  hello@lyniafinance.com    │                            │     │
+│  │                            │  [Send message]            │     │
+│  │  [Pin] Location            │                            │     │
+│  │  Harare, Zimbabwe          │                            │     │
+│  │                            │                            │     │
+│  └────────────────────────────┴────────────────────────────┘     │
+│                                                                  │
+│  ════════════════════════════════════                             │
+│                                                                  │
+│  WANT TO PARTNER WITH US?                                        │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────┐        │
+│  │  Name *   Phone *   Email *   Type *                  │        │
+│  │  [input]  [input]   [input]   [select]                │        │
+│  │  Message                                              │        │
+│  │  [textarea                                    ]       │        │
+│  │                                                       │        │
+│  │  [Submit partnership application]                     │        │
+│  └──────────────────────────────────────────────────────┘        │
+│                                                                  │
+├──────────────────────────────────────────────────────────────────┤
+│  [Footer]                                                        │
+└──────────────────────────────────────────────────────────────────┘
 
 Contact: split layout (info left, form right)
 Partnership: full width, fields in row
@@ -1026,3 +1094,4 @@ Partnership: full width, fields in row
 - Fixed position, bottom-right corner
 - Above footer when scrolled to bottom
 - Tooltip on hover (desktop) or briefly on load (mobile)
+- Serves as universal WhatsApp access — secondary CTAs on page freed for other actions

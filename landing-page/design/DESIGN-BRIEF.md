@@ -35,27 +35,31 @@
 ### Navigation Bar
 
 ```
-Lynia Finance (logo)    Products    Mission    Partnerships    Research
+Lynia Finance (logo)    Products    About    Partnerships    Research    [Start your application]
 ```
 
-- **Clean nav only** - no buttons, no Contact, no Careers in the nav
+- CTA button on the right provides persistent conversion path from any scroll position (Stripe pattern)
+- "Mission" renamed to "About" for broader utility (investors, press, job seekers all look for "About")
 - Contact, Careers, and other links live in the footer
+- Mobile: CTA appears as last item in hamburger menu
 
-### Homepage Structure (Stripe-inspired flow)
+### Homepage Structure (Stripe-inspired flow, reordered)
 
 | # | Section | Stripe Equivalent | Layout |
 |---|---------|-------------------|--------|
-| 1 | **Hero** | Hero with gradient + animated UI | Full-viewport, WebGL gradient, 2-col split |
-| 2 | **Social Proof** | Customer logos bar | Horizontal logo strip |
-| 3 | **Product Suite** | Product showcase grid | 3-column card grid |
-| 4 | **Asset Financing** | Product deep dive | Split: text left, visual right |
-| 5 | **Digital Credit** | Product deep dive | Split: visual left, text right (dark bg) |
-| 6 | **Enterprise Partnerships** | Product deep dive | Split: text left, visual right |
-| 7 | **Why Alternative Financing** | "Why Stripe" + global numbers | Stats on gradient background |
+| 1 | **Hero** | Hero with gradient + animated UI | Full-viewport, CSS gradient (WebGL enhancement), 2-col split |
+| 2 | **Social Proof** | Customer logos bar | Horizontal logo strip or stat numbers |
+| 3 | **Why Alternative Financing** | "Why Stripe" + global numbers | Stats on gradient background |
+| 4 | **Product Suite** | Product showcase grid | 3-column card grid |
+| 5 | **Asset Financing** | Product deep dive | Split: text left, visual right (compact padding) |
+| 6 | **Digital Credit** | Product deep dive | Split: visual left, text right (dark bg, lead capture CTA) |
+| 7 | **Enterprise Partnerships** | Product deep dive | Split: text left, visual right (compact padding) |
 | 8 | **Customer Segments** | Startup / Enterprise / Platform cards | 3-column cards |
 | 9 | **Featured Research** | Editorial content | 3-column blog card grid (from Sanity) |
 | 10 | **Bottom CTA** | Bottom CTA + pricing | Dark/gradient bg, final conversion |
 | 11 | **Footer** | Multi-column footer | Products, Company, Connect, Legal |
+
+**Section order change from v1**: Stats section moved from position 7 to position 3 — establishes the market problem before presenting products (Stripe narrative pattern).
 
 Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 
@@ -72,37 +76,37 @@ Full wireframes and copy in [`CONTENT.md`](./CONTENT.md).
 | Page | Purpose |
 |------|---------|
 | **Products** | Detailed product pages (Asset Financing, Digital Credit, Enterprise Partnerships) |
-| **Mission** | Company mission, vision, and values |
+| **About** | Company mission, vision, and values |
 | **Partnerships** | Distributor and B2B partnership information + application form |
 | **Research** | Blog / research articles and news |
 | **Privacy Policy / Terms** | Legal pages (footer links) |
 
 ### Footer
 
-| Products | Connect | Company | Legal |
+| Products | Company | Connect | Legal |
 |----------|---------|---------|-------|
-| Smartphone financing | X (Twitter) | Careers | Privacy Policy |
-| Digital loans | LinkedIn | Contact | Terms |
-| Embedded financing | WhatsApp | | |
+| Asset financing | About | X (Twitter) | Privacy Policy |
+| Digital credit | Careers | LinkedIn | Terms |
+| Enterprise partnerships | Contact | WhatsApp | |
 
 ---
 
 ## 4. Key Messaging
 
-### 4.1 Hero Messaging (confirmed)
+### 4.1 Hero Messaging (updated per Stripe alignment review)
 
-- **Headline**: "Credit that works for real people"
-- **Subtext**: "Lynia Finance helps you get the smartphone, tools, or cash you need—giving you the power to earn more and do more."
-- **Primary CTA**: `[Apply now]`
-- **Secondary CTA**: `Lets chat on whatsapp`
+- **Headline**: "Financial tools for the underbanked"
+- **Subtext**: "Smartphones, equipment, and cash — delivered through WhatsApp with approval in under 5 minutes."
+- **Primary CTA**: `[Start your application]`
+- **Secondary CTA**: `See how it works →`
 
-### 4.2 Product Headlines (confirmed)
+### 4.2 Product Headlines (updated per Stripe alignment review)
 
 | Product | Headline | Subtext |
 |---------|----------|---------|
-| **Asset Financing** | "Own the tools that power your trade" | Get smartphones, tools of your trade through flexible financing... |
-| **Digital Credit** | "Cash when you need it most" | Quick, secure digital loans delivered straight to your mobile wallet... |
-| **Enterprise Partnerships** | "Credit built into your business" | We partner with enterprises to embed financing directly into their platforms... |
+| **Asset Financing** | "Own the tools that power your trade" | Finance a smartphone or equipment with a small deposit. Collect from a local agent, repay via mobile money. |
+| **Digital Credit** | "Cash when you need it most" | Digital loans deposited directly into your EcoCash or OneMoney wallet. Apply once, get funded in under 10 minutes. |
+| **Enterprise Partnerships** | "Embed credit into your platform" | Offer your customers financing at the point of need. Lynia handles underwriting, disbursement, and collections — you earn on every transaction. |
 
 Full copy in [`CONTENT.md`](./CONTENT.md).
 
@@ -169,7 +173,7 @@ Established brand voice applies:
 | White | `#FFFFFF` | Backgrounds, cards |
 
 - **Full token definitions**: See [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md)
-- **Colors note**: Hero gradient uses vibrant warm tones (per Stripe's actual WebGL implementation); brand palette remains cool navy/blurple
+- **Colors note**: Hero uses CSS gradient as default; WebGL animated gradient is a progressive enhancement loaded only on capable devices (`hardwareConcurrency >= 4`). Brand palette remains cool navy/blurple
 
 ### 5.3 Typography
 
@@ -199,10 +203,11 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 | CTA | Action | Location |
 |-----|--------|----------|
-| `[Apply now]` | Primary conversion (WhatsApp or application flow) | Hero, Asset Financing |
-| `Lets chat on whatsapp` | Opens WhatsApp chat | Hero, Asset Financing |
-| `[Coming soon]` | Disabled/waitlist for Digital Credit | Digital Credit section |
+| `[Start your application]` | Primary conversion (WhatsApp or application flow) | Nav, Hero, Asset Financing, Bottom CTA |
+| `See how it works →` | Scrolls to product section | Hero |
+| `[Get notified when we launch →]` | Lead capture (phone/email) for Digital Credit | Digital Credit section |
 | `[Partner with us]` | Partnership application form | Enterprise Partnerships section |
+| `Talk to our team →` | Links to contact page | Bottom CTA |
 | **WhatsApp floating button** | Opens WhatsApp chat | Persistent on all pages |
 
 ### 6.2 Forms & Interactions

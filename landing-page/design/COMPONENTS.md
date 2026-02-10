@@ -32,9 +32,9 @@
 ### Structure
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  [Logo]        Products   Mission   Partnerships   Research  │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  [Logo]     Products   About   Partnerships   Research    [Start your application]  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Properties
@@ -47,7 +47,7 @@
 | Backdrop filter | `blur(12px)` (on scroll) |
 | Border bottom | `1px solid var(--color-border)` (on scroll, hidden at top) |
 | Z-index | `var(--z-sticky)` (100) |
-| Container | `max-width: var(--container-max)` centered with `var(--container-padding)` |
+| Container | `max-width: var(--container-wide)` / `1280px` centered with `var(--container-padding)` |
 | Transition | Background `var(--duration-normal)` `var(--easing-default)` |
 
 ### Logo
@@ -71,6 +71,21 @@
 | Transition | Color `var(--duration-fast)` |
 | Underline | None. Optional: 2px bottom border on active page |
 
+### Nav CTA Button
+
+| Property | Value |
+|----------|-------|
+| Text | "Start your application" |
+| Style | Primary button (small size) |
+| Height | `36px` |
+| Padding | `8px 16px` |
+| Background | `var(--color-primary)` / `#635BFF` |
+| Text color | `var(--color-white)` |
+| Border radius | `var(--radius-md)` |
+| Hover | Background `var(--color-primary-hover)` / `#5651E5` |
+| On dark hero | White background, `var(--color-primary)` text → blurple bg on scroll |
+| Visibility | Hidden on `< 1024px`, visible on desktop. In mobile menu: shown as last item (full width) |
+
 ### Mobile Nav
 
 | Property | Value |
@@ -79,14 +94,16 @@
 | Panel | Full-screen overlay, `background: var(--color-white)` |
 | Animation | Slide down from top, `var(--duration-slow)` |
 | Links | Stacked vertically, `var(--text-h4)`, `48px` row height |
+| CTA button | Full-width primary button at bottom of menu list |
 | Close | X icon top-right, same position as hamburger |
 | Z-index | `var(--z-overlay)` (200) |
 
 ### Behavior
 
-1. On page load (hero visible): transparent background, white text links
-2. On scroll past hero: solid white background, dark text links, bottom border visible
+1. On page load (hero visible): transparent background, white text links, white-bg CTA button
+2. On scroll past hero: solid white background, dark text links, blurple CTA button, bottom border visible
 3. Transition between states is smooth (`200ms`)
+4. CTA button provides persistent conversion path from any scroll position (Stripe pattern)
 
 ---
 
@@ -157,8 +174,8 @@
 
 | Property | Value |
 |----------|-------|
-| Height | `100vh` min, content-adaptive |
-| Background | WebGL animated gradient canvas (full viewport) |
+| Height | `100vh` min (desktop), auto content-driven (mobile) |
+| Background | CSS gradient default; WebGL as progressive enhancement on capable devices |
 | Content layout | CSS Grid, 2 columns (`1fr 1fr`), `gap: 48px` |
 | Container | `max-width: var(--container-max)`, centered |
 | Vertical alignment | Center |
@@ -195,14 +212,17 @@
 | Padding | `var(--space-20)` top |
 | Min height | `auto` (not full viewport) |
 
-### WebGL Gradient Background
+### Gradient Background
+
+**Default**: CSS gradient (works on all devices, zero JS, within performance budget).
 
 | Property | Value |
 |----------|-------|
-| Colors | `#6ec3f4` (light blue), `#3a3aff` (vivid blue), `#ff61ab` (pink), `#E63946` (red) |
-| Animation | Slow-moving gradient mesh, `0.3` speed factor |
-| Fallback | `background: linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%)` |
-| Performance | Reduce to CSS gradient on `prefers-reduced-motion` or low-end devices |
+| Default | `background: linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%)` |
+| WebGL enhancement | Animated gradient mesh with colors `#6ec3f4`, `#3a3aff`, `#ff61ab`, `#E63946` |
+| WebGL condition | Load only if `navigator.hardwareConcurrency >= 4` (skip on low-end devices) |
+| WebGL speed | `0.3` speed factor, organic movement |
+| Reduced motion | Static CSS gradient only (no WebGL, no animation) |
 
 ---
 
@@ -214,8 +234,8 @@
 |----------|-------|
 | Background | `var(--color-white)` or `var(--color-gray-100)` / `#F6F9FC` |
 | Padding | `var(--space-10)` vertical |
-| Content | Centered label + horizontal logo row |
-| Label | `var(--text-caption)`, `var(--color-text-muted)` / `#ADBDCC`, uppercase, `var(--tracking-wide)` |
+| Content | Horizontal logo row — no label text (Stripe pattern: logos speak for themselves) |
+| Fallback (no logos) | `500+ loans funded · <5 min approval · 100% mobile money` in `var(--text-body-sm)` |
 | Logo container | Flex, `gap: 48px`, center-aligned, `flex-wrap: wrap` |
 | Logo height | `28px–36px`, grayscale by default |
 | Logo hover | Full color, `var(--duration-normal)` transition |
@@ -434,13 +454,13 @@ Used in Section 8 (Customer Segments).
 ┌───────────────────────┐
 │  FOR INDIVIDUALS       │  Overline label
 │                        │
-│  Get the tools you     │  Description
-│  need to earn more.    │
-│  Smartphones,          │
-│  equipment, and cash   │
-│  — all via WhatsApp.   │
+│  Smartphones,          │  Description
+│  equipment, and cash.  │
+│  Apply via WhatsApp    │
+│  in under 5 minutes.   │
 │                        │
-│  Apply now →           │  Link
+│  Start your            │  Link
+│  application →         │
 └───────────────────────┘
 ```
 

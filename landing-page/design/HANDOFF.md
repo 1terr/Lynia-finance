@@ -10,13 +10,14 @@
 
 | Document | Purpose | Status |
 |----------|---------|--------|
-| [`DESIGN-BRIEF.md`](./DESIGN-BRIEF.md) | Project overview, brand direction, audience, technical choices | Complete |
-| [`CONTENT.md`](./CONTENT.md) | Full page copy for all sections and pages | Complete |
+| [`DESIGN-BRIEF.md`](./DESIGN-BRIEF.md) | Project overview, brand direction, audience, technical choices | Updated |
+| [`CONTENT.md`](./CONTENT.md) | Full page copy for all sections and pages | Updated |
 | [`DESIGN-TOKENS.md`](./DESIGN-TOKENS.md) | Colors, typography, spacing, shadows, radii, z-index, breakpoints | Complete |
-| [`COMPONENTS.md`](./COMPONENTS.md) | Detailed specs for all 16 reusable UI components | Complete |
-| [`WIREFRAMES.md`](./WIREFRAMES.md) | Mobile-first and desktop wireframes for all pages and sections | Complete |
-| [`ANIMATIONS.md`](./ANIMATIONS.md) | Motion, transitions, scroll animations, hover/focus states | Complete |
-| [`TASKS.md`](./TASKS.md) | Design phase task tracking | Complete |
+| [`COMPONENTS.md`](./COMPONENTS.md) | Detailed specs for all 16+ reusable UI components | Updated |
+| [`WIREFRAMES.md`](./WIREFRAMES.md) | Mobile-first and desktop wireframes for all pages and sections | Updated |
+| [`ANIMATIONS.md`](./ANIMATIONS.md) | Motion, transitions, scroll animations, hover/focus states | Updated |
+| [`REVIEW-STRIPE-ALIGNMENT.md`](./REVIEW-STRIPE-ALIGNMENT.md) | Stripe alignment review — copy style guide and design recommendations | Complete |
+| [`TASKS.md`](./TASKS.md) | Design phase task tracking | Updated |
 
 ---
 
@@ -34,7 +35,7 @@
 | **Body text** | `#425466` (Stripe blue-gray) |
 | **Muted text** | `#ADBDCC` (secondary text on dark backgrounds) |
 | **Light BG** | `#F6F9FC` (Stripe "Black Squeeze") |
-| **Hero gradient** | WebGL: `#6ec3f4`, `#3a3aff`, `#ff61ab`, `#E63946` (Stripe's vibrant multi-hue) |
+| **Hero gradient** | CSS gradient default; WebGL as progressive enhancement on capable devices |
 | **CSS framework** | Tailwind CSS (config in DESIGN-TOKENS.md) |
 | **Breakpoints** | 640 / 768 / 1024 / 1280 / 1536 px |
 | **Max container** | 1080px |
@@ -44,21 +45,23 @@
 
 ## Pages to Build
 
-### Homepage (11 sections)
+### Homepage (11 sections — reordered)
 
 | # | Section | Background | Key Component |
 |---|---------|-----------|---------------|
-| 1 | Hero | WebGL gradient | Hero Section |
-| 2 | Social Proof | White/Gray-50 | Logo Strip |
-| 3 | Product Suite | White | Product Card (×3) |
-| 4 | Asset Financing | White | Product Deep Dive (text L, visual R) |
-| 5 | Digital Credit | Navy (#0A2540) | Product Deep Dive (visual L, text R) |
-| 6 | Enterprise Partnerships | Light (#F6F9FC) | Product Deep Dive (text L, visual R) |
-| 7 | Why Alternative Financing | Blue gradient | Stat Card (×4) |
+| 1 | Hero | CSS gradient (WebGL enhancement) | Hero Section |
+| 2 | Social Proof | White/Gray-50 | Logo Strip / Stat numbers |
+| 3 | Why Alternative Financing | Blue gradient | Stat Card (×4) |
+| 4 | Product Suite | White | Product Card (×3) |
+| 5 | Asset Financing | White | Product Deep Dive (text L, visual R) |
+| 6 | Digital Credit | Navy (#0A2540) | Product Deep Dive (visual L, text R) + lead capture |
+| 7 | Enterprise Partnerships | Light (#F6F9FC) | Product Deep Dive (text L, visual R) |
 | 8 | Customer Segments | White | Segment Card (×3) |
 | 9 | Editorial | White | Blog Post Card (×3, from Sanity) |
 | 10 | Bottom CTA | Navy/gradient | CTA Section |
 | 11 | Footer | Navy | Footer |
+
+**Section order change**: Stats moved from position 7 to position 3. Establishes the problem before products.
 
 ### Other Pages
 
@@ -67,7 +70,7 @@
 | Research | Featured post + 3-col grid | Blog Post Card, category pills |
 | Contact | Split (info L, form R) + partnership form | Form Elements, buttons |
 | Products | Detailed product pages | Product Deep Dive sections |
-| Mission | Company mission/vision/values | Text sections |
+| About | Company mission/vision/values | Text sections |
 | Partnerships | Info + application form | Form Elements |
 | Privacy Policy | Legal text | Text content |
 | Terms | Legal text | Text content |
@@ -76,7 +79,7 @@
 
 | Element | Notes |
 |---------|-------|
-| Navigation Bar | Sticky, transparent→solid on scroll |
+| Navigation Bar | Sticky, transparent→solid on scroll, CTA button on desktop |
 | Footer | 4-column, navy background |
 | WhatsApp FAB | Fixed bottom-right, all pages |
 
@@ -165,7 +168,7 @@ landing-page/frontend/
 │   │   └── [slug]/page.tsx     # Individual post
 │   ├── contact/page.tsx        # Contact + partnership forms
 │   ├── products/page.tsx       # Products overview
-│   ├── mission/page.tsx        # Mission page
+│   ├── about/page.tsx           # About page (mission, vision, values)
 │   ├── partnerships/page.tsx   # Partnerships page
 │   ├── privacy/page.tsx        # Privacy policy
 │   └── terms/page.tsx          # Terms of service
