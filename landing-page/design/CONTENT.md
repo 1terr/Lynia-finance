@@ -251,7 +251,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 ┌─────────────────────────────────────────────────────────┐
 │                (brand blue gradient bg)                  │
 │                                                         │
-│  Why Alternative Financing                              │
+│  Building credit rails for the underbanked             │
 │                                                         │
 │  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────┐ │
 │  │   80%    │  │   <5%    │  │  $14B    │  │  70%+   │ │
@@ -276,6 +276,9 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 - `<5%` — Of informal workers have access to bank credit
 - `$14B` — Estimated unserved credit demand in Zimbabwe's informal sector
 - `70%+` — Mobile money adoption rate (EcoCash, OneMoney)
+
+**Section headline**:
+> Building credit rails for the underbanked
 
 **Supporting headline**:
 > The underbanked aren't high risk — they're unmodeled.
