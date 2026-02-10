@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Production Database Connection Pooling Configuration
+  Supabase PgBouncer connection pooling settings and Lambda connection management
+
+# ============================================================================
+# SUPABASE CONNECTION POOLING (PgBouncer)
+# ============================================================================
+#
+# Supabase provides built-in PgBouncer connection pooling at port 6543.
+# This template documents the required configuration and provides CloudFormation
+# resources for connection monitoring.
+#
+# IMPORTANT: Supabase PgBouncer settings are configured via the Supabase
+# Dashboard (Project Settings > Database > Connection Pooling), not via
+# CloudFormation. This template documents the required settings and creates
+# supporting AWS resources.
+#
+# ============================================================================
+# REQUIRED SUPABASE DASHBOARD SETTINGS
+# ============================================================================
+#
+# Pool Mode:          Transaction (required for serverless - releases connection
+#                     after each transaction, not after session disconnect)
+#
+# Pool Size:          15 (Supabase free/pro plan default)
+#                     Increase to 25-50 for production with paid plan
+#
+# Connection String:  Use the "Connection pooling" string from Supabase dashboard
+#                     Format: postgresql://postgres.[ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+#
+# ============================================================================
+# LAMBDA CONNECTION MANAGEMENT GUIDELINES
+# ============================================================================
+#
+# 1. Use connection pooling URL (port 6543), NOT direct connection (port 5432)
+#    - Direct: db.[ref].supabase.co:5432 (for migrations only)
+#    - Pooled: aws-0-[region].pooler.supabase.com:6543 (for Lambda)
+#
+# 2. Each Lambda function should configure its client pool:
+#    - pool_min: 1 (keep one warm connection)
+#    - pool_max: 5 (prevent connection exhaustion)
+#    - idle_timeout: 10s (release idle connections quickly)
+#    - connection_timeout: 5s (fail fast on connection issues)
+#
+# 3. Total production connection budget:
+#    6 Lambda functions x 5 max connections x max concurrency
+#    = 6 x 5 x 50 = 1500 theoretical max
+#    PgBouncer pool of 50 handles this via transaction-mode multiplexing
+#
+# 4. Connection lifecycle:
+#    - Lambda creates connection on cold start
+#    - Connection reused across warm invocations
+#    - PgBouncer multiplexes at transaction boundary
+#    - Idle Lambda connections released after 10s
+#
+# ============================================================================
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # SSM PARAMETERS (connection pool settings per service)
+  # ==========================================================
+  # Store pool configuration as SSM parameters so Lambda functions
+  # can read them at startup without hardcoding values
+
+  GlobalPoolConfig:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${Environment}/lynia/database/pool-config"
+      Type: String
+      Description: Database connection pool configuration for all services
+      Value: !Sub |
+        {
+          "pool_mode": "transaction",
+          "use_pooler": true,
+          "pooler_port": 6543,
+          "direct_port": 5432,
+          "pool_min": 1,
+          "pool_max": ${!If [IsProduction, 5, 2]},
+          "idle_timeout_ms": 10000,
+          "connection_timeout_ms": 5000,
+          "statement_timeout_ms": 30000,
+          "max_lifetime_ms": 600000,
+          "ssl_mode": "require"
+        }
+      Tags:
+        Environment: !Ref Environment
+
+  PaymentPoolConfig:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${Environment}/lynia/database/payment-pool-config"
+      Type: String
+      Description: Payment service pool config (higher limits for financial transactions)
+      Value: !Sub |
+        {
+          "pool_min": ${!If [IsProduction, 2, 1]},
+          "pool_max": ${!If [IsProduction, 10, 3]},
+          "idle_timeout_ms": 15000,
+          "connection_timeout_ms": 5000,
+          "statement_timeout_ms": 60000,
+          "max_lifetime_ms": 600000
+        }
+      Tags:
+        Environment: !Ref Environment
+
+  # ==========================================================
+  # CONNECTION MONITORING ALARMS
+  # ==========================================================
+
+  # Custom metric alarm: Lambda functions publish connection pool metrics
+  DatabaseConnectionExhaustedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-db-connection-exhausted"
+      AlarmDescription: "Database connection pool exhausted - increase pool size or reduce concurrency"
+      Namespace: !Sub "Lynia/${Environment}"
+      MetricName: DatabaseConnectionPoolExhausted
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  DatabaseConnectionLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: IsProduction
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-db-connection-latency"
+      AlarmDescription: "Database connection acquisition latency > 3 seconds"
+      Namespace: !Sub "Lynia/${Environment}"
+      MetricName: DatabaseConnectionAcquisitionTime
+      Statistic: p95
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 3000
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  PoolConfigParameterName:
+    Description: SSM parameter name for global pool config
+    Value: !Ref GlobalPoolConfig
+
+  PaymentPoolConfigParameterName:
+    Description: SSM parameter name for payment pool config
+    Value: !Ref PaymentPoolConfig
+
+  PoolingSummary:
+    Description: Connection pooling strategy
+    Value: !If
+      - IsProduction
+      - "Transaction-mode PgBouncer on port 6543, pool_max=5 (payment=10), auto-scaling concurrency"
+      - "Transaction-mode PgBouncer on port 6543, pool_max=2 (payment=3), fixed concurrency"

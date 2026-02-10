@@ -1,0 +1,357 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Production Master Orchestration Template
+  Deploys all infrastructure stacks in the correct dependency order for production environment
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  # Domain
+  DomainName:
+    Type: String
+    Default: lyniafinance.co.zw
+
+  HostedZoneId:
+    Type: String
+    Default: ""
+    Description: Existing Route 53 Hosted Zone ID (leave empty to create new)
+
+  # Supabase
+  SupabaseUrl:
+    Type: String
+    NoEcho: true
+  SupabaseServiceRoleKey:
+    Type: String
+    NoEcho: true
+
+  # WhatsApp Cloud API
+  WhatsAppPhoneNumberId:
+    Type: String
+    NoEcho: true
+    Default: ""
+  WhatsAppAccessToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+  WhatsAppWebhookVerifyToken:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  # Smile Identity (KYC)
+  SmilePartnerId:
+    Type: String
+    NoEcho: true
+    Default: ""
+  SmileApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  # EcoCash
+  EcocashMerchantId:
+    Type: String
+    NoEcho: true
+    Default: ""
+  EcocashApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  # OneMoney
+  OnemoneyMerchantId:
+    Type: String
+    NoEcho: true
+    Default: ""
+  OnemoneyApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  # Trustonic
+  TrustonicApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+  TrustonicApiSecret:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  # SMS
+  SmsApiKey:
+    Type: String
+    NoEcho: true
+    Default: ""
+
+  # Alerts
+  AlertEmail:
+    Type: String
+    Default: alerts@lynia.co.zw
+  AlertPhone:
+    Type: String
+    Default: ""
+
+Resources:
+  # ==========================================================
+  # LAYER 1: NETWORKING (no dependencies)
+  # ==========================================================
+
+  VPCStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/vpc.yaml"
+      Parameters:
+        Environment: !Ref Environment
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: networking
+
+  # ==========================================================
+  # LAYER 1: SECRETS (no dependencies)
+  # ==========================================================
+
+  SecretsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/secrets-manager.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        SupabaseUrl: !Ref SupabaseUrl
+        SupabaseServiceRoleKey: !Ref SupabaseServiceRoleKey
+        WhatsAppPhoneNumberId: !Ref WhatsAppPhoneNumberId
+        WhatsAppAccessToken: !Ref WhatsAppAccessToken
+        WhatsAppWebhookVerifyToken: !Ref WhatsAppWebhookVerifyToken
+        SmilePartnerId: !Ref SmilePartnerId
+        SmileApiKey: !Ref SmileApiKey
+        EcocashMerchantId: !Ref EcocashMerchantId
+        EcocashApiKey: !Ref EcocashApiKey
+        OnemoneyMerchantId: !Ref OnemoneyMerchantId
+        OnemoneyApiKey: !Ref OnemoneyApiKey
+        TrustonicApiKey: !Ref TrustonicApiKey
+        TrustonicApiSecret: !Ref TrustonicApiSecret
+        SmsApiKey: !Ref SmsApiKey
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: secrets
+
+  # ==========================================================
+  # LAYER 1: SQS QUEUES (no dependencies)
+  # ==========================================================
+
+  SQSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/sqs-queues.yaml"
+      Parameters:
+        Environment: !Ref Environment
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: messaging
+
+  # ==========================================================
+  # LAYER 1: IAM ROLES (no dependencies)
+  # ==========================================================
+
+  IAMStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/iam-roles.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        ArtifactBucketName: !Sub "lynia-finance-${Environment}-artifacts"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: security
+
+  # ==========================================================
+  # LAYER 2: DNS + SSL (depends on nothing, but takes time)
+  # ==========================================================
+
+  # Note: DNS and SSL are deployed after networking. Certificate
+  # validation requires DNS records, and the API Gateway custom domain
+  # needs the certificate ready. This stack may take 10-30 minutes
+  # for certificate validation.
+
+  DNSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/dns-ssl.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        DomainName: !Ref DomainName
+        HostedZoneId: !Ref HostedZoneId
+        ApiGatewayRestApiId: "placeholder"
+        ApiGatewayStageName: Prod
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: dns
+
+  # ==========================================================
+  # LAYER 2: MONITORING (depends on nothing directly)
+  # ==========================================================
+
+  MonitoringStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/cloudwatch-alarms.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        AlertEmail: !Ref AlertEmail
+        AlertPhone: !Ref AlertPhone
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: monitoring
+
+  # ==========================================================
+  # LAYER 2: X-RAY TRACING
+  # ==========================================================
+
+  XRayStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/xray-tracing.yaml"
+      Parameters:
+        Environment: !Ref Environment
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: observability
+
+  # ==========================================================
+  # LAYER 3: FRONTEND HOSTING (depends on DNS for certificates)
+  # ==========================================================
+
+  FrontendStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: DNSStack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/frontend-hosting.yaml"
+      Parameters:
+        Environment: !Ref Environment
+        DomainName: !Ref DomainName
+        FrontendCertificateArn: !GetAtt DNSStack.Outputs.FrontendCertificateArn
+        HostedZoneId: !GetAtt DNSStack.Outputs.HostedZoneIdOutput
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: frontend
+
+  # ==========================================================
+  # LAYER 3: CANARY DEPLOYMENTS
+  # ==========================================================
+
+  CanaryStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/canary-deployments.yaml"
+      Parameters:
+        Environment: !Ref Environment
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: deployment
+
+  # ==========================================================
+  # LAYER 3: LAMBDA AUTO-SCALING
+  # ==========================================================
+
+  AutoScalingStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/lambda-autoscaling.yaml"
+      Parameters:
+        Environment: !Ref Environment
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Layer
+          Value: scaling
+
+Outputs:
+  # Networking
+  VpcId:
+    Description: VPC ID
+    Value: !GetAtt VPCStack.Outputs.VpcId
+
+  PrivateSubnet1Id:
+    Description: Private Subnet 1 ID
+    Value: !GetAtt VPCStack.Outputs.PrivateSubnet1Id
+
+  PrivateSubnet2Id:
+    Description: Private Subnet 2 ID
+    Value: !GetAtt VPCStack.Outputs.PrivateSubnet2Id
+
+  # DNS
+  ApiDomainName:
+    Description: API custom domain
+    Value: !GetAtt DNSStack.Outputs.ApiDomainName
+
+  ApiUrl:
+    Description: Production API URL
+    Value: !GetAtt DNSStack.Outputs.ApiUrl
+
+  # Frontend
+  AdminPortalUrl:
+    Description: Admin portal URL
+    Value: !GetAtt FrontendStack.Outputs.AdminPortalUrl
+
+  AdminPortalBucketName:
+    Description: Admin portal S3 bucket
+    Value: !GetAtt FrontendStack.Outputs.AdminPortalBucketName
+
+  DistributorDashboardUrl:
+    Description: Distributor dashboard URL
+    Value: !GetAtt FrontendStack.Outputs.DistributorDashboardUrl
+
+  DistributorDashboardBucketName:
+    Description: Distributor dashboard S3 bucket
+    Value: !GetAtt FrontendStack.Outputs.DistributorDashboardBucketName
+
+  # Monitoring
+  CriticalAlertsTopicArn:
+    Description: Critical alerts SNS topic
+    Value: !GetAtt MonitoringStack.Outputs.CriticalAlertsTopicArn
+
+  WarningAlertsTopicArn:
+    Description: Warning alerts SNS topic
+    Value: !GetAtt MonitoringStack.Outputs.WarningAlertsTopicArn
+
+  # Deployment
+  DeploymentRoleArn:
+    Description: CI/CD deployment role
+    Value: !GetAtt IAMStack.Outputs.DeploymentRoleArn
+
+  FrontendDeploymentRoleArn:
+    Description: Frontend deployment role
+    Value: !GetAtt IAMStack.Outputs.FrontendDeploymentRoleArn
+
+  # Queues
+  NotificationQueueUrl:
+    Description: Notification SQS queue URL
+    Value: !GetAtt SQSStack.Outputs.NotificationQueueUrl
+
+  PaymentCallbackQueueUrl:
+    Description: Payment callback SQS queue URL
+    Value: !GetAtt SQSStack.Outputs.PaymentCallbackQueueUrl
