@@ -453,7 +453,7 @@ export class PaymentService {
    */
   async trackCompletedPayment(
     paymentId: string,
-    providerReference: string
+    _providerReference: string
   ): Promise<void> {
     try {
       const { data: payment } = await this.supabase

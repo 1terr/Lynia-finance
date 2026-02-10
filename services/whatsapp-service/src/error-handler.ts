@@ -481,6 +481,7 @@ const SUSPICIOUS_PATTERNS = [
  * Throws if suspicious patterns are detected.
  */
 export function sanitizeInput(input: string): { safe: boolean; sanitized: string } {
+  // eslint-disable-next-line no-control-regex
   const sanitized = input.replace(/[\x00-\x1F\x7F]/g, '');
 
   for (const pattern of SUSPICIOUS_PATTERNS) {

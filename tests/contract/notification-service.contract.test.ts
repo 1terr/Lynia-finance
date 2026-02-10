@@ -655,6 +655,7 @@ describe('Notification Service Contract Tests', () => {
         resources: ['arn:aws:events:af-south-1:123456789:rule/process-reminders'],
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await handler(scheduledEvent as any);
 
       // Scheduled events return void, not APIGatewayProxyResult

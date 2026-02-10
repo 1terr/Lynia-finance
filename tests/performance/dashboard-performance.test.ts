@@ -12,7 +12,6 @@
  */
 
 import {
-  createMockSupabaseClient,
   resetMockDataStore,
   seedMockTable,
   createTestCustomer,
@@ -275,7 +274,7 @@ describe('P4-T004: Admin Dashboard Performance', () => {
       const loan = bulkLoans[0];
       const customer = bulkCustomers.find(c => c.id === loan.customer_id);
       const payments = bulkPayments.filter(p => p.loan_id === loan.id);
-      const loanDetail = { loan, customer, payments, paymentCount: payments.length };
+      const _loanDetail = { loan, customer, payments, paymentCount: payments.length };
 
       const dataLoadTime = performance.now() - start;
       const renderTime = estimateRenderTime(payments.length + 2, true);
@@ -424,7 +423,7 @@ describe('P4-T004: Admin Dashboard Performance', () => {
     it('should load reconciliation summary efficiently', async () => {
       const start = performance.now();
 
-      const reconciliation = {
+      const _reconciliation = {
         totalPending: bulkPayments.filter(p => p.payment_status === 'pending').length,
         totalConfirmed: bulkPayments.filter(p => p.payment_status === 'confirmed').length,
         totalFailed: bulkPayments.filter(p => p.payment_status === 'failed').length,
@@ -463,7 +462,7 @@ describe('P4-T004: Admin Dashboard Performance', () => {
       const pageSize = 25;
       const start = performance.now();
 
-      const devicePage = bulkDevices.slice(0, pageSize);
+      const _devicePage = bulkDevices.slice(0, pageSize);
       const dataLoadTime = performance.now() - start;
       const renderTime = estimateRenderTime(pageSize, false);
       const total = dataLoadTime + renderTime;
@@ -571,7 +570,7 @@ describe('P4-T004: Admin Dashboard Performance', () => {
         { name: 'Devices page', data: bulkDevices.slice(0, 25) },
       ];
 
-      for (const { name, data } of pagePayloads) {
+      for (const { name: _name, data } of pagePayloads) {
         const size = measurePayloadSize(data);
         expect(size).toBeLessThan(100 * 1024); // < 100KB per page
       }
@@ -583,7 +582,7 @@ describe('P4-T004: Admin Dashboard Performance', () => {
         { name: 'Customer detail', data: { customer: bulkCustomers[0], loans: bulkLoans.slice(0, 5) } },
       ];
 
-      for (const { name, data } of detailPayloads) {
+      for (const { name: _name, data } of detailPayloads) {
         const size = measurePayloadSize(data);
         expect(size).toBeLessThan(50 * 1024); // < 50KB per detail page
       }

@@ -12,7 +12,6 @@
  */
 
 import {
-  createMockSupabaseClient,
   resetMockDataStore,
   seedMockTable,
   createTestCustomer,
@@ -37,7 +36,7 @@ interface QueryBenchmark {
   explainPlan: string;
 }
 
-interface ConnectionPoolMetrics {
+interface _ConnectionPoolMetrics {
   maxConnections: number;
   activeConnections: number;
   idleConnections: number;
@@ -339,7 +338,7 @@ describe('P4-T005: Database Query Optimization & Stress Testing', () => {
 
   describe('Reporting Queries (< 500ms)', () => {
     it('should generate portfolio summary efficiently', async () => {
-      const { result, durationMs } = await measureTime(async () => {
+      const { result: _result, durationMs } = await measureTime(async () => {
         return {
           totalLoans: largeLoanSet.length,
           activeLoans: largeLoanSet.filter(l => l.status === 'active').length,
@@ -363,7 +362,7 @@ describe('P4-T005: Database Query Optimization & Stress Testing', () => {
     });
 
     it('should generate daily payment reconciliation report', async () => {
-      const { result, durationMs } = await measureTime(async () => {
+      const { result: _result, durationMs } = await measureTime(async () => {
         const today = new Date().toISOString().split('T')[0];
         const todayPayments = largePaymentSet.filter(p =>
           (p.payment_date as string).startsWith(today)
@@ -581,7 +580,7 @@ describe('P4-T005: Database Query Optimization & Stress Testing', () => {
     it('should handle 200 concurrent query connections', async () => {
       const concurrency = 200;
       const start = performance.now();
-      const results: { success: boolean; durationMs: number }[] = [];
+      const _results: { success: boolean; durationMs: number }[] = [];
 
       const promises = Array.from({ length: concurrency }, async (_, i) => {
         const queryStart = performance.now();
@@ -595,7 +594,7 @@ describe('P4-T005: Database Query Optimization & Stress Testing', () => {
       });
 
       const allResults = await Promise.all(promises);
-      const totalDuration = performance.now() - start;
+      const _totalDuration = performance.now() - start;
 
       const successCount = allResults.filter(r => r.success).length;
       const avgDuration = allResults.reduce((sum, r) => sum + r.durationMs, 0) / allResults.length;
@@ -616,7 +615,7 @@ describe('P4-T005: Database Query Optimization & Stress Testing', () => {
       const promises = Array.from({ length: targetPerMinute }, async (_, i) => {
         try {
           const loanId = `db-loan-${i % LOAN_COUNT}`;
-          const payments = largePaymentSet.filter(p => p.loan_id === loanId);
+          const _payments = largePaymentSet.filter(p => p.loan_id === loanId);
           completedTransactions++;
           return { success: true };
         } catch {

@@ -18,7 +18,9 @@ export function initTracing(): void {
   }
 
   // Capture all outgoing HTTP/HTTPS calls
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   AWSXRay.captureHTTPsGlobal(require('http'));
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   AWSXRay.captureHTTPsGlobal(require('https'));
 }
 

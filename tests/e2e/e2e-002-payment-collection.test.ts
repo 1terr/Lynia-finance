@@ -7,7 +7,7 @@
  * Expected Result: Payment processed, loan balance reduced, customer notified
  */
 
-import { createAPIGatewayEvent, parseResponseBody, expectSuccessResponse } from '../helpers/test-utils';
+import { createAPIGatewayEvent, parseResponseBody } from '../helpers/test-utils';
 import { mockPaymentProviderResponses, mockWhatsAppResponses } from '../helpers/mock-external-services';
 import { testCustomers, testLoans, testPayments } from '../fixtures';
 
@@ -17,6 +17,7 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 jest.mock('axios');
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require('axios');
 
 // ---------------------------------------------------------------------------

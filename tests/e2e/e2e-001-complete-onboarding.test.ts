@@ -7,7 +7,7 @@
  * Expected Result: Customer gets approved, pays deposit, and receives device with active loan
  */
 
-import { createAPIGatewayEvent, parseResponseBody, expectSuccessResponse, expectCORSHeaders } from '../helpers/test-utils';
+import { createAPIGatewayEvent, parseResponseBody, expectCORSHeaders } from '../helpers/test-utils';
 import { createWhatsAppWebhookPayload, mockSmileIdentityResponses } from '../helpers/mock-external-services';
 import { testCustomers, testDevices } from '../fixtures';
 
@@ -17,6 +17,7 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 jest.mock('axios');
 
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require('axios');
 
 // ---------------------------------------------------------------------------

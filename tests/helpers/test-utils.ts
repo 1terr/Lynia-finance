@@ -62,14 +62,14 @@ export function getMockTable(tableName: string): Record<string, unknown>[] {
  */
 function createQueryBuilder(tableName: string): QueryBuilder {
   let pendingResult: QueryResult = { data: null, error: null };
-  let filters: Array<{ field: string; op: string; value: unknown }> = [];
+  const filters: Array<{ field: string; op: string; value: unknown }> = [];
   let sortField: string | null = null;
   let sortAsc = true;
   let limitCount: number | null = null;
   let isSingle = false;
   let pendingInsert: Record<string, unknown>[] | null = null;
   let pendingUpdate: Record<string, unknown> | null = null;
-  let pendingSelect = '*';
+  let _pendingSelect = '*';
 
   function applyFilters(): Record<string, unknown>[] {
     let rows = [...(mockDataStore[tableName] || [])];
@@ -160,7 +160,7 @@ function createQueryBuilder(tableName: string): QueryBuilder {
 
   const builder: QueryBuilder = {
     select: jest.fn().mockImplementation((_cols?: string) => {
-      if (_cols) pendingSelect = _cols;
+      if (_cols) _pendingSelect = _cols;
       resolve();
       return builder;
     }),

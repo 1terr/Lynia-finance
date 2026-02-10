@@ -13,15 +13,12 @@
 import {
   createMockSupabaseClient,
   createAPIGatewayEvent,
-  invokeLambdaHandler,
-  parseResponseBody,
   seedMockTable,
   resetMockDataStore,
   createTestCustomer,
   createTestLoan,
   createTestPayment,
   createTestDevice,
-  measureTime,
 } from '../helpers/test-utils';
 
 // =====================================================
@@ -255,7 +252,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'scoring-service',
         async () => {
           const customerId = `perf-cust-${Math.floor(Math.random() * 20)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/scoring/${customerId}`,
             pathParameters: { customerId },
@@ -276,7 +273,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'Credit Score Calculation',
         'scoring-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'POST',
             path: '/scoring/calculate',
             body: JSON.stringify({
@@ -301,7 +298,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
       const start = performance.now();
 
       const promises = Array.from({ length: concurrency }, async (_, i) => {
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'GET',
           path: `/scoring/perf-cust-${i}`,
           pathParameters: { customerId: `perf-cust-${i}` },
@@ -327,7 +324,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'Payment Processing',
         'payment-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'POST',
             path: '/payments/process',
             body: JSON.stringify({
@@ -354,7 +351,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'payment-service',
         async () => {
           const paymentId = `perf-pay-${Math.floor(Math.random() * 50)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/payments/${paymentId}/status`,
             pathParameters: { paymentId },
@@ -375,7 +372,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'payment-service',
         async () => {
           const loanId = `perf-loan-${Math.floor(Math.random() * 20)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/payments/loan/${loanId}`,
             pathParameters: { loanId },
@@ -396,7 +393,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
 
       for (let i = 0; i < 10; i++) {
         const start = performance.now();
-        const event = createAPIGatewayEvent({
+        const _event = createAPIGatewayEvent({
           httpMethod: 'POST',
           path: '/payments/process',
           body: JSON.stringify({
@@ -408,7 +405,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
           }),
         });
         // Simulate: first call creates, subsequent return existing
-        const statusCode = i === 0 ? 200 : 409;
+        const _statusCode = i === 0 ? 200 : 409;
         results.push(performance.now() - start);
       }
 
@@ -427,7 +424,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'Webhook Message Processing',
         'whatsapp-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'POST',
             path: '/whatsapp/webhook',
             body: JSON.stringify({
@@ -466,7 +463,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'Webhook Verification (GET)',
         'whatsapp-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: '/whatsapp/webhook',
             queryStringParameters: {
@@ -514,7 +511,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'kyc-service',
         async () => {
           const customerId = `perf-cust-${Math.floor(Math.random() * 20)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/kyc/${customerId}`,
             pathParameters: { customerId },
@@ -538,7 +535,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'KYC Document Submission',
         'kyc-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'POST',
             path: '/kyc/submit',
             body: JSON.stringify({
@@ -570,7 +567,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'lock-service',
         async () => {
           const deviceId = `perf-dev-${Math.floor(Math.random() * 20)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/locks/${deviceId}`,
             pathParameters: { deviceId },
@@ -594,7 +591,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'Device Lock Execution',
         'lock-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'POST',
             path: '/locks/execute',
             body: JSON.stringify({
@@ -620,7 +617,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'lock-service',
         async () => {
           const deviceId = `perf-dev-${Math.floor(Math.random() * 20)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/locks/${deviceId}/history`,
             pathParameters: { deviceId },
@@ -646,7 +643,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'Send Notification',
         'notification-service',
         async () => {
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'POST',
             path: '/notifications/send',
             body: JSON.stringify({
@@ -672,7 +669,7 @@ describe('P4-T004: Performance Benchmarking & Load Testing', () => {
         'notification-service',
         async () => {
           const customerId = `perf-cust-${Math.floor(Math.random() * 20)}`;
-          const event = createAPIGatewayEvent({
+          const _event = createAPIGatewayEvent({
             httpMethod: 'GET',
             path: `/notifications/${customerId}`,
             pathParameters: { customerId },

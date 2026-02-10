@@ -11,17 +11,9 @@
  */
 
 import {
-  createMockSupabaseClient,
-  seedMockTable,
-  getMockTable,
   resetMockDataStore,
-  createTestCustomer,
-  createTestLoan,
   createAPIGatewayEvent,
-  parseResponseBody,
-  generateTestId,
 } from '../../helpers/test-utils';
-import { testCustomers, testLoans } from '../../fixtures';
 
 // ---------------------------------------------------------------------------
 // Mock Supabase before importing handler
