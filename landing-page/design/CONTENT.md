@@ -95,7 +95,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 **Visual**: Animated flat illustration showing a WhatsApp loan approval flow or mobile money transaction on a phone mockup (CSS-rendered device, Stripe style).
 
 **Technical notes**:
-- Animated gradient using WebGL canvas (blue hues: `#0052FF`, `#003ECB`, `#0A1628`, `#60A5FA`)
+- Animated gradient using WebGL canvas (blue hues: `#0A2540`, `#635BFF`, `#0048E5`, `#1A3550`)
 - CSS Grid layout: 2 columns (text left, visual right)
 - On mobile: stacks (text on top, visual below or hidden)
 
@@ -188,7 +188,7 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 ## Section 5: Product Deep Dive — Digital Credit
 
-**Design**: Alternating background (dark navy `#0A1628` with light text, Stripe-style dark section). Split layout: visual left, text right.
+**Design**: Alternating background (dark navy `#0A2540` with light text, Stripe-style dark section). Split layout: visual left, text right.
 
 **Label**: DIGITAL CREDIT
 
@@ -421,11 +421,11 @@ The homepage follows Stripe's proven section flow: Hero → Product suite → Wh
 
 | Pattern | Implementation |
 |---------|---------------|
-| **Gradient background** | WebGL canvas with animated blue hues (`#0052FF`, `#003ECB`, `#0A1628`, `#60A5FA`) |
+| **Gradient background** | WebGL canvas with animated blue hues (`#0A2540`, `#635BFF`, `#0048E5`, `#1A3550`) |
 | **Device mockups** | CSS-rendered phones/laptops (<1KB, hardware-accelerated, responsive) |
 | **Section transitions** | Scroll-triggered fade-in animations using Intersection Observer API |
 | **Layout** | CSS Grid throughout, 2-column splits for product sections |
-| **Dark sections** | Alternating light/dark backgrounds (white ↔ navy `#0A1628`) |
+| **Dark sections** | Alternating light/dark backgrounds (white ↔ navy `#0A2540`) |
 | **Hover effects** | Subtle card elevation/shadow on hover, button color transitions |
 | **Mobile** | Single-column stack, hero visual below text or hidden, reduced animations |
 

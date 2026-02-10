@@ -26,8 +26,8 @@ Wireframes, mockups, brand assets, and design system for lyniafinance.com.
 
 | Area | Decision |
 |------|----------|
-| Color | Vibrant blue (`#0052FF`), Coinbase/Moniepoint-inspired |
-| Typography | Inter (variable weight, Stripe-like) |
+| Color | Stripe.com palette — navy `#0A2540`, blurple `#635BFF`, CTA `#0048E5` |
+| Typography | Inter (variable weight, Stripe-like, headings 500, body 300) |
 | Icons | Lucide React |
 | Illustrations | Flat, modern vectors (Stripe aesthetic) |
 | Framework | Next.js (App Router) on AWS |
