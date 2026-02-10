@@ -35,10 +35,11 @@
 ### Navigation Bar
 
 ```
-Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Apply now]
+Lynia Finance (logo)    Products    Mission    Partnerships    Research
 ```
 
-- **No Contact in nav** - Contact lives in the footer / bottom of page only
+- **Clean nav only** - no buttons, no Contact, no Careers in the nav
+- Contact, Careers, and other links live in the footer
 
 ### Homepage Structure (single scrolling page)
 
@@ -71,12 +72,11 @@ Lynia Finance (logo)    Products    Mission    Partnerships    Research    [Appl
 
 ### Footer
 
-| Products | Connect | Legal |
-|----------|---------|-------|
-| Smartphone financing | X (Twitter) | Privacy Policy |
-| Digital loans | LinkedIn | Terms |
-| Embedded financing | WhatsApp | |
-| | | Contact info |
+| Products | Connect | Company | Legal |
+|----------|---------|---------|-------|
+| Smartphone financing | X (Twitter) | Careers | Privacy Policy |
+| Digital loans | LinkedIn | Contact | Terms |
+| Embedded financing | WhatsApp | | |
 
 ---
 
@@ -189,7 +189,7 @@ Stripe uses **Söhne** by Klim Type Foundry (licensed font). Recommended open-so
 
 | CTA | Action | Location |
 |-----|--------|----------|
-| `[Apply now]` | Primary conversion (WhatsApp or application flow) | Nav bar, Hero, Asset Financing |
+| `[Apply now]` | Primary conversion (WhatsApp or application flow) | Hero, Asset Financing |
 | `Lets chat on whatsapp` | Opens WhatsApp chat | Hero, Asset Financing |
 | `[Coming soon]` | Disabled/waitlist for Digital Credit | Digital Credit section |
 | `[Partner with us]` | Partnership application form | Enterprise Partnerships section |
