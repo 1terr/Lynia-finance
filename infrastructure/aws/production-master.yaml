@@ -15,7 +15,7 @@ Parameters:
   # Domain
   DomainName:
     Type: String
-    Default: lyniafinance.co.zw
+    Default: lyniafinance.com
 
   HostedZoneId:
     Type: String

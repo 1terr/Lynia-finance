@@ -13,7 +13,7 @@ Parameters:
 
   DomainName:
     Type: String
-    Default: lyniafinance.co.zw
+    Default: lyniafinance.com
     Description: Root domain name
 
   FrontendCertificateArn:
@@ -161,7 +161,7 @@ Resources:
         Name: !Sub "${Environment}-lynia-security-headers"
         SecurityHeadersConfig:
           ContentSecurityPolicy:
-            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.lyniafinance.co.zw https://*.supabase.co"
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.lyniafinance.com https://*.supabase.co"
             Override: true
           StrictTransportSecurity:
             AccessControlMaxAgeSec: 31536000
