@@ -926,3 +926,54 @@ session begins.
 
 **No manual intervention required.** Every Claude Code session starts with an
 up-to-date `master` branch.
+
+## GitHub Direct Connection (gh CLI)
+
+Claude Code can interact with GitHub directly via the `gh` CLI instead of
+relying solely on git commands. This enables creating PRs, checking CI status,
+managing issues, and more through the GitHub API.
+
+### Setup
+
+Provide a GitHub Personal Access Token (PAT) with `repo` and `read:org` scopes:
+
+```bash
+# Option 1: Pass as environment variable
+GH_TOKEN=ghp_xxx bash .claude/scripts/setup-gh.sh
+
+# Option 2: Pass as argument
+bash .claude/scripts/setup-gh.sh ghp_xxx
+```
+
+Create a token at: https://github.com/settings/tokens/new
+
+### How it works
+
+1. On session start, `.claude/scripts/ensure-gh.sh` installs `gh` if missing.
+2. After every commit + push, `auto-push.sh` checks if `gh` is authenticated.
+3. If authenticated, it creates a PR directly via `.claude/scripts/create-pr.sh`
+   instead of waiting for the GitHub Actions workflow.
+4. PRs are created against `master` with auto-merge enabled when available.
+
+### Available gh operations
+
+With `gh` authenticated, Claude can:
+- `gh pr create/list/view/merge` -- Manage pull requests
+- `gh issue create/list/view/close` -- Manage issues
+- `gh run list/view/watch` -- Monitor CI/CD workflow runs
+- `gh api` -- Call any GitHub REST or GraphQL API endpoint
+- `gh repo view` -- View repository information
+
+### Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `.claude/scripts/setup-gh.sh` | One-time `gh` authentication setup |
+| `.claude/scripts/ensure-gh.sh` | Auto-install `gh` on session start |
+| `.claude/scripts/create-pr.sh` | Create PR via GitHub API |
+
+### Fallback behavior
+
+When `gh` is not authenticated, the system falls back to the existing
+`auto-merge-claude-branches.yml` GitHub Actions workflow, which creates PRs
+automatically when pushes land on `claude/*` branches.

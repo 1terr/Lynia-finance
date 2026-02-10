@@ -8,9 +8,19 @@
       "Bash(git pull:*)",
       "Bash(git push:*)",
       "Bash(git update-ref:*)",
+      "Bash(gh :*)",
+      "Bash(gh pr:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh api:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh run:*)",
       "Bash(.claude/scripts/update-master.sh)",
       "Bash(.claude/scripts/pre-commit-check.sh)",
-      "Bash(.claude/scripts/auto-push.sh)"
+      "Bash(.claude/scripts/auto-push.sh)",
+      "Bash(.claude/scripts/setup-gh.sh)",
+      "Bash(.claude/scripts/create-pr.sh)",
+      "Bash(.claude/scripts/ensure-gh.sh)"
     ],
     "deny": [],
     "ask": []
@@ -23,6 +33,10 @@
           {
             "type": "command",
             "command": "bash .claude/scripts/update-master.sh"
+          },
+          {
+            "type": "command",
+            "command": "bash .claude/scripts/ensure-gh.sh"
           }
         ]
       }
