@@ -447,12 +447,21 @@ export default function KYCReviewPage() {
                     <FileText className="mr-1 inline h-4 w-4" />
                     ID Document - Front
                   </p>
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-8">
-                    <div className="text-center">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={docViewerSubmission.id_document_front_url}
+                      alt="ID Document Front"
+                      className="w-full max-h-96 object-contain"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) target.nextElementSibling.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="hidden flex-col items-center justify-center p-8 text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
-                      <p className="mt-2 text-xs text-gray-500 font-mono break-all">
-                        {docViewerSubmission.id_document_front_url}
-                      </p>
+                      <p className="mt-2 text-xs text-gray-500">Image could not be loaded</p>
                     </div>
                   </div>
                 </div>
@@ -464,12 +473,21 @@ export default function KYCReviewPage() {
                     <FileText className="mr-1 inline h-4 w-4" />
                     ID Document - Back
                   </p>
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-8">
-                    <div className="text-center">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={docViewerSubmission.id_document_back_url}
+                      alt="ID Document Back"
+                      className="w-full max-h-96 object-contain"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) target.nextElementSibling.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="hidden flex-col items-center justify-center p-8 text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
-                      <p className="mt-2 text-xs text-gray-500 font-mono break-all">
-                        {docViewerSubmission.id_document_back_url}
-                      </p>
+                      <p className="mt-2 text-xs text-gray-500">Image could not be loaded</p>
                     </div>
                   </div>
                 </div>
@@ -481,12 +499,21 @@ export default function KYCReviewPage() {
                     <Camera className="mr-1 inline h-4 w-4" />
                     Selfie Photo
                   </p>
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-8">
-                    <div className="text-center">
+                  <div className="rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={docViewerSubmission.selfie_image_url}
+                      alt="Selfie Photo"
+                      className="w-full max-h-96 object-contain"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        if (target.nextElementSibling) target.nextElementSibling.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="hidden flex-col items-center justify-center p-8 text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
-                      <p className="mt-2 text-xs text-gray-500 font-mono break-all">
-                        {docViewerSubmission.selfie_image_url}
-                      </p>
+                      <p className="mt-2 text-xs text-gray-500">Image could not be loaded</p>
                     </div>
                   </div>
                 </div>

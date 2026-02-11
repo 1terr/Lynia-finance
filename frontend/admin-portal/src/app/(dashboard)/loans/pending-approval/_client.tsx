@@ -127,25 +127,25 @@ export default function PendingApprovalPage() {
                         <div className="rounded-md bg-gray-50 p-3">
                           <p className="text-xs text-gray-500">Loan Amount</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {formatCurrency(loan.principal || 0)}
+                            {formatCurrency(loan.loan_amount_usd || 0)}
                           </p>
                         </div>
                         <div className="rounded-md bg-gray-50 p-3">
                           <p className="text-xs text-gray-500">Term</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {loan.term_months || 0} months
+                            {loan.loan_term_months || 0} months
                           </p>
                         </div>
                         <div className="rounded-md bg-gray-50 p-3">
                           <p className="text-xs text-gray-500">Monthly Payment</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {formatCurrency(loan.monthly_payment || 0)}
+                            {formatCurrency(loan.monthly_installment_usd || 0)}
                           </p>
                         </div>
                         <div className="rounded-md bg-gray-50 p-3">
                           <p className="text-xs text-gray-500">Credit Score</p>
                           <p className="text-lg font-semibold text-gray-900">
-                            {loan.credit_score_at_application || 'N/A'}
+                            {(loan as Record<string, unknown>).credit_score_at_application as string || 'N/A'}
                           </p>
                         </div>
                       </div>
@@ -154,7 +154,7 @@ export default function PendingApprovalPage() {
                         {device && (
                           <span className="flex items-center gap-1 text-gray-600">
                             <Smartphone className="h-3.5 w-3.5" />
-                            {(device as Record<string, string>).brand} {(device as Record<string, string>).model}
+                            {(device as Record<string, string>).manufacturer} {(device as Record<string, string>).model}
                           </span>
                         )}
                         <span className="text-gray-400">
@@ -213,7 +213,7 @@ export default function PendingApprovalPage() {
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Approve loan of <strong>{formatCurrency(approveModal?.principal || 0)}</strong> for this customer?
+              Approve loan of <strong>{formatCurrency(approveModal?.loan_amount_usd || 0)}</strong> for this customer?
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700">Notes (optional)</label>
@@ -247,7 +247,7 @@ export default function PendingApprovalPage() {
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Reject loan of <strong>{formatCurrency(rejectModal?.principal || 0)}</strong>?
+              Reject loan of <strong>{formatCurrency(rejectModal?.loan_amount_usd || 0)}</strong>?
               The customer will be notified.
             </p>
             <div>

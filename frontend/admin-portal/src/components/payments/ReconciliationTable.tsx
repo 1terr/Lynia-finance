@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatCurrency, truncateId } from '@/lib/utils';
 import { reconcilePayment, type PaymentWithCustomer } from '@/lib/api/payments';
+import { useAuth } from '@/lib/hooks/use-auth';
 
 interface ReconciliationTableProps {
   payments: PaymentWithCustomer[];
@@ -15,9 +16,10 @@ export function ReconciliationTable({
   isLoading,
 }: ReconciliationTableProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const reconcileMutation = useMutation({
-    mutationFn: (id: string) => reconcilePayment(id),
+    mutationFn: (id: string) => reconcilePayment(id, user?.id || ''),
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ['unreconciled-payments'],

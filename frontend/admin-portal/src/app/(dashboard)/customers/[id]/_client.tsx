@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Ban,
   Unlock,
+  Pencil,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -181,7 +182,13 @@ export default function CustomerDetailPage() {
           <p className="text-sm text-gray-500 font-mono">{customer.id}</p>
         </div>
         {canWrite && (
-          <div>
+          <div className="flex gap-2">
+            <Link href={`/customers/${id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil className="mr-1.5 h-4 w-4" />
+                Edit
+              </Button>
+            </Link>
             {customer.status === 'blocked' ? (
               <Button
                 variant="outline"

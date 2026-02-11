@@ -22,10 +22,10 @@ export async function getLoans(filters: LoanFilters = {}) {
 
   let query = supabase
     .from('loans')
-    .select('*, customer:customers(id, full_name, phone_number, kyc_status), device:devices(id, device_brand, device_model, device_imei)', { count: 'exact' });
+    .select('*, customer:customers(id, full_name, phone_number, kyc_status), device:devices(id, manufacturer, model, imei)', { count: 'exact' });
 
   if (status) {
-    query = query.eq('loan_status', status);
+    query = query.eq('status', status);
   }
 
   if (search) {
@@ -78,11 +78,11 @@ export async function approveLoan(loanId: string, adminId: string, notes?: strin
   const { error } = await supabase
     .from('loans')
     .update({
-      loan_status: 'approved',
+      status: 'approved',
       updated_at: new Date().toISOString(),
     })
     .eq('id', loanId)
-    .eq('loan_status', 'pending');
+    .eq('status', 'pending');
 
   if (error) throw error;
 
@@ -101,11 +101,11 @@ export async function rejectLoan(loanId: string, adminId: string, reason: string
   const { error } = await supabase
     .from('loans')
     .update({
-      loan_status: 'rejected',
+      status: 'rejected',
       updated_at: new Date().toISOString(),
     })
     .eq('id', loanId)
-    .eq('loan_status', 'pending');
+    .eq('status', 'pending');
 
   if (error) throw error;
 
@@ -125,7 +125,7 @@ export async function getPendingLoans(page = 1, rawLimit = 25) {
 
   const { data, count, error } = await supabase
     .from('loans')
-    .select('*, customer:customers(id, first_name, last_name, phone_number, kyc_status, credit_score), device:devices(id, brand, model, imei)', { count: 'exact' })
+    .select('*, customer:customers(id, first_name, last_name, phone_number, kyc_status, credit_score), device:devices(id, manufacturer, model, imei)', { count: 'exact' })
     .in('status', ['pending', 'pending_approval', 'submitted'])
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);

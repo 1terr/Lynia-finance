@@ -80,7 +80,7 @@ export default function EditCustomerPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
-      router.push(`/dashboard/customers/${customerId}`);
+      router.push(`/customers/${customerId}`);
     },
   });
 
@@ -104,7 +104,7 @@ export default function EditCustomerPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <Link
-          href={`/dashboard/customers/${customerId}`}
+          href={`/customers/${customerId}`}
           className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
         >
           <svg
@@ -287,7 +287,7 @@ export default function EditCustomerPage() {
         {/* Actions */}
         <div className="flex justify-end gap-3">
           <Link
-            href={`/dashboard/customers/${customerId}`}
+            href={`/customers/${customerId}`}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Cancel

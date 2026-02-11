@@ -10,11 +10,11 @@ interface CollectionsQueueProps {
   isLoading: boolean;
 }
 
-const priorityMap: Record<string, { variant: 'red' | 'yellow' | 'blue' | 'gray'; label: string }> = {
-  critical: { variant: 'red', label: 'Critical' },
-  high: { variant: 'red', label: 'High' },
-  medium: { variant: 'yellow', label: 'Medium' },
-  low: { variant: 'blue', label: 'Low' },
+const priorityMap: Record<string, { variant: 'destructive' | 'warning' | 'info' | 'gray'; label: string }> = {
+  critical: { variant: 'destructive', label: 'Critical' },
+  high: { variant: 'destructive', label: 'High' },
+  medium: { variant: 'warning', label: 'Medium' },
+  low: { variant: 'info', label: 'Low' },
 };
 
 export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
@@ -87,7 +87,7 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
                   <Link
-                    href={`/dashboard/customers/${item.customer_id}`}
+                    href={`/customers/${item.customer_id}`}
                     className="text-sm font-medium text-primary-600 hover:underline"
                   >
                     {item.customer_name}
@@ -122,7 +122,7 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-right text-sm">
                   <Link
-                    href={`/dashboard/customers/${item.customer_id}`}
+                    href={`/customers/${item.customer_id}`}
                     className="text-primary-600 hover:text-primary-900"
                   >
                     View Customer
