@@ -4,7 +4,11 @@ export function exportToCsv(
   rows: (string | number)[][]
 ): void {
   const escape = (val: string | number) => {
-    const str = String(val);
+    let str = String(val);
+    // Prevent CSV formula injection: prefix dangerous leading characters
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = `'${str}`;
+    }
     if (str.includes(',') || str.includes('"') || str.includes('\n')) {
       return `"${str.replace(/"/g, '""')}"`;
     }
@@ -20,7 +24,8 @@ export function exportToCsv(
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.setAttribute('href', url);
-  link.setAttribute('download', `${filename}.csv`);
+  const safeFilename = filename.replace(/[^a-zA-Z0-9_\-]/g, '_');
+  link.setAttribute('download', `${safeFilename}.csv`);
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

@@ -7,17 +7,21 @@ async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const supabase = createClient();
   const { data: { session } } = await supabase.auth.getSession();
 
+  if (!session?.access_token) {
+    throw new Error('Authentication required. Please sign in.');
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(session?.access_token && { Authorization: `Bearer ${session.access_token}` }),
+      Authorization: `Bearer ${session.access_token}`,
       ...options?.headers,
     },
   });
 
   if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
+    throw new Error(`API error: ${res.status}`);
   }
 
   return res.json();
@@ -118,6 +122,7 @@ export async function getPortfolioAtRisk(): Promise<PortfolioAtRisk> {
 }
 
 export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
+  days = Math.min(Math.max(days, 1), 365);
   const supabase = createClient();
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
@@ -171,6 +176,7 @@ export async function getLoansByStatus(): Promise<LoansByStatus[]> {
 }
 
 export async function getRecentActivity(limit: number = 20): Promise<RecentActivity[]> {
+  limit = Math.min(Math.max(limit, 1), 100);
   const supabase = createClient();
   const { data } = await supabase
     .from('audit_log')
@@ -193,7 +199,7 @@ function formatActivityDescription(
   entityType: string,
   details: Record<string, unknown> | null
 ): string {
-  const entity = entityType?.replace('_', ' ') || 'record';
+  const entity = entityType?.replace(/_/g, ' ') || 'record';
   switch (action) {
     case 'create': return `New ${entity} created`;
     case 'update': return `${capitalize(entity)} updated`;
