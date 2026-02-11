@@ -1,6 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
+import Link from 'next/link';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'white';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -35,19 +36,32 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       'inline-flex items-center justify-center font-medium rounded-md transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed';
     const styles = `${base} ${variant !== 'secondary' ? sizeStyles[size] : 'py-3'} ${variantStyles[variant]} ${className}`;
 
+    const arrowEl = arrow ? (
+      <span className="ml-1.5 transition-transform duration-150 group-hover:translate-x-1">&rarr;</span>
+    ) : null;
+
     if (href) {
+      const isExternal = href.startsWith('http');
+      if (isExternal) {
+        return (
+          <a href={href} target="_blank" rel="noopener noreferrer" className={styles}>
+            {children}
+            {arrowEl}
+          </a>
+        );
+      }
       return (
-        <a href={href} className={styles}>
+        <Link href={href} className={styles}>
           {children}
-          {arrow && <span className="ml-1.5 transition-transform duration-150 group-hover:translate-x-1">&rarr;</span>}
-        </a>
+          {arrowEl}
+        </Link>
       );
     }
 
     return (
       <button ref={ref} className={styles} {...props}>
         {children}
-        {arrow && <span className="ml-1.5 transition-transform duration-150 group-hover:translate-x-1">&rarr;</span>}
+        {arrowEl}
       </button>
     );
   }

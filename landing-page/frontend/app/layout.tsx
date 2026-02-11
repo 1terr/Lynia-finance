@@ -36,8 +36,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Inter font loaded via Google Fonts CDN in production.
-            System font stack used as fallback for offline builds. */}
+        {/* Inter font: preconnect eliminates DNS/TLS latency.
+            Migrate to next/font/google when build environment has network. */}
         <link
           rel="preconnect"
           href="https://fonts.googleapis.com"

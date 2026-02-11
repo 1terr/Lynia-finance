@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -23,6 +24,11 @@ export function Navbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* Close mobile menu on route change */
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
     <header
       className={`fixed top-0 left-0 right-0 z-sticky transition-all duration-200 ${
@@ -33,7 +39,7 @@ export function Navbar() {
     >
       <nav className="container-wide flex items-center justify-between h-[72px] lg:h-[72px]">
         {/* Logo */}
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <span
             className={`text-h4 font-medium transition-colors duration-200 ${
               scrolled ? 'text-primary-dark' : 'text-white'
@@ -41,14 +47,14 @@ export function Navbar() {
           >
             Lynia Finance
           </span>
-        </a>
+        </Link>
 
         {/* Desktop links */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
                 aria-current={isActive ? 'page' : undefined}
@@ -63,7 +69,7 @@ export function Navbar() {
                 }`}
               >
                 {link.label}
-              </a>
+              </Link>
             );
           })}
         </div>
@@ -100,7 +106,7 @@ export function Navbar() {
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
-                <a
+                <Link
                   key={link.label}
                   href={link.href}
                   aria-current={isActive ? 'page' : undefined}
@@ -109,10 +115,9 @@ export function Navbar() {
                       ? 'text-primary font-semibold'
                       : 'text-primary-dark hover:text-primary'
                   }`}
-                  onClick={() => setMobileOpen(false)}
                 >
                   {link.label}
-                </a>
+                </Link>
               );
             })}
             <div className="pt-4">

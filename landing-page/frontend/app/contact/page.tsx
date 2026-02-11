@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { WHATSAPP_URL, CONTACT_EMAIL } from '@/lib/constants';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -190,13 +191,13 @@ const contactMethods = [
     icon: Phone,
     label: 'WhatsApp',
     value: 'Chat with us',
-    href: 'https://wa.me/263',
+    href: WHATSAPP_URL,
   },
   {
     icon: Mail,
     label: 'Email',
-    value: 'hello@lyniafinance.com',
-    href: 'mailto:hello@lyniafinance.com',
+    value: CONTACT_EMAIL,
+    href: `mailto:${CONTACT_EMAIL}`,
   },
   {
     icon: MapPin,
