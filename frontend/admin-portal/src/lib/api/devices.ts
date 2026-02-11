@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
 import type { Device, DeviceStatus, LockStatus, DeviceLock, Customer } from '@/types';
 
 export interface DeviceFilters {
@@ -15,7 +16,8 @@ export type DeviceWithCustomer = Omit<Device, 'customer'> & {
 
 export async function getDevices(filters: DeviceFilters = {}) {
   const supabase = createClient();
-  const { status, lock_status, search, page = 1, limit = 25 } = filters;
+  const { status, lock_status, search, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -31,7 +33,10 @@ export async function getDevices(filters: DeviceFilters = {}) {
   }
 
   if (search) {
-    query = query.or(`device_imei.ilike.%${search}%,device_brand.ilike.%${search}%,device_model.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`device_imei.ilike.%${sanitized}%,device_brand.ilike.%${sanitized}%,device_model.ilike.%${sanitized}%`);
+    }
   }
 
   const { data, count, error } = await query
@@ -228,7 +233,8 @@ export interface DeviceHandoverRow {
 
 export async function getDeviceHandovers(filters: { status?: string; search?: string; page?: number; limit?: number } = {}) {
   const supabase = createClient();
-  const { status, search, page = 1, limit = 25 } = filters;
+  const { status, search, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -240,7 +246,10 @@ export async function getDeviceHandovers(filters: { status?: string; search?: st
   }
 
   if (search) {
-    query = query.or(`customer.first_name.ilike.%${search}%,customer.last_name.ilike.%${search}%,device.imei.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`customer.first_name.ilike.%${sanitized}%,customer.last_name.ilike.%${sanitized}%,device.imei.ilike.%${sanitized}%`);
+    }
   }
 
   const { data, count, error } = await query

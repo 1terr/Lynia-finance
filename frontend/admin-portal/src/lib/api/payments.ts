@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
 import type { Payment, PaymentStatus, PaymentMethod, PaymentType, Customer, Loan } from '@/types';
 
 export interface PaymentFilters {
@@ -20,7 +21,8 @@ export type PaymentWithRelations = Omit<Payment, 'customer' | 'loan'> & {
 
 export async function getPayments(filters: PaymentFilters = {}) {
   const supabase = createClient();
-  const { status, method, type, search, date_from, date_to, reconciled, page = 1, limit = 25 } = filters;
+  const { status, method, type, search, date_from, date_to, reconciled, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -40,7 +42,10 @@ export async function getPayments(filters: PaymentFilters = {}) {
   }
 
   if (search) {
-    query = query.or(`reference_number.ilike.%${search}%,transaction_reference.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`reference_number.ilike.%${sanitized}%,transaction_reference.ilike.%${sanitized}%`);
+    }
   }
 
   if (date_from) {
@@ -113,7 +118,8 @@ export async function retryPayment(paymentId: string, adminId: string) {
       payment_status: 'pending',
       updated_at: new Date().toISOString(),
     })
-    .eq('id', paymentId);
+    .eq('id', paymentId)
+    .eq('payment_status', 'failed');
 
   if (error) throw error;
 
@@ -134,7 +140,8 @@ export async function refundPayment(paymentId: string, adminId: string, reason: 
       payment_status: 'refunded',
       updated_at: new Date().toISOString(),
     })
-    .eq('id', paymentId);
+    .eq('id', paymentId)
+    .eq('payment_status', 'completed');
 
   if (error) throw error;
 

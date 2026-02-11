@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
 import type { AdminUser, AdminRole, SystemConfig, AuditLog } from '@/types';
 
 // --- Admin Users ---
@@ -13,7 +14,8 @@ export interface AdminUserFilters {
 
 export async function getAdminUsers(filters: AdminUserFilters = {}) {
   const supabase = createClient();
-  const { role, status, search, page = 1, limit = 25 } = filters;
+  const { role, status, search, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -31,7 +33,10 @@ export async function getAdminUsers(filters: AdminUserFilters = {}) {
   }
 
   if (search) {
-    query = query.or(`email.ilike.%${search}%,first_name.ilike.%${search}%,last_name.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`email.ilike.%${sanitized}%,first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%`);
+    }
   }
 
   const { data, count, error } = await query
@@ -192,7 +197,8 @@ export interface AuditLogFilters {
 
 export async function getAuditLogs(filters: AuditLogFilters = {}) {
   const supabase = createClient();
-  const { user_type, action, entity_type, date_from, date_to, page = 1, limit = 25 } = filters;
+  const { user_type, action, entity_type, date_from, date_to, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase

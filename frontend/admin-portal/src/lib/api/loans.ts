@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
 import type { Loan, Payment, LoanStatus, Customer, Device } from '@/types';
 
 export interface LoanFilters {
@@ -15,7 +16,8 @@ export type LoanWithCustomer = Omit<Loan, 'customer'> & {
 
 export async function getLoans(filters: LoanFilters = {}) {
   const supabase = createClient();
-  const { status, search, page = 1, limit = 25 } = filters;
+  const { status, search, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -27,7 +29,10 @@ export async function getLoans(filters: LoanFilters = {}) {
   }
 
   if (search) {
-    query = query.or(`id.ilike.%${search}%,customer.full_name.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`id.ilike.%${sanitized}%,customer.full_name.ilike.%${sanitized}%`);
+    }
   }
 
   const { data, count, error } = await query
@@ -113,7 +118,8 @@ export async function rejectLoan(loanId: string, adminId: string, reason: string
   });
 }
 
-export async function getPendingLoans(page = 1, limit = 25) {
+export async function getPendingLoans(page = 1, rawLimit = 25) {
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const supabase = createClient();
   const offset = (page - 1) * limit;
 

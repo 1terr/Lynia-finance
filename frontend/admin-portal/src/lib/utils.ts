@@ -66,3 +66,34 @@ export function formatNumber(value: number): string {
 export function truncateId(id: string, length = 8): string {
   return id.length > length ? `${id.slice(0, length)}...` : id;
 }
+
+/**
+ * Mask phone numbers for display. Shows first 4 and last 3 digits.
+ * Example: +263771234567 -> +263****567
+ */
+export function maskPhone(phone: string): string {
+  if (!phone || phone.length < 7) return phone;
+  const cleaned = phone.replace(/\s/g, '');
+  if (cleaned.length <= 7) return cleaned;
+  return cleaned.slice(0, 4) + '****' + cleaned.slice(-3);
+}
+
+/**
+ * Mask national IDs for display. Shows first 2 and last 2 characters.
+ * Example: 12345678A90 -> 12******90
+ */
+export function maskId(id: string): string {
+  if (!id || id.length < 5) return id;
+  return id.slice(0, 2) + '******' + id.slice(-2);
+}
+
+/**
+ * Sanitize search input to prevent PostgREST filter injection.
+ * Strips characters that have special meaning in PostgREST filter syntax.
+ */
+export function sanitizeSearchInput(search: string): string {
+  return search.replace(/[.,()\\]/g, '').trim();
+}
+
+/** Maximum page size for paginated queries */
+export const MAX_PAGE_SIZE = 100;

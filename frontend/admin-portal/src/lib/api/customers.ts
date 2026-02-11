@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
 import type { Customer, CustomerStatus, KYCStatus, Loan, Payment, CreditScore, KYCSubmission } from '@/types';
 
 export interface CustomerFilters {
@@ -11,7 +12,8 @@ export interface CustomerFilters {
 
 export async function getCustomers(filters: CustomerFilters = {}) {
   const supabase = createClient();
-  const { status, kyc_status, search, page = 1, limit = 25 } = filters;
+  const { status, kyc_status, search, page = 1, limit: rawLimit = 25 } = filters;
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
   let query = supabase
@@ -21,7 +23,10 @@ export async function getCustomers(filters: CustomerFilters = {}) {
   if (status) query = query.eq('status', status);
   if (kyc_status) query = query.eq('kyc_status', kyc_status);
   if (search) {
-    query = query.or(`full_name.ilike.%${search}%,phone_number.ilike.%${search}%,email.ilike.%${search}%`);
+    const sanitized = sanitizeSearchInput(search);
+    if (sanitized) {
+      query = query.or(`full_name.ilike.%${sanitized}%,phone_number.ilike.%${sanitized}%,email.ilike.%${sanitized}%`);
+    }
   }
 
   const { data, count, error } = await query
@@ -141,7 +146,8 @@ export async function updateCustomerStatus(customerId: string, status: CustomerS
 
 // --- KYC Review ---
 
-export async function getKYCPendingReview(page = 1, limit = 25) {
+export async function getKYCPendingReview(page = 1, rawLimit = 25) {
+  const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const supabase = createClient();
   const offset = (page - 1) * limit;
 
