@@ -353,6 +353,31 @@ export function createAPIGatewayEvent(overrides: Partial<APIGatewayProxyEvent> =
   };
 }
 
+/**
+ * Create a mock API Gateway event for webhook/callback endpoints.
+ *
+ * All webhook handlers (KYC callback, EcoCash/OneMoney/O'mari payment webhooks)
+ * require a valid `x-signature` header. This factory ensures the header is always
+ * present so tests don't accidentally get 401 rejections.
+ *
+ * Use this instead of `createAPIGatewayEvent` for any POST to:
+ *   - /kyc/callback
+ *   - /payments/webhook/ecocash
+ *   - /payments/webhook/onemoney
+ *   - /payments/webhook/omari
+ */
+export function createWebhookEvent(overrides: Partial<APIGatewayProxyEvent> = {}): APIGatewayProxyEvent {
+  return createAPIGatewayEvent({
+    httpMethod: 'POST',
+    ...overrides,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-signature': 'valid-test-sig',
+      ...overrides.headers,
+    },
+  });
+}
+
 /** Invoke a Lambda handler with a mock event */
 export async function invokeLambdaHandler(
   handler: (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>,
