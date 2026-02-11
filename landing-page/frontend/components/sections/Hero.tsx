@@ -12,21 +12,28 @@ export function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Text column */}
           <div className="pt-20 lg:pt-0">
+            <p
+              className="text-caption uppercase tracking-wider text-white/50 mb-4 opacity-0 animate-fade-in-up"
+            >
+              Credit infrastructure for Africa
+            </p>
             <h1
               className="text-display-mobile lg:text-display text-white opacity-0 animate-fade-in-up"
+              style={{ animationDelay: '50ms' }}
             >
               Financial tools for the underbanked
             </h1>
             <p
               className="mt-6 text-body-lg text-white/70 max-w-[520px] opacity-0 animate-fade-in-up"
-              style={{ animationDelay: '100ms' }}
+              style={{ animationDelay: '150ms' }}
             >
-              Smartphones, assets, and cash — delivered through WhatsApp with
-              approval in under 5 minutes.
+              Smartphones, assets, and instant credit — delivered through
+              WhatsApp to Zimbabwe&apos;s 80% informal workforce. No bank
+              account. No paperwork. Approved in minutes.
             </p>
             <div
               className="mt-8 flex flex-wrap items-center gap-4 opacity-0 animate-fade-in-up"
-              style={{ animationDelay: '200ms' }}
+              style={{ animationDelay: '250ms' }}
             >
               <Button variant="white" size="lg" href="#apply">
                 Start your application
@@ -61,15 +68,15 @@ export function Hero() {
                   <div className="space-y-3">
                     <div className="bg-white/10 rounded-lg rounded-tl-none p-3 max-w-[200px]">
                       <p className="text-white/90 text-caption">
-                        Hi! Ready to apply for your new smartphone?
+                        Hi! Apply for your smartphone or instant credit here.
                       </p>
                     </div>
                     <div className="bg-whatsapp/20 rounded-lg rounded-tr-none p-3 max-w-[180px] ml-auto">
-                      <p className="text-white/90 text-caption">Yes, let&apos;s go!</p>
+                      <p className="text-white/90 text-caption">I need a smartphone</p>
                     </div>
                     <div className="bg-white/10 rounded-lg rounded-tl-none p-3 max-w-[220px]">
                       <p className="text-white/90 text-caption">
-                        Approved! Pick up your device from an agent near you.
+                        Verified! Deposit $15, collect from your nearest agent.
                       </p>
                     </div>
                     <div className="flex items-center gap-2 mt-4">

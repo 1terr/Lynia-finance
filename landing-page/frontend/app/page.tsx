@@ -2,6 +2,7 @@ import { Hero } from '@/components/sections/Hero';
 import { SocialProof } from '@/components/sections/SocialProof';
 import { WhySection } from '@/components/sections/WhySection';
 import { ProductSuite } from '@/components/sections/ProductSuite';
+import { HowItWorks } from '@/components/sections/HowItWorks';
 import { AssetFinancing } from '@/components/sections/AssetFinancing';
 import { DigitalCredit } from '@/components/sections/DigitalCredit';
 import { Enterprise } from '@/components/sections/Enterprise';
@@ -20,17 +21,19 @@ export default function HomePage() {
       <WhySection />
       {/* 4. Product Suite Overview */}
       <ProductSuite />
-      {/* 5. Asset Financing Deep Dive */}
+      {/* 5. How It Works (step-by-step process) */}
+      <HowItWorks />
+      {/* 6. Asset Financing Deep Dive */}
       <AssetFinancing />
-      {/* 6. Digital Credit Deep Dive */}
+      {/* 7. Digital Credit Deep Dive */}
       <DigitalCredit />
-      {/* 7. Enterprise Partnerships Deep Dive */}
+      {/* 8. Enterprise Partnerships Deep Dive */}
       <Enterprise />
-      {/* 8. Customer Segments */}
+      {/* 9. Customer Segments */}
       <CustomerSegments />
-      {/* 9. Editorial */}
+      {/* 10. Editorial */}
       <Editorial />
-      {/* 10. Bottom CTA */}
+      {/* 11. Bottom CTA */}
       <BottomCTA />
     </>
   );

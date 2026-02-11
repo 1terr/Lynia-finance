@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/Button';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 
 const features = [
-  { icon: Banknote, title: 'Mobile money native', description: 'Transactions settle instantly through your mobile wallet.' },
-  { icon: Code, title: 'Developer-ready APIs', description: 'Integrate credit products with a few API calls. Monitor disbursements, repayments, and risk in real time.' },
-  { icon: TrendingUp, title: 'Shared growth', description: 'Your customers access more. Your platform retains more. Lynia handles underwriting, collections, and risk.' },
+  { icon: Banknote, title: 'Revenue on every transaction', description: 'Earn commission on every loan originated through your platform. We handle risk, you earn recurring revenue.' },
+  { icon: Code, title: 'Developer-ready APIs', description: 'Integrate credit products with a few API calls. Real-time dashboards for disbursements, repayments, and portfolio risk.' },
+  { icon: TrendingUp, title: 'We handle the hard parts', description: 'Underwriting, KYC, collections, and compliance — all managed by Lynia. You focus on your customers.' },
 ];
 
 export function Enterprise() {
@@ -30,9 +30,9 @@ export function Enterprise() {
               Embed credit into your platform
             </h2>
             <p className="text-body-lg text-slate mt-6">
-              Offer your customers financing at the point of need. Lynia handles
-              underwriting, disbursement, and collections — you earn on every
-              transaction.
+              Offer your customers financing at the point of need. Distributors,
+              retailers, and platforms integrate Lynia to unlock new revenue —
+              we handle underwriting, disbursement, and collections.
             </p>
 
             <div className="grid grid-cols-1 gap-6 mt-10">

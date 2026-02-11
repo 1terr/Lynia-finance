@@ -4,10 +4,10 @@ import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { useEffect, useState } from 'react';
 
 const stats = [
-  { value: 80, prefix: '', suffix: '%', label: 'of the workforce is informal' },
-  { value: 5, prefix: '<', suffix: '%', label: 'have access to bank credit' },
-  { value: 14, prefix: '$', suffix: 'B', label: 'unserved credit demand' },
-  { value: 70, prefix: '', suffix: '%+', label: 'mobile money adoption' },
+  { value: 80, prefix: '', suffix: '%', label: 'informal workforce', sublabel: 'Excluded from traditional banking' },
+  { value: 5, prefix: '<', suffix: '%', label: 'have bank credit', sublabel: 'In the informal sector' },
+  { value: 14, prefix: '$', suffix: 'B', label: 'credit gap', sublabel: 'Unserved demand in Zimbabwe' },
+  { value: 70, prefix: '', suffix: '%+', label: 'mobile money adoption', sublabel: 'Infrastructure already in place' },
 ];
 
 function CountUp({ target, prefix, suffix, isVisible }: { target: number; prefix: string; suffix: string; isVisible: boolean }) {
@@ -45,6 +45,13 @@ export function WhySection() {
       className="bg-gradient-to-br from-navy to-primary py-16 lg:py-[120px]"
     >
       <div className="container-main text-center">
+        <p
+          className={`text-caption uppercase tracking-wider text-white/40 mb-4 transition-all duration-600 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
+          The opportunity
+        </p>
         <h2
           className={`text-h1-mobile lg:text-h1 text-white font-medium transition-all duration-600 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
@@ -72,7 +79,8 @@ export function WhySection() {
                   isVisible={isVisible}
                 />
               </div>
-              <p className="text-body text-white/70 mt-3">{stat.label}</p>
+              <p className="text-body font-medium text-white/90 mt-3">{stat.label}</p>
+              <p className="text-body-sm text-white/50 mt-1">{stat.sublabel}</p>
             </div>
           ))}
         </div>
@@ -83,8 +91,9 @@ export function WhySection() {
           }`}
           style={{ transitionDelay: '800ms' }}
         >
-          Traditional banks don&apos;t serve them. We do. Mobile money is
-          everywhere — financial products should be too.
+          Traditional banks don&apos;t serve them. We do. Mobile money
+          infrastructure is already in place — financial products should be
+          too. Lynia builds on what exists to serve those who&apos;ve been excluded.
         </p>
       </div>
     </section>

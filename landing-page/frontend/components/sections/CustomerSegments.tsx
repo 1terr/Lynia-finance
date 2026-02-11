@@ -5,19 +5,19 @@ import { useScrollAnimation } from '@/lib/useScrollAnimation';
 const segments = [
   {
     label: 'FOR INDIVIDUALS',
-    description: 'Smartphones, assets, and cash. Apply via WhatsApp in under 5 minutes.',
+    description: 'Traders, vendors, and entrepreneurs. Get a smartphone or instant credit via WhatsApp — approved in under 5 minutes, no bank account needed.',
     cta: 'Start your application',
     href: '#apply',
   },
   {
     label: 'FOR DISTRIBUTORS',
-    description: 'Sell smartphones and assets in your community. Earn commission on every sale.',
+    description: 'Sell smartphones and assets in your community through Lynia. Zero inventory risk, earn commission on every device sold.',
     cta: 'Become a distributor',
     href: '/contact',
   },
   {
     label: 'FOR PARTNERS',
-    description: 'Embed credit into your platform. Offer financing at the point of sale through our APIs.',
+    description: 'Embed credit directly into your platform via our APIs. Offer financing at the point of sale and earn revenue on every transaction.',
     cta: 'Partner with us',
     href: '/contact',
   },
