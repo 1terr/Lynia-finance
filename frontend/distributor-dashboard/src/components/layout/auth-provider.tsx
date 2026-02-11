@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { Distributor } from '@/types/distributor';
@@ -29,7 +28,6 @@ async function fetchDistributorProfile(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const distributor = useAuthStore((s) => s.distributor);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setDistributor = useAuthStore((s) => s.setDistributor);
@@ -53,18 +51,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // User exists in auth but not in distributors table or inactive
             await supabase.auth.signOut();
-            router.push('/login');
-            return;
           }
-        } else {
-          // No authenticated user — redirect to login
-          router.push('/login');
-          return;
         }
       } catch {
-        // Session expired or invalid — redirect to login
-        router.push('/login');
-        return;
+        // Session expired or invalid — redirect handled by render gate
       } finally {
         setLoading(false);
       }
@@ -82,7 +72,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else if (event === 'SIGNED_OUT') {
           setDistributor(null);
-          router.push('/login');
         }
       });
       subscription = data.subscription;
@@ -93,15 +82,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [router, setDistributor, setLoading]);
+  }, [setDistributor, setLoading]);
 
-  // Gate rendering: show loading spinner until auth check completes
-  if (isLoading || !distributor) {
+  // Show loading spinner while initial auth check is in progress
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  // Auth check complete but no valid distributor — redirect to login.
+  // Uses window.location for a hard redirect because Next.js middleware does
+  // not run in static exports (output: 'export'), so router.push alone could
+  // leave the spinner stuck if client-side navigation stalls.
+  if (!distributor) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
   }
 
   return <>{children}</>;
