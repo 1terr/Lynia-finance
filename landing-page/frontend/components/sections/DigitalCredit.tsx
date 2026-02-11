@@ -2,6 +2,7 @@
 
 import { Clock, Wallet } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { WaitlistForm } from '@/components/ui/WaitlistForm';
 
 const features = [
   { icon: Clock, title: 'Application to wallet in minutes', description: 'From application to cash in your wallet — under 10 minutes. No paperwork, no branch visit.' },
@@ -67,19 +68,7 @@ export function DigitalCredit() {
             {/* Lead capture */}
             <div className="mt-8">
               <p className="text-body-sm text-white/50 mb-3">Coming soon</p>
-              <form className="flex flex-col sm:flex-row gap-3" onSubmit={(e) => e.preventDefault()}>
-                <input
-                  type="tel"
-                  placeholder="+263 7XX XXX XXX"
-                  className="h-11 px-4 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-body-sm focus:border-primary focus:outline-none flex-1"
-                />
-                <button
-                  type="submit"
-                  className="h-11 px-6 rounded-md bg-primary text-white text-body-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
-                >
-                  Get notified when we launch &rarr;
-                </button>
-              </form>
+              <WaitlistForm />
             </div>
           </div>
         </div>

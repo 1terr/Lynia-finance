@@ -9,12 +9,38 @@ type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
 function ContactForm() {
   const [status, setStatus] = useState<FormStatus>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus('submitting');
-    // Simulated submission — replace with real API route
-    setTimeout(() => setStatus('success'), 800);
+    setErrorMsg('');
+
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
+      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+    };
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setErrorMsg(json.error || 'Something went wrong. Please try again.');
+        setStatus('error');
+        return;
+      }
+      setStatus('success');
+    } catch {
+      setErrorMsg('Network error. Please check your connection and try again.');
+      setStatus('error');
+    }
   };
 
   if (status === 'success') {
@@ -80,8 +106,11 @@ function ContactForm() {
           placeholder="How can we help?"
         />
       </div>
+      {status === 'error' && (
+        <p className="text-body-sm text-error">{errorMsg}</p>
+      )}
       <Button type="submit" variant="primary" size="lg" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Sending…' : 'Send message'}
+        {status === 'submitting' ? 'Sending\u2026' : 'Send message'}
       </Button>
     </form>
   );
@@ -89,11 +118,39 @@ function ContactForm() {
 
 function PartnershipForm() {
   const [status, setStatus] = useState<FormStatus>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setStatus('submitting');
-    setTimeout(() => setStatus('success'), 800);
+    setErrorMsg('');
+
+    const form = e.currentTarget;
+    const data = {
+      name: (form.elements.namedItem('name') as HTMLInputElement).value,
+      phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
+      email: (form.elements.namedItem('email') as HTMLInputElement).value,
+      partnerType: (form.elements.namedItem('partnerType') as HTMLSelectElement).value,
+      message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+    };
+
+    try {
+      const res = await fetch('/api/partnership', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setErrorMsg(json.error || 'Something went wrong. Please try again.');
+        setStatus('error');
+        return;
+      }
+      setStatus('success');
+    } catch {
+      setErrorMsg('Network error. Please check your connection and try again.');
+      setStatus('error');
+    }
   };
 
   if (status === 'success') {
@@ -179,8 +236,11 @@ function PartnershipForm() {
           placeholder="Tell us about your business and partnership goals"
         />
       </div>
+      {status === 'error' && (
+        <p className="text-body-sm text-error">{errorMsg}</p>
+      )}
       <Button type="submit" variant="primary" size="lg" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Submitting…' : 'Submit partnership application'}
+        {status === 'submitting' ? 'Submitting\u2026' : 'Submit partnership application'}
       </Button>
     </form>
   );
