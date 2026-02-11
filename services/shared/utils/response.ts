@@ -121,3 +121,21 @@ export function unauthorizedResponse(message: string = 'Unauthorized', event?: A
     headers: getSecurityHeaders(event)
   };
 }
+
+/**
+ * Safely parse JSON request body.
+ * Returns parsed object on success, or an error response on malformed input.
+ */
+export function parseBody<T = Record<string, unknown>>(
+  event: APIGatewayProxyEvent
+): { data: T; error: null } | { data: null; error: APIGatewayProxyResult } {
+  try {
+    const data = JSON.parse(event.body || '{}') as T;
+    return { data, error: null };
+  } catch {
+    return {
+      data: null,
+      error: validationErrorResponse('Invalid JSON in request body', undefined, event),
+    };
+  }
+}
