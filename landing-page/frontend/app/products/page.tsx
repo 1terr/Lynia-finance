@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/Button';
+import { WaitlistForm } from '@/components/ui/WaitlistForm';
 import { WHATSAPP_URL } from '@/lib/constants';
 
 /* ─── Asset Financing steps ─── */
@@ -189,21 +190,9 @@ export default function ProductsPage() {
             </div>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-10 max-w-[480px]">
             <p className="text-body-sm text-white/50 mb-3">Coming soon</p>
-            <form className="flex flex-col sm:flex-row gap-3 max-w-[480px]" onSubmit={(e: React.FormEvent) => e.preventDefault()}>
-              <input
-                type="tel"
-                placeholder="+263 7XX XXX XXX"
-                className="h-11 px-4 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-body-sm focus:border-primary focus:outline-none flex-1"
-              />
-              <button
-                type="submit"
-                className="h-11 px-6 rounded-md bg-primary text-white text-body-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap"
-              >
-                Get notified &rarr;
-              </button>
-            </form>
+            <WaitlistForm />
           </div>
         </div>
       </section>
