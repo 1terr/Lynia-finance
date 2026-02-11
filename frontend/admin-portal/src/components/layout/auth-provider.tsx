@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { type AdminUser, isValidAdminRole } from '@/types/auth';
@@ -33,7 +32,6 @@ async function fetchAdminProfile(
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setUser = useAuthStore((s) => s.setUser);
@@ -57,18 +55,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // User exists in auth but not in admin_users, is inactive, or has invalid role
             await supabase.auth.signOut();
-            router.push('/login');
-            return;
           }
-        } else {
-          // No authenticated user — redirect to login
-          router.push('/login');
-          return;
         }
       } catch {
-        // Session expired or invalid — redirect to login
-        router.push('/login');
-        return;
+        // Session expired or invalid — redirect handled by render gate
       } finally {
         setLoading(false);
       }
@@ -86,7 +76,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
-          router.push('/login');
         }
       });
       subscription = data.subscription;
@@ -97,15 +86,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [router, setUser, setLoading]);
+  }, [setUser, setLoading]);
 
-  // Gate rendering: show loading spinner until auth check completes
-  if (isLoading || !user) {
+  // Show loading spinner while initial auth check is in progress
+  if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
+  }
+
+  // Auth check complete but no valid admin user — redirect to login.
+  // Uses window.location for a hard redirect because Next.js middleware does
+  // not run in static exports (output: 'export'), so router.push alone could
+  // leave the spinner stuck if client-side navigation stalls.
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+    return null;
   }
 
   return <>{children}</>;
