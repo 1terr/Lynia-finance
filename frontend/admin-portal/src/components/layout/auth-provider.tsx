@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
-import type { AdminUser } from '@/types/auth';
+import { type AdminUser, isValidAdminRole } from '@/types/auth';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -19,18 +19,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-          // Fetch admin profile from admin_users table
+          // Fetch admin profile with explicit columns (MED-06: avoid select('*'))
           const { data: adminUser } = await supabase
             .from('admin_users')
-            .select('*')
+            .select('id, email, first_name, last_name, role, is_active, department, last_login_at, login_count, created_at, updated_at')
             .eq('id', user.id)
             .eq('is_active', true)
             .single();
 
-          if (adminUser) {
+          // MED-02: Runtime validation of admin role from database
+          if (adminUser && isValidAdminRole(adminUser.role)) {
             setUser(adminUser as AdminUser);
           } else {
-            // User exists in auth but not in admin_users or is inactive
+            // User exists in auth but not in admin_users, is inactive, or has invalid role
             await supabase.auth.signOut();
             router.push('/login');
           }

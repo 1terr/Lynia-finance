@@ -82,10 +82,10 @@ export function CustomerPayments({ payments }: CustomerPaymentsProps) {
                     {formatCurrency(payment.amount_usd)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-gray-900">
-                    {payment.payment_type.replace('_', ' ')}
+                    {payment.payment_type.replace(/_/g, ' ')}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-gray-900">
-                    {payment.payment_method.replace('_', ' ')}
+                    {payment.payment_method.replace(/_/g, ' ')}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge variant={statusInfo.variant}>

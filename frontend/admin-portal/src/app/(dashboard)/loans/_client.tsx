@@ -77,7 +77,7 @@ export default function LoansPage() {
       header: 'Status',
       render: (row) => (
         <Badge variant="status" status={row.loan_status}>
-          {row.loan_status.replace('_', ' ')}
+          {row.loan_status.replace(/_/g, ' ')}
         </Badge>
       ),
     },

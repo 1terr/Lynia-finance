@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate } from '@/lib/utils';
+import { formatDate, maskPhone, maskId } from '@/lib/utils';
 import type { CustomerWithRelations } from '@/types/database';
 
 const kycStatusMap: Record<string, { variant: 'green' | 'yellow' | 'blue' | 'red' | 'gray'; label: string }> = {
@@ -115,14 +115,14 @@ export function CustomerHeader({ customer, onBlock, onUnblock }: CustomerHeaderP
         <div>
           <p className="text-sm text-gray-500">Phone</p>
           <p className="mt-1 text-sm font-medium text-gray-900">
-            {customer.phone_number}
+            {maskPhone(customer.phone_number)}
           </p>
         </div>
         {customer.whatsapp_number && (
           <div>
             <p className="text-sm text-gray-500">WhatsApp</p>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {customer.whatsapp_number}
+              {maskPhone(customer.whatsapp_number)}
             </p>
           </div>
         )}
@@ -138,7 +138,7 @@ export function CustomerHeader({ customer, onBlock, onUnblock }: CustomerHeaderP
           <div>
             <p className="text-sm text-gray-500">National ID</p>
             <p className="mt-1 text-sm font-medium text-gray-900">
-              {customer.national_id}
+              {maskId(customer.national_id)}
             </p>
           </div>
         )}

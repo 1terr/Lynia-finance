@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/shared/Pagination';
-import { formatDate, formatCurrency, truncateId } from '@/lib/utils';
+import { formatDate, formatCurrency, truncateId, maskPhone } from '@/lib/utils';
 import type { PaymentWithCustomer } from '@/lib/api/payments';
 
 interface PaymentTableProps {
@@ -93,7 +93,7 @@ export function PaymentTable({
                     {truncateId(payment.id)}
                   </div>
                   <div className="text-xs capitalize text-gray-500">
-                    {payment.payment_type.replace('_', ' ')}
+                    {payment.payment_type.replace(/_/g, ' ')}
                   </div>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
@@ -107,7 +107,7 @@ export function PaymentTable({
                         {payment.customers.last_name}
                       </Link>
                       <div className="text-xs text-gray-500">
-                        {payment.customers.phone_number}
+                        {maskPhone(payment.customers.phone_number)}
                       </div>
                     </div>
                   ) : (
@@ -121,7 +121,7 @@ export function PaymentTable({
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
                   <span className="text-sm capitalize text-gray-700">
-                    {payment.payment_method.replace('_', ' ')}
+                    {payment.payment_method.replace(/_/g, ' ')}
                   </span>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">

@@ -118,6 +118,7 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
           placeholder="Additional notes..."
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
           rows={2}
+          maxLength={1000}
         />
       </div>
 

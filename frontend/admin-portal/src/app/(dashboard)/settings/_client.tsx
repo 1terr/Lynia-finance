@@ -716,7 +716,7 @@ function AuditLogTab() {
       header: 'Entity',
       render: (row) => (
         <div>
-          <p className="text-sm text-gray-900 capitalize">{row.entity_type.replace('_', ' ')}</p>
+          <p className="text-sm text-gray-900 capitalize">{row.entity_type.replace(/_/g, ' ')}</p>
           {row.entity_id && (
             <p className="font-mono text-xs text-gray-500">{row.entity_id.slice(0, 8)}...</p>
           )}

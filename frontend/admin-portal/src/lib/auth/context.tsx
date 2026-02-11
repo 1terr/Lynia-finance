@@ -11,7 +11,8 @@ import {
 import { useRouter } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
-import type { AdminRole, AdminUser, PermissionAction } from '@/types';
+import type { AdminUser, PermissionAction } from '@/types';
+import { isValidAdminRole } from '@/types/auth';
 import { hasPermission } from './permissions';
 
 interface AuthContextValue {
@@ -34,23 +35,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchAdminProfile = useCallback(
     async (userId: string): Promise<AdminUser | null> => {
+      // MED-06: Explicit column list instead of select('*')
       const { data, error } = await supabase
         .from('admin_users')
-        .select('*')
+        .select('id, email, first_name, last_name, role, is_active, department, last_login_at, login_count, created_at, updated_at')
         .eq('id', userId)
         .single();
 
       if (error || !data) return null;
 
-      return {
-        id: data.id,
-        email: data.email,
-        full_name: data.full_name,
-        role: data.role as AdminRole,
-        avatar_url: data.avatar_url,
-        created_at: data.created_at,
-        last_sign_in_at: data.last_sign_in_at,
-      };
+      // MED-02: Runtime validation of role from database
+      if (!isValidAdminRole(data.role)) return null;
+
+      return data as AdminUser;
     },
     [supabase]
   );

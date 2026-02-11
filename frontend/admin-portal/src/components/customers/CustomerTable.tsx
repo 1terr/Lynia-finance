@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/shared/Pagination';
-import { formatDate, formatCurrency, truncateId } from '@/lib/utils';
+import { formatDate, formatCurrency, truncateId, maskPhone } from '@/lib/utils';
 import type { Customer } from '@/types/database';
 
 interface CustomerTableProps {
@@ -115,7 +115,7 @@ export function CustomerTable({
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="text-sm text-gray-900">
-                    {customer.phone_number}
+                    {maskPhone(customer.phone_number)}
                   </div>
                   {customer.email && (
                     <div className="text-xs text-gray-500">{customer.email}</div>

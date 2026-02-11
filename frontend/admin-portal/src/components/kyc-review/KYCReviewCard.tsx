@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/Button';
 import { DocumentViewer } from './DocumentViewer';
 import { SLAIndicator } from './SLAIndicator';
 import { ReviewHistory } from './ReviewHistory';
-import { cn, formatDateTime, getConfidenceLevel } from '@/lib/utils';
+import { cn, formatDateTime, getConfidenceLevel, maskPhone, maskId } from '@/lib/utils';
 import { useKYCActions } from '@/lib/hooks/useKYCReview';
 import type { KYCSubmission } from '@/types';
 
@@ -148,9 +148,9 @@ export function KYCReviewCard({
                 </h4>
                 <div className="space-y-2.5">
                   <InfoRow icon={User} label="Name" value={`${customer?.first_name} ${customer?.last_name}`} />
-                  <InfoRow icon={Phone} label="Phone" value={customer?.phone_number || 'N/A'} />
+                  <InfoRow icon={Phone} label="Phone" value={customer?.phone_number ? maskPhone(customer.phone_number) : 'N/A'} />
                   <InfoRow icon={Mail} label="Email" value={customer?.email || 'N/A'} />
-                  <InfoRow icon={CreditCard} label="ID Number" value={submission.id_number || 'N/A'} />
+                  <InfoRow icon={CreditCard} label="ID Number" value={submission.id_number ? maskId(submission.id_number) : 'N/A'} />
                   <InfoRow icon={Calendar} label="Submitted" value={formatDateTime(submission.submitted_at)} />
                   {customer?.city && (
                     <InfoRow icon={MapPin} label="Location" value={`${customer.city}${customer.province ? ', ' + customer.province : ''}`} />
@@ -262,6 +262,7 @@ export function KYCReviewCard({
                       </label>
                       <textarea
                         rows={2}
+                        maxLength={1000}
                         value={approvalNotes}
                         onChange={(e) => setApprovalNotes(e.target.value)}
                         placeholder="Add any notes about this review..."
@@ -299,6 +300,7 @@ export function KYCReviewCard({
                       </label>
                       <textarea
                         rows={3}
+                        maxLength={1000}
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="Provide a detailed reason for rejection..."

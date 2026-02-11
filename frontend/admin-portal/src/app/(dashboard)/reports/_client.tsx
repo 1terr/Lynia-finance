@@ -373,7 +373,7 @@ export default function ReportsPage() {
                       {collectionQuery.data.map((item) => (
                         <tr key={item.method}>
                           <td className="px-4 py-3 text-sm font-medium text-gray-900">
-                            <Badge variant="default">{item.method.replace('_', ' ')}</Badge>
+                            <Badge variant="default">{item.method.replace(/_/g, ' ')}</Badge>
                           </td>
                           <td className="px-4 py-3 text-right text-sm text-gray-700">
                             {item.count.toLocaleString()}

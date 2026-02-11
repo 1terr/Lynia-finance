@@ -58,7 +58,7 @@ export function DashboardHeader({ onMenuToggle }: HeaderProps) {
                 {user ? `${user.first_name} ${user.last_name}` : 'Loading...'}
               </p>
               <p className="text-xs text-gray-500">
-                {user?.role.replace('_', ' ')}
+                {user?.role.replace(/_/g, ' ')}
               </p>
             </div>
             <ChevronDown className="h-4 w-4 text-gray-400" />

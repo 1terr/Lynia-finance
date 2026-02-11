@@ -73,6 +73,11 @@ export function UserManagement() {
   };
 
   const handleToggleActive = async (user: AdminUserWithMeta) => {
+    // HIGH-08: Confirmation dialog for destructive action
+    const action = user.is_active ? 'deactivate' : 'activate';
+    if (!confirm(`Are you sure you want to ${action} ${user.first_name} ${user.last_name}?`)) {
+      return;
+    }
     const updated = await updateAdminUser(user.id, { is_active: !user.is_active });
     setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
   };

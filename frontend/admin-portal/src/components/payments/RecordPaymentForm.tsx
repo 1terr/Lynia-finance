@@ -191,6 +191,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
             <textarea
               {...register('notes')}
               rows={2}
+              maxLength={1000}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Additional notes..."
             />

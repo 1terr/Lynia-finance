@@ -35,7 +35,7 @@ export function CustomerOverview({ customer }: CustomerOverviewProps) {
           <h3 className="text-sm font-medium text-gray-500">Employment</h3>
           <InfoRow
             label="Status"
-            value={customer.employment_status?.replace('_', ' ') || 'N/A'}
+            value={customer.employment_status?.replace(/_/g, ' ') || 'N/A'}
           />
           <InfoRow label="Type" value={customer.employment_type || 'N/A'} />
           <InfoRow

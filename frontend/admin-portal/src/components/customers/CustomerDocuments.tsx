@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate } from '@/lib/utils';
+import { formatDate, maskId } from '@/lib/utils';
 import type { KYCSubmission } from '@/types/database';
 
 interface CustomerDocumentsProps {
@@ -122,13 +122,13 @@ export function CustomerDocuments({
               <div>
                 <p className="text-sm text-gray-500">Document Type</p>
                 <p className="mt-1 text-sm font-medium capitalize text-gray-900">
-                  {submission.document_type.replace('_', ' ')}
+                  {submission.document_type.replace(/_/g, ' ')}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Document Number</p>
                 <p className="mt-1 text-sm font-medium text-gray-900">
-                  {submission.document_number}
+                  {maskId(submission.document_number)}
                 </p>
               </div>
               {submission.image_quality_score !== null && (

@@ -105,7 +105,7 @@ export default function CustomerDetailPage() {
       header: 'Status',
       render: (row) => (
         <Badge variant="status" status={row.loan_status}>
-          {row.loan_status.replace('_', ' ')}
+          {row.loan_status.replace(/_/g, ' ')}
         </Badge>
       ),
     },
@@ -130,12 +130,12 @@ export default function CustomerDetailPage() {
     {
       key: 'payment_type',
       header: 'Type',
-      render: (row) => <span className="capitalize">{row.payment_type.replace('_', ' ')}</span>,
+      render: (row) => <span className="capitalize">{row.payment_type.replace(/_/g, ' ')}</span>,
     },
     {
       key: 'payment_method',
       header: 'Method',
-      render: (row) => <span className="capitalize">{row.payment_method.replace('_', ' ')}</span>,
+      render: (row) => <span className="capitalize">{row.payment_method.replace(/_/g, ' ')}</span>,
     },
     {
       key: 'payment_status',
@@ -233,7 +233,7 @@ export default function CustomerDetailPage() {
             <div>
               <p className="text-xs text-gray-500">Employment</p>
               <p className="text-sm font-medium capitalize">
-                {customer.employment_status?.replace('_', ' ') || 'Unknown'}
+                {customer.employment_status?.replace(/_/g, ' ') || 'Unknown'}
               </p>
             </div>
           </div>
@@ -328,7 +328,7 @@ export default function CustomerDetailPage() {
                       <div>
                         <div className="flex items-center gap-2">
                           <Badge variant="status" status={submission.status}>
-                            {submission.status.replace('_', ' ')}
+                            {submission.status.replace(/_/g, ' ')}
                           </Badge>
                           <span className="text-sm text-gray-500">
                             Submitted {formatDateTime(submission.created_at)}
@@ -367,7 +367,7 @@ export default function CustomerDetailPage() {
                   ['Email', customer.email || 'N/A'],
                   ['Date of Birth', customer.date_of_birth ? formatDate(customer.date_of_birth) : 'N/A'],
                   ['Address', customer.physical_address || 'N/A'],
-                  ['Employment', customer.employment_status?.replace('_', ' ') || 'N/A'],
+                  ['Employment', customer.employment_status?.replace(/_/g, ' ') || 'N/A'],
                   ['Monthly Income', customer.monthly_income_usd ? formatCurrency(customer.monthly_income_usd) : 'N/A'],
                   ['Risk Level', customer.risk_level || 'N/A'],
                   ['Joined', formatDateTime(customer.created_at)],

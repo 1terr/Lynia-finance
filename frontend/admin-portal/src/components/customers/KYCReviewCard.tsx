@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { approveKYC, rejectKYC } from '@/lib/api/customers';
-import { formatDate } from '@/lib/utils';
+import { formatDate, maskPhone } from '@/lib/utils';
 import type { KYCSubmission, Customer } from '@/types/database';
 
 interface KYCReviewCardProps {
@@ -43,7 +43,7 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
             {submission.attempt_number}
           </p>
           <p className="text-sm text-gray-500">
-            Phone: {submission.customers.phone_number}
+            Phone: {maskPhone(submission.customers.phone_number)}
           </p>
         </div>
 
@@ -132,7 +132,7 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
         <div>
           <p className="text-sm text-gray-500">Document Type</p>
           <p className="mt-1 font-medium capitalize">
-            {submission.document_type.replace('_', ' ')}
+            {submission.document_type.replace(/_/g, ' ')}
           </p>
         </div>
       </div>

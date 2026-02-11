@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { addCustomerNote } from '@/lib/api/customers';
 import { formatDateTime } from '@/lib/utils';
+import { useAuthStore } from '@/lib/store/auth-store';
 import type { CustomerNote } from '@/types/database';
 
 interface CustomerNotesProps {
@@ -24,10 +25,12 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
   const [noteType, setNoteType] = useState<string>('general');
   const [noteText, setNoteText] = useState('');
   const queryClient = useQueryClient();
+  // HIGH-10: Use authenticated admin's ID instead of hardcoded 'current-admin'
+  const adminUser = useAuthStore((s) => s.user);
 
   const addNoteMutation = useMutation({
     mutationFn: () =>
-      addCustomerNote(customerId, noteType, noteText, 'current-admin'),
+      addCustomerNote(customerId, noteType, noteText, adminUser?.id || 'unknown'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
       setNoteText('');
@@ -74,6 +77,7 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               rows={3}
+              maxLength={2000}
               className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Enter your note..."
             />
@@ -104,7 +108,7 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
           >
             <div className="flex items-start justify-between">
               <Badge variant={noteTypeColors[note.note_type] || 'gray'}>
-                {note.note_type.replace('_', ' ')}
+                {note.note_type.replace(/_/g, ' ')}
               </Badge>
               <span className="text-xs text-gray-400">
                 {formatDateTime(note.created_at)}

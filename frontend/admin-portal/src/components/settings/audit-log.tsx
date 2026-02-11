@@ -47,7 +47,7 @@ export function AuditLog() {
             className="rounded-lg border bg-background px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-ring"
           >
             {resources.map((r) => (
-              <option key={r} value={r}>{r === 'all' ? 'All Resources' : r.replace('_', ' ')}</option>
+              <option key={r} value={r}>{r === 'all' ? 'All Resources' : r.replace(/_/g, ' ')}</option>
             ))}
           </select>
         </div>

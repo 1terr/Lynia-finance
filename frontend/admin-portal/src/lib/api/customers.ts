@@ -58,14 +58,47 @@ export async function getCustomerById(id: string): Promise<Customer | null> {
 
 export const fetchCustomerById = getCustomerById;
 
-export async function updateCustomer(id: string, updates: Partial<Customer>) {
+/** Fields that are safe to update via the admin portal (HIGH-05) */
+const CUSTOMER_UPDATE_ALLOWLIST: (keyof Customer)[] = [
+  'full_name',
+  'email',
+  'phone_number',
+  'date_of_birth',
+  'physical_address',
+  'employment_status',
+  'monthly_income_usd',
+  'status',
+];
+
+export async function updateCustomer(id: string, updates: Partial<Customer>, adminId?: string) {
   const supabase = createClient();
+
+  // HIGH-05: Only allow explicitly safe fields to be updated
+  const safeUpdates: Record<string, unknown> = {};
+  for (const key of CUSTOMER_UPDATE_ALLOWLIST) {
+    if (key in updates) {
+      safeUpdates[key] = updates[key];
+    }
+  }
+  safeUpdates.updated_at = new Date().toISOString();
+
   const { error } = await supabase
     .from('customers')
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update(safeUpdates)
     .eq('id', id);
 
   if (error) throw error;
+
+  // HIGH-06: Audit logging for customer modifications
+  if (adminId) {
+    await supabase.from('audit_log').insert({
+      admin_id: adminId,
+      action: 'update',
+      entity_type: 'customer',
+      entity_id: id,
+      details: { updated_fields: Object.keys(safeUpdates).filter(k => k !== 'updated_at') },
+    });
+  }
 }
 
 export async function getCustomerLoans(customerId: string): Promise<Loan[]> {
@@ -215,4 +248,28 @@ export async function rejectKYC(submissionId: string, customerId: string, adminI
     entity_id: submissionId,
     details: { customer_id: customerId, reason },
   });
+}
+
+// --- Customer Notes ---
+
+export async function addCustomerNote(
+  customerId: string,
+  noteType: string,
+  noteText: string,
+  adminId: string
+) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('customer_notes')
+    .insert({
+      customer_id: customerId,
+      note_type: noteType,
+      note_text: noteText,
+      created_by: adminId,
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+  return data;
 }
