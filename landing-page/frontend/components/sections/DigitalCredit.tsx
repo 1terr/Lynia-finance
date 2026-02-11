@@ -4,8 +4,8 @@ import { Clock, Wallet } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 
 const features = [
-  { icon: Clock, title: 'Application to wallet in minutes', description: 'From application to cash in your wallet — under 10 minutes.' },
-  { icon: Wallet, title: 'Works with your mobile money', description: 'Receive and repay through the mobile money wallet you already use.' },
+  { icon: Clock, title: 'Application to wallet in minutes', description: 'From application to cash in your wallet — under 10 minutes. No paperwork, no branch visit.' },
+  { icon: Wallet, title: 'EcoCash and OneMoney supported', description: 'Receive and repay through the mobile money wallet you already use. Repayment is automated and flexible.' },
 ];
 
 export function DigitalCredit() {
@@ -40,8 +40,9 @@ export function DigitalCredit() {
               Cash when you need it most
             </h2>
             <p className="text-body-lg text-white/70 mt-6">
-              Digital loans deposited directly into your mobile wallet. Apply
-              once, get funded in under 10 minutes.
+              Instant digital loans deposited directly into your mobile wallet.
+              Apply via WhatsApp, get funded in under 10 minutes. Designed for
+              everyday needs and working capital.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">

@@ -22,37 +22,39 @@ Lynia Finance (logo)    Products    About    Partnerships    Editorial    [Start
 
 ## Homepage Structure (Stripe-inspired)
 
-The homepage follows a reordered Stripe-inspired flow: Hero → Social Proof → Why (stats) → Product suite → Product deep dives → Customer segments → Editorial → Bottom CTA → Footer.
+The homepage follows a reordered Stripe-inspired flow: Hero → Social Proof → Why (stats) → Product suite → How It Works → Product deep dives → Customer segments → Editorial → Bottom CTA → Footer.
 
-The stats section is placed early to establish the problem before presenting products — this mirrors how Stripe positions "Why Stripe" early in their page flow.
+The stats section is placed early to establish the problem before presenting products — this mirrors how Stripe positions "Why Stripe" early in their page flow. The "How It Works" section is placed between the product overview and deep dives to clearly communicate the user journey — a critical element from the investor pitch deck.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ 1. HERO (animated gradient background)                  │
 ├─────────────────────────────────────────────────────────┤
-│ 2. SOCIAL PROOF (partner/trust logos or stats)          │
+│ 2. SOCIAL PROOF (traction stats strip)                  │
 ├─────────────────────────────────────────────────────────┤
-│ 3. WHY ALTERNATIVE FINANCING (underbanked stats)        │
+│ 3. WHY ALTERNATIVE FINANCING (market opportunity)       │
 ├─────────────────────────────────────────────────────────┤
 │ 4. PRODUCT SUITE (3 product cards in grid)              │
 ├─────────────────────────────────────────────────────────┤
-│ 5. PRODUCT DEEP DIVE: Asset Financing                   │
+│ 5. HOW IT WORKS (4-step process flow)                   │
 ├─────────────────────────────────────────────────────────┤
-│ 6. PRODUCT DEEP DIVE: Digital Credit                    │
+│ 6. PRODUCT DEEP DIVE: Asset Financing                   │
 ├─────────────────────────────────────────────────────────┤
-│ 7. PRODUCT DEEP DIVE: Enterprise Partnerships           │
+│ 7. PRODUCT DEEP DIVE: Digital Credit                    │
 ├─────────────────────────────────────────────────────────┤
-│ 8. CUSTOMER SEGMENTS (who we serve)                     │
+│ 8. PRODUCT DEEP DIVE: Enterprise Partnerships           │
 ├─────────────────────────────────────────────────────────┤
-│ 9. EDITORIAL (featured Editorial posts)                 │
+│ 9. CUSTOMER SEGMENTS (who we serve)                     │
 ├─────────────────────────────────────────────────────────┤
-│ 10. BOTTOM CTA (final conversion)                      │
+│ 10. EDITORIAL (featured Editorial posts)                │
 ├─────────────────────────────────────────────────────────┤
-│ 11. FOOTER                                             │
+│ 11. BOTTOM CTA (final conversion)                      │
+├─────────────────────────────────────────────────────────┤
+│ 12. FOOTER                                             │
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Section order change from v1:** Stats section moved from position 7 to position 3. This establishes the market problem before presenting products — a Stripe narrative pattern.
+**Section order change from v2:** Added "How It Works" section at position 5 (between product suite overview and product deep dives). This mirrors the pitch deck's step-by-step flow and clarifies the customer journey for both visitors and investors.
 
 ---
 
@@ -89,11 +91,14 @@ The stats section is placed early to establish the problem before presenting pro
 └─────────────────────────────────────────────────────────┘
 ```
 
+**Overline**:
+> CREDIT INFRASTRUCTURE FOR AFRICA
+
 **Headline**:
 > Financial tools for the underbanked
 
 **Subtext**:
-> Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes.
+> Smartphones, assets, and instant credit — delivered through WhatsApp to Zimbabwe's 80% informal workforce. No bank account. No paperwork. Approved in minutes.
 
 **CTAs**:
 - Primary: `[Start your application]` (filled button, white bg with brand text on dark hero)
@@ -127,10 +132,10 @@ The stats section is placed early to establish the problem before presenting pro
 **Content**: Partner logos, payment provider logos, or trust indicators.
 
 - If logos available: no label text — just the logo row (Stripe pattern)
-- If logos not yet available, use stats-as-proof (no label needed):
+- If logos not yet available, use stats-as-proof with value/label split (no heading needed):
 
 ```
-500+ loans funded  ·  <5 min approval  ·  100% mobile money
+500+ loans funded  ·  <5 min average approval  ·  100% mobile money  ·  50+ agent locations
 ```
 
 If a label is required:
@@ -166,17 +171,20 @@ If a label is required:
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Stats** (short labels — 3-5 words each):
-- `80%` — of the workforce is informal
-- `<5%` — have access to bank credit
-- `$14B` — unserved credit demand
-- `70%+` — mobile money adoption
+**Section overline**:
+> THE OPPORTUNITY
 
 **Section headline**:
 > 80% of Zimbabwe works. Less than 5% can borrow.
 
+**Stats** (short labels + sublabels):
+- `80%` — informal workforce — Excluded from traditional banking
+- `<5%` — have bank credit — In the informal sector
+- `$14B` — credit gap — Unserved demand in Zimbabwe
+- `70%+` — mobile money adoption — Infrastructure already in place
+
 **Supporting text**:
-> Traditional banks don't serve them. We do. Mobile money is everywhere — financial products should be too.
+> Traditional banks don't serve them. We do. Mobile money infrastructure is already in place — financial products should be too. Lynia builds on what exists to serve those who've been excluded.
 
 ---
 
@@ -213,7 +221,50 @@ If a label is required:
 
 ---
 
-## Section 5: Product Deep Dive — Asset Financing
+## Section 5: How It Works
+
+**Design**: Light background (`#F6F9FC`). 4-column step grid with numbered icons, connector lines between steps. Section overline + headline + subtitle. This section mirrors the pitch deck's step-by-step process flow — critical for both customer conversion and investor credibility.
+
+**Stripe pattern**: Clear numbered process with icons, similar to how Stripe shows integration steps.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│                                                          │
+│  HOW IT WORKS                                            │
+│  From application to funded in minutes                   │
+│  Everything happens on WhatsApp.                         │
+│                                                          │
+│  ┌──────────┐───┌──────────┐───┌──────────┐───┌───────┐ │
+│  │ 01       │   │ 02       │   │ 03       │   │ 04    │ │
+│  │ Apply    │   │ Get      │   │ Receive  │   │ Repay │ │
+│  │ via      │   │ verified │   │ device   │   │ via   │ │
+│  │ WhatsApp │   │ instantly│   │ or funds │   │ mobile│ │
+│  │          │   │          │   │          │   │ money │ │
+│  └──────────┘   └──────────┘   └──────────┘   └───────┘ │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Overline**: HOW IT WORKS
+
+**Headline**:
+> From application to funded in minutes
+
+**Subtitle**:
+> Everything happens on WhatsApp — the app your customers already use every day.
+
+**Steps**:
+
+| Step | Title | Description |
+|------|-------|-------------|
+| 01 | Apply via WhatsApp | No app download. No bank visit. Start a conversation and apply in under 2 minutes. |
+| 02 | Get verified instantly | AI-powered credit scoring and KYC verification. Decisions in under 5 minutes. |
+| 03 | Receive your device or funds | Collect a smartphone from a local agent, or receive cash directly into your mobile wallet. |
+| 04 | Repay via mobile money | Flexible repayment through EcoCash or OneMoney. No bank account needed. |
+
+---
+
+## Section 6: Product Deep Dive — Asset Financing
 
 **Design**: Full-width section. Split layout: text left, product visual/illustration right. White background. Compact — reduced padding (`80px` instead of `120px`) to tighten scroll depth.
 
@@ -225,16 +276,16 @@ If a label is required:
 > Own the tools that power your trade
 
 **Subtext**:
-> Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money.
+> Finance smartphones and productive assets with a small deposit. Collect from a local agent, repay via mobile money. Built for traders, vendors, and entrepreneurs who need tools to earn.
 
 **Features** (4-column grid):
 
 | Feature | Description |
 |---------|-------------|
-| **Pay a deposit, own the device** | Start with a small deposit. The device is yours from day one. |
-| **Pick up locally** | Collect your device from any Lynia agent in your area. |
-| **Approved in minutes** | Apply via WhatsApp. Get a decision in under 5 minutes. |
-| **Repay via mobile money** | Pay back through your mobile wallet. No bank account needed. |
+| **Deposit as low as $15** | Start with a small deposit. The device is yours from day one — no collateral required. |
+| **Pick up from 50+ agents** | Collect your device from a Lynia agent in your area. Growing network across Zimbabwe. |
+| **Approved in under 5 min** | Apply via WhatsApp. AI-powered credit scoring delivers decisions in minutes, not days. |
+| **Repay via EcoCash or OneMoney** | Flexible repayment through the mobile wallet you already use. No bank account needed. |
 
 **CTAs**:
 - Primary: `[Start your application]`
@@ -244,7 +295,7 @@ If a label is required:
 
 ---
 
-## Section 6: Product Deep Dive — Digital Credit
+## Section 7: Product Deep Dive — Digital Credit
 
 **Design**: Alternating background (dark navy `#0A2540` with light text, Stripe-style dark section). Split layout: visual left, text right. Compact padding.
 
@@ -254,14 +305,14 @@ If a label is required:
 > Cash when you need it most
 
 **Subtext**:
-> Digital loans deposited directly into your mobile wallet. Apply once, get funded in under 10 minutes.
+> Instant digital loans deposited directly into your mobile wallet. Apply via WhatsApp, get funded in under 10 minutes. Designed for everyday needs and working capital.
 
 **Features** (2-column grid):
 
 | Feature | Description |
 |---------|-------------|
-| **Application to wallet in minutes** | From application to cash in your wallet — under 10 minutes. |
-| **Works with your mobile money** | Receive and repay through the mobile money wallet you already use. |
+| **Application to wallet in minutes** | From application to cash in your wallet — under 10 minutes. No paperwork, no branch visit. |
+| **EcoCash and OneMoney supported** | Receive and repay through the mobile money wallet you already use. Repayment is automated and flexible. |
 
 **CTA**:
 - Primary: `[Get notified when we launch →]` (captures phone number or email — converts interest into a lead instead of a dead-end disabled button)
@@ -270,7 +321,7 @@ If a label is required:
 
 ---
 
-## Section 7: Product Deep Dive — Enterprise Partnerships
+## Section 8: Product Deep Dive — Enterprise Partnerships
 
 **Design**: Light background (`#F6F9FC`). Split layout: text left, visual right. Compact padding.
 
@@ -280,15 +331,15 @@ If a label is required:
 > Embed credit into your platform
 
 **Subtext**:
-> Offer your customers financing at the point of need. Lynia handles underwriting, disbursement, and collections — you earn on every transaction.
+> Offer your customers financing at the point of need. Distributors, retailers, and platforms integrate Lynia to unlock new revenue — we handle underwriting, disbursement, and collections.
 
 **Features** (3-item grid):
 
 | Feature | Description |
 |---------|-------------|
-| **Mobile money native** | Transactions settle instantly through your mobile wallet. |
-| **Developer-ready APIs** | Integrate credit products with a few API calls. Monitor disbursements, repayments, and risk in real time. |
-| **Shared growth** | Your customers access more. Your platform retains more. Lynia handles underwriting, collections, and risk. |
+| **Revenue on every transaction** | Earn commission on every loan originated through your platform. We handle risk, you earn recurring revenue. |
+| **Developer-ready APIs** | Integrate credit products with a few API calls. Real-time dashboards for disbursements, repayments, and portfolio risk. |
+| **We handle the hard parts** | Underwriting, KYC, collections, and compliance — all managed by Lynia. You focus on your customers. |
 
 **CTA**:
 - Primary: `[Partner with us]`
@@ -297,31 +348,30 @@ If a label is required:
 
 ---
 
-## Section 8: Customer Segments
+## Section 9: Customer Segments
 
 **Design**: 3-column card layout. Each card targets a different audience with tailored messaging. Stripe does this for startups / enterprises / platforms.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                                                         │
-│  Built for how Zimbabwe works                           │
-│                                                         │
-│  ┌─────────────────┐ ┌─────────────────┐ ┌────────────────┐ │
-│  │ FOR INDIVIDUALS │ │ FOR DISTRIBUTORS│ │ FOR PARTNERS    │ │
-│  │                 │ │                 │ │                 │ │
-│  │ Smartphones,    │ │ Sell smart-     │ │ Embed credit    │ │
-│  │ assets, and     │ │ phones and      │ │ into your       │ │
-│  │ cash. Apply     │ │ assets in your  │ │ platform.       │ │
-│  │ via WhatsApp    │ │ community. Earn │ │ Offer financing │ │
-│  │ in under 5      │ │ commission on   │ │ at the point    │ │
-│  │ minutes.        │ │ every sale.     │ │ of sale through │ │
-│  │                 │ │                 │ │ our APIs.       │ │
-│  │                 │ │                 │ │                 │ │
-│  │ Start your      │ │ Become a        │ │ Partner with    │ │
-│  │ application →   │ │ distributor →   │ │ us →            │ │
-│  └─────────────────┘ └─────────────────┘ └────────────────┘ │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  Built for how Zimbabwe works                                │
+│                                                              │
+│  ┌──────────────────┐ ┌──────────────────┐ ┌──────────────┐ │
+│  │ FOR INDIVIDUALS  │ │ FOR DISTRIBUTORS │ │ FOR PARTNERS  │ │
+│  │                  │ │                  │ │               │ │
+│  │ Traders, vendors │ │ Sell smartphones │ │ Embed credit  │ │
+│  │ and entrepreneurs│ │ and assets in    │ │ directly into │ │
+│  │ Get a smartphone │ │ your community.  │ │ your platform │ │
+│  │ or instant credit│ │ Zero inventory   │ │ via our APIs. │ │
+│  │ via WhatsApp.    │ │ risk, earn       │ │ Earn revenue  │ │
+│  │                  │ │ commission.      │ │ on every txn. │ │
+│  │                  │ │                  │ │               │ │
+│  │ Start your       │ │ Become a         │ │ Partner with  │ │
+│  │ application →    │ │ distributor →    │ │ us →          │ │
+│  └──────────────────┘ └──────────────────┘ └──────────────┘ │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 **Section headline**:
@@ -329,7 +379,7 @@ If a label is required:
 
 ---
 
-## Section 9: Editorial
+## Section 10: Editorial
 
 **Design**: 2-3 column card grid showing latest Editorial posts. Stripe features curated editorial content (reports, interviews, announcements).
 
@@ -355,7 +405,7 @@ If a label is required:
 
 ---
 
-## Section 10: Bottom CTA
+## Section 11: Bottom CTA
 
 **Design**: Full-width section with gradient or dark background. Final push to convert.
 
@@ -366,7 +416,9 @@ If a label is required:
 │  Apply now. Get funded today.                           │
 │                                                         │
 │  No bank account required. No paperwork.                │
-│  Approval in under 5 minutes.                           │
+│  No branch visits. Just WhatsApp, your national ID,     │
+│  and 5 minutes. Join the 500+ Zimbabweans already       │
+│  building with Lynia.                                   │
 │                                                         │
 │  [Start your application]    Talk to our team →         │
 │                                                         │
@@ -377,7 +429,7 @@ If a label is required:
 > Apply now. Get funded today.
 
 **Subtext**:
-> No bank account required. No paperwork. Approval in under 5 minutes.
+> No bank account required. No paperwork. No branch visits. Just WhatsApp, your national ID, and 5 minutes. Join the 500+ Zimbabweans already building with Lynia.
 
 **CTAs**:
 - Primary: `[Start your application]` (filled button, white bg)
@@ -434,14 +486,15 @@ If a label is required:
 
 | Stripe Section | Lynia Equivalent | Notes |
 |---------------|-----------------|-------|
-| Hero with gradient + animated UI | Hero with gradient + WhatsApp UI illustration | CSS gradient default, WebGL progressive enhancement |
-| Customer logos bar | Partner/trust logos bar | Mobile wallet providers or stat numbers |
-| "Why Stripe" + global numbers | "80% of Zimbabwe works..." + underbanked stats | Moved early (position 3) to establish stakes |
+| Hero with gradient + animated UI | Hero with gradient + WhatsApp UI illustration | Overline positioning ("Credit infrastructure for Africa") + pitch-deck-aligned subtext |
+| Customer logos bar | Traction stats strip | Value/label split: 500+ loans, <5 min, 100% mobile money, 50+ agents |
+| "Why Stripe" + global numbers | "80% of Zimbabwe works..." + market opportunity | Overline "THE OPPORTUNITY" + stat sublabels for context |
 | Product suite grid | 3 product cards (Asset, Digital, Enterprise) | Icons + one-liner + link |
-| Individual product sections | 3 product deep-dives | Alternating backgrounds, compact padding |
-| Customer segments | For Individuals / Businesses / Partners | 3-column cards |
+| Integration steps | How It Works (4-step process) | New section — mirrors pitch deck process flow |
+| Individual product sections | 3 product deep-dives | Pitch-deck-aligned features (specific numbers, named providers) |
+| Customer segments | For Individuals / Distributors / Partners | Specific outcomes per segment (zero inventory risk, commission model) |
 | Editorial content | Featured Editorial posts | Pulls from Sanity |
-| Bottom CTA + pricing | Bottom CTA | Apply now + Talk to our team |
+| Bottom CTA + pricing | Bottom CTA | Social proof closing ("Join the 500+ Zimbabweans") |
 | Nav with CTA button | Nav with "Start your application" button | Persistent conversion path |
 | Multi-column footer | Multi-column footer | Products, Company, Connect, Legal |
 

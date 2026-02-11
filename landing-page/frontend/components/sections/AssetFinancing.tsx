@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/Button';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 
 const features = [
-  { icon: CreditCard, title: 'Pay a deposit, own the device', description: 'Start with a small deposit. The device is yours from day one.' },
-  { icon: MapPin, title: 'Pick up locally', description: 'Collect your device from any Lynia agent in your area.' },
-  { icon: Zap, title: 'Approved in minutes', description: 'Apply via WhatsApp. Get a decision in under 5 minutes.' },
-  { icon: Smartphone, title: 'Repay via mobile money', description: 'Pay back through your mobile wallet. No bank account needed.' },
+  { icon: CreditCard, title: 'Deposit as low as $15', description: 'Start with a small deposit. The device is yours from day one — no collateral required.' },
+  { icon: MapPin, title: 'Pick up from 50+ agents', description: 'Collect your device from a Lynia agent in your area. Growing network across Zimbabwe.' },
+  { icon: Zap, title: 'Approved in under 5 min', description: 'Apply via WhatsApp. AI-powered credit scoring delivers decisions in minutes, not days.' },
+  { icon: Smartphone, title: 'Repay via EcoCash or OneMoney', description: 'Flexible repayment through the mobile wallet you already use. No bank account needed.' },
 ];
 
 export function AssetFinancing() {
@@ -31,8 +31,9 @@ export function AssetFinancing() {
               Own the tools that power your trade
             </h2>
             <p className="text-body-lg text-slate mt-6">
-              Finance smartphones and assets with a small deposit. Collect from a
-              local agent, repay via mobile money.
+              Finance smartphones and productive assets with a small deposit.
+              Collect from a local agent, repay via mobile money. Built for
+              traders, vendors, and entrepreneurs who need tools to earn.
             </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">

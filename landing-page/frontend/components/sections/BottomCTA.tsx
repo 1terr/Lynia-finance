@@ -22,12 +22,14 @@ export function BottomCTA() {
           Apply now. Get funded today.
         </h2>
         <p
-          className={`text-body-lg text-white/70 max-w-[560px] mx-auto mt-6 transition-all duration-500 ${
+          className={`text-body-lg text-white/70 max-w-[600px] mx-auto mt-6 transition-all duration-500 ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '100ms' }}
         >
-          No bank account required. No paperwork. Approval in under 5 minutes.
+          No bank account required. No paperwork. No branch visits. Just
+          WhatsApp, your national ID, and 5 minutes. Join the 500+ Zimbabweans
+          already building with Lynia.
         </p>
         <div
           className={`flex flex-wrap justify-center gap-4 mt-8 transition-all duration-500 ${
