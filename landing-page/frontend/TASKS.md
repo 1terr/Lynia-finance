@@ -12,10 +12,10 @@
 | **Homepage (11 sections)** | ✅ 100% | All sections built, animations working |
 | **Layout (Nav + Footer + FAB)** | ✅ 100% | Responsive, mobile menu, WhatsApp FAB |
 | **Design tokens / Tailwind** | ✅ 100% | Full DESIGN-TOKENS.md mapped to config |
-| **Destination pages** | ⚠️ 57% | 4 of 7 pages built (contact, about, privacy, terms) |
+| **Destination pages** | ⚠️ 86% | 6 of 7 pages built (contact, about, privacy, terms, editorial, careers) |
 | **Forms** | ⚠️ 60% | Contact + partnership forms built; no backend wiring yet |
-| **CMS (Sanity)** | ❌ 0% | Editorial page has placeholder posts only |
-| **Dead link fixes** | ✅ 90% | All CTAs fixed; social links use placeholder URLs |
+| **CMS (Sanity)** | ⚠️ 30% | Static editorial data in place; Sanity integration pending |
+| **Dead link fixes** | ✅ 95% | All CTAs fixed; social links use placeholder URLs |
 
 ---
 
@@ -88,7 +88,7 @@ Critical CTAs and links that currently go nowhere.
 - [x] **BottomCTA "Talk to our team →"** → `/contact` ✅ page built
 - [x] **Navbar "About"** → `/about` ✅ page built
 - [x] **Footer "About"** → `/about` ✅ page built
-- [ ] **Footer "Careers"** → `/careers` (page still needed — P3)
+- [x] **Footer "Careers"** → `/careers` ✅ page built
 - [x] **Footer "Contact"** → `/contact` ✅ page built
 - [x] **Footer "Privacy Policy"** → `/privacy` ✅ page built
 - [x] **Footer "Terms"** → `/terms` ✅ page built
@@ -198,44 +198,57 @@ app/terms/page.tsx                      Terms of service (12 sections)
 
 ---
 
-## Phase 2F: Editorial Page (Sanity CMS) — PRIORITY 2
+## Phase 2F: Editorial Pages — COMPLETE (Static) ✅ / Sanity CMS — PENDING
 
-Homepage editorial section exists with placeholder posts. Full page needs CMS integration.
+Homepage editorial section and full editorial pages built with static data.
+Sanity CMS integration deferred to a future phase.
 
 **Route**: `/editorial` (listing), `/editorial/[slug]` (individual post)
 **Design spec**: CONTENT.md Section: Editorial Page (Blog)
-**CMS**: Sanity (free tier)
 
-### Editorial listing page
+### Editorial listing page ✅
 
-- [ ] Update `app/editorial/page.tsx` (or create if it doesn't exist)
-- [ ] Featured post hero (large card at top)
-- [ ] Category filter pills: All / Products / Engineering / Company / Market
-- [ ] 3-column card grid (reuse BlogPostCard pattern from homepage)
-- [ ] "Load more" pagination
-- [ ] Responsive: 1-col mobile, 2-col tablet, 3-col desktop
+- [x] Create `app/editorial/page.tsx`
+- [x] Featured post hero (large card at top)
+- [x] Category filter pills: All / Products / Engineering / Company / Market
+- [x] 3-column card grid (reuse BlogPostCard pattern from homepage)
+- [x] Responsive: 1-col mobile, 2-col tablet, 3-col desktop
+- [ ] "Load more" pagination (not needed until post count exceeds 6)
 
-### Individual post page
+### Individual post page ✅
 
-- [ ] Create `app/editorial/[slug]/page.tsx`
-- [ ] Post header: title, category tag, date, author
-- [ ] Featured image (full width)
-- [ ] Rich text body (portable text from Sanity)
-- [ ] Author bio footer
-- [ ] "Related posts" section at bottom
-- [ ] Back to editorial link
+- [x] Create `app/editorial/[slug]/page.tsx`
+- [x] Post header: title, category tag, date, read time
+- [x] Featured image placeholder (full width)
+- [x] Article body (paragraphs from static data)
+- [x] Author bio footer with avatar initials
+- [x] "Related posts" section at bottom (same-category priority)
+- [x] Back to editorial link
+- [x] SEO metadata via `generateMetadata`
+- [x] Static generation via `generateStaticParams`
 
-### Sanity CMS setup
+### Shared editorial data ✅
+
+- [x] Create `lib/editorial-data.ts` — 6 articles with full body content
+- [x] Update homepage Editorial section to use shared data + link to slugs
+
+### Sanity CMS setup (future)
 
 - [ ] Install `@sanity/client` and `next-sanity`
 - [ ] Create `lib/sanity.ts` — client configuration + GROQ queries
-- [ ] Define Sanity schemas:
-  - [ ] **Post**: title, slug, featured image, excerpt, body (rich text), category, author, publishedAt
-  - [ ] **Author**: name, avatar, role
-  - [ ] **Category**: name, slug, description
-- [ ] Set up Sanity Studio (separate project or embedded)
-- [ ] Create initial seed content (3 placeholder posts)
-- [ ] Connect homepage Editorial section to real Sanity data
+- [ ] Define Sanity schemas (Post, Author, Category)
+- [ ] Set up Sanity Studio
+- [ ] Migrate static data to CMS
+- [ ] Connect editorial pages to Sanity data
+
+### Files created
+
+```
+lib/editorial-data.ts                       Shared article data (6 posts)
+app/editorial/page.tsx                      Editorial listing with featured hero + category filters
+app/editorial/layout.tsx                    Metadata for editorial section
+app/editorial/[slug]/page.tsx               Individual article page with related posts
+```
 
 ---
 
@@ -279,15 +292,22 @@ Dedicated page for distributor and B2B partnership info.
 
 ---
 
-## Phase 2I: Careers Page — PRIORITY 3
+## Phase 2I: Careers Page — COMPLETE ✅
 
 **Route**: `/careers`
 
-- [ ] Create `app/careers/page.tsx`
-- [ ] Company culture section
-- [ ] Open positions (can be placeholder initially)
-- [ ] "Why work at Lynia" section
-- [ ] Application CTA (email or contact form link)
+- [x] Create `app/careers/page.tsx`
+- [x] Hero section with gradient background
+- [x] "Why Lynia" section — 4 value cards (mission-driven, early stage, Zimbabwe-first, remote-friendly)
+- [x] Open positions section (placeholder with email + WhatsApp CTA)
+- [x] "Get in touch" button linking to `/contact`
+- [x] Metadata: unique title + description
+
+### Files created
+
+```
+app/careers/page.tsx                        Careers page with hero, values, positions
+```
 
 ---
 
@@ -332,11 +352,11 @@ Complete list of routes the site needs.
 | `/` | ✅ Built | — | — |
 | `/about` | ✅ Built | P2 | Navbar, Footer |
 | `/contact` | ✅ Built | **P1** | Enterprise CTA, Segments (×2), BottomCTA, Footer |
-| `/careers` | ❌ Missing | P3 | Footer |
+| `/careers` | ✅ Built | P3 | Footer |
 | `/partnerships` | ❌ Missing | P3 | Navbar |
 | `/products` | ❌ Missing | P3 | Product cards "Learn more" |
-| `/editorial` | ⚠️ Placeholder | P2 | Navbar, Editorial section, Footer |
-| `/editorial/[slug]` | ❌ Missing | P2 | Editorial listing page |
+| `/editorial` | ✅ Built | P2 | Navbar, Editorial section, Footer |
+| `/editorial/[slug]` | ✅ Built | P2 | Editorial listing page |
 | `/privacy` | ✅ Built | P2 | Footer |
 | `/terms` | ✅ Built | P2 | Footer |
 
@@ -364,10 +384,9 @@ Enterprise "Partner with us" → /contact → Partnership form ✅
 
 ### Journey 4: Blog reader
 ```
-Editorial "View all articles →" → /editorial → [PLACEHOLDER ONLY]
-Fix: Build editorial listing + Sanity CMS integration
+Editorial "View all articles →" → /editorial → article listing → /editorial/[slug] ✅
 ```
-**Status**: ⚠️ Partial — needs Sanity integration
+**Status**: ✅ Works end-to-end (static data; Sanity CMS integration pending)
 
 ### Journey 5: Investor / regulator
 ```
@@ -379,21 +398,19 @@ Footer "Terms" → /terms ✅
 
 ### Journey 6: Job seeker
 ```
-Footer "Careers" → /careers → [PAGE MISSING]
-Fix: Build /careers page
+Footer "Careers" → /careers → hero + values + open positions + /contact ✅
 ```
-**Status**: ❌ Blocked — needs /careers page
+**Status**: ✅ Works end-to-end
 
 ---
 
 ## Recommended Build Order (remaining)
 
 ```
-1. /editorial    — Sanity CMS integration for real blog posts
-2. /editorial/[slug] — Individual post pages
-3. /products     — Detailed product info pages
-4. /partnerships — Dedicated distributor/partner info
-5. /careers      — Job listings
+1. /products     — Detailed product info pages (P3)
+2. /partnerships — Dedicated distributor/partner info (P3)
+3. Sanity CMS    — Replace static editorial data with CMS (P2)
 ```
 
-All P1 items are complete. Remaining items are P2 (editorial/CMS) and P3 (products, partnerships, careers).
+All P1 items are complete. All 6 user journeys now work end-to-end.
+Remaining items are P2 (Sanity CMS migration) and P3 (products, partnerships pages).
