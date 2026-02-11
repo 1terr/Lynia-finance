@@ -73,13 +73,16 @@ export default function LoansPage() {
       render: (row) => formatCurrency(row.outstanding_balance_usd),
     },
     {
-      key: 'loan_status',
+      key: 'status',
       header: 'Status',
-      render: (row) => (
-        <Badge variant="status" status={row.loan_status}>
-          {row.loan_status.replace('_', ' ')}
-        </Badge>
-      ),
+      render: (row) => {
+        const status = (row as Record<string, unknown>).status as string || '';
+        return (
+          <Badge variant="status" status={status}>
+            {status.replace(/_/g, ' ')}
+          </Badge>
+        );
+      },
     },
     {
       key: 'days_past_due',
@@ -96,7 +99,7 @@ export default function LoansPage() {
       header: 'Device',
       render: (row) =>
         row.device ? (
-          <span className="text-sm">{row.device.device_brand} {row.device.device_model}</span>
+          <span className="text-sm">{(row.device as Record<string, string>).manufacturer} {(row.device as Record<string, string>).model}</span>
         ) : (
           <span className="text-gray-400">-</span>
         ),

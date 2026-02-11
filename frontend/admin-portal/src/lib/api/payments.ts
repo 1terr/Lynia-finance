@@ -27,10 +27,10 @@ export async function getPayments(filters: PaymentFilters = {}) {
 
   let query = supabase
     .from('payments')
-    .select('*, customer:customers(id, full_name, phone_number), loan:loans(id, loan_amount_usd, loan_status)', { count: 'exact' });
+    .select('*, customer:customers(id, full_name, phone_number), loan:loans(id, loan_amount_usd, status)', { count: 'exact' });
 
   if (status) {
-    query = query.eq('payment_status', status);
+    query = query.eq('status', status);
   }
 
   if (method) {
@@ -44,7 +44,7 @@ export async function getPayments(filters: PaymentFilters = {}) {
   if (search) {
     const sanitized = sanitizeSearchInput(search);
     if (sanitized) {
-      query = query.or(`reference_number.ilike.%${sanitized}%,transaction_reference.ilike.%${sanitized}%`);
+      query = query.or(`reference_number.ilike.%${sanitized}%,transaction_id.ilike.%${sanitized}%`);
     }
   }
 
@@ -115,11 +115,11 @@ export async function retryPayment(paymentId: string, adminId: string) {
   const { error } = await supabase
     .from('payments')
     .update({
-      payment_status: 'pending',
+      status: 'pending',
       updated_at: new Date().toISOString(),
     })
     .eq('id', paymentId)
-    .eq('payment_status', 'failed');
+    .eq('status', 'failed');
 
   if (error) throw error;
 
@@ -137,11 +137,11 @@ export async function refundPayment(paymentId: string, adminId: string, reason: 
   const { error } = await supabase
     .from('payments')
     .update({
-      payment_status: 'refunded',
+      status: 'refunded',
       updated_at: new Date().toISOString(),
     })
     .eq('id', paymentId)
-    .eq('payment_status', 'completed');
+    .eq('status', 'completed');
 
   if (error) throw error;
 
@@ -281,14 +281,14 @@ export async function getPaymentStats(): Promise<PaymentStats> {
 
   const [totalResult, completedResult, pendingResult, failedResult, unreconciledResult] = await Promise.all([
     supabase.from('payments').select('id', { count: 'exact', head: true }),
-    supabase.from('payments').select('payment_amount_usd').eq('payment_status', 'completed'),
-    supabase.from('payments').select('id', { count: 'exact', head: true }).eq('payment_status', 'pending'),
-    supabase.from('payments').select('id', { count: 'exact', head: true }).eq('payment_status', 'failed'),
+    supabase.from('payments').select('amount_usd').eq('status', 'completed'),
+    supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('payments').select('id', { count: 'exact', head: true }).eq('status', 'failed'),
     supabase.from('payments').select('id', { count: 'exact', head: true }).eq('reconciled', false),
   ]);
 
   const totalCollected = (completedResult.data || []).reduce(
-    (sum, p) => sum + (p.payment_amount_usd || 0),
+    (sum, p) => sum + ((p as Record<string, number>).amount_usd || 0),
     0
   );
 

@@ -155,7 +155,7 @@ export default function HandoversPage() {
                         {device ? (
                           <div>
                             <p className="text-sm text-gray-900">
-                              {(device as Record<string, string>).brand} {(device as Record<string, string>).model}
+                              {(device as Record<string, string>).manufacturer} {(device as Record<string, string>).model}
                             </p>
                             <p className="text-xs text-gray-500">{(device as Record<string, string>).imei || 'No IMEI'}</p>
                           </div>

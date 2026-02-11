@@ -104,7 +104,7 @@ export function ReconciliationTable({
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 <span className="text-sm capitalize text-gray-700">
-                  {payment.payment_method.replace('_', ' ')}
+                  {payment.payment_method.replace(/_/g, ' ')}
                 </span>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">

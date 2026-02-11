@@ -59,22 +59,25 @@ export default function PaymentDetailPage() {
     },
   });
 
+  const paymentStatus = (payment as Record<string, unknown> | undefined)?.status as string || '';
+  const paymentAmount = (payment as Record<string, unknown> | undefined)?.amount_usd as number || 0;
+
   const canReconcile =
     user &&
     hasPermission(user.role, 'payments:reconcile') &&
     payment &&
     !payment.reconciled &&
-    payment.payment_status === 'completed';
+    paymentStatus === 'completed';
 
   const canRetry =
     user &&
     hasPermission(user.role, 'payments:write') &&
-    payment?.payment_status === 'failed';
+    paymentStatus === 'failed';
 
   const canRefund =
     user &&
     hasPermission(user.role, 'payments:write') &&
-    payment?.payment_status === 'completed';
+    paymentStatus === 'completed';
 
   if (isLoading) {
     return (
@@ -105,8 +108,8 @@ export default function PaymentDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">Payment Details</h1>
-            <Badge variant="status" status={payment.payment_status}>
-              {payment.payment_status}
+            <Badge variant="status" status={paymentStatus}>
+              {paymentStatus}
             </Badge>
           </div>
           <p className="text-sm text-gray-500 font-mono">{payment.id}</p>
@@ -150,7 +153,7 @@ export default function PaymentDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Amount</p>
-              <p className="text-lg font-semibold">{formatCurrencyDetailed(payment.payment_amount_usd)}</p>
+              <p className="text-lg font-semibold">{formatCurrencyDetailed(paymentAmount)}</p>
             </div>
           </div>
         </Card>
@@ -199,8 +202,8 @@ export default function PaymentDetailPage() {
           <CardContent>
             <dl className="space-y-3">
               {[
-                ['Status', payment.payment_status],
-                ['Reference', payment.reference_number || payment.transaction_reference || 'N/A'],
+                ['Status', paymentStatus],
+                ['Reference', payment.reference_number || (payment as Record<string, unknown>).transaction_id as string || 'N/A'],
                 ['Reconciled', payment.reconciled ? 'Yes' : 'No'],
                 ['Confirmed At', payment.confirmed_at ? formatDateTime(payment.confirmed_at) : 'N/A'],
                 ['Failed At', payment.failed_at ? formatDateTime(payment.failed_at) : 'N/A'],
@@ -258,7 +261,7 @@ export default function PaymentDetailPage() {
                   <dl className="space-y-2">
                     {[
                       ['Loan Amount', formatCurrencyDetailed(payment.loan.loan_amount_usd)],
-                      ['Loan Status', payment.loan.loan_status],
+                      ['Loan Status', (payment.loan as Record<string, unknown>).status as string || ''],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between">
                         <dt className="text-sm text-gray-500">{label}</dt>
@@ -301,7 +304,7 @@ export default function PaymentDetailPage() {
       <Modal open={refundModal} onClose={() => setRefundModal(false)} title="Refund Payment">
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Refund payment of {formatCurrencyDetailed(payment.payment_amount_usd)} for{' '}
+            Refund payment of {formatCurrencyDetailed(paymentAmount)} for{' '}
             <strong>{payment.customer?.full_name}</strong>?
           </p>
           <div>

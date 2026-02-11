@@ -52,14 +52,14 @@ export default function DevicesPage() {
 
   const columns: Column<DeviceWithCustomer>[] = [
     {
-      key: 'device_brand',
+      key: 'manufacturer',
       header: 'Device',
       render: (row) => (
         <div>
           <p className="font-medium text-gray-900">
-            {row.device_brand} {row.device_model}
+            {(row as Record<string, unknown>).manufacturer as string} {(row as Record<string, unknown>).model as string}
           </p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei}</p>
+          <p className="font-mono text-xs text-gray-500">{(row as Record<string, unknown>).imei as string}</p>
         </div>
       ),
     },

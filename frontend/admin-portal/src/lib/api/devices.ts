@@ -35,7 +35,7 @@ export async function getDevices(filters: DeviceFilters = {}) {
   if (search) {
     const sanitized = sanitizeSearchInput(search);
     if (sanitized) {
-      query = query.or(`device_imei.ilike.%${sanitized}%,device_brand.ilike.%${sanitized}%,device_model.ilike.%${sanitized}%`);
+      query = query.or(`imei.ilike.%${sanitized}%,manufacturer.ilike.%${sanitized}%,model.ilike.%${sanitized}%`);
     }
   }
 
@@ -239,7 +239,7 @@ export async function getDeviceHandovers(filters: { status?: string; search?: st
 
   let query = supabase
     .from('device_handovers')
-    .select('*, customer:customers(id, first_name, last_name, phone_number), device:devices(id, brand, model, imei), distributor:distributors(id, business_name, contact_person)', { count: 'exact' });
+    .select('*, customer:customers(id, first_name, last_name, phone_number), device:devices(id, manufacturer, model, imei), distributor:distributors(id, business_name, contact_person)', { count: 'exact' });
 
   if (status) {
     query = query.eq('status', status);

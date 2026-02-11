@@ -65,7 +65,8 @@ export default function LoanDetailPage() {
     },
   });
 
-  const canApprove = user && hasPermission(user.role, 'loans:approve') && loan?.loan_status === 'pending';
+  const loanStatus = (loan as Record<string, unknown> | null)?.status as string || '';
+  const canApprove = user && hasPermission(user.role, 'loans:approve') && loanStatus === 'pending';
 
   const paymentColumns: Column<Payment>[] = [
     {
@@ -74,39 +75,42 @@ export default function LoanDetailPage() {
       render: (row) => formatDate(row.payment_date),
     },
     {
-      key: 'payment_amount_usd',
+      key: 'amount_usd',
       header: 'Amount',
-      render: (row) => formatCurrencyDetailed(row.payment_amount_usd),
+      render: (row) => formatCurrencyDetailed((row as Record<string, unknown>).amount_usd as number || 0),
     },
     {
       key: 'payment_type',
       header: 'Type',
       render: (row) => (
-        <span className="capitalize">{row.payment_type.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_type.replace(/_/g, ' ')}</span>
       ),
     },
     {
       key: 'payment_method',
       header: 'Method',
       render: (row) => (
-        <span className="capitalize">{row.payment_method.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_method.replace(/_/g, ' ')}</span>
       ),
     },
     {
-      key: 'payment_status',
+      key: 'status',
       header: 'Status',
-      render: (row) => (
-        <Badge variant="status" status={row.payment_status}>
-          {row.payment_status}
-        </Badge>
-      ),
+      render: (row) => {
+        const payStatus = (row as Record<string, unknown>).status as string || '';
+        return (
+          <Badge variant="status" status={payStatus}>
+            {payStatus}
+          </Badge>
+        );
+      },
     },
     {
-      key: 'transaction_reference',
+      key: 'reference_number',
       header: 'Reference',
       render: (row) => (
         <span className="font-mono text-xs text-gray-500">
-          {row.transaction_reference || '-'}
+          {row.reference_number || (row as Record<string, unknown>).transaction_id as string || '-'}
         </span>
       ),
     },
@@ -145,8 +149,8 @@ export default function LoanDetailPage() {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">Loan Details</h1>
-            <Badge variant="status" status={loan.loan_status}>
-              {loan.loan_status.replace('_', ' ')}
+            <Badge variant="status" status={loanStatus}>
+              {loanStatus.replace(/_/g, ' ')}
             </Badge>
           </div>
           <p className="text-sm text-gray-500 font-mono">{loan.id}</p>
@@ -196,7 +200,7 @@ export default function LoanDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Monthly Payment</p>
-              <p className="text-lg font-semibold">{formatCurrency(loan.monthly_installment_usd)}</p>
+              <p className="text-lg font-semibold">{formatCurrency(loan.loan_term_months > 0 ? loan.total_amount_due_usd / loan.loan_term_months : 0)}</p>
             </div>
           </div>
         </Card>

@@ -102,13 +102,16 @@ export default function CustomerDetailPage() {
       render: (row) => formatCurrency(row.outstanding_balance_usd),
     },
     {
-      key: 'loan_status',
+      key: 'status',
       header: 'Status',
-      render: (row) => (
-        <Badge variant="status" status={row.loan_status}>
-          {row.loan_status.replace('_', ' ')}
-        </Badge>
-      ),
+      render: (row) => {
+        const loanSt = (row as Record<string, unknown>).status as string || '';
+        return (
+          <Badge variant="status" status={loanSt}>
+            {loanSt.replace(/_/g, ' ')}
+          </Badge>
+        );
+      },
     },
     {
       key: 'created_at',
@@ -124,26 +127,29 @@ export default function CustomerDetailPage() {
       render: (row) => formatDate(row.payment_date),
     },
     {
-      key: 'payment_amount_usd',
+      key: 'amount_usd',
       header: 'Amount',
-      render: (row) => formatCurrencyDetailed(row.payment_amount_usd),
+      render: (row) => formatCurrencyDetailed((row as Record<string, unknown>).amount_usd as number || 0),
     },
     {
       key: 'payment_type',
       header: 'Type',
-      render: (row) => <span className="capitalize">{row.payment_type.replace('_', ' ')}</span>,
+      render: (row) => <span className="capitalize">{row.payment_type.replace(/_/g, ' ')}</span>,
     },
     {
       key: 'payment_method',
       header: 'Method',
-      render: (row) => <span className="capitalize">{row.payment_method.replace('_', ' ')}</span>,
+      render: (row) => <span className="capitalize">{row.payment_method.replace(/_/g, ' ')}</span>,
     },
     {
-      key: 'payment_status',
+      key: 'status',
       header: 'Status',
-      render: (row) => (
-        <Badge variant="status" status={row.payment_status}>{row.payment_status}</Badge>
-      ),
+      render: (row) => {
+        const paySt = (row as Record<string, unknown>).status as string || '';
+        return (
+          <Badge variant="status" status={paySt}>{paySt}</Badge>
+        );
+      },
     },
   ];
 

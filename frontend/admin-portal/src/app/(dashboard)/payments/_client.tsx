@@ -82,35 +82,38 @@ export default function PaymentsPage() {
       ),
     },
     {
-      key: 'payment_amount_usd',
+      key: 'amount_usd',
       header: 'Amount',
       sortable: true,
       render: (row) => (
-        <span className="font-medium">{formatCurrencyDetailed(row.payment_amount_usd)}</span>
+        <span className="font-medium">{formatCurrencyDetailed((row as Record<string, unknown>).amount_usd as number || 0)}</span>
       ),
     },
     {
       key: 'payment_type',
       header: 'Type',
       render: (row) => (
-        <span className="capitalize">{row.payment_type.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_type.replace(/_/g, ' ')}</span>
       ),
     },
     {
       key: 'payment_method',
       header: 'Method',
       render: (row) => (
-        <span className="capitalize">{row.payment_method.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_method.replace(/_/g, ' ')}</span>
       ),
     },
     {
-      key: 'payment_status',
+      key: 'status',
       header: 'Status',
-      render: (row) => (
-        <Badge variant="status" status={row.payment_status}>
-          {row.payment_status}
-        </Badge>
-      ),
+      render: (row) => {
+        const payStatus = (row as Record<string, unknown>).status as string || '';
+        return (
+          <Badge variant="status" status={payStatus}>
+            {payStatus}
+          </Badge>
+        );
+      },
     },
     {
       key: 'reconciled',
@@ -127,7 +130,7 @@ export default function PaymentsPage() {
       header: 'Reference',
       render: (row) => (
         <span className="font-mono text-xs text-gray-500">
-          {row.reference_number || row.transaction_reference || '-'}
+          {row.reference_number || (row as Record<string, unknown>).transaction_id as string || '-'}
         </span>
       ),
     },
