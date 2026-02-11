@@ -4,6 +4,12 @@ export const metadata: Metadata = {
   title: 'Products — Lynia Finance',
   description:
     'Asset financing, digital credit, and enterprise partnerships. Three products built for Zimbabwe\u2019s underbanked majority.',
+  openGraph: {
+    title: 'Products — Lynia Finance',
+    description:
+      'Asset financing, digital credit, and enterprise partnerships. Three products built for Zimbabwe\u2019s underbanked majority.',
+    url: '/products',
+  },
 };
 
 export default function ProductsLayout({

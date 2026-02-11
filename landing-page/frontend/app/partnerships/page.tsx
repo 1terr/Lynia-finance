@@ -5,6 +5,12 @@ export const metadata: Metadata = {
   title: 'Partnerships — Lynia Finance',
   description:
     'Sell devices in your community or embed credit into your platform. Partner with Lynia Finance.',
+  openGraph: {
+    title: 'Partnerships — Lynia Finance',
+    description:
+      'Sell devices in your community or embed credit into your platform. Partner with Lynia Finance.',
+    url: '/partnerships',
+  },
 };
 
 const distributorBenefits = [

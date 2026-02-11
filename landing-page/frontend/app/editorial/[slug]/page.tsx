@@ -18,6 +18,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title: `${post.title} — Lynia Finance`,
     description: post.excerpt,
+    openGraph: {
+      title: `${post.title} — Lynia Finance`,
+      description: post.excerpt,
+      url: `/editorial/${slug}`,
+      type: 'article',
+    },
   };
 }
 

@@ -5,6 +5,12 @@ export const metadata: Metadata = {
   title: 'Careers — Lynia Finance',
   description:
     'Build financial tools for Zimbabwe\u2019s underbanked majority. Join the team at Lynia Finance.',
+  openGraph: {
+    title: 'Careers — Lynia Finance',
+    description:
+      'Build financial tools for Zimbabwe\u2019s underbanked majority. Join the team at Lynia Finance.',
+    url: '/careers',
+  },
 };
 
 const values = [
