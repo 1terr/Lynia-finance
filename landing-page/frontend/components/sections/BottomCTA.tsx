@@ -37,7 +37,7 @@ export function BottomCTA() {
           }`}
           style={{ transitionDelay: '200ms' }}
         >
-          <Button variant="white" size="lg">
+          <Button variant="white" size="lg" href="https://wa.me/263">
             Start your application
           </Button>
           <Button variant="ghost" size="lg" href="/contact">

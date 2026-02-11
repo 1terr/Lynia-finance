@@ -5,9 +5,9 @@ import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 const navLinks = [
-  { label: 'Products', href: '#products' },
+  { label: 'Products', href: '/#products' },
   { label: 'About', href: '/about' },
-  { label: 'Partnerships', href: '#enterprise' },
+  { label: 'Partnerships', href: '/#enterprise' },
   { label: 'Editorial', href: '/editorial' },
 ];
 
@@ -63,7 +63,7 @@ export function Navbar() {
           <Button
             variant={scrolled ? 'primary' : 'white'}
             size="sm"
-            href="#apply"
+            href="/#apply"
           >
             Start your application
           </Button>
@@ -98,7 +98,7 @@ export function Navbar() {
               </a>
             ))}
             <div className="pt-4">
-              <Button variant="primary" size="lg" href="#apply" className="w-full">
+              <Button variant="primary" size="lg" href="/#apply" className="w-full">
                 Start your application
               </Button>
             </div>

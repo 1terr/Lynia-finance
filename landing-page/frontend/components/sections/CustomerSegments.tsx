@@ -7,7 +7,7 @@ const segments = [
     label: 'FOR INDIVIDUALS',
     description: 'Traders, vendors, and entrepreneurs. Get a smartphone or instant credit via WhatsApp — approved in under 5 minutes, no bank account needed.',
     cta: 'Start your application',
-    href: '#apply',
+    href: '/#apply',
   },
   {
     label: 'FOR DISTRIBUTORS',

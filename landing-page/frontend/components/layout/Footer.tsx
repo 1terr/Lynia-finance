@@ -2,9 +2,9 @@ const footerColumns = [
   {
     title: 'Products',
     links: [
-      { label: 'Asset financing', href: '#asset-financing' },
-      { label: 'Digital credit', href: '#digital-credit' },
-      { label: 'Enterprise partnerships', href: '#enterprise' },
+      { label: 'Asset financing', href: '/#asset-financing' },
+      { label: 'Digital credit', href: '/#digital-credit' },
+      { label: 'Enterprise partnerships', href: '/#enterprise' },
     ],
   },
   {
@@ -18,9 +18,9 @@ const footerColumns = [
   {
     title: 'Connect',
     links: [
-      { label: 'X (Twitter)', href: '#' },
-      { label: 'LinkedIn', href: '#' },
-      { label: 'WhatsApp', href: '#' },
+      { label: 'X (Twitter)', href: 'https://x.com' },
+      { label: 'LinkedIn', href: 'https://linkedin.com' },
+      { label: 'WhatsApp', href: 'https://wa.me/263' },
     ],
   },
   {
