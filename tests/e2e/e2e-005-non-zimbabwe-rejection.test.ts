@@ -17,6 +17,51 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 jest.mock('axios');
 
+// Mock provider services to bypass signature verification in tests
+jest.mock('../../services/kyc-service/src/smile-identity-service', () => ({
+  SmileIdentityService: jest.fn().mockImplementation(() => ({
+    submitEnhancedKYC: jest.fn().mockResolvedValue({ job_id: 'job_001', smile_job_id: 'smile_job_001', message: 'KYC verification submitted successfully' }),
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+    determineVerificationDecision: jest.fn().mockImplementation((result: Record<string, unknown>) => {
+      const code = result.ResultCode as string;
+      if (code === '1012') return { decision: 'APPROVED', reason: 'All checks passed' };
+      if (code === '1014') return { decision: 'REJECTED', reason: 'ID verification failed' };
+      return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
+    }),
+    handleSmileError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
+  })),
+}));
+
+jest.mock('../../services/kyc-service/src/image-processor', () => ({
+  validateImage: jest.fn().mockReturnValue({ valid: true, size: 5000, format: 'jpeg' }),
+  bufferToBase64: jest.fn().mockReturnValue('data:image/jpeg;base64,abc123'),
+  downloadWhatsAppImage: jest.fn().mockResolvedValue(Buffer.from('fake-image')),
+  validateZimbabweIDNumber: jest.fn().mockImplementation((id: string) => {
+    const pattern = /^(\d{2})-(\d{6})([A-Z])(\d{2})$/i;
+    const match = id.trim().match(pattern);
+    if (!match) return { valid: false, error: 'Invalid ID format' };
+    return { valid: true, normalized: id.trim().toUpperCase() };
+  }),
+}));
+
+jest.mock('../../services/payment-service/src/ecocash-provider', () => ({
+  EcoCashProvider: jest.fn().mockImplementation(() => ({
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  })),
+}));
+
+jest.mock('../../services/payment-service/src/onemoney-provider', () => ({
+  OneMoneyProvider: jest.fn().mockImplementation(() => ({
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  })),
+}));
+
+jest.mock('../../services/payment-service/src/omari-provider', () => ({
+  OmariProvider: jest.fn().mockImplementation(() => ({
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  })),
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require('axios');
 
@@ -222,6 +267,7 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
         httpMethod: 'POST',
         path: '/kyc/callback',
         body: JSON.stringify(rejectedKyc),
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await kycHandler(event);

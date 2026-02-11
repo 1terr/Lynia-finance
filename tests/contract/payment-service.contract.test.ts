@@ -322,7 +322,7 @@ describe('Payment Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/payments/webhook/ecocash',
         body: JSON.stringify({ ...webhookBody, status: 'FAILED' }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
@@ -340,7 +340,7 @@ describe('Payment Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/payments/webhook/ecocash',
         body: JSON.stringify({ ...webhookBody, status: 'CANCELLED' }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
@@ -356,7 +356,7 @@ describe('Payment Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/payments/webhook/ecocash',
         body: JSON.stringify(webhookBody),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
@@ -449,7 +449,7 @@ describe('Payment Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/payments/webhook/onemoney',
         body: JSON.stringify(webhookBody),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);

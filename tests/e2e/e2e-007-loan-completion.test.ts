@@ -17,6 +17,25 @@ jest.mock('@supabase/supabase-js', () => ({
 }));
 jest.mock('axios');
 
+// Mock provider services to bypass signature verification in tests
+jest.mock('../../services/payment-service/src/ecocash-provider', () => ({
+  EcoCashProvider: jest.fn().mockImplementation(() => ({
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  })),
+}));
+
+jest.mock('../../services/payment-service/src/onemoney-provider', () => ({
+  OneMoneyProvider: jest.fn().mockImplementation(() => ({
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  })),
+}));
+
+jest.mock('../../services/payment-service/src/omari-provider', () => ({
+  OmariProvider: jest.fn().mockImplementation(() => ({
+    verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  })),
+}));
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require('axios');
 
@@ -229,6 +248,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
           currency: 'USD',
           timestamp: new Date().toISOString(),
         }),
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await paymentHandler(event);
@@ -515,6 +535,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
           status: 'SUCCESS',
           amount: 51.33,
         }),
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await paymentHandler(event);

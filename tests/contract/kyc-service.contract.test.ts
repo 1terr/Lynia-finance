@@ -434,7 +434,7 @@ describe('KYC Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/kyc/callback',
         body: JSON.stringify(callbackPayload),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
@@ -464,7 +464,7 @@ describe('KYC Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/kyc/callback',
         body: JSON.stringify({ ...callbackPayload, job_success: false }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
@@ -494,7 +494,7 @@ describe('KYC Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/kyc/callback',
         body: JSON.stringify(callbackPayload),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
@@ -511,7 +511,7 @@ describe('KYC Service Contract Tests', () => {
         httpMethod: 'POST',
         path: '/kyc/callback',
         body: JSON.stringify(callbackPayload),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
       const response = await handler(event);
