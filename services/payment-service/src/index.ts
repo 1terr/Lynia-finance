@@ -111,20 +111,28 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
  */
 async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    const payload: EcoCashWebhook = JSON.parse(event.body || '{}');
-
-    // Verify webhook signature
+    // Verify webhook signature (mandatory — reject unsigned requests)
     const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
-    if (receivedSignature) {
-      const isValid = ecocashProvider.verifyWebhookSignature(receivedSignature, event.body!);
-      if (!isValid) {
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ error: 'Invalid signature' }),
-          headers: { 'Content-Type': 'application/json' }
-        };
-      }
+    if (!receivedSignature) {
+      console.warn('EcoCash webhook rejected: missing signature header');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Missing signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
     }
+
+    const isValid = ecocashProvider.verifyWebhookSignature(receivedSignature, event.body || '');
+    if (!isValid) {
+      console.warn('EcoCash webhook rejected: invalid signature');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
+    const payload: EcoCashWebhook = JSON.parse(event.body || '{}');
 
     const paymentId = payload.merchant_reference;
 
@@ -158,20 +166,28 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
  */
 async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    const payload: OneMoneyWebhook = JSON.parse(event.body || '{}');
-
-    // Verify webhook signature
+    // Verify webhook signature (mandatory — reject unsigned requests)
     const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
-    if (receivedSignature) {
-      const isValid = onemoneyProvider.verifyWebhookSignature(receivedSignature, event.body!);
-      if (!isValid) {
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ error: 'Invalid signature' }),
-          headers: { 'Content-Type': 'application/json' }
-        };
-      }
+    if (!receivedSignature) {
+      console.warn('OneMoney webhook rejected: missing signature header');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Missing signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
     }
+
+    const isValid = onemoneyProvider.verifyWebhookSignature(receivedSignature, event.body || '');
+    if (!isValid) {
+      console.warn('OneMoney webhook rejected: invalid signature');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
+    const payload: OneMoneyWebhook = JSON.parse(event.body || '{}');
 
     const paymentId = payload.merchant_reference;
 
@@ -205,20 +221,28 @@ async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGa
  */
 async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    const payload: OmariWebhook = JSON.parse(event.body || '{}');
-
-    // Verify webhook signature
+    // Verify webhook signature (mandatory — reject unsigned requests)
     const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
-    if (receivedSignature) {
-      const isValid = omariProvider.verifyWebhookSignature(receivedSignature, event.body!);
-      if (!isValid) {
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ error: 'Invalid signature' }),
-          headers: { 'Content-Type': 'application/json' }
-        };
-      }
+    if (!receivedSignature) {
+      console.warn('O\'mari webhook rejected: missing signature header');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Missing signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
     }
+
+    const isValid = omariProvider.verifyWebhookSignature(receivedSignature, event.body || '');
+    if (!isValid) {
+      console.warn('O\'mari webhook rejected: invalid signature');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
+    const payload: OmariWebhook = JSON.parse(event.body || '{}');
 
     const paymentId = payload.merchant_reference;
 

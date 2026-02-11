@@ -231,23 +231,30 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
  */
 async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
+    // Verify webhook signature (mandatory — reject unsigned requests)
+    const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
+    if (!receivedSignature) {
+      console.warn('Smile Identity webhook rejected: missing signature header');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Missing signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
+    const isValid = smileService.verifyWebhookSignature(receivedSignature, event.body || '');
+    if (!isValid) {
+      console.warn('Smile Identity webhook rejected: invalid signature');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid signature' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
     const payload: SmileWebhookPayload = JSON.parse(event.body || '{}');
 
     console.log(`Processing Smile callback for job ${payload.smile_job_id}`);
-
-    // Verify webhook signature
-    const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
-    if (receivedSignature) {
-      const isValid = smileService.verifyWebhookSignature(receivedSignature, event.body!);
-      if (!isValid) {
-        console.error('Invalid Smile webhook signature');
-        return {
-          statusCode: 401,
-          body: JSON.stringify({ error: 'Invalid signature' }),
-          headers: { 'Content-Type': 'application/json' }
-        };
-      }
-    }
 
     // Extract IDs
     const customer_id = payload.partner_params.user_id;
