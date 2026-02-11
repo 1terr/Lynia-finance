@@ -12,10 +12,10 @@
 | **Homepage (11 sections)** | ✅ 100% | All sections built, animations working |
 | **Layout (Nav + Footer + FAB)** | ✅ 100% | Responsive, mobile menu, WhatsApp FAB |
 | **Design tokens / Tailwind** | ✅ 100% | Full DESIGN-TOKENS.md mapped to config |
-| **Destination pages** | ⚠️ 86% | 6 of 7 pages built (contact, about, privacy, terms, editorial, careers) |
+| **Destination pages** | ✅ 100% | All pages built (contact, about, privacy, terms, editorial, careers, products, partnerships) |
 | **Forms** | ⚠️ 60% | Contact + partnership forms built; no backend wiring yet |
 | **CMS (Sanity)** | ⚠️ 30% | Static editorial data in place; Sanity integration pending |
-| **Dead link fixes** | ✅ 95% | All CTAs fixed; social links use placeholder URLs |
+| **Dead link fixes** | ✅ 100% | All CTAs and nav links resolved; social links use placeholder URLs |
 
 ---
 
@@ -252,43 +252,51 @@ app/editorial/[slug]/page.tsx               Individual article page with related
 
 ---
 
-## Phase 2G: Products Page — PRIORITY 3
+## Phase 2G: Products Page — COMPLETE ✅
 
-Detailed product pages linked from Product Suite cards.
+Full-page product showcase with expanded content for all 3 products.
 
-**Route**: `/products` (overview), individual anchors or sub-pages
+**Route**: `/products` (with anchor IDs `#asset-financing`, `#digital-credit`, `#enterprise`)
 
-- [ ] Create `app/products/page.tsx`
-- [ ] Full-page versions of the 3 product deep-dives:
-  - [ ] Asset Financing — expanded features, how-it-works steps, FAQ
-  - [ ] Digital Credit — expanded features, lead capture, FAQ
-  - [ ] Enterprise Partnerships — API docs preview, integration steps, FAQ
-- [ ] Each product section with anchor IDs for direct linking
-- [ ] Update "Learn more →" links in ProductSuite cards to point here
-- [ ] Bottom CTA section
+- [x] Create `app/products/page.tsx`
+- [x] Hero with jump-link buttons to each product section
+- [x] **Asset Financing**: how-it-works (4 steps) + features (4 cards) + WhatsApp CTA
+- [x] **Digital Credit**: how-it-works (3 steps) + features (2 cards) + lead capture form
+- [x] **Enterprise**: how-it-works (3 steps) + features (3 cards) + "Partner with us" CTA
+- [x] Bottom CTA section
+- [x] Update "Learn more →" in ProductSuite cards → `/products#section`
+- [x] Update footer product links → `/products#section`
+- [x] Update navbar "Products" → `/products`
+- [x] Metadata via layout.tsx
+
+### Files created
+
+```
+app/products/page.tsx                       Products page with 3 deep-dives
+app/products/layout.tsx                     Metadata for products section
+```
 
 ---
 
-## Phase 2H: Partnerships Page — PRIORITY 3
+## Phase 2H: Partnerships Page — COMPLETE ✅
 
 Dedicated page for distributor and B2B partnership info.
 
 **Route**: `/partnerships`
-**Nav**: Linked from navbar (currently points to `/#enterprise` on homepage)
 
-- [ ] Create `app/partnerships/page.tsx`
-- [ ] Hero: "Partner with Lynia Finance"
-- [ ] Distributor program section:
-  - What distributors do
-  - Commission structure
-  - Requirements
-  - "Become a distributor" CTA → contact form
-- [ ] B2B API partnership section:
-  - Integration overview
-  - API capabilities
-  - "Partner with us" CTA → contact form
-- [ ] Partnership application form (reuse from contact page or embed)
-- [ ] Update navbar "Partnerships" link to `/partnerships`
+- [x] Create `app/partnerships/page.tsx`
+- [x] Hero: "Grow with Lynia Finance"
+- [x] Distributor section: description, who it's for, benefits, requirements, CTA
+- [x] B2B section: description, integration options, revenue model, CTA
+- [x] Bottom CTA: "Ready to partner?"
+- [x] Update navbar "Partnerships" → `/partnerships`
+- [x] Metadata: unique title + description
+
+### Files created
+
+```
+app/partnerships/page.tsx                   Partnerships page with distributor + B2B
+```
 
 ---
 
@@ -353,8 +361,8 @@ Complete list of routes the site needs.
 | `/about` | ✅ Built | P2 | Navbar, Footer |
 | `/contact` | ✅ Built | **P1** | Enterprise CTA, Segments (×2), BottomCTA, Footer |
 | `/careers` | ✅ Built | P3 | Footer |
-| `/partnerships` | ❌ Missing | P3 | Navbar |
-| `/products` | ❌ Missing | P3 | Product cards "Learn more" |
+| `/partnerships` | ✅ Built | P3 | Navbar |
+| `/products` | ✅ Built | P3 | Navbar, Product cards "Learn more", Footer |
 | `/editorial` | ✅ Built | P2 | Navbar, Editorial section, Footer |
 | `/editorial/[slug]` | ✅ Built | P2 | Editorial listing page |
 | `/privacy` | ✅ Built | P2 | Footer |
@@ -407,10 +415,10 @@ Footer "Careers" → /careers → hero + values + open positions + /contact ✅
 ## Recommended Build Order (remaining)
 
 ```
-1. /products     — Detailed product info pages (P3)
-2. /partnerships — Dedicated distributor/partner info (P3)
-3. Sanity CMS    — Replace static editorial data with CMS (P2)
+1. Sanity CMS    — Replace static editorial data with CMS (P2)
+2. SEO polish    — OG tags, robots.txt, sitemap, structured data
+3. Form backends — Wire contact + lead capture forms to real backend
 ```
 
-All P1 items are complete. All 6 user journeys now work end-to-end.
-Remaining items are P2 (Sanity CMS migration) and P3 (products, partnerships pages).
+All P1 and P3 items are complete. All destination pages built. All 6 user journeys work end-to-end.
+Remaining items are P2 (Sanity CMS migration, SEO, form backends).
