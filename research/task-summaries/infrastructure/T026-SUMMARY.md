@@ -312,7 +312,7 @@ module.exports = credentials;
 SMILE_PARTNER_ID=your_partner_id_here
 SMILE_API_KEY=your_api_key_here
 SMILE_SID_SERVER=0  # Use 0 for sandbox, 1 for production
-SMILE_CALLBACK_URL=https://api.lyniafinance.co.zw/webhooks/smile-identity
+SMILE_CALLBACK_URL=https://api.lyniafinance.com/webhooks/smile-identity
 ```
 
 ### Getting API Credentials

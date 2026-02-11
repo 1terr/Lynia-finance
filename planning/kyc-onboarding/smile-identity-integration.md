@@ -228,7 +228,7 @@ const kycRequest: SmileEnhancedKYCRequest = {
       image: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUg...'
     }
   ],
-  callback_url: 'https://api.lyniafinance.co.zw/webhooks/smile-identity',
+  callback_url: 'https://api.lyniafinance.com/webhooks/smile-identity',
   use_enrolled_image: false
 };
 ```

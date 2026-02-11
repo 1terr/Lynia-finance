@@ -11,7 +11,7 @@ S3), Supabase custom domain, and security hardening.
 
 | Component | Current Config | Target Config |
 |-----------|---------------|---------------|
-| Domain | `lyniafinance.co.zw` (Route 53) | `lyniafinance.com` (Cloudflare) |
+| Domain | `lyniafinance.com` (Route 53) | `lyniafinance.com` (Cloudflare) |
 | DNS Provider | AWS Route 53 | Cloudflare |
 | Admin Portal | CloudFront default domain | `admin.lyniafinance.com` |
 | Distributor Dashboard | CloudFront default domain | `distributor.lyniafinance.com` |
@@ -194,7 +194,7 @@ S3), Supabase custom domain, and security hardening.
 - [ ] 10.1 Set low TTL (60s) on old DNS records 24 hours before cutover
 - [ ] 10.2 Deploy all new DNS records in Cloudflare
 - [ ] 10.3 Verify all services accessible via new domain
-- [ ] 10.4 Set up 301 redirects from `*.lyniafinance.co.zw` → `*.lyniafinance.com` (if applicable)
+- [ ] 10.4 Set up 301 redirects from `*.lyniafinance.com` → `*.lyniafinance.com` (if applicable)
 - [ ] 10.5 Monitor for 48 hours for DNS propagation issues
 - [ ] 10.6 Increase TTL back to production values (300s+)
 

@@ -169,7 +169,7 @@ Repeat the same process for the distributor distribution with:
 ### 2.4 Update CloudFront Security Headers Policy
 
 The existing `SecurityHeadersPolicy` in `frontend-hosting.yaml` needs CSP updated
-to reference `lyniafinance.com` instead of `lyniafinance.co.zw`:
+to reference `lyniafinance.com` instead of `lyniafinance.com`:
 
 ```yaml
 ContentSecurityPolicy:
@@ -277,7 +277,7 @@ The existing template uses Route 53 for DNS. Since we are using Cloudflare,
 the Route 53 hosted zone and DNS record resources become optional. The template
 should be updated to:
 
-1. Change default domain from `lyniafinance.co.zw` to `lyniafinance.com`
+1. Change default domain from `lyniafinance.com` to `lyniafinance.com`
 2. Make Route 53 resources conditional (skip when using external DNS)
 3. Keep ACM certificate resources (they work with any DNS provider)
 

@@ -387,7 +387,7 @@ async function shouldSendNotification(
 
 *Lynia Finance*
 +263 77 123 4567
-support@lyniafinance.co.zw
+support@lyniafinance.com
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -461,7 +461,7 @@ async function generatePaymentReceipt(payment: Payment): Promise<string> {
 
 *Lynia Finance*
 +263 77 123 4567
-support@lyniafinance.co.zw
+support@lyniafinance.com
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

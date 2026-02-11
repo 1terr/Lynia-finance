@@ -42,6 +42,7 @@ jobs:
                 | grep -v node_modules \
                 | grep -v ".next/" \
                 | grep -v dist/ \
+                | grep -v "validate-domains.yml" \
                 || true)
 
               if [ -n "$MATCHES" ]; then
