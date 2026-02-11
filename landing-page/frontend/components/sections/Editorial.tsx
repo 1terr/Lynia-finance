@@ -1,30 +1,9 @@
 'use client';
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { posts } from '@/lib/editorial-data';
 
-const placeholderPosts = [
-  {
-    category: 'Company',
-    title: 'Why we built Lynia Finance',
-    excerpt: 'The story behind our mission to serve Zimbabwe\u2019s underbanked majority.',
-    date: '10 Feb 2026',
-    image: null,
-  },
-  {
-    category: 'Market',
-    title: 'Zimbabwe\u2019s $14B credit gap',
-    excerpt: '80% of the workforce is informal. Less than 5% have bank credit. Here\u2019s how we\u2019re closing the gap.',
-    date: '8 Feb 2026',
-    image: null,
-  },
-  {
-    category: 'Products',
-    title: 'How asset financing works',
-    excerpt: 'From deposit to device in under 24 hours. A step-by-step walkthrough.',
-    date: '5 Feb 2026',
-    image: null,
-  },
-];
+const displayPosts = posts.slice(0, 3);
 
 export function Editorial() {
   const { ref, isVisible } = useScrollAnimation();
@@ -41,9 +20,10 @@ export function Editorial() {
         </h2>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
-          {placeholderPosts.map((post, i) => (
-            <article
-              key={post.title}
+          {displayPosts.map((post, i) => (
+            <a
+              key={post.slug}
+              href={`/editorial/${post.slug}`}
               className={`group border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 cursor-pointer ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
@@ -65,7 +45,7 @@ export function Editorial() {
                 </p>
                 <p className="text-caption text-slate-light mt-4">{post.date}</p>
               </div>
-            </article>
+            </a>
           ))}
         </div>
 
