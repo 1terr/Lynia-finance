@@ -105,6 +105,36 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
           NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
 
+      - name: Generate runtime config for admin portal
+        if: steps.build-admin.outcome == 'success'
+        run: |
+          node -e "
+            const config = {
+              SUPABASE_URL: process.env.SUPABASE_URL || '',
+              SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+            };
+            const js = 'window.__LYNIA_CONFIG__=' + JSON.stringify(config) + ';';
+            require('fs').writeFileSync('frontend/admin-portal/out/config.js', js);
+          "
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+
+      - name: Generate runtime config for distributor dashboard
+        if: steps.build-distributor.outcome == 'success'
+        run: |
+          node -e "
+            const config = {
+              SUPABASE_URL: process.env.SUPABASE_URL || '',
+              SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+            };
+            const js = 'window.__LYNIA_CONFIG__=' + JSON.stringify(config) + ';';
+            require('fs').writeFileSync('frontend/distributor-dashboard/out/config.js', js);
+          "
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+
       - name: Upload admin portal build
         if: steps.build-admin.outcome == 'success'
         uses: actions/upload-artifact@v4
