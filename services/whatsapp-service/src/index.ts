@@ -24,7 +24,7 @@ import {
   trackSecurityEvent,
   mapWhatsAppApiError,
 } from './error-handler';
-import { CircuitBreaker, CircuitOpenError } from '../../shared/utils/circuit-breaker';
+import { CircuitBreaker, CircuitOpenError } from './utils/circuit-breaker';
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
