@@ -409,7 +409,7 @@ sudo nano /etc/nginx/sites-available/fineract
 # /etc/nginx/sites-available/fineract
 server {
     listen 80;
-    server_name fineract.lyniafinance.co.zw;
+    server_name fineract.lyniafinance.com;
 
     location / {
         proxy_pass https://localhost:8443;
@@ -424,7 +424,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 # Get SSL certificate (Let's Encrypt)
-sudo certbot --nginx -d fineract.lyniafinance.co.zw
+sudo certbot --nginx -d fineract.lyniafinance.com
 ```
 
 ### 5.2 Memory Optimization (Critical for 1GB RAM)

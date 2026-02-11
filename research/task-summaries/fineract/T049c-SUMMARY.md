@@ -241,7 +241,7 @@ curl -X POST https://abc123xyz.lambda-url.us-east-1.on.aws/ \
 | Feature | Function URL | API Gateway HTTP API |
 |---------|--------------|----------------------|
 | **Cost** | **$0** (forever) ✅ | $1 per 1M requests (after 12 months) |
-| **Custom Domain** | ❌ No | ✅ Yes (api.lyniafinance.co.zw) |
+| **Custom Domain** | ❌ No | ✅ Yes (api.lyniafinance.com) |
 | **API Keys** | ❌ No | ✅ Yes (rate limit per customer) |
 | **Caching** | ❌ No | ✅ Yes ($14.40/month for 1 GB) |
 | **Request Validation** | ❌ No (validate in Lambda) | ✅ Yes (reject before Lambda) |
@@ -324,7 +324,7 @@ Without API Gateway:
 https://abc123xyz.lambda-url.us-east-1.on.aws/ ❌ Ugly
 
 With API Gateway:
-https://api.lyniafinance.co.zw/whatsapp ✅ Professional
+https://api.lyniafinance.com/whatsapp ✅ Professional
 ```
 
 **2. API Keys & Rate Limiting**:
@@ -374,7 +374,7 @@ Payment Webhook: Function URL ✅ (internal)
 Device Lock Automation: Function URL ✅ (internal)
 Credit Scoring: Function URL ✅ (or cache in DynamoDB/Redis)
 
-Admin Dashboard API: API Gateway ✅ (if want api.lyniafinance.co.zw)
+Admin Dashboard API: API Gateway ✅ (if want api.lyniafinance.com)
 ```
 
 ### 6.3 Hybrid Approach
@@ -390,7 +390,7 @@ Internal Microservices (5 functions):
 └─ credit-scoring → Function URL (free)
 
 Public-Facing API (if needed):
-└─ admin-dashboard-api → API Gateway HTTP API (custom domain: api.lyniafinance.co.zw)
+└─ admin-dashboard-api → API Gateway HTTP API (custom domain: api.lyniafinance.com)
 
 Cost:
 - Function URLs: $0/month (forever) ✅
@@ -436,7 +436,7 @@ TOTAL: $0.53/month (Year 2+) if using custom domain, $0/month if not
 4. **No custom domain needed** (microservices call each other via Function URL)
 
 **USE API GATEWAY ONLY IF**:
-- Need custom domain (api.lyniafinance.co.zw)
+- Need custom domain (api.lyniafinance.com)
 - Need API keys for third-party partners
 - Need caching (high-traffic read-heavy endpoints)
 - Need request validation (save Lambda costs)
@@ -453,9 +453,9 @@ TOTAL: $0.53/month (Year 2+) if using custom domain, $0/month if not
 - [ ] Document Function URL endpoints
 
 **Week 2** (if custom domain needed):
-- [ ] Purchase domain (lyniafinance.co.zw): $12/year
+- [ ] Purchase domain (lyniafinance.com): $12/year
 - [ ] Create API Gateway HTTP API
-- [ ] Configure custom domain (api.lyniafinance.co.zw)
+- [ ] Configure custom domain (api.lyniafinance.com)
 - [ ] Set up Route 53 hosted zone ($0.50/month)
 
 **Decision Point**: Skip API Gateway for now (Year 1-2), add later if custom domain becomes important.

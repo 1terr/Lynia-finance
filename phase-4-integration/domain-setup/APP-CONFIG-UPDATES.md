@@ -3,7 +3,7 @@
 ## Overview
 
 This document lists every file and configuration that must be updated when
-changing the domain from `lyniafinance.co.zw` to `lyniafinance.com`.
+changing the domain from `lyniafinance.com` to `lyniafinance.com`.
 
 ---
 
@@ -17,7 +17,7 @@ changing the domain from `lyniafinance.co.zw` to `lyniafinance.com`.
 # Before
 DomainName:
   Type: String
-  Default: lyniafinance.co.zw
+  Default: lyniafinance.com
 
 # After
 DomainName:
@@ -33,7 +33,7 @@ DomainName:
 # Before
 DomainName:
   Type: String
-  Default: lyniafinance.co.zw
+  Default: lyniafinance.com
 
 # After
 DomainName:
@@ -44,7 +44,7 @@ DomainName:
 CSP `connect-src` update:
 ```yaml
 # Before
-connect-src 'self' https://*.lyniafinance.co.zw https://*.supabase.co
+connect-src 'self' https://*.lyniafinance.com https://*.supabase.co
 
 # After
 connect-src 'self' https://*.lyniafinance.com https://*.supabase.co
@@ -58,7 +58,7 @@ connect-src 'self' https://*.lyniafinance.com https://*.supabase.co
 # Before
 DomainName:
   Type: String
-  Default: lyniafinance.co.zw
+  Default: lyniafinance.com
 
 # After
 DomainName:
@@ -75,13 +75,13 @@ DomainName:
 **Changes**:
 ```bash
 # Before
-ECOCASH_CALLBACK_URL=https://api.lyniafinance.co.zw/payments/webhook
-ONEMONEY_CALLBACK_URL=https://api.lyniafinance.co.zw/payments/webhook
-API_DOMAIN=api.lyniafinance.co.zw
-ADMIN_DOMAIN=admin.lyniafinance.co.zw
-DISTRIBUTOR_DOMAIN=distributor.lyniafinance.co.zw
-API_BASE_URL=https://api.lyniafinance.co.zw
-NEXT_PUBLIC_API_URL=https://api.lyniafinance.co.zw
+ECOCASH_CALLBACK_URL=https://api.lyniafinance.com/payments/webhook
+ONEMONEY_CALLBACK_URL=https://api.lyniafinance.com/payments/webhook
+API_DOMAIN=api.lyniafinance.com
+ADMIN_DOMAIN=admin.lyniafinance.com
+DISTRIBUTOR_DOMAIN=distributor.lyniafinance.com
+API_BASE_URL=https://api.lyniafinance.com
+NEXT_PUBLIC_API_URL=https://api.lyniafinance.com
 
 # After
 ECOCASH_CALLBACK_URL=https://api.lyniafinance.com/payments/webhook
@@ -130,16 +130,16 @@ All Lambda services that set CORS headers need updated origins. Check these file
 ```typescript
 // Before
 const ALLOWED_ORIGINS = [
-  'https://admin.lyniafinance.co.zw',
-  'https://distributor.lyniafinance.co.zw',
+  'https://admin.lyniafinance.com',
+  'https://distributor.lyniafinance.com',
 ];
 
 // After (include both during migration)
 const ALLOWED_ORIGINS = [
   'https://admin.lyniafinance.com',
   'https://distributor.lyniafinance.com',
-  'https://admin.lyniafinance.co.zw',    // Remove after migration
-  'https://distributor.lyniafinance.co.zw', // Remove after migration
+  'https://admin.lyniafinance.com',    // Remove after migration
+  'https://distributor.lyniafinance.com', // Remove after migration
 ];
 ```
 
@@ -202,8 +202,8 @@ Site URL: https://admin.lyniafinance.com
 Redirect URLs:
   https://admin.lyniafinance.com/**
   https://distributor.lyniafinance.com/**
-  https://admin.lyniafinance.co.zw/**     ← Remove after migration
-  https://distributor.lyniafinance.co.zw/** ← Remove after migration
+  https://admin.lyniafinance.com/**     ← Remove after migration
+  https://distributor.lyniafinance.com/** ← Remove after migration
   http://localhost:3000/**
   http://localhost:3001/**
 ```

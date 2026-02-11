@@ -278,7 +278,7 @@ id_number: '00-000000A00'
 
 ### Scorecard API Endpoints
 
-**Base URL**: `https://fineract.lyniafinance.co.zw/fineract-provider/api/v1`
+**Base URL**: `https://fineract.lyniafinance.com/fineract-provider/api/v1`
 
 **Authentication**: Basic Auth (username/password or API key)
 
@@ -286,7 +286,7 @@ id_number: '00-000000A00'
 
 ```bash
 # POST /scoring/scorecards
-curl -X POST https://fineract.lyniafinance.co.zw/fineract-provider/api/v1/scoring/scorecards \
+curl -X POST https://fineract.lyniafinance.com/fineract-provider/api/v1/scoring/scorecards \
   -H "Authorization: Basic $(echo -n 'admin:password' | base64)" \
   -H "Content-Type: application/json" \
   -H "Fineract-Platform-TenantId: default" \
@@ -352,7 +352,7 @@ curl -X POST https://fineract.lyniafinance.co.zw/fineract-provider/api/v1/scorin
 
 ```bash
 # POST /scoring/scorecards/{scorecardId}/calculate
-curl -X POST https://fineract.lyniafinance.co.zw/fineract-provider/api/v1/scoring/scorecards/1/calculate \
+curl -X POST https://fineract.lyniafinance.com/fineract-provider/api/v1/scoring/scorecards/1/calculate \
   -H "Authorization: Basic $(echo -n 'admin:password' | base64)" \
   -H "Content-Type: application/json" \
   -H "Fineract-Platform-TenantId: default" \

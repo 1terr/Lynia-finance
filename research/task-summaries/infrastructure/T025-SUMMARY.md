@@ -1124,7 +1124,7 @@ module.exports = router;
 2. Go to **SMS** > **Settings** > **Delivery Reports**
 3. Enter webhook URL:
    ```
-   https://api.lyniafinance.co.zw/api/webhooks/africastalking/delivery-reports
+   https://api.lyniafinance.com/api/webhooks/africastalking/delivery-reports
    ```
 4. Click **"Save"**
 

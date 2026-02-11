@@ -192,7 +192,7 @@ sudo apt install nginx certbot python3-certbot-nginx -y
 sudo tee /etc/nginx/sites-available/fineract << EOF
 server {
     listen 80;
-    server_name fineract.lyniafinance.co.zw;
+    server_name fineract.lyniafinance.com;
 
     location / {
         proxy_pass https://localhost:8443;
@@ -210,7 +210,7 @@ sudo nginx -t
 sudo systemctl reload nginx
 
 # Get SSL certificate
-sudo certbot --nginx -d fineract.lyniafinance.co.zw
+sudo certbot --nginx -d fineract.lyniafinance.com
 ```
 
 **Memory Optimization** (Critical for 1GB RAM):
@@ -466,7 +466,7 @@ aws budgets create-budget \
     },
     "Subscribers": [{
       "SubscriptionType": "EMAIL",
-      "Address": "admin@lyniafinance.co.zw"
+      "Address": "admin@lyniafinance.com"
     }]
   }]'
 ```

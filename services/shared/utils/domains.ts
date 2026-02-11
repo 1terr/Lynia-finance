@@ -2,7 +2,7 @@
  * Lynia Finance - Domain Constants
  *
  * Single source of truth for all Lynia Finance domain names.
- * The canonical domain is lyniafinance.com (NOT lyniafinance.co.zw).
+ * The canonical domain is lyniafinance.com.
  *
  * Usage:
  *   import { DOMAINS } from '../shared/utils/domains';

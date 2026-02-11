@@ -614,7 +614,7 @@ module.exports = { generateWebToken };
       // Initialize Smile ID Web SDK
       const smileID = new SmileIdentity({
         token: token,
-        callback_url: 'https://api.lyniafinance.co.zw/webhooks/smile-kyc',
+        callback_url: 'https://api.lyniafinance.com/webhooks/smile-kyc',
         environment: 'sandbox',  // or 'production'
 
         // Product configuration
@@ -1267,7 +1267,7 @@ Smile ID offers **4 integration methods**. Choose based on your technical requir
     const smileID = new SmileIdentity({
       // Authentication
       token: token,
-      callback_url: 'https://api.lyniafinance.co.zw/webhooks/smile-kyc',
+      callback_url: 'https://api.lyniafinance.com/webhooks/smile-kyc',
       environment: 'production',  // or 'sandbox'
 
       // Product configuration
@@ -1339,7 +1339,7 @@ class MainActivity : AppCompatActivity() {
             .jobId("job_${UUID.randomUUID()}")
             .country("ZW")
             .idType("NATIONAL_ID")
-            .callbackUrl("https://api.lyniafinance.co.zw/webhooks/smile-kyc")
+            .callbackUrl("https://api.lyniafinance.com/webhooks/smile-kyc")
             .build(this)
 
         startActivityForResult(intent, REQUEST_CODE_KYC)
@@ -1379,7 +1379,7 @@ class ViewController: UIViewController {
             jobId: "job_\(UUID().uuidString)",
             country: "ZW",
             idType: "NATIONAL_ID",
-            callbackUrl: "https://api.lyniafinance.co.zw/webhooks/smile-kyc"
+            callbackUrl: "https://api.lyniafinance.com/webhooks/smile-kyc"
         )
 
         kyc.onSuccess = { result in

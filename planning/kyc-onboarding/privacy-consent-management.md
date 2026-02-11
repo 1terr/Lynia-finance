@@ -223,7 +223,7 @@ Key points:
 **Full Terms (Web Link):**
 
 Provide link to full legal document:
-`https://lyniafinance.co.zw/terms-v1.0`
+`https://lyniafinance.com/terms-v1.0`
 
 ---
 
@@ -355,7 +355,7 @@ You have the right to:
 5️⃣ Withdrawal
    Revoke consent (may affect service)
 
-Contact: privacy@lyniafinance.co.zw
+Contact: privacy@lyniafinance.com
 ```
 
 ---

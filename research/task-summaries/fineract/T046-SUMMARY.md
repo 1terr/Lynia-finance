@@ -463,7 +463,7 @@ Content-Type: application/json
 **Request**:
 ```json
 {
-  "url": "https://api.lyniafinance.co.zw/webhooks/device-lock",
+  "url": "https://api.lyniafinance.com/webhooks/device-lock",
   "events": [
     "device.locked",
     "device.unlocked",
@@ -479,7 +479,7 @@ Content-Type: application/json
 ```json
 {
   "webhook_id": "wh-123456",
-  "url": "https://api.lyniafinance.co.zw/webhooks/device-lock",
+  "url": "https://api.lyniafinance.com/webhooks/device-lock",
   "events": ["device.locked", "device.unlocked", "device.offline", "device.tampered", "device.low_battery"],
   "active": true,
   "created_at": "2025-11-15T10:00:00Z"

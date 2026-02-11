@@ -325,7 +325,7 @@ aws budgets create-budget \
       "Subscribers": [
         {
           "SubscriptionType": "EMAIL",
-          "Address": "admin@lyniafinance.co.zw"
+          "Address": "admin@lyniafinance.com"
         }
       ]
     }
