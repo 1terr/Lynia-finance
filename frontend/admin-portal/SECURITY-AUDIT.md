@@ -343,33 +343,52 @@ The following critical and high-severity issues were fixed as part of this audit
 | CRIT-01 | Created `src/middleware.ts` wiring up `updateSession()` with route matcher |
 | CRIT-02 | Added `sanitizeSearchInput()` utility and applied to all 6 search functions |
 | CRIT-03 | Replaced placeholder fallbacks with runtime errors in `client.ts` and `server.ts` |
+| CRIT-04 | Applied `maskId()` to all national ID / document_number display locations (8 files) |
+| CRIT-05 | Applied `maskPhone()` to all phone number display locations (8 files) |
 | CRIT-06 | Added CSV formula injection protection in `csv.ts` |
+| HIGH-02 | Consolidated three `ROLE_PERMISSIONS` into single source in `types/auth.ts` |
+| HIGH-05 | Added field allowlist to `updateCustomer` -- only safe fields can be updated |
+| HIGH-06 | Added audit logging to `updateCustomer` for RBZ compliance |
 | HIGH-07 | Added state guards to `retryPayment` (only `failed`) and `refundPayment` (only `completed`) |
+| HIGH-08 | Added confirmation dialogs to user deactivation, reconciliation, handover cancel |
+| HIGH-10 | Fixed hardcoded `'current-admin'` in CustomerNotes to use authenticated admin ID |
 | HIGH-12 | Enforced `MAX_PAGE_SIZE = 100` cap on all paginated queries |
-| MED-10 | Documented fix needed (`.replace(/_/g, ' ')`) -- too many files to safely bulk-change |
+| MED-01 | Genericized login error messages to prevent account enumeration |
+| MED-02 | Added `isValidAdminRole()` runtime validation for database role values |
+| MED-05 | Consolidated `AdminUser` type to single definition in `types/auth.ts` |
+| MED-06 | Replaced `select('*')` with explicit column lists in auth context and auth-provider |
+| MED-07 | Consolidated duplicate `useAuth`/`usePermission` hooks to re-export from canonical sources |
+| MED-08 | Fixed `PermissionGuard` to fail-closed (deny by default when no permission specified) |
+| MED-10 | Fixed `.replace('_', ' ')` to `.replace(/_/g, ' ')` across all 19 affected files |
+| MED-12 | Added `maxLength` to text inputs (notes, lock reason, rejection reason, etc.) |
+| MED-14 | Capped `getDailyTrends` `days` parameter to max 365 |
+| MED-17 | Collections CSV export now uses safe `exportToCsv()` utility with formula-injection protection |
+| LOW-03 | Fixed "Locked" status color from red to orange per CLAUDE.md spec |
+| LOW-06 | Added session timeout/idle detection (30-minute auto-logout) |
+| LOW-13 | Removed hardcoded notification badge count "3" |
 
-Additionally, `maskPhone()` and `maskId()` utility functions were added to `lib/utils.ts` for use across the portal.
+Additionally, `maskPhone()` and `maskId()` utility functions were added to `lib/utils.ts` and are now applied across the portal.
 
 ---
 
 ## Recommended Next Steps
 
 ### Immediate (before deployment)
-1. Consolidate the three `ROLE_PERMISSIONS` definitions into a single source
-2. Consolidate duplicate `useAuth` and `usePermission` hooks
-3. Apply `maskPhone()`/`maskId()` across all component display locations
-4. Add confirmation dialogs to all destructive actions listed in HIGH-08
+1. ~~Consolidate the three `ROLE_PERMISSIONS` definitions into a single source~~ **[DONE]**
+2. ~~Consolidate duplicate `useAuth` and `usePermission` hooks~~ **[DONE]**
+3. ~~Apply `maskPhone()`/`maskId()` across all component display locations~~ **[DONE]**
+4. ~~Add confirmation dialogs to all destructive actions listed in HIGH-08~~ **[DONE]**
 
 ### Short-term (within sprint)
 5. Implement Supabase RLS policies for all tables
 6. Add server-side permission validation in API functions
-7. Replace `select('*')` with explicit column lists
-8. Add runtime validation for admin role from database
-9. Genericize login error messages
+7. ~~Replace `select('*')` with explicit column lists~~ **[DONE in auth modules]**
+8. ~~Add runtime validation for admin role from database~~ **[DONE]**
+9. ~~Genericize login error messages~~ **[DONE]**
 10. Wrap multi-table operations in Supabase RPC transactions
 
 ### Medium-term
-11. Add session timeout and idle detection
+11. ~~Add session timeout and idle detection~~ **[DONE]**
 12. Implement rate limiting on login
 13. Add WCAG 2.1 AA accessibility attributes
 14. Move dashboard metric aggregations to database views/RPC

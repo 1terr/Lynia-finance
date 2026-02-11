@@ -161,7 +161,7 @@ export default function PaymentDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Method</p>
-              <p className="text-lg font-semibold capitalize">{payment.payment_method.replace('_', ' ')}</p>
+              <p className="text-lg font-semibold capitalize">{payment.payment_method.replace(/_/g, ' ')}</p>
             </div>
           </div>
         </Card>
@@ -172,7 +172,7 @@ export default function PaymentDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Type</p>
-              <p className="text-lg font-semibold capitalize">{payment.payment_type.replace('_', ' ')}</p>
+              <p className="text-lg font-semibold capitalize">{payment.payment_type.replace(/_/g, ' ')}</p>
             </div>
           </div>
         </Card>

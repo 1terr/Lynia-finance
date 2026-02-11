@@ -27,14 +27,15 @@ export default function LoginPage() {
       });
 
       if (authError) {
-        setError(authError.message);
+        // MED-01: Generic error to avoid leaking account information
+        setError('Invalid email or password');
         return;
       }
 
       // Verify user is an active admin
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        setError('Authentication failed');
+        setError('Invalid email or password');
         return;
       }
 
@@ -44,15 +45,10 @@ export default function LoginPage() {
         .eq('id', user.id)
         .single();
 
-      if (!adminUser) {
+      if (!adminUser || !adminUser.is_active) {
         await supabase.auth.signOut();
-        setError('You do not have admin access');
-        return;
-      }
-
-      if (!adminUser.is_active) {
-        await supabase.auth.signOut();
-        setError('Your account has been deactivated');
+        // MED-01: Generic error to not reveal account existence or status
+        setError('Invalid email or password');
         return;
       }
 

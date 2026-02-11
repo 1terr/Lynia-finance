@@ -93,14 +93,14 @@ export default function PaymentsPage() {
       key: 'payment_type',
       header: 'Type',
       render: (row) => (
-        <span className="capitalize">{row.payment_type.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_type.replace(/_/g, ' ')}</span>
       ),
     },
     {
       key: 'payment_method',
       header: 'Method',
       render: (row) => (
-        <span className="capitalize">{row.payment_method.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_method.replace(/_/g, ' ')}</span>
       ),
     },
     {

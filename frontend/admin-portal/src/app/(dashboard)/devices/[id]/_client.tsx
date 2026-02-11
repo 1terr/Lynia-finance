@@ -141,7 +141,7 @@ export default function DeviceDetailPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">Device Details</h1>
             <Badge variant="status" status={device.status}>
-              {device.status.replace('_', ' ')}
+              {device.status.replace(/_/g, ' ')}
             </Badge>
             <Badge variant="status" status={device.lock_status}>
               {device.lock_status}
@@ -208,7 +208,7 @@ export default function DeviceDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Condition</p>
-              <p className="text-lg font-semibold capitalize">{device.condition.replace('_', ' ')}</p>
+              <p className="text-lg font-semibold capitalize">{device.condition.replace(/_/g, ' ')}</p>
             </div>
           </div>
         </Card>

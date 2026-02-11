@@ -1,4 +1,9 @@
-import { ROLE_PERMISSIONS, type AdminRole, type PermissionAction } from '@/types';
+/**
+ * Permission helpers using the canonical ROLE_PERMISSIONS from types/auth.ts (HIGH-02 fix).
+ * No longer uses wildcard '*' -- all roles have explicit permission lists.
+ */
+import { ROLE_PERMISSIONS, type AdminRole, type Permission } from '@/types/auth';
+import type { PermissionAction } from '@/types';
 
 export function hasPermission(
   userRole: AdminRole,
@@ -8,10 +13,7 @@ export function hasPermission(
   const permissions = ROLE_PERMISSIONS[userRole];
   if (!permissions) return false;
 
-  // Wildcard means full access (super_admin, admin)
-  if (permissions.includes('*')) return true;
-
-  return permissions.includes(`${resource}:${action}`);
+  return permissions.includes(`${resource}:${action}` as Permission);
 }
 
 export function hasAnyPermission(

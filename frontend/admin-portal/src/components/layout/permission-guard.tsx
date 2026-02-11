@@ -33,5 +33,6 @@ export function PermissionGuard({
     return hasAnyPermission(permissions) ? <>{children}</> : <>{fallback}</>;
   }
 
-  return <>{children}</>;
+  // MED-08: Default to deny when no permission is specified (fail-closed)
+  return <>{fallback}</>;
 }

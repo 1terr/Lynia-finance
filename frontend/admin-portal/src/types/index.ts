@@ -4,15 +4,9 @@
 
 // --- Admin Users & Auth ---
 
-export type AdminRole =
-  | 'super_admin'
-  | 'admin'
-  | 'operations_manager'
-  | 'customer_support'
-  | 'finance_team'
-  | 'kyc_reviewer'
-  | 'inventory_manager'
-  | 'reports_viewer';
+// Re-export canonical auth types from types/auth.ts to avoid divergent definitions (HIGH-02)
+export type { AdminRole, Permission, AdminUser } from './auth';
+export { ROLE_PERMISSIONS, ADMIN_ROLES, isValidAdminRole } from './auth';
 
 export type PermissionAction =
   | 'view'
@@ -27,62 +21,6 @@ export type PermissionAction =
   | 'refund'
   | 'export'
   | 'send';
-
-export const ROLE_PERMISSIONS: Record<AdminRole, string[]> = {
-  super_admin: ['*'],
-  admin: ['*'],
-  operations_manager: [
-    'dashboard:view',
-    'customers:read', 'customers:write',
-    'loans:read', 'loans:approve', 'loans:reject', 'loans:write',
-    'kyc:read', 'kyc:approve', 'kyc:reject',
-    'devices:read', 'devices:write', 'devices:lock', 'devices:unlock',
-    'payments:read', 'payments:reconcile',
-    'reports:read', 'reports:export',
-    'notifications:send',
-  ],
-  kyc_reviewer: [
-    'dashboard:view',
-    'customers:read',
-    'kyc:read', 'kyc:approve', 'kyc:reject',
-  ],
-  finance_team: [
-    'dashboard:view',
-    'customers:read',
-    'loans:read',
-    'payments:read', 'payments:reconcile', 'payments:refund',
-    'reports:read', 'reports:export',
-  ],
-  inventory_manager: [
-    'dashboard:view',
-    'devices:read', 'devices:write', 'devices:delete',
-  ],
-  customer_support: [
-    'dashboard:view',
-    'customers:read',
-    'loans:read',
-    'kyc:read',
-    'payments:read',
-    'notifications:send',
-  ],
-  reports_viewer: [
-    'dashboard:view',
-    'reports:read', 'reports:export',
-  ],
-};
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  role: AdminRole;
-  is_active: boolean;
-  last_login_at: string | null;
-  login_count: number;
-  created_at: string;
-  updated_at: string;
-}
 
 // --- Customers ---
 

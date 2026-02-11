@@ -1,77 +1,11 @@
-import type { AdminRole } from '@/types';
+/**
+ * Permission utilities using the canonical ROLE_PERMISSIONS from types/auth.ts.
+ * This file no longer defines its own permission map (HIGH-02 fix).
+ */
+import type { AdminRole, Permission } from '@/types/auth';
+import { ROLE_PERMISSIONS } from '@/types/auth';
 
-type Permission =
-  | 'customers:read'
-  | 'customers:write'
-  | 'loans:read'
-  | 'loans:write'
-  | 'loans:approve'
-  | 'payments:read'
-  | 'payments:write'
-  | 'payments:reconcile'
-  | 'devices:read'
-  | 'devices:write'
-  | 'devices:lock'
-  | 'kyc:read'
-  | 'kyc:review'
-  | 'reports:read'
-  | 'reports:export'
-  | 'admin_users:read'
-  | 'admin_users:write'
-  | 'settings:read'
-  | 'settings:write';
-
-const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
-  super_admin: [
-    'customers:read', 'customers:write',
-    'loans:read', 'loans:write', 'loans:approve',
-    'payments:read', 'payments:write', 'payments:reconcile',
-    'devices:read', 'devices:write', 'devices:lock',
-    'kyc:read', 'kyc:review',
-    'reports:read', 'reports:export',
-    'admin_users:read', 'admin_users:write',
-    'settings:read', 'settings:write',
-  ],
-  admin: [
-    'customers:read', 'customers:write',
-    'loans:read', 'loans:write', 'loans:approve',
-    'payments:read', 'payments:write', 'payments:reconcile',
-    'devices:read', 'devices:write', 'devices:lock',
-    'kyc:read', 'kyc:review',
-    'reports:read', 'reports:export',
-    'settings:read',
-  ],
-  operations_manager: [
-    'customers:read', 'customers:write',
-    'loans:read', 'loans:write', 'loans:approve',
-    'payments:read', 'payments:write',
-    'devices:read', 'devices:write', 'devices:lock',
-    'kyc:read', 'kyc:review',
-    'reports:read', 'reports:export',
-  ],
-  finance_team: [
-    'customers:read',
-    'loans:read',
-    'payments:read', 'payments:write', 'payments:reconcile',
-    'reports:read', 'reports:export',
-  ],
-  kyc_reviewer: [
-    'customers:read',
-    'kyc:read', 'kyc:review',
-  ],
-  customer_support: [
-    'customers:read',
-    'loans:read',
-    'payments:read',
-    'devices:read',
-  ],
-  inventory_manager: [
-    'devices:read', 'devices:write',
-  ],
-  reports_viewer: [
-    'reports:read',
-  ],
-};
+export type { Permission };
 
 export function hasPermission(role: AdminRole, permission: Permission): boolean {
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;

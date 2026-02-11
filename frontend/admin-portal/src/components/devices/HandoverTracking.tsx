@@ -156,7 +156,11 @@ export function HandoverTracking({
                 )}
                 {onCancel && (
                   <button
-                    onClick={() => onCancel(handover.id)}
+                    onClick={() => {
+                      if (confirm('Are you sure you want to cancel this handover?')) {
+                        onCancel(handover.id);
+                      }
+                    }}
                     disabled={isLoading}
                     className="px-3 py-1.5 bg-white text-red-600 text-xs rounded-md border border-red-300 hover:bg-red-50 disabled:opacity-50"
                   >

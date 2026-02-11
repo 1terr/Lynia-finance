@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, maskPhone } from '@/lib/utils';
 import type { CollectionItem } from '@/lib/api/payments';
 
 interface CollectionsQueueProps {
@@ -93,7 +93,7 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
                     {item.customer_name}
                   </Link>
                   <div className="text-xs text-gray-500">
-                    {item.customer_phone}
+                    {maskPhone(item.customer_phone)}
                   </div>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-red-600">

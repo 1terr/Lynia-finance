@@ -6,7 +6,8 @@ import Link from 'next/link';
 import { getOverdueCollections, type CollectionItem } from '@/lib/api/payments';
 import { CollectionsQueue } from '@/components/payments/CollectionsQueue';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, maskPhone } from '@/lib/utils';
+import { exportToCsv } from '@/lib/export/csv';
 import {
   CreditCard,
   AlertTriangle,
@@ -44,23 +45,17 @@ export default function CollectionsPage() {
   const highCount = items.filter((i: CollectionItem) => i.priority === 'high').length;
 
   const handleExportCSV = () => {
+    // MED-17: Use the safe exportToCsv utility with formula-injection protection
     const headers = ['Customer', 'Phone', 'Amount Due', 'Days Overdue', 'Missed Payments', 'Priority'];
     const rows = filteredItems.map((item: CollectionItem) => [
       item.customer_name,
-      item.customer_phone,
+      maskPhone(item.customer_phone),
       item.amount_due.toFixed(2),
       item.days_overdue,
       item.missed_payments,
       item.priority,
     ]);
-    const csv = [headers, ...rows].map((r) => r.join(',')).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `collections-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportToCsv(`collections-${new Date().toISOString().split('T')[0]}`, headers, rows);
   };
 
   return (

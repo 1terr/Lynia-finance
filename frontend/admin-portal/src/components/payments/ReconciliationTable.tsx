@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatCurrency, truncateId } from '@/lib/utils';
+import { formatDate, formatCurrency, truncateId, maskPhone } from '@/lib/utils';
 import { reconcilePayment, type PaymentWithCustomer } from '@/lib/api/payments';
 
 interface ReconciliationTableProps {
@@ -93,7 +93,7 @@ export function ReconciliationTable({
                 </div>
                 {payment.customers && (
                   <div className="text-xs text-gray-500">
-                    {payment.customers.phone_number}
+                    {maskPhone(payment.customers.phone_number)}
                   </div>
                 )}
               </td>
@@ -102,7 +102,7 @@ export function ReconciliationTable({
               </td>
               <td className="whitespace-nowrap px-6 py-4">
                 <span className="text-sm capitalize text-gray-700">
-                  {payment.payment_method.replace('_', ' ')}
+                  {payment.payment_method.replace(/_/g, ' ')}
                 </span>
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
@@ -113,7 +113,11 @@ export function ReconciliationTable({
               </td>
               <td className="whitespace-nowrap px-6 py-4 text-right">
                 <button
-                  onClick={() => reconcileMutation.mutate(payment.id)}
+                  onClick={() => {
+                    if (confirm('Mark this payment as reconciled?')) {
+                      reconcileMutation.mutate(payment.id);
+                    }
+                  }}
                   disabled={reconcileMutation.isPending}
                   className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >

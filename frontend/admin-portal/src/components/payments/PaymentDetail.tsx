@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatDateTime, formatCurrency } from '@/lib/utils';
+import { formatDate, formatDateTime, formatCurrency, maskPhone } from '@/lib/utils';
 import {
   confirmPayment,
   failPayment,
@@ -80,11 +80,11 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
           <InfoField label="Amount" value={formatCurrency(payment.amount_usd)} />
           <InfoField
             label="Payment Type"
-            value={payment.payment_type.replace('_', ' ')}
+            value={payment.payment_type.replace(/_/g, ' ')}
           />
           <InfoField
             label="Payment Method"
-            value={payment.payment_method.replace('_', ' ')}
+            value={payment.payment_method.replace(/_/g, ' ')}
           />
           <InfoField label="Payment Date" value={formatDate(payment.payment_date)} />
           <InfoField
@@ -150,7 +150,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
                 </Link>
               </p>
               <p className="text-sm text-gray-500">
-                {payment.customers.phone_number}
+                {maskPhone(payment.customers.phone_number)}
               </p>
             </div>
           ) : (

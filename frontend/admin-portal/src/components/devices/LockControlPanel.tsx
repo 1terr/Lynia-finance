@@ -36,7 +36,7 @@ export function LockControlPanel({
 
   const lockStatusConfig: Record<string, { label: string; color: string }> = {
     unlocked: { label: 'Unlocked', color: 'text-green-700 bg-green-50' },
-    locked: { label: 'Locked', color: 'text-red-700 bg-red-50' },
+    locked: { label: 'Locked', color: 'text-orange-700 bg-orange-50' },
     permanent_unlock: { label: 'Permanently Unlocked', color: 'text-blue-700 bg-blue-50' },
   };
 
@@ -107,6 +107,7 @@ export function LockControlPanel({
               placeholder="Enter reason for locking the device..."
               className="w-full rounded-md border border-red-300 px-3 py-2 text-sm mb-2"
               rows={2}
+              maxLength={500}
             />
             <div className="flex gap-2">
               <button

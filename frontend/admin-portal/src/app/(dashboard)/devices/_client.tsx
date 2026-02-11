@@ -67,7 +67,7 @@ export default function DevicesPage() {
       key: 'condition',
       header: 'Condition',
       render: (row) => (
-        <span className="capitalize">{row.condition.replace('_', ' ')}</span>
+        <span className="capitalize">{row.condition.replace(/_/g, ' ')}</span>
       ),
     },
     {
@@ -90,7 +90,7 @@ export default function DevicesPage() {
       header: 'Status',
       render: (row) => (
         <Badge variant="status" status={row.status}>
-          {row.status.replace('_', ' ')}
+          {row.status.replace(/_/g, ' ')}
         </Badge>
       ),
     },

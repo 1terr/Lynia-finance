@@ -70,15 +70,12 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </button>
 
-        {/* Notifications */}
+        {/* Notifications - LOW-13: Badge hidden until real notification system is implemented */}
         <button
           className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
           title="Notifications"
         >
           <Bell className="h-5 w-5" />
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-            3
-          </span>
         </button>
 
         {/* Profile dropdown */}

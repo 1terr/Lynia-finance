@@ -82,14 +82,14 @@ export default function LoanDetailPage() {
       key: 'payment_type',
       header: 'Type',
       render: (row) => (
-        <span className="capitalize">{row.payment_type.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_type.replace(/_/g, ' ')}</span>
       ),
     },
     {
       key: 'payment_method',
       header: 'Method',
       render: (row) => (
-        <span className="capitalize">{row.payment_method.replace('_', ' ')}</span>
+        <span className="capitalize">{row.payment_method.replace(/_/g, ' ')}</span>
       ),
     },
     {
@@ -146,7 +146,7 @@ export default function LoanDetailPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">Loan Details</h1>
             <Badge variant="status" status={loan.loan_status}>
-              {loan.loan_status.replace('_', ' ')}
+              {loan.loan_status.replace(/_/g, ' ')}
             </Badge>
           </div>
           <p className="text-sm text-gray-500 font-mono">{loan.id}</p>
