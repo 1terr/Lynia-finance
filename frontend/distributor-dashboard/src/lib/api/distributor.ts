@@ -7,6 +7,7 @@ import type {
   HandoverResult,
   DeviceCondition,
 } from '@/types/distributor';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -125,12 +126,50 @@ export async function fetchCommissions(): Promise<CommissionEntry[]> {
   return [...mockCommissions];
 }
 
-export async function loginDistributor(email: string, _password: string): Promise<Distributor> {
-  await delay(800);
-  if (email === 'kudzai@distributor.co.zw') {
-    return { ...mockDistributor };
+export async function loginDistributor(email: string, password: string): Promise<Distributor> {
+  if (!isSupabaseConfigured()) {
+    // Mock fallback for local development without Supabase
+    await delay(800);
+    if (email === 'kudzai@distributor.co.zw') {
+      return { ...mockDistributor };
+    }
+    throw new Error('Invalid credentials');
   }
-  throw new Error('Invalid credentials');
+
+  const supabase = createClient();
+
+  const { error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (authError) {
+    throw new Error('Invalid email or password');
+  }
+
+  // Verify the authenticated user has a distributor profile
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('Invalid email or password');
+  }
+
+  const { data: profile } = await supabase
+    .from('distributors')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .single();
+
+  if (!profile) {
+    // User authenticated but has no active distributor profile — sign them out
+    await supabase.auth.signOut();
+    throw new Error('Invalid email or password');
+  }
+
+  return profile as Distributor;
 }
 
 // ── Handover API ──
