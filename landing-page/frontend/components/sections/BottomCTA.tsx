@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/Button';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 export function BottomCTA() {
   const { ref, isVisible } = useScrollAnimation();
@@ -37,7 +38,7 @@ export function BottomCTA() {
           }`}
           style={{ transitionDelay: '200ms' }}
         >
-          <Button variant="white" size="lg" href="https://wa.me/263">
+          <Button variant="white" size="lg" href={WHATSAPP_URL}>
             Start your application
           </Button>
           <Button variant="ghost" size="lg" href="/contact">

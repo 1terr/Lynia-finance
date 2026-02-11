@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Button } from '@/components/ui/Button';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'About — Lynia Finance',
@@ -175,7 +176,7 @@ export default function AboutPage() {
             hear from you.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Button variant="white" size="lg" href="https://wa.me/263">
+            <Button variant="white" size="lg" href={WHATSAPP_URL}>
               Start your application
             </Button>
             <Button variant="ghost" size="lg" href="/contact">

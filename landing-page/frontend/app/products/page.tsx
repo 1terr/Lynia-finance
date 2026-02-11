@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/Button';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 /* ─── Asset Financing steps ─── */
 const assetSteps = [
@@ -134,7 +135,7 @@ export default function ProductsPage() {
           </div>
 
           <div className="mt-10">
-            <Button variant="primary" size="lg" href="https://wa.me/263">
+            <Button variant="primary" size="lg" href={WHATSAPP_URL}>
               Start your application
             </Button>
           </div>
@@ -276,7 +277,7 @@ export default function ProductsPage() {
             WhatsApp, your national ID, and 5 minutes.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Button variant="white" size="lg" href="https://wa.me/263">
+            <Button variant="white" size="lg" href={WHATSAPP_URL}>
               Start your application
             </Button>
             <Button variant="ghost" size="lg" href="/contact">
