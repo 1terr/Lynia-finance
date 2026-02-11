@@ -15,6 +15,8 @@
 | **Destination pages** | ✅ 100% | All pages built (contact, about, privacy, terms, editorial, careers, products, partnerships) |
 | **Forms** | ⚠️ 60% | Contact + partnership forms built; no backend wiring yet |
 | **CMS (Sanity)** | ⚠️ 30% | Static editorial data in place; Sanity integration pending |
+| **SEO** | ✅ 100% | OG tags, robots.txt, sitemap.xml, JSON-LD structured data |
+| **Navigation polish** | ✅ 100% | Active page indicator, aria-current, all links resolved |
 | **Dead link fixes** | ✅ 100% | All CTAs and nav links resolved; social links use placeholder URLs |
 
 ---
@@ -332,12 +334,12 @@ app/careers/page.tsx                        Careers page with hero, values, posi
 ### Cross-page navigation
 
 - [x] Ensure navbar scroll-anchor links work from all pages (prefix with `/`)
-- [ ] Add active state indicator for current page in navbar
+- [x] Add active state indicator for current page in navbar
 - [x] Footer product links use `/#asset-financing` format from non-homepage pages
 
 ### Accessibility
 
-- [ ] Add `aria-current="page"` to active nav link
+- [x] Add `aria-current="page"` to active nav link
 - [ ] Verify keyboard navigation through all interactive elements
 - [ ] Test screen reader flow for all forms
 - [ ] Verify color contrast ratios (WCAG AA)
@@ -345,9 +347,9 @@ app/careers/page.tsx                        Careers page with hero, values, posi
 ### SEO
 
 - [x] Add unique `<title>` and `<meta description>` per page (about, privacy, terms)
-- [ ] Add Open Graph tags (og:title, og:description, og:image)
-- [ ] Add `robots.txt` and `sitemap.xml`
-- [ ] Add structured data (Organization, WebSite)
+- [x] Add Open Graph tags (og:title, og:description, og:image — all pages)
+- [x] Add `robots.txt` and `sitemap.xml` (via Next.js route handlers)
+- [x] Add structured data (Organization, WebSite JSON-LD in root layout)
 
 ---
 
@@ -416,9 +418,9 @@ Footer "Careers" → /careers → hero + values + open positions + /contact ✅
 
 ```
 1. Sanity CMS    — Replace static editorial data with CMS (P2)
-2. SEO polish    — OG tags, robots.txt, sitemap, structured data
-3. Form backends — Wire contact + lead capture forms to real backend
+2. Form backends — Wire contact + lead capture forms to real backend
+3. Accessibility — Keyboard nav, screen reader, color contrast audit
 ```
 
-All P1 and P3 items are complete. All destination pages built. All 6 user journeys work end-to-end.
-Remaining items are P2 (Sanity CMS migration, SEO, form backends).
+All destination pages, SEO, and navigation polish complete.
+Remaining items are CMS migration, form backends, and accessibility testing.

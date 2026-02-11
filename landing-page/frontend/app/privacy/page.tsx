@@ -4,6 +4,12 @@ export const metadata: Metadata = {
   title: 'Privacy Policy — Lynia Finance',
   description:
     'How Lynia Finance collects, uses, and protects your personal information.',
+  openGraph: {
+    title: 'Privacy Policy — Lynia Finance',
+    description:
+      'How Lynia Finance collects, uses, and protects your personal information.',
+    url: '/privacy',
+  },
 };
 
 export default function PrivacyPage() {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -12,6 +13,7 @@ const navLinks = [
 ];
 
 export function Navbar() {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -43,19 +45,27 @@ export function Navbar() {
 
         {/* Desktop links */}
         <div className="hidden lg:flex items-center gap-8">
-          {navLinks.map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={`text-body-sm font-medium transition-colors duration-150 ${
-                scrolled
-                  ? 'text-slate hover:text-primary-dark'
-                  : 'text-white/80 hover:text-white'
-              }`}
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            return (
+              <a
+                key={link.label}
+                href={link.href}
+                aria-current={isActive ? 'page' : undefined}
+                className={`text-body-sm font-medium transition-colors duration-150 ${
+                  isActive
+                    ? scrolled
+                      ? 'text-primary-dark border-b-2 border-primary pb-0.5'
+                      : 'text-white border-b-2 border-white pb-0.5'
+                    : scrolled
+                      ? 'text-slate hover:text-primary-dark'
+                      : 'text-white/80 hover:text-white'
+                }`}
+              >
+                {link.label}
+              </a>
+            );
+          })}
         </div>
 
         {/* Desktop CTA */}
@@ -87,16 +97,24 @@ export function Navbar() {
       {mobileOpen && (
         <div className="lg:hidden bg-white border-t border-border animate-fade-in-up">
           <div className="px-6 py-6 flex flex-col gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-h4 text-primary-dark py-3 hover:text-primary transition-colors"
-                onClick={() => setMobileOpen(false)}
-              >
-                {link.label}
-              </a>
-            ))}
+            {navLinks.map((link) => {
+              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              return (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`text-h4 py-3 transition-colors ${
+                    isActive
+                      ? 'text-primary font-semibold'
+                      : 'text-primary-dark hover:text-primary'
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  {link.label}
+                </a>
+              );
+            })}
             <div className="pt-4">
               <Button variant="primary" size="lg" href="/#apply" className="w-full">
                 Start your application

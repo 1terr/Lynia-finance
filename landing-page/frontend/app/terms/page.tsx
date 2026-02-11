@@ -4,6 +4,12 @@ export const metadata: Metadata = {
   title: 'Terms of Service — Lynia Finance',
   description:
     'Terms and conditions governing the use of Lynia Finance services.',
+  openGraph: {
+    title: 'Terms of Service — Lynia Finance',
+    description:
+      'Terms and conditions governing the use of Lynia Finance services.',
+    url: '/terms',
+  },
 };
 
 export default function TermsPage() {
