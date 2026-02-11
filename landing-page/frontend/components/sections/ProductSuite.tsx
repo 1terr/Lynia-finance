@@ -9,21 +9,21 @@ const products = [
     label: 'ASSET FINANCING',
     headline: 'Own the tools that power your trade',
     description: 'Finance smartphones and assets with a small deposit. Collect from a local agent, repay via mobile money.',
-    href: '#asset-financing',
+    href: '/products#asset-financing',
   },
   {
     icon: Wallet,
     label: 'DIGITAL CREDIT',
     headline: 'Cash when you need it most',
     description: 'Digital loans deposited directly into your mobile wallet. Apply once, get funded in under 10 minutes.',
-    href: '#digital-credit',
+    href: '/products#digital-credit',
   },
   {
     icon: Building2,
     label: 'ENTERPRISE PARTNERSHIPS',
     headline: 'Embed credit into your platform',
     description: 'Offer your customers financing at the point of need. Lynia handles underwriting, disbursement, and collections.',
-    href: '#enterprise',
+    href: '/products#enterprise',
   },
 ];
 
