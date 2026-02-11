@@ -23,7 +23,8 @@ export default function LoginPage() {
     try {
       const distributor = await loginDistributor(email, password);
       setDistributor(distributor);
-      router.push('/');
+      // Use hard redirect so the AuthProvider re-initialises with fresh session
+      window.location.href = '/';
     } catch {
       setError('Invalid email or password. Please try again.');
     } finally {
@@ -89,7 +90,7 @@ export default function LoginPage() {
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
-            Demo: kudzai@distributor.co.zw / any password
+            Sign in with your distributor account credentials.
           </p>
         </form>
       </div>

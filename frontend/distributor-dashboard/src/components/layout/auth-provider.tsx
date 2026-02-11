@@ -4,27 +4,23 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { type AdminUser, isValidAdminRole } from '@/types/auth';
+import type { Distributor } from '@/types/distributor';
 
-/** Fetch and validate admin profile for a given auth user id. */
-async function fetchAdminProfile(
+/** Fetch distributor profile for the authenticated user. */
+async function fetchDistributorProfile(
   supabase: ReturnType<typeof createClient>,
   userId: string,
-): Promise<AdminUser | null> {
+): Promise<Distributor | null> {
   try {
-    // MED-06: Explicit column list instead of select('*')
     const { data } = await supabase
-      .from('admin_users')
-      .select(
-        'id, email, first_name, last_name, role, is_active, department, last_login_at, login_count, created_at, updated_at',
-      )
-      .eq('id', userId)
-      .eq('is_active', true)
+      .from('distributors')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('status', 'active')
       .single();
 
-    // MED-02: Runtime validation of admin role from database
-    if (data && isValidAdminRole(data.role)) {
-      return data as AdminUser;
+    if (data) {
+      return data as Distributor;
     }
   } catch {
     // Query failed -- treat as unauthenticated
@@ -34,9 +30,9 @@ async function fetchAdminProfile(
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const user = useAuthStore((s) => s.user);
+  const distributor = useAuthStore((s) => s.distributor);
   const isLoading = useAuthStore((s) => s.isLoading);
-  const setUser = useAuthStore((s) => s.setUser);
+  const setDistributor = useAuthStore((s) => s.setDistributor);
   const setLoading = useAuthStore((s) => s.setLoading);
 
   useEffect(() => {
@@ -47,15 +43,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     async function loadUser() {
       try {
         const {
-          data: { user: authUser },
+          data: { user },
         } = await supabase.auth.getUser();
 
-        if (authUser) {
-          const adminUser = await fetchAdminProfile(supabase, authUser.id);
-          if (adminUser) {
-            setUser(adminUser);
+        if (user) {
+          const profile = await fetchDistributorProfile(supabase, user.id);
+          if (profile) {
+            setDistributor(profile);
           } else {
-            // User exists in auth but not in admin_users, is inactive, or has invalid role
+            // User exists in auth but not in distributors table or inactive
             await supabase.auth.signOut();
             router.push('/login');
             return;
@@ -80,12 +76,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
-          const adminUser = await fetchAdminProfile(supabase, session.user.id);
-          if (adminUser) {
-            setUser(adminUser);
+          const profile = await fetchDistributorProfile(supabase, session.user.id);
+          if (profile) {
+            setDistributor(profile);
           }
         } else if (event === 'SIGNED_OUT') {
-          setUser(null);
+          setDistributor(null);
           router.push('/login');
         }
       });
@@ -97,12 +93,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription?.unsubscribe();
     };
-  }, [router, setUser, setLoading]);
+  }, [router, setDistributor, setLoading]);
 
   // Gate rendering: show loading spinner until auth check completes
-  if (isLoading || !user) {
+  if (isLoading || !distributor) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
