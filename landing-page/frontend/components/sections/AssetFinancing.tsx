@@ -59,7 +59,7 @@ export function AssetFinancing() {
               <Button variant="primary" href="#apply">
                 Start your application
               </Button>
-              <Button variant="secondary">Learn more &rarr;</Button>
+              <Button variant="secondary" href="#how-it-works">Learn more &rarr;</Button>
             </div>
           </div>
 

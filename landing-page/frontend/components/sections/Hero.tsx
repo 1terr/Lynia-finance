@@ -38,7 +38,7 @@ export function Hero() {
               <Button variant="white" size="lg" href="#apply">
                 Start your application
               </Button>
-              <Button variant="secondary" href="#products" className="text-white hover:text-white/80">
+              <Button variant="secondary" href="#how-it-works" className="text-white hover:text-white/80">
                 See how it works &rarr;
               </Button>
             </div>
