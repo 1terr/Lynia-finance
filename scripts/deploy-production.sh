@@ -167,14 +167,22 @@ deploy_infrastructure() {
 
   log "Deploying infrastructure stacks..."
 
-  # Ensure template bucket exists
+  # Verify bootstrap stack (deployment buckets) exists
   if [ "$DRY_RUN" = false ]; then
-    aws s3 mb "s3://${TEMPLATE_BUCKET}" --region "$REGION" 2>/dev/null || true
+    if ! aws cloudformation describe-stacks \
+        --stack-name "${ENVIRONMENT}-lynia-deployment-buckets" \
+        --region "$REGION" &>/dev/null; then
+      error "Bootstrap stack '${ENVIRONMENT}-lynia-deployment-buckets' not found."
+      error "Run: ./scripts/setup-s3-template-bucket.sh --env ${ENVIRONMENT}"
+      exit 1
+    fi
+    success "Bootstrap stack verified: ${ENVIRONMENT}-lynia-deployment-buckets"
   fi
 
   # Upload nested stack templates
   log "Uploading CloudFormation templates to S3..."
   local templates=(
+    "infrastructure/aws/deployment-buckets.yaml"
     "infrastructure/aws/vpc.yaml"
     "infrastructure/aws/secrets-manager.yaml"
     "infrastructure/aws/sqs-queues.yaml"
