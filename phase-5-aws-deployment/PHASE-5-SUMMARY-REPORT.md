@@ -3,7 +3,7 @@
 **Project**: Lynia Finance - Device Financing Platform
 **Phase**: Phase 5 - AWS Deployment
 **Duration**: Weeks 19-21 (February-March 2026)
-**Status**: ⚪ **NOT STARTED**
+**Status**: 🟡 **IN PROGRESS**
 **Target Completion**: March 2026
 
 ---
@@ -41,11 +41,11 @@ Phase 5 deploys all AWS infrastructure for the Lynia Finance platform, completin
 | **Phase 2**: Backend Infrastructure | COMPLETED | 6 Lambda services, 35+ tables, CI/CD |
 | **Phase 3**: Frontend & Features | COMPLETED | 29 tasks, 21 service files, 4 migrations |
 | **Phase 4**: Integration Testing & Deployment | COMPLETED | 15 tasks, E2E tests, deployment runbook |
-| **Phase 5**: AWS Deployment | ⚪ NOT STARTED | 17 tasks, 43 hours estimated |
+| **Phase 5**: AWS Deployment | 🟡 IN PROGRESS | 17 tasks, 43 hours estimated |
 
 ### Phase 5 Objectives
 
-1. ⚪ Deploy all foundation infrastructure (VPC, Cognito, RDS, S3, SQS, Secrets, IAM)
+1. 🟡 Deploy all foundation infrastructure (VPC, Cognito, RDS, S3, SQS, Secrets, IAM)
 2. ⚪ Run database migrations against RDS
 3. ⚪ Build and deploy 6 Lambda microservices via SAM
 4. ⚪ Configure API Gateway throttling, WAF, and monitoring
@@ -63,7 +63,7 @@ Phase 5 deploys all AWS infrastructure for the Lynia Finance platform, completin
 
 | Task | Title | Status | Progress Report |
 |------|-------|--------|----------------|
-| P5-DEPLOY-T001 | Prerequisites & S3 Template Bucket Setup | ⚪ Not Started | [P5-DEPLOY-T001-PROGRESS.md](task-reports/P5-DEPLOY-T001-PROGRESS.md) |
+| P5-DEPLOY-T001 | Prerequisites & S3 Template Bucket Setup | 🟡 In Progress | [P5-DEPLOY-T001-PROGRESS.md](task-reports/P5-DEPLOY-T001-PROGRESS.md) |
 | P5-DEPLOY-T002 | Deploy VPC Stack | ⚪ Not Started | [P5-DEPLOY-T002-PROGRESS.md](task-reports/P5-DEPLOY-T002-PROGRESS.md) |
 | P5-DEPLOY-T003 | Deploy Cognito User Pool Stack | ⚪ Not Started | [P5-DEPLOY-T003-PROGRESS.md](task-reports/P5-DEPLOY-T003-PROGRESS.md) |
 | P5-DEPLOY-T004 | Deploy RDS PostgreSQL Stack | ⚪ Not Started | [P5-DEPLOY-T004-PROGRESS.md](task-reports/P5-DEPLOY-T004-PROGRESS.md) |
