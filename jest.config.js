@@ -27,7 +27,7 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/services/$1',
-    '^@supabase/supabase-js$': '<rootDir>/node_modules/@supabase/supabase-js'
+    '^@supabase/supabase-js$': '<rootDir>/tests/helpers/supabase-stub.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 30000, // 30 seconds for integration tests

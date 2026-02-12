@@ -36,6 +36,7 @@ type QueryBuilder = {
   filter: jest.Mock;
   range: jest.Mock;
   count: jest.Mock;
+  execute: jest.Mock;
 };
 
 /** In-memory data store keyed by table name */
@@ -271,13 +272,17 @@ function createQueryBuilder(tableName: string): QueryBuilder {
       const rows = applyFilters();
       pendingResult = { data: rows, error: null };
       return builder;
+    }),
+    execute: jest.fn().mockImplementation(() => {
+      if (pendingResult) return Promise.resolve(pendingResult);
+      return Promise.resolve(resolve());
     })
   };
 
   return builder;
 }
 
-/** Create a mock Supabase client for testing */
+/** Create a mock Supabase client for testing (legacy — prefer createMockDatabaseClient) */
 export function createMockSupabaseClient() {
   const client = {
     from: jest.fn().mockImplementation((tableName: string) => {
@@ -296,6 +301,15 @@ export function createMockSupabaseClient() {
   };
 
   return client;
+}
+
+/** Create a mock database client matching the db export from services/shared/clients/database.ts */
+export function createMockDatabaseClient() {
+  return {
+    from: jest.fn().mockImplementation((tableName: string) => {
+      return createQueryBuilder(tableName);
+    }),
+  };
 }
 
 // =====================================================

@@ -11,7 +11,7 @@
  */
 
 import {
-  createMockSupabaseClient,
+  createMockDatabaseClient,
   createAPIGatewayEvent,
   seedMockTable,
   resetMockDataStore,
@@ -92,11 +92,11 @@ async function runBenchmark(
 // MOCK SETUP
 // =====================================================
 
-const mockSupabase = createMockSupabaseClient();
+const mockDb = createMockDatabaseClient();
 
-jest.mock('../../services/shared/clients/supabase', () => ({
-  getSupabaseClient: () => mockSupabase,
-  supabase: mockSupabase,
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
 }));
 
 // =====================================================
