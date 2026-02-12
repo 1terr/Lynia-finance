@@ -24,7 +24,7 @@
 
 | Task ID | Task Name | Priority | Estimate | Status | Dependencies |
 |---------|-----------|----------|----------|--------|--------------|
-| P5-DEPLOY-T001 | Prerequisites & S3 Template Bucket Setup | Critical | 3h | ⚪ Not Started | None |
+| P5-DEPLOY-T001 | Prerequisites & S3 Template Bucket Setup | Critical | 3h | 🟡 In Progress | None |
 | P5-DEPLOY-T002 | Deploy VPC Stack | Critical | 2h | ⚪ Not Started | T001 |
 | P5-DEPLOY-T003 | Deploy Cognito User Pool Stack | Critical | 2h | ⚪ Not Started | T001 |
 | P5-DEPLOY-T004 | Deploy RDS PostgreSQL Stack | Critical | 3h | ⚪ Not Started | T002 |
@@ -83,7 +83,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 ### P5-DEPLOY-T001: Prerequisites & S3 Template Bucket Setup
 **Priority**: Critical
 **Estimate**: 3 hours
-**Status**: ⚪ Not Started
+**Status**: 🟡 In Progress (automation complete, awaiting AWS credentials)
 **Dependencies**: None
 
 **Objective**: Verify all CLI tools and AWS credentials are in place. Create the S3 buckets for CloudFormation template storage and SAM artifact uploads. Upload all infrastructure templates.
