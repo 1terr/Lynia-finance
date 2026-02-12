@@ -1,8 +1,6 @@
 {
   "Parameters": {
     "Environment": "staging",
-    "SupabaseUrl": "https://ghdrnxlsupbzoddtyxcp.supabase.co",
-    "SupabaseServiceRoleKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdoZHJueGxzdXBiem9kZHR5eGNwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2NDc0MDY0MCwiZXhwIjoyMDgwMzE2NjQwfQ.dkjNfok20WRZW7eOjNoiyrgOJgci7swzMWpV4IV1Yfc",
     "WhatsAppPhoneNumberId": "PENDING_PHONE_NUMBER_ID",
     "WhatsAppAccessToken": "EAANEiba967IBQrXYRS4bONUJPh6hZAPvr7cMIT8NBkr5v6ECGdhpFqxXdCuIugsccTgzjoawXTkSDgZBaJ1GwVBJSgGchBPBOEp1yJPuTnj4GcZCwHSN8Iw5IMDIyfEzmZCKcRG9f3vZC4S33UqfcpjVYfSdO5mysdwvkJXqxybgMz9FW6KLh5Aaayx3mWo8lHhKMBNvn1ZCuvGdd4WGfWJKCAvT6ZCLGxiiQLpBYRBLODLZBZB7rGDSuosWEVQFeOeqcmNFwZB2jMDUlZAJyXMmezS",
     "WhatsAppWebhookVerifyToken": "lynia_webhook_2025",

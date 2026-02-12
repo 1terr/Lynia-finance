@@ -1,8 +1,6 @@
 {
   "Parameters": {
     "Environment": "production",
-    "SupabaseUrl": "https://ghdrnxlsupbzoddtyxcp.supabase.co",
-    "SupabaseServiceRoleKey": "REPLACE_WITH_PRODUCTION_SUPABASE_KEY",
     "WhatsAppPhoneNumberId": "REPLACE_WITH_PRODUCTION_WHATSAPP_PHONE_ID",
     "WhatsAppAccessToken": "REPLACE_WITH_PRODUCTION_WHATSAPP_TOKEN",
     "WhatsAppWebhookVerifyToken": "REPLACE_WITH_PRODUCTION_WEBHOOK_TOKEN",
