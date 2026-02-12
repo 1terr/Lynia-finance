@@ -227,7 +227,8 @@ export class QueryBuilder<T = Record<string, unknown>> {
     return this;
   }
 
-  async execute(): Promise<{ data: T | T[] | null; error: Error | null; count?: number }> {
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  async execute(): Promise<{ data: any; error: Error | null; count?: number }> {
     const p = await getPool();
     const where = this.whereClauses.length > 0
       ? ` WHERE ${this.whereClauses.join(' AND ')}`
@@ -301,7 +302,7 @@ export class QueryBuilder<T = Record<string, unknown>> {
           const placeholders = keys.map((_, i) => `$${i + 1}`);
           const updates = keys
             .filter((k) => k !== this.upsertConflictColumn)
-            .map((k, i) => `${k} = EXCLUDED.${k}`);
+            .map((k) => `${k} = EXCLUDED.${k}`);
           sql = `INSERT INTO ${this.table} (${keys.join(', ')})
                  VALUES (${placeholders.join(', ')})
                  ON CONFLICT (${this.upsertConflictColumn}) DO UPDATE SET ${updates.join(', ')}
