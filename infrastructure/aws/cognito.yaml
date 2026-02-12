@@ -16,6 +16,8 @@ Resources:
       UsernameAttributes:
         - email
       MfaConfiguration: OPTIONAL
+      EnabledMfas:
+        - SOFTWARE_TOKEN_MFA
       Policies:
         PasswordPolicy:
           MinimumLength: 12
@@ -51,6 +53,7 @@ Resources:
       UserPoolId: !Ref UserPool
       GenerateSecret: false
       ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
       PreventUserExistenceErrors: ENABLED
@@ -70,6 +73,7 @@ Resources:
       UserPoolId: !Ref UserPool
       GenerateSecret: false
       ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_USER_SRP_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
       PreventUserExistenceErrors: ENABLED
@@ -88,7 +92,7 @@ Resources:
       GroupName: admin
       UserPoolId: !Ref UserPool
       Description: Full system administrators
-      Precedence: 0
+      Precedence: 1
 
   ManagerGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -96,7 +100,7 @@ Resources:
       GroupName: manager
       UserPoolId: !Ref UserPool
       Description: Operations managers
-      Precedence: 1
+      Precedence: 2
 
   SupportGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -104,7 +108,7 @@ Resources:
       GroupName: support
       UserPoolId: !Ref UserPool
       Description: Customer support staff
-      Precedence: 2
+      Precedence: 3
 
   ReportsViewerGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -112,7 +116,7 @@ Resources:
       GroupName: reports_viewer
       UserPoolId: !Ref UserPool
       Description: Read-only reports access
-      Precedence: 3
+      Precedence: 4
 
   DistributorGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -120,7 +124,7 @@ Resources:
       GroupName: distributor
       UserPoolId: !Ref UserPool
       Description: Field agents and distributors
-      Precedence: 4
+      Precedence: 5
 
 Outputs:
   UserPoolId:
