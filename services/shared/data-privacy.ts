@@ -231,11 +231,13 @@ export async function requestDataDeletion(params: {
   reason?: string;
 }): Promise<DeletionRequest> {
   // Check for active loans - cannot delete during active loan
-  const { count: activeLoans } = await supabase
+  const { count: activeLoans } = await db
     .from('loans')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('customer_id', params.customer_id)
-    .in('loan_status', ['active', 'delinquent']);
+    .in('loan_status', ['active', 'delinquent'])
+    .count()
+    .execute();
 
   if ((activeLoans || 0) > 0) {
     throw new Error(
@@ -244,7 +246,7 @@ export async function requestDataDeletion(params: {
     );
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('deletion_requests')
     .insert({
       customer_id: params.customer_id,
@@ -255,7 +257,8 @@ export async function requestDataDeletion(params: {
       data_categories_deleted: [],
     })
     .select()
-    .single();
+    .single()
+    .execute();
 
   if (error) throw new Error(`Failed to create deletion request: ${error.message}`);
 
@@ -278,14 +281,15 @@ export async function approveDeletionRequest(
   requestId: string,
   approvedBy: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('deletion_requests')
     .update({
       status: 'approved',
       approved_by: approvedBy,
       approved_at: new Date(),
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .execute();
 
   await logPrivacyAction({
     action: 'deletion_approved',
@@ -302,12 +306,13 @@ export async function approveDeletionRequest(
  */
 export async function executeDataAnonymization(requestId: string): Promise<void> {
   // Get the request
-  const { data: request } = await supabase
+  const { data: request } = await db
     .from('deletion_requests')
     .select('*')
     .eq('id', requestId)
     .eq('status', 'approved')
-    .single();
+    .single()
+    .execute();
 
   if (!request) throw new Error('Deletion request not found or not approved');
 
@@ -315,13 +320,14 @@ export async function executeDataAnonymization(requestId: string): Promise<void>
   const deletedCategories: string[] = [];
 
   // Mark as processing
-  await supabase
+  await db
     .from('deletion_requests')
     .update({ status: 'processing' })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .execute();
 
   // 1. Anonymize customer PII
-  await supabase
+  await db
     .from('customers')
     .update({
       first_name: 'ANONYMIZED',
@@ -340,52 +346,58 @@ export async function executeDataAnonymization(requestId: string): Promise<void>
       anonymized: true,
       anonymized_at: new Date(),
     })
-    .eq('id', customerId);
+    .eq('id', customerId)
+    .execute();
   deletedCategories.push('personal_information');
 
   // 2. Remove KYC documents (images)
-  await supabase
+  await db
     .from('kyc_submissions')
     .update({
       document_url: null,
       selfie_url: null,
       verification_data: null,
     })
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
   deletedCategories.push('kyc_documents');
 
   // 3. Anonymize WhatsApp messages
-  await supabase
+  await db
     .from('whatsapp_messages')
     .update({ message_body: 'ANONYMIZED' })
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
   deletedCategories.push('communication_history');
 
   // 4. Remove device fingerprint data
-  await supabase
+  await db
     .from('devices')
     .update({
       device_fingerprint: null,
     })
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
   deletedCategories.push('device_data');
 
   // 5. Withdraw all consents
-  await supabase
+  await db
     .from('customer_consents')
     .update({
       granted: false,
       withdrawn_at: new Date(),
       updated_at: new Date(),
     })
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
   deletedCategories.push('consent_records');
 
   // 6. Remove from feature store
-  await supabase
+  await db
     .from('customer_features')
     .delete()
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
   deletedCategories.push('analytics_data');
 
   // Note: We DO NOT delete:
@@ -396,14 +408,15 @@ export async function executeDataAnonymization(requestId: string): Promise<void>
   // These are retained with anonymized customer references.
 
   // Mark as completed
-  await supabase
+  await db
     .from('deletion_requests')
     .update({
       status: 'completed',
       completed_at: new Date(),
       data_categories_deleted: deletedCategories,
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .execute();
 
   await logPrivacyAction({
     action: 'data_anonymized',
@@ -423,14 +436,15 @@ export async function rejectDeletionRequest(
   rejectedBy: string,
   reason: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('deletion_requests')
     .update({
       status: 'rejected',
       approved_by: rejectedBy,
       rejected_reason: reason,
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .execute();
 
   await logPrivacyAction({
     action: 'deletion_rejected',
@@ -454,54 +468,61 @@ export async function exportCustomerData(
   requestedBy: string
 ): Promise<CustomerDataExport> {
   // Get customer profile
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('*')
     .eq('id', customerId)
-    .single();
+    .single()
+    .execute();
 
   // Get loans
-  const { data: loans } = await supabase
+  const { data: loans } = await db
     .from('loans')
     .select('*')
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
 
   // Get payments
-  const { data: payments } = await supabase
+  const { data: payments } = await db
     .from('payments')
     .select('*')
     .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .execute();
 
   // Get KYC submissions (without document URLs for security)
-  const { data: kyc } = await supabase
+  const { data: kyc } = await db
     .from('kyc_submissions')
     .select('id, submission_type, status, created_at, completed_at')
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
 
   // Get credit scores
-  const { data: scores } = await supabase
+  const { data: scores } = await db
     .from('credit_scores')
     .select('*')
     .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .execute();
 
   // Get consents
   const consents = await getCustomerConsents(customerId);
 
   // Get devices
-  const { data: devices } = await supabase
+  const { data: devices } = await db
     .from('devices')
     .select('id, brand, model, imei, status, assigned_at')
-    .eq('customer_id', customerId);
+    .eq('customer_id', customerId)
+    .execute();
 
   // Get notifications
-  const { data: notifications } = await supabase
+  const { data: notifications } = await db
     .from('notifications')
     .select('id, type, channel, status, created_at')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false })
-    .limit(100);
+    .limit(100)
+    .execute();
 
   const exportData: CustomerDataExport = {
     customer: (customer || {}) as Record<string, unknown>,
@@ -543,7 +564,7 @@ export async function logPrivacyAction(params: {
   fields_accessed: string[];
   ip_address?: string;
 }): Promise<void> {
-  await supabase.from('privacy_audit_log').insert({
+  await db.from('privacy_audit_log').insert({
     action: params.action,
     entity_type: params.entity_type,
     entity_id: params.entity_id,
@@ -552,7 +573,7 @@ export async function logPrivacyAction(params: {
     fields_accessed: params.fields_accessed,
     ip_address: params.ip_address,
     created_at: new Date(),
-  });
+  }).execute();
 }
 
 /**
@@ -562,13 +583,14 @@ export async function getPrivacyAuditTrail(
   customerId: string,
   limit: number = 100
 ): Promise<PrivacyAuditEntry[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from('privacy_audit_log')
     .select('*')
     .eq('entity_id', customerId)
     .eq('entity_type', 'customer')
     .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    .execute();
 
   return (data || []) as PrivacyAuditEntry[];
 }
@@ -588,7 +610,7 @@ export async function reportDataBreach(params: {
   containment_actions: string[];
   reported_by: string;
 }): Promise<DataBreachRecord> {
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('data_breaches')
     .insert({
       detected_at: new Date(),
@@ -603,7 +625,8 @@ export async function reportDataBreach(params: {
       reported_by: params.reported_by,
     })
     .select()
-    .single();
+    .single()
+    .execute();
 
   if (error) throw new Error(`Failed to record breach: ${error.message}`);
 
@@ -626,13 +649,14 @@ export async function sendBreachNotification(
   breachId: string,
   notifiedBy: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('data_breaches')
     .update({
       notification_sent: true,
       notification_sent_at: new Date(),
     })
-    .eq('id', breachId);
+    .eq('id', breachId)
+    .execute();
 
   await logPrivacyAction({
     action: 'breach_notification_sent',
@@ -651,13 +675,14 @@ export async function reportBreachToAuthority(
   breachId: string,
   reportedBy: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('data_breaches')
     .update({
       reported_to_authority: true,
       reported_at: new Date(),
     })
-    .eq('id', breachId);
+    .eq('id', breachId)
+    .execute();
 
   await logPrivacyAction({
     action: 'breach_reported_to_authority',
@@ -673,11 +698,12 @@ export async function reportBreachToAuthority(
  * Get pending deletion requests (for admin review)
  */
 export async function getPendingDeletionRequests(): Promise<DeletionRequest[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from('deletion_requests')
     .select('*')
     .eq('status', 'pending')
-    .order('requested_at', { ascending: true });
+    .order('requested_at', { ascending: true })
+    .execute();
 
   return (data || []) as DeletionRequest[];
 }
@@ -686,11 +712,12 @@ export async function getPendingDeletionRequests(): Promise<DeletionRequest[]> {
  * Get active/unresolved data breaches
  */
 export async function getActiveBreaches(): Promise<DataBreachRecord[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from('data_breaches')
     .select('*')
     .eq('resolved', false)
-    .order('detected_at', { ascending: false });
+    .order('detected_at', { ascending: false })
+    .execute();
 
   return (data || []) as DataBreachRecord[];
 }

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { submitForm } from '@/lib/supabase';
+import { submitForm } from '@/lib/api';
 import { normalisePhone, isValidPhone, jsonError } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {

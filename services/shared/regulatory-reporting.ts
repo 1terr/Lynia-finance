@@ -14,12 +14,7 @@
  * 7-year retention per RBZ requirements.
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from './clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -143,10 +138,11 @@ export async function generateLoanPortfolioSummary(
   const periodEnd = config.period_end.toISOString();
 
   // Total outstanding loans
-  const { data: activeLoans } = await supabase
+  const { data: activeLoans } = await db
     .from('loans')
     .select('id, principal_amount, total_interest, loan_status, product_id, term_months')
-    .in('loan_status', ['active', 'delinquent']);
+    .in('loan_status', ['active', 'delinquent'])
+    .execute();
 
   const totalOutstanding = activeLoans || [];
   const totalPrincipal = totalOutstanding.reduce((sum, l) => sum + (l.principal_amount || 0), 0);
@@ -174,33 +170,36 @@ export async function generateLoanPortfolioSummary(
   }
 
   // New loans in period
-  const { data: newLoans } = await supabase
+  const { data: newLoans } = await db
     .from('loans')
     .select('id, principal_amount')
     .gte('disbursed_at', periodStart)
-    .lte('disbursed_at', periodEnd);
+    .lte('disbursed_at', periodEnd)
+    .execute();
 
   const newCount = newLoans?.length || 0;
   const newAmount = (newLoans || []).reduce((sum, l) => sum + (l.principal_amount || 0), 0);
 
   // Closed loans in period
-  const { data: closedLoans } = await supabase
+  const { data: closedLoans } = await db
     .from('loans')
     .select('id, principal_amount')
     .in('loan_status', ['completed', 'written_off'])
     .gte('updated_at', periodStart)
-    .lte('updated_at', periodEnd);
+    .lte('updated_at', periodEnd)
+    .execute();
 
   const closedCount = closedLoans?.length || 0;
   const closedAmount = (closedLoans || []).reduce((sum, l) => sum + (l.principal_amount || 0), 0);
 
   // Collection rate
-  const { data: payments } = await supabase
+  const { data: payments } = await db
     .from('payments')
     .select('amount')
     .eq('status', 'completed')
     .gte('created_at', periodStart)
-    .lte('created_at', periodEnd);
+    .lte('created_at', periodEnd)
+    .execute();
 
   const totalCollected = (payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
   const collectionRate = totalPrincipal > 0 ? (totalCollected / totalPrincipal) * 100 : 0;
@@ -235,23 +234,27 @@ export async function generateDelinquencyReport(
   const periodStart = config.period_start.toISOString();
   const periodEnd = config.period_end.toISOString();
 
-  const { data: delinquentLoans } = await supabase
+  const { data: delinquentLoans } = await db
     .from('loans')
     .select('id, principal_amount, days_past_due, loan_status')
-    .eq('loan_status', 'delinquent');
+    .eq('loan_status', 'delinquent')
+    .execute();
 
   const loans = delinquentLoans || [];
 
   // Total active portfolio for percentage calculation
-  const { count: _totalActiveCount } = await supabase
+  const { count: _totalActiveCount } = await db
     .from('loans')
-    .select('*', { count: 'exact', head: true })
-    .in('loan_status', ['active', 'delinquent']);
+    .select('*')
+    .in('loan_status', ['active', 'delinquent'])
+    .count()
+    .execute();
 
-  const { data: activeLoanAmounts } = await supabase
+  const { data: activeLoanAmounts } = await db
     .from('loans')
     .select('principal_amount')
-    .in('loan_status', ['active', 'delinquent']);
+    .in('loan_status', ['active', 'delinquent'])
+    .execute();
 
   const totalPortfolio = (activeLoanAmounts || []).reduce(
     (sum, l) => sum + (l.principal_amount || 0), 0
@@ -267,12 +270,13 @@ export async function generateDelinquencyReport(
   const pctOf = (amount: number) => totalPortfolio > 0 ? Math.round((amount / totalPortfolio) * 100 * 100) / 100 : 0;
 
   // Write-offs in period
-  const { data: writeOffs } = await supabase
+  const { data: writeOffs } = await db
     .from('loans')
     .select('id, principal_amount')
     .eq('loan_status', 'written_off')
     .gte('updated_at', periodStart)
-    .lte('updated_at', periodEnd);
+    .lte('updated_at', periodEnd)
+    .execute();
 
   const writeOffAmount = (writeOffs || []).reduce((s, l) => s + (l.principal_amount || 0), 0);
 
@@ -319,32 +323,41 @@ export async function generateKYCComplianceReport(
   const periodEnd = config.period_end.toISOString();
 
   // Total customers
-  const { count: totalCustomers } = await supabase
+  const { count: totalCustomers } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true });
+    .select('*')
+    .count()
+    .execute();
 
   // KYC statuses
-  const { count: verified } = await supabase
+  const { count: verified } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true })
-    .eq('kyc_status', 'verified');
+    .select('*')
+    .eq('kyc_status', 'verified')
+    .count()
+    .execute();
 
-  const { count: pending } = await supabase
+  const { count: pending } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true })
-    .eq('kyc_status', 'pending');
+    .select('*')
+    .eq('kyc_status', 'pending')
+    .count()
+    .execute();
 
-  const { count: failed } = await supabase
+  const { count: failed } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true })
-    .eq('kyc_status', 'failed');
+    .select('*')
+    .eq('kyc_status', 'failed')
+    .count()
+    .execute();
 
   // KYC submissions in period
-  const { data: submissions } = await supabase
+  const { data: submissions } = await db
     .from('kyc_submissions')
     .select('submission_type, status, created_at, completed_at')
     .gte('created_at', periodStart)
-    .lte('created_at', periodEnd);
+    .lte('created_at', periodEnd)
+    .execute();
 
   // Average verification time
   const completedSubmissions = (submissions || []).filter(
@@ -400,20 +413,22 @@ export async function generateAMLReport(params: {
   reported_by: string;
 }): Promise<AMLSuspiciousActivityReport> {
   // Get customer details
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('id, first_name, last_name')
     .eq('id', params.customer_id)
-    .single();
+    .single()
+    .execute();
 
   // Get recent transactions
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const { data: transactions } = await supabase
+  const { data: transactions } = await db
     .from('payments')
     .select('created_at, payment_method, amount, currency')
     .eq('customer_id', params.customer_id)
     .gte('created_at', thirtyDaysAgo)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .execute();
 
   const refNumber = `STR-${Date.now()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
@@ -437,7 +452,7 @@ export async function generateAMLReport(params: {
   };
 
   // Save STR to database
-  await supabase.from('regulatory_reports').insert({
+  await db.from('regulatory_reports').insert({
     report_type: 'aml_suspicious_activity',
     period_start: new Date(),
     period_end: new Date(),
@@ -445,10 +460,10 @@ export async function generateAMLReport(params: {
     generated_at: new Date(),
     data: report,
     status: 'generated',
-  });
+  }).execute();
 
   // Log compliance action
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     action: 'aml_str_filed',
     entity_type: 'customer',
     entity_id: params.customer_id,
@@ -459,7 +474,7 @@ export async function generateAMLReport(params: {
       risk_indicators: params.risk_indicators,
     },
     created_at: new Date(),
-  });
+  }).execute();
 
   return report;
 }
@@ -563,21 +578,21 @@ export async function getReportHistory(params?: {
   status?: string;
   limit?: number;
 }): Promise<GeneratedReport[]> {
-  let query = supabase
+  let queryBuilder = db
     .from('regulatory_reports')
     .select('*')
     .order('generated_at', { ascending: false });
 
   if (params?.report_type) {
-    query = query.eq('report_type', params.report_type);
+    queryBuilder = queryBuilder.eq('report_type', params.report_type);
   }
   if (params?.status) {
-    query = query.eq('status', params.status);
+    queryBuilder = queryBuilder.eq('status', params.status);
   }
 
-  query = query.limit(params?.limit || 50);
+  queryBuilder = queryBuilder.limit(params?.limit || 50);
 
-  const { data } = await query;
+  const { data } = await queryBuilder.execute();
   return (data || []) as GeneratedReport[];
 }
 
@@ -588,22 +603,23 @@ export async function markReportSubmitted(
   reportId: string,
   submittedBy: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('regulatory_reports')
     .update({
       status: 'submitted',
       submitted_to_rbz_at: new Date(),
     })
-    .eq('id', reportId);
+    .eq('id', reportId)
+    .execute();
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     action: 'regulatory_report_submitted',
     entity_type: 'regulatory_report',
     entity_id: reportId,
     performed_by: submittedBy,
     details: { submitted_at: new Date().toISOString() },
     created_at: new Date(),
-  });
+  }).execute();
 }
 
 // ===================================================================
@@ -614,7 +630,7 @@ async function saveReport(
   config: ReportConfig,
   data: Record<string, unknown>
 ): Promise<void> {
-  await supabase.from('regulatory_reports').insert({
+  await db.from('regulatory_reports').insert({
     report_type: config.type,
     period_start: config.period_start,
     period_end: config.period_end,
@@ -622,5 +638,5 @@ async function saveReport(
     generated_at: new Date(),
     data,
     status: 'generated',
-  });
+  }).execute();
 }
