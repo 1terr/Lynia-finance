@@ -43,6 +43,26 @@ jobs:
             --template-body file://infrastructure/aws/cognito.yaml
           echo "Template validation passed"
 
+      - name: Clean up failed stack if needed
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-cognito"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ]; then
+            echo "Stack in ${STACK_STATUS} state — deleting before re-deploy..."
+            aws cloudformation delete-stack --stack-name "${STACK_NAME}"
+            aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
+            echo "Stack deleted successfully"
+          elif [ "${STACK_STATUS}" = "DOES_NOT_EXIST" ]; then
+            echo "Stack does not exist yet — will create"
+          else
+            echo "Stack exists in state: ${STACK_STATUS}"
+          fi
+
       - name: Deploy Cognito stack
         id: deploy
         run: |
@@ -59,6 +79,17 @@ jobs:
             --region ${{ env.AWS_REGION }}
 
           echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Show stack events on failure
+        if: failure()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-cognito"
+          echo "=== Stack Events (most recent first) ==="
+          aws cloudformation describe-stack-events \
+            --stack-name "${STACK_NAME}" \
+            --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+            --output table 2>/dev/null || echo "Could not fetch stack events"
 
       - name: Extract stack outputs
         id: outputs

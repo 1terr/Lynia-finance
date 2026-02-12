@@ -11,6 +11,7 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub "${Environment}-lynia-users"
+      UserPoolTier: PLUS
       AutoVerifiedAttributes:
         - email
       UsernameAttributes:
