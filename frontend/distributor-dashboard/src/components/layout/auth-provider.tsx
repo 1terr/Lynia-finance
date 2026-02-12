@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { Distributor } from '@/types/distributor';
 
@@ -28,14 +27,29 @@ async function fetchDistributorProfile(
   return null;
 }
 
+/** Hard redirect — works reliably in static exports where router.push can stall. */
+function redirectToLogin() {
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const distributor = useAuthStore((s) => s.distributor);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setDistributor = useAuthStore((s) => s.setDistributor);
   const setLoading = useAuthStore((s) => s.setLoading);
 
+  // When Supabase is not configured (local dev without env vars), skip auth
+  // entirely and render children so the mock-data flow keeps working.
+  const supabaseReady = isSupabaseConfigured();
+
   useEffect(() => {
+    if (!supabaseReady) {
+      setLoading(false);
+      return;
+    }
+
     let subscription: { unsubscribe: () => void } | null = null;
 
     const supabase = createClient();
@@ -53,17 +67,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // User exists in auth but not in distributors table or inactive
             await supabase.auth.signOut();
-            router.push('/login');
+            redirectToLogin();
             return;
           }
         } else {
           // No authenticated user — redirect to login
-          router.push('/login');
+          redirectToLogin();
           return;
         }
       } catch {
         // Session expired or invalid — redirect to login
-        router.push('/login');
+        redirectToLogin();
         return;
       } finally {
         setLoading(false);
@@ -73,27 +87,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
 
     // Listen for auth state changes
-    try {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const profile = await fetchDistributorProfile(supabase, session.user.id);
-          if (profile) {
-            setDistributor(profile);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setDistributor(null);
-          router.push('/login');
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const profile = await fetchDistributorProfile(supabase, session.user.id);
+        if (profile) {
+          setDistributor(profile);
         }
-      });
-      subscription = data.subscription;
-    } catch {
-      // Supabase client unavailable -- auth listener not registered
-    }
+      } else if (event === 'SIGNED_OUT') {
+        setDistributor(null);
+        redirectToLogin();
+      }
+    });
+    subscription = data.subscription;
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, [router, setDistributor, setLoading]);
+  }, [supabaseReady, setDistributor, setLoading]);
+
+  // When Supabase is not configured, skip the auth gate entirely
+  if (!supabaseReady) {
+    return <>{children}</>;
+  }
 
   // Gate rendering: show loading spinner until auth check completes
   if (isLoading || !distributor) {

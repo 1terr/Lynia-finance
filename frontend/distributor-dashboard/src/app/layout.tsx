@@ -10,6 +10,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Runtime config loaded before React hydration so createClient()
+            can read window.__LYNIA_CONFIG__ on first render. */}
+        <script src="/config.js" />
+      </head>
       <body className="font-sans">
         <ConfigGuard>{children}</ConfigGuard>
       </body>

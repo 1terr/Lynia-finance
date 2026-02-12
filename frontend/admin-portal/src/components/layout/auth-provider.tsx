@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { type AdminUser, isValidAdminRole } from '@/types/auth';
 
@@ -32,14 +31,29 @@ async function fetchAdminProfile(
   return null;
 }
 
+/** Hard redirect — works reliably in static exports where router.push can stall. */
+function redirectToLogin() {
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
   const setUser = useAuthStore((s) => s.setUser);
   const setLoading = useAuthStore((s) => s.setLoading);
 
+  // When Supabase is not configured the ConfigGuard already blocks rendering,
+  // but we still guard here to avoid calling methods on a null client.
+  const supabaseReady = isSupabaseConfigured();
+
   useEffect(() => {
+    if (!supabaseReady) {
+      setLoading(false);
+      return;
+    }
+
     let subscription: { unsubscribe: () => void } | null = null;
 
     const supabase = createClient();
@@ -57,17 +71,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           } else {
             // User exists in auth but not in admin_users, is inactive, or has invalid role
             await supabase.auth.signOut();
-            router.push('/login');
+            redirectToLogin();
             return;
           }
         } else {
           // No authenticated user — redirect to login
-          router.push('/login');
+          redirectToLogin();
           return;
         }
       } catch {
         // Session expired or invalid — redirect to login
-        router.push('/login');
+        redirectToLogin();
         return;
       } finally {
         setLoading(false);
@@ -77,27 +91,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loadUser();
 
     // Listen for auth state changes
-    try {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const adminUser = await fetchAdminProfile(supabase, session.user.id);
-          if (adminUser) {
-            setUser(adminUser);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          router.push('/login');
+    const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const adminUser = await fetchAdminProfile(supabase, session.user.id);
+        if (adminUser) {
+          setUser(adminUser);
         }
-      });
-      subscription = data.subscription;
-    } catch {
-      // Supabase client unavailable -- auth listener not registered
-    }
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        redirectToLogin();
+      }
+    });
+    subscription = data.subscription;
 
     return () => {
       subscription?.unsubscribe();
     };
-  }, [router, setUser, setLoading]);
+  }, [supabaseReady, setUser, setLoading]);
 
   // Gate rendering: show loading spinner until auth check completes
   if (isLoading || !user) {
