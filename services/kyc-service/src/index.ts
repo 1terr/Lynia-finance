@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { createClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import { SmileIdentityService, SmileWebhookPayload } from './smile-identity-service';
 import {
   validateImage as _validateImage,
@@ -7,11 +7,6 @@ import {
   downloadWhatsAppImage as _downloadWhatsAppImage,
   validateZimbabweIDNumber
 } from './image-processor';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const smileService = new SmileIdentityService();
 
@@ -108,14 +103,15 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
     console.log(`Initiating KYC for customer ${customer_id}`);
 
     // Check for existing KYC submission
-    const { data: existingSubmission } = await supabase
+    const { data: existingSubmission } = await db
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customer_id)
       .in('status', ['pending', 'verified'])
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .single()
+      .execute();
 
     // If already verified, return existing status
     if (existingSubmission && existingSubmission.status === 'verified') {
@@ -159,7 +155,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
     });
 
     // Save KYC submission record
-    const { data: submission, error: submissionError } = await supabase
+    const { data: submission, error: submissionError } = await db
       .from('kyc_submissions')
       .insert({
         customer_id: customer_id,
@@ -174,7 +170,8 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         created_at: new Date().toISOString()
       })
       .select()
-      .single();
+      .single()
+      .execute();
 
     if (submissionError) {
       console.error('Error saving KYC submission:', submissionError);
@@ -261,12 +258,13 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
     const job_id = payload.partner_params.job_id;
 
     // Fetch KYC submission
-    const { data: submission, error: fetchError } = await supabase
+    const { data: submission, error: fetchError } = await db
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customer_id)
       .eq('smile_identity_transaction_id', job_id)
-      .single();
+      .single()
+      .execute();
 
     if (fetchError || !submission) {
       console.error(`KYC submission not found for job ${job_id}`);
@@ -304,14 +302,15 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
       updateData.manual_review_required = true;
     }
 
-    await supabase
+    await db
       .from('kyc_submissions')
       .update(updateData)
-      .eq('id', submission.id);
+      .eq('id', submission.id)
+      .execute();
 
     // Update customer KYC status
     if (decision === 'APPROVED') {
-      await supabase
+      await db
         .from('customers')
         .update({
           kyc_status: 'verified',
@@ -320,14 +319,15 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
           date_of_birth: payload.result.id_info.dob,
           gender: payload.result.id_info.gender === 'M' ? 'male' : 'female'
         })
-        .eq('id', customer_id);
+        .eq('id', customer_id)
+        .execute();
 
       console.log(`Customer ${customer_id} KYC approved`);
 
       // TODO: Trigger credit scoring (would be called by onboarding flow)
     } else if (decision === 'MANUAL_REVIEW') {
       // Create manual review task
-      await supabase
+      await db
         .from('kyc_manual_reviews')
         .insert({
           kyc_submission_id: submission.id,
@@ -336,7 +336,8 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
           sla_deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
           priority: 'normal',
           created_at: new Date().toISOString()
-        });
+        })
+        .execute();
 
       console.log(`Manual review created for customer ${customer_id}`);
 
@@ -376,13 +377,14 @@ async function getKYCStatus(customerId: string): Promise<APIGatewayProxyResult> 
     }
 
     // Fetch latest KYC submission
-    const { data: submission, error } = await supabase
+    const { data: submission, error } = await db
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customerId)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .single()
+      .execute();
 
     if (error || !submission) {
       // No KYC submission found
@@ -445,11 +447,12 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
     }
 
     // Check retry eligibility
-    const { data: submissions } = await supabase
+    const { data: submissions } = await db
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customer_id)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .execute();
 
     if (!submissions || submissions.length === 0) {
       return {

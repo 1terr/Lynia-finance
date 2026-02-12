@@ -3,13 +3,11 @@
 import { useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { createClient } from '@/lib/supabase/client';
 import { hasPermission } from './permissions';
 import type { PermissionAction } from '@/types';
 
 interface UseAuthReturn {
   user: ReturnType<typeof useAuthStore.getState>['user'];
-  supabaseUser: null;
   isLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
@@ -26,42 +24,25 @@ interface UseAuthReturn {
 export function useAuth(): UseAuthReturn {
   const user = useAuthStore((s) => s.user);
   const isLoading = useAuthStore((s) => s.isLoading);
-  const setUser = useAuthStore((s) => s.setUser);
+  const storeSignIn = useAuthStore((s) => s.signIn);
+  const signOutUser = useAuthStore((s) => s.signOutUser);
   const router = useRouter();
 
   const signIn = useCallback(
     async (email: string, password: string): Promise<{ error?: string }> => {
-      try {
-        const supabase = createClient();
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (error) {
-          // MED-01: Generic error to avoid leaking account information
-          return { error: 'Invalid email or password' };
-        }
-
+      const result = await storeSignIn(email, password);
+      if (!result.error) {
         router.refresh();
-        return {};
-      } catch {
-        return { error: 'An unexpected error occurred' };
       }
+      return result;
     },
-    [router],
+    [router, storeSignIn],
   );
 
   const signOut = useCallback(async () => {
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-    } catch {
-      // Best-effort sign out -- clear local state regardless
-    }
-    setUser(null);
+    signOutUser();
     router.push('/login');
-  }, [router, setUser]);
+  }, [router, signOutUser]);
 
   const checkPermission = useCallback(
     (resource: string, action: PermissionAction): boolean => {
@@ -71,5 +52,5 @@ export function useAuth(): UseAuthReturn {
     [user],
   );
 
-  return { user, supabaseUser: null, isLoading, signIn, signOut, checkPermission };
+  return { user, isLoading, signIn, signOut, checkPermission };
 }

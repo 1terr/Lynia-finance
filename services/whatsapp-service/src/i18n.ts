@@ -13,12 +13,7 @@
  *  - Simple 8th-grade reading level (financial inclusion)
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -241,11 +236,12 @@ export function parseLanguageSelection(input: string): SupportedLanguage | null 
  * Get customer's preferred language from database
  */
 export async function getCustomerLanguage(phoneNumber: string): Promise<SupportedLanguage> {
-  const { data } = await supabase
+  const { data } = await db
     .from('customer_preferences')
     .select('preferred_language, customers!inner(phone_number)')
     .eq('customers.phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   return (data?.preferred_language as SupportedLanguage) || 'en';
 }
@@ -257,13 +253,14 @@ export async function setCustomerLanguage(
   customerId: string,
   language: SupportedLanguage
 ): Promise<void> {
-  await supabase
+  await db
     .from('customer_preferences')
     .upsert({
       customer_id: customerId,
       preferred_language: language,
       updated_at: new Date(),
-    });
+    })
+    .execute();
 }
 
 /**

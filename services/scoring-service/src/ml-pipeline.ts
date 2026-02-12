@@ -15,12 +15,7 @@
  *  - Scoring inference uses pre-trained weights loaded at runtime
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -133,43 +128,48 @@ export interface PredictionResult {
  */
 export async function extractFeatures(customerId: string): Promise<FeatureVector> {
   // Get customer data
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('*')
     .eq('id', customerId)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) throw new Error(`Customer ${customerId} not found`);
 
   // Get loan history
-  const { data: loans } = await supabase
+  const { data: loans } = await db
     .from('loans')
     .select('*')
     .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .execute();
 
   // Get payment history
-  const { data: payments } = await supabase
+  const { data: payments } = await db
     .from('payments')
     .select('*')
     .eq('customer_id', customerId)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .execute();
 
   // Get KYC data
-  const { data: kyc } = await supabase
+  const { data: kyc } = await db
     .from('kyc_submissions')
     .select('*')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .single()
+    .execute();
 
   // Get feature store data (alternative data)
-  const { data: altData } = await supabase
+  const { data: altData } = await db
     .from('customer_features')
     .select('*')
     .eq('customer_id', customerId)
-    .single();
+    .single()
+    .execute();
 
   const income = customer.monthly_income_usd || 200;
   const debts = customer.existing_debt_obligations_usd || 0;
@@ -241,11 +241,11 @@ export async function extractFeatures(customerId: string): Promise<FeatureVector
   };
 
   // Store features for training data
-  await supabase.from('customer_features').upsert({
+  await db.from('customer_features').upsert({
     customer_id: customerId,
     features: features,
     computed_at: new Date(),
-  });
+  }).execute();
 
   return features;
 }
@@ -345,11 +345,12 @@ export async function getModelForCustomer(
   customerId: string
 ): Promise<{ modelVersion: string; weights: ModelWeights }> {
   // Check for active A/B tests
-  const { data: tests } = await supabase
+  const { data: tests } = await db
     .from('ab_tests')
     .select('*')
     .eq('status', 'active')
-    .limit(1);
+    .limit(1)
+    .execute();
 
   if (!tests || tests.length === 0) {
     return { modelVersion: 'v1.0.0', weights: DEFAULT_WEIGHTS };
@@ -381,10 +382,10 @@ export async function recordOutcome(data: {
   days_past_due_max: number;
   total_paid_ratio: number;
 }): Promise<void> {
-  await supabase.from('ml_training_outcomes').insert({
+  await db.from('ml_training_outcomes').insert({
     ...data,
     recorded_at: new Date(),
-  });
+  }).execute();
 }
 
 /**
@@ -402,16 +403,18 @@ export async function getModelPerformance(
   const since = new Date();
   since.setDate(since.getDate() - windowDays);
 
-  const { data: predictions } = await supabase
+  const { data: predictions } = await db
     .from('credit_scores')
     .select('decision, customer_id')
     .eq('model_version', modelVersion)
-    .gte('created_at', since.toISOString());
+    .gte('created_at', since.toISOString())
+    .execute();
 
-  const { data: outcomes } = await supabase
+  const { data: outcomes } = await db
     .from('ml_training_outcomes')
     .select('customer_id, outcome')
-    .gte('recorded_at', since.toISOString());
+    .gte('recorded_at', since.toISOString())
+    .execute();
 
   const totalPredictions = predictions?.length || 0;
   const approvedCount = predictions?.filter(p => p.decision === 'approve').length || 0;

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -12,8 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
-  const supabase = createClient();
+  const signIn = useAuthStore((s) => s.signIn);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,45 +19,12 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const result = await signIn(email, password);
 
-      if (authError) {
-        // MED-01: Generic error to avoid leaking account information
-        setError('Invalid email or password');
+      if (result.error) {
+        setError(result.error);
         return;
       }
-
-      // Verify user is an active admin
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Invalid email or password');
-        return;
-      }
-
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('is_active, login_count')
-        .eq('id', user.id)
-        .single();
-
-      if (!adminUser || !adminUser.is_active) {
-        await supabase.auth.signOut();
-        // MED-01: Generic error to not reveal account existence or status
-        setError('Invalid email or password');
-        return;
-      }
-
-      // Update last login
-      await supabase
-        .from('admin_users')
-        .update({
-          last_login_at: new Date().toISOString(),
-          login_count: (adminUser.login_count || 0) + 1,
-        })
-        .eq('id', user.id);
 
       window.location.href = '/';
     } catch {

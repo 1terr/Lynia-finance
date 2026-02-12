@@ -6,7 +6,6 @@ import { Bell, LogOut, User, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { createClient } from '@/lib/supabase/client';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 
@@ -18,7 +17,6 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const user = useAuthStore((s) => s.user);
-  const setUser = useAuthStore((s) => s.setUser);
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -33,10 +31,10 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
+  const signOutUser = useAuthStore((s) => s.signOutUser);
+
+  const handleLogout = () => {
+    signOutUser();
     router.push('/login');
   };
 

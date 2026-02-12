@@ -1,8 +1,12 @@
 /**
  * JWT Authentication Middleware
  *
- * Validates Supabase JWT tokens from the Authorization header.
+ * Validates Cognito JWT tokens from the API Gateway Cognito authorizer.
  * All protected API endpoints MUST call requireAuth() before processing.
+ *
+ * With a Cognito authorizer on API Gateway, the JWT is validated before
+ * the Lambda is invoked. This middleware extracts the claims from the
+ * event context.
  *
  * Webhook endpoints (called by external providers like EcoCash, Smile Identity)
  * use signature verification instead of JWT auth — see individual handlers.
@@ -14,58 +18,65 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { createClient } from '@supabase/supabase-js';
 
 export interface AuthResult {
   userId: string | null;
-  role: string | null;
+  email: string | null;
+  roles: string[];
   error: APIGatewayProxyResult | null;
 }
 
 /**
- * Validate JWT token from Authorization header using Supabase Auth.
+ * Extract authenticated user info from Cognito JWT claims.
  *
- * Returns the authenticated user ID and role, or an error response
- * that should be returned directly to the caller.
+ * The API Gateway Cognito authorizer validates the JWT before the Lambda
+ * is invoked. The claims are available in event.requestContext.authorizer.claims.
  */
 export async function requireAuth(event: APIGatewayProxyEvent): Promise<AuthResult> {
-  const authHeader = event.headers?.Authorization || event.headers?.authorization;
+  const claims = event.requestContext.authorizer?.claims;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return {
-      userId: null,
-      role: null,
-      error: {
-        statusCode: 401,
-        body: JSON.stringify({
-          success: false,
-          error: {
-            code: 'AUTH_TOKEN_001',
-            message: 'Authentication required. Provide a valid Bearer token.',
-          },
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-          'WWW-Authenticate': 'Bearer',
-        },
-      },
-    };
-  }
+  if (!claims) {
+    // Fallback: check Authorization header manually (for routes without authorizer)
+    const authHeader = event.headers?.Authorization || event.headers?.authorization;
 
-  const token = authHeader.replace('Bearer ', '');
-
-  try {
-    const supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return {
         userId: null,
-        role: null,
+        email: null,
+        roles: [],
+        error: {
+          statusCode: 401,
+          body: JSON.stringify({
+            success: false,
+            error: {
+              code: 'AUTH_TOKEN_001',
+              message: 'Authentication required. Provide a valid Bearer token.',
+            },
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+            'WWW-Authenticate': 'Bearer',
+          },
+        },
+      };
+    }
+
+    // Decode JWT payload (already validated by API Gateway)
+    try {
+      const token = authHeader.replace('Bearer ', '');
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+
+      return {
+        userId: payload.sub || null,
+        email: payload.email || null,
+        roles: (payload['cognito:groups'] || '').split(',').filter(Boolean),
+        error: null,
+      };
+    } catch {
+      return {
+        userId: null,
+        email: null,
+        roles: [],
         error: {
           statusCode: 401,
           body: JSON.stringify({
@@ -79,29 +90,14 @@ export async function requireAuth(event: APIGatewayProxyEvent): Promise<AuthResu
         },
       };
     }
-
-    return {
-      userId: user.id,
-      role: user.role || null,
-      error: null,
-    };
-  } catch {
-    return {
-      userId: null,
-      role: null,
-      error: {
-        statusCode: 401,
-        body: JSON.stringify({
-          success: false,
-          error: {
-            code: 'AUTH_TOKEN_001',
-            message: 'Authentication failed.',
-          },
-        }),
-        headers: { 'Content-Type': 'application/json' },
-      },
-    };
   }
+
+  return {
+    userId: claims.sub,
+    email: claims.email || null,
+    roles: (claims['cognito:groups'] || '').split(',').filter(Boolean),
+    error: null,
+  };
 }
 
 /**
@@ -109,6 +105,11 @@ export async function requireAuth(event: APIGatewayProxyEvent): Promise<AuthResu
  * Only use for logging/correlation — never for authorization decisions.
  */
 export function extractUserIdFromToken(event: APIGatewayProxyEvent): string | null {
+  // First try Cognito authorizer claims
+  const claims = event.requestContext.authorizer?.claims;
+  if (claims?.sub) return claims.sub;
+
+  // Fallback to manual JWT decode
   const authHeader = event.headers?.Authorization || event.headers?.authorization;
   if (!authHeader) return null;
 

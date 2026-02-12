@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/client';
-import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
+import { fetchAPI } from '@/lib/api/client';
+import { MAX_PAGE_SIZE } from '@/lib/utils';
 import type { AdminUser, AdminRole, SystemConfig, AuditLog } from '@/types';
 
 // --- Admin Users ---
@@ -13,57 +13,31 @@ export interface AdminUserFilters {
 }
 
 export async function getAdminUsers(filters: AdminUserFilters = {}) {
-  const supabase = createClient();
   const { role, status, search, page = 1, limit: rawLimit = 25 } = filters;
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
-  const offset = (page - 1) * limit;
 
-  let query = supabase
-    .from('admin_users')
-    .select('*', { count: 'exact' });
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  if (role) params.set('role', role);
+  if (status) params.set('status', status);
+  if (search) params.set('search', search);
 
-  if (role) {
-    query = query.eq('role', role);
-  }
-
-  if (status === 'active') {
-    query = query.eq('is_active', true);
-  } else if (status === 'inactive') {
-    query = query.eq('is_active', false);
-  }
-
-  if (search) {
-    const sanitized = sanitizeSearchInput(search);
-    if (sanitized) {
-      query = query.or(`email.ilike.%${sanitized}%,first_name.ilike.%${sanitized}%,last_name.ilike.%${sanitized}%`);
-    }
-  }
-
-  const { data, count, error } = await query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) throw error;
-
-  return {
-    data: (data || []) as AdminUser[],
-    total: count || 0,
-    page,
-    limit,
-    total_pages: Math.ceil((count || 0) / limit),
-  };
+  return fetchAPI<{
+    data: AdminUser[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  }>(`/api/v1/admin/users?${params.toString()}`);
 }
 
 export async function getAdminUserById(id: string): Promise<AdminUser | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('admin_users')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) return null;
-  return data as AdminUser;
+  try {
+    return await fetchAPI<AdminUser>(`/api/v1/admin/users/${id}`);
+  } catch {
+    return null;
+  }
 }
 
 export interface CreateAdminUserData {
@@ -74,23 +48,10 @@ export interface CreateAdminUserData {
 }
 
 export async function createAdminUser(userData: CreateAdminUserData): Promise<AdminUser> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('admin_users')
-    .insert({
-      email: userData.email,
-      first_name: userData.first_name,
-      last_name: userData.last_name,
-      role: userData.role,
-      is_active: true,
-      login_count: 0,
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data as AdminUser;
+  return fetchAPI<AdminUser>('/api/v1/admin/users', {
+    method: 'POST',
+    body: JSON.stringify(userData),
+  });
 }
 
 export interface UpdateAdminUserData {
@@ -105,48 +66,16 @@ export async function updateAdminUser(
   updates: UpdateAdminUserData,
   adminId?: string
 ): Promise<AdminUser> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('admin_users')
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  // Log audit entry
-  if (adminId) {
-    await supabase.from('audit_log').insert({
-      user_id: adminId,
-      user_type: 'admin',
-      action: 'update',
-      entity_type: 'admin_user',
-      entity_id: id,
-      description: `Updated admin user: ${Object.keys(updates).join(', ')}`,
-      changes: updates as Record<string, unknown>,
-    });
-  }
-
-  return data as AdminUser;
+  return fetchAPI<AdminUser>(`/api/v1/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ ...updates, admin_id: adminId }),
+  });
 }
 
 // --- System Config ---
 
 export async function getSystemConfigs(): Promise<SystemConfig[]> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('system_config')
-    .select('*')
-    .order('config_key', { ascending: true });
-
-  if (error) throw error;
-  return (data || []) as SystemConfig[];
+  return fetchAPI<SystemConfig[]>('/api/v1/admin/config');
 }
 
 export async function updateSystemConfig(
@@ -154,33 +83,10 @@ export async function updateSystemConfig(
   configValue: Record<string, unknown>,
   adminId: string
 ): Promise<SystemConfig> {
-  const supabase = createClient();
-
-  const { data, error } = await supabase
-    .from('system_config')
-    .update({
-      config_value: configValue,
-      updated_by: adminId,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', id)
-    .select()
-    .single();
-
-  if (error) throw error;
-
-  // Log audit entry
-  await supabase.from('audit_log').insert({
-    user_id: adminId,
-    user_type: 'admin',
-    action: 'update',
-    entity_type: 'system_config',
-    entity_id: id,
-    description: `Updated system configuration`,
-    changes: { config_value: configValue },
+  return fetchAPI<SystemConfig>(`/api/v1/admin/config/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ config_value: configValue, admin_id: adminId }),
   });
-
-  return data as SystemConfig;
 }
 
 // --- Audit Logs ---
@@ -196,46 +102,23 @@ export interface AuditLogFilters {
 }
 
 export async function getAuditLogs(filters: AuditLogFilters = {}) {
-  const supabase = createClient();
   const { user_type, action, entity_type, date_from, date_to, page = 1, limit: rawLimit = 25 } = filters;
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
-  const offset = (page - 1) * limit;
 
-  let query = supabase
-    .from('audit_log')
-    .select('*', { count: 'exact' });
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  if (user_type) params.set('user_type', user_type);
+  if (action) params.set('action', action);
+  if (entity_type) params.set('entity_type', entity_type);
+  if (date_from) params.set('date_from', date_from);
+  if (date_to) params.set('date_to', date_to);
 
-  if (user_type) {
-    query = query.eq('user_type', user_type);
-  }
-
-  if (action) {
-    query = query.eq('action', action);
-  }
-
-  if (entity_type) {
-    query = query.eq('entity_type', entity_type);
-  }
-
-  if (date_from) {
-    query = query.gte('created_at', date_from);
-  }
-
-  if (date_to) {
-    query = query.lte('created_at', date_to);
-  }
-
-  const { data, count, error } = await query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) throw error;
-
-  return {
-    data: (data || []) as AuditLog[],
-    total: count || 0,
-    page,
-    limit,
-    total_pages: Math.ceil((count || 0) / limit),
-  };
+  return fetchAPI<{
+    data: AuditLog[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  }>(`/api/v1/admin/audit-logs?${params.toString()}`);
 }

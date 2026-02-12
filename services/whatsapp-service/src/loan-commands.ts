@@ -15,12 +15,7 @@
  *  - Clear formatted responses
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // COMMAND DEFINITIONS
@@ -114,22 +109,24 @@ export function checkRateLimit(phoneNumber: string): boolean {
 // ===================================================================
 
 async function handleBalance(phoneNumber: string): Promise<string> {
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('id, first_name')
     .eq('phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
 
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('customer_id', customer.id)
     .in('loan_status', ['active', 'delinquent'])
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) {
     return `Hi ${customer.first_name}! You don't have any active loans.\n\nWant to apply? Reply *APPLY* to get started.`;
@@ -163,20 +160,22 @@ Reply:
 }
 
 async function handleHistory(phoneNumber: string): Promise<string> {
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('id, first_name')
     .eq('phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
 
-  const { data: payments } = await supabase
+  const { data: payments } = await db
     .from('payments')
     .select('*')
     .eq('customer_id', customer.id)
     .order('created_at', { ascending: false })
-    .limit(5);
+    .limit(5)
+    .execute();
 
   if (!payments || payments.length === 0) {
     return `Hi ${customer.first_name}! No payment history found.\n\nYour first payment will appear here after it's processed.`;
@@ -197,22 +196,24 @@ async function handleHistory(phoneNumber: string): Promise<string> {
 }
 
 async function handleSchedule(phoneNumber: string): Promise<string> {
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('id, first_name')
     .eq('phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
 
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('customer_id', customer.id)
     .in('loan_status', ['active', 'delinquent'])
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) return `Hi ${customer.first_name}! No active loan found.`;
 
@@ -256,21 +257,23 @@ Need human help? Reply *SUPPORT* to connect with our team.`;
 }
 
 async function handleDevice(phoneNumber: string): Promise<string> {
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('id, first_name')
     .eq('phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
 
-  const { data: device } = await supabase
+  const { data: device } = await db
     .from('devices')
     .select('*')
     .eq('customer_id', customer.id)
     .order('assigned_at', { ascending: false })
     .limit(1)
-    .single();
+    .single()
+    .execute();
 
   if (!device) {
     return `Hi ${customer.first_name}! No device found on your account.`;
@@ -309,11 +312,12 @@ Note: Phone number changes require identity verification.`;
 }
 
 async function handleExtension(phoneNumber: string): Promise<string> {
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('id, first_name')
     .eq('phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
 
@@ -355,13 +359,13 @@ export async function routeLoanCommand(
   }
 
   // Log command usage
-  await supabase.from('whatsapp_messages').insert({
+  await db.from('whatsapp_messages').insert({
     phone_number: phoneNumber,
     message_type: 'command',
     direction: 'inbound',
     content: `Command: ${command}`,
     status: 'delivered',
-  }).then(() => {}).catch(() => {});
+  }).execute().then(() => {}).catch(() => {});
 
   switch (command) {
     case 'BALANCE': return handleBalance(phoneNumber);

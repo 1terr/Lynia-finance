@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { LockControlPanel } from '../LockControlPanel';
 import { mockDeviceAssignment, mockLockedAssignment, mockLockEvents } from '@/test/mocks/devices';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('LockControlPanel', () => {
   const defaultProps = {

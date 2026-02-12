@@ -1,10 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -491,7 +486,7 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
 
   // Store score in database
   try {
-    const { error: dbError } = await supabase
+    const { error: dbError } = await db
       .from('credit_scores')
       .insert({
         customer_id: scoreResult.customer_id,
@@ -504,7 +499,8 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
         down_payment_percentage: scoreResult.down_payment_percentage,
         interest_rate_apr: scoreResult.interest_rate_apr,
         calculated_at: scoreResult.calculated_at
-      });
+      })
+      .execute();
 
     if (dbError) {
       console.error('Database error:', dbError);
@@ -538,13 +534,14 @@ async function handleGetScore(customerId: string): Promise<APIGatewayProxyResult
 
   try {
     // Fetch most recent score from database
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('credit_scores')
       .select('*')
       .eq('customer_id', customerId)
       .order('calculated_at', { ascending: false })
       .limit(1)
-      .single();
+      .single()
+      .execute();
 
     if (error || !data) {
       return {

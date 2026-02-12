@@ -7,7 +7,7 @@
  * All providers now use direct API integrations (Paynow aggregator removed).
  */
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -78,13 +78,8 @@ const FEE_RATES: Record<string, Record<string, number>> = {
 // ===================================================================
 
 export class PaymentAnalyticsService {
-  private supabase: SupabaseClient;
-
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+    // db client imported from shared module
   }
 
   /**
@@ -92,7 +87,7 @@ export class PaymentAnalyticsService {
    */
   async trackPaymentMethod(event: PaymentMethodEvent): Promise<void> {
     try {
-      await this.supabase.from('payment_method_analytics').insert({
+      await db.from('payment_method_analytics').insert({
         payment_id: event.payment_id,
         loan_id: event.loan_id,
         customer_id: event.customer_id,
@@ -104,7 +99,7 @@ export class PaymentAnalyticsService {
         fee_percentage: event.fee_percentage,
         status: event.status,
         created_at: event.created_at,
-      });
+      }).execute();
     } catch (error) {
       // Analytics tracking should never block the payment flow
       console.error('Failed to track payment method:', error);
@@ -147,12 +142,13 @@ export class PaymentAnalyticsService {
     endDate: string
   ): Promise<PaymentAnalyticsSummary> {
     try {
-      const { data: analytics, error } = await this.supabase
+      const { data: analytics, error } = await db
         .from('payment_method_analytics')
         .select('payment_method, amount, fee_amount, status')
         .eq('status', 'completed')
         .gte('created_at', startDate)
-        .lte('created_at', endDate);
+        .lte('created_at', endDate)
+        .execute();
 
       if (error || !analytics) {
         throw new Error('Failed to fetch payment analytics');

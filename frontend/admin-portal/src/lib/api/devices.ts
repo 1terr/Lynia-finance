@@ -1,5 +1,5 @@
-import { createClient } from '@/lib/supabase/client';
-import { sanitizeSearchInput, MAX_PAGE_SIZE } from '@/lib/utils';
+import { fetchAPI } from '@/lib/api/client';
+import { MAX_PAGE_SIZE } from '@/lib/utils';
 import type { Device, DeviceStatus, LockStatus, DeviceLock, Customer } from '@/types';
 
 export interface DeviceFilters {
@@ -15,157 +15,55 @@ export type DeviceWithCustomer = Omit<Device, 'customer'> & {
 };
 
 export async function getDevices(filters: DeviceFilters = {}) {
-  const supabase = createClient();
   const { status, lock_status, search, page = 1, limit: rawLimit = 25 } = filters;
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
-  const offset = (page - 1) * limit;
 
-  let query = supabase
-    .from('devices')
-    .select('*, customer:customers(id, full_name, phone_number)', { count: 'exact' });
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  if (status) params.set('status', status);
+  if (lock_status) params.set('lock_status', lock_status);
+  if (search) params.set('search', search);
 
-  if (status) {
-    query = query.eq('status', status);
-  }
-
-  if (lock_status) {
-    query = query.eq('lock_status', lock_status);
-  }
-
-  if (search) {
-    const sanitized = sanitizeSearchInput(search);
-    if (sanitized) {
-      query = query.or(`device_imei.ilike.%${sanitized}%,device_brand.ilike.%${sanitized}%,device_model.ilike.%${sanitized}%`);
-    }
-  }
-
-  const { data, count, error } = await query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) throw error;
-
-  return {
-    data: (data || []) as DeviceWithCustomer[],
-    total: count || 0,
-    page,
-    limit,
-    total_pages: Math.ceil((count || 0) / limit),
-  };
+  return fetchAPI<{
+    data: DeviceWithCustomer[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  }>(`/api/v1/devices?${params.toString()}`);
 }
 
 export async function getDeviceById(id: string): Promise<Device | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('devices')
-    .select('*, customer:customers(*), loan:loans(*)')
-    .eq('id', id)
-    .single();
-
-  if (error) return null;
-  return data as Device;
+  try {
+    return await fetchAPI<Device>(`/api/v1/devices/${id}`);
+  } catch {
+    return null;
+  }
 }
 
 export async function getDeviceLockHistory(deviceId: string): Promise<DeviceLock[]> {
-  const supabase = createClient();
-  const { data } = await supabase
-    .from('device_locks')
-    .select('*')
-    .eq('device_id', deviceId)
-    .order('created_at', { ascending: false });
-
-  return (data || []) as DeviceLock[];
+  return fetchAPI<DeviceLock[]>(`/api/v1/devices/${deviceId}/lock-history`);
 }
 
 export async function lockDevice(deviceId: string, adminId: string, reason: string) {
-  const supabase = createClient();
-  const now = new Date().toISOString();
-
-  const { error: deviceError } = await supabase
-    .from('devices')
-    .update({
-      lock_status: 'locked',
-      locked_at: now,
-      lock_reason: reason,
-      updated_at: now,
-    })
-    .eq('id', deviceId);
-
-  if (deviceError) throw deviceError;
-
-  const { error: lockError } = await supabase.from('device_locks').insert({
-    device_id: deviceId,
-    action: 'lock',
-    reason,
-    lock_type: 'manual_admin',
-    executed_by: adminId,
-    execution_status: 'success',
-    executed_at: now,
-  });
-
-  if (lockError) throw lockError;
-
-  await supabase.from('audit_log').insert({
-    admin_id: adminId,
-    action: 'lock',
-    entity_type: 'device',
-    entity_id: deviceId,
-    details: { reason },
+  return fetchAPI<void>(`/api/v1/devices/${deviceId}/lock`, {
+    method: 'POST',
+    body: JSON.stringify({ admin_id: adminId, reason }),
   });
 }
 
 export async function unlockDevice(deviceId: string, adminId: string, reason: string) {
-  const supabase = createClient();
-  const now = new Date().toISOString();
-
-  const { error: deviceError } = await supabase
-    .from('devices')
-    .update({
-      lock_status: 'unlocked',
-      locked_at: null,
-      lock_reason: null,
-      updated_at: now,
-    })
-    .eq('id', deviceId);
-
-  if (deviceError) throw deviceError;
-
-  const { error: lockError } = await supabase.from('device_locks').insert({
-    device_id: deviceId,
-    action: 'unlock',
-    reason,
-    lock_type: 'manual_admin',
-    executed_by: adminId,
-    execution_status: 'success',
-    executed_at: now,
-  });
-
-  if (lockError) throw lockError;
-
-  await supabase.from('audit_log').insert({
-    admin_id: adminId,
-    action: 'unlock',
-    entity_type: 'device',
-    entity_id: deviceId,
-    details: { reason },
+  return fetchAPI<void>(`/api/v1/devices/${deviceId}/unlock`, {
+    method: 'POST',
+    body: JSON.stringify({ admin_id: adminId, reason }),
   });
 }
 
 export async function updateDeviceStatus(deviceId: string, status: DeviceStatus, adminId: string) {
-  const supabase = createClient();
-  const { error } = await supabase
-    .from('devices')
-    .update({ status, updated_at: new Date().toISOString() })
-    .eq('id', deviceId);
-
-  if (error) throw error;
-
-  await supabase.from('audit_log').insert({
-    admin_id: adminId,
-    action: 'update',
-    entity_type: 'device',
-    entity_id: deviceId,
-    details: { status },
+  return fetchAPI<void>(`/api/v1/devices/${deviceId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, admin_id: adminId }),
   });
 }
 
@@ -232,57 +130,24 @@ export interface DeviceHandoverRow {
 }
 
 export async function getDeviceHandovers(filters: { status?: string; search?: string; page?: number; limit?: number } = {}) {
-  const supabase = createClient();
   const { status, search, page = 1, limit: rawLimit = 25 } = filters;
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
-  const offset = (page - 1) * limit;
 
-  let query = supabase
-    .from('device_handovers')
-    .select('*, customer:customers(id, first_name, last_name, phone_number), device:devices(id, brand, model, imei), distributor:distributors(id, business_name, contact_person)', { count: 'exact' });
+  const params = new URLSearchParams();
+  params.set('page', String(page));
+  params.set('limit', String(limit));
+  if (status) params.set('status', status);
+  if (search) params.set('search', search);
 
-  if (status) {
-    query = query.eq('status', status);
-  }
-
-  if (search) {
-    const sanitized = sanitizeSearchInput(search);
-    if (sanitized) {
-      query = query.or(`customer.first_name.ilike.%${sanitized}%,customer.last_name.ilike.%${sanitized}%,device.imei.ilike.%${sanitized}%`);
-    }
-  }
-
-  const { data, count, error } = await query
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (error) throw error;
-
-  return {
-    data: (data || []) as DeviceHandoverRow[],
-    total: count || 0,
-    page,
-    limit,
-    total_pages: Math.ceil((count || 0) / limit),
-  };
+  return fetchAPI<{
+    data: DeviceHandoverRow[];
+    total: number;
+    page: number;
+    limit: number;
+    total_pages: number;
+  }>(`/api/v1/devices/handovers?${params.toString()}`);
 }
 
 export async function getDeviceStats(): Promise<DeviceStats> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('devices')
-    .select('status, lock_status');
-
-  if (error) throw error;
-
-  const devices = data || [];
-
-  return {
-    in_stock: devices.filter((d) => d.status === 'in_stock').length,
-    allocated: devices.filter((d) => d.status === 'allocated').length,
-    active: devices.filter((d) => d.status === 'active').length,
-    locked: devices.filter((d) => d.lock_status === 'locked').length,
-    returned: devices.filter((d) => d.status === 'returned').length,
-    damaged: devices.filter((d) => d.status === 'damaged').length,
-  };
+  return fetchAPI<DeviceStats>('/api/v1/devices/stats');
 }

@@ -7,7 +7,47 @@ import type {
   HandoverResult,
   DeviceCondition,
 } from '@/types/distributor';
-import { createClient, isSupabaseConfigured } from '@/lib/supabase/client';
+import {
+  CognitoUser,
+  AuthenticationDetails,
+  userPool,
+  getSession,
+} from '@/lib/auth/cognito';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+/** Check whether Cognito is configured with the required env vars. */
+export function isCognitoConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID &&
+      process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID,
+  );
+}
+
+/** Get the current session's JWT token for API calls. */
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const session = await getSession();
+    if (session && session.isValid()) {
+      return session.getIdToken().getJwtToken();
+    }
+  } catch {
+    // No valid session
+  }
+  return null;
+}
+
+/** Build standard headers with auth token. */
+async function authHeaders(): Promise<Record<string, string>> {
+  const token = await getAuthToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -127,8 +167,8 @@ export async function fetchCommissions(): Promise<CommissionEntry[]> {
 }
 
 export async function loginDistributor(email: string, password: string): Promise<Distributor> {
-  if (!isSupabaseConfigured()) {
-    // Mock fallback for local development without Supabase
+  if (!isCognitoConfigured()) {
+    // Mock fallback for local development without Cognito
     await delay(800);
     if (email === 'kudzai@distributor.co.zw') {
       return { ...mockDistributor };
@@ -136,40 +176,44 @@ export async function loginDistributor(email: string, password: string): Promise
     throw new Error('Invalid credentials');
   }
 
-  const supabase = createClient();
+  return new Promise<Distributor>((resolve, reject) => {
+    const cognitoUser = new CognitoUser({
+      Username: email,
+      Pool: userPool,
+    });
 
-  const { error: authError } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+    const authDetails = new AuthenticationDetails({
+      Username: email,
+      Password: password,
+    });
+
+    cognitoUser.authenticateUser(authDetails, {
+      onSuccess: async (session) => {
+        try {
+          const token = session.getIdToken().getJwtToken();
+          const headers = await authHeaders();
+          headers['Authorization'] = `Bearer ${token}`;
+
+          const res = await fetch(`${API_URL}/distributors/me`, { headers });
+
+          if (!res.ok) {
+            cognitoUser.signOut();
+            reject(new Error('Invalid email or password'));
+            return;
+          }
+
+          const profile = await res.json();
+          resolve(profile as Distributor);
+        } catch {
+          cognitoUser.signOut();
+          reject(new Error('Invalid email or password'));
+        }
+      },
+      onFailure: () => {
+        reject(new Error('Invalid email or password'));
+      },
+    });
   });
-
-  if (authError) {
-    throw new Error('Invalid email or password');
-  }
-
-  // Verify the authenticated user has a distributor profile
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Invalid email or password');
-  }
-
-  const { data: profile } = await supabase
-    .from('distributors')
-    .select('*')
-    .eq('user_id', user.id)
-    .eq('status', 'active')
-    .single();
-
-  if (!profile) {
-    // User authenticated but has no active distributor profile — sign them out
-    await supabase.auth.signOut();
-    throw new Error('Invalid email or password');
-  }
-
-  return profile as Distributor;
 }
 
 // ── Handover API ──

@@ -29,8 +29,7 @@ Globals:
     Environment:
       Variables:
         NODE_ENV: !Ref Environment
-        SUPABASE_URL: !Ref SupabaseUrl
-        SUPABASE_SERVICE_ROLE_KEY: !Ref SupabaseServiceRoleKey
+        DB_SECRET_NAME: !Sub "${Environment}/lynia/database"
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"
     VpcConfig: !If
@@ -52,15 +51,10 @@ Parameters:
       - production
     Description: Deployment environment
 
-  SupabaseUrl:
+  CognitoUserPoolArn:
     Type: String
-    Description: Supabase project URL
-    Default: https://ghdrnxlsupbzoddtyxcp.supabase.co
-
-  SupabaseServiceRoleKey:
-    Type: String
-    Description: Supabase service role key
-    NoEcho: true
+    Description: Cognito User Pool ARN for API Gateway authorizer
+    Default: ""
 
   WhatsAppPhoneNumberId:
     Type: String
@@ -197,7 +191,7 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
             - Effect: Allow
               Action:
                 - sqs:SendMessage
@@ -250,7 +244,7 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/whatsapp-*"
             - Effect: Allow
               Action:
@@ -311,7 +305,7 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/smile-identity-*"
             - Effect: Allow
               Action:
@@ -378,7 +372,7 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/ecocash-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/onemoney-*"
             - Effect: Allow
@@ -444,7 +438,7 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/trustonic-*"
             - Effect: Allow
               Action:
@@ -514,7 +508,7 @@ Resources:
               Action:
                 - secretsmanager:GetSecretValue
               Resource:
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/supabase-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/sms-*"
             - Effect: Allow
               Action:

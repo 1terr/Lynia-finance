@@ -12,7 +12,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { formatDateTime, formatDate, formatRelativeTime } from '@/lib/utils';
-import { createClient } from '@/lib/supabase/client';
+import { fetchAPI } from '@/lib/api/client';
 import type { KYCSubmission, Customer } from '@/types';
 import {
   CheckCircle,
@@ -64,41 +64,18 @@ export default function KYCReviewPage() {
 
   const { data: reviewHistory } = useQuery({
     queryKey: ['kyc-review-history'],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data, count } = await supabase
-        .from('kyc_submissions')
-        .select('id, customer_id, status, created_at, updated_at, customer:customers(full_name, phone_number)', { count: 'exact' })
-        .neq('status', 'pending_review')
-        .order('updated_at', { ascending: false })
-        .range(0, 49);
-      const records = (data || []).map((row: Record<string, unknown>) => ({
-        ...row,
-        customer: Array.isArray(row.customer) ? row.customer[0] : row.customer,
-      }));
-      return { data: records as KYCReviewRecord[], total: count || 0 };
-    },
+    queryFn: () =>
+      fetchAPI<{ data: KYCReviewRecord[]; total: number }>(
+        '/api/v1/kyc/submissions/review-history?limit=50'
+      ),
   });
 
   const { data: slaStats } = useQuery({
     queryKey: ['kyc-sla-stats'],
-    queryFn: async () => {
-      const supabase = createClient();
-      const { data } = await supabase
-        .from('kyc_submissions')
-        .select('created_at, status')
-        .eq('status', 'pending_review');
-      const pending = data || [];
-      const now = Date.now();
-      let within4h = 0, within24h = 0, over24h = 0;
-      for (const s of pending) {
-        const hours = (now - new Date(s.created_at).getTime()) / 3600000;
-        if (hours < 4) within4h++;
-        else if (hours < 24) within24h++;
-        else over24h++;
-      }
-      return { total: pending.length, within4h, within24h, over24h };
-    },
+    queryFn: () =>
+      fetchAPI<{ total: number; within4h: number; within24h: number; over24h: number }>(
+        '/api/v1/kyc/submissions/sla-stats'
+      ),
   });
 
   const approveMutation = useMutation({

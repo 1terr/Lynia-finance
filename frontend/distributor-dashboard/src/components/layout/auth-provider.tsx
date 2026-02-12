@@ -1,28 +1,30 @@
 'use client';
 
 import { useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { getSession, signOut as cognitoSignOut } from '@/lib/auth/cognito';
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { Distributor } from '@/types/distributor';
 
-/** Fetch distributor profile for the authenticated user. */
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+
+/** Fetch distributor profile for the authenticated user via backend API. */
 async function fetchDistributorProfile(
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
+  token: string,
 ): Promise<Distributor | null> {
   try {
-    const { data } = await supabase
-      .from('distributors')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('status', 'active')
-      .single();
+    const res = await fetch(`${API_URL}/distributors/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-    if (data) {
-      return data as Distributor;
-    }
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    return data as Distributor;
   } catch {
-    // Query failed -- treat as unauthenticated
+    // Request failed -- treat as unauthenticated
   }
   return null;
 }
@@ -34,54 +36,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const setLoading = useAuthStore((s) => s.setLoading);
 
   useEffect(() => {
-    let subscription: { unsubscribe: () => void } | null = null;
-
-    const supabase = createClient();
-
     async function loadUser() {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const session = await getSession();
 
-        if (user) {
-          const profile = await fetchDistributorProfile(supabase, user.id);
+        if (session && session.isValid()) {
+          const token = session.getIdToken().getJwtToken();
+          const profile = await fetchDistributorProfile(token);
           if (profile) {
             setDistributor(profile);
           } else {
-            // User exists in auth but not in distributors table or inactive
-            await supabase.auth.signOut();
+            // User exists in Cognito but not in distributors table or inactive
+            cognitoSignOut();
           }
         }
       } catch {
-        // Session expired or invalid — redirect handled by render gate
+        // Session expired or invalid -- redirect handled by render gate
       } finally {
         setLoading(false);
       }
     }
 
     loadUser();
-
-    // Listen for auth state changes
-    try {
-      const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          const profile = await fetchDistributorProfile(supabase, session.user.id);
-          if (profile) {
-            setDistributor(profile);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          setDistributor(null);
-        }
-      });
-      subscription = data.subscription;
-    } catch {
-      // Supabase client unavailable -- auth listener not registered
-    }
-
-    return () => {
-      subscription?.unsubscribe();
-    };
   }, [setDistributor, setLoading]);
 
   // Show loading spinner while initial auth check is in progress
@@ -93,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Auth check complete but no valid distributor — redirect to login.
+  // Auth check complete but no valid distributor -- redirect to login.
   // Uses window.location for a hard redirect because Next.js middleware does
   // not run in static exports (output: 'export'), so router.push alone could
   // leave the spinner stuck if client-side navigation stalls.

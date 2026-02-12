@@ -12,12 +12,7 @@
  * audit trail integrity per RBZ 7-year retention requirements.
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from './clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -126,7 +121,7 @@ export async function grantConsent(params: {
   const now = new Date();
 
   // Upsert consent record
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('customer_consents')
     .upsert(
       {
@@ -142,7 +137,8 @@ export async function grantConsent(params: {
       { onConflict: 'customer_id,purpose' }
     )
     .select()
-    .single();
+    .single()
+    .execute();
 
   if (error) throw new Error(`Failed to record consent: ${error.message}`);
 
@@ -167,7 +163,7 @@ export async function withdrawConsent(params: {
 }): Promise<void> {
   const now = new Date();
 
-  await supabase
+  await db
     .from('customer_consents')
     .update({
       granted: false,
@@ -175,7 +171,8 @@ export async function withdrawConsent(params: {
       updated_at: now,
     })
     .eq('customer_id', params.customer_id)
-    .eq('purpose', params.purpose);
+    .eq('purpose', params.purpose)
+    .execute();
 
   await logPrivacyAction({
     action: 'consent_withdrawn',
@@ -194,12 +191,13 @@ export async function hasConsent(
   customerId: string,
   purpose: ConsentPurpose
 ): Promise<boolean> {
-  const { data } = await supabase
+  const { data } = await db
     .from('customer_consents')
     .select('granted')
     .eq('customer_id', customerId)
     .eq('purpose', purpose)
-    .single();
+    .single()
+    .execute();
 
   return data?.granted === true;
 }
@@ -210,11 +208,12 @@ export async function hasConsent(
 export async function getCustomerConsents(
   customerId: string
 ): Promise<ConsentRecord[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from('customer_consents')
     .select('*')
     .eq('customer_id', customerId)
-    .order('purpose');
+    .order('purpose')
+    .execute();
 
   return (data || []) as ConsentRecord[];
 }

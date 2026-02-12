@@ -15,12 +15,7 @@
  * - Error logging and analytics tracking
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // ERROR TYPES
@@ -553,7 +548,7 @@ export async function trackError(
   error: ConversationError
 ): Promise<void> {
   try {
-    await supabase.from('whatsapp_error_log').insert({
+    await db.from('whatsapp_error_log').insert({
       phone_number: phoneNumber,
       error_category: error.category,
       error_severity: error.severity,
@@ -562,7 +557,7 @@ export async function trackError(
       internal_message: error.internalMessage,
       metadata: error.metadata || {},
       created_at: new Date().toISOString(),
-    });
+    }).execute();
   } catch (err) {
     // Never let error tracking fail the main flow
     console.error('Failed to track error:', err);
@@ -578,7 +573,7 @@ export async function trackSecurityEvent(
   details: Record<string, unknown>
 ): Promise<void> {
   try {
-    await supabase.from('whatsapp_error_log').insert({
+    await db.from('whatsapp_error_log').insert({
       phone_number: phoneNumber,
       error_category: 'security',
       error_severity: 'high',
@@ -587,7 +582,7 @@ export async function trackSecurityEvent(
       internal_message: `Security event: ${eventType}`,
       metadata: details,
       created_at: new Date().toISOString(),
-    });
+    }).execute();
   } catch (err) {
     console.error('Failed to track security event:', err);
   }

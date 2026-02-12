@@ -1,0 +1,141 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lynia Finance - Cognito User Pool
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [dev, staging, production]
+
+Resources:
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "${Environment}-lynia-users"
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      MfaConfiguration: OPTIONAL
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      Schema:
+        - Name: email
+          Required: true
+          Mutable: true
+        - Name: role
+          AttributeDataType: String
+          Mutable: true
+        - Name: display_name
+          AttributeDataType: String
+          Mutable: true
+        - Name: organization_id
+          AttributeDataType: String
+          Mutable: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UserPoolAddOns:
+        AdvancedSecurityMode: ENFORCED
+
+  # App client for admin portal
+  AdminPortalClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${Environment}-admin-portal"
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # App client for distributor dashboard
+  DistributorClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "${Environment}-distributor-dashboard"
+      UserPoolId: !Ref UserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 7
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  # User groups matching current roles
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      UserPoolId: !Ref UserPool
+      Description: Full system administrators
+      Precedence: 0
+
+  ManagerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: manager
+      UserPoolId: !Ref UserPool
+      Description: Operations managers
+      Precedence: 1
+
+  SupportGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: support
+      UserPoolId: !Ref UserPool
+      Description: Customer support staff
+      Precedence: 2
+
+  ReportsViewerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: reports_viewer
+      UserPoolId: !Ref UserPool
+      Description: Read-only reports access
+      Precedence: 3
+
+  DistributorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: distributor
+      UserPoolId: !Ref UserPool
+      Description: Field agents and distributors
+      Precedence: 4
+
+Outputs:
+  UserPoolId:
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub "${Environment}-lynia-user-pool-id"
+  UserPoolArn:
+    Value: !GetAtt UserPool.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-user-pool-arn"
+  AdminClientId:
+    Value: !Ref AdminPortalClient
+    Export:
+      Name: !Sub "${Environment}-lynia-admin-client-id"
+  DistributorClientId:
+    Value: !Ref DistributorClient
+    Export:
+      Name: !Sub "${Environment}-lynia-distributor-client-id"

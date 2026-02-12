@@ -10,9 +10,7 @@
     "lint": "eslint src --ext .ts",
     "type-check": "tsc --noEmit"
   },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.39.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/aws-lambda": "^8.10.131",
     "@types/node": "^20.11.5",

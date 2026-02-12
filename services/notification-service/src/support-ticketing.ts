@@ -11,12 +11,7 @@
  *  - Customer satisfaction (CSAT) collection
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -152,22 +147,23 @@ export async function createTicket(params: {
     created_at: new Date(),
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('support_tickets')
     .insert(ticket)
     .select()
-    .single();
+    .single()
+    .execute();
 
   if (error) throw new Error(`Failed to create ticket: ${error.message}`);
 
   // Add initial message
-  await supabase.from('ticket_messages').insert({
+  await db.from('ticket_messages').insert({
     ticket_id: data.id,
     sender_type: 'customer',
     sender_id: params.customer_id,
     message: params.description,
     created_at: new Date(),
-  });
+  }).execute();
 
   return data as SupportTicket;
 }
@@ -176,10 +172,11 @@ export async function createTicket(params: {
  * Assign ticket to an agent
  */
 export async function assignTicket(ticketId: string, agentId: string): Promise<void> {
-  await supabase
+  await db
     .from('support_tickets')
     .update({ status: 'assigned', assigned_to: agentId })
-    .eq('id', ticketId);
+    .eq('id', ticketId)
+    .execute();
 }
 
 /**
@@ -191,40 +188,42 @@ export async function addTicketReply(
   senderId: string,
   message: string
 ): Promise<void> {
-  await supabase.from('ticket_messages').insert({
+  await db.from('ticket_messages').insert({
     ticket_id: ticketId,
     sender_type: senderType,
     sender_id: senderId,
     message,
     created_at: new Date(),
-  });
+  }).execute();
 
   const newStatus = senderType === 'agent' ? 'waiting_customer' : 'in_progress';
-  await supabase
+  await db
     .from('support_tickets')
     .update({ status: newStatus })
-    .eq('id', ticketId);
+    .eq('id', ticketId)
+    .execute();
 }
 
 /**
  * Resolve a ticket
  */
 export async function resolveTicket(ticketId: string, resolution: string): Promise<void> {
-  await supabase
+  await db
     .from('support_tickets')
     .update({
       status: 'resolved',
       resolved_at: new Date(),
     })
-    .eq('id', ticketId);
+    .eq('id', ticketId)
+    .execute();
 
-  await supabase.from('ticket_messages').insert({
+  await db.from('ticket_messages').insert({
     ticket_id: ticketId,
     sender_type: 'system',
     sender_id: 'system',
     message: `Ticket resolved: ${resolution}`,
     created_at: new Date(),
-  });
+  }).execute();
 }
 
 /**
@@ -233,22 +232,24 @@ export async function resolveTicket(ticketId: string, resolution: string): Promi
 export async function recordCSAT(ticketId: string, score: number): Promise<void> {
   if (score < 1 || score > 5) throw new Error('CSAT score must be 1-5');
 
-  await supabase
+  await db
     .from('support_tickets')
     .update({ csat_score: score, status: 'closed' })
-    .eq('id', ticketId);
+    .eq('id', ticketId)
+    .execute();
 }
 
 /**
  * Get tickets needing attention (breaching SLA)
  */
 export async function getBreachingSLATickets(): Promise<SupportTicket[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from('support_tickets')
     .select('*')
     .in('status', ['open', 'assigned', 'in_progress'])
     .lt('sla_due_at', new Date().toISOString())
-    .order('sla_due_at', { ascending: true });
+    .order('sla_due_at', { ascending: true })
+    .execute();
 
   return (data || []) as SupportTicket[];
 }

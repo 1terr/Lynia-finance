@@ -12,13 +12,8 @@
  * Triggered by EventBridge cron: rate(1 hour)
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import axios from 'axios';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'http://localhost:3000/whatsapp/send';
 
@@ -201,7 +196,7 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
   const today = new Date().toISOString().split('T')[0];
 
   // Look for loans with upcoming or overdue installments
-  const { data: loans, error } = await supabase
+  const { data: loans, error } = await db
     .from('loans')
     .select(`
       id,
@@ -217,7 +212,8 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
       )
     `)
     .in('loan_status', ['active', 'delinquent'])
-    .not('next_payment_date', 'is', null);
+    .not('next_payment_date', 'is', null)
+    .execute();
 
   if (error || !loans) {
     console.error('Error fetching loans for reminders:', error);
@@ -255,13 +251,14 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
  * Check if a reminder has already been sent for this loan/type combination
  */
 async function hasReminderBeenSent(loanId: string, reminderType: ReminderType): Promise<boolean> {
-  const { data } = await supabase
+  const { data } = await db
     .from('payment_reminders')
     .select('id')
     .eq('loan_id', loanId)
     .eq('reminder_type', reminderType)
     .in('status', ['sent', 'delivered', 'read'])
-    .limit(1);
+    .limit(1)
+    .execute();
 
   return !!data && data.length > 0;
 }
@@ -270,11 +267,12 @@ async function hasReminderBeenSent(loanId: string, reminderType: ReminderType): 
  * Check if customer has opted out of reminders
  */
 async function hasOptedOut(customerId: string): Promise<boolean> {
-  const { data } = await supabase
+  const { data } = await db
     .from('customer_preferences')
     .select('reminder_opt_out')
     .eq('customer_id', customerId)
-    .single();
+    .single()
+    .execute();
 
   return data?.reminder_opt_out === true;
 }
@@ -322,7 +320,7 @@ async function sendReminder(
   }
 
   // Store reminder record
-  await supabase.from('payment_reminders').insert({
+  await db.from('payment_reminders').insert({
     loan_id: record.loan_id,
     customer_id: record.customer_id,
     reminder_type: record.reminder_type,
@@ -333,7 +331,7 @@ async function sendReminder(
     message_content: record.message_content,
     whatsapp_message_id: record.whatsapp_message_id,
     payment_link: record.payment_link,
-  });
+  }).execute();
 
   return record;
 }
@@ -408,13 +406,14 @@ export async function processPaymentReminders(): Promise<{
  * Handle customer opt-out request
  */
 export async function handleReminderOptOut(customerId: string): Promise<void> {
-  await supabase
+  await db
     .from('customer_preferences')
     .upsert({
       customer_id: customerId,
       reminder_opt_out: true,
       updated_at: new Date(),
-    });
+    })
+    .execute();
 
   console.log(`Customer ${customerId} opted out of reminders`);
 }
@@ -423,13 +422,14 @@ export async function handleReminderOptOut(customerId: string): Promise<void> {
  * Handle customer opt-in request
  */
 export async function handleReminderOptIn(customerId: string): Promise<void> {
-  await supabase
+  await db
     .from('customer_preferences')
     .upsert({
       customer_id: customerId,
       reminder_opt_out: false,
       updated_at: new Date(),
-    });
+    })
+    .execute();
 
   console.log(`Customer ${customerId} opted in to reminders`);
 }
@@ -450,7 +450,7 @@ export async function getReminderAnalytics(dateRange?: { from: string; to: strin
   read_rate: number;
   by_type: Record<string, number>;
 }> {
-  let query = supabase
+  let query = db
     .from('payment_reminders')
     .select('reminder_type, status');
 
@@ -458,7 +458,7 @@ export async function getReminderAnalytics(dateRange?: { from: string; to: strin
     query = query.gte('sent_at', dateRange.from).lte('sent_at', dateRange.to);
   }
 
-  const { data: reminders } = await query;
+  const { data: reminders } = await query.execute();
 
   if (!reminders || reminders.length === 0) {
     return {
