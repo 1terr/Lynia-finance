@@ -52,11 +52,14 @@ jobs:
             --stack-name "${STACK_NAME}" \
             --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
 
-          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ]; then
+          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ] || [ "${STACK_STATUS}" = "DELETE_FAILED" ]; then
             echo "Stack in ${STACK_STATUS} state — deleting before re-deploy..."
             aws cloudformation delete-stack --stack-name "${STACK_NAME}"
             aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
             echo "Stack deleted successfully"
+          elif [ "${STACK_STATUS}" = "UPDATE_ROLLBACK_COMPLETE" ]; then
+            echo "⚠️  Stack in UPDATE_ROLLBACK_COMPLETE state (previous update failed and rolled back)"
+            echo "Will attempt a new update from this state..."
           elif [ "${STACK_STATUS}" = "DOES_NOT_EXIST" ]; then
             echo "Stack does not exist yet — will create"
           else
@@ -311,6 +314,7 @@ jobs:
         if: always()
         run: |
           ENV="${{ github.event.inputs.environment }}"
+          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
           STACK_STATUS="${{ steps.outputs.outputs.stack_status }}"
 
           POOL_PASS="${{ steps.verify-pool.outputs.pool_pass || 0 }}"
@@ -323,8 +327,13 @@ jobs:
           TOTAL_PASS=$((POOL_PASS + GROUPS_PASS + CLIENTS_PASS))
           TOTAL_FAIL=$((POOL_FAIL + GROUPS_FAIL + CLIENTS_FAIL))
 
-          # Stack status check
-          if [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ]; then
+          # Stack status check — also detect deploy step failure
+          if [ "${DEPLOY_OUTCOME}" != "success" ]; then
+            STACK_CHECK="❌"
+            STACK_STATUS="${STACK_STATUS:-DEPLOY_FAILED}"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+            echo "::error::CloudFormation deploy step failed. Check the 'Deploy Cognito stack' and 'Show stack events on failure' steps above for details."
+          elif [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ]; then
             STACK_CHECK="✅"
             TOTAL_PASS=$((TOTAL_PASS + 1))
           else
