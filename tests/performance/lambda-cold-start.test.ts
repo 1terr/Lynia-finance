@@ -72,23 +72,23 @@ async function simulateColdStart(
 // MOCK SETUP
 // =====================================================
 
-jest.mock('../../services/shared/clients/supabase', () => ({
-  getSupabaseClient: () => ({
+jest.mock('../../services/shared/clients/database', () => ({
+  db: {
     from: jest.fn().mockReturnValue({
       select: jest.fn().mockReturnThis(),
       insert: jest.fn().mockReturnThis(),
       update: jest.fn().mockReturnThis(),
       eq: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+      single: jest.fn().mockReturnThis(),
+      maybeSingle: jest.fn().mockReturnThis(),
       order: jest.fn().mockReturnThis(),
       limit: jest.fn().mockReturnThis(),
+      in: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ data: null, error: null }),
     }),
-    auth: {
-      getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test' } }, error: null }),
-    },
-  }),
-  supabase: null,
+  },
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
 }));
 
 // =====================================================

@@ -20,7 +20,6 @@
   },
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "^3.988.0",
-    "@supabase/supabase-js": "^2.95.3",
     "@types/jest": "^29.5.0",
     "@types/node": "^20.0.0",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
