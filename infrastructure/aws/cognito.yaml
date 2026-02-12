@@ -11,7 +11,6 @@ Resources:
     Type: AWS::Cognito::UserPool
     Properties:
       UserPoolName: !Sub "${Environment}-lynia-users"
-      UserPoolTier: PLUS
       AutoVerifiedAttributes:
         - email
       UsernameAttributes:
@@ -43,8 +42,6 @@ Resources:
         RecoveryMechanisms:
           - Name: verified_email
             Priority: 1
-      UserPoolAddOns:
-        AdvancedSecurityMode: ENFORCED
 
   # App client for admin portal
   AdminPortalClient:
