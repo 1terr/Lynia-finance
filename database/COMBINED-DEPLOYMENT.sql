@@ -979,6 +979,278 @@ WITH CHECK (
 );
 
 -- =====================================================
+-- SECURITY DEFINER helper functions for RLS role checks
+-- =====================================================
+-- These run as the function owner (bypassing RLS on
+-- admin_users) to prevent circular evaluation when used
+-- in admin_users' own policies.
+
+CREATE OR REPLACE FUNCTION public.is_admin_or_manager()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admin_users
+    WHERE id = auth.uid()
+      AND role IN ('admin', 'manager')
+      AND status = 'active'
+  );
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_admin_staff()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+SET search_path = ''
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.admin_users
+    WHERE id = auth.uid()
+      AND role IN ('admin', 'manager', 'support', 'reports_viewer')
+      AND status = 'active'
+  );
+$$;
+
+-- =====================================================
+-- RLS POLICIES: admin_users
+-- =====================================================
+
+CREATE POLICY "Staff view own profile"
+ON public.admin_users FOR SELECT
+TO authenticated
+USING (id = auth.uid());
+
+CREATE POLICY "Admins manage all staff"
+ON public.admin_users FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: agent_inventory
+-- =====================================================
+
+CREATE POLICY "Distributors view own inventory"
+ON public.agent_inventory FOR SELECT
+TO authenticated
+USING (
+  distributor_id = auth.uid()
+  OR public.is_admin_or_manager()
+);
+
+CREATE POLICY "Admins manage agent inventory"
+ON public.agent_inventory FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: audit_log
+-- =====================================================
+
+CREATE POLICY "Admins view audit log"
+ON public.audit_log FOR SELECT
+TO authenticated
+USING (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: credit_scores
+-- =====================================================
+
+CREATE POLICY "Customers and staff view credit scores"
+ON public.credit_scores FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage credit scores"
+ON public.credit_scores FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: device_locks
+-- =====================================================
+
+CREATE POLICY "Customers and staff view device locks"
+ON public.device_locks FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage device locks"
+ON public.device_locks FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: devices
+-- =====================================================
+
+CREATE POLICY "Customers and staff view devices"
+ON public.devices FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage devices"
+ON public.devices FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: distributors
+-- =====================================================
+
+CREATE POLICY "Distributors view own profile"
+ON public.distributors FOR SELECT
+TO authenticated
+USING (
+  id = auth.uid()
+  OR public.is_admin_or_manager()
+);
+
+CREATE POLICY "Admins manage distributors"
+ON public.distributors FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: kyc_submissions
+-- =====================================================
+
+CREATE POLICY "Customers and staff view KYC submissions"
+ON public.kyc_submissions FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage KYC submissions"
+ON public.kyc_submissions FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: loans
+-- =====================================================
+
+CREATE POLICY "Customers and staff view loans"
+ON public.loans FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage loans"
+ON public.loans FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: notifications
+-- =====================================================
+
+CREATE POLICY "Customers and staff view notifications"
+ON public.notifications FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage notifications"
+ON public.notifications FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: payments
+-- =====================================================
+
+CREATE POLICY "Customers and staff view payments"
+ON public.payments FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage payments"
+ON public.payments FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: support_tickets
+-- =====================================================
+
+CREATE POLICY "Customers and staff view support tickets"
+ON public.support_tickets FOR SELECT
+TO authenticated
+USING (
+  customer_id = auth.uid()
+  OR assigned_to = auth.uid()
+  OR public.is_admin_staff()
+);
+
+CREATE POLICY "Admins manage support tickets"
+ON public.support_tickets FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: whatsapp_messages
+-- =====================================================
+
+CREATE POLICY "Staff view WhatsApp messages"
+ON public.whatsapp_messages FOR SELECT
+TO authenticated
+USING (public.is_admin_staff());
+
+CREATE POLICY "Admins manage WhatsApp messages"
+ON public.whatsapp_messages FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
+-- RLS POLICIES: whatsapp_sessions
+-- =====================================================
+
+CREATE POLICY "Staff view WhatsApp sessions"
+ON public.whatsapp_sessions FOR SELECT
+TO authenticated
+USING (public.is_admin_staff());
+
+CREATE POLICY "Admins manage WhatsApp sessions"
+ON public.whatsapp_sessions FOR ALL
+TO authenticated
+USING (public.is_admin_or_manager())
+WITH CHECK (public.is_admin_or_manager());
+
+-- =====================================================
 -- FUNCTIONS & TRIGGERS
 -- =====================================================
 
