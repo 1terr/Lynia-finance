@@ -17,12 +17,7 @@
  *  - Audit trail for every step
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -69,11 +64,12 @@ export async function checkRepossessionEligibility(loanId: string): Promise<{
   outstanding_amount: number;
   restructuring_attempted: boolean;
 }> {
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('id', loanId)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) throw new Error('Loan not found');
 
@@ -81,11 +77,12 @@ export async function checkRepossessionEligibility(loanId: string): Promise<{
   const daysPastDue = loan.days_past_due || 0;
 
   // Check if restructuring was attempted
-  const { data: restructures } = await supabase
+  const { data: restructures } = await db
     .from('restructure_requests')
     .select('id')
     .eq('loan_id', loanId)
-    .limit(1);
+    .limit(1)
+    .execute();
 
   const restructuringAttempted = !!restructures && restructures.length > 0;
 
@@ -135,11 +132,12 @@ export async function initiateRepossession(
     throw new Error(`Not eligible: ${eligibility.reason}`);
   }
 
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('customer_id, device_id')
     .eq('id', loanId)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) throw new Error('Loan not found');
 
@@ -155,20 +153,21 @@ export async function initiateRepossession(
     created_at: new Date(),
   };
 
-  const { data: created } = await supabase
+  const { data: created } = await db
     .from('repossession_orders')
     .insert(order)
     .select()
-    .single();
+    .single()
+    .execute();
 
   // Audit log
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     action: 'repossession.initiated',
     entity_type: 'loan',
     entity_id: loanId,
     performed_by: initiatedBy,
     metadata: { order_id: created?.id, days_past_due: eligibility.days_past_due },
-  });
+  }).execute();
 
   return created as RepossessionOrder;
 }
@@ -177,11 +176,12 @@ export async function initiateRepossession(
  * Create repossession order after 7-day warning period
  */
 export async function createRepossessionOrder(orderId: string): Promise<void> {
-  const { data: order } = await supabase
+  const { data: order } = await db
     .from('repossession_orders')
     .select('*')
     .eq('id', orderId)
-    .single();
+    .single()
+    .execute();
 
   if (!order) throw new Error('Order not found');
 
@@ -194,23 +194,25 @@ export async function createRepossessionOrder(orderId: string): Promise<void> {
     }
   }
 
-  await supabase
+  await db
     .from('repossession_orders')
     .update({ status: 'order_created' })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .execute();
 }
 
 /**
  * Assign field agent to recover device
  */
 export async function assignAgent(orderId: string, agentId: string): Promise<void> {
-  await supabase
+  await db
     .from('repossession_orders')
     .update({
       status: 'agent_assigned',
       assigned_agent_id: agentId,
     })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .execute();
 }
 
 /**
@@ -221,7 +223,7 @@ export async function recordRecovery(
   condition: string,
   notes: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('repossession_orders')
     .update({
       status: 'recovered',
@@ -229,25 +231,29 @@ export async function recordRecovery(
       device_condition_on_recovery: condition,
       notes,
     })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .execute();
 
   // Update device status
-  const { data: order } = await supabase
+  const { data: order } = await db
     .from('repossession_orders')
     .select('device_id, loan_id')
     .eq('id', orderId)
-    .single();
+    .single()
+    .execute();
 
   if (order) {
-    await supabase
+    await db
       .from('devices')
       .update({ status: 'repossessed', lock_status: 'locked' })
-      .eq('id', order.device_id);
+      .eq('id', order.device_id)
+      .execute();
 
-    await supabase
+    await db
       .from('loans')
       .update({ loan_status: 'defaulted' })
-      .eq('id', order.loan_id);
+      .eq('id', order.loan_id)
+      .execute();
   }
 }
 
@@ -258,15 +264,16 @@ export async function closeRepossession(
   orderId: string,
   closedBy: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('repossession_orders')
     .update({ status: 'closed' })
-    .eq('id', orderId);
+    .eq('id', orderId)
+    .execute();
 
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     action: 'repossession.closed',
     entity_type: 'repossession_order',
     entity_id: orderId,
     performed_by: closedBy,
-  });
+  }).execute();
 }

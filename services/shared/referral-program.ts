@@ -14,12 +14,7 @@
  *  - Bonus: $10 for every 5th referral
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db, query } from './clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -67,23 +62,25 @@ function generateCode(name: string): string {
  * Get or create a referral code for a customer
  */
 export async function getOrCreateReferralCode(customerId: string): Promise<ReferralCode> {
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('referral_codes')
     .select('*')
     .eq('customer_id', customerId)
-    .single();
+    .single()
+    .execute();
 
   if (existing) return existing as ReferralCode;
 
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('first_name')
     .eq('id', customerId)
-    .single();
+    .single()
+    .execute();
 
   const code = generateCode(customer?.first_name || 'LYN');
 
-  const { data: created } = await supabase
+  const { data: created } = await db
     .from('referral_codes')
     .insert({
       code,
@@ -94,7 +91,8 @@ export async function getOrCreateReferralCode(customerId: string): Promise<Refer
       created_at: new Date(),
     })
     .select()
-    .single();
+    .single()
+    .execute();
 
   return created as ReferralCode;
 }
@@ -111,32 +109,35 @@ export async function createReferral(
   refereePhone: string
 ): Promise<Referral> {
   // Look up referral code
-  const { data: codeRecord } = await supabase
+  const { data: codeRecord } = await db
     .from('referral_codes')
     .select('customer_id, code')
     .eq('code', referralCode)
-    .single();
+    .single()
+    .execute();
 
   if (!codeRecord) throw new Error('Invalid referral code');
 
   // Anti-fraud: check self-referral
-  const { data: referrer } = await supabase
+  const { data: referrer } = await db
     .from('customers')
     .select('phone_number')
     .eq('id', codeRecord.customer_id)
-    .single();
+    .single()
+    .execute();
 
   if (referrer?.phone_number === refereePhone) {
     throw new Error('Self-referral not allowed');
   }
 
   // Anti-fraud: check duplicate
-  const { data: duplicate } = await supabase
+  const { data: duplicate } = await db
     .from('referrals')
     .select('id')
     .eq('referee_phone', refereePhone)
     .not('status', 'eq', 'expired')
-    .limit(1);
+    .limit(1)
+    .execute();
 
   if (duplicate && duplicate.length > 0) {
     throw new Error('This phone number has already been referred');
@@ -152,22 +153,18 @@ export async function createReferral(
     created_at: new Date(),
   };
 
-  const { data: created } = await supabase
+  const { data: created } = await db
     .from('referrals')
     .insert(referral)
     .select()
-    .single();
+    .single()
+    .execute();
 
   // Increment total referrals
-  await supabase.rpc('increment_referral_count', {
-    p_code: referralCode,
-  }).then(() => {}).catch(() => {
-    // Fallback: manual increment
-    supabase
-      .from('referral_codes')
-      .update({ total_referrals: (codeRecord as Record<string, unknown>).total_referrals + 1 })
-      .eq('code', referralCode);
-  });
+  await query(
+    'UPDATE referral_codes SET total_referrals = total_referrals + 1 WHERE code = $1',
+    [referralCode]
+  );
 
   return created as Referral;
 }
@@ -178,55 +175,60 @@ export async function createReferral(
 export async function convertReferral(
   refereeCustomerId: string
 ): Promise<{ referralFound: boolean; rewardAmount: number }> {
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('phone_number')
     .eq('id', refereeCustomerId)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) return { referralFound: false, rewardAmount: 0 };
 
-  const { data: referral } = await supabase
+  const { data: referral } = await db
     .from('referrals')
     .select('*')
     .eq('referee_phone', customer.phone_number)
     .in('status', ['pending', 'onboarding'])
-    .single();
+    .single()
+    .execute();
 
   if (!referral) return { referralFound: false, rewardAmount: 0 };
 
   // Update referral
-  await supabase
+  await db
     .from('referrals')
     .update({
       referee_id: refereeCustomerId,
       status: 'converted',
       converted_at: new Date(),
     })
-    .eq('id', referral.id);
+    .eq('id', referral.id)
+    .execute();
 
   // Credit referrer reward
   const rewardAmount = referral.referrer_reward_amount || 5;
 
   // Check for milestone bonus (every 5th referral)
-  const { data: codeRecord } = await supabase
+  const { data: codeRecord } = await db
     .from('referral_codes')
     .select('successful_referrals')
     .eq('customer_id', referral.referrer_id)
-    .single();
+    .single()
+    .execute();
 
   const successCount = (codeRecord?.successful_referrals || 0) + 1;
   const bonusAmount = successCount % 5 === 0 ? 10 : 0;
   const totalReward = rewardAmount + bonusAmount;
 
   // Update code stats
-  await supabase
+  await db
     .from('referral_codes')
     .update({
       successful_referrals: successCount,
       total_rewards_earned: (codeRecord as Record<string, unknown>)?.total_rewards_earned + totalReward,
     })
-    .eq('customer_id', referral.referrer_id);
+    .eq('customer_id', referral.referrer_id)
+    .execute();
 
   return { referralFound: true, rewardAmount: totalReward };
 }
@@ -243,11 +245,13 @@ export async function getReferralStats(customerId: string): Promise<{
 }> {
   const codeRecord = await getOrCreateReferralCode(customerId);
 
-  const { count: pendingCount } = await supabase
+  const { count: pendingCount } = await db
     .from('referrals')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('referrer_id', customerId)
-    .in('status', ['pending', 'onboarding']);
+    .in('status', ['pending', 'onboarding'])
+    .count()
+    .execute();
 
   return {
     code: codeRecord.code,

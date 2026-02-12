@@ -136,9 +136,9 @@ export const mockKYCSubmission: KYCSubmission = {
   customer_id: mockCustomer.id,
   document_type: 'national_id',
   document_number: '63-1234567-A-01',
-  document_front_url: 'https://example.supabase.co/storage/v1/object/public/kyc/front.jpg',
-  document_back_url: 'https://example.supabase.co/storage/v1/object/public/kyc/back.jpg',
-  selfie_url: 'https://example.supabase.co/storage/v1/object/public/kyc/selfie.jpg',
+  document_front_url: 'https://lynia-kyc-documents.s3.amazonaws.com/kyc/front.jpg',
+  document_back_url: 'https://lynia-kyc-documents.s3.amazonaws.com/kyc/back.jpg',
+  selfie_url: 'https://lynia-kyc-documents.s3.amazonaws.com/kyc/selfie.jpg',
   smile_job_id: 'smile-001',
   smile_result: {
     face_match: true,

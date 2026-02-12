@@ -458,11 +458,12 @@ export class LockManagementService {
       }
 
       // Check if overdue loan is fully repaid with no balance
-      const { data: loan } = await this.supabase
+      const { data: loan } = await db
         .from('loans')
         .select('outstanding_balance, status')
         .eq('id', payment.loan_id)
-        .single();
+        .single()
+        .execute();
 
       if (!loan) {
         console.error('Loan not found');
@@ -495,13 +496,14 @@ export class LockManagementService {
     gracePeriodStart: Date | string,
     gracePeriodEnd: Date | string
   ): Promise<boolean> {
-    const { data: payments, error } = await this.supabase
+    const { data: payments, error } = await db
       .from('payments')
       .select('*')
       .eq('loan_id', loanId)
       .gte('completed_at', new Date(gracePeriodStart).toISOString())
       .lte('completed_at', new Date(gracePeriodEnd).toISOString())
-      .eq('status', 'completed');
+      .eq('status', 'completed')
+      .execute();
 
     if (error) {
       console.error('Error checking payments during grace period:', error);

@@ -13,12 +13,7 @@
  * Actions: allow, flag, block, report
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from './clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -75,10 +70,12 @@ export async function checkIdentityDuplicate(params: {
 
   // Check duplicate national ID
   if (params.national_id) {
-    const { count } = await supabase
+    const { count } = await db
       .from('customers')
-      .select('*', { count: 'exact', head: true })
-      .eq('national_id', params.national_id);
+      .select('*')
+      .eq('national_id', params.national_id)
+      .count()
+      .execute();
 
     if ((count || 0) > 1) {
       score += 80;
@@ -87,10 +84,12 @@ export async function checkIdentityDuplicate(params: {
   }
 
   // Check duplicate phone
-  const { count: phoneCount } = await supabase
+  const { count: phoneCount } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true })
-    .eq('phone_number', params.phone_number);
+    .select('*')
+    .eq('phone_number', params.phone_number)
+    .count()
+    .execute();
 
   if ((phoneCount || 0) > 1) {
     score += 60;
@@ -99,11 +98,13 @@ export async function checkIdentityDuplicate(params: {
 
   // Check duplicate IMEI
   if (params.device_imei) {
-    const { count: imeiCount } = await supabase
+    const { count: imeiCount } = await db
       .from('loans')
-      .select('*', { count: 'exact', head: true })
+      .select('*')
       .eq('device_imei', params.device_imei)
-      .in('loan_status', ['active', 'delinquent']);
+      .in('loan_status', ['active', 'delinquent'])
+      .count()
+      .execute();
 
     if ((imeiCount || 0) > 1) {
       score += 90;
@@ -127,11 +128,13 @@ export async function checkVelocity(params: {
   const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   // Applications in last 24 hours from same phone
-  const { count: dailyCount } = await supabase
+  const { count: dailyCount } = await db
     .from('whatsapp_onboarding_sessions')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('phone_number', params.phone_number)
-    .gte('created_at', oneDayAgo);
+    .gte('created_at', oneDayAgo)
+    .count()
+    .execute();
 
   if ((dailyCount || 0) > 3) {
     score += 50;
@@ -139,11 +142,13 @@ export async function checkVelocity(params: {
   }
 
   // Applications in last week
-  const { count: weeklyCount } = await supabase
+  const { count: weeklyCount } = await db
     .from('whatsapp_onboarding_sessions')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('phone_number', params.phone_number)
-    .gte('created_at', oneWeekAgo);
+    .gte('created_at', oneWeekAgo)
+    .count()
+    .execute();
 
   if ((weeklyCount || 0) > 5) {
     score += 40;
@@ -152,11 +157,13 @@ export async function checkVelocity(params: {
 
   // Multiple rejected applications
   if (params.customer_id) {
-    const { count: rejectedCount } = await supabase
+    const { count: rejectedCount } = await db
       .from('loans')
-      .select('*', { count: 'exact', head: true })
+      .select('*')
       .eq('customer_id', params.customer_id)
-      .eq('loan_status', 'rejected');
+      .eq('loan_status', 'rejected')
+      .count()
+      .execute();
 
     if ((rejectedCount || 0) >= 3) {
       score += 30;
@@ -174,11 +181,12 @@ export async function checkDeviceTamper(deviceId: string): Promise<FraudCheckRes
   const rules: string[] = [];
   let score = 0;
 
-  const { data: device } = await supabase
+  const { data: device } = await db
     .from('devices')
     .select('*')
     .eq('id', deviceId)
-    .single();
+    .single()
+    .execute();
 
   if (!device) return buildResult('device_tamper', 0, []);
 
@@ -222,11 +230,13 @@ export async function checkPaymentAnomaly(params: {
 
   // Check for rapid successive payments
   const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-  const { count: recentPayments } = await supabase
+  const { count: recentPayments } = await db
     .from('payments')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('customer_id', params.customer_id)
-    .gte('created_at', thirtyMinAgo);
+    .gte('created_at', thirtyMinAgo)
+    .count()
+    .execute();
 
   if ((recentPayments || 0) > 3) {
     score += 50;
@@ -234,12 +244,13 @@ export async function checkPaymentAnomaly(params: {
   }
 
   // Check for unusual amount (much higher than installment)
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('monthly_installment_amount')
     .eq('customer_id', params.customer_id)
     .in('loan_status', ['active'])
-    .single();
+    .single()
+    .execute();
 
   if (loan && params.amount > (loan.monthly_installment_amount || 0) * 3) {
     score += 30;
@@ -249,12 +260,14 @@ export async function checkPaymentAnomaly(params: {
   // Multiple failed payments today
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const { count: failedToday } = await supabase
+  const { count: failedToday } = await db
     .from('payments')
-    .select('*', { count: 'exact', head: true })
+    .select('*')
     .eq('customer_id', params.customer_id)
     .eq('status', 'failed')
-    .gte('created_at', todayStart.toISOString());
+    .gte('created_at', todayStart.toISOString())
+    .count()
+    .execute();
 
   if ((failedToday || 0) >= 5) {
     score += 40;
@@ -300,7 +313,7 @@ export async function recordFraudAlert(
 ): Promise<void> {
   if (result.action === 'allow') return;
 
-  await supabase.from('fraud_alerts').insert({
+  await db.from('fraud_alerts').insert({
     customer_id: customerId,
     check_type: result.check_type,
     risk_score: result.risk_score,
@@ -309,19 +322,20 @@ export async function recordFraudAlert(
     rules_triggered: result.rules_triggered,
     reviewed: false,
     created_at: new Date(),
-  });
+  }).execute();
 }
 
 /**
  * Get unreviewed fraud alerts
  */
 export async function getUnreviewedAlerts(limit: number = 50): Promise<FraudAlert[]> {
-  const { data } = await supabase
+  const { data } = await db
     .from('fraud_alerts')
     .select('*')
     .eq('reviewed', false)
     .order('risk_score', { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    .execute();
 
   return (data || []) as FraudAlert[];
 }
@@ -334,7 +348,7 @@ export async function reviewAlert(
   reviewerId: string,
   resolution: string
 ): Promise<void> {
-  await supabase
+  await db
     .from('fraud_alerts')
     .update({
       reviewed: true,
@@ -342,5 +356,6 @@ export async function reviewAlert(
       reviewed_at: new Date(),
       resolution,
     })
-    .eq('id', alertId);
+    .eq('id', alertId)
+    .execute();
 }
