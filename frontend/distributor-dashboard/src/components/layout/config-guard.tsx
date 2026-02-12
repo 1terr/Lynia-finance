@@ -1,16 +1,16 @@
 'use client';
 
-import { isSupabaseConfigured } from '@/lib/supabase/client';
+import { isCognitoConfigured } from '@/lib/api/distributor';
 
 /**
- * Blocks child rendering when Supabase environment variables are missing.
+ * Blocks child rendering when Cognito environment variables are missing.
  *
- * Placed in the root layout so that no downstream component ever receives a
- * null Supabase client.  During SSR / static export this always renders
- * children (config isn't needed until the browser hydrates).
+ * Placed in the root layout so that no downstream component ever attempts
+ * to use Cognito without valid configuration.  During SSR / static export
+ * this always renders children (config isn't needed until the browser hydrates).
  */
 export function ConfigGuard({ children }: { children: React.ReactNode }) {
-  if (typeof window !== 'undefined' && !isSupabaseConfigured()) {
+  if (typeof window !== 'undefined' && !isCognitoConfigured()) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center max-w-md p-8">

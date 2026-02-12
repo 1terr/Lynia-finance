@@ -11,12 +11,7 @@
  *  - Trend detection
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -114,16 +109,19 @@ export async function getDashboardKPIs(period: 'today' | 'mtd' | 'ytd' = 'mtd'):
   const periodStartStr = periodStart.toISOString();
 
   // Active loans
-  const { count: activeLoans } = await supabase
+  const { count: activeLoans } = await db
     .from('loans')
-    .select('*', { count: 'exact', head: true })
-    .in('loan_status', ['active', 'delinquent']);
+    .select('*')
+    .in('loan_status', ['active', 'delinquent'])
+    .count()
+    .execute();
 
   // Portfolio value
-  const { data: portfolio } = await supabase
+  const { data: portfolio } = await db
     .from('loans')
     .select('total_amount_due, total_amount_paid, days_past_due')
-    .in('loan_status', ['active', 'delinquent']);
+    .in('loan_status', ['active', 'delinquent'])
+    .execute();
 
   const totalPortfolioValue = portfolio?.reduce((sum, l) =>
     sum + ((l.total_amount_due || 0) - (l.total_amount_paid || 0)), 0) || 0;
@@ -139,37 +137,45 @@ export async function getDashboardKPIs(period: 'today' | 'mtd' | 'ytd' = 'mtd'):
   const totalLoans = portfolio?.length || 1;
 
   // MTD disbursements
-  const { data: mtdLoans } = await supabase
+  const { data: mtdLoans } = await db
     .from('loans')
     .select('principal_amount')
-    .gte('created_at', periodStartStr);
+    .gte('created_at', periodStartStr)
+    .execute();
 
   const disbursedMTD = mtdLoans?.reduce((sum, l) => sum + (l.principal_amount || 0), 0) || 0;
 
   // MTD collections
-  const { data: mtdPayments } = await supabase
+  const { data: mtdPayments } = await db
     .from('payments')
     .select('amount')
     .eq('status', 'completed')
-    .gte('created_at', periodStartStr);
+    .gte('created_at', periodStartStr)
+    .execute();
 
   const collectedMTD = mtdPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
 
   // Customer metrics
-  const { count: totalCustomers } = await supabase
+  const { count: totalCustomers } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true });
+    .select('*')
+    .count()
+    .execute();
 
-  const { count: newCustomersMTD } = await supabase
+  const { count: newCustomersMTD } = await db
     .from('customers')
-    .select('*', { count: 'exact', head: true })
-    .gte('created_at', periodStartStr);
+    .select('*')
+    .gte('created_at', periodStartStr)
+    .count()
+    .execute();
 
   // Distributor metrics
-  const { count: activeDistributors } = await supabase
+  const { count: activeDistributors } = await db
     .from('distributors')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active');
+    .select('*')
+    .eq('status', 'active')
+    .count()
+    .execute();
 
   return {
     generated_at: now.toISOString(),
@@ -201,10 +207,11 @@ export async function getDashboardKPIs(period: 'today' | 'mtd' | 'ytd' = 'mtd'):
  * Get portfolio breakdown by various dimensions
  */
 export async function getPortfolioBreakdown(): Promise<PortfolioBreakdown> {
-  const { data: loans } = await supabase
+  const { data: loans } = await db
     .from('loans')
     .select('loan_status, credit_tier, product_code, customers(province), total_amount_due, total_amount_paid')
-    .in('loan_status', ['active', 'delinquent', 'completed']);
+    .in('loan_status', ['active', 'delinquent', 'completed'])
+    .execute();
 
   const byStatus = new Map<string, { count: number; value: number }>();
   const byTier = new Map<string, { count: number; value: number }>();
@@ -257,29 +264,29 @@ export async function getTrend(
 
     switch (metric) {
       case 'disbursements': {
-        const { data } = await supabase.from('loans').select('principal_amount')
-          .gte('created_at', startStr).lt('created_at', endStr);
+        const { data } = await db.from('loans').select('principal_amount')
+          .gte('created_at', startStr).lt('created_at', endStr).execute();
         value = data?.reduce((s, l) => s + (l.principal_amount || 0), 0) || 0;
         break;
       }
       case 'collections': {
-        const { data } = await supabase.from('payments').select('amount')
-          .eq('status', 'completed').gte('created_at', startStr).lt('created_at', endStr);
+        const { data } = await db.from('payments').select('amount')
+          .eq('status', 'completed').gte('created_at', startStr).lt('created_at', endStr).execute();
         value = data?.reduce((s, p) => s + (p.amount || 0), 0) || 0;
         break;
       }
       case 'customers': {
-        const { count } = await supabase.from('customers')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', startStr).lt('created_at', endStr);
+        const { count } = await db.from('customers')
+          .select('*')
+          .gte('created_at', startStr).lt('created_at', endStr).count().execute();
         value = count || 0;
         break;
       }
       case 'defaults': {
-        const { count } = await supabase.from('loans')
-          .select('*', { count: 'exact', head: true })
+        const { count } = await db.from('loans')
+          .select('*')
           .eq('loan_status', 'defaulted')
-          .gte('updated_at', startStr).lt('updated_at', endStr);
+          .gte('updated_at', startStr).lt('updated_at', endStr).count().execute();
         value = count || 0;
         break;
       }
@@ -298,12 +305,13 @@ export async function getTrend(
  * Get distributor performance rankings
  */
 export async function getDistributorRankings(limit: number = 20): Promise<DistributorRanking[]> {
-  const { data: distributors } = await supabase
+  const { data: distributors } = await db
     .from('distributors')
     .select('id, name, total_devices_distributed, total_commissions_earned, average_rating')
     .eq('status', 'active')
     .order('total_devices_distributed', { ascending: false })
-    .limit(limit);
+    .limit(limit)
+    .execute();
 
   return (distributors || []).map((d, i) => ({
     distributor_id: d.id,

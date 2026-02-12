@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { DeviceDetail } from '../DeviceDetail';
 import { mockAvailableDevice } from '@/test/mocks/devices';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('DeviceDetail', () => {
   it('renders device name and SKU', () => {

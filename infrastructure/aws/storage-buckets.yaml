@@ -1,0 +1,113 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lynia Finance - Application Storage Buckets
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [dev, staging, production]
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  KYCDocumentsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Environment}-lynia-kyc-documents-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: aws:kms
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldDocuments
+            Status: Enabled
+            Transitions:
+              - StorageClass: INTELLIGENT_TIERING
+                TransitionInDays: 90
+            ExpirationInDays: 3650
+      Tags:
+        - Key: DataClassification
+          Value: PII-Sensitive
+
+  CommissionPDFsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Environment}-lynia-commission-pdfs-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: ArchiveOldStatements
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 365
+            ExpirationInDays: 2555
+
+  ReconciliationPhotosBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Environment}-lynia-reconciliation-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldPhotos
+            Status: Enabled
+            ExpirationInDays: 365
+
+  MLModelsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Environment}-lynia-ml-models-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+
+Outputs:
+  KYCDocumentsBucketName:
+    Value: !Ref KYCDocumentsBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-kyc-bucket"
+  CommissionPDFsBucketName:
+    Value: !Ref CommissionPDFsBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-commission-bucket"
+  ReconciliationBucketName:
+    Value: !Ref ReconciliationPhotosBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-reconciliation-bucket"
+  MLModelsBucketName:
+    Value: !Ref MLModelsBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-ml-models-bucket"

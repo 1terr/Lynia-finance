@@ -57,16 +57,24 @@ export function buildSecretName(service: string): string {
 }
 
 /**
- * Retrieve Supabase credentials from Secrets Manager.
+ * Retrieve database (RDS PostgreSQL) credentials from Secrets Manager.
  */
-export async function getSupabaseSecrets(): Promise<{
-  SUPABASE_URL: string;
-  SUPABASE_SERVICE_ROLE_KEY: string;
+export async function getDatabaseSecrets(): Promise<{
+  host: string;
+  port: string;
+  database: string;
+  username: string;
+  password: string;
 }> {
-  const secrets = await getSecret(buildSecretName('supabase'));
+  const secrets = await getSecret(
+    process.env.DB_SECRET_NAME || buildSecretName('database')
+  );
   return {
-    SUPABASE_URL: secrets.SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: secrets.SUPABASE_SERVICE_ROLE_KEY,
+    host: secrets.host,
+    port: secrets.port || '5432',
+    database: secrets.database || 'lynia',
+    username: secrets.username,
+    password: secrets.password,
   };
 }
 

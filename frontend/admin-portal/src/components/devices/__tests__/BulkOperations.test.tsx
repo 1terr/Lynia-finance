@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BulkOperations } from '../BulkOperations';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('BulkOperations', () => {
   const defaultProps = {

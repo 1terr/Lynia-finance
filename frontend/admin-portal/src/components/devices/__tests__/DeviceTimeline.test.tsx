@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { DeviceTimeline } from '../DeviceTimeline';
 import { mockLockEvents, mockDeviceAssignment } from '@/test/mocks/devices';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('DeviceTimeline', () => {
   it('renders lock events', () => {

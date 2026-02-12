@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { createClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import axios from 'axios';
 import type {
   WhatsAppWebhookEvent,
@@ -25,11 +25,6 @@ import {
   mapWhatsAppApiError,
 } from './error-handler';
 import { CircuitBreaker, CircuitOpenError } from './utils/circuit-breaker';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const corsHeaders = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' };
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
@@ -349,11 +344,12 @@ async function processIncomingMessage(
 
     // 5. Unexpected message type handling
     // Get current conversation state to determine expected input
-    const { data: session } = await supabase
+    const { data: session } = await db
       .from('whatsapp_onboarding_sessions')
       .select('current_state')
       .eq('phone_number', phoneNumber)
-      .single();
+      .single()
+      .execute();
 
     const currentState = session?.current_state || 'welcome';
     const expectedType = getExpectedInputType(currentState);
@@ -371,10 +367,11 @@ async function processIncomingMessage(
         if (response) {
           if (globalCmd === 'cancel') {
             // Save progress and reset state
-            await supabase
+            await db
               .from('whatsapp_onboarding_sessions')
               .update({ current_state: 'welcome', last_activity_at: new Date() })
-              .eq('phone_number', phoneNumber);
+              .eq('phone_number', phoneNumber)
+              .execute();
           }
           await sendTextMessage(phoneNumber, response);
           return;
@@ -513,17 +510,18 @@ async function storeMessage(data: {
 }): Promise<void> {
   try {
     // Find customer by phone number
-    const { data: customer } = await supabase
+    const { data: customer } = await db
       .from('customers')
       .select('id')
       .eq('whatsapp_number', data.phone_number)
-      .single();
+      .single()
+      .execute();
 
     if (customer) {
-      await supabase.from('whatsapp_messages').insert({
+      await db.from('whatsapp_messages').insert({
         customer_id: customer.id,
         ...data
-      });
+      }).execute();
     }
   } catch (error) {
     console.error('Error storing message:', error);
@@ -535,10 +533,11 @@ async function storeMessage(data: {
  */
 async function updateMessageStatus(messageId: string, status: string): Promise<void> {
   try {
-    await supabase
+    await db
       .from('whatsapp_messages')
       .update({ status })
-      .eq('whatsapp_message_id', messageId);
+      .eq('whatsapp_message_id', messageId)
+      .execute();
     console.log(`Updated message ${messageId} status to ${status}`);
   } catch (error) {
     console.error('Error updating message status:', error);
@@ -551,15 +550,16 @@ async function updateMessageStatus(messageId: string, status: string): Promise<v
 async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise<Record<string, unknown> | null> {
   try {
     // Try to find existing customer
-    let { data: customer } = await supabase
+    let { data: customer } = await db
       .from('customers')
       .select('*')
       .eq('whatsapp_number', phoneNumber)
-      .single();
+      .single()
+      .execute();
 
     if (!customer) {
       // Create new customer record
-      const { data: newCustomer, error } = await supabase
+      const { data: newCustomer, error } = await db
         .from('customers')
         .insert({
           phone_number: phoneNumber,
@@ -569,7 +569,8 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
           status: 'active'
         })
         .select()
-        .single();
+        .single()
+        .execute();
 
       if (error) throw error;
       customer = newCustomer;
@@ -588,16 +589,17 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
  */
 async function _getConversation(customerId: string, phoneNumber: string): Promise<Record<string, unknown> | null> {
   try {
-    let { data: conversation } = await supabase
+    let { data: conversation } = await db
       .from('whatsapp_conversations')
       .select('*')
       .eq('customer_id', customerId)
       .eq('phone_number', phoneNumber)
-      .single();
+      .single()
+      .execute();
 
     if (!conversation) {
       // Create new conversation
-      const { data: newConv } = await supabase
+      const { data: newConv } = await db
         .from('whatsapp_conversations')
         .insert({
           customer_id: customerId,
@@ -605,7 +607,8 @@ async function _getConversation(customerId: string, phoneNumber: string): Promis
           conversation_state: 'idle'
         })
         .select()
-        .single();
+        .single()
+        .execute();
       conversation = newConv;
     }
 
@@ -625,14 +628,15 @@ async function _updateConversationState(
   state: string
 ): Promise<void> {
   try {
-    await supabase
+    await db
       .from('whatsapp_conversations')
       .update({
         conversation_state: state,
         last_message_at: new Date().toISOString()
       })
       .eq('customer_id', customerId)
-      .eq('phone_number', phoneNumber);
+      .eq('phone_number', phoneNumber)
+      .execute();
   } catch (error) {
     console.error('Error updating conversation state:', error);
   }
@@ -643,14 +647,15 @@ async function _updateConversationState(
  */
 async function _getCustomerLoan(customerId: string): Promise<Record<string, unknown> | null> {
   try {
-    const { data: loan } = await supabase
+    const { data: loan } = await db
       .from('loans')
       .select('*')
       .eq('customer_id', customerId)
       .in('loan_status', ['approved', 'active'])
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .single()
+      .execute();
 
     return loan;
   } catch (error) {

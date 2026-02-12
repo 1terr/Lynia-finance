@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { submitForm } from '@/lib/supabase';
 import {
   sanitise,
   normalisePhone,
@@ -35,23 +35,21 @@ export async function POST(req: NextRequest) {
     return jsonError('Select a valid partnership type', 400);
   }
 
-  let db;
   try {
-    db = getSupabaseAdmin();
+    const result = await submitForm({
+      type: 'partnership',
+      name,
+      phone,
+      email,
+      partner_type: partnerType,
+      message: message || null,
+    });
+
+    if (result.error) {
+      console.error('partnership submit failed', { error: result.error });
+      return jsonError('Failed to save your application. Please try again.', 500);
+    }
   } catch {
-    return jsonError('Form service is not configured', 503);
-  }
-
-  const { error } = await db.from('partnership_applications').insert({
-    name,
-    phone,
-    email,
-    partner_type: partnerType,
-    message: message || null,
-  });
-
-  if (error) {
-    console.error('partnership insert failed', { code: error.code });
     return jsonError('Failed to save your application. Please try again.', 500);
   }
 

@@ -10,12 +10,7 @@
  *  - Restructuring approval workflow
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -73,11 +68,12 @@ export interface EarlyPayoffQuote {
  * Calculate early payoff amount (no penalties per CLAUDE.md)
  */
 export async function calculateEarlyPayoff(loanId: string): Promise<EarlyPayoffQuote> {
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('id', loanId)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) throw new Error('Loan not found');
 
@@ -105,10 +101,10 @@ export async function calculateEarlyPayoff(loanId: string): Promise<EarlyPayoffQ
   };
 
   // Store quote
-  await supabase.from('early_payoff_quotes').insert({
+  await db.from('early_payoff_quotes').insert({
     ...quote,
     created_at: new Date(),
-  });
+  }).execute();
 
   return quote;
 }
@@ -129,11 +125,12 @@ export async function requestTermExtension(
     throw new Error('Extension must be 1-3 months');
   }
 
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('id', loanId)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) throw new Error('Loan not found');
 
@@ -164,10 +161,10 @@ export async function requestTermExtension(
     },
   };
 
-  await supabase.from('restructure_requests').insert({
+  await db.from('restructure_requests').insert({
     ...request,
     created_at: new Date(),
-  });
+  }).execute();
 
   return request;
 }
@@ -189,22 +186,24 @@ export async function requestPaymentHoliday(
   }
 
   // Check if holiday already used
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('restructure_requests')
     .select('id')
     .eq('loan_id', loanId)
     .eq('type', 'payment_holiday')
-    .in('status', ['approved', 'active', 'completed']);
+    .in('status', ['approved', 'active', 'completed'])
+    .execute();
 
   if (existing && existing.length > 0) {
     throw new Error('Payment holiday already used for this loan');
   }
 
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('id', loanId)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) throw new Error('Loan not found');
 
@@ -234,10 +233,10 @@ export async function requestPaymentHoliday(
     },
   };
 
-  await supabase.from('restructure_requests').insert({
+  await db.from('restructure_requests').insert({
     ...request,
     created_at: new Date(),
-  });
+  }).execute();
 
   return request;
 }
@@ -253,11 +252,12 @@ export async function enrollHardshipProgram(
   loanId: string,
   reason: string
 ): Promise<RestructureRequest> {
-  const { data: loan } = await supabase
+  const { data: loan } = await db
     .from('loans')
     .select('*')
     .eq('id', loanId)
-    .single();
+    .single()
+    .execute();
 
   if (!loan) throw new Error('Loan not found');
 
@@ -288,10 +288,10 @@ export async function enrollHardshipProgram(
     },
   };
 
-  await supabase.from('restructure_requests').insert({
+  await db.from('restructure_requests').insert({
     ...request,
     created_at: new Date(),
-  });
+  }).execute();
 
   return request;
 }
@@ -307,16 +307,17 @@ export async function approveRestructure(
   requestId: string,
   reviewerId: string
 ): Promise<void> {
-  const { data: request } = await supabase
+  const { data: request } = await db
     .from('restructure_requests')
     .select('*')
     .eq('id', requestId)
-    .single();
+    .single()
+    .execute();
 
   if (!request) throw new Error('Request not found');
 
   // Update loan with new terms
-  await supabase
+  await db
     .from('loans')
     .update({
       monthly_installment_amount: request.proposed_terms.monthly_amount,
@@ -325,20 +326,22 @@ export async function approveRestructure(
       restructured: true,
       restructured_at: new Date(),
     })
-    .eq('id', request.loan_id);
+    .eq('id', request.loan_id)
+    .execute();
 
   // Update request status
-  await supabase
+  await db
     .from('restructure_requests')
     .update({
       status: 'approved',
       reviewed_by: reviewerId,
       reviewed_at: new Date(),
     })
-    .eq('id', requestId);
+    .eq('id', requestId)
+    .execute();
 
   // Log audit
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     action: 'loan.restructure.approved',
     entity_type: 'loan',
     entity_id: request.loan_id,
@@ -349,5 +352,5 @@ export async function approveRestructure(
       old_monthly: request.current_terms.monthly_amount,
       new_monthly: request.proposed_terms.monthly_amount,
     },
-  });
+  }).execute();
 }

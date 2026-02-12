@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import { EcoCashProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
 import { OneMoneyProvider } from './onemoney-provider';
 import { OmariProvider } from './omari-provider';
@@ -60,18 +60,12 @@ const TRANSACTION_LIMITS = {
  * Handles all payment operations across multiple gateways
  */
 export class PaymentService {
-  private supabase: SupabaseClient;
   private ecocashProvider: EcoCashProvider;
   private onemoneyProvider: OneMoneyProvider;
   private omariProvider: OmariProvider;
   private analytics: PaymentAnalyticsService;
 
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     this.ecocashProvider = new EcoCashProvider();
     this.onemoneyProvider = new OneMoneyProvider();
     this.omariProvider = new OmariProvider();
@@ -102,12 +96,13 @@ export class PaymentService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const { data: dailyPayments } = await this.supabase
+    const { data: dailyPayments } = await db
       .from('payments')
       .select('amount, currency')
       .eq('customer_id', customerId)
       .in('status', ['pending', 'processing', 'completed'])
-      .gte('initiated_at', today.toISOString());
+      .gte('initiated_at', today.toISOString())
+      .execute();
 
     const dailyTotal = (dailyPayments || []).reduce(
       (sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0
@@ -123,12 +118,13 @@ export class PaymentService {
     // 3. Monthly aggregate limit
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    const { data: monthlyPayments } = await this.supabase
+    const { data: monthlyPayments } = await db
       .from('payments')
       .select('amount, currency')
       .eq('customer_id', customerId)
       .in('status', ['pending', 'processing', 'completed'])
-      .gte('initiated_at', monthStart.toISOString());
+      .gte('initiated_at', monthStart.toISOString())
+      .execute();
 
     const monthlyTotal = (monthlyPayments || []).reduce(
       (sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0
@@ -176,7 +172,7 @@ export class PaymentService {
       const paymentReference = this.generatePaymentReference();
 
       // Create payment record in database
-      const { data: payment, error: paymentError } = await this.supabase
+      const { data: payment, error: paymentError } = await db
         .from('payments')
         .insert({
           loan_id: request.loan_id,
@@ -192,7 +188,8 @@ export class PaymentService {
           created_at: new Date().toISOString()
         })
         .select()
-        .single();
+        .single()
+        .execute();
 
       if (paymentError || !payment) {
         console.error('Error creating payment record:', paymentError);
@@ -228,14 +225,15 @@ export class PaymentService {
       }
 
       // Update payment record with gateway transaction ID
-      await this.supabase
+      await db
         .from('payments')
         .update({
           gateway_transaction_id: response.transaction_id,
           status: response.status,
           updated_at: new Date().toISOString()
         })
-        .eq('id', payment.id);
+        .eq('id', payment.id)
+        .execute();
 
       console.log(`Payment ${payment.id} initiated via ${gateway}: ${response.transaction_id}`);
 
@@ -260,11 +258,12 @@ export class PaymentService {
   async checkPaymentStatus(paymentId: string): Promise<Payment> {
     try {
       // Fetch payment from database
-      const { data: payment, error } = await this.supabase
+      const { data: payment, error } = await db
         .from('payments')
         .select('*')
         .eq('id', paymentId)
-        .single();
+        .single()
+        .execute();
 
       if (error || !payment) {
         throw new Error('Payment not found');
@@ -318,11 +317,12 @@ export class PaymentService {
       console.log(`Processing payment completion for ${paymentId}`);
 
       // Fetch payment
-      const { data: payment, error } = await this.supabase
+      const { data: payment, error } = await db
         .from('payments')
         .select('*')
         .eq('id', paymentId)
-        .single();
+        .single()
+        .execute();
 
       if (error || !payment) {
         throw new Error('Payment not found');
@@ -353,11 +353,12 @@ export class PaymentService {
    * Link payment to loan and update loan status
    */
   private async linkPaymentToLoan(payment: Payment): Promise<void> {
-    const { data: loan, error: loanError } = await this.supabase
+    const { data: loan, error: loanError } = await db
       .from('loans')
       .select('*')
       .eq('id', payment.loan_id)
-      .single();
+      .single()
+      .execute();
 
     if (loanError || !loan) {
       console.error('Loan not found:', payment.loan_id);
@@ -366,7 +367,7 @@ export class PaymentService {
 
     if (payment.payment_type === 'deposit') {
       // Update loan status to paid_deposit
-      await this.supabase
+      await db
         .from('loans')
         .update({
           deposit_paid: true,
@@ -375,7 +376,8 @@ export class PaymentService {
           status: 'paid_deposit',
           updated_at: new Date().toISOString()
         })
-        .eq('id', payment.loan_id);
+        .eq('id', payment.loan_id)
+        .execute();
 
       console.log(`Loan ${payment.loan_id} deposit paid: $${payment.amount}`);
 
@@ -383,7 +385,7 @@ export class PaymentService {
       // Update loan balance
       const newBalance = (loan.outstanding_balance || loan.principal_amount) - payment.amount;
 
-      await this.supabase
+      await db
         .from('loans')
         .update({
           outstanding_balance: newBalance,
@@ -392,7 +394,8 @@ export class PaymentService {
           status: newBalance <= 0 ? 'paid_off' : 'active',
           updated_at: new Date().toISOString()
         })
-        .eq('id', payment.loan_id);
+        .eq('id', payment.loan_id)
+        .execute();
 
       console.log(`Loan ${payment.loan_id} repayment: $${payment.amount}, new balance: $${newBalance}`);
     }
@@ -419,10 +422,11 @@ export class PaymentService {
       updateData.failure_reason = statusResponse.failure_reason;
     }
 
-    await this.supabase
+    await db
       .from('payments')
       .update(updateData)
-      .eq('id', paymentId);
+      .eq('id', paymentId)
+      .execute();
 
     console.log(`Payment ${paymentId} status updated to ${statusResponse.status}`);
   }
@@ -434,11 +438,12 @@ export class PaymentService {
    * Direct integrations with all 4 providers replace the Paynow aggregator.
    */
   private async selectGateway(customerId: string): Promise<PaymentGateway> {
-    const { data: customer } = await this.supabase
+    const { data: customer } = await db
       .from('customers')
       .select('preferred_payment_gateway')
       .eq('id', customerId)
-      .single();
+      .single()
+      .execute();
 
     if (customer?.preferred_payment_gateway) {
       return customer.preferred_payment_gateway as PaymentGateway;
@@ -456,11 +461,12 @@ export class PaymentService {
     _providerReference: string
   ): Promise<void> {
     try {
-      const { data: payment } = await this.supabase
+      const { data: payment } = await db
         .from('payments')
         .select('id, loan_id, customer_id, amount, currency, gateway')
         .eq('id', paymentId)
-        .single();
+        .single()
+        .execute();
 
       if (!payment) return;
 
@@ -515,11 +521,12 @@ export class PaymentService {
       const cutoffTime = new Date(Date.now() - maxAge * 60 * 60 * 1000);
 
       // Fetch all pending/processing payments
-      const { data: payments, error } = await this.supabase
+      const { data: payments, error } = await db
         .from('payments')
         .select('*')
         .in('status', ['pending', 'processing'])
-        .gte('initiated_at', cutoffTime.toISOString());
+        .gte('initiated_at', cutoffTime.toISOString())
+        .execute();
 
       if (error || !payments) {
         throw new Error('Failed to fetch payments for reconciliation');

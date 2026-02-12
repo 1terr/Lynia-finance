@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 /** Session timeout in milliseconds (30 minutes of inactivity) */
@@ -22,15 +21,13 @@ const ACTIVITY_EVENTS: (keyof WindowEventMap)[] = [
  */
 export function useSessionTimeout(timeoutMs = SESSION_TIMEOUT_MS) {
   const router = useRouter();
-  const setUser = useAuthStore((s) => s.setUser);
+  const signOutUser = useAuthStore((s) => s.signOutUser);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleTimeout = useCallback(async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setUser(null);
+  const handleTimeout = useCallback(() => {
+    signOutUser();
     router.push('/login');
-  }, [router, setUser]);
+  }, [router, signOutUser]);
 
   const resetTimer = useCallback(() => {
     if (timerRef.current) {

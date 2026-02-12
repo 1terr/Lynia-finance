@@ -10,12 +10,7 @@
  *  - Automated alerts for anomalies
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -66,11 +61,12 @@ export interface DeviceAlert {
  * Perform health check on a single device
  */
 export async function checkDeviceHealth(deviceId: string): Promise<DeviceHealthReport> {
-  const { data: device } = await supabase
+  const { data: device } = await db
     .from('devices')
     .select('*')
     .eq('id', deviceId)
-    .single();
+    .single()
+    .execute();
 
   if (!device) throw new Error('Device not found');
 
@@ -162,7 +158,7 @@ export async function checkDeviceHealth(deviceId: string): Promise<DeviceHealthR
   };
 
   // Store health check
-  await supabase.from('device_health_checks').insert({
+  await db.from('device_health_checks').insert({
     device_id: deviceId,
     health_score: report.health_score,
     battery_health: report.battery_health_percent,
@@ -172,7 +168,7 @@ export async function checkDeviceHealth(deviceId: string): Promise<DeviceHealthR
     critical_alerts: alerts.filter(a => a.severity === 'critical').length,
     report_data: report,
     checked_at: now,
-  });
+  }).execute();
 
   return report;
 }
@@ -186,11 +182,12 @@ export async function batchHealthCheck(): Promise<{
   warnings: number;
   critical: number;
 }> {
-  const { data: devices } = await supabase
+  const { data: devices } = await db
     .from('devices')
     .select('id')
     .in('status', ['assigned', 'active'])
-    .not('customer_id', 'is', null);
+    .not('customer_id', 'is', null)
+    .execute();
 
   if (!devices) return { checked: 0, healthy: 0, warnings: 0, critical: 0 };
 
@@ -222,12 +219,13 @@ export async function getDevicesNeedingAttention(): Promise<Array<{
   critical_alerts: number;
   last_checked: string;
 }>> {
-  const { data } = await supabase
+  const { data } = await db
     .from('device_health_checks')
     .select('device_id, health_score, critical_alerts, checked_at, devices(imei)')
     .or('health_score.lt.60,critical_alerts.gt.0')
     .order('health_score', { ascending: true })
-    .limit(50);
+    .limit(50)
+    .execute();
 
   return (data || []).map(d => ({
     device_id: d.device_id,

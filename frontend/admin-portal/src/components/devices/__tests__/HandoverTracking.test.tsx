@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { HandoverTracking } from '../HandoverTracking';
 import { mockHandover, mockCompletedHandover, mockHandovers } from '@/test/mocks/devices';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('HandoverTracking', () => {
   const defaultProps = {

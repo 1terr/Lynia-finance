@@ -10,12 +10,7 @@
  *  - Export audit logging
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -151,7 +146,7 @@ export async function generateExport(request: ExportRequest): Promise<ExportResu
   const fields = request.fields?.length ? request.fields : config.defaultFields;
   const selectStr = fields.join(', ');
 
-  let query = supabase.from(config.table).select(selectStr);
+  let query = db.from(config.table).select(selectStr);
 
   if (request.date_from) {
     query = query.gte(config.dateField, request.date_from);
@@ -162,7 +157,7 @@ export async function generateExport(request: ExportRequest): Promise<ExportResu
 
   query = query.order(config.dateField, { ascending: false }).limit(10000);
 
-  const { data: records, error } = await query;
+  const { data: records, error } = await query.execute();
 
   if (error) throw new Error(`Export failed: ${error.message}`);
 
@@ -178,7 +173,7 @@ export async function generateExport(request: ExportRequest): Promise<ExportResu
   const exportId = `exp_${Date.now()}_${request.entity}`;
 
   // Log export for audit
-  await supabase.from('audit_log').insert({
+  await db.from('audit_log').insert({
     action: 'data.export',
     entity_type: request.entity,
     entity_id: exportId,
@@ -190,7 +185,7 @@ export async function generateExport(request: ExportRequest): Promise<ExportResu
       date_from: request.date_from,
       date_to: request.date_to,
     },
-  });
+  }).execute();
 
   return {
     export_id: exportId,

@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase';
+import { submitForm } from '@/lib/supabase';
 import {
   sanitise,
   normalisePhone,
@@ -29,22 +29,20 @@ export async function POST(req: NextRequest) {
     return jsonError('Invalid email address', 400);
   }
 
-  let db;
   try {
-    db = getSupabaseAdmin();
+    const result = await submitForm({
+      type: 'contact',
+      name,
+      phone,
+      email: email || null,
+      message: message || null,
+    });
+
+    if (result.error) {
+      console.error('contact submit failed', { error: result.error });
+      return jsonError('Failed to save your message. Please try again.', 500);
+    }
   } catch {
-    return jsonError('Form service is not configured', 503);
-  }
-
-  const { error } = await db.from('contact_submissions').insert({
-    name,
-    phone,
-    email: email || null,
-    message: message || null,
-  });
-
-  if (error) {
-    console.error('contact insert failed', { code: error.code });
     return jsonError('Failed to save your message. Please try again.', 500);
   }
 

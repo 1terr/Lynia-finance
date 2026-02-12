@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { DeviceTable } from '../DeviceTable';
 import { mockDevices } from '@/test/mocks/devices';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('DeviceTable', () => {
   const defaultProps = {

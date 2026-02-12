@@ -1,11 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, ScheduledEvent } from 'aws-lambda';
-import { createClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import { processPaymentReminders, getReminderAnalytics, handleReminderOptOut, handleReminderOptIn } from './reminder-scheduler';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' };
 
@@ -95,11 +90,12 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
   }
 
   // Get customer phone number
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('phone_number, first_name')
     .eq('id', customerId)
-    .single();
+    .single()
+    .execute();
 
   if (!customer) {
     return {
@@ -110,7 +106,7 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
   }
 
   // Store notification record
-  const { data: notification, error: insertError } = await supabase
+  const { data: notification, error: insertError } = await db
     .from('notifications')
     .insert({
       customer_id: customerId,
@@ -121,7 +117,8 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
       status: 'pending',
     })
     .select()
-    .single();
+    .single()
+    .execute();
 
   if (insertError) {
     console.error('Failed to store notification:', insertError);
@@ -145,10 +142,11 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     }
     // SMS and email channels to be implemented
 
-    await supabase
+    await db
       .from('notifications')
       .update({ status: 'sent', sent_at: new Date() })
-      .eq('id', notification.id);
+      .eq('id', notification.id)
+      .execute();
 
     return {
       statusCode: 200,
@@ -156,10 +154,11 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
       headers
     };
   } catch (error) {
-    await supabase
+    await db
       .from('notifications')
       .update({ status: 'failed' })
-      .eq('id', notification.id);
+      .eq('id', notification.id)
+      .execute();
 
     return {
       statusCode: 500,
@@ -170,12 +169,13 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
 }
 
 async function getNotificationHistory(customerId: string): Promise<APIGatewayProxyResult> {
-  const { data: notifications, error } = await supabase
+  const { data: notifications, error } = await db
     .from('notifications')
     .select('*')
     .eq('customer_id', customerId)
     .order('created_at', { ascending: false })
-    .limit(50);
+    .limit(50)
+    .execute();
 
   if (error) {
     return {

@@ -9,8 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
-    "@supabase/ssr": "^0.5.0",
+    "amazon-cognito-identity-js": "^6.3.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.344.0",

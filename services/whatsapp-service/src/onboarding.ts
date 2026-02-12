@@ -12,13 +12,8 @@
  * 8. Loan Terms Acceptance
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import axios from 'axios';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -159,11 +154,12 @@ export function validateZimbabwePhoneNumber(phoneNumber: string): {
  */
 export async function getOrCreateSession(phoneNumber: string): Promise<OnboardingSession> {
   // Try to get existing active session
-  const { data: existingSession } = await supabase
+  const { data: existingSession } = await db
     .from('whatsapp_onboarding_sessions')
     .select('*')
     .eq('phone_number', phoneNumber)
-    .single();
+    .single()
+    .execute();
 
   if (existingSession && existingSession.current_state !== 'completed') {
     // Check if session expired (30 minutes)
@@ -188,11 +184,12 @@ export async function getOrCreateSession(phoneNumber: string): Promise<Onboardin
     created_at: new Date()
   };
 
-  const { data: newSession, error } = await supabase
+  const { data: newSession, error } = await db
     .from('whatsapp_onboarding_sessions')
     .insert(session)
     .select()
-    .single();
+    .single()
+    .execute();
 
   if (error) {
     console.error('Failed to create session:', error);
@@ -209,13 +206,14 @@ export async function updateSession(
   phoneNumber: string,
   updates: Partial<OnboardingSession>
 ): Promise<void> {
-  const { error } = await supabase
+  const { error } = await db
     .from('whatsapp_onboarding_sessions')
     .update({
       ...updates,
       last_activity_at: new Date()
     })
-    .eq('phone_number', phoneNumber);
+    .eq('phone_number', phoneNumber)
+    .execute();
 
   if (error) {
     console.error('Failed to update session:', error);
@@ -239,11 +237,11 @@ export async function handleWelcome(context: MessageContext): Promise<string> {
   if (!validation.valid) {
     if (validation.message === 'non_zimbabwean_number') {
       // Log international interest
-      await supabase.from('international_interest').insert({
+      await db.from('international_interest').insert({
         phone_number: context.from,
         rejected_at: new Date(),
         source: 'whatsapp_onboarding'
-      });
+      }).execute();
 
       return `❌ *Service Not Available*
 
@@ -885,14 +883,14 @@ export async function handleTermsAcceptance(
 
   if (message.includes('accept') || message.includes('i accept')) {
     // Log consent
-    await supabase.from('customer_consents').insert({
+    await db.from('customer_consents').insert({
       customer_id: session.customer_id,
       phone_number: context.from,
       consent_type: 'loan_terms',
       consent_text: 'Customer accepted loan terms via WhatsApp',
       version: '1.0',
       accepted_at: new Date()
-    });
+    }).execute();
 
     await updateSession(context.from, {
       current_state: 'completed',

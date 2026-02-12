@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { DeviceSummaryCards } from '../DeviceSummaryCards';
 import { mockInventorySummary } from '@/test/mocks/devices';
 
-jest.mock('@/lib/supabase/client');
+jest.mock('@/lib/api/client');
 
 describe('DeviceSummaryCards', () => {
   it('displays summary values', () => {

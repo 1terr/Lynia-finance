@@ -15,12 +15,7 @@
  *  - Retention policy: features stored 2 years, raw data 90 days
  */
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -289,27 +284,30 @@ export function assessLocationStability(
  */
 export async function analyzeReferralNetwork(customerId: string): Promise<ReferralProfile> {
   // Check if customer was referred
-  const { data: customer } = await supabase
+  const { data: customer } = await db
     .from('customers')
     .select('referred_by')
     .eq('id', customerId)
-    .single();
+    .single()
+    .execute();
 
   // Count customers this person referred
-  const { data: referrals, count } = await supabase
+  const { data: referrals, count } = await db
     .from('customers')
-    .select('id', { count: 'exact' })
-    .eq('referred_by', customerId);
+    .select('id')
+    .eq('referred_by', customerId)
+    .execute();
 
   // Check default rate of referred customers
   let defaultRate = 0;
   if (referrals && referrals.length > 0) {
     const referralIds = referrals.map(r => r.id);
-    const { data: defaultedLoans } = await supabase
+    const { data: defaultedLoans } = await db
       .from('loans')
       .select('id')
       .in('customer_id', referralIds)
-      .eq('loan_status', 'defaulted');
+      .eq('loan_status', 'defaulted')
+      .execute();
 
     defaultRate = (defaultedLoans?.length || 0) / referrals.length;
   }
@@ -341,11 +339,12 @@ export async function computeAlternativeFeatures(
   locationData?: LocationProfile
 ): Promise<AlternativeDataFeatures> {
   // Check consent
-  const { data: consent } = await supabase
+  const { data: consent } = await db
     .from('customer_preferences')
     .select('*')
     .eq('customer_id', customerId)
-    .single();
+    .single()
+    .execute();
 
   const referral = await analyzeReferralNetwork(customerId);
   const mm = mobileMoneyData || getDefaultMobileMoneyProfile();
@@ -402,10 +401,10 @@ export async function computeAlternativeFeatures(
   };
 
   // Persist to feature store
-  await supabase.from('customer_features').upsert({
+  await db.from('customer_features').upsert({
     customer_id: customerId,
     ...features,
-  });
+  }).execute();
 
   return features;
 }

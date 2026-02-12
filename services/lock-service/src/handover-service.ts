@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 
 /**
  * Device Handover Request
@@ -44,14 +44,7 @@ export interface HandoverRecord {
  * Manages the complete device handover workflow
  */
 export class HandoverService {
-  private supabase: SupabaseClient;
-
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     console.log('HandoverService initialized');
   }
 
@@ -66,7 +59,7 @@ export class HandoverService {
 
     try {
       // Fetch loan with related data
-      const { data: loan, error: loanError } = await this.supabase
+      const { data: loan, error: loanError } = await db
         .from('loans')
         .select(`
           *,
@@ -74,7 +67,8 @@ export class HandoverService {
           devices(*)
         `)
         .eq('id', loanId)
-        .single();
+        .single()
+        .execute();
 
       if (loanError || !loan) {
         blockers.push('Loan not found');
@@ -92,11 +86,12 @@ export class HandoverService {
       }
 
       // Check KYC verification
-      const { data: customer } = await this.supabase
+      const { data: customer } = await db
         .from('customers')
         .select('kyc_status')
         .eq('id', loan.customer_id)
-        .single();
+        .single()
+        .execute();
 
       if (customer?.kyc_status !== 'verified') {
         blockers.push(`KYC not verified (status: ${customer?.kyc_status || 'unknown'})`);
@@ -106,11 +101,12 @@ export class HandoverService {
       if (!loan.device_id) {
         blockers.push('Device not assigned to loan');
       } else {
-        const { data: device } = await this.supabase
+        const { data: device } = await db
           .from('devices')
           .select('status')
           .eq('id', loan.device_id)
-          .single();
+          .single()
+          .execute();
 
         if (device?.status !== 'in_stock') {
           blockers.push(`Device not available (status: ${device?.status || 'unknown'})`);
@@ -143,7 +139,7 @@ export class HandoverService {
       }
 
       // Create handover record
-      const { data: handover, error: handoverError } = await this.supabase
+      const { data: handover, error: handoverError } = await db
         .from('device_handovers')
         .insert({
           loan_id: request.loan_id,
@@ -162,7 +158,8 @@ export class HandoverService {
           created_at: new Date().toISOString()
         })
         .select()
-        .single();
+        .single()
+        .execute();
 
       if (handoverError || !handover) {
         console.error('Error creating handover record:', handoverError);
@@ -187,25 +184,27 @@ export class HandoverService {
   ): Promise<{ verified: boolean; reason?: string }> {
     try {
       // Get handover record
-      const { data: handover } = await this.supabase
+      const { data: handover } = await db
         .from('device_handovers')
         .select('*, customers(*)')
         .eq('id', handoverId)
-        .single();
+        .single()
+        .execute();
 
       if (!handover) {
         throw new Error('Handover not found');
       }
 
       // Get customer's KYC submission
-      const { data: kycSubmission } = await this.supabase
+      const { data: kycSubmission } = await db
         .from('kyc_submissions')
         .select('*')
         .eq('customer_id', handover.customer_id)
         .eq('status', 'verified')
         .order('verified_at', { ascending: false })
         .limit(1)
-        .single();
+        .single()
+        .execute();
 
       if (!kycSubmission) {
         return {
@@ -223,14 +222,15 @@ export class HandoverService {
       }
 
       // Update handover record
-      await this.supabase
+      await db
         .from('device_handovers')
         .update({
           identity_verified: true,
           status: 'identity_verified',
           updated_at: new Date().toISOString()
         })
-        .eq('id', handoverId);
+        .eq('id', handoverId)
+        .execute();
 
       console.log(`Identity verified for handover ${handoverId}`);
       return { verified: true };
@@ -254,22 +254,24 @@ export class HandoverService {
       console.log(`Verifying deposit payment for handover ${handoverId}`);
 
       // Get handover record
-      const { data: handover } = await this.supabase
+      const { data: handover } = await db
         .from('device_handovers')
         .select('*')
         .eq('id', handoverId)
-        .single();
+        .single()
+        .execute();
 
       if (!handover) {
         throw new Error('Handover not found');
       }
 
       // Check if loan has deposit payment completed
-      const { data: loan } = await this.supabase
+      const { data: loan } = await db
         .from('loans')
         .select('deposit_paid, deposit_amount, deposit_paid_at')
         .eq('id', handover.loan_id)
-        .single();
+        .single()
+        .execute();
 
       if (!loan) {
         return {
@@ -286,7 +288,7 @@ export class HandoverService {
       }
 
       // Get deposit payment record
-      const { data: payment } = await this.supabase
+      const { data: payment } = await db
         .from('payments')
         .select('*')
         .eq('loan_id', handover.loan_id)
@@ -294,7 +296,8 @@ export class HandoverService {
         .eq('status', 'completed')
         .order('completed_at', { ascending: false })
         .limit(1)
-        .single();
+        .single()
+        .execute();
 
       if (!payment) {
         return {
@@ -304,14 +307,15 @@ export class HandoverService {
       }
 
       // Update handover record
-      await this.supabase
+      await db
         .from('device_handovers')
         .update({
           deposit_verified: true,
           status: 'deposit_verified',
           updated_at: new Date().toISOString()
         })
-        .eq('id', handoverId);
+        .eq('id', handoverId)
+        .execute();
 
       console.log(`Deposit verified for handover ${handoverId}: $${payment.amount}`);
 
@@ -348,7 +352,7 @@ export class HandoverService {
     }
   ): Promise<void> {
     try {
-      await this.supabase
+      await db
         .from('device_handovers')
         .update({
           device_condition: deviceCondition,
@@ -356,7 +360,8 @@ export class HandoverService {
           status: 'device_inspected',
           updated_at: new Date().toISOString()
         })
-        .eq('id', handoverId);
+        .eq('id', handoverId)
+        .execute();
 
       console.log(`Device condition recorded for handover ${handoverId}`);
     } catch (error) {
@@ -380,11 +385,12 @@ export class HandoverService {
       console.log(`Completing handover ${handoverId}`);
 
       // Get handover record
-      const { data: handover } = await this.supabase
+      const { data: handover } = await db
         .from('device_handovers')
         .select('*')
         .eq('id', handoverId)
-        .single();
+        .single()
+        .execute();
 
       if (!handover) {
         throw new Error('Handover not found');
@@ -408,7 +414,7 @@ export class HandoverService {
       const firstPaymentDate = new Date(handoverDate.getTime() + 30 * 24 * 60 * 60 * 1000);
 
       // Update loan status to 'active'
-      await this.supabase
+      await db
         .from('loans')
         .update({
           status: 'active',
@@ -416,10 +422,11 @@ export class HandoverService {
           next_payment_date: firstPaymentDate.toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', handover.loan_id);
+        .eq('id', handover.loan_id)
+        .execute();
 
       // Update device status to 'assigned'
-      await this.supabase
+      await db
         .from('devices')
         .update({
           status: 'assigned',
@@ -428,10 +435,11 @@ export class HandoverService {
           assigned_at: handoverDate.toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', handover.device_id);
+        .eq('id', handover.device_id)
+        .execute();
 
       // Update agent inventory record
-      await this.supabase
+      await db
         .from('agent_inventory')
         .update({
           status: 'sold',
@@ -440,7 +448,8 @@ export class HandoverService {
           sold_loan_id: handover.loan_id,
           updated_at: new Date().toISOString()
         })
-        .eq('device_id', handover.device_id);
+        .eq('device_id', handover.device_id)
+        .execute();
 
       // Calculate distributor commission
       const commission = await this.calculateDistributorCommission(
@@ -450,7 +459,7 @@ export class HandoverService {
       );
 
       // Record distributor commission
-      await this.supabase
+      await db
         .from('distributor_commissions')
         .insert({
           distributor_id: handover.distributor_id,
@@ -463,17 +472,19 @@ export class HandoverService {
           payment_status: 'pending',
           notes: `Commission for device handover - ${commission.device_model}`,
           created_at: handoverDate.toISOString()
-        });
+        })
+        .execute();
 
       // Update handover record
-      await this.supabase
+      await db
         .from('device_handovers')
         .update({
           status: 'completed',
           handed_over_at: handoverDate.toISOString(),
           updated_at: new Date().toISOString()
         })
-        .eq('id', handoverId);
+        .eq('id', handoverId)
+        .execute();
 
       console.log(`Handover ${handoverId} completed successfully`);
       console.log(`Loan ${handover.loan_id} activated`);
@@ -492,14 +503,15 @@ export class HandoverService {
       console.error('Error completing handover:', error);
 
       // Mark handover as failed
-      await this.supabase
+      await db
         .from('device_handovers')
         .update({
           status: 'failed',
           failure_reason: error instanceof Error ? error.message : 'Unknown error',
           updated_at: new Date().toISOString()
         })
-        .eq('id', handoverId);
+        .eq('id', handoverId)
+        .execute();
 
       throw error;
     }
@@ -519,11 +531,12 @@ export class HandoverService {
     device_model: string;
   }> {
     // Get device details
-    const { data: device } = await this.supabase
+    const { data: device } = await db
       .from('devices')
       .select('retail_price_usd, model')
       .eq('id', deviceId)
-      .single();
+      .single()
+      .execute();
 
     if (!device) {
       throw new Error('Device not found');
@@ -546,11 +559,12 @@ export class HandoverService {
    */
   async getHandoverStatus(handoverId: string): Promise<HandoverRecord> {
     try {
-      const { data: handover, error } = await this.supabase
+      const { data: handover, error } = await db
         .from('device_handovers')
         .select('*')
         .eq('id', handoverId)
-        .single();
+        .single()
+        .execute();
 
       if (error || !handover) {
         throw new Error('Handover not found');

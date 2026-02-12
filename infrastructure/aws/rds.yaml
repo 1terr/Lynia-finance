@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Lynia Finance - RDS PostgreSQL Database
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [dev, staging, production]
+  DBMasterUsername:
+    Type: String
+    Default: lynia_admin
+    NoEcho: true
+  DBMasterPassword:
+    Type: String
+    NoEcho: true
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Lynia Finance DB subnets
+      SubnetIds:
+        - !ImportValue
+          Fn::Sub: "${Environment}-lynia-private-subnet-1"
+        - !ImportValue
+          Fn::Sub: "${Environment}-lynia-private-subnet-2"
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: RDS access from Lambda functions
+      VpcId: !ImportValue
+        Fn::Sub: "${Environment}-lynia-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !ImportValue
+            Fn::Sub: "${Environment}-lynia-lambda-sg"
+
+  DatabaseInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      DBInstanceIdentifier: !Sub "${Environment}-lynia-db"
+      Engine: postgres
+      EngineVersion: "16.4"
+      DBInstanceClass: !If [IsProduction, db.t4g.small, db.t4g.micro]
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 100
+      StorageType: gp3
+      MasterUsername: !Ref DBMasterUsername
+      MasterUserPassword: !Ref DBMasterPassword
+      DBName: lynia
+      VPCSecurityGroups:
+        - !Ref DatabaseSecurityGroup
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      MultiAZ: !If [IsProduction, true, false]
+      BackupRetentionPeriod: !If [IsProduction, 35, 7]
+      StorageEncrypted: true
+      DeletionProtection: !If [IsProduction, true, false]
+      EnablePerformanceInsights: !If [IsProduction, true, false]
+      PubliclyAccessible: false
+      CopyTagsToSnapshot: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: lynia-finance
+
+Outputs:
+  DatabaseEndpoint:
+    Value: !GetAtt DatabaseInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${Environment}-lynia-db-endpoint"
+  DatabasePort:
+    Value: !GetAtt DatabaseInstance.Endpoint.Port
+    Export:
+      Name: !Sub "${Environment}-lynia-db-port"
+  DatabaseSecurityGroupId:
+    Value: !Ref DatabaseSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-lynia-db-sg"

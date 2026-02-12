@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { db } from '../../shared/clients/database';
 import { TrustonicProvider } from './trustonic-provider';
 
 /**
@@ -38,15 +38,9 @@ export interface LockEvent {
  * Handles automated device lock/unlock workflows
  */
 export class LockManagementService {
-  private supabase: SupabaseClient;
   private trustonic: TrustonicProvider;
 
   constructor() {
-    this.supabase = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
     this.trustonic = new TrustonicProvider();
 
     console.log('LockManagementService initialized');
@@ -65,11 +59,12 @@ export class LockManagementService {
       console.log(`Locking device ${deviceId}: ${reason}`);
 
       // Get device details
-      const { data: device, error: deviceError } = await this.supabase
+      const { data: device, error: deviceError } = await db
         .from('devices')
         .select('*, customers(*)')
         .eq('id', deviceId)
-        .single();
+        .single()
+        .execute();
 
       if (deviceError || !device) {
         throw new Error('Device not found');
@@ -98,7 +93,7 @@ export class LockManagementService {
       });
 
       // Update device status in database
-      await this.supabase
+      await db
         .from('devices')
         .update({
           lock_status: 'locked',
@@ -106,10 +101,11 @@ export class LockManagementService {
           lock_reason: reason,
           updated_at: new Date().toISOString()
         })
-        .eq('id', deviceId);
+        .eq('id', deviceId)
+        .execute();
 
       // Create lock event record
-      await this.supabase
+      await db
         .from('device_lock_history')
         .insert({
           device_id: deviceId,
@@ -120,7 +116,8 @@ export class LockManagementService {
           execution_status: 'success',
           lock_provider: 'trustonic',
           created_at: new Date().toISOString()
-        });
+        })
+        .execute();
 
       console.log(`Device ${deviceId} locked successfully`);
 
@@ -128,7 +125,7 @@ export class LockManagementService {
       console.error('Error locking device:', error);
 
       // Create failed lock event
-      await this.supabase
+      await db
         .from('device_lock_history')
         .insert({
           device_id: deviceId,
@@ -140,7 +137,8 @@ export class LockManagementService {
           error_message: error instanceof Error ? error.message : 'Unknown error',
           lock_provider: 'trustonic',
           created_at: new Date().toISOString()
-        });
+        })
+        .execute();
 
       throw error;
     }
@@ -159,11 +157,12 @@ export class LockManagementService {
       console.log(`Unlocking device ${deviceId}: ${reason}`);
 
       // Get device details
-      const { data: device, error: deviceError } = await this.supabase
+      const { data: device, error: deviceError } = await db
         .from('devices')
         .select('*')
         .eq('id', deviceId)
-        .single();
+        .single()
+        .execute();
 
       if (deviceError || !device) {
         throw new Error('Device not found');
@@ -187,7 +186,7 @@ export class LockManagementService {
       });
 
       // Update device status in database
-      await this.supabase
+      await db
         .from('devices')
         .update({
           lock_status: 'unlocked',
@@ -195,10 +194,11 @@ export class LockManagementService {
           lock_reason: null,
           updated_at: new Date().toISOString()
         })
-        .eq('id', deviceId);
+        .eq('id', deviceId)
+        .execute();
 
       // Create unlock event record
-      await this.supabase
+      await db
         .from('device_lock_history')
         .insert({
           device_id: deviceId,
@@ -209,7 +209,8 @@ export class LockManagementService {
           execution_status: 'success',
           lock_provider: 'trustonic',
           created_at: new Date().toISOString()
-        });
+        })
+        .execute();
 
       console.log(`Device ${deviceId} unlocked successfully`);
 
@@ -217,7 +218,7 @@ export class LockManagementService {
       console.error('Error unlocking device:', error);
 
       // Create failed unlock event
-      await this.supabase
+      await db
         .from('device_lock_history')
         .insert({
           device_id: deviceId,
@@ -229,7 +230,8 @@ export class LockManagementService {
           error_message: error instanceof Error ? error.message : 'Unknown error',
           lock_provider: 'trustonic',
           created_at: new Date().toISOString()
-        });
+        })
+        .execute();
 
       throw error;
     }
@@ -246,11 +248,12 @@ export class LockManagementService {
     lock_reason?: string;
   }> {
     try {
-      const { data: device, error } = await this.supabase
+      const { data: device, error } = await db
         .from('devices')
         .select('id, lock_status, locked_at, unlocked_at, lock_reason')
         .eq('id', deviceId)
-        .single();
+        .single()
+        .execute();
 
       if (error || !device) {
         throw new Error('Device not found');
@@ -290,11 +293,12 @@ export class LockManagementService {
       let failed = 0;
 
       // Step 1: Check for new overdue loans (7+ days)
-      const { data: overdueLoans, error: overdueError } = await this.supabase
+      const { data: overdueLoans, error: overdueError } = await db
         .from('loans')
         .select('*, devices(*), customers(*)')
         .eq('status', 'active')
-        .lt('next_payment_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+        .lt('next_payment_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .execute();
 
       if (overdueError) {
         console.error('Error fetching overdue loans:', overdueError);
@@ -303,13 +307,14 @@ export class LockManagementService {
 
         for (const loan of overdueLoans) {
           // Check if trigger already exists
-          const { data: existingTrigger } = await this.supabase
+          const { data: existingTrigger } = await db
             .from('device_lock_triggers')
             .select('*')
             .eq('loan_id', loan.id)
             .eq('trigger_type', 'missed_payment')
             .in('status', ['pending', 'executed'])
-            .single();
+            .single()
+            .execute();
 
           if (existingTrigger) {
             continue; // Already triggered
@@ -317,7 +322,7 @@ export class LockManagementService {
 
           // Create lock trigger with 3-day grace period
           const gracePeriodUntil = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-          await this.supabase
+          await db
             .from('device_lock_triggers')
             .insert({
               loan_id: loan.id,
@@ -330,7 +335,8 @@ export class LockManagementService {
               lock_scheduled_at: gracePeriodUntil.toISOString(),
               status: 'pending',
               created_at: new Date().toISOString()
-            });
+            })
+            .execute();
 
           triggered++;
           console.log(`Lock trigger created for loan ${loan.id} (grace period until ${gracePeriodUntil})`);
@@ -338,11 +344,12 @@ export class LockManagementService {
       }
 
       // Step 2: Execute scheduled locks (grace period expired)
-      const { data: scheduledLocks, error: scheduledError } = await this.supabase
+      const { data: scheduledLocks, error: scheduledError } = await db
         .from('device_lock_triggers')
         .select('*, loans(*, devices(*))')
         .lte('lock_scheduled_at', new Date().toISOString())
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .execute();
 
       if (scheduledError) {
         console.error('Error fetching scheduled locks:', scheduledError);
@@ -357,7 +364,7 @@ export class LockManagementService {
 
           if (paymentReceived) {
             // Cancel lock (customer paid during grace period)
-            await this.supabase
+            await db
               .from('device_lock_triggers')
               .update({
                 status: 'cancelled',
@@ -365,7 +372,8 @@ export class LockManagementService {
                 cancellation_reason: 'Payment received during grace period',
                 updated_at: new Date().toISOString()
               })
-              .eq('trigger_id', trigger.trigger_id);
+              .eq('trigger_id', trigger.trigger_id)
+              .execute();
 
             cancelled++;
             console.log(`Lock cancelled for device ${trigger.device_id} - payment received`);
@@ -381,14 +389,15 @@ export class LockManagementService {
             );
 
             // Update trigger status
-            await this.supabase
+            await db
               .from('device_lock_triggers')
               .update({
                 status: 'executed',
                 executed_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               })
-              .eq('trigger_id', trigger.trigger_id);
+              .eq('trigger_id', trigger.trigger_id)
+              .execute();
 
             locked++;
             console.log(`Device ${trigger.device_id} locked successfully`);
@@ -397,14 +406,15 @@ export class LockManagementService {
             console.error(`Failed to lock device ${trigger.device_id}:`, error);
 
             // Mark as failed
-            await this.supabase
+            await db
               .from('device_lock_triggers')
               .update({
                 status: 'failed',
                 error_message: error instanceof Error ? error.message : 'Unknown error',
                 updated_at: new Date().toISOString()
               })
-              .eq('trigger_id', trigger.trigger_id);
+              .eq('trigger_id', trigger.trigger_id)
+              .execute();
 
             failed++;
           }
@@ -429,11 +439,12 @@ export class LockManagementService {
       console.log(`Handling payment received: ${paymentId}`);
 
       // Get payment details
-      const { data: payment, error: paymentError } = await this.supabase
+      const { data: payment, error: paymentError } = await db
         .from('payments')
         .select('*, loans(*, devices(*))')
         .eq('id', paymentId)
-        .single();
+        .single()
+        .execute();
 
       if (paymentError || !payment) {
         console.error('Payment not found:', paymentError);

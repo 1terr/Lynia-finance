@@ -13,8 +13,7 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@supabase/ssr": "^0.5.2",
-    "@supabase/supabase-js": "^2.47.0",
+    "amazon-cognito-identity-js": "^6.3.12",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-table": "^8.20.0",
     "class-variance-authority": "^0.7.0",

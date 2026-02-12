@@ -13,12 +13,7 @@
  */
 
 import axios from 'axios';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { db } from '../../shared/clients/database';
 
 const INNBUCKS_API_URL = process.env.INNBUCKS_API_URL || 'https://sandbox.innbucks.co.zw/api/v1';
 const INNBUCKS_API_KEY = process.env.INNBUCKS_API_KEY || '';
@@ -59,12 +54,13 @@ export async function initiateInnBucksPayment(
   request: InnBucksPaymentRequest
 ): Promise<InnBucksPaymentResponse> {
   // Idempotency check
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from('payments')
     .select('id, external_transaction_id, status')
     .eq('reference', request.reference)
     .eq('payment_method', 'innbucks')
-    .single();
+    .single()
+    .execute();
 
   if (existing && existing.status !== 'failed') {
     return {
@@ -144,7 +140,7 @@ export async function handleInnBucksCallback(payload: {
   const newStatus = payload.status === 'SUCCESS' ? 'completed'
     : payload.status === 'FAILED' ? 'failed' : 'pending';
 
-  await supabase
+  await db
     .from('payments')
     .update({
       status: newStatus,
@@ -152,7 +148,8 @@ export async function handleInnBucksCallback(payload: {
       completed_at: newStatus === 'completed' ? new Date() : null,
     })
     .eq('reference', payload.reference)
-    .eq('payment_method', 'innbucks');
+    .eq('payment_method', 'innbucks')
+    .execute();
 
   if (newStatus === 'completed') {
     console.log(`InnBucks payment completed: ${payload.reference} - $${payload.amount}`);
