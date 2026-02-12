@@ -840,6 +840,10 @@ ALTER TABLE support_tickets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whatsapp_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE whatsapp_messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+ALTER TABLE loan_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE international_interest ENABLE ROW LEVEL SECURITY;
+ALTER TABLE product_interest_waitlist ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_config ENABLE ROW LEVEL SECURITY;
 
 -- =====================================================
 -- RLS POLICIES (Basic - expand as needed)
@@ -862,6 +866,116 @@ USING (
     AND role IN ('admin', 'manager')
     AND status = 'active'
   )
+);
+
+-- loan_products: authenticated users can view active products, admins manage all
+CREATE POLICY "Authenticated users can view active loan products"
+ON loan_products FOR SELECT
+TO authenticated
+USING (
+    status = 'active'
+    OR EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+);
+
+CREATE POLICY "Admins manage loan products"
+ON loan_products FOR ALL
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+);
+
+-- international_interest: admin-only access (inserts via service role)
+CREATE POLICY "Admins manage international interest"
+ON international_interest FOR ALL
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+);
+
+-- product_interest_waitlist: customers see own entries, admins manage all
+CREATE POLICY "Customers view own waitlist entries"
+ON product_interest_waitlist FOR SELECT
+TO authenticated
+USING (
+    customer_id = auth.uid()
+    OR EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+);
+
+CREATE POLICY "Admins manage product waitlist"
+ON product_interest_waitlist FOR ALL
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+);
+
+-- system_config: admin-only access
+CREATE POLICY "Admins manage system config"
+ON system_config FOR ALL
+TO authenticated
+USING (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
+)
+WITH CHECK (
+    EXISTS (
+        SELECT 1 FROM admin_users
+        WHERE id = auth.uid()
+        AND role IN ('admin', 'manager')
+        AND status = 'active'
+    )
 );
 
 -- =====================================================
