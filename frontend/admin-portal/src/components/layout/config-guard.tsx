@@ -1,16 +1,23 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { isSupabaseConfigured } from '@/lib/supabase/client';
 
 /**
  * Blocks child rendering when Supabase environment variables are missing.
  *
- * Placed in the root layout so that no downstream component ever receives a
- * null Supabase client.  During SSR / static export this always renders
- * children (config isn't needed until the browser hydrates).
+ * Uses a post-hydration state check to avoid SSR/client mismatches:
+ *   - Server & first client render: always renders children (matching SSR)
+ *   - After mount: checks config and shows error if missing
  */
 export function ConfigGuard({ children }: { children: React.ReactNode }) {
-  if (typeof window !== 'undefined' && !isSupabaseConfigured()) {
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    setChecked(true);
+  }, []);
+
+  if (checked && !isSupabaseConfigured()) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
         <div className="text-center max-w-md p-8">
