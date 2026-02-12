@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Deployment S3 Buckets (Bootstrap).
+  Template and artifact buckets for CloudFormation nested stacks and SAM deployments.
+  This stack must be deployed BEFORE all other infrastructure stacks.
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # TEMPLATE BUCKET - stores CloudFormation nested stack templates
+  # ==========================================================
+
+  TemplateBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub "lynia-finance-${Environment}-templates"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: lynia-finance
+        - Key: Purpose
+          Value: cloudformation-templates
+
+  TemplateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref TemplateBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowCloudFormationRead
+            Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action:
+              - s3:GetObject
+            Resource: !Sub "${TemplateBucket.Arn}/*"
+
+  # ==========================================================
+  # ARTIFACT BUCKET - stores SAM deployment packages
+  # ==========================================================
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub "lynia-finance-${Environment}-artifacts"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldArtifacts
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: lynia-finance
+        - Key: Purpose
+          Value: sam-deployment-artifacts
+
+Outputs:
+  TemplateBucketName:
+    Description: S3 bucket for CloudFormation nested stack templates
+    Value: !Ref TemplateBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-template-bucket"
+
+  TemplateBucketArn:
+    Description: ARN of the template bucket
+    Value: !GetAtt TemplateBucket.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-template-bucket-arn"
+
+  TemplateBucketUrl:
+    Description: HTTPS URL prefix for nested stack TemplateURL references
+    Value: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates"
+    Export:
+      Name: !Sub "${Environment}-lynia-template-bucket-url"
+
+  ArtifactBucketName:
+    Description: S3 bucket for SAM deployment artifacts
+    Value: !Ref ArtifactBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-artifact-bucket"
+
+  ArtifactBucketArn:
+    Description: ARN of the artifact bucket
+    Value: !GetAtt ArtifactBucket.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-artifact-bucket-arn"

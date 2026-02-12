@@ -5,10 +5,9 @@
 # Automates the complete T001 task:
 #   1. Verify all required CLI tools are installed
 #   2. Verify AWS credentials and target region
-#   3. Create S3 template bucket for CloudFormation templates
+#   3. Deploy bootstrap CloudFormation stack (template + artifact S3 buckets)
 #   4. Upload all infrastructure templates to S3
 #   5. Validate all CloudFormation templates
-#   6. Create SAM artifact bucket
 #
 # Usage:
 #   ./scripts/setup-s3-template-bucket.sh                    # Production
@@ -80,6 +79,8 @@ done
 # Derived names
 TEMPLATE_BUCKET="${STACK_PREFIX}-${ENVIRONMENT}-templates"
 ARTIFACT_BUCKET="${STACK_PREFIX}-${ENVIRONMENT}-artifacts"
+BOOTSTRAP_STACK="${ENVIRONMENT}-lynia-deployment-buckets"
+BOOTSTRAP_TEMPLATE="${PROJECT_ROOT}/infrastructure/aws/deployment-buckets.yaml"
 
 # Logging helpers
 log()     { echo -e "${BLUE}[$(date '+%H:%M:%S')]${NC} $1"; }
@@ -93,6 +94,8 @@ step()    { echo -e "\n${CYAN}━━━ $1 ━━━${NC}"; }
 # ============================================================================
 # Format: local_path:s3_key
 TEMPLATE_MANIFEST=(
+  # Bootstrap (deployment buckets - deployed first via CloudFormation)
+  "infrastructure/aws/deployment-buckets.yaml:deployment-buckets.yaml"
   # Core AWS infrastructure
   "infrastructure/aws/vpc.yaml:vpc.yaml"
   "infrastructure/aws/rds.yaml:rds.yaml"
@@ -222,77 +225,183 @@ verify_credentials() {
 }
 
 # ============================================================================
-# STEP 3: Create Template Bucket
+# STEP 3: Deploy Bootstrap Stack (Template + Artifact Buckets)
 # ============================================================================
-create_template_bucket() {
-  step "Step 3: Create Template Bucket"
+deploy_bootstrap_stack() {
+  step "Step 3: Deploy Bootstrap Stack (Deployment Buckets)"
 
-  log "Target bucket: s3://${TEMPLATE_BUCKET}"
+  log "Stack:           ${BOOTSTRAP_STACK}"
+  log "Template bucket: s3://${TEMPLATE_BUCKET}"
+  log "Artifact bucket: s3://${ARTIFACT_BUCKET}"
+
+  if [ ! -f "$BOOTSTRAP_TEMPLATE" ]; then
+    fail "Bootstrap template not found: $BOOTSTRAP_TEMPLATE"
+    return 2
+  fi
 
   if [ "$DRY_RUN" = true ]; then
-    log "[DRY RUN] Would create bucket: s3://${TEMPLATE_BUCKET}"
-    success "Template bucket creation simulated"
+    log "[DRY RUN] Would deploy CloudFormation stack: ${BOOTSTRAP_STACK}"
+    log "[DRY RUN] Template: ${BOOTSTRAP_TEMPLATE}"
+    log "[DRY RUN] Creates: s3://${TEMPLATE_BUCKET}, s3://${ARTIFACT_BUCKET}"
+    success "Bootstrap stack deployment simulated"
     return 0
   fi
 
-  # Check if bucket already exists
-  if aws s3api head-bucket --bucket "$TEMPLATE_BUCKET" --region "$REGION" 2>/dev/null; then
-    success "Template bucket already exists: s3://${TEMPLATE_BUCKET}"
-  else
-    log "Creating template bucket..."
-    if [ "$REGION" = "us-east-1" ]; then
-      # us-east-1 does not accept LocationConstraint
-      aws s3api create-bucket \
-        --bucket "$TEMPLATE_BUCKET" \
-        --region "$REGION" 2>&1
-    else
-      aws s3api create-bucket \
-        --bucket "$TEMPLATE_BUCKET" \
-        --region "$REGION" \
-        --create-bucket-configuration "LocationConstraint=$REGION" 2>&1
+  # Check if the CloudFormation stack already exists
+  local stack_status
+  stack_status=$(aws cloudformation describe-stacks \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --region "$REGION" \
+    --query "Stacks[0].StackStatus" \
+    --output text 2>/dev/null) || stack_status="DOES_NOT_EXIST"
+
+  if [ "$stack_status" = "DOES_NOT_EXIST" ]; then
+    # Stack does not exist - check if buckets were created by the old imperative script
+    local template_bucket_exists=false
+    local artifact_bucket_exists=false
+
+    if aws s3api head-bucket --bucket "$TEMPLATE_BUCKET" --region "$REGION" 2>/dev/null; then
+      template_bucket_exists=true
+    fi
+    if aws s3api head-bucket --bucket "$ARTIFACT_BUCKET" --region "$REGION" 2>/dev/null; then
+      artifact_bucket_exists=true
     fi
 
-    if [ $? -eq 0 ]; then
-      success "Template bucket created: s3://${TEMPLATE_BUCKET}"
+    if [ "$template_bucket_exists" = true ] && [ "$artifact_bucket_exists" = true ]; then
+      # Both buckets exist from imperative creation - import them into CloudFormation
+      log "Existing buckets detected. Importing into CloudFormation management..."
+      import_existing_buckets || return 2
+    elif [ "$template_bucket_exists" = false ] && [ "$artifact_bucket_exists" = false ]; then
+      # Fresh environment - create everything via CloudFormation
+      log "No existing buckets found. Creating via CloudFormation..."
+      create_bootstrap_stack || return 2
     else
-      fail "Failed to create template bucket"
+      # Partial state - one bucket exists, the other does not
+      fail "Unexpected state: template_bucket=$template_bucket_exists, artifact_bucket=$artifact_bucket_exists"
+      fail "Resolve manually: both buckets must exist or neither must exist."
       return 2
     fi
+  else
+    # Stack exists - update it
+    log "Bootstrap stack exists (status: ${stack_status}). Updating..."
+    update_bootstrap_stack || return 2
   fi
 
-  # Enable versioning for safety
-  aws s3api put-bucket-versioning \
-    --bucket "$TEMPLATE_BUCKET" \
-    --versioning-configuration Status=Enabled \
-    --region "$REGION" 2>/dev/null && \
-    success "Bucket versioning enabled" || \
-    warn "Could not enable bucket versioning"
+  # Verify stack outputs
+  log "Verifying bootstrap stack outputs..."
+  local outputs
+  outputs=$(aws cloudformation describe-stacks \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --region "$REGION" \
+    --query "Stacks[0].Outputs" \
+    --output table 2>/dev/null) || true
 
-  # Block public access
-  aws s3api put-public-access-block \
-    --bucket "$TEMPLATE_BUCKET" \
-    --public-access-block-configuration \
-      "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" \
-    --region "$REGION" 2>/dev/null && \
-    success "Public access blocked" || \
-    warn "Could not set public access block"
+  if [ -n "$outputs" ]; then
+    success "Bootstrap stack deployed successfully"
+    echo "$outputs"
+  else
+    warn "Could not retrieve stack outputs"
+  fi
+}
 
-  # Add server-side encryption
-  aws s3api put-bucket-encryption \
-    --bucket "$TEMPLATE_BUCKET" \
-    --server-side-encryption-configuration \
-      '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}' \
-    --region "$REGION" 2>/dev/null && \
-    success "Server-side encryption enabled (AES-256)" || \
-    warn "Could not enable server-side encryption"
+# Import pre-existing buckets (created by old imperative script) into CloudFormation
+import_existing_buckets() {
+  log "Phase 1: Importing existing buckets into CloudFormation..."
 
-  # Add tags
-  aws s3api put-bucket-tagging \
-    --bucket "$TEMPLATE_BUCKET" \
-    --tagging "TagSet=[{Key=Environment,Value=${ENVIRONMENT}},{Key=Project,Value=lynia-finance},{Key=Purpose,Value=cloudformation-templates}]" \
-    --region "$REGION" 2>/dev/null && \
-    success "Bucket tagged" || \
-    warn "Could not tag bucket"
+  # Resource import requires a change set of type IMPORT.
+  # The BucketPolicy is new (not pre-existing), so we import only the buckets first,
+  # then run a normal update to add the policy.
+
+  # Create import change set
+  aws cloudformation create-change-set \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --change-set-name "import-existing-buckets" \
+    --change-set-type IMPORT \
+    --template-body "file://${BOOTSTRAP_TEMPLATE}" \
+    --parameters "ParameterKey=Environment,ParameterValue=${ENVIRONMENT}" \
+    --resources-to-import "[
+      {\"ResourceType\":\"AWS::S3::Bucket\",\"LogicalResourceId\":\"TemplateBucket\",\"ResourceIdentifier\":{\"BucketName\":\"${TEMPLATE_BUCKET}\"}},
+      {\"ResourceType\":\"AWS::S3::Bucket\",\"LogicalResourceId\":\"ArtifactBucket\",\"ResourceIdentifier\":{\"BucketName\":\"${ARTIFACT_BUCKET}\"}}
+    ]" \
+    --region "$REGION" 2>&1
+
+  if [ $? -ne 0 ]; then
+    fail "Failed to create import change set"
+    return 2
+  fi
+
+  # Wait for change set to be ready
+  log "Waiting for import change set to be ready..."
+  aws cloudformation wait change-set-create-complete \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --change-set-name "import-existing-buckets" \
+    --region "$REGION" 2>/dev/null || {
+    fail "Import change set did not reach CREATE_COMPLETE"
+    return 2
+  }
+
+  # Execute the import
+  log "Executing resource import..."
+  aws cloudformation execute-change-set \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --change-set-name "import-existing-buckets" \
+    --region "$REGION" 2>&1
+
+  if [ $? -ne 0 ]; then
+    fail "Failed to execute import change set"
+    return 2
+  fi
+
+  # Wait for import to complete
+  log "Waiting for import to complete (this may take a minute)..."
+  aws cloudformation wait stack-import-complete \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --region "$REGION" 2>/dev/null || {
+    fail "Stack import did not complete successfully"
+    return 2
+  }
+
+  success "Buckets imported into CloudFormation management"
+
+  # Phase 2: Run a normal update to add the bucket policy and reconcile any drift
+  log "Phase 2: Applying full template (adds bucket policy)..."
+  update_bootstrap_stack
+}
+
+# Create the bootstrap stack from scratch (no pre-existing buckets)
+create_bootstrap_stack() {
+  aws cloudformation deploy \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --template-file "$BOOTSTRAP_TEMPLATE" \
+    --parameter-overrides "Environment=${ENVIRONMENT}" \
+    --no-fail-on-empty-changeset \
+    --tags "Environment=${ENVIRONMENT}" "Project=lynia-finance" "Purpose=bootstrap" \
+    --region "$REGION" 2>&1
+
+  if [ $? -eq 0 ]; then
+    success "Bootstrap stack created: ${BOOTSTRAP_STACK}"
+  else
+    fail "Failed to create bootstrap stack"
+    return 2
+  fi
+}
+
+# Update an existing bootstrap stack
+update_bootstrap_stack() {
+  aws cloudformation deploy \
+    --stack-name "$BOOTSTRAP_STACK" \
+    --template-file "$BOOTSTRAP_TEMPLATE" \
+    --parameter-overrides "Environment=${ENVIRONMENT}" \
+    --no-fail-on-empty-changeset \
+    --tags "Environment=${ENVIRONMENT}" "Project=lynia-finance" "Purpose=bootstrap" \
+    --region "$REGION" 2>&1
+
+  if [ $? -eq 0 ]; then
+    success "Bootstrap stack updated: ${BOOTSTRAP_STACK}"
+  else
+    fail "Failed to update bootstrap stack"
+    return 2
+  fi
 }
 
 # ============================================================================
@@ -426,104 +535,6 @@ validate_templates() {
 }
 
 # ============================================================================
-# STEP 6: Create SAM Artifact Bucket
-# ============================================================================
-create_artifact_bucket() {
-  step "Step 6: Create SAM Artifact Bucket"
-
-  log "Target bucket: s3://${ARTIFACT_BUCKET}"
-
-  if [ "$DRY_RUN" = true ]; then
-    log "[DRY RUN] Would create bucket: s3://${ARTIFACT_BUCKET}"
-    success "Artifact bucket creation simulated"
-    return 0
-  fi
-
-  # Check if bucket already exists
-  if aws s3api head-bucket --bucket "$ARTIFACT_BUCKET" --region "$REGION" 2>/dev/null; then
-    success "Artifact bucket already exists: s3://${ARTIFACT_BUCKET}"
-  else
-    log "Creating artifact bucket..."
-    if [ "$REGION" = "us-east-1" ]; then
-      aws s3api create-bucket \
-        --bucket "$ARTIFACT_BUCKET" \
-        --region "$REGION" 2>&1
-    else
-      aws s3api create-bucket \
-        --bucket "$ARTIFACT_BUCKET" \
-        --region "$REGION" \
-        --create-bucket-configuration "LocationConstraint=$REGION" 2>&1
-    fi
-
-    if [ $? -eq 0 ]; then
-      success "Artifact bucket created: s3://${ARTIFACT_BUCKET}"
-    else
-      fail "Failed to create artifact bucket"
-      return 2
-    fi
-  fi
-
-  # Enable versioning
-  aws s3api put-bucket-versioning \
-    --bucket "$ARTIFACT_BUCKET" \
-    --versioning-configuration Status=Enabled \
-    --region "$REGION" 2>/dev/null && \
-    success "Bucket versioning enabled" || \
-    warn "Could not enable bucket versioning"
-
-  # Block public access
-  aws s3api put-public-access-block \
-    --bucket "$ARTIFACT_BUCKET" \
-    --public-access-block-configuration \
-      "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true" \
-    --region "$REGION" 2>/dev/null && \
-    success "Public access blocked" || \
-    warn "Could not set public access block"
-
-  # Server-side encryption
-  aws s3api put-bucket-encryption \
-    --bucket "$ARTIFACT_BUCKET" \
-    --server-side-encryption-configuration \
-      '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}' \
-    --region "$REGION" 2>/dev/null && \
-    success "Server-side encryption enabled (AES-256)" || \
-    warn "Could not enable server-side encryption"
-
-  # Add lifecycle rule to clean up old artifacts (30 days)
-  aws s3api put-bucket-lifecycle-configuration \
-    --bucket "$ARTIFACT_BUCKET" \
-    --lifecycle-configuration '{
-      "Rules": [{
-        "ID": "cleanup-old-artifacts",
-        "Status": "Enabled",
-        "Filter": {"Prefix": ""},
-        "NoncurrentVersionExpiration": {"NoncurrentDays": 30},
-        "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 7}
-      }]
-    }' \
-    --region "$REGION" 2>/dev/null && \
-    success "Lifecycle policy set (old versions expire after 30 days)" || \
-    warn "Could not set lifecycle policy"
-
-  # Tag the bucket
-  aws s3api put-bucket-tagging \
-    --bucket "$ARTIFACT_BUCKET" \
-    --tagging "TagSet=[{Key=Environment,Value=${ENVIRONMENT}},{Key=Project,Value=lynia-finance},{Key=Purpose,Value=sam-deployment-artifacts}]" \
-    --region "$REGION" 2>/dev/null && \
-    success "Bucket tagged" || \
-    warn "Could not tag bucket"
-
-  # Verify bucket is empty
-  local obj_count
-  obj_count=$(aws s3 ls "s3://${ARTIFACT_BUCKET}/" --region "$REGION" 2>/dev/null | wc -l)
-  if [ "$obj_count" -eq 0 ]; then
-    success "Artifact bucket is empty (ready for SAM deployments)"
-  else
-    warn "Artifact bucket contains $obj_count objects"
-  fi
-}
-
-# ============================================================================
 # Summary Report
 # ============================================================================
 print_summary() {
@@ -543,6 +554,7 @@ print_summary() {
   echo "  Templates validated: $VALIDATED / ${#TEMPLATE_MANIFEST[@]}"
   echo "  Validation failures: $VALIDATION_FAILURES"
   echo ""
+  echo "  Bootstrap stack:  ${BOOTSTRAP_STACK}"
   echo "  Template bucket:  s3://${TEMPLATE_BUCKET}"
   echo "  Artifact bucket:  s3://${ARTIFACT_BUCKET}"
   echo ""
@@ -577,8 +589,9 @@ main() {
   echo "  $(date '+%Y-%m-%d %H:%M:%S')"
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
-  echo "  Environment: ${ENVIRONMENT}"
-  echo "  Region:      ${REGION}"
+  echo "  Environment:     ${ENVIRONMENT}"
+  echo "  Region:          ${REGION}"
+  echo "  Bootstrap stack: ${BOOTSTRAP_STACK}"
   echo "  Template bucket: ${TEMPLATE_BUCKET}"
   echo "  Artifact bucket: ${ARTIFACT_BUCKET}"
   echo ""
@@ -613,17 +626,14 @@ main() {
     exit 1
   }
 
-  # Step 3: Create template bucket
-  create_template_bucket || exit 2
+  # Step 3: Deploy bootstrap stack (creates both template + artifact buckets)
+  deploy_bootstrap_stack || exit 2
 
   # Step 4: Upload templates
   upload_templates
 
   # Step 5: Validate templates
   validate_templates
-
-  # Step 6: Create artifact bucket
-  create_artifact_bucket || exit 2
 
   # Print summary
   print_summary
