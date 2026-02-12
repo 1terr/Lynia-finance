@@ -1,0 +1,336 @@
+name: Deploy Cognito User Pool
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - dev
+
+concurrency:
+  group: deploy-cognito-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy-cognito:
+    name: Deploy Cognito (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          echo "Validating infrastructure/aws/cognito.yaml..."
+          aws cloudformation validate-template \
+            --template-body file://infrastructure/aws/cognito.yaml
+          echo "Template validation passed"
+
+      - name: Deploy Cognito stack
+        id: deploy
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-cognito"
+          echo "Deploying stack: ${STACK_NAME}"
+
+          aws cloudformation deploy \
+            --template-file infrastructure/aws/cognito.yaml \
+            --stack-name "${STACK_NAME}" \
+            --parameter-overrides "Environment=${ENV}" \
+            --tags "Project=lynia-finance" "Environment=${ENV}" "Service=cognito" \
+            --no-fail-on-empty-changeset \
+            --region ${{ env.AWS_REGION }}
+
+          echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Extract stack outputs
+        id: outputs
+        run: |
+          STACK_NAME="${{ steps.deploy.outputs.stack_name }}"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text)
+          echo "Stack status: ${STACK_STATUS}"
+          echo "stack_status=${STACK_STATUS}" >> $GITHUB_OUTPUT
+
+          USER_POOL_ID=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].Outputs[?OutputKey==`UserPoolId`].OutputValue' --output text)
+          echo "user_pool_id=${USER_POOL_ID}" >> $GITHUB_OUTPUT
+
+          USER_POOL_ARN=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].Outputs[?OutputKey==`UserPoolArn`].OutputValue' --output text)
+          echo "user_pool_arn=${USER_POOL_ARN}" >> $GITHUB_OUTPUT
+
+          ADMIN_CLIENT_ID=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].Outputs[?OutputKey==`AdminClientId`].OutputValue' --output text)
+          echo "admin_client_id=${ADMIN_CLIENT_ID}" >> $GITHUB_OUTPUT
+
+          DISTRIBUTOR_CLIENT_ID=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].Outputs[?OutputKey==`DistributorClientId`].OutputValue' --output text)
+          echo "distributor_client_id=${DISTRIBUTOR_CLIENT_ID}" >> $GITHUB_OUTPUT
+
+          echo "=== Stack Outputs ==="
+          echo "UserPoolId:          ${USER_POOL_ID}"
+          echo "UserPoolArn:         ${USER_POOL_ARN}"
+          echo "AdminClientId:       ${ADMIN_CLIENT_ID}"
+          echo "DistributorClientId: ${DISTRIBUTOR_CLIENT_ID}"
+
+      - name: Verify User Pool configuration
+        id: verify-pool
+        run: |
+          USER_POOL_ID="${{ steps.outputs.outputs.user_pool_id }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying User Pool: ${USER_POOL_ID} ==="
+
+          POOL_JSON=$(aws cognito-idp describe-user-pool \
+            --user-pool-id "${USER_POOL_ID}" --output json)
+
+          # Check pool status
+          POOL_STATUS=$(echo "${POOL_JSON}" | jq -r '.UserPool.Status')
+          if [ "${POOL_STATUS}" = "Enabled" ]; then
+            echo "✅ User Pool status: Enabled"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ User Pool status: ${POOL_STATUS} (expected Enabled)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Check MFA configuration
+          MFA_CONFIG=$(echo "${POOL_JSON}" | jq -r '.UserPool.MfaConfiguration')
+          if [ "${MFA_CONFIG}" = "OPTIONAL" ]; then
+            echo "✅ MFA: OPTIONAL"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ MFA: ${MFA_CONFIG} (expected OPTIONAL)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Check password policy
+          MIN_LENGTH=$(echo "${POOL_JSON}" | jq -r '.UserPool.Policies.PasswordPolicy.MinimumLength')
+          REQ_UPPER=$(echo "${POOL_JSON}" | jq -r '.UserPool.Policies.PasswordPolicy.RequireUppercase')
+          REQ_LOWER=$(echo "${POOL_JSON}" | jq -r '.UserPool.Policies.PasswordPolicy.RequireLowercase')
+          REQ_NUM=$(echo "${POOL_JSON}" | jq -r '.UserPool.Policies.PasswordPolicy.RequireNumbers')
+          REQ_SYM=$(echo "${POOL_JSON}" | jq -r '.UserPool.Policies.PasswordPolicy.RequireSymbols')
+
+          if [ "${MIN_LENGTH}" -ge 12 ] && [ "${REQ_UPPER}" = "true" ] && \
+             [ "${REQ_LOWER}" = "true" ] && [ "${REQ_NUM}" = "true" ] && \
+             [ "${REQ_SYM}" = "true" ]; then
+            echo "✅ Password policy: ${MIN_LENGTH}+ chars, all complexity requirements"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Password policy: min=${MIN_LENGTH} upper=${REQ_UPPER} lower=${REQ_LOWER} num=${REQ_NUM} sym=${REQ_SYM}"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "pool_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "pool_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Verify user groups
+        id: verify-groups
+        run: |
+          USER_POOL_ID="${{ steps.outputs.outputs.user_pool_id }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying User Groups ==="
+
+          GROUPS_JSON=$(aws cognito-idp list-groups \
+            --user-pool-id "${USER_POOL_ID}" --output json)
+
+          GROUP_COUNT=$(echo "${GROUPS_JSON}" | jq '.Groups | length')
+
+          EXPECTED_GROUPS=("admin:1" "manager:2" "support:3" "reports_viewer:4" "distributor:5")
+
+          for ENTRY in "${EXPECTED_GROUPS[@]}"; do
+            GROUP_NAME="${ENTRY%%:*}"
+            EXPECTED_PREC="${ENTRY##*:}"
+            ACTUAL_PREC=$(echo "${GROUPS_JSON}" | jq -r \
+              ".Groups[] | select(.GroupName==\"${GROUP_NAME}\") | .Precedence")
+
+            if [ "${ACTUAL_PREC}" = "${EXPECTED_PREC}" ]; then
+              echo "✅ Group '${GROUP_NAME}': precedence=${ACTUAL_PREC}"
+              PASS=$((PASS + 1))
+            elif [ -z "${ACTUAL_PREC}" ]; then
+              echo "❌ Group '${GROUP_NAME}': NOT FOUND"
+              FAIL=$((FAIL + 1))
+            else
+              echo "❌ Group '${GROUP_NAME}': precedence=${ACTUAL_PREC} (expected ${EXPECTED_PREC})"
+              FAIL=$((FAIL + 1))
+            fi
+          done
+
+          echo "groups_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "groups_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Verify app clients
+        id: verify-clients
+        run: |
+          USER_POOL_ID="${{ steps.outputs.outputs.user_pool_id }}"
+          ADMIN_CLIENT_ID="${{ steps.outputs.outputs.admin_client_id }}"
+          DISTRIBUTOR_CLIENT_ID="${{ steps.outputs.outputs.distributor_client_id }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying Admin Portal Client ==="
+          ADMIN_JSON=$(aws cognito-idp describe-user-pool-client \
+            --user-pool-id "${USER_POOL_ID}" \
+            --client-id "${ADMIN_CLIENT_ID}" --output json)
+
+          # Admin: access token = 1 hour
+          ADMIN_ACCESS=$(echo "${ADMIN_JSON}" | jq -r '.UserPoolClient.AccessTokenValidity')
+          ADMIN_ACCESS_UNIT=$(echo "${ADMIN_JSON}" | jq -r '.UserPoolClient.TokenValidityUnits.AccessToken')
+          if [ "${ADMIN_ACCESS}" = "1" ] && [ "${ADMIN_ACCESS_UNIT}" = "hours" ]; then
+            echo "✅ Admin access token: 1 hour"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Admin access token: ${ADMIN_ACCESS} ${ADMIN_ACCESS_UNIT} (expected 1 hours)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Admin: refresh token = 30 days
+          ADMIN_REFRESH=$(echo "${ADMIN_JSON}" | jq -r '.UserPoolClient.RefreshTokenValidity')
+          ADMIN_REFRESH_UNIT=$(echo "${ADMIN_JSON}" | jq -r '.UserPoolClient.TokenValidityUnits.RefreshToken')
+          if [ "${ADMIN_REFRESH}" = "30" ] && [ "${ADMIN_REFRESH_UNIT}" = "days" ]; then
+            echo "✅ Admin refresh token: 30 days"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Admin refresh token: ${ADMIN_REFRESH} ${ADMIN_REFRESH_UNIT} (expected 30 days)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Admin: auth flows
+          ADMIN_AUTH=$(echo "${ADMIN_JSON}" | jq -r '.UserPoolClient.ExplicitAuthFlows[]' | sort)
+          if echo "${ADMIN_AUTH}" | grep -q "ALLOW_USER_PASSWORD_AUTH" && \
+             echo "${ADMIN_AUTH}" | grep -q "ALLOW_USER_SRP_AUTH" && \
+             echo "${ADMIN_AUTH}" | grep -q "ALLOW_REFRESH_TOKEN_AUTH"; then
+            echo "✅ Admin auth flows: USER_PASSWORD_AUTH, USER_SRP_AUTH, REFRESH_TOKEN_AUTH"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Admin auth flows: ${ADMIN_AUTH}"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "=== Verifying Distributor Dashboard Client ==="
+          DIST_JSON=$(aws cognito-idp describe-user-pool-client \
+            --user-pool-id "${USER_POOL_ID}" \
+            --client-id "${DISTRIBUTOR_CLIENT_ID}" --output json)
+
+          # Distributor: access token = 1 hour
+          DIST_ACCESS=$(echo "${DIST_JSON}" | jq -r '.UserPoolClient.AccessTokenValidity')
+          DIST_ACCESS_UNIT=$(echo "${DIST_JSON}" | jq -r '.UserPoolClient.TokenValidityUnits.AccessToken')
+          if [ "${DIST_ACCESS}" = "1" ] && [ "${DIST_ACCESS_UNIT}" = "hours" ]; then
+            echo "✅ Distributor access token: 1 hour"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Distributor access token: ${DIST_ACCESS} ${DIST_ACCESS_UNIT} (expected 1 hours)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Distributor: refresh token = 7 days
+          DIST_REFRESH=$(echo "${DIST_JSON}" | jq -r '.UserPoolClient.RefreshTokenValidity')
+          DIST_REFRESH_UNIT=$(echo "${DIST_JSON}" | jq -r '.UserPoolClient.TokenValidityUnits.RefreshToken')
+          if [ "${DIST_REFRESH}" = "7" ] && [ "${DIST_REFRESH_UNIT}" = "days" ]; then
+            echo "✅ Distributor refresh token: 7 days"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Distributor refresh token: ${DIST_REFRESH} ${DIST_REFRESH_UNIT} (expected 7 days)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Distributor: auth flows
+          DIST_AUTH=$(echo "${DIST_JSON}" | jq -r '.UserPoolClient.ExplicitAuthFlows[]' | sort)
+          if echo "${DIST_AUTH}" | grep -q "ALLOW_USER_PASSWORD_AUTH" && \
+             echo "${DIST_AUTH}" | grep -q "ALLOW_USER_SRP_AUTH" && \
+             echo "${DIST_AUTH}" | grep -q "ALLOW_REFRESH_TOKEN_AUTH"; then
+            echo "✅ Distributor auth flows: USER_PASSWORD_AUTH, USER_SRP_AUTH, REFRESH_TOKEN_AUTH"
+            PASS=$((PASS + 1))
+          else
+            echo "❌ Distributor auth flows: ${DIST_AUTH}"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "clients_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "clients_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Generate summary
+        if: always()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_STATUS="${{ steps.outputs.outputs.stack_status }}"
+
+          POOL_PASS="${{ steps.verify-pool.outputs.pool_pass || 0 }}"
+          POOL_FAIL="${{ steps.verify-pool.outputs.pool_fail || 0 }}"
+          GROUPS_PASS="${{ steps.verify-groups.outputs.groups_pass || 0 }}"
+          GROUPS_FAIL="${{ steps.verify-groups.outputs.groups_fail || 0 }}"
+          CLIENTS_PASS="${{ steps.verify-clients.outputs.clients_pass || 0 }}"
+          CLIENTS_FAIL="${{ steps.verify-clients.outputs.clients_fail || 0 }}"
+
+          TOTAL_PASS=$((POOL_PASS + GROUPS_PASS + CLIENTS_PASS))
+          TOTAL_FAIL=$((POOL_FAIL + GROUPS_FAIL + CLIENTS_FAIL))
+
+          # Stack status check
+          if [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ]; then
+            STACK_CHECK="✅"
+            TOTAL_PASS=$((TOTAL_PASS + 1))
+          else
+            STACK_CHECK="❌"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          fi
+
+          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # Cognito User Pool Deployment — ${ENV}
+
+          ## Stack Info
+          | Property | Value |
+          |----------|-------|
+          | Stack Name | ${ENV}-lynia-cognito |
+          | Stack Status | ${STACK_CHECK} ${STACK_STATUS} |
+          | Region | ${{ env.AWS_REGION }} |
+          | UserPoolId | \`${{ steps.outputs.outputs.user_pool_id }}\` |
+          | UserPoolArn | \`${{ steps.outputs.outputs.user_pool_arn }}\` |
+          | AdminClientId | \`${{ steps.outputs.outputs.admin_client_id }}\` |
+          | DistributorClientId | \`${{ steps.outputs.outputs.distributor_client_id }}\` |
+
+          ## Acceptance Criteria: ${TOTAL_PASS}/${TOTAL} passed
+          | Check | Result |
+          |-------|--------|
+          | Stack status (CREATE_COMPLETE / UPDATE_COMPLETE) | ${STACK_CHECK} |
+          | User Pool config (pool pass: ${POOL_PASS}, fail: ${POOL_FAIL}) | $([ "${POOL_FAIL}" = "0" ] && echo "✅" || echo "❌") |
+          | User groups (groups pass: ${GROUPS_PASS}, fail: ${GROUPS_FAIL}) | $([ "${GROUPS_FAIL}" = "0" ] && echo "✅" || echo "❌") |
+          | App clients (clients pass: ${CLIENTS_PASS}, fail: ${CLIENTS_FAIL}) | $([ "${CLIENTS_FAIL}" = "0" ] && echo "✅" || echo "❌") |
+
+          **Total: ${TOTAL_PASS} passed, ${TOTAL_FAIL} failed out of ${TOTAL} checks**
+          EOF
+
+          if [ "${TOTAL_FAIL}" -gt 0 ]; then
+            echo "::error::${TOTAL_FAIL} acceptance criteria failed"
+            exit 1
+          fi
+
+          echo "All ${TOTAL_PASS} acceptance criteria passed!"

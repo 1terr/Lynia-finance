@@ -6,7 +6,7 @@
 **Priority:** Critical
 **Estimated Hours:** 2
 **Dependencies:** P5-DEPLOY-T001
-**Status:** 🟡 IN PROGRESS (Template Ready & Validated — Awaiting AWS Credentials)
+**Status:** 🟡 IN PROGRESS (GitHub Actions Workflow Ready — Trigger Manually)
 **Completion Date:** —
 
 ---
@@ -146,54 +146,55 @@ Created `scripts/deploy-cognito.sh` — a comprehensive deployment and verificat
 ./scripts/deploy-cognito.sh --dry-run
 ```
 
-### Step 4: Deploy Stack ⏳
+### Step 4: GitHub Actions Deployment Workflow ✅
 
-AWS CLI is not available in this environment. The deployment script is ready to execute when AWS credentials are configured.
+AWS credentials are stored as GitHub repository secrets (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`), so a GitHub Actions workflow was created for deployment.
+
+**Created:** `.github/workflows/deploy-cognito.yml`
+
+**Workflow features:**
+- Manual trigger via `workflow_dispatch` with environment selection (production/staging/dev)
+- AWS credential configuration using `aws-actions/configure-aws-credentials@v6`
+- CloudFormation template validation via AWS API
+- Stack deployment with tags and no-fail-on-empty-changeset
+- Extraction of all 4 stack outputs (UserPoolId, UserPoolArn, AdminClientId, DistributorClientId)
+- Full acceptance criteria verification:
+  - User Pool status, MFA configuration, password policy
+  - All 5 user groups with correct precedences
+  - Both app clients with token validity and auth flow checks
+- GitHub Actions step summary with pass/fail report
 
 **To deploy:**
-```bash
-# 1. Ensure AWS CLI is installed and credentials configured
-export AWS_ACCESS_KEY_ID=<your-access-key>
-export AWS_SECRET_ACCESS_KEY=<your-secret-key>
-export AWS_DEFAULT_REGION=us-east-1
-
-# 2. Run the deployment script
-./scripts/deploy-cognito.sh
-
-# 3. Or deploy manually
-aws cloudformation deploy \
-  --template-file infrastructure/aws/cognito.yaml \
-  --stack-name production-lynia-cognito \
-  --parameter-overrides Environment=production \
-  --region us-east-1
-```
+1. Go to **Actions** tab → **Deploy Cognito User Pool**
+2. Click **Run workflow** → Select environment → **Run**
+3. Monitor the run for all acceptance criteria
+4. Stack outputs will be displayed in the workflow summary
 
 ### Step 5: Record Stack Outputs ⏳
 
-Will be recorded automatically by the deployment script. Expected outputs:
+Will be recorded automatically by the GitHub Actions workflow. The step summary will display:
 
 ```
-USER_POOL_ID=<us-east-1_XXXXXXXXX>
-USER_POOL_ARN=<arn:aws:cognito-idp:us-east-1:XXXX:userpool/us-east-1_XXXX>
-ADMIN_CLIENT_ID=<XXXXXXXXXXXXXXXXXXXXXXXXXX>
-DISTRIBUTOR_CLIENT_ID=<XXXXXXXXXXXXXXXXXXXXXXXXXX>
+UserPoolId:          <us-east-1_XXXXXXXXX>
+UserPoolArn:         <arn:aws:cognito-idp:us-east-1:XXXX:userpool/us-east-1_XXXX>
+AdminClientId:       <XXXXXXXXXXXXXXXXXXXXXXXXXX>
+DistributorClientId: <XXXXXXXXXXXXXXXXXXXXXXXXXX>
 ```
 
 ---
 
 ## Verification
 
-When AWS credentials are available, run:
+**Option A — GitHub Actions (recommended):**
+1. Go to **Actions** → **Deploy Cognito User Pool** → **Run workflow**
+2. The workflow validates, deploys, and verifies all acceptance criteria automatically
 
+**Option B — Local CLI (if credentials available locally):**
 ```bash
-# Full deployment + verification
 ./scripts/deploy-cognito.sh
-
-# Or verify an existing stack
-./scripts/deploy-cognito.sh --verify-only
 ```
 
-The script checks all acceptance criteria automatically:
+Both methods check all acceptance criteria automatically:
 1. Stack status = `CREATE_COMPLETE`
 2. User Pool status = `Enabled`
 3. MFA = `OPTIONAL`
@@ -210,7 +211,8 @@ The script checks all acceptance criteria automatically:
 | File | Purpose | Status |
 |------|---------|--------|
 | `infrastructure/aws/cognito.yaml` | Cognito CloudFormation template | ✅ Updated & validated |
-| `scripts/deploy-cognito.sh` | **NEW** — Deployment + verification script | ✅ Created |
+| `scripts/deploy-cognito.sh` | Deployment + verification script (local) | ✅ Created |
+| `.github/workflows/deploy-cognito.yml` | **NEW** — GitHub Actions deployment workflow | ✅ Created |
 
 ---
 
@@ -226,9 +228,9 @@ The script checks all acceptance criteria automatically:
 
 ## Remaining Work
 
-1. **Configure AWS credentials** — Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION=us-east-1`
-2. **Run deployment script** — `./scripts/deploy-cognito.sh`
-3. **Record live outputs** — Script saves UserPoolId, UserPoolArn, ClientIds automatically
+1. **Trigger GitHub Actions workflow** — Go to Actions → Deploy Cognito User Pool → Run workflow (select `production`)
+2. **Monitor run** — Verify all 15 acceptance criteria pass in the workflow summary
+3. **Record live outputs** — Copy UserPoolId, UserPoolArn, AdminClientId, DistributorClientId from the summary
 4. **Update this report** — Mark remaining acceptance criteria as passed
 
 ---
@@ -245,6 +247,7 @@ The script checks all acceptance criteria automatically:
 | 2026-02-12 | All local validations passed (8 resources, 4 outputs, all configs verified) | 🟡 In Progress |
 | 2026-02-12 | Created scripts/deploy-cognito.sh (deploy + full verification) | 🟡 In Progress |
 | 2026-02-12 | Awaiting AWS credentials for actual stack deployment | 🟡 Blocked |
+| 2026-02-12 | Created GitHub Actions workflow (deploy-cognito.yml) for deployment | 🟡 In Progress |
 
 ---
 **Created**: 2026-02-12
