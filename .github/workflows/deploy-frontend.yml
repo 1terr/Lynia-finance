@@ -91,8 +91,9 @@ jobs:
         run: pnpm --filter "@lynia/admin-portal" build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.COGNITO_ADMIN_CLIENT_ID }}
+          NEXT_PUBLIC_COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
           NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
 
       - name: Build distributor dashboard
@@ -101,8 +102,9 @@ jobs:
         run: pnpm --filter lynia-distributor-portal build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.COGNITO_DISTRIBUTOR_CLIENT_ID }}
+          NEXT_PUBLIC_COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
           NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
 
       - name: Generate runtime config for admin portal
@@ -110,30 +112,34 @@ jobs:
         run: |
           node -e "
             const config = {
-              SUPABASE_URL: process.env.SUPABASE_URL || '',
-              SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+              COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID || '',
+              COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID || '',
+              COGNITO_REGION: process.env.COGNITO_REGION || 'us-east-1',
             };
             const js = 'window.__LYNIA_CONFIG__=' + JSON.stringify(config) + ';';
             require('fs').writeFileSync('frontend/admin-portal/out/config.js', js);
           "
         env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ vars.COGNITO_ADMIN_CLIENT_ID }}
+          COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Generate runtime config for distributor dashboard
         if: steps.build-distributor.outcome == 'success'
         run: |
           node -e "
             const config = {
-              SUPABASE_URL: process.env.SUPABASE_URL || '',
-              SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+              COGNITO_USER_POOL_ID: process.env.COGNITO_USER_POOL_ID || '',
+              COGNITO_CLIENT_ID: process.env.COGNITO_CLIENT_ID || '',
+              COGNITO_REGION: process.env.COGNITO_REGION || 'us-east-1',
             };
             const js = 'window.__LYNIA_CONFIG__=' + JSON.stringify(config) + ';';
             require('fs').writeFileSync('frontend/distributor-dashboard/out/config.js', js);
           "
         env:
-          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY }}
+          COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
+          COGNITO_CLIENT_ID: ${{ vars.COGNITO_DISTRIBUTOR_CLIENT_ID }}
+          COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
 
       - name: Upload admin portal build
         if: steps.build-admin.outcome == 'success'

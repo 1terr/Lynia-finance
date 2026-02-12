@@ -61,9 +61,6 @@ jobs:
 
       - name: Run tests with coverage
         run: pnpm run test:coverage
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_TEST_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_TEST_KEY }}
 
       - name: Extract coverage percentage
         id: coverage
@@ -305,8 +302,6 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               Environment=staging \
-              SupabaseUrl=${{ secrets.STAGING_SUPABASE_URL }} \
-              SupabaseServiceRoleKey=${{ secrets.STAGING_SUPABASE_KEY }} \
               WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID }} \
               WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN }} \
               WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN }} \
@@ -483,8 +478,6 @@ jobs:
             --on-failure ROLLBACK \
             --parameter-overrides \
               Environment=production \
-              SupabaseUrl=${{ secrets.PRODUCTION_SUPABASE_URL }} \
-              SupabaseServiceRoleKey=${{ secrets.PRODUCTION_SUPABASE_KEY }} \
               WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }} \
               WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN }} \
               WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN }} \

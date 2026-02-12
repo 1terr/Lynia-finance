@@ -1,7 +1,15 @@
-# Supabase Setup Guide - Quick Start
+# [ARCHIVED] Supabase Setup Guide
+
+> **This guide is archived.** Lynia Finance has migrated from Supabase to native AWS services (RDS, Cognito, S3).
+> See **[AWS-SETUP-GUIDE.md](./AWS-SETUP-GUIDE.md)** for the current setup instructions.
+> See **[Migration Report](../SUPABASE-TO-AWS-MIGRATION-REPORT.md)** for details on what changed.
+
+---
+
+# Supabase Setup Guide - Quick Start (ARCHIVED)
 
 **Duration**: 10 minutes
-**Current Status**: Setting up Supabase project
+**Current Status**: ARCHIVED - Replaced by AWS infrastructure
 
 ---
 
