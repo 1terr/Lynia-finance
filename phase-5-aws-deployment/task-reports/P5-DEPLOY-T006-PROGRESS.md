@@ -207,17 +207,18 @@ aws sqs list-queues --queue-name-prefix production-lynia \
 | File | Purpose |
 |------|---------|
 | `infrastructure/aws/sqs-queues.yaml` | SQS queues CloudFormation template (11 resources, 1 param, 10 outputs) |
-| `scripts/deploy-sqs.sh` | **NEW** — Deployment and verification automation script |
+| `scripts/deploy-sqs.sh` | **NEW** — Deployment and verification automation script (local CLI) |
+| `.github/workflows/deploy-sqs.yml` | **NEW** — GitHub Actions workflow for CI/CD deployment |
 
 ---
 
 ## Remaining Work
 
-1. **Configure AWS credentials** — Set `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_DEFAULT_REGION=us-east-1`
-2. **Run the deployment script** — `./scripts/deploy-sqs.sh`
-3. **Verify all acceptance criteria pass** — Script reports pass/fail for every check
+AWS credentials are configured as GitHub repository secrets. To deploy:
 
-The deployment script handles everything. Once credentials are provided, the remaining work is a single command execution.
+1. **Trigger the workflow** — Go to GitHub Actions → "Deploy SQS Queues" → Run workflow → Select environment
+2. **Or run locally** if AWS CLI is available: `./scripts/deploy-sqs.sh`
+3. **Verify all acceptance criteria pass** — Both the workflow and script report pass/fail for every check
 
 ---
 
@@ -228,7 +229,8 @@ The deployment script handles everything. Once credentials are provided, the rem
 | 2026-02-12 | Task created | ⚪ Not Started |
 | 2026-02-13 | Reviewed CloudFormation template: 11 resources, 10 outputs, all queue configs validated | 🟡 In Progress |
 | 2026-02-13 | Created `scripts/deploy-sqs.sh` with full deploy + verify automation | 🟡 In Progress |
-| 2026-02-13 | Awaiting AWS credentials for stack deployment | 🟡 Blocked |
+| 2026-02-13 | Created `.github/workflows/deploy-sqs.yml` for CI/CD deployment via GitHub Actions | 🟡 In Progress |
+| 2026-02-13 | AWS credentials added to GitHub Secrets — ready to trigger workflow | 🟡 Ready to Deploy |
 
 ---
 **Created**: 2026-02-12
