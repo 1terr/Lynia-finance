@@ -19,12 +19,15 @@ on:
         options:
           - admin-portal
           - distributor-dashboard
+          - landing-page
           - both
+          - all
   push:
     branches:
       - master
     paths:
       - 'frontend/**'
+      - 'landing-page/frontend/**'
       - '.github/workflows/deploy-frontend.yml'
 
 concurrency:
@@ -48,6 +51,7 @@ jobs:
     outputs:
       admin-built: ${{ steps.build-admin.outcome == 'success' }}
       distributor-built: ${{ steps.build-distributor.outcome == 'success' }}
+      landing-built: ${{ steps.build-landing.outcome == 'success' }}
 
     steps:
       - name: Checkout code
@@ -69,25 +73,25 @@ jobs:
 
       - name: Run frontend linting
         run: |
-          if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
             pnpm --filter "@lynia/admin-portal" lint 2>/dev/null || echo "::warning::Admin portal lint issues found"
           fi
-          if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
             pnpm --filter lynia-distributor-portal lint 2>/dev/null || echo "::warning::Distributor dashboard lint issues found"
           fi
 
       - name: Run frontend tests
         run: |
-          if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
             pnpm --filter "@lynia/admin-portal" test 2>/dev/null || echo "::warning::Admin portal tests failed"
           fi
-          if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ]; then
+          if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
             pnpm --filter lynia-distributor-portal test 2>/dev/null || echo "::warning::Distributor dashboard tests failed"
           fi
 
       - name: Build admin portal
         id: build-admin
-        if: env.DEPLOY_APP == 'admin-portal' || env.DEPLOY_APP == 'both'
+        if: env.DEPLOY_APP == 'admin-portal' || env.DEPLOY_APP == 'both' || env.DEPLOY_APP == 'all'
         run: pnpm --filter "@lynia/admin-portal" build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
@@ -98,7 +102,7 @@ jobs:
 
       - name: Build distributor dashboard
         id: build-distributor
-        if: env.DEPLOY_APP == 'distributor-dashboard' || env.DEPLOY_APP == 'both'
+        if: env.DEPLOY_APP == 'distributor-dashboard' || env.DEPLOY_APP == 'both' || env.DEPLOY_APP == 'all'
         run: pnpm --filter lynia-distributor-portal build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
@@ -106,6 +110,13 @@ jobs:
           NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.COGNITO_DISTRIBUTOR_CLIENT_ID }}
           NEXT_PUBLIC_COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
           NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
+
+      - name: Build landing page
+        id: build-landing
+        if: env.DEPLOY_APP == 'landing-page' || env.DEPLOY_APP == 'all'
+        run: pnpm --filter "@lynia/landing-page" build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
 
       - name: Generate runtime config for admin portal
         if: steps.build-admin.outcome == 'success'
@@ -157,6 +168,14 @@ jobs:
           path: frontend/distributor-dashboard/out/
           retention-days: 3
 
+      - name: Upload landing page build
+        if: steps.build-landing.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: landing-page-build
+          path: landing-page/frontend/out/
+          retention-days: 3
+
   # ================================================================
   # STAGE 2: Deploy Admin Portal (Blue-Green)
   # ================================================================
@@ -164,7 +183,7 @@ jobs:
     name: Deploy Admin Portal
     runs-on: ubuntu-latest
     needs: build-test
-    if: ${{ (inputs.application || 'both') == 'admin-portal' || (inputs.application || 'both') == 'both' }}
+    if: ${{ (inputs.application || 'both') == 'admin-portal' || (inputs.application || 'both') == 'both' || (inputs.application || 'both') == 'all' }}
     environment:
       name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.get-url.outputs.url }}
@@ -300,7 +319,7 @@ jobs:
     name: Deploy Distributor Dashboard
     runs-on: ubuntu-latest
     needs: build-test
-    if: ${{ (inputs.application || 'both') == 'distributor-dashboard' || (inputs.application || 'both') == 'both' }}
+    if: ${{ (inputs.application || 'both') == 'distributor-dashboard' || (inputs.application || 'both') == 'both' || (inputs.application || 'both') == 'all' }}
     environment:
       name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.get-url.outputs.url }}
@@ -401,12 +420,144 @@ jobs:
           echo "url=$URL" >> $GITHUB_OUTPUT
 
   # ================================================================
-  # STAGE 4: Notifications
+  # STAGE 4: Deploy Landing Page (Blue-Green)
+  # ================================================================
+  deploy-landing-page:
+    name: Deploy Landing Page
+    runs-on: ubuntu-latest
+    needs: build-test
+    if: ${{ (inputs.application || 'both') == 'landing-page' || (inputs.application || 'both') == 'all' }}
+    environment:
+      name: ${{ inputs.environment || 'production' }}
+      url: ${{ steps.get-url.outputs.url }}
+
+    steps:
+      - name: Download landing page build
+        uses: actions/download-artifact@v7
+        with:
+          name: landing-page-build
+          path: ./out/
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Blue-Green deployment - Upload to versioned prefix
+        id: blue-green
+        run: |
+          DEPLOY_VERSION="v$(date +%Y%m%d-%H%M%S)-${GITHUB_SHA::7}"
+          BUCKET="${{ env.DEPLOY_ENV }}-lynia-landing-page"
+
+          echo "deploy_version=$DEPLOY_VERSION" >> $GITHUB_OUTPUT
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+
+          aws s3 sync ./out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "*.xml" \
+            --exclude "*.txt" \
+            --exclude "sw.js" \
+            --exclude "manifest.json"
+
+          aws s3 sync ./out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "*.xml" \
+            --include "*.txt" \
+            --include "sw.js" \
+            --include "manifest.json"
+
+      - name: Switch traffic - Update live prefix
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+
+          aws s3 sync "./out/" "s3://${BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "*.xml" \
+            --exclude "*.txt" \
+            --exclude "sw.js" \
+            --exclude "manifest.json" \
+            --exclude "deployments/*"
+
+          aws s3 sync "./out/" "s3://${BUCKET}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "*.xml" \
+            --include "*.txt" \
+            --include "sw.js" \
+            --include "manifest.json" \
+            --exclude "deployments/*"
+
+      - name: Record deployment version for rollback
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          DEPLOY_VERSION="${{ steps.blue-green.outputs.deploy_version }}"
+          echo "$DEPLOY_VERSION" | aws s3 cp - "s3://${BUCKET}/deployments/CURRENT_VERSION"
+
+      - name: Clean old deployments (keep last 5)
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          VERSIONS=$(aws s3 ls "s3://${BUCKET}/deployments/" --recursive \
+            | grep "CURRENT_VERSION\|index.html" \
+            | awk '{print $4}' \
+            | grep -oP 'deployments/v[^/]+' \
+            | sort -u | head -n -5) || true
+
+          for version in $VERSIONS; do
+            aws s3 rm "s3://${BUCKET}/${version}/" --recursive 2>/dev/null || true
+          done
+
+      - name: Invalidate CloudFront cache
+        run: |
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`LandingPageDistributionId`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            INVALIDATION_ID=$(aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/*" \
+              --query 'Invalidation.Id' \
+              --output text)
+            echo "CloudFront invalidation started: $INVALIDATION_ID"
+          else
+            echo "::warning::CloudFront distribution not found - skipping invalidation"
+          fi
+
+      - name: Get deployment URL
+        id: get-url
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --query 'Stacks[0].Outputs[?OutputKey==`LandingPageUrl`].OutputValue' \
+            --output text 2>/dev/null || echo "https://lyniafinance.com")
+          echo "url=$URL" >> $GITHUB_OUTPUT
+          echo "Landing Page URL: $URL"
+
+      - name: Health check deployed frontend
+        run: |
+          URL="${{ steps.get-url.outputs.url }}"
+          echo "Checking frontend health at $URL..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL" || echo "000")
+          if [[ "$HTTP_CODE" =~ ^(200|301|302)$ ]]; then
+            echo "Frontend is responding: $HTTP_CODE"
+          else
+            echo "::warning::Frontend returned HTTP $HTTP_CODE"
+          fi
+
+  # ================================================================
+  # STAGE 5: Notifications
   # ================================================================
   notify:
     name: Frontend Deploy Notification
     runs-on: ubuntu-latest
-    needs: [build-test, deploy-admin-portal, deploy-distributor-dashboard]
+    needs: [build-test, deploy-admin-portal, deploy-distributor-dashboard, deploy-landing-page]
     if: always()
 
     steps:
@@ -415,7 +566,8 @@ jobs:
         run: |
           STATUS="success"
           if [ "${{ needs.deploy-admin-portal.result }}" == "failure" ] || \
-             [ "${{ needs.deploy-distributor-dashboard.result }}" == "failure" ]; then
+             [ "${{ needs.deploy-distributor-dashboard.result }}" == "failure" ] || \
+             [ "${{ needs.deploy-landing-page.result }}" == "failure" ]; then
             STATUS="failure"
           fi
 
@@ -440,3 +592,4 @@ jobs:
           echo "| Build & Test | ${{ needs.build-test.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Admin Portal | ${{ needs.deploy-admin-portal.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Distributor Dashboard | ${{ needs.deploy-distributor-dashboard.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Landing Page | ${{ needs.deploy-landing-page.result }} |" >> $GITHUB_STEP_SUMMARY

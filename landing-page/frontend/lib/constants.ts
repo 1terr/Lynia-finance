@@ -5,10 +5,11 @@
  * only need to be updated in one place.
  */
 
-/** WhatsApp deep-link.  Replace 263XXXXXXXXX with the real business number. */
+// TODO(launch): Replace 263XXXXXXXXX with the real Lynia WhatsApp business number
 export const WHATSAPP_URL = 'https://wa.me/263XXXXXXXXX';
 
 export const SOCIAL_LINKS = {
+  // TODO(launch): Verify these social media URLs are correct before go-live
   twitter: 'https://x.com/lyniafinance',
   linkedin: 'https://linkedin.com/company/lyniafinance',
   whatsapp: WHATSAPP_URL,

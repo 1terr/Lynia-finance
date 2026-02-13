@@ -13,7 +13,7 @@
 | **Layout (Nav + Footer + FAB)** | ✅ 100% | Responsive, mobile menu, WhatsApp FAB |
 | **Design tokens / Tailwind** | ✅ 100% | Full DESIGN-TOKENS.md mapped to config |
 | **Destination pages** | ✅ 100% | All pages built (contact, about, privacy, terms, editorial, careers, products, partnerships) |
-| **Forms** | ⚠️ 60% | Contact + partnership forms built; no backend wiring yet |
+| **Forms** | ✅ 100% | Forms submit to API Gateway → Lambda → RDS PostgreSQL |
 | **CMS (Sanity)** | ⚠️ 30% | Static editorial data in place; Sanity integration pending |
 | **SEO** | ✅ 100% | OG tags, robots.txt, sitemap.xml, JSON-LD structured data |
 | **Navigation polish** | ✅ 100% | Active page indicator, aria-current, all links resolved |
@@ -137,7 +137,7 @@ The most-linked missing page. 5 CTAs across the site point here.
   - [x] Submit button: "Submit partnership application"
   - [x] Success state feedback
 - [x] Mobile layout: single column (info first, form below)
-- [ ] Wire up form submission to real backend (simulated for now)
+- [x] Wire up form submission to API Gateway Lambda (was simulated, now uses `lib/api.ts` → API Gateway → `form-submission-service` Lambda)
 
 ### Files created
 
@@ -326,7 +326,7 @@ app/careers/page.tsx                        Careers page with hero, values, posi
 ### Homepage fixes
 
 - [x] **BottomCTA**: Add `href` to "Start your application" button (WhatsApp deep link)
-- [ ] **Digital Credit lead capture**: Wire up form submission (API route or external service)
+- [x] **Digital Credit lead capture**: Wired to API Gateway Lambda via `submitForm()`
 - [x] **Footer social links**: Replace `#` placeholders with real URLs
 - [x] **Nav links from non-homepage pages**: Hash links prefixed with `/` for cross-page navigation
 - [ ] **Editorial section**: Connect to Sanity CMS data instead of hardcoded posts
@@ -414,13 +414,80 @@ Footer "Careers" → /careers → hero + values + open positions + /contact ✅
 
 ---
 
+## Phase 3: Go-Live Preparation — COMPLETE ✅
+
+Converted the landing page from SSR (standalone) to static export for S3+CloudFront deployment. Forms now submit directly to API Gateway instead of Next.js API routes.
+
+### Static export conversion ✅
+
+- [x] Changed `next.config.js` from `output: 'standalone'` to `output: 'export'` with `trailingSlash: true`
+- [x] Deleted Next.js API routes (`app/api/contact/`, `app/api/partnership/`, `app/api/waitlist/`)
+- [x] Deleted `lib/validation.ts` (server-side validation moved to Lambda)
+- [x] Rewired forms in `app/contact/page.tsx` and `components/ui/WaitlistForm.tsx` to call `submitForm()` from `lib/api.ts` directly
+- [x] Build produces `out/` directory with 20 static HTML pages
+
+### Form submission Lambda ✅
+
+- [x] Created `services/form-submission-service/` — new Lambda function
+- [x] Handles 3 form types: contact, partnership, waitlist
+- [x] Inserts into existing RDS tables from migration 014 (`contact_submissions`, `partnership_applications`, `waitlist`)
+- [x] Input validation: Zimbabwe phone format, email, sanitisation
+- [x] CORS configured for `lyniafinance.com` and `www.lyniafinance.com`
+- [x] Added to SAM template (`template.yaml`) as 7th Lambda function
+- [x] Public endpoint — no Cognito authorizer (landing page visitors are unauthenticated)
+
+### AWS hosting infrastructure ✅
+
+- [x] Added landing page S3 bucket + CloudFront distribution to `infrastructure/aws/frontend-hosting.yaml`
+- [x] CloudFront Function for directory index rewriting (`/about/` → `/about/index.html`)
+- [x] Production aliases: `lyniafinance.com` + `www.lyniafinance.com`
+- [x] DNS records (Route 53) for both root and www domains
+- [x] Updated CSP header: removed `supabase.co`, added `execute-api.amazonaws.com`
+- [x] Added `lyniafinance.com` and `www.lyniafinance.com` to CORS allowed origins in `services/shared/utils/response.ts`
+
+### TODO(launch) markers ✅
+
+Placeholder content flagged with `// TODO(launch)` for easy grep before DNS cutover:
+- `lib/constants.ts` — WhatsApp number (`263XXXXXXXXX`)
+- `lib/constants.ts` — Social media URLs
+- `lib/editorial-data.ts` — Static editorial content
+- `app/about/page.tsx` — Team section
+
+### Files created/modified
+
+```
+services/form-submission-service/src/index.ts    Lambda handler (contact, partnership, waitlist)
+services/form-submission-service/package.json    Service dependencies
+services/form-submission-service/tsconfig.json   TypeScript config
+template.yaml                                    Added FormSubmissionFunction
+infrastructure/aws/frontend-hosting.yaml         Added landing page S3 + CloudFront + DNS
+services/shared/utils/response.ts                Added landing page CORS origins
+landing-page/frontend/next.config.js             output: 'export', trailingSlash: true
+landing-page/frontend/lib/api.ts                 Typed FormResult, better error handling
+landing-page/frontend/lib/constants.ts           TODO(launch) markers
+landing-page/frontend/lib/editorial-data.ts      TODO(launch) marker
+landing-page/frontend/app/about/page.tsx         TODO(launch) marker
+landing-page/frontend/app/contact/page.tsx       Forms call submitForm() directly
+landing-page/frontend/components/ui/WaitlistForm.tsx  Calls submitForm() directly
+```
+
+### Deleted
+
+```
+landing-page/frontend/app/api/contact/route.ts
+landing-page/frontend/app/api/partnership/route.ts
+landing-page/frontend/app/api/waitlist/route.ts
+landing-page/frontend/lib/validation.ts
+```
+
+---
+
 ## Recommended Build Order (remaining)
 
 ```
 1. Sanity CMS    — Replace static editorial data with CMS (P2)
-2. Form backends — Wire contact + lead capture forms to real backend
-3. Accessibility — Keyboard nav, screen reader, color contrast audit
+2. Accessibility — Keyboard nav, screen reader, color contrast audit (P3)
 ```
 
-All destination pages, SEO, and navigation polish complete.
-Remaining items are CMS migration, form backends, and accessibility testing.
+All destination pages, SEO, navigation, forms, and AWS hosting config complete.
+Remaining items are CMS migration and accessibility testing.

@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
   Lynia Finance - Frontend Hosting via S3 and CloudFront CDN
-  Admin portal and Distributor dashboard static hosting with global CDN
+  Landing page, Admin portal, and Distributor dashboard static hosting with global CDN
 
 Parameters:
   Environment:
@@ -127,6 +127,53 @@ Resources:
                 "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${DistributorDashboardDistribution}"
 
   # ==========================================================
+  # LANDING PAGE S3 BUCKET
+  # ==========================================================
+
+  LandingPageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Environment}-lynia-landing-page"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: !If [IsProduction, Enabled, Suspended]
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupOldVersions
+            Status: Enabled
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 30
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Application
+          Value: landing-page
+
+  LandingPageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref LandingPageBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub "${LandingPageBucket.Arn}/*"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${LandingPageDistribution}"
+
+  # ==========================================================
   # CLOUDFRONT ORIGIN ACCESS CONTROL
   # ==========================================================
 
@@ -150,6 +197,41 @@ Resources:
         SigningBehavior: always
         SigningProtocol: sigv4
 
+  LandingPageOAC:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${Environment}-lynia-landing-oac"
+        Description: OAC for landing page S3 bucket
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  # ==========================================================
+  # CLOUDFRONT FUNCTION - DIRECTORY INDEX REWRITE
+  # ==========================================================
+  # Rewrites /about/ → /about/index.html for static sites with trailingSlash
+
+  DirectoryIndexFunction:
+    Type: AWS::CloudFront::Function
+    Properties:
+      Name: !Sub "${Environment}-lynia-directory-index"
+      AutoPublish: true
+      FunctionConfig:
+        Comment: Rewrite directory requests to index.html
+        Runtime: cloudfront-js-2.0
+      FunctionCode: |
+        function handler(event) {
+          var request = event.request;
+          var uri = request.uri;
+          if (uri.endsWith('/')) {
+            request.uri += 'index.html';
+          } else if (!uri.includes('.')) {
+            request.uri += '/index.html';
+          }
+          return request;
+        }
+
   # ==========================================================
   # CLOUDFRONT RESPONSE HEADERS POLICY
   # ==========================================================
@@ -161,7 +243,7 @@ Resources:
         Name: !Sub "${Environment}-lynia-security-headers"
         SecurityHeadersConfig:
           ContentSecurityPolicy:
-            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.lyniafinance.com https://*.supabase.co"
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.lyniafinance.com https://*.execute-api.*.amazonaws.com"
             Override: true
           StrictTransportSecurity:
             AccessControlMaxAgeSec: 31536000
@@ -333,6 +415,79 @@ Resources:
           Value: !Ref Environment
 
   # ==========================================================
+  # CLOUDFRONT DISTRIBUTION - LANDING PAGE
+  # ==========================================================
+
+  LandingPageDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: !Sub "Lynia Landing Page (${Environment})"
+        DefaultRootObject: index.html
+        HttpVersion: http2and3
+        PriceClass: PriceClass_200
+        IPV6Enabled: true
+        Aliases: !If
+          - HasCertificate
+          - !If
+            - IsProduction
+            - - !Ref DomainName
+              - !Sub "www.${DomainName}"
+            - - !Sub "landing-${Environment}.${DomainName}"
+          - !Ref "AWS::NoValue"
+        ViewerCertificate: !If
+          - HasCertificate
+          - AcmCertificateArn: !Ref FrontendCertificateArn
+            SslSupportMethod: sni-only
+            MinimumProtocolVersion: TLSv1.2_2021
+          - CloudFrontDefaultCertificate: true
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt LandingPageBucket.RegionalDomainName
+            OriginAccessControlId: !Ref LandingPageOAC
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          Compress: true
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+          CachedMethods:
+            - GET
+            - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+          ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
+          FunctionAssociations:
+            - EventType: viewer-request
+              FunctionARN: !GetAtt DirectoryIndexFunction.FunctionMetadata.FunctionARN
+        CacheBehaviors:
+          # Static assets - long cache
+          - PathPattern: "/_next/static/*"
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            Compress: true
+            AllowedMethods:
+              - GET
+              - HEAD
+            CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # CachingOptimized
+        CustomErrorResponses:
+          - ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+          - ErrorCode: 403
+            ResponseCode: 404
+            ResponsePagePath: /404.html
+            ErrorCachingMinTTL: 60
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==========================================================
   # DNS RECORDS FOR FRONTENDS
   # ==========================================================
 
@@ -362,6 +517,34 @@ Resources:
       Type: A
       AliasTarget:
         DNSName: !GetAtt DistributorDashboardDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
+  LandingPageDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !If
+        - IsProduction
+        - !Ref DomainName
+        - !Sub "landing-${Environment}.${DomainName}"
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt LandingPageDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
+  LandingPageWwwDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasHostedZone
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !If
+        - IsProduction
+        - !Sub "www.${DomainName}"
+        - !Sub "www-${Environment}.${DomainName}"
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt LandingPageDistribution.DomainName
         HostedZoneId: Z2FDTNDATAQYW2
 
 Outputs:
@@ -416,3 +599,29 @@ Outputs:
         - !Sub "https://distributor.${DomainName}"
         - !Sub "https://distributor-${Environment}.${DomainName}"
       - !Sub "https://${DistributorDashboardDistribution.DomainName}"
+
+  LandingPageBucketName:
+    Description: Landing page S3 bucket name
+    Value: !Ref LandingPageBucket
+    Export:
+      Name: !Sub "${Environment}-lynia-landing-page-bucket"
+
+  LandingPageDistributionId:
+    Description: Landing page CloudFront distribution ID
+    Value: !Ref LandingPageDistribution
+    Export:
+      Name: !Sub "${Environment}-lynia-landing-page-distribution"
+
+  LandingPageDistributionDomain:
+    Description: Landing page CloudFront domain
+    Value: !GetAtt LandingPageDistribution.DomainName
+
+  LandingPageUrl:
+    Description: Landing page URL
+    Value: !If
+      - HasCertificate
+      - !If
+        - IsProduction
+        - !Sub "https://${DomainName}"
+        - !Sub "https://landing-${Environment}.${DomainName}"
+      - !Sub "https://${LandingPageDistribution.DomainName}"
