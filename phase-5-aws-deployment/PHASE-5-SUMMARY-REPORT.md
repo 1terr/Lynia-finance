@@ -68,7 +68,7 @@ Phase 5 deploys all AWS infrastructure for the Lynia Finance platform, completin
 | P5-DEPLOY-T003 | Deploy Cognito User Pool Stack | ⚪ Not Started | [P5-DEPLOY-T003-PROGRESS.md](task-reports/P5-DEPLOY-T003-PROGRESS.md) |
 | P5-DEPLOY-T004 | Deploy RDS PostgreSQL Stack | ⚪ Not Started | [P5-DEPLOY-T004-PROGRESS.md](task-reports/P5-DEPLOY-T004-PROGRESS.md) |
 | P5-DEPLOY-T005 | Deploy S3 Storage Buckets Stack | ⚪ Not Started | [P5-DEPLOY-T005-PROGRESS.md](task-reports/P5-DEPLOY-T005-PROGRESS.md) |
-| P5-DEPLOY-T006 | Deploy SQS Queues Stack | ⚪ Not Started | [P5-DEPLOY-T006-PROGRESS.md](task-reports/P5-DEPLOY-T006-PROGRESS.md) |
+| P5-DEPLOY-T006 | Deploy SQS Queues Stack | 🟡 In Progress | [P5-DEPLOY-T006-PROGRESS.md](task-reports/P5-DEPLOY-T006-PROGRESS.md) |
 | P5-DEPLOY-T007 | Deploy Secrets Manager Stack | ⚪ Not Started | [P5-DEPLOY-T007-PROGRESS.md](task-reports/P5-DEPLOY-T007-PROGRESS.md) |
 | P5-DEPLOY-T008 | Deploy IAM Roles Stack | ⚪ Not Started | [P5-DEPLOY-T008-PROGRESS.md](task-reports/P5-DEPLOY-T008-PROGRESS.md) |
 | P5-DEPLOY-T009 | Run Database Migrations to RDS | ⚪ Not Started | [P5-DEPLOY-T009-PROGRESS.md](task-reports/P5-DEPLOY-T009-PROGRESS.md) |
