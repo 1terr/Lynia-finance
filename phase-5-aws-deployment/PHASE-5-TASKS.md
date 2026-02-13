@@ -29,7 +29,7 @@
 | P5-DEPLOY-T003 | Deploy Cognito User Pool Stack | Critical | 2h | ⚪ Not Started | T001 |
 | P5-DEPLOY-T004 | Deploy RDS PostgreSQL Stack | Critical | 3h | ⚪ Not Started | T002 |
 | P5-DEPLOY-T005 | Deploy S3 Storage Buckets Stack | High | 1h | ⚪ Not Started | T001 |
-| P5-DEPLOY-T006 | Deploy SQS Queues Stack | High | 1h | ⚪ Not Started | T001 |
+| P5-DEPLOY-T006 | Deploy SQS Queues Stack | High | 1h | 🟡 In Progress | T001 |
 | P5-DEPLOY-T007 | Deploy Secrets Manager Stack | Critical | 2h | ⚪ Not Started | T004 |
 | P5-DEPLOY-T008 | Deploy IAM Roles Stack | High | 2h | ⚪ Not Started | T001 |
 | P5-DEPLOY-T009 | Run Database Migrations to RDS | Critical | 3h | ⚪ Not Started | T004 |
