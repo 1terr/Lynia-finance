@@ -34,84 +34,163 @@ The informal economy isn't unproductive—it's simply unstructured and unmodeled
 
 4. **WhatsApp-First Platform**: Complete loan journey via WhatsApp—KYC submission, instant approval (<5 mins), asset selection, payment, and loan management with zero app downloads
 
-## 📁 Project Structure
+## Architecture
+
+```mermaid
+graph TB
+    subgraph Internet
+        WA[Customers via WhatsApp]
+        Admin[Admin Portal]
+        Distrib[Distributor Dashboard]
+    end
+
+    subgraph Edge["AWS Edge"]
+        R53[Route 53 DNS]
+        CF[CloudFront CDN]
+        WAF[AWS WAF]
+    end
+
+    subgraph Auth
+        Cognito[Amazon Cognito]
+    end
+
+    subgraph API["API Layer"]
+        APIGW[API Gateway]
+    end
+
+    subgraph Compute["Private VPC — Lambda Functions ARM64"]
+        Scoring[Scoring Service]
+        WhatsAppSvc[WhatsApp Service]
+        KYC[KYC Service]
+        Payment[Payment Service]
+        Lock[Lock Service]
+        Notification[Notification Service]
+    end
+
+    subgraph Data["Data & Storage"]
+        RDS[(RDS PostgreSQL 16)]
+        S3[S3 Buckets]
+        SQS[SQS Queues]
+        SM[Secrets Manager]
+    end
+
+    subgraph Planned["Planned — Core Banking"]
+        Fineract[Apache Fineract on EC2]
+    end
+
+    subgraph Observability
+        CW[CloudWatch + Alarms]
+        XRay[X-Ray Tracing]
+    end
+
+    WA --> APIGW
+    Admin --> CF
+    Distrib --> CF
+    CF --> WAF --> APIGW
+    APIGW --> Cognito
+    APIGW --> Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification
+    Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification --> RDS
+    Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification --> S3
+    Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification --> SQS
+    Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification --> SM
+    Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification --> CW
+    Scoring & WhatsAppSvc & KYC & Payment & Lock & Notification --> XRay
+    Fineract -.-> RDS
+
+    style Planned stroke-dasharray: 5 5
+```
+
+**Backend**: AWS Lambda (Node.js 20/TypeScript, ARM64 Graviton2)
+**Frontend**: Next.js 14, deployed via S3 + CloudFront
+**Database**: RDS PostgreSQL 16 (encrypted, private VPC)
+**Auth**: Amazon Cognito (admin + distributor user pools)
+**Storage**: S3 (KYC docs, commission PDFs, reconciliation photos, ML models)
+**Queues**: SQS (5 queues with DLQ: notifications, payments, KYC, device locks, credit scoring)
+**Security**: WAF, Secrets Manager, VPC endpoints, X-Ray tracing
+**Core Banking** *(planned)*: Apache Fineract v1.13.0 on EC2 t3.micro
+**CI/CD**: GitHub Actions (backend + frontend deployment pipelines)
+**Integrations**: WhatsApp Cloud API, Smile Identity, EcoCash/OneMoney, Trustonic
+
+**Estimated Cost**: $154-262/month (production) | $90-160/month (staging)
+
+See [docs/architecture/AWS-ARCHITECTURE.md](docs/architecture/AWS-ARCHITECTURE.md) for detailed diagrams and infrastructure reference.
+
+## Project Structure
 
 ```
-Lynia Finance Dev/
-│
-├── fineract/                       # Apache Fineract v1.13.0
-│   ├── modules/                    # All Fineract modules (24 modules)
-│   ├── tests/                      # Integration, OAuth2, 2FA tests
-│   ├── custom/                     # Custom Fineract extensions
-│   ├── config/                     # Fineract configuration
-│   ├── docker/                     # Docker configurations
-│   └── README.md                   # Fineract documentation
-│
-├── lynia-specs/                    # Lynia Finance Specifications
-│   ├── lynia-lending/              # Main Lending Platform Spec
-│   │   ├── spec.md                 # Feature specification & requirements
-│   │   ├── plan.md                 # Implementation plan & milestones
-│   │   ├── tasks.md                # Detailed implementation tasks
-│   │   ├── implementation-guide.md # Cost optimization & architecture
-│   │   ├── supabase-architecture.md # Database & platform design
-│   │   ├── cost-optimization.md    # YC bootstrap cost strategy
-│   │   └── checklists/             # Requirements checklists
-│   ├── templates/                  # Specification templates
-│   ├── scripts/                    # Automation scripts
-│   └── memory/                     # Project memory & constitution
-│
-├── services/                       # Microservices (AWS Lambda)
+Lynia-finance/
+├── services/                       # AWS Lambda microservices
+│   ├── scoring-service/            # Hybrid credit scoring (AI/ML)
 │   ├── whatsapp-service/           # WhatsApp bot conversation flow
 │   ├── kyc-service/                # Smile Identity KYC integration
-│   ├── scoring-service/            # Hybrid credit scoring (ML + Fineract)
-│   ├── payment-service/            # EcoCash/Omari payment gateway
-│   ├── lock-service/               # Device lock management
+│   ├── payment-service/            # EcoCash/OneMoney payment gateway
+│   ├── lock-service/               # Trustonic device lock management
 │   ├── notification-service/       # Multi-channel notifications
-│   ├── inventory-service/          # Inventory & handover management
-│   ├── admin-service/              # Admin portal APIs
-│   └── cs-service/                 # Customer support ticketing
+│   └── shared/                     # Shared clients, types, utilities
 │
 ├── frontend/                       # Web Applications
 │   ├── admin-portal/               # Next.js 14 admin dashboard
 │   └── distributor-dashboard/      # Next.js 14 distributor app
 │
-├── shared/                         # Shared Libraries
-│   ├── types/                      # TypeScript type definitions
-│   ├── utils/                      # Shared utilities
-│   └── clients/                    # API clients (Fineract, etc.)
+├── landing-page/                   # Marketing website
 │
-├── docs/                           # Project Documentation
-│   ├── Apache_Fineract_Setup_Guide.pdf
-│   ├── Apache_Fineract_Upgrade_Strategy.md
-│   ├── FINERACT_V1.13_HIGHLIGHTS.md
-│   └── UPGRADE_LOG.md
+├── infrastructure/                 # Infrastructure as Code
+│   └── aws/                        # 16 CloudFormation templates
+│       ├── vpc.yaml                # VPC, subnets, NAT gateways
+│       ├── rds.yaml                # RDS PostgreSQL 16
+│       ├── cognito.yaml            # Cognito User Pools
+│       ├── storage-buckets.yaml    # S3 buckets
+│       ├── sqs-queues.yaml         # SQS queues + DLQs
+│       ├── secrets-manager.yaml    # Secrets Manager
+│       ├── waf.yaml                # WAF rules
+│       ├── dns-ssl.yaml            # Route 53 + ACM certificates
+│       ├── frontend-hosting.yaml   # S3 + CloudFront distributions
+│       ├── cloudwatch-alarms.yaml  # Monitoring + dashboards
+│       ├── xray-tracing.yaml       # Distributed tracing
+│       ├── canary-deployments.yaml # CodeDeploy canary config
+│       ├── lambda-autoscaling.yaml # Reserved concurrency
+│       ├── iam-roles.yaml          # Least-privilege IAM
+│       └── production-master.yaml  # Orchestration template
 │
-├── scripts/                        # Utility Scripts
-├── infrastructure/                 # Infrastructure as Code (AWS SAM)
-├── gradle/                         # Gradle Wrapper
-└── .github/                        # GitHub Workflows & CI/CD
+├── database/                       # Database management
+│   ├── migrations/                 # SQL migrations (001-018)
+│   └── deploy-to-rds.sh           # RDS deployment script
+│
+├── fineract/                       # Apache Fineract v1.13.0 (core banking, planned deployment)
+│   ├── modules/                    # Fineract modules
+│   ├── custom/                     # Custom Lynia extensions
+│   └── docker/                     # Docker configurations
+│
+├── config/                         # Environment parameters
+├── docs/                           # Documentation
+├── lynia-specs/                    # Specifications & requirements
+├── .github/workflows/              # CI/CD pipelines
+│   ├── deploy.yml                  # Backend Lambda deployment
+│   └── deploy-frontend.yml         # Frontend S3/CloudFront deployment
+└── template.yaml                   # AWS SAM master template
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+- **Node.js 20+** - Lambda runtime
+- **pnpm** - Package manager
 - **AWS CLI** - Configured with credentials
 - **AWS SAM CLI** - For local Lambda testing
 - **Docker Desktop** - For local development
-- **Node.js 20+** - For Lambda functions
 - **Git** - Version control
 
 ### Local Development
 
 **1. Install Dependencies**
 ```bash
-npm install
+pnpm install
 ```
 
 **2. Set Environment Variables**
 ```bash
 cp .env.example .env
-# Edit .env with your credentials
+# Edit .env with your RDS, Cognito, and API credentials
 ```
 
 **3. Build Lambda Functions**
@@ -133,12 +212,12 @@ node scripts/test-api-endpoints.js
 
 **Staging**:
 ```bash
-./scripts/deploy-staging.sh
+sam deploy --config-env staging
 ```
 
 **Production**:
 ```bash
-./scripts/deploy-production.sh
+sam deploy --config-env production
 ```
 
 See [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) for detailed deployment instructions.
@@ -158,22 +237,7 @@ node scripts/test-api-endpoints.js
 **3. View Demo Guide**
 See [docs/DEMO-GUIDE.md](docs/DEMO-GUIDE.md) for complete demo walkthrough.
 
-## 📚 Documentation
-
-- **Apache Fineract Docs**: [fineract/README.md](fineract/README.md)
-- **Upgrade Strategy**: [docs/Apache_Fineract_Upgrade_Strategy.md](docs/Apache_Fineract_Upgrade_Strategy.md)
-- **Fineract v1.13 Highlights**: [docs/FINERACT_V1.13_HIGHLIGHTS.md](docs/FINERACT_V1.13_HIGHLIGHTS.md)
-- **Upgrade Log**: [docs/UPGRADE_LOG.md](docs/UPGRADE_LOG.md)
-
-## 📊 Market Opportunity
-
-**Starting narrow, scaling systemically**
-
-Zimbabwe's informal sector represents a massive untapped market for alternative credit solutions. We're starting with device financing (phones as productive assets for informal workers) and expanding systematically.
-
-**Product Roadmap**: Cell phone financing → Digital loans → Motorbike finance → Vehicle finance → Microfinance banking license → Regional expansion (Southern Africa)
-
-## 🎯 Core Features
+## Core Features
 
 ### For Customers (WhatsApp Bot)
 - WhatsApp-based KYC and instant loan approval (<5 mins)
@@ -194,21 +258,31 @@ Zimbabwe's informal sector represents a massive untapped market for alternative 
 - ML model management
 
 ### Technology Stack
-- Apache Fineract v1.13.0 (core banking)
-- AWS Lambda microservices
-- Supabase (database + real-time)
+- AWS Lambda microservices (Node.js 20, ARM64)
+- RDS PostgreSQL 16 (database)
+- Amazon Cognito (authentication)
+- S3 + CloudFront + WAF (storage, CDN, security)
+- Apache Fineract v1.13.0 (core banking — planned EC2 deployment)
 - WhatsApp Cloud API
 - Hybrid AI/ML credit scoring
 
-## 🥊 Key Differentiators
+## Market Opportunity
 
-- ✅ Instant approval (<5 mins) via WhatsApp
-- ✅ AI/ML underwriting for informal sector
-- ✅ Remote asset-lock technology
-- ✅ Mobile money integration
-- ✅ Scalable agent network distribution
+**Starting narrow, scaling systemically**
 
-## 💼 Business Model
+Zimbabwe's informal sector represents a massive untapped market for alternative credit solutions. We're starting with device financing (phones as productive assets for informal workers) and expanding systematically.
+
+**Product Roadmap**: Cell phone financing → Digital loans → Motorbike finance → Vehicle finance → Microfinance banking license → Regional expansion (Southern Africa)
+
+## Key Differentiators
+
+- Instant approval (<5 mins) via WhatsApp
+- AI/ML underwriting for informal sector
+- Remote asset-lock technology
+- Mobile money integration
+- Scalable agent network distribution
+
+## Business Model
 
 **Dual-sided marketplace**: Borrowers ↔ Debt investors
 
@@ -216,63 +290,22 @@ Zimbabwe's informal sector represents a massive untapped market for alternative 
 
 **Distribution**: B2B2C partnerships + Commission-based agent network + WhatsApp viral growth
 
-## 🔄 Staying Updated
+## Implementation Status
 
-Check for Apache Fineract updates:
-```bash
-# Windows
-scripts\check-fineract-updates.bat
+**Current Status**: AWS-native architecture — Supabase migration complete (Feb 2026)
 
-# Linux/Mac
-scripts/check-fineract-updates.sh
-```
-
-## 🏗️ Architecture
-
-**Backend**: AWS Lambda (Node.js/TypeScript + Python for ML)
-**Frontend**: Next.js 14
-**Database**: Supabase PostgreSQL + Apache Fineract
-**Banking**: Apache Fineract v1.13.0 on AWS EC2
-**Integrations**: WhatsApp Cloud API, Smile Identity, EcoCash/Omari, device lock providers
-
-**Cost**: $5-25/month (Year 1) leveraging AWS & Supabase free tiers
-
-### Development Workflow
-1. Review specs in [lynia-specs/lynia-lending/](lynia-specs/lynia-lending/)
-2. Follow [tasks.md](lynia-specs/lynia-lending/tasks.md) implementation order
-3. Implement using [plan.md](lynia-specs/lynia-lending/plan.md) milestones
-4. TDD approach - tests first
-
-## 📋 Implementation Status
-
-**Current Phase**: Phase 2 Complete ✅
-
-### Phase 2: Backend Infrastructure (COMPLETED)
-
-**Completed Tasks** (12/14):
-- ✅ P2-T002: [Database Schema Deployment](phase-2-backend-infrastructure/P2-T002-PROGRESS.md)
-- ✅ P2-T003: [Payment Service](phase-2-backend-infrastructure/P2-T003-PROGRESS.md)
-- ✅ P2-T004: [Credit Scoring Service](phase-2-backend-infrastructure/P2-T004-PROGRESS.md)
-- ✅ P2-T005: [KYC Service](phase-2-backend-infrastructure/P2-T005-PROGRESS.md)
-- ✅ P2-T006: [WhatsApp Service](phase-2-backend-infrastructure/P2-T006-PROGRESS.md)
-- ✅ P2-T007: [Notification Service](phase-2-backend-infrastructure/P2-T007-PROGRESS.md)
-- ✅ P2-T009: [Device Handover Process](phase-2-backend-infrastructure/P2-T009-PROGRESS.md)
-- ✅ P2-T010: [Trustonic Lock/Unlock Integration](phase-2-backend-infrastructure/P2-T010-PROGRESS.md)
-- ✅ P2-T011: [Admin Dashboard Implementation](phase-2-backend-infrastructure/P2-T011-IMPLEMENTATION-GUIDE.md)
-- ✅ P2-T012: [Testing Infrastructure](phase-2-backend-infrastructure/P2-T012-PROGRESS.md)
-- ✅ P2-T013: [AWS Lambda Deployment & CI/CD](phase-2-backend-infrastructure/P2-T013-PROGRESS.md)
-- ✅ P2-T014: [Demo Preparation & Documentation](phase-2-backend-infrastructure/P2-T014-PROGRESS.md)
-
-**📊 Phase 2 Summary**: See [Phase 2 Summary Report](phase-2-backend-infrastructure/PHASE-2-SUMMARY-REPORT.md) for complete details
-
-**Deliverables**:
-- 6 AWS Lambda microservices (TypeScript/Node.js 20.x)
-- Complete Supabase database schema (35+ tables)
-- CI/CD pipeline (GitHub Actions)
-- Deployment automation (AWS SAM)
-- Testing infrastructure (Jest + Supertest)
+### Completed
+- 6 AWS Lambda microservices (TypeScript/Node.js 20.x, ARM64)
+- RDS PostgreSQL 16 database schema (35+ tables, 18 migrations)
+- Amazon Cognito authentication (admin + distributor clients)
+- S3 storage (4 buckets: KYC docs, commissions, reconciliation, ML models)
+- 16 CloudFormation templates for full infrastructure
+- CI/CD pipelines (GitHub Actions)
+- Deployment automation (AWS SAM + CodeDeploy canary)
+- WAF, X-Ray tracing, CloudWatch monitoring
+- Testing infrastructure (Jest + Supertest, 80%+ coverage)
+- Admin Portal & Distributor Dashboard (Next.js 14)
 - Demo scenarios & test data
-- Comprehensive documentation
 
 **Key Metrics**:
 - Services: 6 Lambda functions
@@ -280,46 +313,37 @@ scripts/check-fineract-updates.sh
 - API endpoints: 45+
 - Test coverage: 80%+
 - Deployment time: <10 minutes
-- Cost: $5-25/month (staging)
 
-### Next: Phase 3 - Frontend & User Flows
-
-**Upcoming** (Starting Week 11):
-- Admin Dashboard UI (Next.js 14)
-- WhatsApp Bot Conversation Flow
-- Payment Gateway Integration
-- Device Management UI
+### Planned
+- Apache Fineract deployment on EC2 (core banking engine)
+- Fineract ↔ Lambda service integration
+- Regional expansion infrastructure
 
 See [plan.md](lynia-specs/lynia-lending/plan.md) for full roadmap.
 
-## 📋 Version Information
+## Version Information
 
-- Apache Fineract: v1.13.0
-- Java: 17 | Gradle: 8.x | Spring Boot: 3.x
-- Node.js: 18 LTS | Python: 3.11 | Next.js: 14
+- Node.js: 20 LTS | TypeScript | Next.js: 14 | Python: 3.11 (ML)
+- Apache Fineract: v1.13.0 (Java 17, Gradle 8.x, Spring Boot 3.x)
+- AWS: SAM CLI, CloudFormation, us-east-1
 
-## 📚 Documentation
+## Documentation
 
-### Platform Documentation
-- **Specifications**: [spec.md](lynia-specs/lynia-lending/spec.md) | [plan.md](lynia-specs/lynia-lending/plan.md) | [tasks.md](lynia-specs/lynia-lending/tasks.md)
-- **Architecture**: [supabase-architecture.md](lynia-specs/lynia-lending/supabase-architecture.md)
-- **System Flows**: [SYSTEM-FLOWS.md](docs/SYSTEM-FLOWS.md)
+### Architecture & Infrastructure
+- **AWS Architecture**: [docs/architecture/AWS-ARCHITECTURE.md](docs/architecture/AWS-ARCHITECTURE.md)
+- **Network Architecture**: [docs/infrastructure/PRODUCTION-NETWORK-ARCHITECTURE.md](docs/infrastructure/PRODUCTION-NETWORK-ARCHITECTURE.md)
+- **AWS Setup Guide**: [docs/deployment/AWS-SETUP-GUIDE.md](docs/deployment/AWS-SETUP-GUIDE.md)
+- **System Flows**: [docs/SYSTEM-FLOWS.md](docs/SYSTEM-FLOWS.md)
+
+### Specifications
+- **Spec**: [spec.md](lynia-specs/lynia-lending/spec.md) | **Plan**: [plan.md](lynia-specs/lynia-lending/plan.md) | **Tasks**: [tasks.md](lynia-specs/lynia-lending/tasks.md)
 
 ### Deployment & Operations
 - **Deployment Guide**: [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
-- **Testing Guide**: [P2-T012-PROGRESS.md](phase-2-backend-infrastructure/P2-T012-PROGRESS.md)
 - **CI/CD Pipeline**: [.github/workflows/deploy.yml](.github/workflows/deploy.yml)
+- **Migration Report**: [docs/SUPABASE-TO-AWS-MIGRATION-REPORT.md](docs/SUPABASE-TO-AWS-MIGRATION-REPORT.md)
 
-### Phase 2 Reports
-- **Phase 2 Summary**: [PHASE-2-SUMMARY-REPORT.md](phase-2-backend-infrastructure/PHASE-2-SUMMARY-REPORT.md)
-- **All Phase 2 Reports**: [phase-2-backend-infrastructure/](phase-2-backend-infrastructure/)
-
-### Demo & Presentation
-- **Demo Guide**: [docs/DEMO-GUIDE.md](docs/DEMO-GUIDE.md)
-- **Demo Scripts**: [scripts/create-demo-data.js](scripts/create-demo-data.js)
-- **API Testing**: [scripts/test-api-endpoints.js](scripts/test-api-endpoints.js)
-
-### Apache Fineract
+### Apache Fineract (Core Banking)
 - **Fineract README**: [fineract/README.md](fineract/README.md)
 - **Setup Guide**: [docs/Apache_Fineract_Setup_Guide.pdf](docs/Apache_Fineract_Setup_Guide.pdf)
 - **v1.13 Highlights**: [docs/FINERACT_V1.13_HIGHLIGHTS.md](docs/FINERACT_V1.13_HIGHLIGHTS.md)
@@ -332,23 +356,28 @@ See [plan.md](lynia-specs/lynia-lending/plan.md) for full roadmap.
 - **Lock Service**: [services/lock-service/](services/lock-service/)
 - **Notification Service**: [services/notification-service/](services/notification-service/)
 
-## 📄 License
+### Demo & Presentation
+- **Demo Guide**: [docs/DEMO-GUIDE.md](docs/DEMO-GUIDE.md)
+- **Demo Scripts**: [scripts/create-demo-data.js](scripts/create-demo-data.js)
+- **API Testing**: [scripts/test-api-endpoints.js](scripts/test-api-endpoints.js)
+
+## License
 
 - Apache Fineract: Apache License 2.0
 - Lynia Finance: Proprietary
 
 ---
 
-## 🧪 Testing
+## Testing
 
 ### Unit Tests
 ```bash
-npm test
+pnpm test
 ```
 
 ### Integration Tests
 ```bash
-npm run test:integration
+pnpm test:integration
 ```
 
 ### API Endpoint Tests
@@ -367,7 +396,7 @@ sam local start-api --port 3000
 
 ---
 
-## 🎬 Demo Scenarios
+## Demo Scenarios
 
 ### Scenario 1: Successful Onboarding
 Zimbabwe customer completes full 8-step onboarding, gets approved (Tier 2, $350 limit), pays deposit via EcoCash, picks up device.
@@ -390,10 +419,10 @@ See [DEMO-GUIDE.md](docs/DEMO-GUIDE.md) for detailed walkthrough.
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 This is a proprietary project. For access or collaboration inquiries, contact the team.
 
 ---
 
-**Last Updated**: 2025-12-09 | **Status**: Phase 2 Complete ✅ | **Next**: Phase 3 - Frontend Development
+**Last Updated**: 2026-02-13 | **Status**: AWS-native architecture complete | **Next**: Fineract EC2 deployment
