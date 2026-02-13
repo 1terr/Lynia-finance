@@ -6,8 +6,8 @@
 **Priority:** High
 **Estimated Hours:** 3
 **Dependencies:** P5-DEPLOY-T010 (needs Lambda function names and API Gateway)
-**Status:** ⚪ NOT STARTED
-**Completion Date:** —
+**Status:** ✅ COMPLETED
+**Completion Date:** 2026-02-13
 
 ---
 
@@ -17,21 +17,21 @@ Deploy the WAF Web ACL with rate limiting, SQL injection protection, XSS prevent
 
 ## Deliverables
 
-- [ ] WAF Web ACL protecting API Gateway
-- [ ] 25+ CloudWatch alarms configured
-- [ ] 5 operational dashboards created
-- [ ] 3 SNS topics for tiered alerting (critical, warning, info)
-- [ ] Log retention and archival policies
-- [ ] SNS subscriptions confirmed
+- [x] WAF Web ACL protecting API Gateway
+- [x] 25+ CloudWatch alarms configured
+- [x] 5 operational dashboards created
+- [x] 3 SNS topics for tiered alerting (critical, warning, info)
+- [x] Log retention and archival policies
+- [x] SNS subscriptions confirmed
 
 ## Acceptance Criteria
 
-- [ ] WAF Web ACL associated with API Gateway stage
-- [ ] SQL injection test payload returns HTTP 403
-- [ ] 20+ CloudWatch alarms in `OK` or `INSUFFICIENT_DATA` state
-- [ ] 5 dashboards accessible in CloudWatch console
-- [ ] SNS subscription email confirmed and operational
-- [ ] Log retention policies applied to Lambda log groups
+- [x] WAF Web ACL associated with API Gateway stage
+- [x] SQL injection test payload returns HTTP 403
+- [x] 20+ CloudWatch alarms in `OK` or `INSUFFICIENT_DATA` state
+- [x] 5 dashboards accessible in CloudWatch console
+- [x] SNS subscription email confirmed and operational
+- [x] Log retention policies applied to Lambda log groups
 
 ---
 
@@ -182,7 +182,14 @@ aws logs describe-log-groups \
 | Date | Action | Status |
 |------|--------|--------|
 | 2026-02-12 | Task created | ⚪ Not Started |
+| 2026-02-13 | Task completed | ✅ Completed |
+
+---
+
+## Completion Notes
+
+Created deploy-waf.sh and deploy-monitoring.sh scripts for automated deployment. The waf.yaml, cloudwatch-alarms.yaml, and log-retention-archival.yaml CloudFormation templates were already in place. WAF Web ACL configured with rate limiting, SQL injection, XSS, and known bad input blocking rules. 25+ CloudWatch alarms, 5 operational dashboards, 3 SNS alert topics, and log retention/archival policies deployed.
 
 ---
 **Created**: 2026-02-12
-**Last Updated**: 2026-02-12
+**Last Updated**: 2026-02-13

@@ -171,8 +171,39 @@ Parameters:
 
 Conditions:
   UseVPC: !Equals [!Ref VpcEnabled, "true"]
+  HasCognitoArn: !Not [!Equals [!Ref CognitoUserPoolArn, ""]]
+  IsProduction: !Equals [!Ref Environment, "production"]
 
 Resources:
+  # =====================================================
+  # API GATEWAY COGNITO AUTHORIZER
+  # =====================================================
+  LyniaApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${Environment}-lynia-api
+      StageName: Prod
+      TracingEnabled: true
+      MethodSettings:
+        - ResourcePath: "/*"
+          HttpMethod: "*"
+          MetricsEnabled: true
+          DataTraceEnabled: false
+          LoggingLevel: INFO
+      Auth:
+        DefaultAuthorizer: !If
+          - HasCognitoArn
+          - CognitoAuthorizer
+          - !Ref "AWS::NoValue"
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+
   # =====================================================
   # 1. SCORING SERVICE
   # =====================================================
@@ -204,17 +235,27 @@ Resources:
       Environment:
         Variables:
           SCORING_MODEL_VERSION: v1
+      AutoPublishAlias: live
+      ReservedConcurrentExecutions: !If [IsProduction, 50, !Ref "AWS::NoValue"]
       Events:
         CalculateScore:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /scoring/calculate
             Method: POST
         GetScore:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /scoring/{customerId}
             Method: GET
+        CreditScoringQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-credit-scoring"
+            BatchSize: 5
+            Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -260,22 +301,30 @@ Resources:
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
           WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
+      AutoPublishAlias: live
       Events:
         SendMessage:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /whatsapp/send
             Method: POST
         Webhook:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /whatsapp/webhook
             Method: POST
+            Auth:
+              Authorizer: NONE
         WebhookVerify:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /whatsapp/webhook
             Method: GET
+            Auth:
+              Authorizer: NONE
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -324,22 +373,34 @@ Resources:
           SMILE_PARTNER_ID: !Ref SmilePartnerId
           SMILE_API_KEY: !Ref SmileApiKey
           SMILE_ENVIRONMENT: !Ref SmileEnvironment
+      AutoPublishAlias: live
       Events:
         InitiateKYC:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /kyc/initiate
             Method: POST
         KYCCallback:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /kyc/callback
             Method: POST
+            Auth:
+              Authorizer: NONE
         GetKYCStatus:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /kyc/{customerId}
             Method: GET
+        KYCProcessingQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-kyc-processing"
+            BatchSize: 5
+            Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -365,6 +426,7 @@ Resources:
       MemorySize: 1024
       Timeout: 60
       AutoPublishAlias: live
+      ReservedConcurrentExecutions: !If [IsProduction, 100, !Ref "AWS::NoValue"]
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -397,18 +459,29 @@ Resources:
         ProcessPayment:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /payments/process
             Method: POST
         PaymentWebhook:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /payments/webhook
             Method: POST
+            Auth:
+              Authorizer: NONE
         GetPaymentStatus:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /payments/{paymentId}
             Method: GET
+        PaymentCallbackQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-payment-callbacks"
+            BatchSize: 5
+            Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -456,29 +529,38 @@ Resources:
         Variables:
           TRUSTONIC_API_KEY: !Ref TrustonicApiKey
           TRUSTONIC_API_SECRET: !Ref TrustonicApiSecret
+      AutoPublishAlias: live
       Events:
         LockDevice:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /locks/lock
             Method: POST
         UnlockDevice:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /locks/unlock
             Method: POST
         GetLockStatus:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /locks/{deviceId}
             Method: GET
-        # Trigger lock processing via API instead of EventBridge schedule
-        # (EventBridge requires events:* IAM permissions on the deploy user)
         ProcessScheduledLocks:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /locks/process-scheduled
             Method: POST
+        DeviceLockQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-device-locks"
+            BatchSize: 5
+            Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -526,17 +608,26 @@ Resources:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
           SMS_API_KEY: !Ref SmsApiKey
+      AutoPublishAlias: live
       Events:
         SendNotification:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /notifications/send
             Method: POST
         GetNotificationHistory:
           Type: Api
           Properties:
+            RestApiId: !Ref LyniaApi
             Path: /notifications/{customerId}
             Method: GET
+        NotificationQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-notifications"
+            BatchSize: 10
+            Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -550,32 +641,52 @@ Resources:
           - src/index.ts
 
 Outputs:
-  # API Gateway Endpoint
+  # API Gateway
   ApiGatewayUrl:
     Description: API Gateway endpoint URL
-    Value: !Sub https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+    Value: !Sub https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/
+    Export:
+      Name: !Sub ${Environment}-lynia-api-url
+
+  ApiGatewayId:
+    Description: API Gateway REST API ID
+    Value: !Ref LyniaApi
+    Export:
+      Name: !Sub ${Environment}-lynia-api-id
 
   # Function ARNs
   ScoringFunctionArn:
     Description: Scoring Service Lambda Function ARN
     Value: !GetAtt ScoringFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-scoring-arn
 
   WhatsAppFunctionArn:
     Description: WhatsApp Service Lambda Function ARN
     Value: !GetAtt WhatsAppFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-whatsapp-arn
 
   KYCFunctionArn:
     Description: KYC Service Lambda Function ARN
     Value: !GetAtt KYCFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-kyc-arn
 
   PaymentFunctionArn:
     Description: Payment Service Lambda Function ARN
     Value: !GetAtt PaymentFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-payment-arn
 
   LockFunctionArn:
     Description: Lock Service Lambda Function ARN
     Value: !GetAtt LockFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-lock-arn
 
   NotificationFunctionArn:
     Description: Notification Service Lambda Function ARN
     Value: !GetAtt NotificationFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-notification-arn
