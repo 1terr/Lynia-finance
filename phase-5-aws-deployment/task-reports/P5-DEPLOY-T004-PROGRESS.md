@@ -6,18 +6,18 @@
 **Priority:** Critical
 **Estimated Hours:** 3
 **Dependencies:** P5-DEPLOY-T002 (VPC stack for private subnets and security groups)
-**Status:** 🟡 IN PROGRESS (template fixed, deployment script created, awaiting AWS access)
+**Status:** 🟡 IN PROGRESS (templates validated, deployment script ready, awaiting AWS credentials)
 **Completion Date:** —
 
 ---
 
 ## Task Description
 
-Deploy RDS PostgreSQL 16.4 into the VPC private subnets created by T002. Production mode enables MultiAZ for high availability, 35-day automated backups, deletion protection, performance insights, and KMS-encrypted storage with auto-scaling to 100GB. Instance creation takes approximately 10-15 minutes.
+Deploy RDS PostgreSQL 16.11 into the VPC private subnets created by T002. Production mode enables MultiAZ for high availability, 35-day automated backups, deletion protection, performance insights, and KMS-encrypted storage with auto-scaling to 100GB. Instance creation takes approximately 10-15 minutes.
 
 ## Deliverables
 
-- [ ] RDS PostgreSQL 16.4 instance deployed in private subnets
+- [ ] RDS PostgreSQL 16.11 instance deployed in private subnets
 - [ ] KMS-encrypted storage with auto-scaling
 - [ ] Automated backups configured (35 days for production)
 - [ ] Stack outputs recorded (endpoint, port, security group ID)
@@ -29,7 +29,7 @@ Deploy RDS PostgreSQL 16.4 into the VPC private subnets created by T002. Product
 - [ ] `MultiAZ`: `true` (production)
 - [ ] `StorageEncrypted`: `true`
 - [ ] `DeletionProtection`: `true` (production)
-- [ ] `Engine`: `postgres`, `EngineVersion`: `16.4`
+- [ ] `Engine`: `postgres`, `EngineVersion`: `16.11`
 - [ ] Instance in private subnet, not publicly accessible
 
 ---
@@ -129,7 +129,7 @@ aws rds describe-db-instances --db-instance-identifier production-lynia-db \
 # Encrypted: true
 # DeletionProtection: true
 # Engine: postgres
-# EngineVersion: 16.4
+# EngineVersion: 16.11
 # InstanceClass: db.t4g.small
 # PubliclyAccessible: false
 
@@ -178,6 +178,7 @@ aws rds describe-db-instances --db-instance-identifier production-lynia-db \
 | 2026-02-12 | Task created | ⚪ Not Started |
 | 2026-02-13 | Fixed RDS template: corrected Lambda SG import name (`lambda-sg` → `lambda-sg-id`), made AllocatedStorage conditional (50 GB production / 20 GB dev), aligned Environment param values with VPC template (`dev` → `development`) | 🟡 In Progress |
 | 2026-02-13 | Created deployment script `infrastructure/aws/scripts/deploy-rds.sh` with VPC dependency check, password generation, deployment, and automated verification | 🟡 In Progress |
+| 2026-02-13 | Updated PostgreSQL engine version from 16.4 → 16.11 (16.4 deprecated by AWS). Validated both VPC and RDS templates with `cfn-lint` — VPC clean, RDS clean (only advisory W1011 for dynamic secret references, acceptable per T007 flow). Confirmed cross-stack export/import names are aligned. Templates ready for deployment. | 🟡 In Progress |
 
 ## Issues Found & Fixed
 
@@ -195,6 +196,12 @@ aws rds describe-db-instances --db-instance-identifier production-lynia-db \
 - **Problem**: RDS template used `dev` but VPC template uses `development`
 - **Impact**: Dev deployments would use mismatched export names, causing failures
 - **Fix**: Changed RDS `AllowedValues` from `[dev, staging, production]` to `[development, staging, production]`
+
+### 4. PostgreSQL Engine Version Deprecated (Medium)
+- **Problem**: RDS template specified PostgreSQL `16.4` which is deprecated by AWS and cannot be used for new instances
+- **Impact**: CloudFormation deploy would fail with unsupported engine version error
+- **Fix**: Updated `EngineVersion` from `"16.4"` to `"16.11"` (latest stable 16.x minor version)
+- **Validation**: Both VPC and RDS templates pass `cfn-lint` validation cleanly
 
 ## Deployment Instructions
 
@@ -217,4 +224,4 @@ The script will:
 
 ---
 **Created**: 2026-02-12
-**Last Updated**: 2026-02-13
+**Last Updated**: 2026-02-13 (engine version updated, cfn-lint validated)
