@@ -294,6 +294,29 @@ jobs:
             echo "Stack status: $STACK_STATUS - no cleanup needed."
           fi
 
+      - name: Resolve VPC and Cognito configuration
+        id: resolve-staging-infra
+        run: |
+          VPC_ENABLED="false"
+          SUBNET1=""
+          SUBNET2=""
+          LAMBDA_SG="sg-00000000"
+          if aws cloudformation describe-stacks --stack-name staging-lynia-vpc --region ${{ env.AWS_REGION }} &>/dev/null; then
+            SUBNET1=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            SUBNET2=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            LAMBDA_SG=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='LambdaSecurityGroupId'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "sg-00000000")
+            if [ -n "$SUBNET1" ] && [ "$SUBNET1" != "None" ]; then VPC_ENABLED="true"; fi
+          fi
+          echo "vpc_enabled=$VPC_ENABLED" >> $GITHUB_OUTPUT
+          echo "subnet1=$SUBNET1" >> $GITHUB_OUTPUT
+          echo "subnet2=$SUBNET2" >> $GITHUB_OUTPUT
+          echo "lambda_sg=$LAMBDA_SG" >> $GITHUB_OUTPUT
+          COGNITO_ARN=""
+          if aws cloudformation describe-stacks --stack-name staging-lynia-cognito --region ${{ env.AWS_REGION }} &>/dev/null; then
+            COGNITO_ARN=$(aws cloudformation describe-stacks --stack-name staging-lynia-cognito --query "Stacks[0].Outputs[?OutputKey=='UserPoolArn'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+          fi
+          echo "cognito_arn=$COGNITO_ARN" >> $GITHUB_OUTPUT
+
       - name: SAM Deploy to Staging
         run: |
           sam deploy \
@@ -302,6 +325,11 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               Environment=staging \
+              VpcEnabled=${{ steps.resolve-staging-infra.outputs.vpc_enabled }} \
+              PrivateSubnet1Id=${{ steps.resolve-staging-infra.outputs.subnet1 }} \
+              PrivateSubnet2Id=${{ steps.resolve-staging-infra.outputs.subnet2 }} \
+              LambdaSecurityGroupId=${{ steps.resolve-staging-infra.outputs.lambda_sg }} \
+              CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }} \
               WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID }} \
               WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN }} \
               WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN }} \
@@ -470,6 +498,29 @@ jobs:
           pip install cfn-lint
           sam validate --lint
 
+      - name: Resolve VPC and Cognito configuration
+        id: resolve-prod-infra
+        run: |
+          VPC_ENABLED="false"
+          SUBNET1=""
+          SUBNET2=""
+          LAMBDA_SG="sg-00000000"
+          if aws cloudformation describe-stacks --stack-name production-lynia-vpc --region ${{ env.AWS_REGION }} &>/dev/null; then
+            SUBNET1=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            SUBNET2=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            LAMBDA_SG=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='LambdaSecurityGroupId'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "sg-00000000")
+            if [ -n "$SUBNET1" ] && [ "$SUBNET1" != "None" ]; then VPC_ENABLED="true"; fi
+          fi
+          echo "vpc_enabled=$VPC_ENABLED" >> $GITHUB_OUTPUT
+          echo "subnet1=$SUBNET1" >> $GITHUB_OUTPUT
+          echo "subnet2=$SUBNET2" >> $GITHUB_OUTPUT
+          echo "lambda_sg=$LAMBDA_SG" >> $GITHUB_OUTPUT
+          COGNITO_ARN=""
+          if aws cloudformation describe-stacks --stack-name production-lynia-cognito --region ${{ env.AWS_REGION }} &>/dev/null; then
+            COGNITO_ARN=$(aws cloudformation describe-stacks --stack-name production-lynia-cognito --query "Stacks[0].Outputs[?OutputKey=='UserPoolArn'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+          fi
+          echo "cognito_arn=$COGNITO_ARN" >> $GITHUB_OUTPUT
+
       - name: SAM Deploy to Production
         run: |
           sam deploy \
@@ -478,6 +529,11 @@ jobs:
             --on-failure ROLLBACK \
             --parameter-overrides \
               Environment=production \
+              VpcEnabled=${{ steps.resolve-prod-infra.outputs.vpc_enabled }} \
+              PrivateSubnet1Id=${{ steps.resolve-prod-infra.outputs.subnet1 }} \
+              PrivateSubnet2Id=${{ steps.resolve-prod-infra.outputs.subnet2 }} \
+              LambdaSecurityGroupId=${{ steps.resolve-prod-infra.outputs.lambda_sg }} \
+              CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }} \
               WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }} \
               WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN }} \
               WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN }} \

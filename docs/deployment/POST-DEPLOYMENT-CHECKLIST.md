@@ -1,212 +1,165 @@
 # Post-Deployment Verification Checklist
 
 **Document:** Lynia Finance - Post-Deployment Verification Checklist
-**Version:** 1.0
-**Last Updated:** February 10, 2026
-**Owner:** Engineering Team
+**Version:** 2.0
+**Last Updated:** February 13, 2026
+**Phase:** Phase 5 - AWS Deployment (T001-T017)
 
 ---
 
-## Instructions
+## Pre-Deployment Prerequisites
 
-Execute this checklist after every production deployment. All checks must pass before declaring the deployment successful. If any critical check fails, initiate rollback per [ROLLBACK-PROCEDURES.md](ROLLBACK-PROCEDURES.md).
-
----
-
-## Phase 1: Immediate Checks (0-5 minutes post-deploy)
-
-### Infrastructure Health
-
-```
-[ ] CloudFormation stack status is UPDATE_COMPLETE or CREATE_COMPLETE
-    Command: aws cloudformation describe-stacks --stack-name lynia-finance-prod --query 'Stacks[0].StackStatus'
-
-[ ] All 6 Lambda functions updated with new version
-    Command: aws lambda list-functions --query "Functions[?starts_with(FunctionName,'production-lynia')].{Name:FunctionName,Modified:LastModified}" --output table
-
-[ ] API Gateway is routing correctly
-    Command: curl -s -o /dev/null -w "%{http_code}" https://api.lyniafinance.com/health
-
-[ ] No Lambda throttling
-    Command: aws cloudwatch describe-alarms --alarm-names production-lynia-lambda-throttles --query 'MetricAlarms[0].StateValue'
-```
-
-### Service Health Endpoints
-
-```
-[ ] Scoring service:      curl -s -w "%{http_code}" https://api.lyniafinance.com/scoring/health
-[ ] Payment service:      curl -s -w "%{http_code}" https://api.lyniafinance.com/payments/health
-[ ] General health:       curl -s -w "%{http_code}" https://api.lyniafinance.com/health
-```
-
-### Frontend Accessibility
-
-```
-[ ] Admin portal loads:           curl -s -w "%{http_code}" https://admin.lyniafinance.com
-[ ] Distributor dashboard loads:  curl -s -w "%{http_code}" https://distributor.lyniafinance.com
-[ ] SSL certificates valid:       echo | openssl s_client -connect admin.lyniafinance.com:443 2>/dev/null | openssl x509 -noout -dates
-```
+- [ ] All Phase 5 tasks T001-T009 completed (VPC, Cognito, RDS, S3, SQS, Secrets, IAM, DB migrations)
+- [ ] AWS CLI v2 configured with appropriate credentials
+- [ ] SAM CLI installed (v1.100+)
+- [ ] Node.js 20.x and pnpm installed
+- [ ] `gh` CLI authenticated (for GitHub secrets configuration)
 
 ---
 
-## Phase 2: Functional Verification (5-15 minutes post-deploy)
+## 1. Infrastructure Stacks (T001-T009)
 
-### Core API Functionality
+- [ ] All CloudFormation stacks in `CREATE_COMPLETE` or `UPDATE_COMPLETE`
+- [ ] VPC: 2 private subnets, 2 public subnets, NAT Gateways operational
+- [ ] Cognito: User Pool created with 5 groups (admin, manager, support, reports_viewer, distributor)
+- [ ] RDS: PostgreSQL 16 instance `available`
+- [ ] S3: Storage buckets created and encrypted
+- [ ] SQS: All 5 queues + 5 DLQs accessible, DLQs empty
+- [ ] Secrets Manager: All 7 secrets present
+- [ ] IAM: Deployment, admin, incident response roles created
+- [ ] Database: All 18 migrations applied successfully
 
-```
-[ ] Credit scoring API accepts requests (POST /scoring/calculate returns 200 or 401)
-[ ] Payment API accepts requests (POST /payments/process returns 200 or 401)
-[ ] KYC API accepts requests (POST /kyc/initiate returns 200 or 401)
-[ ] Lock API accepts requests (POST /locks/lock returns 200 or 401)
-[ ] Notification API accepts requests (POST /notifications/send returns 200 or 401)
-[ ] WhatsApp webhook verification works (GET /whatsapp/webhook with verify token)
-```
+## 2. Lambda Functions (T0010)
 
-### Database Connectivity
+Run: `./scripts/deploy-lambda.sh --env production`
 
-```
-[ ] Lambda functions can connect to Supabase (check logs for connection errors)
-    Command: aws logs filter-log-events --log-group-name /aws/lambda/production-lynia-payment-service --start-time $(date -d '-5 min' +%s000) --filter-pattern "connection" --limit 5
+- [ ] All 6 Lambda functions in `Active` state
+- [ ] Runtime: `nodejs20.x` on all functions
+- [ ] Architecture: `arm64` on all functions
+- [ ] Memory: Payment/Scoring=1024MB, others=512MB
+- [ ] VPC config: 2 SubnetIds, 1 SecurityGroupId per function
+- [ ] Reserved concurrency: Payment=100, Scoring=50 (production only)
+- [ ] SQS event source mappings connected (5 queues)
+- [ ] AutoPublishAlias `live` set on all 6 functions
+- [ ] API Gateway Cognito authorizer active
+- [ ] Webhook endpoints unauthenticated (WhatsApp, KYC callback, Payment webhook)
 
-[ ] Database migrations applied successfully (if applicable)
-[ ] No database connection pool exhaustion warnings
-```
+## 3. API Gateway Throttling (T0011)
 
-### External Service Connectivity
+Run: `./scripts/deploy-api-gateway-throttling.sh --env=production`
 
-```
-[ ] WhatsApp Cloud API reachable (webhook subscription active)
-[ ] Smile Identity sandbox/production API responsive
-[ ] EcoCash API responsive (check circuit breaker status in logs)
-[ ] OneMoney API responsive
-[ ] Trustonic API responsive
-```
+- [ ] 3 usage plans created: Internal (100 RPS), Partner (200 RPS), Public (20 RPS)
+- [ ] 5+ API keys generated and associated with usage plans
+- [ ] CloudWatch logging enabled for API Gateway
+- [ ] Rate limit exceeded returns HTTP 429
 
----
+## 4. WAF & CloudWatch Monitoring (T0012)
 
-## Phase 3: Monitoring Verification (5-30 minutes post-deploy)
+Run: `./scripts/deploy-waf.sh --env=production && ./scripts/deploy-monitoring.sh --env=production`
 
-### CloudWatch Dashboards
+- [ ] WAF Web ACL associated with API Gateway stage
+- [ ] SQL injection blocked (HTTP 403)
+- [ ] XSS payloads blocked (HTTP 403)
+- [ ] Rate limiting: 2000 req/5min per IP
+- [ ] Geo-restriction: ZW, ZA, BW, MZ, MW, US, GB, DE allowed
+- [ ] 25+ CloudWatch alarms configured
+- [ ] 5 dashboards: Real-Time, Business, Technical, Security, Cost
+- [ ] 3 SNS topics: critical-alerts, warning-alerts, info-alerts
+- [ ] Log groups with retention: Production=5yr, Staging=90d
+- [ ] S3 log archival with Glacier lifecycle (production)
+- [ ] PII leak detection metric filters active
 
-```
-[ ] Real-time dashboard showing data (production-lynia-realtime)
-    URL: https://console.aws.amazon.com/cloudwatch/home?region=us-east-1#dashboards:name=production-lynia-realtime
+## 5. DNS & SSL (T0013)
 
-[ ] No active ALARM state on critical alarms
-    Command: aws cloudwatch describe-alarms --state-value ALARM --alarm-name-prefix production-lynia --query 'MetricAlarms[*].AlarmName'
+Run: `./scripts/deploy-dns-ssl.sh --env=production`
 
-[ ] Error rate < 1% across all services
-[ ] Latency p95 < 300ms (SLO target)
-[ ] No Lambda throttles detected
-```
+- [ ] Route 53 hosted zone for `lyniafinance.com`
+- [ ] ACM certificate for `api.lyniafinance.com`: `ISSUED`
+- [ ] ACM certificate for frontend subdomains: `ISSUED`
+- [ ] Custom domain `api.lyniafinance.com` mapped to API Gateway
+- [ ] TLS 1.2+ enforced
+- [ ] Health check active (production)
+- [ ] NS records updated at domain registrar (if new hosted zone)
 
-### Log Verification
+## 6. Frontend Hosting (T0014)
 
-```
-[ ] Structured logs appearing in CloudWatch (JSON format with timestamp, level, service, requestId)
-    Command: aws logs filter-log-events --log-group-name /aws/lambda/production-lynia-scoring-service --start-time $(date -d '-5 min' +%s000) --limit 3
+Run: `./scripts/deploy-frontend-hosting.sh --env=production && ./scripts/build-and-upload-frontend.sh --env=production`
 
-[ ] No ERROR level logs in the first 5 minutes (beyond expected baseline)
-[ ] Log level is INFO (no DEBUG logs in production)
-[ ] PII masking working (phone numbers show as +263****XXX)
-```
+- [ ] Admin Portal S3 bucket populated
+- [ ] Distributor Dashboard S3 bucket populated
+- [ ] CloudFront distributions deployed (HTTP/2 + HTTP/3)
+- [ ] Security headers: HSTS, X-Frame-Options, CSP, X-Content-Type-Options
+- [ ] SPA routing: 403/404 redirect to `/index.html`
+- [ ] `admin.lyniafinance.com` returns HTTP 200
+- [ ] `distributor.lyniafinance.com` returns HTTP 200
+- [ ] Cognito config baked into builds (UserPoolId, ClientId, Region)
+- [ ] Static assets cached with immutable headers
+- [ ] HTML files served with no-cache
 
-### Queue Health
+## 7. Auto-Scaling & Canary (T0015)
 
-```
-[ ] SQS queues processing normally (messages not accumulating)
-    Command: aws sqs get-queue-attributes --queue-url <notification-queue-url> --attribute-names ApproximateNumberOfMessagesVisible
+Run: `./scripts/deploy-lambda-autoscaling.sh --env=production`
 
-[ ] Dead letter queues are empty (no failed messages)
-    Command: aws sqs get-queue-attributes --queue-url <payment-dlq-url> --attribute-names ApproximateNumberOfMessagesVisible
-```
+- [ ] Provisioned concurrency READY: Payment=5, Scoring=3, WhatsApp=3
+- [ ] Auto-scaling: 70% target tracking on Payment (5-50), Scoring (3-30), WhatsApp (3-30)
+- [ ] Scheduled scaling: Business hours 06:00-20:00 CAT
+- [ ] CodeDeploy canary: Payment=10%/30min, Others=10%/15min
+- [ ] X-Ray sampling: Payment=100%, KYC=50%, Scoring=25%, Default=5%
+- [ ] No spillover invocations
 
----
+## 8. Cognito Users & GitHub Secrets (T0016)
 
-## Phase 4: Business Logic Verification (15-30 minutes post-deploy)
+Run: `./scripts/create-cognito-users.sh --env=production && ./scripts/configure-github-secrets.sh --env=production`
 
-### Financial Operations
+- [ ] Admin user `admin@lynia.co.zw` created (admin group, FORCE_CHANGE_PASSWORD)
+- [ ] Manager user `manager@lynia.co.zw` created (manager group, FORCE_CHANGE_PASSWORD)
+- [ ] GitHub secrets set: AWS_REGION, COGNITO_USER_POOL_ARN
+- [ ] GitHub variables set: COGNITO_USER_POOL_ID, COGNITO_ADMIN_CLIENT_ID, COGNITO_DISTRIBUTOR_CLIENT_ID
+- [ ] GitHub secrets set: ADMIN_PORTAL_BUCKET, ADMIN_CF_DISTRIBUTION
+- [ ] GitHub secrets set: DISTRIBUTOR_BUCKET, DISTRIBUTOR_CF_DISTRIBUTION
+- [ ] GitHub variable set: API_URL
+- [ ] Manual: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set
+- [ ] Manual: External service API keys set (WhatsApp, Smile ID, EcoCash, etc.)
 
-```
-[ ] Loan application flow works end-to-end (or verify in staging if no test data)
-[ ] Payment processing flow works (test with small amount if possible)
-[ ] Device lock/unlock commands are delivered
-[ ] Notifications are being sent (SMS, WhatsApp)
-```
+## 9. E2E Validation (T0017)
 
-### Security Verification
+Run: `./scripts/validate-production.sh --env production --verbose`
 
-```
-[ ] WAF rules are active
-    Command: aws wafv2 get-web-acl --name production-lynia-waf --scope REGIONAL --id <acl-id> --query 'WebACL.Rules[*].Name'
-
-[ ] Rate limiting is functional (check rate-limiter logs)
-[ ] JWT authentication is enforced on protected endpoints
-[ ] CORS headers are correct (check response headers)
-```
-
-### Canary Deployment Status (payment-service)
-
-```
-[ ] Canary deployment progressing normally (if applicable)
-    Command: Check CodeDeploy deployment status in AWS Console
-
-[ ] No automatic rollback triggered
-[ ] Error rate within acceptable bounds during canary window
-```
-
----
-
-## Phase 5: Extended Monitoring (30 min - 2 hours)
-
-```
-[ ] Error rate remains stable (no upward trend)
-[ ] Latency remains within SLO bounds
-[ ] No customer complaints received
-[ ] Business metrics dashboard shows normal activity
-[ ] Cost monitoring shows no unexpected spikes
-[ ] Canary deployment completed successfully (payment-service)
-```
-
----
-
-## Deployment Sign-Off
-
-```
-Deployment Date:     _______________
-Deployer:           _______________
-Git Commit:         _______________
-Deployment Method:  [ ] CI/CD  [ ] Manual Script  [ ] SAM CLI
-
-Phase 1 (Infrastructure):  [ ] PASS  [ ] FAIL
-Phase 2 (Functional):      [ ] PASS  [ ] FAIL
-Phase 3 (Monitoring):      [ ] PASS  [ ] FAIL
-Phase 4 (Business Logic):  [ ] PASS  [ ] FAIL
-Phase 5 (Extended):        [ ] PASS  [ ] FAIL
-
-Overall Status:     [ ] DEPLOYMENT SUCCESSFUL  [ ] ROLLBACK INITIATED
-
-Signed: _______________  Date: _______________
-```
+- [ ] Section 1: All CloudFormation stacks healthy
+- [ ] Section 2: All 6 Lambda functions Active
+- [ ] Section 3: All API endpoints responding
+- [ ] Section 4: Both frontend apps return HTTP 200
+- [ ] Section 5: RDS instance available
+- [ ] Section 6: All 5 SQS queues available, DLQs empty
+- [ ] Section 7: WAF blocking SQL injection and XSS
+- [ ] Section 8: 20+ alarms, 5 dashboards, 3 SNS topics
+- [ ] Section 9: All 7 secrets present
+- [ ] Section 10: Provisioned concurrency READY, VPC with NAT Gateways
 
 ---
 
-## Failure Response
+## Emergency Procedures
 
-If any phase fails:
+| Action | Command |
+|--------|---------|
+| Rollback Lambda | `./scripts/rollback.sh` |
+| Rollback Frontend | `./scripts/rollback-frontend.sh` |
+| View logs | `sam logs --config-env production --tail` |
+| Validation | `./scripts/validate-production.sh --env production` |
+| On-call runbook | `docs/ON-CALL-RUNBOOK.md` |
 
-| Phase Failed | Action |
-|-------------|--------|
-| Phase 1 | Immediate rollback - infrastructure broken |
-| Phase 2 | Investigate specific service, likely rollback |
-| Phase 3 | Monitor closely, prepare for rollback |
-| Phase 4 | Investigate business logic, may need hotfix |
-| Phase 5 | Continue monitoring, open investigation ticket |
+## Deployment Scripts
 
-See [ROLLBACK-PROCEDURES.md](ROLLBACK-PROCEDURES.md) for rollback steps.
-See [INCIDENT-RESPONSE-PLAYBOOK.md](INCIDENT-RESPONSE-PLAYBOOK.md) for incident handling.
-
----
-
-**Document Owner:** Engineering Team
-**Used:** After every production deployment
+| Script | Task | Purpose |
+|--------|------|---------|
+| `deploy-lambda.sh` | T0010 | SAM build and deploy all Lambda functions |
+| `deploy-api-gateway-throttling.sh` | T0011 | Usage plans and API keys |
+| `deploy-waf.sh` | T0012 | WAF Web ACL deployment |
+| `deploy-monitoring.sh` | T0012 | CloudWatch alarms, dashboards, log retention |
+| `deploy-dns-ssl.sh` | T0013 | Route 53, ACM certificates |
+| `deploy-frontend-hosting.sh` | T0014 | S3 + CloudFront infrastructure |
+| `build-and-upload-frontend.sh` | T0014 | Build and upload frontend assets |
+| `deploy-lambda-autoscaling.sh` | T0015 | Provisioned concurrency, canary, X-Ray |
+| `create-cognito-users.sh` | T0016 | Initial Cognito users |
+| `configure-github-secrets.sh` | T0016 | GitHub Actions secrets/variables |
+| `validate-production.sh` | T0017 | E2E validation and smoke tests |
