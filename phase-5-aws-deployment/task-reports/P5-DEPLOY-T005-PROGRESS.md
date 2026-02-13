@@ -120,7 +120,8 @@ aws s3api get-bucket-versioning \
 | Date | Action | Status |
 |------|--------|--------|
 | 2026-02-12 | Task created | ⚪ Not Started |
+| 2026-02-13 | Automation added via `infrastructure/aws/scripts/deploy-infrastructure.sh production t005`. Can also run as part of `layer1` (parallel with T006+T008) | ⚪ Not Started |
 
 ---
 **Created**: 2026-02-12
-**Last Updated**: 2026-02-12
+**Last Updated**: 2026-02-13

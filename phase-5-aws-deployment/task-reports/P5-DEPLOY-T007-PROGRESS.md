@@ -178,7 +178,8 @@ aws iam get-policy-version \
 | Date | Action | Status |
 |------|--------|--------|
 | 2026-02-12 | Task created | ⚪ Not Started |
+| 2026-02-13 | Automation added via `infrastructure/aws/scripts/deploy-infrastructure.sh production t007`. Auto-reads RDS endpoint from T004 stack. Requires `DB_PASSWORD` env var | ⚪ Not Started |
 
 ---
 **Created**: 2026-02-12
-**Last Updated**: 2026-02-12
+**Last Updated**: 2026-02-13

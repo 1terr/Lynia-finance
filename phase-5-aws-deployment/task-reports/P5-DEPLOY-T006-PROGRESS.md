@@ -231,6 +231,7 @@ AWS credentials are configured as GitHub repository secrets. To deploy:
 | 2026-02-13 | Created `scripts/deploy-sqs.sh` with full deploy + verify automation | 🟡 In Progress |
 | 2026-02-13 | Created `.github/workflows/deploy-sqs.yml` for CI/CD deployment via GitHub Actions | 🟡 In Progress |
 | 2026-02-13 | AWS credentials added to GitHub Secrets — ready to trigger workflow | 🟡 Ready to Deploy |
+| 2026-02-13 | Also available via `infrastructure/aws/scripts/deploy-infrastructure.sh production t006` (parallel with T005+T008) | 🟡 Ready to Deploy |
 
 ---
 **Created**: 2026-02-12
