@@ -1,0 +1,295 @@
+name: Deploy S3 Storage Buckets
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+concurrency:
+  group: deploy-storage-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy-storage:
+    name: Deploy Storage Buckets (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          echo "Validating infrastructure/aws/storage-buckets.yaml..."
+          aws cloudformation validate-template \
+            --template-body file://infrastructure/aws/storage-buckets.yaml
+          echo "Template validation passed"
+
+      - name: Pre-deploy checks
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+
+          echo "=== Checking IAM permissions ==="
+          if aws s3api list-buckets --query "Buckets[0].Name" --output text > /dev/null 2>&1; then
+            echo "PASS: S3 permissions OK"
+          else
+            echo "::warning::S3 list-buckets failed — IAM user may lack s3:ListAllMyBuckets permission"
+          fi
+
+          echo ""
+          echo "=== Checking for existing buckets ==="
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          for SUFFIX in kyc-documents commission-pdfs reconciliation ml-models; do
+            BUCKET="${ENV}-lynia-${SUFFIX}-${ACCOUNT_ID}"
+            if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+              echo "Found existing bucket: $BUCKET"
+            else
+              echo "Bucket not yet created: $BUCKET"
+            fi
+          done
+
+      - name: Clean up failed stack if needed
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-storage"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          echo "Current stack status: ${STACK_STATUS}"
+
+          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ] || [ "${STACK_STATUS}" = "DELETE_FAILED" ]; then
+            echo "Stack in ${STACK_STATUS} state — deleting before re-deploy..."
+
+            echo "=== Events from previous failed deployment ==="
+            aws cloudformation describe-stack-events \
+              --stack-name "${STACK_NAME}" \
+              --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+              --output table 2>/dev/null || echo "(no events available)"
+
+            aws cloudformation delete-stack --stack-name "${STACK_NAME}"
+            aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
+            echo "Stack deleted successfully"
+          elif [ "${STACK_STATUS}" = "DOES_NOT_EXIST" ]; then
+            echo "Stack does not exist yet — will create"
+          else
+            echo "Stack exists in state: ${STACK_STATUS}"
+          fi
+
+      - name: Deploy storage buckets stack
+        id: deploy
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-storage"
+          echo "Deploying stack: ${STACK_NAME}"
+          echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
+
+          set +e
+          aws cloudformation deploy \
+            --template-file infrastructure/aws/storage-buckets.yaml \
+            --stack-name "${STACK_NAME}" \
+            --parameter-overrides "Environment=${ENV}" \
+            --tags "Project=lynia-finance" "Environment=${ENV}" "Service=storage" "ManagedBy=cloudformation" \
+            --no-fail-on-empty-changeset \
+            --region ${{ env.AWS_REGION }}
+          DEPLOY_EXIT=$?
+          set -e
+
+          if [ "${DEPLOY_EXIT}" -ne 0 ]; then
+            echo "::error::CloudFormation deploy failed (exit code ${DEPLOY_EXIT})"
+            aws cloudformation describe-stack-events \
+              --stack-name "${STACK_NAME}" \
+              --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+              --output table 2>/dev/null || echo "(could not fetch stack events)"
+            exit 1
+          fi
+
+      - name: Extract stack outputs
+        id: outputs
+        run: |
+          STACK_NAME="${{ steps.deploy.outputs.stack_name }}"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text)
+          echo "Stack status: ${STACK_STATUS}"
+          echo "stack_status=${STACK_STATUS}" >> $GITHUB_OUTPUT
+
+          for KEY in KYCDocumentsBucketName CommissionPDFsBucketName ReconciliationBucketName MLModelsBucketName; do
+            VALUE=$(aws cloudformation describe-stacks \
+              --stack-name "${STACK_NAME}" \
+              --query "Stacks[0].Outputs[?OutputKey=='${KEY}'].OutputValue" --output text)
+            echo "${KEY}=${VALUE}" >> $GITHUB_OUTPUT
+            echo "${KEY}: ${VALUE}"
+          done
+
+      - name: Verify bucket resources
+        id: verify-buckets
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying S3 Bucket Resources ==="
+
+          # Check each bucket
+          for SUFFIX in kyc-documents commission-pdfs reconciliation ml-models; do
+            BUCKET="${ENV}-lynia-${SUFFIX}-${ACCOUNT_ID}"
+            echo ""
+            echo "--- ${BUCKET} ---"
+
+            # Bucket exists
+            if aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
+              echo "PASS: Bucket exists"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: Bucket not found"
+              FAIL=$((FAIL + 1))
+              continue
+            fi
+
+            # Public access block
+            PAB=$(aws s3api get-public-access-block --bucket "$BUCKET" --query "PublicAccessBlockConfiguration" --output json 2>/dev/null || echo "{}")
+            ALL_BLOCKED=$(echo "$PAB" | jq 'all(.[]; . == true)')
+            if [ "$ALL_BLOCKED" = "true" ]; then
+              echo "PASS: Public access fully blocked"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: Public access not fully blocked"
+              FAIL=$((FAIL + 1))
+            fi
+
+            # Encryption
+            ENC=$(aws s3api get-bucket-encryption --bucket "$BUCKET" \
+              --query "ServerSideEncryptionConfiguration.Rules[0].ApplyServerSideEncryptionByDefault.SSEAlgorithm" \
+              --output text 2>/dev/null || echo "NONE")
+            if [ "$SUFFIX" = "kyc-documents" ]; then
+              if [ "$ENC" = "aws:kms" ]; then
+                echo "PASS: KMS encryption"
+                PASS=$((PASS + 1))
+              else
+                echo "FAIL: Expected aws:kms, got $ENC"
+                FAIL=$((FAIL + 1))
+              fi
+            else
+              if [ "$ENC" = "AES256" ]; then
+                echo "PASS: AES256 encryption"
+                PASS=$((PASS + 1))
+              else
+                echo "FAIL: Expected AES256, got $ENC"
+                FAIL=$((FAIL + 1))
+              fi
+            fi
+          done
+
+          # Verify lifecycle: commission bucket -> GLACIER
+          COMMISSION_BUCKET="${ENV}-lynia-commission-pdfs-${ACCOUNT_ID}"
+          LC=$(aws s3api get-bucket-lifecycle-configuration --bucket "$COMMISSION_BUCKET" \
+            --query "Rules[0].Transitions[0].StorageClass" --output text 2>/dev/null || echo "NONE")
+          if [ "$LC" = "GLACIER" ]; then
+            echo ""
+            echo "PASS: Commission bucket Glacier lifecycle"
+            PASS=$((PASS + 1))
+          else
+            echo ""
+            echo "FAIL: Commission bucket lifecycle: $LC (expected GLACIER)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Verify versioning on ML models bucket
+          ML_BUCKET="${ENV}-lynia-ml-models-${ACCOUNT_ID}"
+          VER=$(aws s3api get-bucket-versioning --bucket "$ML_BUCKET" \
+            --query "Status" --output text 2>/dev/null || echo "Suspended")
+          if [ "$VER" = "Enabled" ]; then
+            echo "PASS: ML models versioning enabled"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: ML models versioning: $VER (expected Enabled)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo ""
+          echo "bucket_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "bucket_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Generate summary
+        if: always()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
+          STACK_STATUS="${{ steps.outputs.outputs.stack_status }}"
+          BUCKET_PASS="${{ steps.verify-buckets.outputs.bucket_pass || 0 }}"
+          BUCKET_FAIL="${{ steps.verify-buckets.outputs.bucket_fail || 0 }}"
+
+          TOTAL_PASS=$((BUCKET_PASS))
+          TOTAL_FAIL=$((BUCKET_FAIL))
+
+          if [ "${DEPLOY_OUTCOME}" != "success" ]; then
+            STACK_CHECK="FAIL"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          elif [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ]; then
+            STACK_CHECK="PASS"
+            TOTAL_PASS=$((TOTAL_PASS + 1))
+          else
+            STACK_CHECK="FAIL"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          fi
+
+          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # S3 Storage Buckets Deployment — ${ENV}
+
+          ## Stack Info
+          | Property | Value |
+          |----------|-------|
+          | Stack Name | \`${ENV}-lynia-storage\` |
+          | Stack Status | ${STACK_CHECK} ${STACK_STATUS} |
+          | Region | ${{ env.AWS_REGION }} |
+
+          ## Bucket Configuration
+          | Bucket | Encryption | Lifecycle | Versioning |
+          |--------|-----------|-----------|------------|
+          | kyc-documents | KMS | Intelligent Tiering 90d, 10yr | Yes |
+          | commission-pdfs | AES-256 | Glacier after 365d | No |
+          | reconciliation | AES-256 | Expire after 365d | No |
+          | ml-models | AES-256 | None | Yes |
+
+          ## Acceptance Criteria: ${TOTAL_PASS}/${TOTAL} passed
+          | Check | Result |
+          |-------|--------|
+          | Stack status | ${STACK_CHECK} |
+          | Bucket resources (pass: ${BUCKET_PASS}, fail: ${BUCKET_FAIL}) | $([ "${BUCKET_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+
+          **Total: ${TOTAL_PASS} passed, ${TOTAL_FAIL} failed out of ${TOTAL} checks**
+
+          ## Next Steps
+          - Bucket names are exported for **P5-DEPLOY-T010** (SAM Lambda Deploy)
+          EOF
+
+          if [ "${TOTAL_FAIL}" -gt 0 ]; then
+            echo "::error::${TOTAL_FAIL} acceptance criteria failed"
+            exit 1
+          fi
+
+          echo "All ${TOTAL_PASS} acceptance criteria passed!"

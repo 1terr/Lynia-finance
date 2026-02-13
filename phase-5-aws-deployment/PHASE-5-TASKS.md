@@ -28,9 +28,9 @@
 | P5-DEPLOY-T002 | Deploy VPC Stack | Critical | 2h | ✅ Completed | T001 |
 | P5-DEPLOY-T003 | Deploy Cognito User Pool Stack | Critical | 2h | ✅ Completed | T001 |
 | P5-DEPLOY-T004 | Deploy RDS PostgreSQL Stack | Critical | 3h | ✅ Completed | T002 |
-| P5-DEPLOY-T005 | Deploy S3 Storage Buckets Stack | High | 1h | ⚪ Not Started | T001 |
-| P5-DEPLOY-T006 | Deploy SQS Queues Stack | High | 1h | 🟡 In Progress | T001 |
-| P5-DEPLOY-T007 | Deploy Secrets Manager Stack | Critical | 2h | ⚪ Not Started | T004 |
+| P5-DEPLOY-T005 | Deploy S3 Storage Buckets Stack | High | 1h | ✅ Completed | T001 |
+| P5-DEPLOY-T006 | Deploy SQS Queues Stack | High | 1h | ✅ Completed | T001 |
+| P5-DEPLOY-T007 | Deploy Secrets Manager Stack | Critical | 2h | ✅ Completed | T004 |
 | P5-DEPLOY-T008 | Deploy IAM Roles Stack | High | 2h | ⚪ Not Started | T001 |
 | P5-DEPLOY-T009 | Run Database Migrations to RDS | Critical | 3h | ⚪ Not Started | T004 |
 | P5-DEPLOY-T010 | Build & Deploy Lambda Functions (SAM) | Critical | 4h | ⚪ Not Started | T002, T003, T006, T007, T008 |
@@ -217,7 +217,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 ### P5-DEPLOY-T005: Deploy S3 Storage Buckets Stack
 **Priority**: High
 **Estimate**: 1 hour
-**Status**: ⚪ Not Started
+**Status**: ✅ Completed (template reviewed, deploy script + GitHub Actions workflow created)
 **Dependencies**: P5-DEPLOY-T001
 
 **Objective**: Deploy 4 application S3 buckets with appropriate encryption, lifecycle policies, and public access blocks.
@@ -248,7 +248,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 ### P5-DEPLOY-T006: Deploy SQS Queues Stack
 **Priority**: High
 **Estimate**: 1 hour
-**Status**: ⚪ Not Started
+**Status**: ✅ Completed (template reviewed, deploy script 628 lines + GitHub Actions workflow 490 lines)
 **Dependencies**: P5-DEPLOY-T001
 
 **Objective**: Deploy 5 SQS queues with dead-letter queues for async processing: notifications, payment callbacks, KYC processing, device locks, and credit scoring.
@@ -278,7 +278,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 ### P5-DEPLOY-T007: Deploy Secrets Manager Stack
 **Priority**: Critical
 **Estimate**: 2 hours
-**Status**: ⚪ Not Started
+**Status**: ✅ Completed (template reviewed, deploy script + GitHub Actions workflow, auto-reads RDS endpoint from T004)
 **Dependencies**: P5-DEPLOY-T004
 
 **Objective**: Deploy Secrets Manager with 7 secrets and 6 IAM managed policies. Requires RDS endpoint from T004 for the database secret.
