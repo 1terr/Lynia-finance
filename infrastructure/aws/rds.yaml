@@ -4,7 +4,7 @@ Description: Lynia Finance - RDS PostgreSQL Database
 Parameters:
   Environment:
     Type: String
-    AllowedValues: [dev, staging, production]
+    AllowedValues: [development, staging, production]
   DBMasterUsername:
     Type: String
     Default: lynia_admin
@@ -38,7 +38,7 @@ Resources:
           FromPort: 5432
           ToPort: 5432
           SourceSecurityGroupId: !ImportValue
-            Fn::Sub: "${Environment}-lynia-lambda-sg"
+            Fn::Sub: "${Environment}-lynia-lambda-sg-id"
 
   DatabaseInstance:
     Type: AWS::RDS::DBInstance
@@ -47,7 +47,7 @@ Resources:
       Engine: postgres
       EngineVersion: "16.4"
       DBInstanceClass: !If [IsProduction, db.t4g.small, db.t4g.micro]
-      AllocatedStorage: 20
+      AllocatedStorage: !If [IsProduction, 50, 20]
       MaxAllocatedStorage: 100
       StorageType: gp3
       MasterUsername: !Ref DBMasterUsername
