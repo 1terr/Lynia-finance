@@ -76,7 +76,7 @@ jobs:
           aws cloudformation deploy \
             --template-file infrastructure/aws/cognito.yaml \
             --stack-name "${STACK_NAME}" \
-            --parameter-overrides "Environment=${ENV}" \
+            --parameter-overrides "Environment=${ENV}" "DeployId=${{ github.run_id }}" \
             --tags "Project=lynia-finance" "Environment=${ENV}" "Service=cognito" \
             --no-fail-on-empty-changeset \
             --region ${{ env.AWS_REGION }}
