@@ -45,7 +45,7 @@ Resources:
     Properties:
       DBInstanceIdentifier: !Sub "${Environment}-lynia-db"
       Engine: postgres
-      EngineVersion: "16.4"
+      EngineVersion: "16.11"
       DBInstanceClass: !If [IsProduction, db.t4g.small, db.t4g.micro]
       AllocatedStorage: !If [IsProduction, 50, 20]
       MaxAllocatedStorage: 100
