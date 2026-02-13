@@ -10,6 +10,8 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
  * Only trusted frontend domains are permitted.
  */
 const ALLOWED_ORIGINS: string[] = [
+  'https://lyniafinance.com',
+  'https://www.lyniafinance.com',
   'https://admin.lyniafinance.com',
   'https://app.lyniafinance.com',
   'https://distributor.lyniafinance.com',

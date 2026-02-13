@@ -640,6 +640,60 @@ Resources:
         EntryPoints:
           - src/index.ts
 
+  # =====================================================
+  # 7. FORM SUBMISSION SERVICE (Landing Page)
+  # =====================================================
+  FormSubmissionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-form-submission
+      CodeUri: services/form-submission-service/
+      Handler: dist/index.handler
+      Description: Landing page form submissions (contact, partnership, waitlist)
+      MemorySize: 256
+      Timeout: 15
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      AutoPublishAlias: live
+      Events:
+        SubmitForm:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /forms/submit
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        SubmitFormOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /forms/submit
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - src/index.ts
+
 Outputs:
   # API Gateway
   ApiGatewayUrl:
@@ -690,3 +744,9 @@ Outputs:
     Value: !GetAtt NotificationFunction.Arn
     Export:
       Name: !Sub ${Environment}-lynia-notification-arn
+
+  FormSubmissionFunctionArn:
+    Description: Form Submission Service Lambda Function ARN
+    Value: !GetAtt FormSubmissionFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-form-submission-arn
