@@ -1,10 +1,14 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Lynia Finance - Cognito User Pool
+Description: !Sub "Lynia Finance - Cognito User Pool (deploy: ${DeployId})"
 
 Parameters:
   Environment:
     Type: String
     AllowedValues: [dev, staging, production]
+  DeployId:
+    Type: String
+    Description: Unique deployment identifier to force changeset creation
+    Default: local
 
 Resources:
   UserPool:

@@ -154,7 +154,7 @@ if ! $VERIFY_ONLY; then
   aws cloudformation deploy \
     --template-file "$TEMPLATE_PATH" \
     --stack-name "$STACK_NAME" \
-    --parameter-overrides "Environment=$ENVIRONMENT" \
+    --parameter-overrides "Environment=$ENVIRONMENT" "DeployId=$(date +%s)" \
     --region "$REGION" \
     --no-fail-on-empty-changeset \
     --tags \
