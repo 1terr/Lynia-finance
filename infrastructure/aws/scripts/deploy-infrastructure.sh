@@ -1,36 +1,52 @@
 #!/usr/bin/env bash
-# Deploy All Remaining Infrastructure Stacks for Lynia Finance
-# Task: P5-DEPLOY - Full Infrastructure Deployment
-# Prerequisites: VPC stack must already be deployed (production-lynia-vpc)
+# =================================================================
+# Lynia Finance - Phase 5 Infrastructure Deployment
+# =================================================================
+# Deploys remaining P5-DEPLOY tasks after T001-T004 are complete.
+#
+# Already completed (prerequisites):
+#   T001 - Prerequisites & S3 Template Bucket
+#   T002 - VPC Stack
+#   T003 - Cognito User Pool
+#   T004 - RDS PostgreSQL
+#
+# This script handles:
+#   T005 - S3 Storage Buckets
+#   T006 - SQS Queues
+#   T007 - Secrets Manager (needs RDS endpoint + credentials)
+#   T008 - IAM Roles
 #
 # Usage:
-#   ./deploy-infrastructure.sh [environment] [phase]
-#   ./deploy-infrastructure.sh production all       # Deploy all phases
-#   ./deploy-infrastructure.sh production bootstrap  # Phase 0 only
-#   ./deploy-infrastructure.sh production layer1     # Phase 1 only
-#   ./deploy-infrastructure.sh production rds        # Phase 2 only
-#   ./deploy-infrastructure.sh production secrets    # Phase 3 only
+#   ./deploy-infrastructure.sh [environment] [task]
+#   ./deploy-infrastructure.sh production all      # Deploy T005-T008
+#   ./deploy-infrastructure.sh production t005     # S3 Storage Buckets only
+#   ./deploy-infrastructure.sh production t006     # SQS Queues only
+#   ./deploy-infrastructure.sh production t007     # Secrets Manager only
+#   ./deploy-infrastructure.sh production t008     # IAM Roles only
+#   ./deploy-infrastructure.sh production layer1   # T005+T006+T008 in parallel
+#   ./deploy-infrastructure.sh production status   # Show all stack statuses
+# =================================================================
 
 set -euo pipefail
 
 ENVIRONMENT="${1:-production}"
-PHASE="${2:-all}"
+TASK="${2:-all}"
 REGION="us-east-1"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEMPLATE_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Color codes for output
+# Color codes
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 log_info()  { echo -e "${BLUE}[INFO]${NC}  $1"; }
 log_ok()    { echo -e "${GREEN}[OK]${NC}    $1"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
-log_phase() { echo -e "\n${GREEN}============================================${NC}"; echo -e "${GREEN}  PHASE: $1${NC}"; echo -e "${GREEN}============================================${NC}\n"; }
+log_task()  { echo -e "\n${GREEN}============================================${NC}"; echo -e "${GREEN}  $1${NC}"; echo -e "${GREEN}============================================${NC}\n"; }
 
 # Validate environment
 if [[ "$ENVIRONMENT" != "production" && "$ENVIRONMENT" != "staging" && "$ENVIRONMENT" != "development" ]]; then
@@ -38,7 +54,7 @@ if [[ "$ENVIRONMENT" != "production" && "$ENVIRONMENT" != "staging" && "$ENVIRON
   exit 1
 fi
 
-# Helper: check if a stack exists and its status
+# Helper: check stack status
 stack_status() {
   local stack_name="$1"
   aws cloudformation describe-stacks \
@@ -48,7 +64,18 @@ stack_status() {
     --region "$REGION" 2>/dev/null || echo "NOT_FOUND"
 }
 
-# Helper: deploy a stack and wait for completion
+# Helper: get stack output value
+stack_output() {
+  local stack_name="$1"
+  local output_key="$2"
+  aws cloudformation describe-stacks \
+    --stack-name "$stack_name" \
+    --query "Stacks[0].Outputs[?OutputKey=='${output_key}'].OutputValue" \
+    --output text \
+    --region "$REGION" 2>/dev/null || echo ""
+}
+
+# Helper: deploy a CloudFormation stack
 deploy_stack() {
   local stack_name="$1"
   local template="$2"
@@ -64,10 +91,10 @@ deploy_stack() {
   fi
 
   if [[ "$status" == "ROLLBACK_COMPLETE" || "$status" == "CREATE_FAILED" ]]; then
-    log_warn "Stack '$stack_name' is in $status state. Deleting before re-deploy..."
+    log_warn "Stack '$stack_name' in $status state. Deleting before re-deploy..."
     aws cloudformation delete-stack --stack-name "$stack_name" --region "$REGION"
     aws cloudformation wait stack-delete-complete --stack-name "$stack_name" --region "$REGION"
-    log_ok "Deleted failed stack '$stack_name'."
+    log_ok "Deleted failed stack."
   fi
 
   log_info "Deploying stack: $stack_name"
@@ -82,12 +109,11 @@ deploy_stack() {
     --tags "Environment=$ENVIRONMENT" "Service=lynia-finance"
   )
 
-  # Add capabilities if the template creates IAM resources
+  # Add CAPABILITY_NAMED_IAM if template creates IAM resources
   if grep -q "AWS::IAM" "$template" 2>/dev/null; then
     deploy_cmd+=(--capabilities CAPABILITY_NAMED_IAM)
   fi
 
-  # Add parameter overrides if provided
   if [[ ${#params[@]} -gt 0 ]]; then
     deploy_cmd+=(--parameter-overrides "${params[@]}")
   fi
@@ -96,231 +122,270 @@ deploy_stack() {
     log_ok "Stack '$stack_name' deployed successfully."
   else
     log_error "Stack '$stack_name' deployment FAILED."
-    log_error "Check events: aws cloudformation describe-stack-events --stack-name $stack_name --region $REGION"
+    log_error "Check: aws cloudformation describe-stack-events --stack-name $stack_name --region $REGION"
     return 1
   fi
 }
 
-# ============================================================
-# PHASE 0: Bootstrap - Deployment Buckets
-# ============================================================
-deploy_bootstrap() {
-  log_phase "0 - BOOTSTRAP (Deployment Buckets)"
-
-  deploy_stack \
-    "${ENVIRONMENT}-lynia-deployment-buckets" \
-    "${TEMPLATE_DIR}/deployment-buckets.yaml" \
-    "Environment=${ENVIRONMENT}"
-
-  # Export artifact bucket name for IAM roles
-  ARTIFACT_BUCKET="lynia-finance-${ENVIRONMENT}-artifacts"
-  log_info "Artifact bucket: $ARTIFACT_BUCKET"
+# Helper: verify a prerequisite stack is deployed
+require_stack() {
+  local stack_name="$1"
+  local task_id="$2"
+  local status
+  status=$(stack_status "$stack_name")
+  if [[ "$status" != "CREATE_COMPLETE" && "$status" != "UPDATE_COMPLETE" ]]; then
+    log_error "Required stack '$stack_name' not ready (status: $status)."
+    log_error "Complete $task_id first."
+    return 1
+  fi
+  log_ok "Prerequisite '$stack_name': $status"
 }
 
-# ============================================================
-# PHASE 1: Layer 1 - Independent stacks (no VPC dependency)
-# ============================================================
+# =================================================================
+# T005: Deploy S3 Storage Buckets
+# =================================================================
+deploy_t005() {
+  log_task "T005 - Deploy S3 Storage Buckets"
+  require_stack "${ENVIRONMENT}-lynia-deployment-buckets" "T001" || return 1
+
+  deploy_stack \
+    "${ENVIRONMENT}-lynia-storage" \
+    "${TEMPLATE_DIR}/storage-buckets.yaml" \
+    "Environment=${ENVIRONMENT}"
+}
+
+# =================================================================
+# T006: Deploy SQS Queues
+# =================================================================
+deploy_t006() {
+  log_task "T006 - Deploy SQS Queues"
+  require_stack "${ENVIRONMENT}-lynia-deployment-buckets" "T001" || return 1
+
+  deploy_stack \
+    "${ENVIRONMENT}-lynia-sqs" \
+    "${TEMPLATE_DIR}/sqs-queues.yaml" \
+    "Environment=${ENVIRONMENT}"
+}
+
+# =================================================================
+# T007: Deploy Secrets Manager (depends on T004 RDS)
+# =================================================================
+deploy_t007() {
+  log_task "T007 - Deploy Secrets Manager"
+  require_stack "${ENVIRONMENT}-lynia-rds" "T004" || return 1
+
+  # Get RDS endpoint from T004 stack outputs
+  local db_endpoint
+  db_endpoint=$(stack_output "${ENVIRONMENT}-lynia-rds" "DatabaseEndpoint")
+  if [[ -z "$db_endpoint" ]]; then
+    log_error "Could not retrieve RDS endpoint from stack outputs."
+    return 1
+  fi
+  log_info "RDS endpoint: $db_endpoint"
+
+  local db_port
+  db_port=$(stack_output "${ENVIRONMENT}-lynia-rds" "DatabasePort")
+  db_port="${db_port:-5432}"
+
+  # Check if DB password is provided
+  if [[ -z "${DB_PASSWORD:-}" ]]; then
+    log_warn "DB_PASSWORD environment variable not set."
+    log_info "Secrets Manager needs the RDS master password from T004 output."
+    log_info ""
+    log_info "Run with:"
+    log_info "  DB_PASSWORD=<your-rds-password> ./deploy-infrastructure.sh $ENVIRONMENT t007"
+    log_info ""
+    log_info "Or deploy manually:"
+    echo ""
+    echo "  aws cloudformation deploy \\"
+    echo "    --template-file ${TEMPLATE_DIR}/secrets-manager.yaml \\"
+    echo "    --stack-name ${ENVIRONMENT}-lynia-secrets \\"
+    echo "    --capabilities CAPABILITY_NAMED_IAM \\"
+    echo "    --region ${REGION} \\"
+    echo "    --parameter-overrides \\"
+    echo "      Environment=${ENVIRONMENT} \\"
+    echo "      DBHost=${db_endpoint} \\"
+    echo "      DBPort=${db_port} \\"
+    echo "      DBPassword=<RDS-password-from-T004> \\"
+    echo "      WhatsAppPhoneNumberId=<value> \\"
+    echo "      WhatsAppAccessToken=<value> \\"
+    echo "      WhatsAppWebhookVerifyToken=<value> \\"
+    echo "      SmilePartnerId=<value> \\"
+    echo "      SmileApiKey=<value> \\"
+    echo "      EcocashMerchantId=<value> \\"
+    echo "      EcocashApiKey=<value> \\"
+    echo "      OnemoneyMerchantId=<value> \\"
+    echo "      OnemoneyApiKey=<value> \\"
+    echo "      TrustonicApiKey=<value> \\"
+    echo "      TrustonicApiSecret=<value> \\"
+    echo "      SmsApiKey=<value>"
+    echo ""
+    return 1
+  fi
+
+  deploy_stack \
+    "${ENVIRONMENT}-lynia-secrets" \
+    "${TEMPLATE_DIR}/secrets-manager.yaml" \
+    "Environment=${ENVIRONMENT}" \
+    "DBHost=${db_endpoint}" \
+    "DBPort=${db_port}" \
+    "DBPassword=${DB_PASSWORD}" \
+    "WhatsAppPhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}" \
+    "WhatsAppAccessToken=${WHATSAPP_ACCESS_TOKEN:-}" \
+    "WhatsAppWebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}" \
+    "SmilePartnerId=${SMILE_PARTNER_ID:-}" \
+    "SmileApiKey=${SMILE_API_KEY:-}" \
+    "EcocashMerchantId=${ECOCASH_MERCHANT_ID:-}" \
+    "EcocashApiKey=${ECOCASH_API_KEY:-}" \
+    "OnemoneyMerchantId=${ONEMONEY_MERCHANT_ID:-}" \
+    "OnemoneyApiKey=${ONEMONEY_API_KEY:-}" \
+    "TrustonicApiKey=${TRUSTONIC_API_KEY:-}" \
+    "TrustonicApiSecret=${TRUSTONIC_API_SECRET:-}" \
+    "SmsApiKey=${SMS_API_KEY:-}"
+}
+
+# =================================================================
+# T008: Deploy IAM Roles
+# =================================================================
+deploy_t008() {
+  log_task "T008 - Deploy IAM Roles"
+  require_stack "${ENVIRONMENT}-lynia-deployment-buckets" "T001" || return 1
+
+  deploy_stack \
+    "${ENVIRONMENT}-lynia-iam" \
+    "${TEMPLATE_DIR}/iam-roles.yaml" \
+    "Environment=${ENVIRONMENT}" \
+    "ArtifactBucketName=lynia-finance-${ENVIRONMENT}-artifacts"
+}
+
+# =================================================================
+# Layer 1: T005 + T006 + T008 in parallel (independent of each other)
+# =================================================================
 deploy_layer1() {
-  log_phase "1 - LAYER 1 (Independent Stacks - Parallel)"
+  log_task "Layer 1 - T005 + T006 + T008 (parallel)"
 
-  log_info "Deploying 5 independent stacks in parallel..."
-
-  # Run all 5 deployments in parallel using background processes
   local pids=()
+  local labels=()
 
-  # 1a. IAM Roles
-  (
-    deploy_stack \
-      "${ENVIRONMENT}-lynia-iam" \
-      "${TEMPLATE_DIR}/iam-roles.yaml" \
-      "Environment=${ENVIRONMENT}" \
-      "ArtifactBucketName=lynia-finance-${ENVIRONMENT}-artifacts"
-  ) &
-  pids+=($!)
+  deploy_t005 &
+  pids+=($!); labels+=("T005-Storage")
 
-  # 1b. SQS Queues
-  (
-    deploy_stack \
-      "${ENVIRONMENT}-lynia-sqs" \
-      "${TEMPLATE_DIR}/sqs-queues.yaml" \
-      "Environment=${ENVIRONMENT}"
-  ) &
-  pids+=($!)
+  deploy_t006 &
+  pids+=($!); labels+=("T006-SQS")
 
-  # 1c. Storage Buckets
-  (
-    deploy_stack \
-      "${ENVIRONMENT}-lynia-storage" \
-      "${TEMPLATE_DIR}/storage-buckets.yaml" \
-      "Environment=${ENVIRONMENT}"
-  ) &
-  pids+=($!)
+  deploy_t008 &
+  pids+=($!); labels+=("T008-IAM")
 
-  # 1d. X-Ray Tracing
-  (
-    deploy_stack \
-      "${ENVIRONMENT}-lynia-xray" \
-      "${TEMPLATE_DIR}/xray-tracing.yaml" \
-      "Environment=${ENVIRONMENT}"
-  ) &
-  pids+=($!)
-
-  # 1e. Cognito
-  (
-    deploy_stack \
-      "${ENVIRONMENT}-lynia-cognito" \
-      "${TEMPLATE_DIR}/cognito.yaml" \
-      "Environment=${ENVIRONMENT}"
-  ) &
-  pids+=($!)
-
-  # Wait for all parallel deployments
   local failed=0
-  for pid in "${pids[@]}"; do
-    if ! wait "$pid"; then
+  for i in "${!pids[@]}"; do
+    if ! wait "${pids[$i]}"; then
+      log_error "${labels[$i]} FAILED"
       failed=$((failed + 1))
+    else
+      log_ok "${labels[$i]} completed"
     fi
   done
 
   if [[ $failed -gt 0 ]]; then
-    log_error "$failed stack(s) failed in Layer 1. Check output above."
+    log_error "$failed stack(s) failed in Layer 1."
     return 1
   fi
-
-  log_ok "All Layer 1 stacks deployed successfully."
+  log_ok "All Layer 1 stacks deployed."
 }
 
-# ============================================================
-# PHASE 2: RDS Database (depends on VPC)
-# ============================================================
-deploy_rds() {
-  log_phase "2 - RDS DATABASE (depends on VPC)"
-
-  # Verify VPC stack is ready
-  local vpc_status
-  vpc_status=$(stack_status "${ENVIRONMENT}-lynia-vpc")
-  if [[ "$vpc_status" != "CREATE_COMPLETE" && "$vpc_status" != "UPDATE_COMPLETE" ]]; then
-    log_error "VPC stack not ready (status: $vpc_status). Deploy VPC first."
-    return 1
-  fi
-  log_ok "VPC stack verified: $vpc_status"
-
-  # Use the existing RDS deploy script
-  log_info "Delegating to deploy-rds.sh..."
-  bash "${SCRIPT_DIR}/deploy-rds.sh" "$ENVIRONMENT"
-}
-
-# ============================================================
-# PHASE 3: Secrets Manager (depends on RDS)
-# ============================================================
-deploy_secrets() {
-  log_phase "3 - SECRETS MANAGER (depends on RDS)"
-
-  # Verify RDS stack is ready
-  local rds_status
-  rds_status=$(stack_status "${ENVIRONMENT}-lynia-rds")
-  if [[ "$rds_status" != "CREATE_COMPLETE" && "$rds_status" != "UPDATE_COMPLETE" ]]; then
-    log_error "RDS stack not ready (status: $rds_status). Deploy RDS first (Phase 2)."
-    return 1
-  fi
-  log_ok "RDS stack verified: $rds_status"
-
-  log_warn "Secrets Manager requires manual parameter input for sensitive values."
-  log_info "Run the following command with your actual secrets:"
-  echo ""
-  echo "  aws cloudformation deploy \\"
-  echo "    --template-file ${TEMPLATE_DIR}/secrets-manager.yaml \\"
-  echo "    --stack-name ${ENVIRONMENT}-lynia-secrets \\"
-  echo "    --region ${REGION} \\"
-  echo "    --parameter-overrides \\"
-  echo "      Environment=${ENVIRONMENT} \\"
-  echo "      SupabaseUrl=<your-supabase-url> \\"
-  echo "      SupabaseServiceRoleKey=<your-service-role-key> \\"
-  echo "      SupabaseAnonKey=<your-anon-key> \\"
-  echo "      WhatsAppApiToken=<your-whatsapp-token> \\"
-  echo "      SmileIdentityApiKey=<your-smile-api-key> \\"
-  echo "      SmileIdentityPartnerId=<your-partner-id>"
-  echo ""
-  log_info "After deploying Secrets Manager, proceed to SAM deploy for Lambda functions."
-}
-
-# ============================================================
-# Summary
-# ============================================================
-print_summary() {
+# =================================================================
+# Status: show all P5 stack statuses
+# =================================================================
+print_status() {
   echo ""
   echo "============================================"
-  echo "  DEPLOYMENT SUMMARY"
+  echo "  P5-DEPLOY STACK STATUS ($ENVIRONMENT)"
   echo "============================================"
   echo ""
 
-  local stacks=(
-    "${ENVIRONMENT}-lynia-vpc"
-    "${ENVIRONMENT}-lynia-deployment-buckets"
-    "${ENVIRONMENT}-lynia-iam"
-    "${ENVIRONMENT}-lynia-sqs"
-    "${ENVIRONMENT}-lynia-storage"
-    "${ENVIRONMENT}-lynia-xray"
-    "${ENVIRONMENT}-lynia-cognito"
-    "${ENVIRONMENT}-lynia-rds"
-    "${ENVIRONMENT}-lynia-secrets"
+  local -A task_stacks=(
+    ["T001 Prerequisites"]="${ENVIRONMENT}-lynia-deployment-buckets"
+    ["T002 VPC"]="${ENVIRONMENT}-lynia-vpc"
+    ["T003 Cognito"]="${ENVIRONMENT}-lynia-cognito"
+    ["T004 RDS"]="${ENVIRONMENT}-lynia-rds"
+    ["T005 Storage"]="${ENVIRONMENT}-lynia-storage"
+    ["T006 SQS"]="${ENVIRONMENT}-lynia-sqs"
+    ["T007 Secrets"]="${ENVIRONMENT}-lynia-secrets"
+    ["T008 IAM"]="${ENVIRONMENT}-lynia-iam"
+    ["T012 X-Ray"]="${ENVIRONMENT}-lynia-xray"
   )
 
-  printf "  %-40s %s\n" "STACK" "STATUS"
-  printf "  %-40s %s\n" "----------------------------------------" "-------------------"
-  for stack in "${stacks[@]}"; do
+  # Print in order
+  local ordered_tasks=(
+    "T001 Prerequisites"
+    "T002 VPC"
+    "T003 Cognito"
+    "T004 RDS"
+    "T005 Storage"
+    "T006 SQS"
+    "T007 Secrets"
+    "T008 IAM"
+    "T012 X-Ray"
+  )
+
+  printf "  %-25s %-40s %s\n" "TASK" "STACK" "STATUS"
+  printf "  %-25s %-40s %s\n" "-------------------------" "----------------------------------------" "-------------------"
+
+  for task in "${ordered_tasks[@]}"; do
+    local stack="${task_stacks[$task]}"
     local status
     status=$(stack_status "$stack")
     if [[ "$status" == "CREATE_COMPLETE" || "$status" == "UPDATE_COMPLETE" ]]; then
-      printf "  %-40s ${GREEN}%s${NC}\n" "$stack" "$status"
+      printf "  %-25s %-40s ${GREEN}%s${NC}\n" "$task" "$stack" "$status"
     elif [[ "$status" == "NOT_FOUND" ]]; then
-      printf "  %-40s ${YELLOW}%s${NC}\n" "$stack" "NOT DEPLOYED"
+      printf "  %-25s %-40s ${YELLOW}%s${NC}\n" "$task" "$stack" "NOT DEPLOYED"
     else
-      printf "  %-40s ${RED}%s${NC}\n" "$stack" "$status"
+      printf "  %-25s %-40s ${RED}%s${NC}\n" "$task" "$stack" "$status"
     fi
   done
   echo ""
 }
 
-# ============================================================
-# Main execution
-# ============================================================
+# =================================================================
+# Main
+# =================================================================
 
-log_info "Environment: $ENVIRONMENT"
-log_info "Phase: $PHASE"
-log_info "Region: $REGION"
+log_info "P5-DEPLOY Infrastructure Deployment"
+log_info "Environment: $ENVIRONMENT | Region: $REGION | Task: $TASK"
 
-case "$PHASE" in
-  bootstrap)
-    deploy_bootstrap
-    ;;
-  layer1)
-    deploy_layer1
-    ;;
-  rds)
-    deploy_rds
-    ;;
-  secrets)
-    deploy_secrets
-    ;;
+case "$TASK" in
+  t005)   deploy_t005 ;;
+  t006)   deploy_t006 ;;
+  t007)   deploy_t007 ;;
+  t008)   deploy_t008 ;;
+  layer1) deploy_layer1 ;;
   all)
-    deploy_bootstrap
     deploy_layer1
-    deploy_rds
-    deploy_secrets
+    deploy_t007
     ;;
-  status)
-    print_summary
-    ;;
+  status) print_status; exit 0 ;;
   *)
-    log_error "Unknown phase '$PHASE'. Use: bootstrap, layer1, rds, secrets, all, or status"
+    log_error "Unknown task '$TASK'"
+    echo ""
+    echo "Usage: $0 [environment] [task]"
+    echo ""
+    echo "Tasks:"
+    echo "  t005    - Deploy S3 Storage Buckets"
+    echo "  t006    - Deploy SQS Queues"
+    echo "  t007    - Deploy Secrets Manager (needs DB_PASSWORD env var)"
+    echo "  t008    - Deploy IAM Roles"
+    echo "  layer1  - Deploy T005+T006+T008 in parallel"
+    echo "  all     - Deploy layer1 then T007"
+    echo "  status  - Show all stack statuses"
     exit 1
     ;;
 esac
 
-print_summary
+print_status
 
-log_info "Next steps after all stacks are deployed:"
-log_info "  1. sam build --config-env production --cached --parallel"
-log_info "  2. sam deploy --config-env production"
-log_info "  3. Deploy DNS/SSL, WAF, and frontend stacks"
+echo "Next steps:"
+echo "  T009 - Run database migrations:  bash database/deploy-to-rds.sh"
+echo "  T010 - SAM deploy:               sam build && sam deploy --config-env production"
+echo "  T011 - API Gateway throttling"
+echo "  T012 - WAF + CloudWatch monitoring"
+echo "  T013 - DNS/SSL + custom domains"
