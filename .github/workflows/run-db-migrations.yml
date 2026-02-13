@@ -1,0 +1,264 @@
+name: Run Database Migrations
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+concurrency:
+  group: db-migrations-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  run-migrations:
+    name: Run DB Migrations (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get RDS endpoint and security group from T004
+        id: rds
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          RDS_STACK="${ENV}-lynia-rds"
+          VPC_STACK="${ENV}-lynia-vpc"
+
+          echo "=== Fetching RDS details from ${RDS_STACK} ==="
+          RDS_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${RDS_STACK}" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          if [ "${RDS_STATUS}" != "CREATE_COMPLETE" ] && [ "${RDS_STATUS}" != "UPDATE_COMPLETE" ]; then
+            echo "::error::RDS stack ${RDS_STACK} not ready (status: ${RDS_STATUS})"
+            exit 1
+          fi
+
+          DB_HOST=$(aws cloudformation describe-stacks --stack-name "${RDS_STACK}" \
+            --query "Stacks[0].Outputs[?OutputKey=='DatabaseEndpoint'].OutputValue" --output text)
+          DB_PORT=$(aws cloudformation describe-stacks --stack-name "${RDS_STACK}" \
+            --query "Stacks[0].Outputs[?OutputKey=='DatabasePort'].OutputValue" --output text 2>/dev/null || echo "5432")
+          RDS_SG=$(aws cloudformation describe-stacks --stack-name "${RDS_STACK}" \
+            --query "Stacks[0].Outputs[?OutputKey=='DatabaseSecurityGroupId'].OutputValue" --output text 2>/dev/null || echo "")
+
+          echo "DB_HOST=${DB_HOST}"
+          echo "DB_PORT=${DB_PORT:-5432}"
+
+          echo "db_host=${DB_HOST}" >> $GITHUB_OUTPUT
+          echo "db_port=${DB_PORT:-5432}" >> $GITHUB_OUTPUT
+          echo "rds_sg=${RDS_SG}" >> $GITHUB_OUTPUT
+
+      - name: Open temporary network access
+        id: network
+        run: |
+          RDS_SG="${{ steps.rds.outputs.rds_sg }}"
+          DB_PORT="${{ steps.rds.outputs.db_port }}"
+
+          if [ -z "${RDS_SG}" ]; then
+            echo "No security group — skipping"
+            echo "sg_rule_id=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # GitHub Actions runner IP
+          MY_IP=$(curl -s https://checkip.amazonaws.com)
+          echo "Runner IP: ${MY_IP}"
+
+          SG_RULE_ID=$(aws ec2 authorize-security-group-ingress \
+            --group-id "${RDS_SG}" \
+            --protocol tcp \
+            --port "${DB_PORT}" \
+            --cidr "${MY_IP}/32" \
+            --tag-specifications "ResourceType=security-group-rule,Tags=[{Key=Purpose,Value=github-actions-migration},{Key=CreatedBy,Value=run-db-migrations-workflow}]" \
+            --query "SecurityGroupRules[0].SecurityGroupRuleId" \
+            --output text 2>/dev/null || echo "")
+
+          echo "sg_rule_id=${SG_RULE_ID}" >> $GITHUB_OUTPUT
+          echo "rds_sg=${RDS_SG}" >> $GITHUB_OUTPUT
+          echo "Security group rule: ${SG_RULE_ID}"
+
+      - name: Test database connectivity
+        run: |
+          DB_HOST="${{ steps.rds.outputs.db_host }}"
+          DB_PORT="${{ steps.rds.outputs.db_port }}"
+
+          PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
+            -c "SELECT version();"
+
+      - name: Run migration pipeline
+        id: migrate
+        run: |
+          DB_HOST="${{ steps.rds.outputs.db_host }}"
+          DB_PORT="${{ steps.rds.outputs.db_port }}"
+          CONN="postgresql://lynia_admin:${{ secrets.DB_PASSWORD }}@${DB_HOST}:${DB_PORT}/lynia"
+
+          chmod +x database/deploy-to-rds.sh
+          bash database/deploy-to-rds.sh "${CONN}"
+
+      - name: Verify database state
+        id: verify
+        run: |
+          DB_HOST="${{ steps.rds.outputs.db_host }}"
+          DB_PORT="${{ steps.rds.outputs.db_port }}"
+          CONN="postgresql://lynia_admin:${{ secrets.DB_PASSWORD }}@${DB_HOST}:${DB_PORT}/lynia"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying Database State ==="
+
+          # Table count
+          TABLE_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
+            -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';" | tr -d ' ')
+          if [ "${TABLE_COUNT}" -ge 35 ]; then
+            echo "PASS: Table count: ${TABLE_COUNT} (>= 35)"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Table count: ${TABLE_COUNT} (expected >= 35)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Critical tables
+          for TABLE in customers loans loan_applications payments devices distributors; do
+            EXISTS=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+              "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
+              -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename='${TABLE}';" | tr -d ' ')
+            if [ "${EXISTS}" -ge 1 ]; then
+              echo "PASS: ${TABLE}"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: ${TABLE} missing"
+              FAIL=$((FAIL + 1))
+            fi
+          done
+
+          # Index count
+          INDEX_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
+            -t -c "SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname LIKE 'idx_%';" | tr -d ' ')
+          if [ "${INDEX_COUNT}" -ge 22 ]; then
+            echo "PASS: Index count: ${INDEX_COUNT} (>= 22)"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Index count: ${INDEX_COUNT} (expected >= 22)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # Auth schema removed
+          AUTH_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
+            -t -c "SELECT count(*) FROM information_schema.schemata WHERE schema_name='auth';" | tr -d ' ')
+          if [ "${AUTH_COUNT}" -eq 0 ]; then
+            echo "PASS: Auth schema removed"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Auth schema still exists"
+            FAIL=$((FAIL + 1))
+          fi
+
+          # RLS disabled
+          RLS_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
+            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
+            -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND rowsecurity=true;" | tr -d ' ')
+          if [ "${RLS_COUNT}" -eq 0 ]; then
+            echo "PASS: RLS disabled on all tables"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: RLS still enabled on ${RLS_COUNT} tables"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "verify_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "verify_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Revoke temporary network access
+        if: always()
+        run: |
+          SG_RULE_ID="${{ steps.network.outputs.sg_rule_id }}"
+          RDS_SG="${{ steps.network.outputs.rds_sg }}"
+
+          if [ -n "${SG_RULE_ID}" ] && [ -n "${RDS_SG}" ]; then
+            echo "Revoking temporary security group rule: ${SG_RULE_ID}"
+            aws ec2 revoke-security-group-ingress \
+              --group-id "${RDS_SG}" \
+              --security-group-rule-ids "${SG_RULE_ID}" 2>/dev/null && \
+              echo "Temporary access revoked" || \
+              echo "::warning::Failed to revoke rule ${SG_RULE_ID} — manual cleanup needed"
+          else
+            echo "No temporary rule to revoke"
+          fi
+
+      - name: Generate summary
+        if: always()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          MIGRATE_OUTCOME="${{ steps.migrate.outcome }}"
+          VERIFY_PASS="${{ steps.verify.outputs.verify_pass || 0 }}"
+          VERIFY_FAIL="${{ steps.verify.outputs.verify_fail || 0 }}"
+
+          TOTAL_PASS=$((VERIFY_PASS))
+          TOTAL_FAIL=$((VERIFY_FAIL))
+
+          if [ "${MIGRATE_OUTCOME}" = "success" ]; then
+            MIGRATE_CHECK="PASS"
+            TOTAL_PASS=$((TOTAL_PASS + 1))
+          else
+            MIGRATE_CHECK="FAIL"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          fi
+
+          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # Database Migrations — ${ENV}
+
+          ## Migration Pipeline
+          | Phase | Script | Status |
+          |-------|--------|--------|
+          | Pre-migration | 000_pre_migration.sql | ${MIGRATE_CHECK} |
+          | Standard (001-017) | 17 migration files | ${MIGRATE_CHECK} |
+          | Post-migration | 018_remove_rls_for_aws.sql | ${MIGRATE_CHECK} |
+
+          ## Verification: ${TOTAL_PASS}/${TOTAL} passed
+          | Check | Result |
+          |-------|--------|
+          | Migration execution | ${MIGRATE_CHECK} |
+          | Verification (pass: ${VERIFY_PASS}, fail: ${VERIFY_FAIL}) | $([ "${VERIFY_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+
+          **Total: ${TOTAL_PASS} passed, ${TOTAL_FAIL} failed out of ${TOTAL} checks**
+
+          ## Next Steps
+          - Database is ready for **P5-DEPLOY-T010** (SAM Lambda Deploy)
+          EOF
+
+          if [ "${TOTAL_FAIL}" -gt 0 ]; then
+            echo "::error::${TOTAL_FAIL} checks failed"
+            exit 1
+          fi
+
+          echo "All ${TOTAL_PASS} checks passed!"
