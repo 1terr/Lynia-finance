@@ -13,8 +13,8 @@ Lynia Finance provides alternative financial infrastructure for Zimbabwe's under
 Financial systems are high-value targets. Security is not optional.
 
 **Authentication & Authorization**
-- All API endpoints MUST validate JWT tokens via Supabase Auth
-- Implement Row Level Security (RLS) on ALL database tables
+- All API endpoints MUST validate JWT tokens via Amazon Cognito
+- Implement application-layer authorization middleware on ALL endpoints
 - Never trust client-side data - validate everything server-side
 - Use principle of least privilege for all service accounts
 - API keys and secrets MUST use AWS Secrets Manager or environment variables - NEVER hardcode
@@ -59,13 +59,16 @@ Our users trust us with their financial and personal data.
 - Third-party data sharing (Smile Identity, payment providers) requires explicit consent
 
 **Database Privacy Rules**
-```sql
--- Example: RLS policy for customer data
-CREATE POLICY "Users can only view own data" ON customers
-  FOR SELECT USING (auth.uid() = user_id);
+```typescript
+// Authorization middleware (replaces Supabase RLS)
+import { getAuthContext, requireRole } from '../shared/middleware/authorization';
 
--- Mask sensitive data in logs
--- NEVER log: full_national_id, full_phone, biometric_data
+// Verify user can only access own data
+const authContext = getAuthContext(event);
+requireRole(authContext, ['admin', 'manager']);
+
+// Mask sensitive data in logs
+// NEVER log: full_national_id, full_phone, biometric_data
 ```
 
 **Privacy Patterns**
@@ -102,7 +105,7 @@ mutate(); // Revalidate immediately
 
 **Data Visualization**
 - Use consistent chart library (Recharts or Chart.js)
-- Real-time updates via Supabase subscriptions for critical metrics
+- Real-time updates via React Query polling / WebSocket API for critical metrics
 - Responsive design - dashboards must work on tablets (field agents use tablets)
 - Dark mode support (reduces eye strain for staff working long hours)
 
@@ -126,14 +129,14 @@ Design for 10x growth from day one.
 ```yaml
 # Lambda best practices
 - Cold start optimization: Keep bundles < 5MB
-- Connection pooling: Use RDS Proxy or Supabase connection pooling
+- Connection pooling: Use RDS connection pooling or RDS Proxy
 - Async processing: Use SQS for non-critical operations
 - Idempotency: All payment operations must be idempotent
 ```
 
 **Database Scaling**
 - Index all foreign keys and frequently queried columns
-- Use database connection pooling (Supabase PgBouncer)
+- Use database connection pooling (RDS built-in or RDS Proxy)
 - Implement read replicas when query load increases
 - Partition large tables (transactions, audit_logs) by date
 
@@ -858,7 +861,7 @@ Lynia-finance/
 ├── frontend/
 │   ├── admin-portal/        # Staff dashboard (Next.js 14)
 │   └── distributor-dashboard/# Agent portal
-├── infrastructure/          # AWS SAM, Supabase schemas
+├── infrastructure/          # AWS CloudFormation, SAM templates
 ├── database/               # Migrations and seeds
 ├── tests/                  # Test suites
 └── docs/                   # Documentation
@@ -877,21 +880,31 @@ pnpm test                       # Run all tests
 pnpm test:coverage              # Run with coverage report
 pnpm test:integration           # Integration tests only
 
-# Deployment
-sam build                       # Build Lambda functions
+# AWS Lambda (SAM)
+sam build --cached --parallel    # Build Lambda functions
 sam deploy --config-env dev     # Deploy to development
 sam deploy --config-env staging # Deploy to staging
+sam deploy --config-env production # Deploy to production
+sam local start-api --port 3000 # Run API locally
 
-# Database
-pnpm db:migrate                 # Run migrations
+# Database (RDS)
+bash database/deploy-to-rds.sh "$RDS_CONNECTION_STRING"  # Run migrations against RDS
+pnpm db:migrate                 # Run migrations (local)
 pnpm db:seed                    # Seed test data
+
+# Infrastructure (CloudFormation)
+bash infrastructure/aws/scripts/deploy-infrastructure.sh  # Deploy all stacks
 ```
 
 ## External Services
 
 | Service | Purpose | Documentation |
 |---------|---------|---------------|
-| Supabase | Database & Auth | `docs/deployment/SUPABASE-SETUP-GUIDE.md` |
+| AWS RDS PostgreSQL 16 | Database | `docs/deployment/AWS-SETUP-GUIDE.md` |
+| Amazon Cognito | Authentication | `docs/deployment/AWS-SETUP-GUIDE.md` |
+| S3 | File storage (KYC docs, ML models) | `infrastructure/aws/storage-buckets.yaml` |
+| SQS | Async message queues | `infrastructure/aws/sqs-queues.yaml` |
+| CloudFront + WAF | CDN + Security | `docs/infrastructure/PRODUCTION-NETWORK-ARCHITECTURE.md` |
 | WhatsApp Cloud API | Customer messaging | `docs/guides/WHATSAPP-CLOUD-API-SETUP.md` |
 | Smile Identity | KYC verification | `services/kyc-service/README.md` |
 | EcoCash/OneMoney | Mobile payments | `services/payment-service/README.md` |

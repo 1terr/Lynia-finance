@@ -95,12 +95,12 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
     ┌───────────────────────────┐              ┌───────────────────────────┐
     │ External APIs             │              │ AWS Services              │
     │                           │              │                           │
-    │ - Supabase (PostgreSQL)   │              │ - Secrets Manager         │
-    │ - WhatsApp Cloud API      │              │ - CloudWatch Logs         │
-    │ - Smile Identity (KYC)    │              │ - SQS Queues              │
-    │ - EcoCash API             │              │ - X-Ray Tracing           │
-    │ - OneMoney API            │              │ - CodeDeploy              │
-    │ - Trustonic API           │              │                           │
+    │ - WhatsApp Cloud API      │              │ - Secrets Manager         │
+    │ - Smile Identity (KYC)    │              │ - CloudWatch Logs         │
+    │ - EcoCash API             │              │ - SQS Queues              │
+    │ - OneMoney API            │              │ - X-Ray Tracing           │
+    │ - Trustonic API           │              │ - CodeDeploy              │
+    │                           │              │ - RDS PostgreSQL (VPC)    │
     └───────────────────────────┘              └───────────────────────────┘
 ```
 
@@ -230,7 +230,7 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
 
 | Secret Path | Service | Contents |
 |-------------|---------|----------|
-| production/lynia/supabase | All | URL, Service Role Key |
+| production/lynia/database | All | Host, Port, Database, Username, Password |
 | production/lynia/whatsapp | WhatsApp | Phone Number ID, Access Token, Webhook Token |
 | production/lynia/smile-identity | KYC | Partner ID, API Key |
 | production/lynia/ecocash | Payment | Merchant ID, API Key |
@@ -241,14 +241,15 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
 - Least-privilege IAM: Each service can only read its own secrets
 - Accessed via VPC Endpoint (no NAT traversal)
 
-### 10. Database (Supabase)
+### 10. Database (RDS PostgreSQL 16)
 
-- **Provider**: Supabase (managed PostgreSQL)
-- **Connection**: PgBouncer transaction-mode pooling on port 6543
-- **Pool Size**: 50 connections (shared across all Lambda functions)
+- **Provider**: Amazon RDS PostgreSQL 16 (private VPC subnets)
+- **Connection**: Direct `pg` driver via VPC (no PgBouncer needed)
 - **Per-Lambda Pool**: min=1, max=5 (payment: max=10)
 - **SSL**: Required
-- **RLS**: Enabled on all tables
+- **Authorization**: Application-layer middleware (replaces Supabase RLS)
+- **Encryption**: RDS encryption at rest (KMS-managed)
+- **Backups**: Automated daily snapshots, 7-day retention
 
 ### 11. Monitoring & Alerting
 
@@ -285,7 +286,7 @@ Layer 2: AWS WAF     → Rate limiting, SQLi/XSS protection, geo-blocking
 Layer 3: API Gateway → Authentication, throttling, request validation
 Layer 4: VPC         → Network isolation, private subnets, security groups
 Layer 5: Lambda      → IAM roles, least-privilege, env-specific secrets
-Layer 6: Database    → RLS policies, encrypted PII, connection pooling
+Layer 6: Database    → Application-layer authorization, encrypted PII, connection pooling
 ```
 
 ### Data Flow
@@ -294,9 +295,9 @@ Layer 6: Database    → RLS policies, encrypted PII, connection pooling
 Customer (WhatsApp) → WhatsApp Cloud API → API Gateway → WhatsApp Lambda
                                                              │
                                                              ▼
-                                                         Supabase DB
+                                                       RDS PostgreSQL
                                                              │
-Admin (Browser) → CloudFront → S3 (static) → API Gateway → Lambda → Supabase
+Admin (Browser) → CloudFront → S3 (static) → API Gateway → Lambda → RDS PostgreSQL
 ```
 
 ### Encryption
@@ -305,7 +306,7 @@ Admin (Browser) → CloudFront → S3 (static) → API Gateway → Lambda → Su
 |-------|--------|
 | In transit | TLS 1.2+ (all connections) |
 | At rest (S3) | AES-256 server-side encryption |
-| At rest (DB) | Supabase managed encryption |
+| At rest (DB) | RDS encryption (KMS-managed) |
 | Secrets | AWS Secrets Manager (KMS-encrypted) |
 | PII fields | Application-level encryption (bcrypt for passwords) |
 
