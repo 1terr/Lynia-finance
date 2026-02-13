@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { WHATSAPP_URL, CONTACT_EMAIL } from '@/lib/constants';
+import { submitForm } from '@/lib/api';
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -25,14 +26,9 @@ function ContactForm() {
     };
 
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setErrorMsg(json.error || 'Something went wrong. Please try again.');
+      const result = await submitForm({ type: 'contact', ...data });
+      if (!result.success) {
+        setErrorMsg(result.error || 'Something went wrong. Please try again.');
         setStatus('error');
         return;
       }
@@ -135,14 +131,16 @@ function PartnershipForm() {
     };
 
     try {
-      const res = await fetch('/api/partnership', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+      const result = await submitForm({
+        type: 'partnership',
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        partner_type: data.partnerType,
+        message: data.message,
       });
-      const json = await res.json();
-      if (!res.ok) {
-        setErrorMsg(json.error || 'Something went wrong. Please try again.');
+      if (!result.success) {
+        setErrorMsg(result.error || 'Something went wrong. Please try again.');
         setStatus('error');
         return;
       }

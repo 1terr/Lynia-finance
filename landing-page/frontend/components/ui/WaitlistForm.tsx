@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { submitForm } from '@/lib/api';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -16,14 +17,9 @@ export function WaitlistForm() {
     const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value;
 
     try {
-      const res = await fetch('/api/waitlist', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setErrorMsg(json.error || 'Something went wrong. Please try again.');
+      const result = await submitForm({ type: 'waitlist', phone });
+      if (!result.success) {
+        setErrorMsg(result.error || 'Something went wrong. Please try again.');
         setStatus('error');
         return;
       }

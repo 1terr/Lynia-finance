@@ -1,3 +1,5 @@
+// TODO(launch): Replace static editorial content with real articles or connect Sanity CMS
+
 export type Category = 'Company' | 'Market' | 'Products' | 'Engineering';
 
 export interface Author {

@@ -142,7 +142,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Team placeholder */}
+      {/* TODO(launch): Replace with real team member names, roles, and photos */}
       <section className="bg-primary-light py-16 lg:py-20">
         <div className="container-main">
           <div className="text-center max-w-[600px] mx-auto">
