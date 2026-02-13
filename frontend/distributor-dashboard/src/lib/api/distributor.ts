@@ -12,17 +12,12 @@ import {
   AuthenticationDetails,
   userPool,
   getSession,
+  isCognitoConfigured,
 } from '@/lib/auth/cognito';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+export { isCognitoConfigured };
 
-/** Check whether Cognito is configured with the required env vars. */
-export function isCognitoConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID &&
-      process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID,
-  );
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 
 /** Get the current session's JWT token for API calls. */
 async function getAuthToken(): Promise<string | null> {
@@ -168,10 +163,10 @@ export async function fetchCommissions(): Promise<CommissionEntry[]> {
 
 export async function loginDistributor(email: string, password: string): Promise<Distributor> {
   if (!isCognitoConfigured()) {
-    // Mock fallback for local development without Cognito
+    // Mock fallback for development / demo mode without Cognito
     await delay(800);
-    if (email === 'kudzai@distributor.co.zw') {
-      return { ...mockDistributor };
+    if (email === 'kudzai@distributor.co.zw' && password.length >= 4) {
+      return { ...mockDistributor, email };
     }
     throw new Error('Invalid credentials');
   }
@@ -179,7 +174,7 @@ export async function loginDistributor(email: string, password: string): Promise
   return new Promise<Distributor>((resolve, reject) => {
     const cognitoUser = new CognitoUser({
       Username: email,
-      Pool: userPool,
+      Pool: userPool!,
     });
 
     const authDetails = new AuthenticationDetails({

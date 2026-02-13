@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getSession, signOut as cognitoSignOut } from '@/lib/auth/cognito';
+import { getSession, signOut as cognitoSignOut, isCognitoConfigured } from '@/lib/auth/cognito';
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { Distributor } from '@/types/distributor';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const DEMO_SESSION_KEY = 'lynia-demo-distributor';
 
 /** Fetch distributor profile for the authenticated user via backend API. */
 async function fetchDistributorProfile(
@@ -37,6 +38,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function loadUser() {
+      // Demo mode: restore session from sessionStorage
+      if (!isCognitoConfigured()) {
+        try {
+          const stored = sessionStorage.getItem(DEMO_SESSION_KEY);
+          if (stored) {
+            setDistributor(JSON.parse(stored));
+          }
+        } catch { /* private browsing or corrupt data */ }
+        setLoading(false);
+        return;
+      }
+
       try {
         const session = await getSession();
 
