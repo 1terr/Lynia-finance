@@ -1,38 +1,24 @@
 'use client';
 
-/** Returns true when Cognito User Pool ID and Client ID are available. */
-function isCognitoConfigured(): boolean {
-  const poolId = process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || '';
-  const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || '';
-  return Boolean(poolId && clientId);
-}
+import { isCognitoConfigured } from '@/lib/auth/cognito';
 
 /**
- * Blocks child rendering when Cognito environment variables are missing.
- *
- * Placed in the root layout so that no downstream component ever attempts
- * authentication without proper configuration.  During SSR / static export
- * this always renders children (config isn't needed until the browser hydrates).
+ * When Cognito is not properly configured the app runs in demo mode.
+ * This guard renders a small banner at the top so users know they are
+ * interacting with mock data, but it never blocks the UI.
  */
 export function ConfigGuard({ children }: { children: React.ReactNode }) {
-  if (typeof window !== 'undefined' && !isCognitoConfigured()) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="text-center max-w-md p-8">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-orange-100 text-orange-600 font-bold text-xl dark:bg-orange-950 dark:text-orange-400">
-            !
-          </div>
-          <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-            Service Unavailable
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            The admin portal is not properly configured. Please contact your
-            system administrator to set the required environment variables.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const showBanner =
+    typeof window !== 'undefined' && !isCognitoConfigured();
 
-  return <>{children}</>;
+  return (
+    <>
+      {showBanner && (
+        <div className="bg-amber-500 text-white text-center text-xs py-1 px-2 font-medium">
+          Demo Mode — Cognito not configured. Using sample data.
+        </div>
+      )}
+      {children}
+    </>
+  );
 }

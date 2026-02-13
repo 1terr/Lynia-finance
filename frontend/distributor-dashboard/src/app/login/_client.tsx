@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginDistributor } from '@/lib/api/distributor';
+import { loginDistributor, isCognitoConfigured } from '@/lib/api/distributor';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Smartphone, Eye, EyeOff } from 'lucide-react';
@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const isDemoMode = typeof window !== 'undefined' && !isCognitoConfigured();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +24,8 @@ export default function LoginPage() {
     try {
       const distributor = await loginDistributor(email, password);
       setDistributor(distributor);
+      // Persist demo session so it survives the hard redirect page reload
+      try { sessionStorage.setItem('lynia-demo-distributor', JSON.stringify(distributor)); } catch { /* private browsing */ }
       // Use hard redirect so the AuthProvider re-initialises with fresh session
       window.location.href = '/';
     } catch {
@@ -89,9 +92,19 @@ export default function LoginPage() {
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
 
-          <p className="text-xs text-center text-muted-foreground">
-            Sign in with your distributor account credentials.
-          </p>
+          {isDemoMode && (
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
+              <p className="font-medium mb-1">Demo credentials</p>
+              <p>Email: kudzai@distributor.co.zw</p>
+              <p>Password: any 4+ characters</p>
+            </div>
+          )}
+
+          {!isDemoMode && (
+            <p className="text-xs text-center text-muted-foreground">
+              Sign in with your distributor account credentials.
+            </p>
+          )}
         </form>
       </div>
     </div>

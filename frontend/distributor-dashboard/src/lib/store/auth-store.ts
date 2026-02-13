@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { signOut as cognitoSignOut } from '@/lib/auth/cognito';
 import type { Distributor } from '@/types/distributor';
 
 interface AuthState {
@@ -16,5 +17,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   setDistributor: (distributor) => set({ distributor, isAuthenticated: !!distributor }),
   setLoading: (isLoading) => set({ isLoading }),
-  logout: () => set({ distributor: null, isAuthenticated: false }),
+  logout: () => {
+    cognitoSignOut();
+    try { sessionStorage.removeItem('lynia-demo-distributor'); } catch { /* private browsing */ }
+    set({ distributor: null, isAuthenticated: false });
+  },
 }));

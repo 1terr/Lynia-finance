@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { isCognitoConfigured } from '@/lib/auth/cognito';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const signIn = useAuthStore((s) => s.signIn);
+  const isDemoMode = typeof window !== 'undefined' && !isCognitoConfigured();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -80,6 +82,14 @@ export default function LoginPage() {
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </Button>
+
+          {isDemoMode && (
+            <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 text-xs text-blue-700 dark:text-blue-300">
+              <p className="font-medium mb-1">Demo credentials</p>
+              <p>Email: admin@lynia.co.zw</p>
+              <p>Password: any 4+ characters</p>
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>

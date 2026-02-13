@@ -7,6 +7,7 @@ import {
   AuthenticationDetails,
   getSession,
   signOut as cognitoSignOut,
+  isCognitoConfigured,
 } from '@/lib/auth/cognito';
 import type { CognitoUserSession } from '@/lib/auth/cognito';
 
@@ -48,6 +49,29 @@ function buildAdminUserFromSession(session: CognitoUserSession): AdminUser | nul
   };
 }
 
+// ── Demo mode helpers ──
+
+const DEMO_ADMIN: AdminUser = {
+  id: 'demo-admin-001',
+  email: 'admin@lynia.co.zw',
+  first_name: 'Demo',
+  last_name: 'Admin',
+  role: 'super_admin',
+  is_active: true,
+  department: 'Operations',
+  last_login_at: null,
+  login_count: 1,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+const DEMO_CREDENTIALS: Record<string, AdminUser> = {
+  'admin@lynia.co.zw': DEMO_ADMIN,
+  'demo@lynia.co.zw': DEMO_ADMIN,
+};
+
+const DEMO_SESSION_KEY = 'lynia-demo-admin';
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: true,
@@ -69,9 +93,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email: string, password: string) => {
+    // ── Demo mode: accept known demo credentials ──
+    if (!isCognitoConfigured()) {
+      const demoUser = DEMO_CREDENTIALS[email.toLowerCase()];
+      if (demoUser && password.length >= 4) {
+        const user = { ...demoUser, email };
+        document.cookie = 'lynia-auth-active=1; path=/; SameSite=Lax';
+        try { sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user)); } catch { /* private browsing */ }
+        set({ user });
+        return {};
+      }
+      return { error: 'Invalid email or password' };
+    }
+
+    // ── Cognito authentication ──
     const cognitoUser = new CognitoUser({
       Username: email,
-      Pool: userPool,
+      Pool: userPool!,
     });
 
     const authDetails = new AuthenticationDetails({
@@ -104,10 +142,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOutUser: () => {
     cognitoSignOut();
     document.cookie = 'lynia-auth-active=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    try { sessionStorage.removeItem(DEMO_SESSION_KEY); } catch { /* private browsing */ }
     set({ user: null });
   },
 
   initialize: async () => {
+    // Demo mode: restore session from sessionStorage
+    if (!isCognitoConfigured()) {
+      try {
+        const stored = sessionStorage.getItem(DEMO_SESSION_KEY);
+        if (stored) {
+          set({ user: JSON.parse(stored), isLoading: false });
+          return;
+        }
+      } catch { /* private browsing or corrupt data */ }
+      set({ isLoading: false });
+      return;
+    }
+
     try {
       const session = await getSession();
       if (session && session.isValid()) {
