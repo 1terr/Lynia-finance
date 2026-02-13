@@ -1,0 +1,420 @@
+name: Deploy SQS Queues
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+concurrency:
+  group: deploy-sqs-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy-sqs:
+    name: Deploy SQS (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          echo "Validating infrastructure/aws/sqs-queues.yaml..."
+          aws cloudformation validate-template \
+            --template-body file://infrastructure/aws/sqs-queues.yaml
+          echo "Template validation passed"
+
+      - name: Clean up failed stack if needed
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-sqs"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ] || [ "${STACK_STATUS}" = "DELETE_FAILED" ]; then
+            echo "Stack in ${STACK_STATUS} state — deleting before re-deploy..."
+            aws cloudformation delete-stack --stack-name "${STACK_NAME}"
+            aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
+            echo "Stack deleted successfully"
+          elif [ "${STACK_STATUS}" = "UPDATE_ROLLBACK_COMPLETE" ]; then
+            echo "Stack in UPDATE_ROLLBACK_COMPLETE state (previous update failed and rolled back)"
+            echo "Will attempt a new update from this state..."
+          elif [ "${STACK_STATUS}" = "DOES_NOT_EXIST" ]; then
+            echo "Stack does not exist yet — will create"
+          else
+            echo "Stack exists in state: ${STACK_STATUS}"
+          fi
+
+      - name: Deploy SQS stack
+        id: deploy
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-sqs"
+          echo "Deploying stack: ${STACK_NAME}"
+
+          aws cloudformation deploy \
+            --template-file infrastructure/aws/sqs-queues.yaml \
+            --stack-name "${STACK_NAME}" \
+            --parameter-overrides "Environment=${ENV}" \
+            --tags "Project=lynia-finance" "Environment=${ENV}" "Service=messaging" "ManagedBy=cloudformation" \
+            --no-fail-on-empty-changeset \
+            --region ${{ env.AWS_REGION }}
+
+          echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Show stack events on failure
+        if: failure()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-sqs"
+          echo "=== Stack Events (most recent first) ==="
+          aws cloudformation describe-stack-events \
+            --stack-name "${STACK_NAME}" \
+            --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+            --output table 2>/dev/null || echo "Could not fetch stack events"
+
+      - name: Extract stack outputs
+        id: outputs
+        run: |
+          STACK_NAME="${{ steps.deploy.outputs.stack_name }}"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text)
+          echo "Stack status: ${STACK_STATUS}"
+          echo "stack_status=${STACK_STATUS}" >> $GITHUB_OUTPUT
+
+          # Extract all queue URLs and ARNs
+          for QUEUE in Notification PaymentCallback KYCProcessing DeviceLock CreditScoring; do
+            URL=$(aws cloudformation describe-stacks \
+              --stack-name "${STACK_NAME}" \
+              --query "Stacks[0].Outputs[?OutputKey=='${QUEUE}QueueUrl'].OutputValue" --output text)
+            ARN=$(aws cloudformation describe-stacks \
+              --stack-name "${STACK_NAME}" \
+              --query "Stacks[0].Outputs[?OutputKey=='${QUEUE}QueueArn'].OutputValue" --output text)
+
+            # Convert to lowercase for output keys
+            KEY=$(echo "${QUEUE}" | sed 's/\([A-Z]\)/_\L\1/g' | sed 's/^_//')
+            echo "${KEY}_url=${URL}" >> $GITHUB_OUTPUT
+            echo "${KEY}_arn=${ARN}" >> $GITHUB_OUTPUT
+            echo "${QUEUE}: URL=${URL}"
+          done
+
+      - name: Verify queue count
+        id: verify-count
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying Queue Count ==="
+
+          QUEUE_URLS=$(aws sqs list-queues \
+            --queue-name-prefix "${ENV}-lynia" \
+            --query 'QueueUrls' --output json 2>/dev/null || echo "[]")
+
+          TOTAL=$(echo "${QUEUE_URLS}" | jq 'length')
+          MAIN_COUNT=$(echo "${QUEUE_URLS}" | jq '[.[] | select(contains("dlq") | not)] | length')
+          DLQ_COUNT=$(echo "${QUEUE_URLS}" | jq '[.[] | select(contains("dlq"))] | length')
+
+          echo "Total queues: ${TOTAL} (main: ${MAIN_COUNT}, DLQ: ${DLQ_COUNT})"
+
+          if [ "${TOTAL}" -ge 10 ]; then
+            echo "PASS: 10+ queues found"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Only ${TOTAL} queues found (expected 10)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          if [ "${MAIN_COUNT}" -ge 5 ]; then
+            echo "PASS: 5+ main queues"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Only ${MAIN_COUNT} main queues (expected 5)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          if [ "${DLQ_COUNT}" -ge 5 ]; then
+            echo "PASS: 5+ DLQs"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Only ${DLQ_COUNT} DLQs (expected 5)"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "count_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "count_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Verify queue configurations
+        id: verify-queues
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying Queue Configurations ==="
+
+          # Define expected: queue_suffix visibility_timeout max_receive_count
+          declare -A QUEUES=(
+            ["notifications"]="60 3"
+            ["payment-callbacks"]="120 5"
+            ["kyc-processing"]="120 3"
+            ["device-locks"]="90 3"
+            ["credit-scoring"]="90 3"
+          )
+
+          for QUEUE_SUFFIX in "${!QUEUES[@]}"; do
+            QUEUE_NAME="${ENV}-lynia-${QUEUE_SUFFIX}"
+            read EXPECTED_VIS EXPECTED_MAX <<< "${QUEUES[$QUEUE_SUFFIX]}"
+
+            echo ""
+            echo "--- ${QUEUE_NAME} ---"
+
+            QUEUE_URL=$(aws sqs get-queue-url --queue-name "${QUEUE_NAME}" \
+              --query 'QueueUrl' --output text 2>/dev/null || echo "NOT_FOUND")
+
+            if [ "${QUEUE_URL}" = "NOT_FOUND" ]; then
+              echo "FAIL: Queue not found"
+              FAIL=$((FAIL + 1))
+              continue
+            fi
+
+            ATTRS=$(aws sqs get-queue-attributes \
+              --queue-url "${QUEUE_URL}" \
+              --attribute-names All \
+              --query 'Attributes' --output json)
+
+            # Long polling
+            WAIT=$(echo "${ATTRS}" | jq -r '.ReceiveMessageWaitTimeSeconds')
+            if [ "${WAIT}" = "20" ]; then
+              echo "PASS: Long polling: ${WAIT}s"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: Long polling: ${WAIT}s (expected 20)"
+              FAIL=$((FAIL + 1))
+            fi
+
+            # Visibility timeout
+            VIS=$(echo "${ATTRS}" | jq -r '.VisibilityTimeout')
+            if [ "${VIS}" = "${EXPECTED_VIS}" ]; then
+              echo "PASS: Visibility timeout: ${VIS}s"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: Visibility timeout: ${VIS}s (expected ${EXPECTED_VIS})"
+              FAIL=$((FAIL + 1))
+            fi
+
+            # Message retention (4 days = 345600s)
+            RET=$(echo "${ATTRS}" | jq -r '.MessageRetentionPeriod')
+            if [ "${RET}" = "345600" ]; then
+              echo "PASS: Retention: 4 days"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: Retention: ${RET}s (expected 345600)"
+              FAIL=$((FAIL + 1))
+            fi
+
+            # Redrive policy
+            REDRIVE=$(echo "${ATTRS}" | jq -r '.RedrivePolicy')
+            MAX_RECEIVE=$(echo "${REDRIVE}" | jq -r '.maxReceiveCount')
+            if [ "${MAX_RECEIVE}" = "${EXPECTED_MAX}" ]; then
+              echo "PASS: maxReceiveCount: ${MAX_RECEIVE}"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: maxReceiveCount: ${MAX_RECEIVE} (expected ${EXPECTED_MAX})"
+              FAIL=$((FAIL + 1))
+            fi
+
+            # DLQ target exists
+            DLQ_ARN=$(echo "${REDRIVE}" | jq -r '.deadLetterTargetArn')
+            if [ -n "${DLQ_ARN}" ] && [ "${DLQ_ARN}" != "null" ]; then
+              echo "PASS: DLQ target configured"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: No DLQ target"
+              FAIL=$((FAIL + 1))
+            fi
+          done
+
+          echo ""
+          echo "queue_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "queue_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Verify DLQ retention
+        id: verify-dlqs
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying DLQ Retention ==="
+
+          for QUEUE_SUFFIX in notifications payment-callbacks kyc-processing device-locks credit-scoring; do
+            DLQ_NAME="${ENV}-lynia-${QUEUE_SUFFIX}-dlq"
+
+            DLQ_URL=$(aws sqs get-queue-url --queue-name "${DLQ_NAME}" \
+              --query 'QueueUrl' --output text 2>/dev/null || echo "NOT_FOUND")
+
+            if [ "${DLQ_URL}" = "NOT_FOUND" ]; then
+              echo "FAIL: DLQ not found: ${DLQ_NAME}"
+              FAIL=$((FAIL + 1))
+              continue
+            fi
+
+            DLQ_RET=$(aws sqs get-queue-attributes \
+              --queue-url "${DLQ_URL}" \
+              --attribute-names MessageRetentionPeriod \
+              --query 'Attributes.MessageRetentionPeriod' --output text)
+
+            if [ "${DLQ_RET}" = "1209600" ]; then
+              echo "PASS: ${DLQ_NAME}: 14 days retention"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: ${DLQ_NAME}: ${DLQ_RET}s (expected 1209600)"
+              FAIL=$((FAIL + 1))
+            fi
+
+            # Check DLQ is empty
+            MSG_COUNT=$(aws sqs get-queue-attributes \
+              --queue-url "${DLQ_URL}" \
+              --attribute-names ApproximateNumberOfMessages \
+              --query 'Attributes.ApproximateNumberOfMessages' --output text)
+            if [ "${MSG_COUNT}" = "0" ]; then
+              echo "PASS: ${DLQ_NAME}: empty (0 messages)"
+              PASS=$((PASS + 1))
+            else
+              echo "WARN: ${DLQ_NAME}: ${MSG_COUNT} message(s) in DLQ"
+            fi
+          done
+
+          echo "dlq_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "dlq_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Verify CloudWatch alarm
+        id: verify-alarm
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying DLQ CloudWatch Alarm ==="
+
+          ALARM_NAME="${ENV}-lynia-dlq-messages"
+          ALARM_JSON=$(aws cloudwatch describe-alarms \
+            --alarm-names "${ALARM_NAME}" \
+            --query 'MetricAlarms[0]' --output json 2>/dev/null || echo "null")
+
+          if [ "${ALARM_JSON}" != "null" ] && [ -n "${ALARM_JSON}" ]; then
+            STATE=$(echo "${ALARM_JSON}" | jq -r '.StateValue')
+            METRIC=$(echo "${ALARM_JSON}" | jq -r '.MetricName')
+            THRESHOLD=$(echo "${ALARM_JSON}" | jq -r '.Threshold')
+
+            echo "PASS: Alarm exists: ${ALARM_NAME} (state: ${STATE})"
+            echo "  Metric: ${METRIC}, Threshold: ${THRESHOLD}"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Alarm not found: ${ALARM_NAME}"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "alarm_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "alarm_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Generate summary
+        if: always()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
+          STACK_STATUS="${{ steps.outputs.outputs.stack_status }}"
+
+          COUNT_PASS="${{ steps.verify-count.outputs.count_pass || 0 }}"
+          COUNT_FAIL="${{ steps.verify-count.outputs.count_fail || 0 }}"
+          QUEUE_PASS="${{ steps.verify-queues.outputs.queue_pass || 0 }}"
+          QUEUE_FAIL="${{ steps.verify-queues.outputs.queue_fail || 0 }}"
+          DLQ_PASS="${{ steps.verify-dlqs.outputs.dlq_pass || 0 }}"
+          DLQ_FAIL="${{ steps.verify-dlqs.outputs.dlq_fail || 0 }}"
+          ALARM_PASS="${{ steps.verify-alarm.outputs.alarm_pass || 0 }}"
+          ALARM_FAIL="${{ steps.verify-alarm.outputs.alarm_fail || 0 }}"
+
+          TOTAL_PASS=$((COUNT_PASS + QUEUE_PASS + DLQ_PASS + ALARM_PASS))
+          TOTAL_FAIL=$((COUNT_FAIL + QUEUE_FAIL + DLQ_FAIL + ALARM_FAIL))
+
+          # Stack status check
+          if [ "${DEPLOY_OUTCOME}" != "success" ]; then
+            STACK_CHECK="FAIL"
+            STACK_STATUS="${STACK_STATUS:-DEPLOY_FAILED}"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+            echo "::error::CloudFormation deploy step failed."
+          elif [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ]; then
+            STACK_CHECK="PASS"
+            TOTAL_PASS=$((TOTAL_PASS + 1))
+          else
+            STACK_CHECK="FAIL"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          fi
+
+          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # SQS Queues Deployment — ${ENV}
+
+          ## Stack Info
+          | Property | Value |
+          |----------|-------|
+          | Stack Name | \`${ENV}-lynia-sqs\` |
+          | Stack Status | ${STACK_CHECK} ${STACK_STATUS} |
+          | Region | ${{ env.AWS_REGION }} |
+
+          ## Queue Configuration
+          | Queue | Visibility | Retention | Max Retries |
+          |-------|-----------|-----------|-------------|
+          | notifications | 60s | 4 days | 3 |
+          | payment-callbacks | 120s | 4 days | **5** |
+          | kyc-processing | 120s | 4 days | 3 |
+          | device-locks | 90s | 4 days | 3 |
+          | credit-scoring | 90s | 4 days | 3 |
+
+          ## Acceptance Criteria: ${TOTAL_PASS}/${TOTAL} passed
+          | Check | Result |
+          |-------|--------|
+          | Stack status (CREATE_COMPLETE / UPDATE_COMPLETE) | ${STACK_CHECK} |
+          | Queue count (count pass: ${COUNT_PASS}, fail: ${COUNT_FAIL}) | $([ "${COUNT_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+          | Queue configs (queue pass: ${QUEUE_PASS}, fail: ${QUEUE_FAIL}) | $([ "${QUEUE_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+          | DLQ retention (dlq pass: ${DLQ_PASS}, fail: ${DLQ_FAIL}) | $([ "${DLQ_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+          | CloudWatch alarm (alarm pass: ${ALARM_PASS}, fail: ${ALARM_FAIL}) | $([ "${ALARM_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+
+          **Total: ${TOTAL_PASS} passed, ${TOTAL_FAIL} failed out of ${TOTAL} checks**
+
+          ## Next Steps
+          - These queue ARNs are needed by **P5-DEPLOY-T010** (SAM Lambda Deploy) for SQS event source mappings
+          - Queue exports are available via CloudFormation cross-stack references
+          EOF
+
+          if [ "${TOTAL_FAIL}" -gt 0 ]; then
+            echo "::error::${TOTAL_FAIL} acceptance criteria failed"
+            exit 1
+          fi
+
+          echo "All ${TOTAL_PASS} acceptance criteria passed!"
