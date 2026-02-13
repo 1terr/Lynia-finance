@@ -1,0 +1,242 @@
+name: Deploy IAM Roles
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+
+concurrency:
+  group: deploy-iam-${{ github.event.inputs.environment }}
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+
+jobs:
+  deploy-iam:
+    name: Deploy IAM Roles (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Validate CloudFormation template
+        run: |
+          echo "Validating infrastructure/aws/iam-roles.yaml..."
+          aws cloudformation validate-template \
+            --template-body file://infrastructure/aws/iam-roles.yaml
+          echo "Template validation passed"
+
+      - name: Clean up failed stack if needed
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-iam"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          echo "Current stack status: ${STACK_STATUS}"
+
+          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ]; then
+            echo "Stack in ${STACK_STATUS} state — deleting before re-deploy..."
+            aws cloudformation delete-stack --stack-name "${STACK_NAME}"
+            aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
+            echo "Stack deleted successfully"
+          elif [ "${STACK_STATUS}" = "DOES_NOT_EXIST" ]; then
+            echo "Stack does not exist yet — will create"
+          fi
+
+      - name: Deploy IAM roles stack
+        id: deploy
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-iam"
+          ARTIFACT_BUCKET="lynia-finance-${ENV}-templates"
+          echo "Deploying stack: ${STACK_NAME}"
+          echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
+
+          set +e
+          aws cloudformation deploy \
+            --template-file infrastructure/aws/iam-roles.yaml \
+            --stack-name "${STACK_NAME}" \
+            --parameter-overrides \
+              "Environment=${ENV}" \
+              "ArtifactBucketName=${ARTIFACT_BUCKET}" \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --tags "Project=lynia-finance" "Environment=${ENV}" "Service=iam" "Layer=security" "ManagedBy=cloudformation" \
+            --no-fail-on-empty-changeset \
+            --region ${{ env.AWS_REGION }}
+          DEPLOY_EXIT=$?
+          set -e
+
+          if [ "${DEPLOY_EXIT}" -ne 0 ]; then
+            echo "::error::CloudFormation deploy failed (exit code ${DEPLOY_EXIT})"
+            aws cloudformation describe-stack-events \
+              --stack-name "${STACK_NAME}" \
+              --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+              --output table 2>/dev/null || true
+            exit 1
+          fi
+
+      - name: Extract stack outputs
+        id: outputs
+        run: |
+          STACK_NAME="${{ steps.deploy.outputs.stack_name }}"
+
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text)
+          echo "Stack status: ${STACK_STATUS}"
+          echo "stack_status=${STACK_STATUS}" >> $GITHUB_OUTPUT
+
+          for KEY in DeploymentRoleArn FrontendDeploymentRoleArn AdminReadOnlyRoleArn IncidentResponseRoleArn; do
+            VALUE=$(aws cloudformation describe-stacks \
+              --stack-name "${STACK_NAME}" \
+              --query "Stacks[0].Outputs[?OutputKey=='${KEY}'].OutputValue" --output text 2>/dev/null || echo "N/A")
+            echo "${KEY}=${VALUE}" >> $GITHUB_OUTPUT
+            echo "${KEY}: ${VALUE}"
+          done
+
+      - name: Verify IAM roles
+        id: verify-roles
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          PASS=0
+          FAIL=0
+
+          echo "=== Verifying IAM Roles ==="
+
+          # Always-present roles
+          for ROLE in deployment-role frontend-deployment; do
+            ROLE_NAME="${ENV}-lynia-${ROLE}"
+            if aws iam get-role --role-name "${ROLE_NAME}" > /dev/null 2>&1; then
+              echo "PASS: ${ROLE_NAME} exists"
+              PASS=$((PASS + 1))
+            else
+              echo "FAIL: ${ROLE_NAME} not found"
+              FAIL=$((FAIL + 1))
+            fi
+          done
+
+          # Production-only roles
+          if [ "${ENV}" = "production" ]; then
+            for ROLE in admin-readonly incident-response; do
+              ROLE_NAME="${ENV}-lynia-${ROLE}"
+              if aws iam get-role --role-name "${ROLE_NAME}" > /dev/null 2>&1; then
+                echo "PASS: ${ROLE_NAME} exists"
+                PASS=$((PASS + 1))
+
+                # Verify MFA condition
+                MFA=$(aws iam get-role --role-name "${ROLE_NAME}" \
+                  --query 'Role.AssumeRolePolicyDocument.Statement[0].Condition.Bool."aws:MultiFactorAuthPresent"' \
+                  --output text 2>/dev/null || echo "false")
+                if [ "${MFA}" = "true" ]; then
+                  echo "PASS: ${ROLE_NAME} requires MFA"
+                  PASS=$((PASS + 1))
+                else
+                  echo "FAIL: ${ROLE_NAME} does not require MFA"
+                  FAIL=$((FAIL + 1))
+                fi
+              else
+                echo "FAIL: ${ROLE_NAME} not found"
+                FAIL=$((FAIL + 1))
+              fi
+            done
+          fi
+
+          # Verify deployment role has inline policies
+          DEPLOY_POLICIES=$(aws iam list-role-policies --role-name "${ENV}-lynia-deployment-role" \
+            --query 'PolicyNames | length(@)' --output text 2>/dev/null || echo "0")
+          if [ "${DEPLOY_POLICIES}" -ge 1 ]; then
+            echo "PASS: Deployment role has ${DEPLOY_POLICIES} inline policies"
+            PASS=$((PASS + 1))
+          else
+            echo "FAIL: Deployment role has no inline policies"
+            FAIL=$((FAIL + 1))
+          fi
+
+          echo "role_pass=${PASS}" >> $GITHUB_OUTPUT
+          echo "role_fail=${FAIL}" >> $GITHUB_OUTPUT
+
+      - name: Generate summary
+        if: always()
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          DEPLOY_OUTCOME="${{ steps.deploy.outcome }}"
+          STACK_STATUS="${{ steps.outputs.outputs.stack_status }}"
+          ROLE_PASS="${{ steps.verify-roles.outputs.role_pass || 0 }}"
+          ROLE_FAIL="${{ steps.verify-roles.outputs.role_fail || 0 }}"
+
+          TOTAL_PASS=$((ROLE_PASS))
+          TOTAL_FAIL=$((ROLE_FAIL))
+
+          if [ "${DEPLOY_OUTCOME}" != "success" ]; then
+            STACK_CHECK="FAIL"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          elif [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ]; then
+            STACK_CHECK="PASS"
+            TOTAL_PASS=$((TOTAL_PASS + 1))
+          else
+            STACK_CHECK="FAIL"
+            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+          fi
+
+          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
+
+          if [ "${ENV}" = "production" ]; then
+            ROLE_TABLE="| deployment-role | CI/CD pipeline | No |
+          | frontend-deployment | S3 + CloudFront | No |
+          | admin-readonly | Production monitoring | **Yes** |
+          | incident-response | Break-glass access | **Yes** |"
+          else
+            ROLE_TABLE="| deployment-role | CI/CD pipeline | No |
+          | frontend-deployment | S3 + CloudFront | No |"
+          fi
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          # IAM Roles Deployment — ${ENV}
+
+          ## Stack Info
+          | Property | Value |
+          |----------|-------|
+          | Stack Name | \`${ENV}-lynia-iam\` |
+          | Stack Status | ${STACK_CHECK} ${STACK_STATUS} |
+          | Region | ${{ env.AWS_REGION }} |
+
+          ## IAM Roles
+          | Role | Purpose | MFA |
+          |------|---------|-----|
+          ${ROLE_TABLE}
+
+          ## Acceptance Criteria: ${TOTAL_PASS}/${TOTAL} passed
+
+          **Total: ${TOTAL_PASS} passed, ${TOTAL_FAIL} failed out of ${TOTAL} checks**
+
+          ## Next Steps
+          - DeploymentRoleArn needed by **P5-DEPLOY-T010** (SAM Lambda Deploy)
+          - FrontendDeploymentRoleArn needed by **P5-DEPLOY-T014** (Frontend)
+          EOF
+
+          if [ "${TOTAL_FAIL}" -gt 0 ]; then
+            echo "::error::${TOTAL_FAIL} acceptance criteria failed"
+            exit 1
+          fi
+
+          echo "All ${TOTAL_PASS} acceptance criteria passed!"

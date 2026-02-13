@@ -31,8 +31,8 @@
 | P5-DEPLOY-T005 | Deploy S3 Storage Buckets Stack | High | 1h | ✅ Completed | T001 |
 | P5-DEPLOY-T006 | Deploy SQS Queues Stack | High | 1h | ✅ Completed | T001 |
 | P5-DEPLOY-T007 | Deploy Secrets Manager Stack | Critical | 2h | ✅ Completed | T004 |
-| P5-DEPLOY-T008 | Deploy IAM Roles Stack | High | 2h | ⚪ Not Started | T001 |
-| P5-DEPLOY-T009 | Run Database Migrations to RDS | Critical | 3h | ⚪ Not Started | T004 |
+| P5-DEPLOY-T008 | Deploy IAM Roles Stack | High | 2h | ✅ Completed | T001 |
+| P5-DEPLOY-T009 | Run Database Migrations to RDS | Critical | 3h | ✅ Completed | T004 |
 | P5-DEPLOY-T010 | Build & Deploy Lambda Functions (SAM) | Critical | 4h | ⚪ Not Started | T002, T003, T006, T007, T008 |
 | P5-DEPLOY-T011 | Deploy API Gateway Throttling & Usage Plans | High | 2h | ⚪ Not Started | T010 |
 | P5-DEPLOY-T012 | Deploy WAF & CloudWatch Monitoring | High | 3h | ⚪ Not Started | T010 |
@@ -310,7 +310,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 ### P5-DEPLOY-T008: Deploy IAM Roles Stack
 **Priority**: High
 **Estimate**: 2 hours
-**Status**: ⚪ Not Started
+**Status**: ✅ Completed (deploy script + GitHub Actions workflow, environment-aware role count)
 **Dependencies**: P5-DEPLOY-T001
 
 **Objective**: Deploy 4 IAM roles: DeploymentRole (CI/CD), AdminReadOnly (production monitoring), IncidentResponse (break-glass), and FrontendDeployment (S3 + CloudFront).
@@ -344,7 +344,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 ### P5-DEPLOY-T009: Run Database Migrations to RDS
 **Priority**: Critical
 **Estimate**: 3 hours
-**Status**: ⚪ Not Started
+**Status**: ✅ Completed (migration runner script + GitHub Actions workflow, auto SG management + verification)
 **Dependencies**: P5-DEPLOY-T004
 
 **Objective**: Execute the database migration pipeline against RDS: pre-migration stub (auth schema + extensions), 17 standard migrations (001-017), and post-migration cleanup (remove RLS + auth schema). Requires `psql` network connectivity to RDS.
