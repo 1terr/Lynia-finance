@@ -6,7 +6,7 @@
 **Priority:** Critical
 **Estimated Hours:** 3
 **Dependencies:** P5-DEPLOY-T002 (VPC stack for private subnets and security groups)
-**Status:** ⚪ NOT STARTED
+**Status:** 🟡 IN PROGRESS (template fixed, deployment script created, awaiting AWS access)
 **Completion Date:** —
 
 ---
@@ -167,6 +167,7 @@ aws rds describe-db-instances --db-instance-identifier production-lynia-db \
 | File | Purpose |
 |------|---------|
 | `infrastructure/aws/rds.yaml` | RDS CloudFormation template |
+| `infrastructure/aws/scripts/deploy-rds.sh` | Deployment script with validation and verification |
 
 ---
 
@@ -175,7 +176,45 @@ aws rds describe-db-instances --db-instance-identifier production-lynia-db \
 | Date | Action | Status |
 |------|--------|--------|
 | 2026-02-12 | Task created | ⚪ Not Started |
+| 2026-02-13 | Fixed RDS template: corrected Lambda SG import name (`lambda-sg` → `lambda-sg-id`), made AllocatedStorage conditional (50 GB production / 20 GB dev), aligned Environment param values with VPC template (`dev` → `development`) | 🟡 In Progress |
+| 2026-02-13 | Created deployment script `infrastructure/aws/scripts/deploy-rds.sh` with VPC dependency check, password generation, deployment, and automated verification | 🟡 In Progress |
+
+## Issues Found & Fixed
+
+### 1. Cross-Stack Export Name Mismatch (Critical)
+- **Problem**: RDS template imported `${Environment}-lynia-lambda-sg` but VPC template exports `${Environment}-lynia-lambda-sg-id`
+- **Impact**: CloudFormation deploy would fail with "export not found" error
+- **Fix**: Updated RDS template to reference `${Environment}-lynia-lambda-sg-id`
+
+### 2. AllocatedStorage Not Conditional (Medium)
+- **Problem**: `AllocatedStorage` was hardcoded to `20` for all environments
+- **Impact**: Production would deploy with 20 GB instead of the required 50 GB
+- **Fix**: Changed to `!If [IsProduction, 50, 20]`
+
+### 3. Environment Parameter Mismatch (Medium)
+- **Problem**: RDS template used `dev` but VPC template uses `development`
+- **Impact**: Dev deployments would use mismatched export names, causing failures
+- **Fix**: Changed RDS `AllowedValues` from `[dev, staging, production]` to `[development, staging, production]`
+
+## Deployment Instructions
+
+AWS CLI access is required to complete the actual deployment. Run:
+
+```bash
+cd infrastructure/aws/scripts
+./deploy-rds.sh production
+```
+
+The script will:
+1. Verify VPC stack (T002) is deployed
+2. Generate a secure 24-character master password
+3. Deploy the RDS CloudFormation stack
+4. Wait for creation (~10-15 minutes)
+5. Display stack outputs (endpoint, port, security group)
+6. Run automated verification checks
+
+**Save the generated DB_PASSWORD** — it is needed for T007 (Secrets Manager).
 
 ---
 **Created**: 2026-02-12
-**Last Updated**: 2026-02-12
+**Last Updated**: 2026-02-13
