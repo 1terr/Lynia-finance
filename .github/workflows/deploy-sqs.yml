@@ -43,6 +43,43 @@ jobs:
             --template-body file://infrastructure/aws/sqs-queues.yaml
           echo "Template validation passed"
 
+      - name: Pre-deploy checks
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+
+          echo "=== Checking IAM permissions ==="
+          # Verify SQS permissions
+          if aws sqs list-queues --queue-name-prefix "${ENV}-lynia" --max-results 1 > /dev/null 2>&1; then
+            echo "PASS: SQS permissions OK"
+          else
+            echo "::warning::SQS list-queues failed — IAM user may lack sqs:ListQueues permission"
+          fi
+
+          # Verify CloudWatch permissions
+          if aws cloudwatch describe-alarms --alarm-names "test-permission-check" --max-records 1 > /dev/null 2>&1; then
+            echo "PASS: CloudWatch permissions OK"
+          else
+            echo "::warning::CloudWatch describe-alarms failed — IAM user may lack cloudwatch:DescribeAlarms permission"
+            echo "::warning::The DLQAlarm resource requires cloudwatch:PutMetricAlarm permission"
+          fi
+
+          echo ""
+          echo "=== Checking for orphaned SQS queues ==="
+          EXISTING_QUEUES=$(aws sqs list-queues \
+            --queue-name-prefix "${ENV}-lynia" \
+            --query 'QueueUrls' --output json 2>/dev/null || echo "[]")
+
+          QUEUE_COUNT=$(echo "${EXISTING_QUEUES}" | jq 'length')
+          if [ "${QUEUE_COUNT}" -gt 0 ]; then
+            echo "Found ${QUEUE_COUNT} existing queue(s) with prefix ${ENV}-lynia:"
+            echo "${EXISTING_QUEUES}" | jq -r '.[]' 2>/dev/null || true
+            echo ""
+            echo "NOTE: If these are NOT managed by the ${ENV}-lynia-sqs CloudFormation stack,"
+            echo "they may cause naming conflicts during deployment."
+          else
+            echo "No existing queues found — clean slate for deployment"
+          fi
+
       - name: Clean up failed stack if needed
         run: |
           ENV="${{ github.event.inputs.environment }}"
@@ -52,11 +89,24 @@ jobs:
             --stack-name "${STACK_NAME}" \
             --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
 
+          echo "Current stack status: ${STACK_STATUS}"
+
           if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ] || [ "${STACK_STATUS}" = "CREATE_FAILED" ] || [ "${STACK_STATUS}" = "DELETE_FAILED" ]; then
             echo "Stack in ${STACK_STATUS} state — deleting before re-deploy..."
+
+            echo "=== Events from previous failed deployment ==="
+            aws cloudformation describe-stack-events \
+              --stack-name "${STACK_NAME}" \
+              --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+              --output table 2>/dev/null || echo "(no events available)"
+
             aws cloudformation delete-stack --stack-name "${STACK_NAME}"
             aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
             echo "Stack deleted successfully"
+
+            echo "Waiting 70s for SQS queue name recycling (AWS requires 60s)..."
+            sleep 70
+            echo "Wait complete — proceeding with deployment"
           elif [ "${STACK_STATUS}" = "UPDATE_ROLLBACK_COMPLETE" ]; then
             echo "Stack in UPDATE_ROLLBACK_COMPLETE state (previous update failed and rolled back)"
             echo "Will attempt a new update from this state..."
@@ -72,7 +122,9 @@ jobs:
           ENV="${{ github.event.inputs.environment }}"
           STACK_NAME="${ENV}-lynia-sqs"
           echo "Deploying stack: ${STACK_NAME}"
+          echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
 
+          set +e
           aws cloudformation deploy \
             --template-file infrastructure/aws/sqs-queues.yaml \
             --stack-name "${STACK_NAME}" \
@@ -80,19 +132,36 @@ jobs:
             --tags "Project=lynia-finance" "Environment=${ENV}" "Service=messaging" "ManagedBy=cloudformation" \
             --no-fail-on-empty-changeset \
             --region ${{ env.AWS_REGION }}
+          DEPLOY_EXIT=$?
+          set -e
 
-          echo "stack_name=${STACK_NAME}" >> $GITHUB_OUTPUT
-
-      - name: Show stack events on failure
-        if: failure()
-        run: |
-          ENV="${{ github.event.inputs.environment }}"
-          STACK_NAME="${ENV}-lynia-sqs"
-          echo "=== Stack Events (most recent first) ==="
-          aws cloudformation describe-stack-events \
-            --stack-name "${STACK_NAME}" \
-            --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
-            --output table 2>/dev/null || echo "Could not fetch stack events"
+          if [ "${DEPLOY_EXIT}" -ne 0 ]; then
+            echo ""
+            echo "::error::CloudFormation deploy failed (exit code ${DEPLOY_EXIT})"
+            echo ""
+            echo "=== Failed Resource Events ==="
+            aws cloudformation describe-stack-events \
+              --stack-name "${STACK_NAME}" \
+              --query 'StackEvents[?ResourceStatus==`CREATE_FAILED` || ResourceStatus==`UPDATE_FAILED`].{Resource:LogicalResourceId,Status:ResourceStatus,Reason:ResourceStatusReason}' \
+              --output table 2>/dev/null || echo "(could not fetch stack events)"
+            echo ""
+            echo "=== Current Stack Status ==="
+            aws cloudformation describe-stacks \
+              --stack-name "${STACK_NAME}" \
+              --query 'Stacks[0].{Status:StackStatus,Reason:StackStatusReason}' \
+              --output table 2>/dev/null || echo "(stack may have been deleted during rollback)"
+            echo ""
+            echo "=== Troubleshooting ==="
+            echo "Common causes:"
+            echo "  1. SQS queue name conflict: Queues with these names already exist outside CloudFormation"
+            echo "  2. Missing IAM permissions: Ensure credentials have sqs:*, cloudwatch:PutMetricAlarm, cloudformation:*"
+            echo "  3. Export name conflict: Another stack already exports with the same names"
+            echo "  4. SQS 60s recycling delay: Re-run the workflow (cleanup step now waits 70s)"
+            echo ""
+            echo "To investigate further:"
+            echo "  aws cloudformation describe-stack-events --stack-name ${STACK_NAME} --query 'StackEvents[0:10]'"
+            exit 1
+          fi
 
       - name: Extract stack outputs
         id: outputs
