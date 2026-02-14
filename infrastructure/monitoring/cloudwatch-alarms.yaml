@@ -621,16 +621,16 @@ Resources:
   # SQS DLQ MONITORING
   # ==========================================================
 
-  DLQMessagesAlarm:
+  PaymentDLQMessagesAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmName: !Sub "${Environment}-lynia-dlq-messages-warning"
-      AlarmDescription: "Dead letter queue has messages - failed processing detected"
+      AlarmName: !Sub "${Environment}-lynia-payment-dlq-warning"
+      AlarmDescription: "Payment DLQ has messages - failed payment processing detected"
       Namespace: AWS/SQS
       MetricName: ApproximateNumberOfMessagesVisible
       Dimensions:
         - Name: QueueName
-          Value: !Sub "${Environment}-lynia-payment-dlq"
+          Value: !Sub "${Environment}-lynia-payment-callbacks-dlq"
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 1
@@ -639,6 +639,82 @@ Resources:
       TreatMissingData: notBreaching
       AlarmActions:
         - !Ref CriticalAlertsTopic
+
+  NotificationDLQMessagesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-notification-dlq-warning"
+      AlarmDescription: "Notification DLQ has messages - failed notification processing detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Sub "${Environment}-lynia-notifications-dlq"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  KYCDLQMessagesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-kyc-dlq-warning"
+      AlarmDescription: "KYC DLQ has messages - failed KYC processing detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Sub "${Environment}-lynia-kyc-processing-dlq"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  DeviceLockDLQMessagesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-device-lock-dlq-warning"
+      AlarmDescription: "Device Lock DLQ has messages - failed device lock processing detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Sub "${Environment}-lynia-device-locks-dlq"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
+
+  CreditScoringDLQMessagesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-credit-scoring-dlq-warning"
+      AlarmDescription: "Credit Scoring DLQ has messages - failed scoring processing detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Sub "${Environment}-lynia-credit-scoring-dlq"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref WarningAlertsTopic
 
   # ==========================================================
   # DASHBOARD 1: REAL-TIME OVERVIEW (refreshes every 30s)

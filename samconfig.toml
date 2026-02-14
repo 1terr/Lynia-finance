@@ -35,7 +35,10 @@ watch = true
 stack_name = "lynia-finance-staging"
 region = "us-east-1"
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "Environment=staging"
+# NOTE: VPC and Cognito values must be stored in SSM Parameter Store before deploy.
+# Create SSM params: /staging/lynia/vpc/private-subnet-1, /staging/lynia/vpc/private-subnet-2,
+#   /staging/lynia/vpc/lambda-sg, /staging/lynia/cognito/user-pool-arn
+parameter_overrides = "Environment=staging VpcEnabled=true PrivateSubnet1Id={resolve:ssm:/staging/lynia/vpc/private-subnet-1} PrivateSubnet2Id={resolve:ssm:/staging/lynia/vpc/private-subnet-2} LambdaSecurityGroupId={resolve:ssm:/staging/lynia/vpc/lambda-sg} CognitoUserPoolArn={resolve:ssm:/staging/lynia/cognito/user-pool-arn}"
 
 [staging.build.parameters]
 cached = true
@@ -56,7 +59,10 @@ capabilities = "CAPABILITY_IAM"
 stack_name = "lynia-finance-prod"
 region = "us-east-1"
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "Environment=production"
+# NOTE: VPC and Cognito values must be stored in SSM Parameter Store before deploy.
+# Create SSM params: /production/lynia/vpc/private-subnet-1, /production/lynia/vpc/private-subnet-2,
+#   /production/lynia/vpc/lambda-sg, /production/lynia/cognito/user-pool-arn
+parameter_overrides = "Environment=production VpcEnabled=true PrivateSubnet1Id={resolve:ssm:/production/lynia/vpc/private-subnet-1} PrivateSubnet2Id={resolve:ssm:/production/lynia/vpc/private-subnet-2} LambdaSecurityGroupId={resolve:ssm:/production/lynia/vpc/lambda-sg} CognitoUserPoolArn={resolve:ssm:/production/lynia/cognito/user-pool-arn}"
 
 [production.build.parameters]
 cached = true

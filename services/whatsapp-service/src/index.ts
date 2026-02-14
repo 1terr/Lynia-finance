@@ -25,12 +25,12 @@ import {
   mapWhatsAppApiError,
 } from './error-handler';
 import { CircuitBreaker, CircuitOpenError } from './utils/circuit-breaker';
+import { getSecurityHeaders } from '../../shared/utils/response';
 
-const corsHeaders = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' };
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN || 'lynia_webhook_2025';
+const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN!;
 
 /** Circuit breaker for WhatsApp Cloud API calls */
 const whatsappCircuitBreaker = new CircuitBreaker({
@@ -68,7 +68,7 @@ export const handler = async (
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers: corsHeaders
+      headers: getSecurityHeaders(event)
     };
   } catch (error) {
     console.error('Error:', error);
@@ -78,7 +78,7 @@ export const handler = async (
         error: 'Internal Server Error',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: corsHeaders
+      headers: getSecurityHeaders(event)
     };
   }
 };
@@ -155,7 +155,7 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         messageId,
         waId: response.data.contacts[0].wa_id
       }),
-      headers: corsHeaders
+      headers: getSecurityHeaders(event)
     };
   } catch (error) {
     console.error('Error sending message:', error instanceof Error ? error.message : 'Unknown');
@@ -166,7 +166,7 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         body: JSON.stringify({
           error: 'Failed to send WhatsApp message'
         }),
-        headers: corsHeaders
+        headers: getSecurityHeaders(event)
       };
     }
     throw error;
@@ -233,7 +233,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true }),
-      headers: corsHeaders
+      headers: getSecurityHeaders(event)
     };
   } catch (error) {
     console.error('Error handling webhook:', error);
@@ -241,7 +241,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     return {
       statusCode: 200,
       body: JSON.stringify({ success: false, error: 'Processing error' }),
-      headers: corsHeaders
+      headers: getSecurityHeaders(event)
     };
   }
 }

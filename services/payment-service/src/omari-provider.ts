@@ -1,6 +1,10 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
+import { requireEnv } from '../../shared/utils/require-env';
+import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+
+const omariCircuitBreaker = new CircuitBreaker({ name: 'omari-api', failureThreshold: 5, resetTimeout: 60000 });
 
 /**
  * O'mari Payment Provider (Old Mutual digital wallet)
@@ -47,10 +51,10 @@ export class OmariProvider {
 
   constructor() {
     this.config = {
-      merchant_id: process.env.OMARI_MERCHANT_ID || 'test_merchant',
-      api_key: process.env.OMARI_API_KEY || 'test_api_key',
-      api_secret: process.env.OMARI_API_SECRET || 'test_api_secret',
-      webhook_secret: process.env.OMARI_WEBHOOK_SECRET || 'test_webhook_secret',
+      merchant_id: requireEnv('OMARI_MERCHANT_ID'),
+      api_key: requireEnv('OMARI_API_KEY'),
+      api_secret: requireEnv('OMARI_API_SECRET'),
+      webhook_secret: requireEnv('OMARI_WEBHOOK_SECRET'),
       base_url: process.env.OMARI_BASE_URL || 'https://sandbox.omari.co.zw/api/v1',
       environment: (process.env.OMARI_ENV || 'sandbox') as 'sandbox' | 'production'
     };
@@ -84,7 +88,7 @@ export class OmariProvider {
         description: request.description
       };
 
-      const response = await this.client.post('/payments/initiate', payload);
+      const response = await omariCircuitBreaker.execute(() => this.client.post('/payments/initiate', payload));
 
       return {
         success: true,
@@ -109,7 +113,7 @@ export class OmariProvider {
    */
   async checkPaymentStatus(transactionId: string): Promise<PaymentStatusResponse> {
     try {
-      const response = await this.client.get(`/payments/${transactionId}/status`);
+      const response = await omariCircuitBreaker.execute(() => this.client.get(`/payments/${transactionId}/status`));
 
       return {
         transaction_id: response.data.transaction_id,
