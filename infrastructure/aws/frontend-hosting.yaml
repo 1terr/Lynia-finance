@@ -210,27 +210,9 @@ Resources:
   # ==========================================================
   # CLOUDFRONT FUNCTION - DIRECTORY INDEX REWRITE
   # ==========================================================
-  # Rewrites /about/ → /about/index.html for static sites with trailingSlash
-
-  DirectoryIndexFunction:
-    Type: AWS::CloudFront::Function
-    Properties:
-      Name: !Sub "${Environment}-lynia-directory-index"
-      AutoPublish: true
-      FunctionConfig:
-        Comment: Rewrite directory requests to index.html
-        Runtime: cloudfront-js-2.0
-      FunctionCode: |
-        function handler(event) {
-          var request = event.request;
-          var uri = request.uri;
-          if (uri.endsWith('/')) {
-            request.uri += 'index.html';
-          } else if (!uri.includes('.')) {
-            request.uri += '/index.html';
-          }
-          return request;
-        }
+  # The directory-index function (${Environment}-lynia-directory-index) is
+  # managed outside this stack.  We reference it by constructed ARN so that
+  # CloudFront distributions can attach it without re-creating the resource.
 
   # ==========================================================
   # CLOUDFRONT RESPONSE HEADERS POLICY
@@ -311,7 +293,7 @@ Resources:
           ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
           FunctionAssociations:
             - EventType: viewer-request
-              FunctionARN: !GetAtt DirectoryIndexFunction.FunctionMetadata.FunctionARN
+              FunctionARN: !Sub "arn:aws:cloudfront::${AWS::AccountId}:function/${Environment}-lynia-directory-index"
         CacheBehaviors:
           # Static assets - long cache
           - PathPattern: "/_next/static/*"
@@ -397,7 +379,7 @@ Resources:
           ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
           FunctionAssociations:
             - EventType: viewer-request
-              FunctionARN: !GetAtt DirectoryIndexFunction.FunctionMetadata.FunctionARN
+              FunctionARN: !Sub "arn:aws:cloudfront::${AWS::AccountId}:function/${Environment}-lynia-directory-index"
         CacheBehaviors:
           - PathPattern: "/_next/static/*"
             TargetOriginId: S3Origin
@@ -469,7 +451,7 @@ Resources:
           ResponseHeadersPolicyId: !Ref SecurityHeadersPolicy
           FunctionAssociations:
             - EventType: viewer-request
-              FunctionARN: !GetAtt DirectoryIndexFunction.FunctionMetadata.FunctionARN
+              FunctionARN: !Sub "arn:aws:cloudfront::${AWS::AccountId}:function/${Environment}-lynia-directory-index"
         CacheBehaviors:
           # Static assets - long cache
           - PathPattern: "/_next/static/*"
