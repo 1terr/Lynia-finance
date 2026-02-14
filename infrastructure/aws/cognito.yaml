@@ -4,7 +4,7 @@ Description: !Sub "Lynia Finance - Cognito User Pool (deploy: ${DeployId})"
 Parameters:
   Environment:
     Type: String
-    AllowedValues: [dev, staging, production]
+    AllowedValues: [development, staging, production]
   DeployId:
     Type: String
     Description: Unique deployment identifier to force changeset creation

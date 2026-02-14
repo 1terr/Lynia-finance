@@ -1,5 +1,9 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
+import { requireEnv } from '../../shared/utils/require-env';
+import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+
+const smileCircuitBreaker = new CircuitBreaker({ name: 'smile-identity-api', failureThreshold: 5, resetTimeout: 60000 });
 
 /**
  * Smile Identity Configuration
@@ -127,10 +131,10 @@ export class SmileIdentityService {
   constructor() {
     // Initialize configuration from environment variables
     this.config = {
-      partner_id: process.env.SMILE_PARTNER_ID || 'test_partner',
-      api_key: process.env.SMILE_API_KEY || 'test_api_key',
+      partner_id: requireEnv('SMILE_PARTNER_ID'),
+      api_key: requireEnv('SMILE_API_KEY'),
       sid_server: process.env.SMILE_SERVER_URL || 'https://3eydmgh10d.execute-api.us-west-2.amazonaws.com/test',
-      callback_url: `${process.env.API_BASE_URL || 'http://localhost:3000'}/kyc/callback`,
+      callback_url: `${requireEnv('API_BASE_URL')}/kyc/callback`,
       environment: (process.env.NODE_ENV === 'production' ? 'prod' : 'test') as 'test' | 'prod'
     };
 
@@ -218,15 +222,17 @@ export class SmileIdentityService {
     const signature = this.generateSignature(payload);
 
     try {
-      // Make API request
-      const response = await this.client.post<SmileImmediateResponse>(
-        '/v1/id_verification',
-        payload,
-        {
-          headers: {
-            'X-Signature': signature
+      // Make API request (protected by circuit breaker)
+      const response = await smileCircuitBreaker.execute(() =>
+        this.client.post<SmileImmediateResponse>(
+          '/v1/id_verification',
+          payload,
+          {
+            headers: {
+              'X-Signature': signature
+            }
           }
-        }
+        )
       );
 
       console.log(`Smile Identity job submitted successfully: ${response.data.smile_job_id}`);

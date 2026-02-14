@@ -22,13 +22,28 @@ Parameters:
     Default: ""
     Description: Existing Route 53 Hosted Zone ID (leave empty to create new)
 
-  # Supabase
-  SupabaseUrl:
+  # RDS PostgreSQL Database
+  DBHost:
+    Type: String
+    Description: RDS database endpoint
+  DBPort:
+    Type: String
+    Default: "5432"
+  DBName:
+    Type: String
+    Default: lynia
+  DBUsername:
     Type: String
     NoEcho: true
-  SupabaseServiceRoleKey:
+    Default: lynia_admin
+  DBPassword:
     Type: String
     NoEcho: true
+
+  # API Gateway (from SAM stack output — deploy SAM first)
+  ApiGatewayRestApiId:
+    Type: String
+    Description: API Gateway REST API ID from SAM deployment (required — deploy SAM stack first)
 
   # WhatsApp Cloud API
   WhatsAppPhoneNumberId:
@@ -125,8 +140,11 @@ Resources:
       TemplateURL: !Sub "https://s3.amazonaws.com/lynia-finance-${Environment}-templates/secrets-manager.yaml"
       Parameters:
         Environment: !Ref Environment
-        SupabaseUrl: !Ref SupabaseUrl
-        SupabaseServiceRoleKey: !Ref SupabaseServiceRoleKey
+        DBHost: !Ref DBHost
+        DBPort: !Ref DBPort
+        DBName: !Ref DBName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
         WhatsAppPhoneNumberId: !Ref WhatsAppPhoneNumberId
         WhatsAppAccessToken: !Ref WhatsAppAccessToken
         WhatsAppWebhookVerifyToken: !Ref WhatsAppWebhookVerifyToken
@@ -195,7 +213,7 @@ Resources:
         Environment: !Ref Environment
         DomainName: !Ref DomainName
         HostedZoneId: !Ref HostedZoneId
-        ApiGatewayRestApiId: "placeholder"
+        ApiGatewayRestApiId: !Ref ApiGatewayRestApiId
         ApiGatewayStageName: Prod
       Tags:
         - Key: Environment

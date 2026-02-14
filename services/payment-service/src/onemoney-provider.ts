@@ -1,6 +1,10 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
+import { requireEnv } from '../../shared/utils/require-env';
+import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+
+const onemoneyCircuitBreaker = new CircuitBreaker({ name: 'onemoney-api', failureThreshold: 5, resetTimeout: 60000 });
 
 /**
  * OneMoney Configuration
@@ -38,10 +42,10 @@ export class OneMoneyProvider {
 
   constructor() {
     this.config = {
-      merchant_id: process.env.ONEMONEY_MERCHANT_ID || 'test_merchant',
-      api_key: process.env.ONEMONEY_API_KEY || 'test_api_key',
-      api_secret: process.env.ONEMONEY_API_SECRET || 'test_api_secret',
-      webhook_secret: process.env.ONEMONEY_WEBHOOK_SECRET || 'test_webhook_secret',
+      merchant_id: requireEnv('ONEMONEY_MERCHANT_ID'),
+      api_key: requireEnv('ONEMONEY_API_KEY'),
+      api_secret: requireEnv('ONEMONEY_API_SECRET'),
+      webhook_secret: requireEnv('ONEMONEY_WEBHOOK_SECRET'),
       base_url: process.env.ONEMONEY_BASE_URL || 'https://sandbox.onemoney.co.zw/api/v1',
       environment: (process.env.ONEMONEY_ENV || 'sandbox') as 'sandbox' | 'production'
     };
@@ -82,7 +86,7 @@ export class OneMoneyProvider {
       };
 
       // Make API request
-      const response = await this.client.post('/payments/initiate', payload);
+      const response = await onemoneyCircuitBreaker.execute(() => this.client.post('/payments/initiate', payload));
 
       console.log(`OneMoney payment initiated: ${response.data.transaction_id}`);
 
@@ -114,7 +118,7 @@ export class OneMoneyProvider {
     try {
       console.log(`Checking OneMoney payment status: ${transactionId}`);
 
-      const response = await this.client.get(`/payments/${transactionId}/status`);
+      const response = await onemoneyCircuitBreaker.execute(() => this.client.get(`/payments/${transactionId}/status`));
 
       return {
         transaction_id: response.data.transaction_id,

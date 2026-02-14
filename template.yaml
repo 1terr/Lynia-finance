@@ -32,6 +32,7 @@ Globals:
         DB_SECRET_NAME: !Sub "${Environment}/lynia/database"
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"
+        API_BASE_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
     VpcConfig: !If
       - UseVPC
       - SecurityGroupIds:
@@ -301,6 +302,7 @@ Resources:
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
           WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
+          SCORING_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/scoring/calculate"
       AutoPublishAlias: live
       Events:
         SendMessage:
@@ -608,6 +610,7 @@ Resources:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
           SMS_API_KEY: !Ref SmsApiKey
+          WHATSAPP_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/whatsapp/send"
       AutoPublishAlias: live
       Events:
         SendNotification:

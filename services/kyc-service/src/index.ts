@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { db } from '../../shared/clients/database';
+import { getSecurityHeaders } from '../../shared/utils/response';
 import { SmileIdentityService, SmileWebhookPayload } from './smile-identity-service';
 import {
   validateImage as _validateImage,
@@ -28,7 +29,7 @@ export const handler = async (
       return await handleSmileCallback(event);
     } else if (path.match(/\/kyc\/[^/]+$/) && method === 'GET') {
       const customerId = event.pathParameters?.customerId;
-      return await getKYCStatus(customerId!);
+      return await getKYCStatus(customerId!, event);
     } else if (path === '/kyc/retry' && method === 'POST') {
       return await retryKYC(event);
     }
@@ -36,10 +37,7 @@ export const handler = async (
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': 'https://admin.lynia.finance'
-      }
+      headers: getSecurityHeaders(event)
     };
   } catch (error) {
     console.error('Error:', error);
@@ -49,10 +47,7 @@ export const handler = async (
         error: 'Internal Server Error',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': 'https://admin.lynia.finance'
-      }
+      headers: getSecurityHeaders(event)
     };
   }
 };
@@ -83,7 +78,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
           error: 'Missing required fields',
           required: ['customer_id', 'id_number', 'id_image_base64', 'selfie_image_base64']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -96,7 +91,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
           error: 'Invalid ID number',
           message: idValidation.error
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -123,7 +118,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
           status: 'verified',
           kyc_submission_id: existingSubmission.id
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -138,7 +133,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
           kyc_submission_id: existingSubmission.id,
           smile_job_id: existingSubmission.smile_identity_transaction_id
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -189,7 +184,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         smile_job_id: smileResult.smile_job_id,
         status: 'pending'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
 
   } catch (error) {
@@ -207,7 +202,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
           retriable: errorResponse.retriable,
           retry_after: errorResponse.retry_after
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -217,7 +212,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
         error: 'Failed to initiate KYC',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 }
@@ -366,13 +361,13 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
  * GET /kyc/{customerId}
  * Get KYC status for a customer
  */
-async function getKYCStatus(customerId: string): Promise<APIGatewayProxyResult> {
+async function getKYCStatus(customerId: string, event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     if (!customerId) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Customer ID required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -395,7 +390,7 @@ async function getKYCStatus(customerId: string): Promise<APIGatewayProxyResult> 
           kyc_status: 'not_started',
           message: 'No KYC submission found'
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -413,7 +408,7 @@ async function getKYCStatus(customerId: string): Promise<APIGatewayProxyResult> 
         verification_reason: submission.verification_reason,
         manual_review_required: submission.manual_review_required
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
 
   } catch (error) {
@@ -424,7 +419,7 @@ async function getKYCStatus(customerId: string): Promise<APIGatewayProxyResult> 
         error: 'Failed to fetch KYC status',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 }
@@ -442,7 +437,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Customer ID required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -458,7 +453,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
       return {
         statusCode: 404,
         body: JSON.stringify({ error: 'No KYC submission found' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -475,7 +470,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
           attempts_used: totalAttempts,
           max_attempts: 3
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -489,7 +484,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
           message: 'KYC is already verified',
           current_status: lastSubmission.status
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -500,7 +495,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
         attempts_remaining: 3 - totalAttempts,
         message: 'You can retry KYC verification. Please submit new documents.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
 
   } catch (error) {
@@ -511,7 +506,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
         error: 'Failed to check retry eligibility',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 }

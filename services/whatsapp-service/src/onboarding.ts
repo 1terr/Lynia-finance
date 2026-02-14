@@ -739,7 +739,7 @@ export async function handleCreditScoring(
     };
 
     // Call scoring service (when deployed)
-    const SCORING_API_URL = process.env.SCORING_API_URL || 'http://localhost:3000/scoring/calculate';
+    const SCORING_API_URL = process.env.SCORING_API_URL!;
     const response = await axios.post(SCORING_API_URL, scoringPayload);
     const scoreResult = response.data;
 
