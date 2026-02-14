@@ -572,7 +572,7 @@ function computeNewTerms(
 ): NewTerms {
   let newTermMonths = original.term_months;
   let newInterestRate = original.interest_rate;
-  let newOutstanding = original.outstanding;
+  const newOutstanding = original.outstanding;
 
   switch (request.reschedule_type) {
     case 'term_extension': {

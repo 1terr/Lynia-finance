@@ -33,7 +33,7 @@ jobs:
       DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -84,7 +84,7 @@ jobs:
           ./gradlew --no-daemon --console=plain :fineract:tests:oauth2-tests:test -PdbType=postgresql
       - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         with:
           name: test-results
           retention-days: 5
@@ -92,7 +92,7 @@ jobs:
             fineract/**/build/reports/
       - name: Archive server logs
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@v4
         with:
           name: server-logs
           retention-days: 5
