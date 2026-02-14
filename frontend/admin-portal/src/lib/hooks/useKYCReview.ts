@@ -39,7 +39,7 @@ export function useKYCReviewQueue(initialFilters?: Partial<KYCReviewFilters>) {
         `/api/v1/kyc/submissions?${params.toString()}`
       );
     },
-    // Poll every 30 seconds instead of Supabase realtime subscription
+    // Poll every 30 seconds (Cognito-authenticated via fetchAPI)
     refetchInterval: 30_000,
   });
 

@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getFineractLoanDetail } from '@/lib/api/fineract';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { formatCurrency, formatDate, formatPercent } from '@/lib/utils';
 import {
   getFineractStatusDisplay,
@@ -35,6 +36,7 @@ interface Props {
 export default function FineractLoanDetailPage({ loanId }: Props) {
   const router = useRouter();
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const canRecordPayment = useAuthStore((s) => s.hasPermission('payments:reconcile'));
 
   const { data: loan, isLoading, refetch } = useQuery({
     queryKey: ['fineract-loan-detail', loanId],
@@ -96,7 +98,7 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
             {loan.productName.replace('Lynia Device Finance - ', '')}
           </p>
         </div>
-        {loan.status.code === 'loanStatusType.active' && (
+        {loan.status.code === 'loanStatusType.active' && canRecordPayment && (
           <button
             onClick={() => setShowPaymentForm(true)}
             className="rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700"

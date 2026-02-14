@@ -1,4 +1,7 @@
+'use client';
+
 import dynamic from 'next/dynamic';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const GLAccountingDashboard = dynamic(
   () => import('@/components/fineract/gl-accounting-dashboard'),
@@ -6,5 +9,9 @@ const GLAccountingDashboard = dynamic(
 );
 
 export default function Page() {
-  return <GLAccountingDashboard />;
+  return (
+    <ProtectedRoute requiredPermission={{ resource: 'payments', action: 'read' }}>
+      <GLAccountingDashboard />
+    </ProtectedRoute>
+  );
 }

@@ -1,4 +1,7 @@
+'use client';
+
 import dynamic from 'next/dynamic';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const ReconciliationDashboard = dynamic(
   () => import('@/components/fineract/reconciliation-dashboard'),
@@ -6,5 +9,9 @@ const ReconciliationDashboard = dynamic(
 );
 
 export default function Page() {
-  return <ReconciliationDashboard />;
+  return (
+    <ProtectedRoute requiredPermission={{ resource: 'payments', action: 'reconcile' }}>
+      <ReconciliationDashboard />
+    </ProtectedRoute>
+  );
 }

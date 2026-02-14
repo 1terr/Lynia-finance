@@ -1,4 +1,7 @@
+'use client';
+
 import dynamic from 'next/dynamic';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const FineractApprovalPage = dynamic(
   () => import('@/components/fineract/fineract-approval-page'),
@@ -6,5 +9,9 @@ const FineractApprovalPage = dynamic(
 );
 
 export default function Page() {
-  return <FineractApprovalPage />;
+  return (
+    <ProtectedRoute requiredPermission={{ resource: 'loans', action: 'approve' }}>
+      <FineractApprovalPage />
+    </ProtectedRoute>
+  );
 }
