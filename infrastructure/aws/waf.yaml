@@ -22,7 +22,7 @@ Parameters:
 
   LoginRateLimitPerIP:
     Type: Number
-    Default: 100
+    Default: 200
     Description: Maximum auth requests per 5-minute window per IP
 
 Conditions:
@@ -142,17 +142,15 @@ Resources:
         - Name: BlockSuspiciousHeaders
           Priority: 6
           Statement:
-            OrStatement:
-              Statements:
-                - SizeConstraintStatement:
-                    FieldToMatch:
-                      SingleHeader:
-                        Name: user-agent
-                    ComparisonOperator: EQ
-                    Size: 0
-                    TextTransformations:
-                      - Priority: 0
-                        Type: NONE
+            SizeConstraintStatement:
+              FieldToMatch:
+                SingleHeader:
+                  Name: user-agent
+              ComparisonOperator: EQ
+              Size: 0
+              TextTransformations:
+                - Priority: 0
+                  Type: NONE
           Action:
             Block: {}
           VisibilityConfig:

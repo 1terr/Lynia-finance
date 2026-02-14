@@ -46,21 +46,21 @@ Resources:
       DBInstanceIdentifier: !Sub "${Environment}-lynia-db"
       Engine: postgres
       EngineVersion: "16.11"
-      DBInstanceClass: !If [IsProduction, db.t4g.small, db.t4g.micro]
-      AllocatedStorage: !If [IsProduction, 50, 20]
-      MaxAllocatedStorage: 100
-      StorageType: gp3
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: 20
+      MaxAllocatedStorage: 20
+      StorageType: gp2
       MasterUsername: !Ref DBMasterUsername
       MasterUserPassword: !Ref DBMasterPassword
       DBName: lynia
       VPCSecurityGroups:
         - !Ref DatabaseSecurityGroup
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
-      MultiAZ: !If [IsProduction, true, false]
-      BackupRetentionPeriod: !If [IsProduction, 35, 7]
+      MultiAZ: false
+      BackupRetentionPeriod: 1
       StorageEncrypted: true
-      DeletionProtection: !If [IsProduction, true, false]
-      EnablePerformanceInsights: !If [IsProduction, true, false]
+      DeletionProtection: false
+      EnablePerformanceInsights: false
       PubliclyAccessible: false
       CopyTagsToSnapshot: true
       Tags:
