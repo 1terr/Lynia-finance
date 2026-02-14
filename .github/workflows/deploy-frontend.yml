@@ -74,19 +74,19 @@ jobs:
       - name: Run frontend linting
         run: |
           if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
-            pnpm --filter "@lynia/admin-portal" lint 2>/dev/null || echo "::warning::Admin portal lint issues found"
+            pnpm --filter "@lynia/admin-portal" lint || echo "::warning::Admin portal lint issues found"
           fi
           if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
-            pnpm --filter lynia-distributor-portal lint 2>/dev/null || echo "::warning::Distributor dashboard lint issues found"
+            pnpm --filter lynia-distributor-portal lint || echo "::warning::Distributor dashboard lint issues found"
           fi
 
       - name: Run frontend tests
         run: |
           if [ "${{ env.DEPLOY_APP }}" == "admin-portal" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
-            pnpm --filter "@lynia/admin-portal" test 2>/dev/null || echo "::warning::Admin portal tests failed"
+            pnpm --filter "@lynia/admin-portal" test || echo "::warning::Admin portal tests failed"
           fi
           if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
-            pnpm --filter lynia-distributor-portal test 2>/dev/null || echo "::warning::Distributor dashboard tests failed"
+            pnpm --filter lynia-distributor-portal test || echo "::warning::Distributor dashboard tests failed"
           fi
 
       - name: Build admin portal

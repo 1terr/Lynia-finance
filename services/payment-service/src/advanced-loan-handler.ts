@@ -22,7 +22,6 @@ import {
 import {
   getAuthContext,
   requireRole,
-  AuthContext,
 } from '../../shared/middleware/authorization';
 
 import {
