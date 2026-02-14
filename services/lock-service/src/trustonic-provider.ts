@@ -1,5 +1,9 @@
 import { createHmac } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
+import { requireEnv } from '../../shared/utils/require-env';
+import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+
+const trustonicCircuitBreaker = new CircuitBreaker({ name: 'trustonic-api', failureThreshold: 5, resetTimeout: 60000 });
 
 /**
  * Trustonic Configuration
@@ -67,8 +71,8 @@ export class TrustonicProvider {
 
   constructor() {
     this.config = {
-      api_key: process.env.TRUSTONIC_API_KEY || 'test_api_key',
-      api_secret: process.env.TRUSTONIC_API_SECRET || 'test_api_secret',
+      api_key: requireEnv('TRUSTONIC_API_KEY'),
+      api_secret: requireEnv('TRUSTONIC_API_SECRET'),
       base_url: process.env.TRUSTONIC_BASE_URL || 'https://api.trustonic.com/v1',
       environment: (process.env.TRUSTONIC_ENV || 'sandbox') as 'sandbox' | 'production'
     };
@@ -114,9 +118,11 @@ export class TrustonicProvider {
       };
 
       const signature = this.generateSignature(payload);
-      const response = await this.client.post('/devices/enroll', payload, {
-        headers: { 'X-Signature': signature }
-      });
+      const response = await trustonicCircuitBreaker.execute(() =>
+        this.client.post('/devices/enroll', payload, {
+          headers: { 'X-Signature': signature }
+        })
+      );
 
       console.log(`Device ${deviceId} enrolled with Trustonic: ${response.data.device_id}`);
 
@@ -164,9 +170,11 @@ export class TrustonicProvider {
       };
 
       const signature = this.generateSignature(payload);
-      await this.client.post(`/devices/${request.device_id}/lock`, payload, {
-        headers: { 'X-Signature': signature }
-      });
+      await trustonicCircuitBreaker.execute(() =>
+        this.client.post(`/devices/${request.device_id}/lock`, payload, {
+          headers: { 'X-Signature': signature }
+        })
+      );
 
       console.log(`Device ${request.device_id} locked successfully via Trustonic`);
 
@@ -202,9 +210,11 @@ export class TrustonicProvider {
       };
 
       const signature = this.generateSignature(payload);
-      await this.client.post(`/devices/${request.device_id}/unlock`, payload, {
-        headers: { 'X-Signature': signature }
-      });
+      await trustonicCircuitBreaker.execute(() =>
+        this.client.post(`/devices/${request.device_id}/unlock`, payload, {
+          headers: { 'X-Signature': signature }
+        })
+      );
 
       console.log(`Device ${request.device_id} unlocked successfully via Trustonic`);
 
@@ -231,7 +241,9 @@ export class TrustonicProvider {
       }
 
       // Production: Call actual Trustonic API
-      const response = await this.client.get(`/devices/${deviceId}/status`);
+      const response = await trustonicCircuitBreaker.execute(() =>
+        this.client.get(`/devices/${deviceId}/status`)
+      );
 
       return {
         device_id: deviceId,

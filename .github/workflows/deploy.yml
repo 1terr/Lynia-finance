@@ -75,7 +75,8 @@ jobs:
           COVERAGE="${{ steps.coverage.outputs.total }}"
           THRESHOLD=80
           if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l 2>/dev/null || echo 1) )); then
-            echo "::warning::Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
+            echo "::error::Coverage ${COVERAGE}% is below ${THRESHOLD}% threshold"
+            exit 1
           fi
 
       - name: Upload coverage to Codecov

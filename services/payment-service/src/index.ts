@@ -3,6 +3,7 @@ import { PaymentService, InitiatePaymentRequest } from './payment-service';
 import { EcoCashProvider, EcoCashWebhook } from './ecocash-provider';
 import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
 import { OmariProvider, OmariWebhook } from './omari-provider';
+import { getSecurityHeaders } from '../../shared/utils/response';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
@@ -31,7 +32,7 @@ export const handler = async (
       return await handleOmariWebhook(event);
     } else if (path.match(/\/payments\/[^/]+$/) && method === 'GET') {
       const paymentId = event.pathParameters?.paymentId;
-      return await getPaymentStatus(paymentId!);
+      return await getPaymentStatus(paymentId!, event);
     } else if (path === '/payments/reconcile' && method === 'POST') {
       return await reconcilePayments(event);
     }
@@ -39,7 +40,7 @@ export const handler = async (
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   } catch (error) {
     console.error('Error:', error);
@@ -49,7 +50,7 @@ export const handler = async (
         error: 'Internal Server Error',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 };
@@ -71,7 +72,7 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
           error: 'Missing required fields',
           required: ['loan_id', 'customer_id', 'amount', 'customer_phone', 'payment_type']
         }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -89,7 +90,7 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
         payment_url: result.payment_url,
         instructions: result.instructions
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
 
   } catch (error) {
@@ -100,7 +101,7 @@ async function initiatePayment(event: APIGatewayProxyEvent): Promise<APIGatewayP
         error: 'Payment initiation failed',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 }
@@ -274,13 +275,13 @@ async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatew
  * GET /payments/{paymentId}
  * Get payment status
  */
-async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResult> {
+async function getPaymentStatus(paymentId: string, event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     if (!paymentId) {
       return {
         statusCode: 400,
         body: JSON.stringify({ error: 'Payment ID required' }),
-        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+        headers: getSecurityHeaders(event)
       };
     }
 
@@ -301,7 +302,7 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
         completed_at: payment.completed_at,
         failed_at: payment.failed_at
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
 
   } catch (error) {
@@ -312,7 +313,7 @@ async function getPaymentStatus(paymentId: string): Promise<APIGatewayProxyResul
         error: 'Failed to fetch payment status',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 }
@@ -334,7 +335,7 @@ async function reconcilePayments(event: APIGatewayProxyEvent): Promise<APIGatewa
         success: true,
         ...result
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
 
   } catch (error) {
@@ -345,7 +346,7 @@ async function reconcilePayments(event: APIGatewayProxyEvent): Promise<APIGatewa
         error: 'Reconciliation failed',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' }
+      headers: getSecurityHeaders(event)
     };
   }
 }

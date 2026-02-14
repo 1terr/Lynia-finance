@@ -15,7 +15,7 @@
 import { db } from '../../shared/clients/database';
 import axios from 'axios';
 
-const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'http://localhost:3000/whatsapp/send';
+const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL!;
 
 // ===================================================================
 // TYPE DEFINITIONS

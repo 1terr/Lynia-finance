@@ -1,8 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, ScheduledEvent } from 'aws-lambda';
 import { db } from '../../shared/clients/database';
 import { processPaymentReminders, getReminderAnalytics, handleReminderOptOut, handleReminderOptIn } from './reminder-scheduler';
-
-const headers = { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': 'https://admin.lynia.finance' };
+import { getSecurityHeaders } from '../../shared/utils/response';
 
 /**
  * Notification Service Lambda Handler
@@ -32,37 +31,37 @@ export const handler = async (
 
     if (path === '/notifications/reminders/process' && method === 'POST') {
       const stats = await processPaymentReminders();
-      return { statusCode: 200, body: JSON.stringify({ success: true, stats }), headers };
+      return { statusCode: 200, body: JSON.stringify({ success: true, stats }), headers: getSecurityHeaders(apiEvent) };
     }
 
     if (path === '/notifications/reminders/analytics' && method === 'GET') {
       const from = apiEvent.queryStringParameters?.from;
       const to = apiEvent.queryStringParameters?.to;
       const analytics = await getReminderAnalytics(from && to ? { from, to } : undefined);
-      return { statusCode: 200, body: JSON.stringify({ success: true, data: analytics }), headers };
+      return { statusCode: 200, body: JSON.stringify({ success: true, data: analytics }), headers: getSecurityHeaders(apiEvent) };
     }
 
     if (path === '/notifications/reminders/opt-out' && method === 'POST') {
       const body = JSON.parse(apiEvent.body || '{}');
       await handleReminderOptOut(body.customerId);
-      return { statusCode: 200, body: JSON.stringify({ success: true, message: 'Opted out of reminders' }), headers };
+      return { statusCode: 200, body: JSON.stringify({ success: true, message: 'Opted out of reminders' }), headers: getSecurityHeaders(apiEvent) };
     }
 
     if (path === '/notifications/reminders/opt-in' && method === 'POST') {
       const body = JSON.parse(apiEvent.body || '{}');
       await handleReminderOptIn(body.customerId);
-      return { statusCode: 200, body: JSON.stringify({ success: true, message: 'Opted in to reminders' }), headers };
+      return { statusCode: 200, body: JSON.stringify({ success: true, message: 'Opted in to reminders' }), headers: getSecurityHeaders(apiEvent) };
     }
 
     if (path.startsWith('/notifications/') && method === 'GET') {
       const customerId = apiEvent.pathParameters?.customerId;
-      return await getNotificationHistory(customerId!);
+      return await getNotificationHistory(customerId!, apiEvent);
     }
 
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Not Found' }),
-      headers
+      headers: getSecurityHeaders(apiEvent)
     };
   } catch (error) {
     console.error('Error:', error);
@@ -72,7 +71,7 @@ export const handler = async (
         error: 'Internal Server Error',
         message: 'An unexpected error occurred. Please try again later.'
       }),
-      headers
+      headers: getSecurityHeaders()
     };
   }
 };
@@ -85,7 +84,7 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     return {
       statusCode: 400,
       body: JSON.stringify({ error: 'Missing required fields: customerId, channel, message' }),
-      headers
+      headers: getSecurityHeaders(event)
     };
   }
 
@@ -101,7 +100,7 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     return {
       statusCode: 404,
       body: JSON.stringify({ error: 'Customer not found' }),
-      headers
+      headers: getSecurityHeaders(event)
     };
   }
 
@@ -125,14 +124,14 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to create notification' }),
-      headers
+      headers: getSecurityHeaders(event)
     };
   }
 
   // Send via appropriate channel
   try {
     if (channel === 'whatsapp') {
-      const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL || 'http://localhost:3000/whatsapp/send';
+      const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL!;
       const axios = (await import('axios')).default;
       await axios.post(WHATSAPP_API_URL, {
         to: customer.phone_number,
@@ -151,7 +150,7 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     return {
       statusCode: 200,
       body: JSON.stringify({ success: true, notificationId: notification.id }),
-      headers
+      headers: getSecurityHeaders(event)
     };
   } catch (error) {
     await db
@@ -163,12 +162,12 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to send notification' }),
-      headers
+      headers: getSecurityHeaders(event)
     };
   }
 }
 
-async function getNotificationHistory(customerId: string): Promise<APIGatewayProxyResult> {
+async function getNotificationHistory(customerId: string, event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   const { data: notifications, error } = await db
     .from('notifications')
     .select('*')
@@ -181,13 +180,13 @@ async function getNotificationHistory(customerId: string): Promise<APIGatewayPro
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to fetch notifications' }),
-      headers
+      headers: getSecurityHeaders(event)
     };
   }
 
   return {
     statusCode: 200,
     body: JSON.stringify({ customerId, notifications: notifications || [] }),
-    headers
+    headers: getSecurityHeaders(event)
   };
 }

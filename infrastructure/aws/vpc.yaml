@@ -249,8 +249,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
-          CidrIp: "0.0.0.0/0"
-          Description: "PostgreSQL outbound for Supabase"
+          CidrIp: !GetAtt LyniaVPC.CidrBlock
+          Description: "PostgreSQL outbound for RDS (VPC-internal only)"
       Tags:
         - Key: Name
           Value: !Sub "${Environment}-lynia-lambda-sg"

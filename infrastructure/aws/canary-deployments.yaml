@@ -187,7 +187,7 @@ Resources:
             console.log('Running pre-deployment validation checks...');
 
             // Check 1: Verify environment variables are set
-            const requiredEnvVars = ['NODE_ENV', 'SUPABASE_URL'];
+            const requiredEnvVars = ['NODE_ENV', 'DB_SECRET_NAME'];
             for (const envVar of requiredEnvVars) {
               if (!process.env[envVar]) {
                 throw new Error(`Missing required env var: ${envVar}`);
