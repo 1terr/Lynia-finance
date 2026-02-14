@@ -11,14 +11,22 @@ import {
 } from '@/lib/auth/cognito';
 import type { CognitoUserSession } from '@/lib/auth/cognito';
 
+type AuthChallenge =
+  | { type: 'NEW_PASSWORD_REQUIRED'; userAttributes: Record<string, string> }
+  | { type: 'SOFTWARE_TOKEN_MFA' }
+  | null;
+
 interface AuthState {
   user: AdminUser | null;
   isLoading: boolean;
+  challenge: AuthChallenge;
   setUser: (user: AdminUser | null) => void;
   setLoading: (loading: boolean) => void;
   hasPermission: (permission: Permission) => boolean;
   hasAnyPermission: (permissions: Permission[]) => boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  completeNewPassword: (newPassword: string) => Promise<{ error?: string }>;
+  completeMfaChallenge: (code: string) => Promise<{ error?: string }>;
   signOutUser: () => void;
   initialize: () => Promise<void>;
 }
@@ -72,9 +80,13 @@ const DEMO_CREDENTIALS: Record<string, AdminUser> = {
 
 const DEMO_SESSION_KEY = 'lynia-demo-admin';
 
+// Stores the CognitoUser instance while a challenge is in progress
+let pendingCognitoUser: InstanceType<typeof CognitoUser> | null = null;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isLoading: true,
+  challenge: null,
   setUser: (user) => set({ user }),
   setLoading: (isLoading) => set({ isLoading }),
   hasPermission: (permission) => {
@@ -120,22 +132,97 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     return new Promise<{ error?: string }>((resolve) => {
       cognitoUser.authenticateUser(authDetails, {
         onSuccess: (session: CognitoUserSession) => {
+          pendingCognitoUser = null;
           const adminUser = buildAdminUserFromSession(session);
           if (!adminUser) {
             cognitoSignOut();
             resolve({ error: 'Invalid email or password' });
             return;
           }
-          // Set a marker cookie so middleware can detect an active session
           document.cookie = 'lynia-auth-active=1; path=/; SameSite=Lax';
-          set({ user: adminUser });
+          set({ user: adminUser, challenge: null });
           resolve({});
         },
         onFailure: () => {
-          // MED-01: Generic error to avoid leaking account information
+          pendingCognitoUser = null;
           resolve({ error: 'Invalid email or password' });
         },
+        newPasswordRequired: (userAttributes: Record<string, string>) => {
+          pendingCognitoUser = cognitoUser;
+          set({ challenge: { type: 'NEW_PASSWORD_REQUIRED', userAttributes } });
+          resolve({});
+        },
+        totpRequired: () => {
+          pendingCognitoUser = cognitoUser;
+          set({ challenge: { type: 'SOFTWARE_TOKEN_MFA' } });
+          resolve({});
+        },
+        mfaRequired: () => {
+          pendingCognitoUser = cognitoUser;
+          set({ challenge: { type: 'SOFTWARE_TOKEN_MFA' } });
+          resolve({});
+        },
       });
+    });
+  },
+
+  completeNewPassword: async (newPassword: string) => {
+    if (!pendingCognitoUser) return { error: 'Session expired. Please sign in again.' };
+
+    return new Promise<{ error?: string }>((resolve) => {
+      pendingCognitoUser!.completeNewPasswordChallenge(newPassword, {}, {
+        onSuccess: (session: CognitoUserSession) => {
+          pendingCognitoUser = null;
+          const adminUser = buildAdminUserFromSession(session);
+          if (!adminUser) {
+            cognitoSignOut();
+            resolve({ error: 'Account setup failed. Contact your administrator.' });
+            return;
+          }
+          document.cookie = 'lynia-auth-active=1; path=/; SameSite=Lax';
+          set({ user: adminUser, challenge: null });
+          resolve({});
+        },
+        onFailure: (err: Error) => {
+          resolve({ error: err.message || 'Failed to set new password' });
+        },
+        mfaRequired: () => {
+          set({ challenge: { type: 'SOFTWARE_TOKEN_MFA' } });
+          resolve({});
+        },
+        totpRequired: () => {
+          set({ challenge: { type: 'SOFTWARE_TOKEN_MFA' } });
+          resolve({});
+        },
+      });
+    });
+  },
+
+  completeMfaChallenge: async (code: string) => {
+    if (!pendingCognitoUser) return { error: 'Session expired. Please sign in again.' };
+
+    return new Promise<{ error?: string }>((resolve) => {
+      pendingCognitoUser!.sendMFACode(
+        code,
+        {
+          onSuccess: (session: CognitoUserSession) => {
+            pendingCognitoUser = null;
+            const adminUser = buildAdminUserFromSession(session);
+            if (!adminUser) {
+              cognitoSignOut();
+              resolve({ error: 'Authentication failed. Contact your administrator.' });
+              return;
+            }
+            document.cookie = 'lynia-auth-active=1; path=/; SameSite=Lax';
+            set({ user: adminUser, challenge: null });
+            resolve({});
+          },
+          onFailure: (err: Error) => {
+            resolve({ error: err.message || 'Invalid verification code' });
+          },
+        },
+        'SOFTWARE_TOKEN_MFA',
+      );
     });
   },
 
