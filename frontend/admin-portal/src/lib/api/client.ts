@@ -1,12 +1,20 @@
-import { getSession } from '@/lib/auth/cognito';
+import { getSession, signOut as cognitoSignOut } from '@/lib/auth/cognito';
 import type { AdminUser, DashboardMetrics, PortfolioAtRisk, DailyTrend, LoansByStatus, RecentActivity } from '@/types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
+/**
+ * Authenticated API client using Cognito JWT tokens.
+ *
+ * Extracts the ID token from the current Cognito session and attaches it
+ * as a Bearer token to every request. On 401 responses (expired/invalid
+ * token), clears the local Cognito session and redirects to login.
+ */
 export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
   const session = await getSession();
 
   if (!session) {
+    handleSessionExpired();
     throw new Error('Authentication required. Please sign in.');
   }
 
@@ -21,11 +29,30 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
     },
   });
 
+  // Handle Cognito token rejection from backend
+  if (res.status === 401) {
+    handleSessionExpired();
+    throw new Error('Session expired. Redirecting to login.');
+  }
+
+  if (res.status === 403) {
+    throw new Error('You do not have permission to perform this action.');
+  }
+
   if (!res.ok) {
     throw new Error(`API error: ${res.status}`);
   }
 
   return res.json();
+}
+
+/** Clear Cognito session and redirect to login on auth failure. */
+function handleSessionExpired(): void {
+  cognitoSignOut();
+  document.cookie = 'lynia-auth-active=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
 }
 
 // --- Admin User ---

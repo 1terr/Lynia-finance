@@ -14,6 +14,7 @@ import {
   approveFineractLoan,
   disburseFineractLoan,
 } from '@/lib/api/fineract';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { FineractLoanView } from '@/types/fineract';
 import { Pagination } from '@/components/ui/pagination';
@@ -21,6 +22,8 @@ import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
 
 export default function FineractApprovalPage() {
   const queryClient = useQueryClient();
+  const canApprove = useAuthStore((s) => s.hasPermission('loans:approve'));
+  const canReject = useAuthStore((s) => s.hasPermission('loans:reject'));
   const [page, setPage] = useState(1);
   const [selectedLoan, setSelectedLoan] = useState<FineractLoanView | null>(
     null
@@ -173,23 +176,29 @@ export default function FineractApprovalPage() {
                 )}
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => openModal(loan, 'approve')}
-                  className="inline-flex items-center gap-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-                >
-                  <CheckCircle className="h-4 w-4" />
-                  Approve
-                </button>
-                <button
-                  onClick={() => openModal(loan, 'reject')}
-                  className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                >
-                  <XCircle className="h-4 w-4" />
-                  Reject
-                </button>
-              </div>
+              {/* Actions - gated by Cognito role permissions */}
+              {(canApprove || canReject) && (
+                <div className="flex gap-2">
+                  {canApprove && (
+                    <button
+                      onClick={() => openModal(loan, 'approve')}
+                      className="inline-flex items-center gap-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      Approve
+                    </button>
+                  )}
+                  {canReject && (
+                    <button
+                      onClick={() => openModal(loan, 'reject')}
+                      className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Reject
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Submitted date */}

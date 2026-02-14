@@ -12,6 +12,7 @@ import {
   getReconciliationResults,
   triggerReconciliation,
 } from '@/lib/api/fineract';
+import { useAuthStore } from '@/lib/store/auth-store';
 import { formatCurrency, formatDateTime } from '@/lib/utils';
 import type { ReconciliationDiscrepancy } from '@/types/fineract';
 import {
@@ -45,6 +46,7 @@ const SEVERITY_STYLES: Record<
 
 export default function ReconciliationDashboard() {
   const queryClient = useQueryClient();
+  const canReconcile = useAuthStore((s) => s.hasPermission('payments:reconcile'));
 
   const { data, isLoading } = useQuery({
     queryKey: ['fineract-reconciliation'],
@@ -92,18 +94,20 @@ export default function ReconciliationDashboard() {
           <p className="text-xs text-gray-400">
             Last run: {formatDateTime(data.runAt)}
           </p>
-          <button
-            onClick={() => triggerMutation.mutate()}
-            disabled={triggerMutation.isPending}
-            className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${
-                triggerMutation.isPending ? 'animate-spin' : ''
-              }`}
-            />
-            Run Reconciliation
-          </button>
+          {canReconcile && (
+            <button
+              onClick={() => triggerMutation.mutate()}
+              disabled={triggerMutation.isPending}
+              className="inline-flex items-center gap-2 rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${
+                  triggerMutation.isPending ? 'animate-spin' : ''
+                }`}
+              />
+              Run Reconciliation
+            </button>
+          )}
         </div>
       </div>
 

@@ -1,4 +1,7 @@
+'use client';
+
 import dynamic from 'next/dynamic';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 
 const OverdueLoansPage = dynamic(
   () => import('@/components/fineract/overdue-loans-page'),
@@ -6,5 +9,9 @@ const OverdueLoansPage = dynamic(
 );
 
 export default function Page() {
-  return <OverdueLoansPage />;
+  return (
+    <ProtectedRoute requiredPermission={{ resource: 'loans', action: 'read' }}>
+      <OverdueLoansPage />
+    </ProtectedRoute>
+  );
 }
