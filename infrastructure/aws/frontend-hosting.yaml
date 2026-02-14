@@ -243,7 +243,7 @@ Resources:
         Name: !Sub "${Environment}-lynia-security-headers"
         SecurityHeadersConfig:
           ContentSecurityPolicy:
-            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.lyniafinance.com https://*.execute-api.*.amazonaws.com"
+            ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.lyniafinance.com https://*.execute-api.*.amazonaws.com https://cognito-idp.*.amazonaws.com https://cognito-identity.*.amazonaws.com"
             Override: true
           StrictTransportSecurity:
             AccessControlMaxAgeSec: 31536000
