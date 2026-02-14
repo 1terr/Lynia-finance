@@ -114,7 +114,7 @@ function parseGroups(groups: string | undefined): Role[] {
 
 function createAuthError(code: string, message: string) {
   const error = new Error(message);
-  (error as Record<string, unknown>).code = code;
-  (error as Record<string, unknown>).statusCode = 403;
+  (error as unknown as Record<string, unknown>).code = code;
+  (error as unknown as Record<string, unknown>).statusCode = 403;
   return error;
 }
