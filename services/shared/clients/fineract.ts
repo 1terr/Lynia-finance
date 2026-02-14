@@ -80,7 +80,7 @@ const fineractBreaker = new CircuitBreaker({
   onOpen: (name, failures) => {
     console.error(`[fineract-client] Circuit OPEN after ${failures} failures`);
   },
-  onClose: (name) => {
+  onClose: (_name) => {
     console.log(`[fineract-client] Circuit CLOSED (recovered)`);
   },
 });

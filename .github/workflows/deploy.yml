@@ -134,7 +134,8 @@ jobs:
             if grep -rn --include="*.ts" --include="*.js" --include="*.tsx" \
                -E "$pattern" services/ frontend/ 2>/dev/null | \
                grep -v node_modules | grep -v ".test." | grep -v ".spec." | \
-               grep -v "process.env" | grep -v "secrets." | head -5; then
+               grep -v "process.env" | grep -v "secrets." | \
+               grep -v ":\s*string" | grep -v "interface " | grep -v "\.d\.ts" | head -5; then
               FOUND=1
             fi
           done

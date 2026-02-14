@@ -24,7 +24,7 @@
  */
 
 import { db, query } from './clients/database';
-import { getFineractClient, parseFineractDate } from './clients/fineract';
+import { getFineractClient } from './clients/fineract';
 import { logger } from './utils/logger';
 import { createHash } from 'crypto';
 import type {
@@ -437,13 +437,7 @@ export async function generatePrudentialReturn(
     .reduce((s, p) => s + (p.amount || 0), 0);
 
   const grossPortfolio = loans.reduce((s, l) => s + (l.outstanding_balance || 0), 0);
-  const par30Loans = loans.filter(l => (l.days_past_due || 0) >= 30);
-  const par60Loans = loans.filter(l => (l.days_past_due || 0) >= 60);
-  const par90Loans = loans.filter(l => (l.days_past_due || 0) >= 90);
   const provisionAmount = calculateProvisions(loans);
-
-  const totalDisbursed = loans.reduce((s, l) => s + (l.principal_amount || 0), 0);
-  const totalPaid = loans.reduce((s, l) => s + (l.total_paid_usd || 0), 0);
 
   const quarter = Math.ceil((config.periodEnd.getMonth() + 1) / 3);
 
