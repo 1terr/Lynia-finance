@@ -1,0 +1,462 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Phase 6: Apache Fineract ECS Fargate Deployment
+  Runs Fineract as a containerized service within the existing VPC private subnets
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  FineractImageTag:
+    Type: String
+    Default: latest
+    Description: Docker image tag for apache/fineract
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # ECS CLUSTER
+  # ==========================================================
+  FineractCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${Environment}-lynia-fineract"
+      ClusterSettings:
+        - Name: containerInsights
+          Value: !If [IsProduction, enabled, disabled]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: fineract
+
+  # ==========================================================
+  # SECURITY GROUPS
+  # ==========================================================
+  FineractSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-fineract-sg"
+      GroupDescription: Security group for Fineract ECS tasks
+      VpcId: !ImportValue
+        Fn::Sub: "${Environment}-lynia-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8443
+          ToPort: 8443
+          SourceSecurityGroupId: !ImportValue
+            Fn::Sub: "${Environment}-lynia-lambda-sg-id"
+          Description: "Lambda functions → Fineract API"
+        - IpProtocol: tcp
+          FromPort: 8443
+          ToPort: 8443
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+          Description: "ALB health checks → Fineract"
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: "10.0.0.0/16"
+          Description: "Fineract → RDS PostgreSQL"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTPS outbound (AWS APIs, Secrets Manager)"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-fineract-sg"
+
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Environment}-lynia-fineract-alb-sg"
+      GroupDescription: Security group for Fineract internal ALB
+      VpcId: !ImportValue
+        Fn::Sub: "${Environment}-lynia-vpc-id"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8443
+          ToPort: 8443
+          SourceSecurityGroupId: !ImportValue
+            Fn::Sub: "${Environment}-lynia-lambda-sg-id"
+          Description: "Lambda functions → ALB"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-fineract-alb-sg"
+
+  ALBSecurityGroupEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Properties:
+      GroupId: !Ref ALBSecurityGroup
+      IpProtocol: tcp
+      FromPort: 8443
+      ToPort: 8443
+      DestinationSecurityGroupId: !Ref FineractSecurityGroup
+      Description: "ALB → Fineract tasks"
+
+  # Allow Fineract to access existing RDS security group
+  FineractToRDSIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !ImportValue
+        Fn::Sub: "${Environment}-lynia-db-sg"
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref FineractSecurityGroup
+      Description: "Fineract ECS → RDS PostgreSQL"
+
+  # ==========================================================
+  # IAM ROLES
+  # ==========================================================
+  FineractTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-fineract-exec-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: FineractSecretsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
+        - PolicyName: FineractLogging
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !GetAtt FineractLogGroup.Arn
+
+  FineractTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-fineract-task-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: FineractCloudWatch
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - cloudwatch:PutMetricData
+                Resource: "*"
+                Condition:
+                  StringEquals:
+                    cloudwatch:namespace: !Sub "${Environment}/lynia/fineract"
+
+  # ==========================================================
+  # LOG GROUP
+  # ==========================================================
+  FineractLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/ecs/${Environment}-lynia-fineract"
+      RetentionInDays: !If [IsProduction, 90, 14]
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==========================================================
+  # TASK DEFINITION
+  # ==========================================================
+  FineractTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub "${Environment}-lynia-fineract"
+      Cpu: "1024"
+      Memory: "2048"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !GetAtt FineractTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt FineractTaskRole.Arn
+      RuntimePlatform:
+        CpuArchitecture: X86_64
+        OperatingSystemFamily: LINUX
+      ContainerDefinitions:
+        - Name: fineract
+          Image: !Sub "apache/fineract:${FineractImageTag}"
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8443
+              Protocol: tcp
+          Environment:
+            - Name: FINERACT_NODE_ID
+              Value: "1"
+            - Name: FINERACT_HIKARI_DRIVER_SOURCE_CLASS_NAME
+              Value: org.postgresql.Driver
+            - Name: FINERACT_HIKARI_MINIMUM_IDLE
+              Value: "3"
+            - Name: FINERACT_HIKARI_MAXIMUM_POOL_SIZE
+              Value: "10"
+            - Name: FINERACT_HIKARI_IDLE_TIMEOUT
+              Value: "60000"
+            - Name: FINERACT_HIKARI_CONNECTION_TIMEOUT
+              Value: "20000"
+            - Name: FINERACT_HIKARI_TEST_QUERY
+              Value: "SELECT 1"
+            - Name: FINERACT_HIKARI_AUTO_COMMIT
+              Value: "true"
+            - Name: FINERACT_HIKARI_DS_PROPERTIES_CACHE_PREP_STMTS
+              Value: "true"
+            - Name: FINERACT_HIKARI_DS_PROPERTIES_PREP_STMT_CACHE_SIZE
+              Value: "250"
+            - Name: FINERACT_HIKARI_DS_PROPERTIES_PREP_STMT_CACHE_SQL_LIMIT
+              Value: "2048"
+            - Name: FINERACT_HIKARI_DS_PROPERTIES_USE_SERVER_PREP_STMTS
+              Value: "true"
+            - Name: FINERACT_DEFAULT_TENANTDB_PORT
+              Value: "5432"
+            - Name: FINERACT_DEFAULT_TENANTDB_CONN_PARAMS
+              Value: ""
+            - Name: FINERACT_DEFAULT_TENANTDB_TIMEZONE
+              Value: "Africa/Harare"
+            - Name: FINERACT_DEFAULT_TENANTDB_IDENTIFIER
+              Value: "default"
+            - Name: FINERACT_DEFAULT_TENANTDB_NAME
+              Value: "fineract_default"
+            - Name: FINERACT_DEFAULT_TENANTDB_DESCRIPTION
+              Value: "Lynia Finance Default Tenant"
+            - Name: FINERACT_SERVER_SSL_ENABLED
+              Value: "true"
+            - Name: FINERACT_SECURITY_BASICAUTH_ENABLED
+              Value: "true"
+            - Name: FINERACT_SECURITY_OAUTH_ENABLED
+              Value: "false"
+            - Name: FINERACT_MODE_READ_ENABLED
+              Value: "true"
+            - Name: FINERACT_MODE_WRITE_ENABLED
+              Value: "true"
+            - Name: FINERACT_MODE_BATCH_WORKER_ENABLED
+              Value: "true"
+            - Name: FINERACT_MODE_BATCH_MANAGER_ENABLED
+              Value: "true"
+            - Name: FINERACT_JOB_LOAN_COB_ENABLED
+              Value: "true"
+            - Name: FINERACT_REMOTE_JOB_MESSAGE_HANDLER_SPRING_EVENTS_ENABLED
+              Value: "true"
+            - Name: FINERACT_MANAGEMENT_ENDPOINT_WEB_EXPOSURE_INCLUDE
+              Value: "health,info,prometheus"
+            - Name: FINERACT_MANAGEMENT_PROMETHEUS_ENABLED
+              Value: "true"
+            - Name: FINERACT_EVENTS_EXTERNAL_ENABLED
+              Value: "false"
+            - Name: SPRING_PROFILES_ACTIVE
+              Value: !If [IsProduction, "production", "test"]
+            - Name: OTEL_SERVICE_NAME
+              Value: !Sub "${Environment}-lynia-fineract"
+            - Name: JAVA_TOOL_OPTIONS
+              Value: "-Xmx1G -XX:MinRAMPercentage=25 -XX:MaxRAMPercentage=80 -XX:TieredStopAtLevel=1 -XX:+UseContainerSupport -XX:+UseStringDeduplication --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED"
+          Secrets:
+            - Name: FINERACT_HIKARI_JDBC_URL
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:jdbc_url::"
+            - Name: FINERACT_HIKARI_USERNAME
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_username::"
+            - Name: FINERACT_HIKARI_PASSWORD
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_password::"
+            - Name: FINERACT_DEFAULT_TENANTDB_HOSTNAME
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_host::"
+            - Name: FINERACT_DEFAULT_TENANTDB_UID
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_username::"
+            - Name: FINERACT_DEFAULT_TENANTDB_PWD
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_password::"
+            - Name: FINERACT_DEFAULT_MASTER_PASSWORD
+              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:master_password::"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref FineractLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: fineract
+          HealthCheck:
+            Command:
+              - CMD-SHELL
+              - "curl -kfs https://localhost:8443/fineract-provider/actuator/health || exit 1"
+            Interval: 30
+            Timeout: 10
+            Retries: 5
+            StartPeriod: 180
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==========================================================
+  # INTERNAL APPLICATION LOAD BALANCER
+  # ==========================================================
+  FineractALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${Environment}-lynia-fineract-alb"
+      Scheme: internal
+      Type: application
+      Subnets:
+        - !ImportValue
+          Fn::Sub: "${Environment}-lynia-private-subnet-1"
+        - !ImportValue
+          Fn::Sub: "${Environment}-lynia-private-subnet-2"
+      SecurityGroups:
+        - !Ref ALBSecurityGroup
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  FineractTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub "${Environment}-fineract-tg"
+      Port: 8443
+      Protocol: HTTPS
+      VpcId: !ImportValue
+        Fn::Sub: "${Environment}-lynia-vpc-id"
+      TargetType: ip
+      HealthCheckProtocol: HTTPS
+      HealthCheckPath: /fineract-provider/actuator/health
+      HealthCheckPort: "8443"
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 10
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      Matcher:
+        HttpCode: "200"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  FineractListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref FineractALB
+      Port: 8443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !ImportValue
+            Fn::Sub: "${Environment}-lynia-internal-cert-arn"
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref FineractTargetGroup
+
+  # ==========================================================
+  # ECS SERVICE
+  # ==========================================================
+  FineractService:
+    Type: AWS::ECS::Service
+    DependsOn: FineractListener
+    Properties:
+      ServiceName: fineract-server
+      Cluster: !Ref FineractCluster
+      TaskDefinition: !Ref FineractTaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MaximumPercent: 200
+        MinimumHealthyPercent: 100
+        DeploymentCircuitBreaker:
+          Enable: true
+          Rollback: true
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !ImportValue
+              Fn::Sub: "${Environment}-lynia-private-subnet-1"
+            - !ImportValue
+              Fn::Sub: "${Environment}-lynia-private-subnet-2"
+          SecurityGroups:
+            - !Ref FineractSecurityGroup
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: fineract
+          ContainerPort: 8443
+          TargetGroupArn: !Ref FineractTargetGroup
+      HealthCheckGracePeriodSeconds: 300
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  # ==========================================================
+  # AUTO SCALING
+  # ==========================================================
+  FineractScalableTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Condition: IsProduction
+    Properties:
+      MaxCapacity: 3
+      MinCapacity: 1
+      ResourceId: !Sub "service/${FineractCluster}/${FineractService.Name}"
+      RoleARN: !Sub "arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  FineractScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Condition: IsProduction
+    Properties:
+      PolicyName: !Sub "${Environment}-lynia-fineract-cpu-scaling"
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref FineractScalableTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        TargetValue: 70.0
+        ScaleInCooldown: 300
+        ScaleOutCooldown: 60
+
+Outputs:
+  FineractClusterArn:
+    Description: Fineract ECS Cluster ARN
+    Value: !GetAtt FineractCluster.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-cluster-arn"
+
+  FineractServiceName:
+    Description: Fineract ECS Service Name
+    Value: !GetAtt FineractService.Name
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-service-name"
+
+  FineractALBEndpoint:
+    Description: Internal ALB DNS name for Fineract API
+    Value: !GetAtt FineractALB.DNSName
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-endpoint"
+
+  FineractALBArn:
+    Description: Fineract ALB ARN
+    Value: !Ref FineractALB
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-alb-arn"
+
+  FineractSecurityGroupId:
+    Description: Fineract Security Group ID
+    Value: !Ref FineractSecurityGroup
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-sg-id"

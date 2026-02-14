@@ -1,0 +1,199 @@
+{
+  "description": "Lynia Finance - Fineract Chart of Accounts for Microfinance Lending",
+  "version": "1.0.0",
+  "created": "2026-02-14",
+  "phase": "Phase 6 - Apache Fineract Integration",
+  "notes": [
+    "GL accounts follow standard microfinance chart of accounts structure.",
+    "Type values: 1=Asset, 2=Liability, 3=Equity, 4=Income, 5=Expense.",
+    "Usage values: 1=Header (grouping), 2=Detail (postable).",
+    "Accounts are created once during initial Fineract setup.",
+    "Financial activity mappings connect Fineract loan events to GL entries."
+  ],
+  "accounts": [
+    {
+      "name": "Assets",
+      "glCode": "1000",
+      "type": 1,
+      "usage": 1,
+      "manualEntriesAllowed": false,
+      "description": "Header account for all asset accounts"
+    },
+    {
+      "name": "Cash and Bank",
+      "glCode": "1001",
+      "type": 1,
+      "usage": 2,
+      "parentGlCode": "1000",
+      "manualEntriesAllowed": true,
+      "description": "Cash on hand and bank balances. Fund source for loan disbursements.",
+      "financialActivityMapping": "ASSET_FUND_SOURCE"
+    },
+    {
+      "name": "Loan Portfolio",
+      "glCode": "1100",
+      "type": 1,
+      "usage": 2,
+      "parentGlCode": "1000",
+      "manualEntriesAllowed": false,
+      "description": "Outstanding loan principal balances. Debited on disbursement, credited on repayment.",
+      "financialActivityMapping": "ASSET_LOAN_PORTFOLIO"
+    },
+    {
+      "name": "Interest Receivable",
+      "glCode": "1200",
+      "type": 1,
+      "usage": 2,
+      "parentGlCode": "1000",
+      "manualEntriesAllowed": false,
+      "description": "Accrued interest not yet collected. Used with accrual-based accounting."
+    },
+    {
+      "name": "Fee Receivable",
+      "glCode": "1300",
+      "type": 1,
+      "usage": 2,
+      "parentGlCode": "1000",
+      "manualEntriesAllowed": false,
+      "description": "Accrued fees not yet collected (disbursement fees, processing fees)."
+    },
+    {
+      "name": "Penalty Receivable",
+      "glCode": "1400",
+      "type": 1,
+      "usage": 2,
+      "parentGlCode": "1000",
+      "manualEntriesAllowed": false,
+      "description": "Accrued penalty charges not yet collected (late payment penalties)."
+    },
+    {
+      "name": "Liabilities",
+      "glCode": "2000",
+      "type": 2,
+      "usage": 1,
+      "manualEntriesAllowed": false,
+      "description": "Header account for all liability accounts"
+    },
+    {
+      "name": "Overpayment Liability",
+      "glCode": "2001",
+      "type": 2,
+      "usage": 2,
+      "parentGlCode": "2000",
+      "manualEntriesAllowed": false,
+      "description": "Customer overpayments held pending refund or application to next installment."
+    },
+    {
+      "name": "Transfers in Suspense",
+      "glCode": "2100",
+      "type": 2,
+      "usage": 2,
+      "parentGlCode": "2000",
+      "manualEntriesAllowed": false,
+      "description": "Temporary holding account for funds in transit between accounts.",
+      "financialActivityMapping": "LIABILITY_TRANSFER_IN_SUSPENSE"
+    },
+    {
+      "name": "Equity",
+      "glCode": "3000",
+      "type": 3,
+      "usage": 1,
+      "manualEntriesAllowed": false,
+      "description": "Header account for equity accounts"
+    },
+    {
+      "name": "Opening Balance Equity",
+      "glCode": "3001",
+      "type": 3,
+      "usage": 2,
+      "parentGlCode": "3000",
+      "manualEntriesAllowed": true,
+      "description": "Used for initial balance adjustments during setup."
+    },
+    {
+      "name": "Income",
+      "glCode": "4000",
+      "type": 4,
+      "usage": 1,
+      "manualEntriesAllowed": false,
+      "description": "Header account for all income accounts"
+    },
+    {
+      "name": "Interest Income",
+      "glCode": "4001",
+      "type": 4,
+      "usage": 2,
+      "parentGlCode": "4000",
+      "manualEntriesAllowed": false,
+      "description": "Interest earned on outstanding loans. Credited when interest is recognized."
+    },
+    {
+      "name": "Fee Income",
+      "glCode": "4002",
+      "type": 4,
+      "usage": 2,
+      "parentGlCode": "4000",
+      "manualEntriesAllowed": false,
+      "description": "Fees earned (disbursement fees, processing fees)."
+    },
+    {
+      "name": "Penalty Income",
+      "glCode": "4003",
+      "type": 4,
+      "usage": 2,
+      "parentGlCode": "4000",
+      "manualEntriesAllowed": false,
+      "description": "Late payment penalty income."
+    },
+    {
+      "name": "Income from Recovery",
+      "glCode": "4004",
+      "type": 4,
+      "usage": 2,
+      "parentGlCode": "4000",
+      "manualEntriesAllowed": false,
+      "description": "Income from recovery of previously written-off loans."
+    },
+    {
+      "name": "Expenses",
+      "glCode": "5000",
+      "type": 5,
+      "usage": 1,
+      "manualEntriesAllowed": false,
+      "description": "Header account for all expense accounts"
+    },
+    {
+      "name": "Loan Write-Off Expense",
+      "glCode": "5001",
+      "type": 5,
+      "usage": 2,
+      "parentGlCode": "5000",
+      "manualEntriesAllowed": false,
+      "description": "Expense recognized when loans are written off as uncollectable."
+    },
+    {
+      "name": "Provision Expense",
+      "glCode": "5002",
+      "type": 5,
+      "usage": 2,
+      "parentGlCode": "5000",
+      "manualEntriesAllowed": false,
+      "description": "Expense for loan loss provisioning per RBZ guidelines."
+    }
+  ],
+  "loanProductAccountMappings": {
+    "description": "Maps loan product financial events to GL accounts. Applied to all 3 loan products.",
+    "fundSourceAccountId": "1001",
+    "loanPortfolioAccountId": "1100",
+    "interestOnLoanAccountId": "4001",
+    "incomeFromFeeAccountId": "4002",
+    "incomeFromPenaltyAccountId": "4003",
+    "writeOffAccountId": "5001",
+    "overpaymentLiabilityAccountId": "2001",
+    "transfersInSuspenseAccountId": "2100",
+    "receivableInterestAccountId": "1200",
+    "receivableFeeAccountId": "1300",
+    "receivablePenaltyAccountId": "1400",
+    "incomeFromRecoveryAccountId": "4004"
+  }
+}

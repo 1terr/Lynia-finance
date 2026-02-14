@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Phase 6: Fineract CloudWatch Alarms and Monitoring
+  Health checks, alarms, and dashboard for the Fineract ECS service
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  AlertEmail:
+    Type: String
+    Default: alerts@lynia.co.zw
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+
+Resources:
+  # ==========================================================
+  # SNS TOPIC FOR ALERTS
+  # ==========================================================
+  FineractAlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${Environment}-lynia-fineract-alerts"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+
+  FineractAlertSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      Endpoint: !Ref AlertEmail
+      TopicArn: !Ref FineractAlertTopic
+
+  # ==========================================================
+  # CLOUDWATCH ALARMS
+  # ==========================================================
+
+  # Critical: Fineract service has zero running tasks
+  FineractServiceDownAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-service-down"
+      AlarmDescription: "CRITICAL: Fineract ECS service has no running tasks"
+      Namespace: AWS/ECS
+      MetricName: RunningTaskCount
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${Environment}-lynia-fineract"
+        - Name: ServiceName
+          Value: fineract-server
+      Statistic: Minimum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref FineractAlertTopic
+
+  # Warning: Fineract CPU utilization > 80%
+  FineractHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-high-cpu"
+      AlarmDescription: "WARNING: Fineract CPU utilization exceeding 80%"
+      Namespace: AWS/ECS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${Environment}-lynia-fineract"
+        - Name: ServiceName
+          Value: fineract-server
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref FineractAlertTopic
+
+  # Warning: Fineract memory utilization > 85%
+  FineractHighMemoryAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-high-memory"
+      AlarmDescription: "WARNING: Fineract memory utilization exceeding 85%"
+      Namespace: AWS/ECS
+      MetricName: MemoryUtilization
+      Dimensions:
+        - Name: ClusterName
+          Value: !Sub "${Environment}-lynia-fineract"
+        - Name: ServiceName
+          Value: fineract-server
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 85
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref FineractAlertTopic
+
+  # Critical: ALB target group has no healthy targets
+  FineractUnhealthyTargetsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-unhealthy-targets"
+      AlarmDescription: "CRITICAL: No healthy Fineract targets behind ALB"
+      Namespace: AWS/ApplicationELB
+      MetricName: UnHealthyHostCount
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !ImportValue
+            Fn::Sub: "${Environment}-lynia-fineract-alb-arn"
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: breaching
+      AlarmActions:
+        - !Ref FineractAlertTopic
+
+  # Warning: ALB 5xx error rate > 5%
+  FineractALB5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-alb-5xx"
+      AlarmDescription: "WARNING: Fineract ALB returning 5xx errors"
+      Namespace: AWS/ApplicationELB
+      MetricName: HTTPCode_Target_5XX_Count
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !ImportValue
+            Fn::Sub: "${Environment}-lynia-fineract-alb-arn"
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref FineractAlertTopic
+
+  # Warning: ALB response time > 2s p95
+  FineractHighLatencyAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-high-latency"
+      AlarmDescription: "WARNING: Fineract API response time exceeding 2 seconds"
+      Namespace: AWS/ApplicationELB
+      MetricName: TargetResponseTime
+      Dimensions:
+        - Name: LoadBalancer
+          Value: !ImportValue
+            Fn::Sub: "${Environment}-lynia-fineract-alb-arn"
+      ExtendedStatistic: p95
+      Period: 300
+      EvaluationPeriods: 3
+      Threshold: 2.0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref FineractAlertTopic
+
+  # ==========================================================
+  # CLOUDWATCH DASHBOARD
+  # ==========================================================
+  FineractDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: IsProduction
+    Properties:
+      DashboardName: !Sub "${Environment}-lynia-fineract"
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "metric",
+              "x": 0, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "title": "Fineract ECS - CPU & Memory",
+                "metrics": [
+                  ["AWS/ECS", "CPUUtilization", "ClusterName", "${Environment}-lynia-fineract", "ServiceName", "fineract-server", {"label": "CPU %"}],
+                  ["AWS/ECS", "MemoryUtilization", "ClusterName", "${Environment}-lynia-fineract", "ServiceName", "fineract-server", {"label": "Memory %"}]
+                ],
+                "period": 300,
+                "stat": "Average",
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 0, "width": 12, "height": 6,
+              "properties": {
+                "title": "Fineract ECS - Running Tasks",
+                "metrics": [
+                  ["AWS/ECS", "RunningTaskCount", "ClusterName", "${Environment}-lynia-fineract", "ServiceName", "fineract-server"],
+                  ["AWS/ECS", "DesiredTaskCount", "ClusterName", "${Environment}-lynia-fineract", "ServiceName", "fineract-server"]
+                ],
+                "period": 60,
+                "stat": "Average",
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "title": "Fineract ALB - Request Count & Latency",
+                "metrics": [
+                  ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "Requests"}],
+                  ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${FineractALBFullName}", {"stat": "p95", "label": "p95 Latency", "yAxis": "right"}]
+                ],
+                "period": 300,
+                "region": "${AWS::Region}"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 6, "width": 12, "height": 6,
+              "properties": {
+                "title": "Fineract ALB - HTTP Status Codes",
+                "metrics": [
+                  ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "2xx", "color": "#2ca02c"}],
+                  ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "4xx", "color": "#ff7f0e"}],
+                  ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "5xx", "color": "#d62728"}]
+                ],
+                "period": 300,
+                "region": "${AWS::Region}"
+              }
+            }
+          ]
+        }
+
+  # Placeholder for ALB full name reference
+  FineractALBFullName:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Metadata:
+      Note: "Replace ${FineractALBFullName} in dashboard JSON with actual ALB full name after deployment"
+
+Outputs:
+  FineractAlertTopicArn:
+    Description: SNS topic for Fineract alerts
+    Value: !Ref FineractAlertTopic
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-alert-topic"
