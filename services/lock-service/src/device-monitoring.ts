@@ -227,11 +227,11 @@ export async function getDevicesNeedingAttention(): Promise<Array<{
     .limit(50)
     .execute();
 
-  return (data || []).map(d => ({
-    device_id: d.device_id,
-    imei: (d.devices as Record<string, unknown>)?.imei || '',
-    health_score: d.health_score,
-    critical_alerts: d.critical_alerts,
-    last_checked: d.checked_at,
+  return (data || []).map((d: Record<string, unknown>) => ({
+    device_id: d.device_id as string,
+    imei: String((d.devices as Record<string, unknown>)?.imei || ''),
+    health_score: d.health_score as number,
+    critical_alerts: d.critical_alerts as number,
+    last_checked: d.checked_at as string,
   }));
 }

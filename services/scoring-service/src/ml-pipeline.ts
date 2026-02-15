@@ -182,7 +182,7 @@ export async function extractFeatures(customerId: string): Promise<FeatureVector
 
   // Compute repayment features from history
   const totalPayments = payments?.length || 0;
-  const onTimePayments = payments?.filter(p => p.status === 'completed' && !p.is_late).length || 0;
+  const onTimePayments = payments?.filter((p: Record<string, unknown>) => p.status === 'completed' && !p.is_late).length || 0;
   const onTimeRate = totalPayments > 0 ? onTimePayments / totalPayments : 0.5;
 
   // Extract onboarding behavior
@@ -292,7 +292,7 @@ export function scoreCustomer(
   const contributions: Record<string, number> = {};
 
   for (const [feature, coeff] of Object.entries(weights.coefficients)) {
-    const value = (features as Record<string, number>)[feature] || 0;
+    const value = (features as unknown as Record<string, number>)[feature] || 0;
     const contribution = coeff * value;
     logit += contribution;
     contributions[feature] = contribution;
@@ -417,8 +417,8 @@ export async function getModelPerformance(
     .execute();
 
   const totalPredictions = predictions?.length || 0;
-  const approvedCount = predictions?.filter(p => p.decision === 'approve').length || 0;
-  const defaults = outcomes?.filter(o => o.outcome === 'default').length || 0;
+  const approvedCount = predictions?.filter((p: Record<string, unknown>) => p.decision === 'approve').length || 0;
+  const defaults = outcomes?.filter((o: Record<string, unknown>) => o.outcome === 'default').length || 0;
   const defaultRate = approvedCount > 0 ? defaults / approvedCount : 0;
 
   return {

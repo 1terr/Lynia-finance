@@ -161,7 +161,7 @@ export async function generateExport(request: ExportRequest): Promise<ExportResu
 
   if (error) throw new Error(`Export failed: ${error.message}`);
 
-  const maskedRecords = (records || []).map(r => maskRecord(r, request.mask_pii));
+  const maskedRecords = (records || []).map((r: Record<string, unknown>) => maskRecord(r, request.mask_pii));
 
   let data: string;
   if (request.format === 'csv') {

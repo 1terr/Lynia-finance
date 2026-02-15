@@ -123,17 +123,17 @@ export async function getDashboardKPIs(period: 'today' | 'mtd' | 'ytd' = 'mtd'):
     .in('loan_status', ['active', 'delinquent'])
     .execute();
 
-  const totalPortfolioValue = portfolio?.reduce((sum, l) =>
-    sum + ((l.total_amount_due || 0) - (l.total_amount_paid || 0)), 0) || 0;
+  const totalPortfolioValue = portfolio?.reduce((sum: number, l: Record<string, unknown>) =>
+    sum + ((Number(l.total_amount_due) || 0) - (Number(l.total_amount_paid) || 0)), 0) || 0;
 
   const avgDPD = portfolio?.length
-    ? portfolio.reduce((sum, l) => sum + (l.days_past_due || 0), 0) / portfolio.length
+    ? portfolio.reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.days_past_due) || 0), 0) / portfolio.length
     : 0;
 
   // PAR calculations
-  const par30 = portfolio?.filter(l => (l.days_past_due || 0) > 30).length || 0;
-  const par60 = portfolio?.filter(l => (l.days_past_due || 0) > 60).length || 0;
-  const par90 = portfolio?.filter(l => (l.days_past_due || 0) > 90).length || 0;
+  const par30 = portfolio?.filter((l: Record<string, unknown>) => (Number(l.days_past_due) || 0) > 30).length || 0;
+  const par60 = portfolio?.filter((l: Record<string, unknown>) => (Number(l.days_past_due) || 0) > 60).length || 0;
+  const par90 = portfolio?.filter((l: Record<string, unknown>) => (Number(l.days_past_due) || 0) > 90).length || 0;
   const totalLoans = portfolio?.length || 1;
 
   // MTD disbursements
@@ -143,7 +143,7 @@ export async function getDashboardKPIs(period: 'today' | 'mtd' | 'ytd' = 'mtd'):
     .gte('created_at', periodStartStr)
     .execute();
 
-  const disbursedMTD = mtdLoans?.reduce((sum, l) => sum + (l.principal_amount || 0), 0) || 0;
+  const disbursedMTD = mtdLoans?.reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.principal_amount) || 0), 0) || 0;
 
   // MTD collections
   const { data: mtdPayments } = await db
@@ -153,7 +153,7 @@ export async function getDashboardKPIs(period: 'today' | 'mtd' | 'ytd' = 'mtd'):
     .gte('created_at', periodStartStr)
     .execute();
 
-  const collectedMTD = mtdPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+  const collectedMTD = mtdPayments?.reduce((sum: number, p: Record<string, unknown>) => sum + (Number(p.amount) || 0), 0) || 0;
 
   // Customer metrics
   const { count: totalCustomers } = await db
@@ -230,7 +230,7 @@ export async function getPortfolioBreakdown(): Promise<PortfolioBreakdown> {
     t.count++; t.value += outstanding;
     byTier.set(tier, t);
 
-    const province = (loan.customers as Record<string, unknown>)?.province || 'Unknown';
+    const province = String((loan.customers as Record<string, unknown>)?.province || 'Unknown');
     const p = byProvince.get(province) || { count: 0, value: 0 };
     p.count++; p.value += outstanding;
     byProvince.set(province, p);
@@ -266,13 +266,13 @@ export async function getTrend(
       case 'disbursements': {
         const { data } = await db.from('loans').select('principal_amount')
           .gte('created_at', startStr).lt('created_at', endStr).execute();
-        value = data?.reduce((s, l) => s + (l.principal_amount || 0), 0) || 0;
+        value = data?.reduce((s: number, l: Record<string, unknown>) => s + (Number(l.principal_amount) || 0), 0) || 0;
         break;
       }
       case 'collections': {
         const { data } = await db.from('payments').select('amount')
           .eq('status', 'completed').gte('created_at', startStr).lt('created_at', endStr).execute();
-        value = data?.reduce((s, p) => s + (p.amount || 0), 0) || 0;
+        value = data?.reduce((s: number, p: Record<string, unknown>) => s + (Number(p.amount) || 0), 0) || 0;
         break;
       }
       case 'customers': {
@@ -313,7 +313,7 @@ export async function getDistributorRankings(limit: number = 20): Promise<Distri
     .limit(limit)
     .execute();
 
-  return (distributors || []).map((d, i) => ({
+  return (distributors || []).map((d: Record<string, unknown>, i: number) => ({
     distributor_id: d.id,
     name: d.name,
     handovers_count: d.total_devices_distributed || 0,

@@ -155,7 +155,7 @@ export async function initiateRepossession(
 
   const { data: created } = await db
     .from('repossession_orders')
-    .insert(order)
+    .insert(order as unknown as Record<string, unknown>)
     .select()
     .single()
     .execute();

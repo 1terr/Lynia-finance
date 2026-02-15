@@ -212,8 +212,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-scoring-service
-      CodeUri: services/scoring-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: scoring-service/src/index.handler
       Description: Credit scoring and loan assessment service
       MemorySize: 1024
       Policies:
@@ -267,7 +267,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - scoring-service/src/index.ts
 
   # =====================================================
   # 2. WHATSAPP SERVICE
@@ -276,8 +276,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-whatsapp-service
-      CodeUri: services/whatsapp-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: whatsapp-service/src/index.handler
       Description: WhatsApp messaging and webhook service
       Policies:
         - Version: "2012-10-17"
@@ -337,7 +337,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - whatsapp-service/src/index.ts
 
   # =====================================================
   # 3. KYC SERVICE
@@ -346,8 +346,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-kyc-service
-      CodeUri: services/kyc-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: kyc-service/src/index.handler
       Description: KYC verification service (Smile Identity integration)
       Policies:
         - Version: "2012-10-17"
@@ -413,7 +413,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - kyc-service/src/index.ts
 
   # =====================================================
   # 4. PAYMENT SERVICE
@@ -422,8 +422,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-payment-service
-      CodeUri: services/payment-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: payment-service/src/index.handler
       Description: Payment processing service (EcoCash, OneMoney integration)
       MemorySize: 1024
       Timeout: 60
@@ -494,7 +494,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - payment-service/src/index.ts
 
   # =====================================================
   # 5. LOCK SERVICE
@@ -503,8 +503,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-lock-service
-      CodeUri: services/lock-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: lock-service/src/index.handler
       Description: Device lock/unlock service (Trustonic integration)
       Policies:
         - Version: "2012-10-17"
@@ -573,7 +573,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - lock-service/src/index.ts
 
   # =====================================================
   # 6. NOTIFICATION SERVICE
@@ -582,8 +582,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-notification-service
-      CodeUri: services/notification-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: notification-service/src/index.handler
       Description: Multi-channel notification service (SMS, WhatsApp, Email)
       Policies:
         - Version: "2012-10-17"
@@ -641,7 +641,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - notification-service/src/index.ts
 
   # =====================================================
   # 7. FORM SUBMISSION SERVICE (Landing Page)
@@ -650,8 +650,8 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub ${Environment}-lynia-form-submission
-      CodeUri: services/form-submission-service/
-      Handler: dist/index.handler
+      CodeUri: services/
+      Handler: form-submission-service/src/index.handler
       Description: Landing page form submissions (contact, partnership, waitlist)
       MemorySize: 256
       Timeout: 15
@@ -695,7 +695,7 @@ Resources:
         External:
           - "@aws-sdk/*"
         EntryPoints:
-          - src/index.ts
+          - form-submission-service/src/index.ts
 
 Outputs:
   # API Gateway
