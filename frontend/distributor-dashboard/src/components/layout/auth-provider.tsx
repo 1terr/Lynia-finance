@@ -1,34 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getSession, signOut as cognitoSignOut, isCognitoConfigured } from '@/lib/auth/cognito';
+import { getSession, isCognitoConfigured } from '@/lib/auth/cognito';
+import { buildDistributorFromSession } from '@/lib/auth/build-distributor';
 import { useAuthStore } from '@/lib/store/auth-store';
-import type { Distributor } from '@/types/distributor';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
 const DEMO_SESSION_KEY = 'lynia-demo-distributor';
-
-/** Fetch distributor profile for the authenticated user via backend API. */
-async function fetchDistributorProfile(
-  token: string,
-): Promise<Distributor | null> {
-  try {
-    const res = await fetch(`${API_URL}/distributors/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!res.ok) return null;
-
-    const data = await res.json();
-    return data as Distributor;
-  } catch {
-    // Request failed -- treat as unauthenticated
-  }
-  return null;
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const distributor = useAuthStore((s) => s.distributor);
@@ -54,14 +31,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const session = await getSession();
 
         if (session && session.isValid()) {
-          const token = session.getIdToken().getJwtToken();
-          const profile = await fetchDistributorProfile(token);
-          if (profile) {
-            setDistributor(profile);
-          } else {
-            // User exists in Cognito but not in distributors table or inactive
-            cognitoSignOut();
-          }
+          const profile = buildDistributorFromSession(session);
+          setDistributor(profile);
         }
       } catch {
         // Session expired or invalid -- redirect handled by render gate
