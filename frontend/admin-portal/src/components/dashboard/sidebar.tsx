@@ -2,161 +2,232 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { hasPermission } from '@/lib/permissions';
-import type { AdminRole } from '@/types';
 import {
   LayoutDashboard,
   Users,
-  FileText,
+  Banknote,
   Smartphone,
   CreditCard,
   BarChart3,
-  Settings,
   Shield,
-  ClipboardCheck,
-  X,
+  ChevronDown,
+  type LucideIcon,
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth/context';
+import { hasPermission } from '@/lib/auth/permissions';
+import type { PermissionAction } from '@/types';
 
-interface SidebarProps {
-  role: AdminRole;
-  open: boolean;
-  onClose: () => void;
+interface SidebarItem {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  requiredPermission?: { resource: string; action: PermissionAction };
+  children?: { label: string; href: string }[];
 }
 
-const navItems = [
+const NAVIGATION: SidebarItem[] = [
   {
     label: 'Dashboard',
     href: '/',
     icon: LayoutDashboard,
-    permission: null,
   },
   {
     label: 'Customers',
     href: '/customers',
     icon: Users,
-    permission: 'customers:read' as const,
+    requiredPermission: { resource: 'customers', action: 'read' },
+    children: [
+      { label: 'All Customers', href: '/customers' },
+      { label: 'KYC Review', href: '/customers/kyc-review' },
+    ],
   },
   {
     label: 'Loans',
     href: '/loans',
-    icon: FileText,
-    permission: 'loans:read' as const,
+    icon: Banknote,
+    requiredPermission: { resource: 'loans', action: 'read' },
+    children: [
+      { label: 'All Loans', href: '/loans' },
+      { label: 'Pending Approval', href: '/loans/pending-approval' },
+    ],
   },
   {
     label: 'Devices',
     href: '/devices',
     icon: Smartphone,
-    permission: 'devices:read' as const,
+    requiredPermission: { resource: 'devices', action: 'read' },
+    children: [
+      { label: 'Inventory', href: '/devices' },
+      { label: 'Handovers', href: '/devices/handovers' },
+      { label: 'Lock/Unlock', href: '/devices/lock-unlock' },
+    ],
   },
   {
     label: 'Payments',
     href: '/payments',
     icon: CreditCard,
-    permission: 'payments:read' as const,
-  },
-  {
-    label: 'KYC Review',
-    href: '/customers/kyc-review',
-    icon: ClipboardCheck,
-    permission: 'kyc:review' as const,
+    requiredPermission: { resource: 'payments', action: 'read' },
+    children: [
+      { label: 'All Payments', href: '/payments' },
+      { label: 'Collections', href: '/payments/collections' },
+    ],
   },
   {
     label: 'Reports',
     href: '/reports',
     icon: BarChart3,
-    permission: 'reports:read' as const,
-  },
-  {
-    label: 'Settings',
-    href: '/settings',
-    icon: Settings,
-    permission: 'settings:read' as const,
-  },
-  {
-    label: 'Admin Users',
-    href: '/settings/admin-users',
-    icon: Shield,
-    permission: 'admin_users:read' as const,
+    requiredPermission: { resource: 'reports', action: 'read' },
   },
 ];
 
-export function Sidebar({ role, open, onClose }: SidebarProps) {
-  const pathname = usePathname();
+interface SidebarProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-  const visibleItems = navItems.filter(
-    (item) => !item.permission || hasPermission(role, item.permission)
-  );
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const pathname = usePathname();
+  const { user } = useAuth();
+
+  const filteredNav = NAVIGATION.filter((item) => {
+    if (!item.requiredPermission) return true;
+    if (!user) return false;
+    return hasPermission(
+      user.role,
+      item.requiredPermission.resource,
+      item.requiredPermission.action
+    );
+  });
 
   return (
     <>
       {/* Mobile overlay */}
-      {open && (
+      {isOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-white border-r border-gray-200 transition-transform duration-200 lg:translate-x-0 lg:static lg:z-auto',
-          open ? 'translate-x-0' : '-translate-x-full'
+          'fixed left-0 top-0 z-50 flex h-full w-[var(--sidebar-width)] flex-col bg-sidebar transition-transform duration-200 lg:z-30 lg:translate-x-0',
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Logo */}
-        <div className="flex h-16 items-center justify-between border-b border-gray-200 px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-white font-bold text-sm">
-              LF
-            </div>
-            <span className="text-lg font-semibold text-gray-900">Lynia Finance</span>
-          </Link>
-          <button
-            onClick={onClose}
-            className="rounded-md p-1 text-gray-400 hover:text-gray-600 lg:hidden"
-          >
-            <X className="h-5 w-5" />
-          </button>
+        <div className="flex h-[var(--header-height)] items-center gap-3 border-b border-white/10 px-6">
+          <Shield className="h-8 w-8 text-brand-400" />
+          <div>
+            <h1 className="text-lg font-bold text-white">Lynia Admin</h1>
+            <p className="text-xs text-gray-400">Finance Platform</p>
+          </div>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-4">
+        <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
-            {visibleItems.map((item) => {
-              const isActive =
-                item.href === '/'
-                  ? pathname === '/'
-                  : pathname.startsWith(item.href);
-              const Icon = item.icon;
-
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onClose}
-                    className={cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-brand-50 text-brand-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    )}
-                  >
-                    <Icon className={cn('h-5 w-5 flex-shrink-0', isActive ? 'text-brand-600' : 'text-gray-400')} />
-                    {item.label}
-                  </Link>
-                </li>
-              );
-            })}
+            {filteredNav.map((item) => (
+              <SidebarNavItem
+                key={item.href}
+                item={item}
+                pathname={pathname}
+              />
+            ))}
           </ul>
         </nav>
 
-        {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
-          <p className="text-xs text-gray-400">Lynia Finance v0.1.0</p>
-        </div>
+        {/* User info footer */}
+        {user && (
+          <div className="border-t border-white/10 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-medium text-white">
+                {user.full_name
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white">
+                  {user.full_name}
+                </p>
+                <p className="truncate text-xs text-gray-400">{user.email}</p>
+              </div>
+            </div>
+          </div>
+        )}
       </aside>
     </>
+  );
+}
+
+function SidebarNavItem({
+  item,
+  pathname,
+}: {
+  item: SidebarItem;
+  pathname: string;
+}) {
+  const isActive =
+    pathname === item.href ||
+    (item.children?.some((child) => pathname === child.href) ?? false);
+  const Icon = item.icon;
+
+  if (item.children) {
+    return (
+      <li>
+        <details open={isActive}>
+          <summary
+            className={cn(
+              'flex cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              isActive
+                ? 'bg-sidebar-active text-white'
+                : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
+            )}
+          >
+            <Icon className="h-5 w-5 shrink-0" />
+            <span className="flex-1">{item.label}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 transition-transform [[open]>&]:rotate-180" />
+          </summary>
+          <ul className="mt-1 space-y-1 pl-11">
+            {item.children.map((child) => (
+              <li key={child.href}>
+                <Link
+                  href={child.href}
+                  className={cn(
+                    'block rounded-lg px-3 py-1.5 text-sm transition-colors',
+                    pathname === child.href
+                      ? 'font-medium text-white'
+                      : 'text-gray-400 hover:text-white'
+                  )}
+                >
+                  {child.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
+      </li>
+    );
+  }
+
+  return (
+    <li>
+      <Link
+        href={item.href}
+        className={cn(
+          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+          isActive
+            ? 'bg-sidebar-active text-white'
+            : 'text-gray-300 hover:bg-sidebar-hover hover:text-white'
+        )}
+      >
+        <Icon className="h-5 w-5 shrink-0" />
+        <span>{item.label}</span>
+      </Link>
+    </li>
   );
 }
