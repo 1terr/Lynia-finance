@@ -301,7 +301,7 @@ export async function analyzeReferralNetwork(customerId: string): Promise<Referr
   // Check default rate of referred customers
   let defaultRate = 0;
   if (referrals && referrals.length > 0) {
-    const referralIds = referrals.map(r => r.id);
+    const referralIds = referrals.map((r: Record<string, unknown>) => r.id);
     const { data: defaultedLoans } = await db
       .from('loans')
       .select('id')
@@ -402,7 +402,6 @@ export async function computeAlternativeFeatures(
 
   // Persist to feature store
   await db.from('customer_features').upsert({
-    customer_id: customerId,
     ...features,
   }).execute();
 

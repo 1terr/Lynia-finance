@@ -145,8 +145,8 @@ export async function generateLoanPortfolioSummary(
     .execute();
 
   const totalOutstanding = activeLoans || [];
-  const totalPrincipal = totalOutstanding.reduce((sum, l) => sum + (l.principal_amount || 0), 0);
-  const totalInterest = totalOutstanding.reduce((sum, l) => sum + (l.total_interest || 0), 0);
+  const totalPrincipal = totalOutstanding.reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.principal_amount) || 0), 0);
+  const totalInterest = totalOutstanding.reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.total_interest) || 0), 0);
 
   // Loans by status
   const loansByStatus: Record<string, { count: number; amount: number }> = {};
@@ -178,7 +178,7 @@ export async function generateLoanPortfolioSummary(
     .execute();
 
   const newCount = newLoans?.length || 0;
-  const newAmount = (newLoans || []).reduce((sum, l) => sum + (l.principal_amount || 0), 0);
+  const newAmount = (newLoans || []).reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.principal_amount) || 0), 0);
 
   // Closed loans in period
   const { data: closedLoans } = await db
@@ -190,7 +190,7 @@ export async function generateLoanPortfolioSummary(
     .execute();
 
   const closedCount = closedLoans?.length || 0;
-  const closedAmount = (closedLoans || []).reduce((sum, l) => sum + (l.principal_amount || 0), 0);
+  const closedAmount = (closedLoans || []).reduce((sum: number, l: Record<string, unknown>) => sum + (Number(l.principal_amount) || 0), 0);
 
   // Collection rate
   const { data: payments } = await db
@@ -201,7 +201,7 @@ export async function generateLoanPortfolioSummary(
     .lte('created_at', periodEnd)
     .execute();
 
-  const totalCollected = (payments || []).reduce((sum, p) => sum + (p.amount || 0), 0);
+  const totalCollected = (payments || []).reduce((sum: number, p: Record<string, unknown>) => sum + (Number(p.amount) || 0), 0);
   const collectionRate = totalPrincipal > 0 ? (totalCollected / totalPrincipal) * 100 : 0;
 
   const summary: LoanPortfolioSummary = {
@@ -221,7 +221,7 @@ export async function generateLoanPortfolioSummary(
       : 0,
   };
 
-  await saveReport(config, summary);
+  await saveReport(config, summary as unknown as Record<string, unknown>);
   return summary;
 }
 
@@ -257,16 +257,16 @@ export async function generateDelinquencyReport(
     .execute();
 
   const totalPortfolio = (activeLoanAmounts || []).reduce(
-    (sum, l) => sum + (l.principal_amount || 0), 0
+    (sum: number, l: Record<string, unknown>) => sum + (Number(l.principal_amount) || 0), 0
   );
 
   // PAR buckets
-  const par1_30 = loans.filter(l => l.days_past_due >= 1 && l.days_past_due <= 30);
-  const par31_60 = loans.filter(l => l.days_past_due >= 31 && l.days_past_due <= 60);
-  const par61_90 = loans.filter(l => l.days_past_due >= 61 && l.days_past_due <= 90);
-  const par90plus = loans.filter(l => l.days_past_due > 90);
+  const par1_30 = loans.filter((l: Record<string, unknown>) => Number(l.days_past_due) >= 1 && Number(l.days_past_due) <= 30);
+  const par31_60 = loans.filter((l: Record<string, unknown>) => Number(l.days_past_due) >= 31 && Number(l.days_past_due) <= 60);
+  const par61_90 = loans.filter((l: Record<string, unknown>) => Number(l.days_past_due) >= 61 && Number(l.days_past_due) <= 90);
+  const par90plus = loans.filter((l: Record<string, unknown>) => Number(l.days_past_due) > 90);
 
-  const sumAmount = (arr: typeof loans) => arr.reduce((s, l) => s + (l.principal_amount || 0), 0);
+  const sumAmount = (arr: Record<string, unknown>[]) => arr.reduce((s: number, l: Record<string, unknown>) => s + (Number(l.principal_amount) || 0), 0);
   const pctOf = (amount: number) => totalPortfolio > 0 ? Math.round((amount / totalPortfolio) * 100 * 100) / 100 : 0;
 
   // Write-offs in period
@@ -278,7 +278,7 @@ export async function generateDelinquencyReport(
     .lte('updated_at', periodEnd)
     .execute();
 
-  const writeOffAmount = (writeOffs || []).reduce((s, l) => s + (l.principal_amount || 0), 0);
+  const writeOffAmount = (writeOffs || []).reduce((s: number, l: Record<string, unknown>) => s + (Number(l.principal_amount) || 0), 0);
 
   const report: DelinquencyReport = {
     reporting_period: { start: periodStart, end: periodEnd },
@@ -309,7 +309,7 @@ export async function generateDelinquencyReport(
     provision_amount: sumAmount(par90plus) * 1.0 + sumAmount(par61_90) * 0.5 + sumAmount(par31_60) * 0.25 + sumAmount(par1_30) * 0.05,
   };
 
-  await saveReport(config, report);
+  await saveReport(config, report as unknown as Record<string, unknown>);
   return report;
 }
 
@@ -361,13 +361,13 @@ export async function generateKYCComplianceReport(
 
   // Average verification time
   const completedSubmissions = (submissions || []).filter(
-    s => s.status === 'verified' && s.completed_at
+    (s: Record<string, unknown>) => s.status === 'verified' && s.completed_at
   );
   let avgVerificationHours = 0;
   if (completedSubmissions.length > 0) {
-    const totalHours = completedSubmissions.reduce((sum, s) => {
-      const start = new Date(s.created_at).getTime();
-      const end = new Date(s.completed_at).getTime();
+    const totalHours = completedSubmissions.reduce((sum: number, s: Record<string, unknown>) => {
+      const start = new Date(s.created_at as string).getTime();
+      const end = new Date(s.completed_at as string).getTime();
       return sum + (end - start) / (1000 * 60 * 60);
     }, 0);
     avgVerificationHours = Math.round((totalHours / completedSubmissions.length) * 100) / 100;
@@ -398,7 +398,7 @@ export async function generateKYCComplianceReport(
     enhanced_due_diligence_count: 0,
   };
 
-  await saveReport(config, report);
+  await saveReport(config, report as unknown as Record<string, unknown>);
   return report;
 }
 
@@ -440,11 +440,11 @@ export async function generateAMLReport(params: {
     account_type: 'Device Finance',
     suspicious_activity_type: params.suspicious_activity_type,
     description: params.description,
-    transaction_details: (transactions || []).map(t => ({
-      date: t.created_at,
-      type: t.payment_method,
-      amount: t.amount,
-      currency: t.currency || 'USD',
+    transaction_details: (transactions || []).map((t: Record<string, unknown>) => ({
+      date: t.created_at as string,
+      type: t.payment_method as string,
+      amount: t.amount as number,
+      currency: (t.currency as string) || 'USD',
     })),
     risk_indicators: params.risk_indicators,
     action_taken: 'Account flagged for review, STR filed with RBZ',
