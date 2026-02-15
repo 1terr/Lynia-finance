@@ -163,8 +163,9 @@ describe('RecordPaymentForm', () => {
     const amountInput = screen.getByLabelText('Amount (USD)');
     fireEvent.change(amountInput, { target: { value: '0' } });
 
-    const submitBtn = screen.getByText('Submit Payment');
-    fireEvent.click(submitBtn);
+    // Submit the form directly to bypass any native validation
+    const form = amountInput.closest('form')!;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(screen.getByText(/Amount must be greater than zero/)).toBeInTheDocument();
@@ -181,8 +182,9 @@ describe('RecordPaymentForm', () => {
     const amountInput = screen.getByLabelText('Amount (USD)');
     fireEvent.change(amountInput, { target: { value: '500' } });
 
-    const submitBtn = screen.getByText('Submit Payment');
-    fireEvent.click(submitBtn);
+    // Submit the form directly to bypass any native validation
+    const form = amountInput.closest('form')!;
+    fireEvent.submit(form);
 
     await waitFor(() => {
       expect(

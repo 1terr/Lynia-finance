@@ -28,16 +28,19 @@ const mockQueryBuilder = {
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: null, error: null }),
-  maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  single: jest.fn().mockReturnThis(),
+  maybeSingle: jest.fn().mockReturnThis(),
+  execute: jest.fn().mockResolvedValue({ data: null, error: null }),
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn(() => mockQueryBuilder),
 };
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 const mockSubmitEnhancedKYC = jest.fn();
@@ -98,6 +101,8 @@ function buildInitiateKYCBody(overrides: Record<string, unknown> = {}) {
 describe('KYC Service Contract Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Reset Supabase client
+    mockDb.from.mockReturnValue(mockQueryBuilder);
     // Reset query builder defaults
     mockQueryBuilder.select.mockReturnThis();
     mockQueryBuilder.insert.mockReturnThis();
@@ -107,7 +112,9 @@ describe('KYC Service Contract Tests', () => {
     mockQueryBuilder.in.mockReturnThis();
     mockQueryBuilder.order.mockReturnThis();
     mockQueryBuilder.limit.mockReturnThis();
-    mockQueryBuilder.single.mockResolvedValue({ data: null, error: null });
+    mockQueryBuilder.single.mockReturnThis();
+    mockQueryBuilder.maybeSingle.mockReturnThis();
+    mockQueryBuilder.execute.mockResolvedValue({ data: null, error: null });
   });
 
   // =========================================================================
@@ -116,7 +123,7 @@ describe('KYC Service Contract Tests', () => {
   describe('POST /kyc/initiate', () => {
     it('should return 200 with submission details on success', async () => {
       // No existing submission
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
 
       // Smile Identity submission
@@ -127,7 +134,7 @@ describe('KYC Service Contract Tests', () => {
       });
 
       // Insert submission
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({
           data: {
             id: 'kyc_sub_001',
@@ -238,7 +245,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return existing status when KYC is already verified', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_existing',
           customer_id: 'cust_001',
@@ -264,7 +271,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return existing status when KYC is already pending', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_pending',
           customer_id: 'cust_001',
@@ -293,7 +300,7 @@ describe('KYC Service Contract Tests', () => {
 
     it('should return 500 when Smile Identity submission fails', async () => {
       // No existing submission
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: { code: 'PGRST116' },
       });
@@ -340,7 +347,7 @@ describe('KYC Service Contract Tests', () => {
 
     it('should return 200 with success message for APPROVED callback', async () => {
       // Fetch submission
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
@@ -373,7 +380,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should verify x-signature header when present', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
@@ -425,7 +432,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 404 when submission not found', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: { code: 'PGRST116', message: 'No rows found' },
       });
@@ -445,7 +452,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should process REJECTED decision correctly', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
@@ -471,11 +478,11 @@ describe('KYC Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(200);
       // Verify update was called with rejected status
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith('kyc_submissions');
+      expect(mockDb.from).toHaveBeenCalledWith('kyc_submissions');
     });
 
     it('should process MANUAL_REVIEW decision correctly', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
@@ -501,11 +508,11 @@ describe('KYC Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(200);
       // Should create manual review task
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith('kyc_manual_reviews');
+      expect(mockDb.from).toHaveBeenCalledWith('kyc_manual_reviews');
     });
 
     it('should return 500 when callback processing throws', async () => {
-      mockQueryBuilder.single.mockRejectedValue(new Error('DB connection lost'));
+      mockQueryBuilder.execute.mockRejectedValue(new Error('DB connection lost'));
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -540,7 +547,7 @@ describe('KYC Service Contract Tests', () => {
         manual_review_required: false,
       };
 
-      mockQueryBuilder.single.mockResolvedValue({ data: submissionData, error: null });
+      mockQueryBuilder.execute.mockResolvedValue({ data: submissionData, error: null });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -566,7 +573,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return kyc_status: not_started when no submission found', async () => {
-      mockQueryBuilder.single.mockResolvedValue({
+      mockQueryBuilder.execute.mockResolvedValue({
         data: null,
         error: { code: 'PGRST116', message: 'No rows found' },
       });
@@ -601,7 +608,7 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 500 when database query fails', async () => {
-      mockQueryBuilder.single.mockRejectedValue(new Error('Timeout'));
+      mockQueryBuilder.execute.mockRejectedValue(new Error('Timeout'));
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -623,19 +630,13 @@ describe('KYC Service Contract Tests', () => {
   describe('POST /kyc/retry', () => {
     it('should return 200 with retry allowed when under max attempts', async () => {
       // Return 2 previous submissions (under limit of 3)
-      mockQueryBuilder.single.mockImplementation(() => {
-        throw new Error('Do not call single for array results');
-      });
-      // For /kyc/retry, submissions are returned as array (no .single())
-      // The handler uses .order() which returns the query builder, then accesses data directly
-      // We need to make the chain resolve to { data: [...], error: null }
-      mockQueryBuilder.order.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: [
           { id: 'sub_1', status: 'rejected', created_at: '2024-01-01' },
           { id: 'sub_2', status: 'rejected', created_at: '2024-01-02' },
         ],
         error: null,
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -667,10 +668,10 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 404 when no KYC submission found', async () => {
-      mockQueryBuilder.order.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: null,
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -686,14 +687,14 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 400 when maximum retry attempts (3) reached', async () => {
-      mockQueryBuilder.order.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: [
           { id: 'sub_1', status: 'rejected', created_at: '2024-01-01' },
           { id: 'sub_2', status: 'rejected', created_at: '2024-01-02' },
           { id: 'sub_3', status: 'rejected', created_at: '2024-01-03' },
         ],
         error: null,
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -711,12 +712,12 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 400 when KYC is already verified', async () => {
-      mockQueryBuilder.order.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: [
           { id: 'sub_1', status: 'verified', created_at: '2024-01-01' },
         ],
         error: null,
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -779,7 +780,7 @@ describe('KYC Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(404);
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://lyniafinance.com');
     });
   });
 

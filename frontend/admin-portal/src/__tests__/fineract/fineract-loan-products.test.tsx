@@ -35,9 +35,10 @@ describe('LoanProductsPage', () => {
     render(<LoanProductsPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/Tier 1/)).toBeInTheDocument();
-      expect(screen.getByText(/Tier 2/)).toBeInTheDocument();
-      expect(screen.getByText(/Tier 3/)).toBeInTheDocument();
+      // Tier label appears in badge and product name, so use getAllByText
+      expect(screen.getAllByText(/Tier 1/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Tier 2/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/Tier 3/).length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -60,9 +61,10 @@ describe('LoanProductsPage', () => {
     render(<LoanProductsPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/350.*499/)).toBeInTheDocument();
-      expect(screen.getByText(/500.*649/)).toBeInTheDocument();
-      expect(screen.getByText(/650.*850/)).toBeInTheDocument();
+      // Credit score ranges appear in both description text and score display
+      expect(screen.getAllByText(/350.*499/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/500.*649/).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText(/650.*850/).length).toBeGreaterThanOrEqual(1);
     });
   });
 

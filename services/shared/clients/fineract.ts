@@ -17,7 +17,7 @@ import { getSecret } from '../utils/secrets';
 import type {
   FineractClientConfig,
   FineractClientCreateRequest,
-  FineractClient,
+  FineractClient as FineractClientData,
   FineractCommandResponse,
   FineractErrorResponse,
   FineractLoanCreateRequest,
@@ -250,13 +250,13 @@ export class FineractClient {
   }
 
   /** Get a client by Fineract ID */
-  async getClient(clientId: number): Promise<FineractClient> {
-    return request<FineractClient>('GET', `/clients/${clientId}`);
+  async getClient(clientId: number): Promise<FineractClientData> {
+    return request<FineractClientData>('GET', `/clients/${clientId}`);
   }
 
   /** Get a client by external ID (Lynia customer UUID) */
-  async getClientByExternalId(externalId: string): Promise<FineractClient> {
-    return request<FineractClient>('GET', `/clients/external-id/${externalId}`);
+  async getClientByExternalId(externalId: string): Promise<FineractClientData> {
+    return request<FineractClientData>('GET', `/clients/external-id/${externalId}`);
   }
 
   // ----------------------------------------------------------

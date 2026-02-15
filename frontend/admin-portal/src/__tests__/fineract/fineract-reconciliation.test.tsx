@@ -10,6 +10,10 @@ import * as fineractApi from '@/lib/api/fineract';
 import { MOCK_RECONCILIATION } from '../fixtures/fineract-mocks';
 
 jest.mock('@/lib/api/fineract');
+jest.mock('@/lib/store/auth-store', () => ({
+  useAuthStore: (selector: (state: { hasPermission: (p: string) => boolean }) => unknown) =>
+    selector({ hasPermission: () => true }),
+}));
 
 const mockedApi = fineractApi as jest.Mocked<typeof fineractApi>;
 

@@ -12,8 +12,10 @@ import { mockPaymentProviderResponses } from '../helpers/mock-external-services'
 import { testCustomers, testLoans, testDevices, testPayments, testCreditScores } from '../fixtures';
 
 // Mock external dependencies
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 jest.mock('axios');
 
@@ -48,26 +50,17 @@ const createMockQueryBuilder = () => {
     'select', 'insert', 'update', 'delete', 'upsert',
     'eq', 'neq', 'in', 'gte', 'lte', 'gt', 'lt', 'is', 'not', 'or',
     'order', 'limit', 'match', 'filter', 'range', 'count',
+    'single', 'maybeSingle',
   ];
   for (const m of methods) {
     builder[m] = jest.fn().mockReturnValue(builder);
   }
-  builder.single = jest.fn().mockResolvedValue({ data: null, error: null });
-  builder.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  builder.execute = jest.fn().mockResolvedValue({ data: null, error: null });
   return builder;
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn((_table: string) => createMockQueryBuilder()),
-  auth: {
-    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-  },
-  storage: {
-    from: jest.fn().mockReturnValue({
-      upload: jest.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
-      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://test.supabase.co/storage/test' } }),
-    }),
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -213,10 +206,10 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
     });
 
     it('should verify payment webhook returns 200', async () => {
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'payments') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               id: 'pay_final',
               loan_id: activeLoan.id,
@@ -229,7 +222,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
             error: null,
           });
         } else if (table === 'loans') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: { ...activeLoan, outstanding_balance: 0, status: 'completed' },
             error: null,
           });
@@ -406,9 +399,9 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
     });
 
     it('should validate repeat customer gets better scoring', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: { id: 'score_repeat' }, error: null });
+        qb.execute.mockResolvedValue({ data: { id: 'score_repeat' }, error: null });
         return qb;
       });
 
@@ -522,7 +515,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
   // =========================================================================
   describe('Error Scenarios', () => {
     it('should handle payment webhook database error', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         throw new Error('Connection timeout');
       });
 

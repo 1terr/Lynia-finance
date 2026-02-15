@@ -12,8 +12,10 @@ import { createWhatsAppWebhookPayload, mockSmileIdentityResponses } from '../hel
 import { testCustomers, testDevices } from '../fixtures';
 
 // Mock external dependencies
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 jest.mock('axios');
 
@@ -74,32 +76,28 @@ const createMockQueryBuilder = () => {
     'select', 'insert', 'update', 'delete', 'upsert',
     'eq', 'neq', 'in', 'gte', 'lte', 'gt', 'lt', 'is', 'not', 'or',
     'order', 'limit', 'match', 'filter', 'range', 'count',
+    'single', 'maybeSingle',
   ];
   for (const m of methods) {
     builder[m] = jest.fn().mockReturnValue(builder);
   }
-  builder.single = jest.fn().mockResolvedValue({ data: null, error: null });
-  builder.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  builder.execute = jest.fn().mockResolvedValue({ data: null, error: null });
   return builder;
 };
 
 let mockQueryBuilder = createMockQueryBuilder();
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn((_table: string) => {
     mockQueryBuilder = createMockQueryBuilder();
     return mockQueryBuilder;
   }),
-  auth: {
-    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-  },
-  storage: {
-    from: jest.fn().mockReturnValue({
-      upload: jest.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
-      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://test.supabase.co/storage/test' } }),
-    }),
-  },
 };
+
+// Set environment variables before importing handlers
+process.env.WHATSAPP_PHONE_NUMBER_ID = 'test_phone_id';
+process.env.WHATSAPP_ACCESS_TOKEN = 'test_access_token';
+process.env.WHATSAPP_VERIFY_TOKEN = 'lynia_webhook_2025';
 
 // ---------------------------------------------------------------------------
 // Import handlers after mocking
@@ -140,14 +138,14 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       );
 
       // Mock customer lookup returning no existing customer (new registration)
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'customers') {
-          qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+          qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
           // For insert-then-select chain
           qb.insert.mockReturnValue(qb);
           qb.select.mockReturnValue(qb);
-          qb.single.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } })
+          qb.execute.mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } })
             .mockResolvedValueOnce({
               data: {
                 id: 'cust_test_001',
@@ -273,9 +271,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should return KYC status for a valid customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({
+        qb.execute.mockResolvedValue({
           data: {
             id: 'kyc_001',
             customer_id: 'cust_test_001',
@@ -309,9 +307,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should return kyc_status not_started if no submission exists', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
@@ -331,10 +329,10 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     it('should process Smile Identity callback and update KYC to verified', async () => {
       const smilePayload = mockSmileIdentityResponses.verifiedKYC;
 
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'kyc_submissions') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               id: 'kyc_sub_001',
               customer_id: 'cust_test_001',
@@ -362,9 +360,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should return 404 when Smile callback references unknown submission', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
@@ -431,9 +429,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should calculate credit score and auto-approve for a strong customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: { id: 'score_001' }, error: null });
+        qb.execute.mockResolvedValue({ data: { id: 'score_001' }, error: null });
         return qb;
       });
 
@@ -486,9 +484,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should assign Tier 2 for a scaled score between 700-749', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: { id: 'score_002' }, error: null });
+        qb.execute.mockResolvedValue({ data: { id: 'score_002' }, error: null });
         return qb;
       });
 
@@ -530,9 +528,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should return review decision for a low-income customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: { id: 'score_003' }, error: null });
+        qb.execute.mockResolvedValue({ data: { id: 'score_003' }, error: null });
         return qb;
       });
 
@@ -571,9 +569,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should return 404 when fetching score for non-existent customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
@@ -809,7 +807,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
   describe('Error Scenarios', () => {
     it('should return 500 with structured error for WhatsApp internal errors', async () => {
       // Force an error by providing malformed body
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         throw new Error('Database connection failed');
       });
 
@@ -838,9 +836,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
     });
 
     it('should return 400 for KYC callback with missing customer_id in partner_params', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 

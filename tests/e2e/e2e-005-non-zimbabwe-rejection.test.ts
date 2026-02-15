@@ -12,8 +12,10 @@ import { createWhatsAppWebhookPayload, mockSmileIdentityResponses } from '../hel
 import { testCustomers } from '../fixtures';
 
 // Mock external dependencies
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 jest.mock('axios');
 
@@ -74,26 +76,17 @@ const createMockQueryBuilder = () => {
     'select', 'insert', 'update', 'delete', 'upsert',
     'eq', 'neq', 'in', 'gte', 'lte', 'gt', 'lt', 'is', 'not', 'or',
     'order', 'limit', 'match', 'filter', 'range', 'count',
+    'single', 'maybeSingle',
   ];
   for (const m of methods) {
     builder[m] = jest.fn().mockReturnValue(builder);
   }
-  builder.single = jest.fn().mockResolvedValue({ data: null, error: null });
-  builder.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  builder.execute = jest.fn().mockResolvedValue({ data: null, error: null });
   return builder;
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn((_table: string) => createMockQueryBuilder()),
-  auth: {
-    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-  },
-  storage: {
-    from: jest.fn().mockReturnValue({
-      upload: jest.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
-      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://test.supabase.co/storage/test' } }),
-    }),
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -148,9 +141,9 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
     it('should still return 200 for WhatsApp webhook with non-Zimbabwe number (webhook must acknowledge)', async () => {
       const webhookPayload = createWhatsAppWebhookPayload('+27821234567', 'Hi');
 
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
@@ -247,10 +240,10 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
     it('should process KYC callback with rejection result', async () => {
       const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
 
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'kyc_submissions') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               id: 'kyc_non_zw_001',
               customer_id: 'cust_non_zw_001',
@@ -292,9 +285,9 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
   // =========================================================================
   describe('Step 3: Loan Application Rejected', () => {
     it('should reject scoring for customer with failed KYC', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: { id: 'score_reject' }, error: null });
+        qb.execute.mockResolvedValue({ data: { id: 'score_reject' }, error: null });
         return qb;
       });
 
@@ -332,9 +325,9 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
     });
 
     it('should reject scoring for customer with very low income', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: { id: 'score_low_income' }, error: null });
+        qb.execute.mockResolvedValue({ data: { id: 'score_low_income' }, error: null });
         return qb;
       });
 

@@ -13,6 +13,10 @@ jest.mock('@/lib/api/fineract');
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
 }));
+jest.mock('@/lib/store/auth-store', () => ({
+  useAuthStore: (selector: (state: { hasPermission: (p: string) => boolean }) => unknown) =>
+    selector({ hasPermission: () => true }),
+}));
 
 const mockedApi = fineractApi as jest.Mocked<typeof fineractApi>;
 
@@ -91,7 +95,8 @@ describe('FineractApprovalPage', () => {
     fireEvent.click(screen.getByText('Approve'));
 
     await waitFor(() => {
-      expect(screen.getByText('Confirm Approval')).toBeInTheDocument();
+      // "Confirm Approval" appears in both the <h3> title and <button> inside the modal
+      expect(screen.getAllByText('Confirm Approval').length).toBeGreaterThanOrEqual(1);
     });
   });
 
@@ -119,10 +124,10 @@ describe('FineractApprovalPage', () => {
     fireEvent.click(screen.getByText('Approve'));
 
     await waitFor(() => {
-      expect(screen.getByText('Confirm Approval')).toBeInTheDocument();
+      expect(screen.getAllByText('Confirm Approval').length).toBeGreaterThanOrEqual(1);
     });
 
-    fireEvent.click(screen.getByText('Confirm Approval'));
+    fireEvent.click(screen.getByRole('button', { name: /Confirm Approval/ }));
 
     await waitFor(() => {
       expect(mockedApi.approveFineractLoan).toHaveBeenCalledWith(

@@ -28,16 +28,19 @@ const mockQueryBuilder = {
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: null, error: null }),
-  maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  single: jest.fn().mockReturnThis(),
+  maybeSingle: jest.fn().mockReturnThis(),
+  execute: jest.fn().mockResolvedValue({ data: null, error: null }),
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn(() => mockQueryBuilder),
 };
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 const mockProcessPaymentReminders = jest.fn();
@@ -77,7 +80,7 @@ describe('Notification Service Contract Tests', () => {
     mockQueryBuilder.eq.mockReturnThis();
     mockQueryBuilder.order.mockReturnThis();
     mockQueryBuilder.limit.mockReturnThis();
-    mockQueryBuilder.single.mockResolvedValue({ data: null, error: null });
+    mockQueryBuilder.execute.mockResolvedValue({ data: null, error: null });
   });
 
   // =========================================================================
@@ -86,7 +89,7 @@ describe('Notification Service Contract Tests', () => {
   describe('POST /notifications/send', () => {
     it('should return 200 with notificationId on successful send', async () => {
       // Customer lookup
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({
           data: { phone_number: '+263771234567', first_name: 'John' },
           error: null,
@@ -166,7 +169,7 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should return 404 when customer is not found', async () => {
-      mockQueryBuilder.single.mockResolvedValueOnce({
+      mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: { code: 'PGRST116', message: 'No rows found' },
       });
@@ -189,7 +192,7 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should accept whatsapp channel', async () => {
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({
           data: { phone_number: '+263771234567', first_name: 'John' },
           error: null,
@@ -215,7 +218,7 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should accept sms channel', async () => {
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({
           data: { phone_number: '+263771234567', first_name: 'John' },
           error: null,
@@ -241,7 +244,7 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should accept email channel', async () => {
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({
           data: { phone_number: '+263771234567', first_name: 'John' },
           error: null,
@@ -267,7 +270,7 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should return 500 when notification insert fails', async () => {
-      mockQueryBuilder.single
+      mockQueryBuilder.execute
         .mockResolvedValueOnce({
           data: { phone_number: '+263771234567', first_name: 'John' },
           error: null,
@@ -538,10 +541,10 @@ describe('Notification Service Contract Tests', () => {
 
       // The getNotificationHistory function does NOT call .single()
       // It uses .limit(50) which returns { data, error } directly
-      mockQueryBuilder.limit.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValue({
         data: notifications,
         error: null,
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -561,10 +564,10 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should return empty array when no notifications exist', async () => {
-      mockQueryBuilder.limit.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValue({
         data: [],
         error: null,
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -581,10 +584,10 @@ describe('Notification Service Contract Tests', () => {
     });
 
     it('should return 500 when database query fails', async () => {
-      mockQueryBuilder.limit.mockReturnValue({
+      mockQueryBuilder.execute.mockResolvedValue({
         data: null,
         error: { code: 'DB_ERR', message: 'Connection lost' },
-      } as unknown as typeof mockQueryBuilder);
+      });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -638,7 +641,7 @@ describe('Notification Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(404);
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://lyniafinance.com');
     });
   });
 

@@ -55,38 +55,48 @@ describe('GLAccountingDashboard', () => {
   it('renders journal entries table', async () => {
     render(<GLAccountingDashboard />, { wrapper: createWrapper() });
 
+    // Click the Journal Entries tab (default tab is GL Accounts)
     await waitFor(() => {
       expect(screen.getByText('Journal Entries')).toBeInTheDocument();
     });
+    fireEvent.click(screen.getByText('Journal Entries'));
 
-    // Should show debit and credit entries
-    expect(screen.getByText('DEBIT')).toBeInTheDocument();
-    expect(screen.getByText('CREDIT')).toBeInTheDocument();
+    // Should show debit and credit entries after switching tabs (multiple debit entries exist)
+    await waitFor(() => {
+      expect(screen.getAllByText('DEBIT').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByText('CREDIT').length).toBeGreaterThanOrEqual(1);
+    });
   });
 
   it('renders trial balance', async () => {
     render(<GLAccountingDashboard />, { wrapper: createWrapper() });
 
+    // Click the Trial Balance tab
     await waitFor(() => {
       expect(screen.getByText('Trial Balance')).toBeInTheDocument();
     });
+    fireEvent.click(screen.getByText('Trial Balance'));
 
-    // GL account codes
-    expect(screen.getByText('1001')).toBeInTheDocument();
-    expect(screen.getByText('1100')).toBeInTheDocument();
+    // GL account codes should be visible in trial balance
+    await waitFor(() => {
+      expect(screen.getByText('1001')).toBeInTheDocument();
+      expect(screen.getByText('1100')).toBeInTheDocument();
+    });
   });
 
   it('shows account type labels', async () => {
     render(<GLAccountingDashboard />, { wrapper: createWrapper() });
 
+    // Default tab (GL Accounts) shows type labels (multiple ASSET accounts exist)
     await waitFor(() => {
-      expect(screen.getByText('ASSET')).toBeInTheDocument();
+      expect(screen.getAllByText('ASSET').length).toBeGreaterThanOrEqual(1);
     });
   });
 
   it('shows GL account codes', async () => {
     render(<GLAccountingDashboard />, { wrapper: createWrapper() });
 
+    // Default tab (GL Accounts) shows account codes
     await waitFor(() => {
       expect(screen.getByText('1001')).toBeInTheDocument();
       expect(screen.getByText('1100')).toBeInTheDocument();
@@ -97,22 +107,30 @@ describe('GLAccountingDashboard', () => {
   it('supports date filtering for journal entries', async () => {
     render(<GLAccountingDashboard />, { wrapper: createWrapper() });
 
+    // Click the Journal Entries tab to see date filters
     await waitFor(() => {
       expect(screen.getByText('Journal Entries')).toBeInTheDocument();
     });
+    fireEvent.click(screen.getByText('Journal Entries'));
 
-    expect(screen.getByLabelText('From Date')).toBeInTheDocument();
-    expect(screen.getByLabelText('To Date')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByLabelText('From Date')).toBeInTheDocument();
+      expect(screen.getByLabelText('To Date')).toBeInTheDocument();
+    });
   });
 
   it('trial balance debits equal credits', async () => {
     render(<GLAccountingDashboard />, { wrapper: createWrapper() });
 
+    // Click the Trial Balance tab
     await waitFor(() => {
       expect(screen.getByText('Trial Balance')).toBeInTheDocument();
     });
+    fireEvent.click(screen.getByText('Trial Balance'));
 
     // The mock data is balanced - verify totals row exists
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Total')).toBeInTheDocument();
+    });
   });
 });

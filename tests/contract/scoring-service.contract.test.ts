@@ -28,16 +28,19 @@ const mockQueryBuilder = {
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: null, error: null }),
-  maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  single: jest.fn().mockReturnThis(),
+  maybeSingle: jest.fn().mockReturnThis(),
+  execute: jest.fn().mockResolvedValue({ data: null, error: null }),
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn(() => mockQueryBuilder),
 };
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 import { handler } from '../../services/scoring-service/src/index';
@@ -142,7 +145,7 @@ describe('Scoring Service Contract Tests', () => {
     jest.clearAllMocks();
     // Default: insert succeeds
     mockQueryBuilder.insert.mockReturnValue(mockQueryBuilder);
-    mockQueryBuilder.single.mockResolvedValue({ data: null, error: null });
+    mockQueryBuilder.execute.mockResolvedValue({ data: null, error: null });
   });
 
   // =========================================================================
@@ -379,7 +382,7 @@ describe('Scoring Service Contract Tests', () => {
     // Database storage resilience
     // -----------------------------------------------------------------------
     it('should still return score even when database insert fails', async () => {
-      mockQueryBuilder.single.mockResolvedValue({
+      mockQueryBuilder.execute.mockResolvedValue({
         data: null,
         error: { code: 'PGRST001', message: 'insert failed' },
       });
@@ -422,7 +425,7 @@ describe('Scoring Service Contract Tests', () => {
         calculated_at: '2024-01-15T10:00:00Z',
       };
 
-      mockQueryBuilder.single.mockResolvedValue({ data: storedScore, error: null });
+      mockQueryBuilder.execute.mockResolvedValue({ data: storedScore, error: null });
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -454,7 +457,7 @@ describe('Scoring Service Contract Tests', () => {
     });
 
     it('should return 404 when no score found for customer', async () => {
-      mockQueryBuilder.single.mockResolvedValue({
+      mockQueryBuilder.execute.mockResolvedValue({
         data: null,
         error: { code: 'PGRST116', message: 'No rows found' },
       });
@@ -473,7 +476,7 @@ describe('Scoring Service Contract Tests', () => {
     });
 
     it('should return 500 when database query throws', async () => {
-      mockQueryBuilder.single.mockRejectedValue(new Error('Connection lost'));
+      mockQueryBuilder.execute.mockRejectedValue(new Error('Connection lost'));
 
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
@@ -527,7 +530,7 @@ describe('Scoring Service Contract Tests', () => {
       const response = await handler(event);
 
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://lyniafinance.com');
     });
   });
 
