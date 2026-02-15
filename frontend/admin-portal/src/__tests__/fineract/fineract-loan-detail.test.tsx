@@ -14,6 +14,10 @@ jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
   useParams: () => ({ id: 'loan-001-uuid' }),
 }));
+jest.mock('@/lib/store/auth-store', () => ({
+  useAuthStore: (selector: (state: { hasPermission: (p: string) => boolean }) => unknown) =>
+    selector({ hasPermission: () => true }),
+}));
 
 const mockedApi = fineractApi as jest.Mocked<typeof fineractApi>;
 
@@ -58,7 +62,8 @@ describe('FineractLoanDetailPage', () => {
     await waitFor(() => {
       expect(screen.getByText('Principal Outstanding')).toBeInTheDocument();
       expect(screen.getByText('Interest Outstanding')).toBeInTheDocument();
-      expect(screen.getByText('Total Outstanding')).toBeInTheDocument();
+      // "Total Outstanding" appears in both BalanceCard and RepaymentScheduleTable summary
+      expect(screen.getAllByText('Total Outstanding').length).toBeGreaterThanOrEqual(1);
     });
   });
 

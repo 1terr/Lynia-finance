@@ -12,8 +12,10 @@ import { mockSmileIdentityResponses } from '../helpers/mock-external-services';
 import { testCustomers, testLoans, testCreditScores } from '../fixtures';
 
 // Mock external dependencies
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 jest.mock('axios');
 
@@ -29,26 +31,17 @@ const createMockQueryBuilder = () => {
     'select', 'insert', 'update', 'delete', 'upsert',
     'eq', 'neq', 'in', 'gte', 'lte', 'gt', 'lt', 'is', 'not', 'or',
     'order', 'limit', 'match', 'filter', 'range', 'count',
+    'single', 'maybeSingle',
   ];
   for (const m of methods) {
     builder[m] = jest.fn().mockReturnValue(builder);
   }
-  builder.single = jest.fn().mockResolvedValue({ data: null, error: null });
-  builder.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  builder.execute = jest.fn().mockResolvedValue({ data: null, error: null });
   return builder;
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn((_table: string) => createMockQueryBuilder()),
-  auth: {
-    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'admin-user' } }, error: null }),
-  },
-  storage: {
-    from: jest.fn().mockReturnValue({
-      upload: jest.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
-      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://test.supabase.co/storage/test' } }),
-    }),
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -169,9 +162,9 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
     });
 
     it('should verify GET scoring endpoint returns 404 for unknown customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
@@ -189,9 +182,9 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
     });
 
     it('should retrieve existing credit score for review customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({
+        qb.execute.mockResolvedValue({
           data: {
             customer_id: reviewCustomer.id,
             scaled_score: reviewScore.score,

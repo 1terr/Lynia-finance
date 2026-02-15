@@ -27,16 +27,19 @@ const mockQueryBuilder = {
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: null, error: null }),
-  maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  single: jest.fn().mockReturnThis(),
+  maybeSingle: jest.fn().mockReturnThis(),
+  execute: jest.fn().mockResolvedValue({ data: null, error: null }),
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn(() => mockQueryBuilder),
 };
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 const mockAxiosPost = jest.fn().mockResolvedValue({
@@ -119,7 +122,7 @@ describe('WhatsApp Service Contract Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Default: customer lookup succeeds
-    mockQueryBuilder.single.mockResolvedValue({
+    mockQueryBuilder.execute.mockResolvedValue({
       data: { id: 'cust_001', whatsapp_number: '263771234567' },
       error: null,
     });
@@ -486,7 +489,7 @@ describe('WhatsApp Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(200);
       // Should call update on whatsapp_messages table
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith('whatsapp_messages');
+      expect(mockDb.from).toHaveBeenCalledWith('whatsapp_messages');
     });
 
     it('should return 200 with success: false on processing error', async () => {
@@ -544,7 +547,7 @@ describe('WhatsApp Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(404);
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
-      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
+      expect(response.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://lyniafinance.com');
     });
   });
 

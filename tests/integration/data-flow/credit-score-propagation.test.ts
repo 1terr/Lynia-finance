@@ -29,8 +29,9 @@ const mockQueryBuilder = {
   in: jest.fn().mockReturnThis(),
   order: jest.fn().mockReturnThis(),
   limit: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: null, error: null }),
-  maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
+  single: jest.fn().mockReturnThis(),
+  maybeSingle: jest.fn().mockReturnThis(),
+  execute: jest.fn().mockResolvedValue({ data: null, error: null }),
   match: jest.fn().mockReturnThis(),
   gte: jest.fn().mockReturnThis(),
   lte: jest.fn().mockReturnThis(),
@@ -44,12 +45,14 @@ const mockQueryBuilder = {
   count: jest.fn().mockReturnThis(),
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn(() => ({ ...mockQueryBuilder })),
 };
 
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -624,7 +627,7 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       expect(result.calculated_at).toBeDefined();
 
       // Verify the insert was called on supabase
-      expect(mockSupabaseClient.from).toHaveBeenCalledWith('credit_scores');
+      expect(mockDb.from).toHaveBeenCalledWith('credit_scores');
     });
   });
 

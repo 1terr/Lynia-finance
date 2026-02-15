@@ -268,7 +268,7 @@ describe('Cross-Service API Response Format Contract Tests', () => {
 
         expect(response).toBeDefined();
         // All services should return CORS headers on 404
-        expect(response!.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://admin.lynia.finance');
+        expect(response!.headers).toHaveProperty('Access-Control-Allow-Origin', 'https://lyniafinance.com');
       });
     });
   });

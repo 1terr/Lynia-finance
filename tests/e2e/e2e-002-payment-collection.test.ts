@@ -12,8 +12,10 @@ import { mockPaymentProviderResponses, mockWhatsAppResponses } from '../helpers/
 import { testCustomers, testLoans, testPayments } from '../fixtures';
 
 // Mock external dependencies
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => mockSupabaseClient),
+jest.mock('../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 jest.mock('axios');
 
@@ -48,26 +50,17 @@ const createMockQueryBuilder = () => {
     'select', 'insert', 'update', 'delete', 'upsert',
     'eq', 'neq', 'in', 'gte', 'lte', 'gt', 'lt', 'is', 'not', 'or',
     'order', 'limit', 'match', 'filter', 'range', 'count',
+    'single', 'maybeSingle',
   ];
   for (const m of methods) {
     builder[m] = jest.fn().mockReturnValue(builder);
   }
-  builder.single = jest.fn().mockResolvedValue({ data: null, error: null });
-  builder.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  builder.execute = jest.fn().mockResolvedValue({ data: null, error: null });
   return builder;
 };
 
-const mockSupabaseClient = {
+const mockDb = {
   from: jest.fn((_table: string) => createMockQueryBuilder()),
-  auth: {
-    getUser: jest.fn().mockResolvedValue({ data: { user: { id: 'test-user' } }, error: null }),
-  },
-  storage: {
-    from: jest.fn().mockReturnValue({
-      upload: jest.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
-      getPublicUrl: jest.fn().mockReturnValue({ data: { publicUrl: 'https://test.supabase.co/storage/test' } }),
-    }),
-  },
 };
 
 // ---------------------------------------------------------------------------
@@ -154,10 +147,10 @@ describe('E2E-002: Payment Collection Flow', () => {
   // =========================================================================
   describe('Step 2: Process Payment Webhook - Success', () => {
     it('should return 200 when processing a successful OneMoney webhook', async () => {
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'payments') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               id: 'pay_test_002',
               loan_id: activeLoan.id,
@@ -174,7 +167,7 @@ describe('E2E-002: Payment Collection Flow', () => {
             error: null,
           });
         } else if (table === 'loans') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               ...activeLoan,
               outstanding_balance: activeLoan.outstanding_balance - 51.33,
@@ -210,10 +203,10 @@ describe('E2E-002: Payment Collection Flow', () => {
     });
 
     it('should return 200 when processing a successful EcoCash webhook', async () => {
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'payments') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               id: 'pay_test_ec_001',
               loan_id: activeLoan.id,
@@ -228,7 +221,7 @@ describe('E2E-002: Payment Collection Flow', () => {
             error: null,
           });
         } else if (table === 'loans') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: activeLoan,
             error: null,
           });
@@ -258,10 +251,10 @@ describe('E2E-002: Payment Collection Flow', () => {
   // =========================================================================
   describe('Step 2b: Process Payment Webhook - Failure', () => {
     it('should handle a failed OneMoney payment webhook gracefully', async () => {
-      mockSupabaseClient.from.mockImplementation((table: string) => {
+      mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
         if (table === 'payments') {
-          qb.single.mockResolvedValue({
+          qb.execute.mockResolvedValue({
             data: {
               id: 'pay_test_fail',
               loan_id: activeLoan.id,
@@ -399,9 +392,9 @@ describe('E2E-002: Payment Collection Flow', () => {
     });
 
     it('should return 404 when sending notification for non-existent customer', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
-        qb.single.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
+        qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
@@ -473,7 +466,7 @@ describe('E2E-002: Payment Collection Flow', () => {
     });
 
     it('should handle webhook processing error and return 500', async () => {
-      mockSupabaseClient.from.mockImplementation(() => {
+      mockDb.from.mockImplementation(() => {
         throw new Error('Database unavailable');
       });
 
