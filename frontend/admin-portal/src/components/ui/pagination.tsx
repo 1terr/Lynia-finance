@@ -1,77 +1,106 @@
 'use client';
 
-import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Button } from './Button';
 
 interface PaginationProps {
   page: number;
   totalPages: number;
+  total: number;
+  limit: number;
   onPageChange: (page: number) => void;
-  total?: number;
-  pageSize?: number;
+  className?: string;
 }
 
-export function Pagination({ page, totalPages, onPageChange, total, pageSize = 25 }: PaginationProps) {
-  const start = (page - 1) * pageSize + 1;
-  const end = Math.min(page * pageSize, total || page * pageSize);
+export function Pagination({
+  page,
+  totalPages,
+  total,
+  limit,
+  onPageChange,
+  className,
+}: PaginationProps) {
+  const from = (page - 1) * limit + 1;
+  const to = Math.min(page * limit, total);
 
   return (
-    <div className="flex items-center justify-between px-1 py-3">
-      <div className="text-sm text-gray-500">
-        {total !== undefined && (
-          <>Showing {start} to {end} of {total} results</>
-        )}
+    <div
+      className={cn(
+        'flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3',
+        className
+      )}
+    >
+      <div className="text-sm text-gray-700">
+        Showing <span className="font-medium">{from}</span> to{' '}
+        <span className="font-medium">{to}</span> of{' '}
+        <span className="font-medium">{total}</span> results
       </div>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => onPageChange(page - 1)}
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
           disabled={page <= 1}
-          className={cn(
-            'rounded-md border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
-          )}
+          onClick={() => onPageChange(page - 1)}
         >
           <ChevronLeft className="h-4 w-4" />
-        </button>
-        {generatePageNumbers(page, totalPages).map((p, i) =>
-          p === '...' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-sm text-gray-400">...</span>
-          ) : (
-            <button
-              key={p}
-              onClick={() => onPageChange(p as number)}
-              className={cn(
-                'rounded-md px-3 py-1.5 text-sm font-medium',
-                p === page
-                  ? 'bg-brand-600 text-white'
-                  : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-              )}
-            >
-              {p}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => onPageChange(page + 1)}
-          disabled={page >= totalPages}
-          className={cn(
-            'rounded-md border border-gray-300 p-1.5 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed'
+          Previous
+        </Button>
+
+        {/* Page numbers */}
+        <div className="hidden sm:flex items-center gap-1">
+          {getPageNumbers(page, totalPages).map((pageNum, index) =>
+            pageNum === null ? (
+              <span key={`dots-${index}`} className="px-2 text-gray-400">
+                ...
+              </span>
+            ) : (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={cn(
+                  'h-8 min-w-[2rem] rounded text-sm font-medium',
+                  pageNum === page
+                    ? 'bg-primary-600 text-white'
+                    : 'text-gray-700 hover:bg-gray-100'
+                )}
+              >
+                {pageNum}
+              </button>
+            )
           )}
+        </div>
+
+        <Button
+          variant="secondary"
+          size="sm"
+          disabled={page >= totalPages}
+          onClick={() => onPageChange(page + 1)}
         >
+          Next
           <ChevronRight className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );
 }
 
-function generatePageNumbers(current: number, total: number): (number | string)[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
-  const pages: (number | string)[] = [1];
-  if (current > 3) pages.push('...');
-  for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
-    pages.push(i);
+function getPageNumbers(
+  current: number,
+  total: number
+): (number | null)[] {
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1);
   }
-  if (current < total - 2) pages.push('...');
-  pages.push(total);
-  return pages;
+
+  if (current <= 3) {
+    return [1, 2, 3, 4, null, total];
+  }
+
+  if (current >= total - 2) {
+    return [1, null, total - 3, total - 2, total - 1, total];
+  }
+
+  return [1, null, current - 1, current, current + 1, null, total];
 }
