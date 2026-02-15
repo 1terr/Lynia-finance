@@ -14,6 +14,7 @@ import {
   getSession,
   isCognitoConfigured,
 } from '@/lib/auth/cognito';
+import { buildDistributorFromSession } from '@/lib/auth/build-distributor';
 
 export { isCognitoConfigured };
 
@@ -183,26 +184,9 @@ export async function loginDistributor(email: string, password: string): Promise
     });
 
     cognitoUser.authenticateUser(authDetails, {
-      onSuccess: async (session) => {
-        try {
-          const token = session.getIdToken().getJwtToken();
-          const headers = await authHeaders();
-          headers['Authorization'] = `Bearer ${token}`;
-
-          const res = await fetch(`${API_URL}/distributors/me`, { headers });
-
-          if (!res.ok) {
-            cognitoUser.signOut();
-            reject(new Error('Invalid email or password'));
-            return;
-          }
-
-          const profile = await res.json();
-          resolve(profile as Distributor);
-        } catch {
-          cognitoUser.signOut();
-          reject(new Error('Invalid email or password'));
-        }
+      onSuccess: (session) => {
+        const profile = buildDistributorFromSession(session);
+        resolve(profile);
       },
       onFailure: () => {
         reject(new Error('Invalid email or password'));
