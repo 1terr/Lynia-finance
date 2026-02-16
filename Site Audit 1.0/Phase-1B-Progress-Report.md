@@ -254,10 +254,32 @@ tests/integration/data-flow/credit-score-propagation.test.ts (~15 lines)
 
 Phase 1B is **code-complete**. All test failures have been resolved, the admin portal builds, and the codebase is ready for deployment. The remaining blockers are operational (AWS credentials, Fineract instance deployment, SAM deployment) rather than code-level issues.
 
-**Next Steps:**
-1. Deploy this branch to GitHub (PR to master)
-2. Install AWS SDK v3 packages to resolve supplementary module TS errors
-3. Deploy Lambda services via SAM
-4. Deploy Fineract ECS instance
-5. Initialize Fineract with loan products, GL accounts, and currencies
-6. Proceed to Phase 2 (User Journey testing with live services)
+**Next Steps (Original):**
+1. ~~Deploy this branch to GitHub (PR to master)~~ DONE (PR #383, merged Feb 16)
+2. ~~Install AWS SDK v3 packages to resolve supplementary module TS errors~~ DONE (commit 4009d74)
+3. ~~Deploy Lambda services via SAM~~ DONE (production deployment succeeded Feb 16)
+4. ~~Deploy Fineract ECS instance~~ DONE (see Phase-6-Fineract-Deployment-Report.md)
+5. Initialize Fineract with loan products, GL accounts, and currencies - PENDING
+6. Proceed to Phase 2 (User Journey testing with live services) - PENDING
+
+---
+
+## Phase 6 Update (February 16, 2026)
+
+All operational blockers from Phase 1B have been resolved:
+
+| Blocker | Status | Resolution |
+|---|---|---|
+| AWS SDK v3 Packages | RESOLVED | Installed via `pnpm add` (commit 4009d74) |
+| SAM Deployment | RESOLVED | Lambda functions deployed to production |
+| Fineract ECS Instance | RESOLVED | 3 CloudFormation stacks deployed, Fineract running on ECS Fargate |
+
+**Remaining work for full Fineract integration:**
+1. Initialize Fineract (head office, currencies USD/ZWL, 3 loan products, GL chart of accounts)
+2. Apply database migration `019_add_fineract_columns.sql` to Lynia RDS
+3. Update Lambda environment variables with Fineract ALB URL
+4. Set up EventBridge 6-hour reconciliation cron
+5. Pin Fineract Docker image to specific version tag
+6. End-to-end testing of Fineract admin portal pages with live data
+
+See `Phase-6-Fineract-Deployment-Report.md` for detailed deployment documentation.
