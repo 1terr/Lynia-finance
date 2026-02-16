@@ -212,8 +212,8 @@ function verifyWebhook(event: APIGatewayProxyEvent): APIGatewayProxyResult {
  */
 function validateWebhookSignature(event: APIGatewayProxyEvent): boolean {
   if (!META_APP_SECRET) {
-    // Skip validation if META_APP_SECRET is not configured (development only)
-    if (process.env.NODE_ENV === 'development') {
+    // Skip validation if META_APP_SECRET is not configured (development/test only)
+    if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'staging') {
       console.warn('Webhook signature validation skipped: META_APP_SECRET not configured');
       return true;
     }
