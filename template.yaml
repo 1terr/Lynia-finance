@@ -892,7 +892,7 @@ Resources:
   # =====================================================
   FineractDashboard:
     Type: AWS::CloudWatch::Dashboard
-    Condition: IsNotDev
+    Condition: IsProduction
     Properties:
       DashboardName: !Sub ${Environment}-lynia-fineract
       DashboardBody: !Sub |
