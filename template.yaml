@@ -923,7 +923,7 @@ Resources:
     Type: AWS::CloudWatch::Dashboard
     Condition: IsProduction
     Properties:
-      DashboardName: !Sub ${Environment}-lynia-fineract
+      DashboardName: !Sub ${Environment}-lynia-fineract-proxy
       DashboardBody: !Sub |
         {
           "widgets": [
