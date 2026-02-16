@@ -69,6 +69,7 @@ jest.mock('../../services/whatsapp-service/src/onboarding', () => ({
 process.env.WHATSAPP_PHONE_NUMBER_ID = 'test_phone_id';
 process.env.WHATSAPP_ACCESS_TOKEN = 'test_access_token';
 process.env.WHATSAPP_VERIFY_TOKEN = 'lynia_webhook_2025';
+process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = 'lynia_webhook_2025';
 
 import { handler } from '../../services/whatsapp-service/src/index';
 
