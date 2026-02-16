@@ -57,3 +57,8 @@ services/payment-service/dist/
 services/scoring-service/dist/
 services/whatsapp-service/dist/
 frontend/distributor-dashboard/.next/
+
+# Temporary deployment artifacts
+outfile.json
+scripts/migration-runner.zip
+scripts/migration-runner/

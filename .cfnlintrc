@@ -1,0 +1,3 @@
+ignore_checks:
+  - E3004
+  - W8001
