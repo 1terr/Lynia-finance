@@ -133,11 +133,14 @@ async function handleBalance(phoneNumber: string): Promise<string> {
     return `Hi ${customer.first_name}! You don't have any active loans.\n\nWant to apply? Reply *APPLY* to get started.`;
   }
 
-  // Try Fineract for real-time balance (source of truth for accounting)
-  let outstanding: number;
-  let nextDue: string;
-  let nextDueAmount: number;
+  // Default to Lynia DB data
+  let outstanding = loan.total_amount_due - (loan.total_amount_paid || 0);
+  let nextDue = loan.next_payment_date
+    ? new Date(loan.next_payment_date).toLocaleDateString('en-ZW', { weekday: 'short', month: 'short', day: 'numeric' })
+    : 'N/A';
+  let nextDueAmount = loan.monthly_installment_amount || 0;
 
+  // Try Fineract for real-time balance (source of truth for accounting)
   if (loan.fineract_loan_id && process.env.FINERACT_SECRET_NAME) {
     try {
       const fBalance = await getFineractLoanBalance(loan.fineract_loan_id);
@@ -149,17 +152,8 @@ async function handleBalance(phoneNumber: string): Promise<string> {
         nextDueAmount = fBalance.nextDueAmount;
       }
     } catch {
-      // Fallback to Lynia DB data below
+      // Fineract unavailable - continue with Lynia DB defaults above
     }
-  }
-
-  // Fallback: use Lynia DB data if Fineract unavailable
-  if (outstanding! === undefined) {
-    outstanding = loan.total_amount_due - (loan.total_amount_paid || 0);
-    nextDue = loan.next_payment_date
-      ? new Date(loan.next_payment_date).toLocaleDateString('en-ZW', { weekday: 'short', month: 'short', day: 'numeric' })
-      : 'N/A';
-    nextDueAmount = loan.monthly_installment_amount;
   }
 
   return `💰 *Loan Balance*
@@ -172,11 +166,11 @@ Device: ${loan.device_model || 'Smartphone'}
 📊 *Summary:*
 • Total Loan: $${loan.total_amount_due?.toFixed(2)}
 • Amount Paid: $${(loan.total_amount_paid || 0).toFixed(2)}
-• Outstanding: *$${outstanding!.toFixed(2)}*
+• Outstanding: *$${outstanding.toFixed(2)}*
 • Monthly Payment: $${loan.monthly_installment_amount?.toFixed(2)}
 
-📅 Next Payment: *${nextDue!}*
-💵 Amount Due: *$${nextDueAmount!?.toFixed(2)}*
+📅 Next Payment: *${nextDue}*
+💵 Amount Due: *$${nextDueAmount.toFixed(2)}*
 
 Reply:
 1 - Pay now
