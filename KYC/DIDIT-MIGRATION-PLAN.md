@@ -468,3 +468,50 @@ These pre-existing issues are documented for reference (not part of this migrati
 5. **SQS queue not wired** — KYC processing queue provisioned but Lambda trigger commented out
 6. **No WhatsApp notification on KYC completion** — callback handler has `// TODO: Send notification`
 7. **Credential loading inconsistency** — Service uses `requireEnv()` instead of `getSmileIdentitySecrets()` from Secrets Manager
+
+---
+
+## 8. DIDIT Agent Skills Reference
+
+DIDIT provides production-ready AI agent skills with API references and CLI tools for testing. These are saved locally under `KYC/didit-agent-skills/` for offline reference.
+
+**Source repository:** https://github.com/didit-protocol/didit-agent-skills
+
+### Active Skills (Used in Integration)
+
+| Skill | Local Path | API Endpoint | Purpose |
+|-------|------------|-------------|---------|
+| ID Verification | `KYC/didit-agent-skills/didit-id-verification/` | `POST /v3/id-verification/` | Document OCR, MRZ parsing, security features, 4000+ doc types |
+| Passive Liveness | `KYC/didit-agent-skills/didit-passive-liveness/` | `POST /v3/passive-liveness/` | Single-image spoof detection (99.9% accuracy) |
+| Face Match | `KYC/didit-agent-skills/didit-face-match/` | `POST /v3/face-match/` | Selfie-to-ID comparison, 0-100 similarity score |
+| Sessions | `KYC/didit-agent-skills/didit-sessions/` | 11 endpoints under `/v3/session/` | Lifecycle management, decisions, blocklist, PDF reports |
+
+### Future Skills (Roadmap)
+
+| Skill | Local Path | Lynia Relevance |
+|-------|------------|-----------------|
+| AML Screening | `KYC/didit-agent-skills/didit-aml-screening/` | RBZ compliance — sanctions/PEP checks for loans > $1000 |
+| Phone Verification | `KYC/didit-agent-skills/didit-phone-verification/` | WhatsApp OTP delivery for customer onboarding |
+| Email Verification | `KYC/didit-agent-skills/didit-email-verification/` | Email OTP with breach/disposable detection |
+
+### CLI Testing Tools
+
+Each skill includes Python scripts for manual sandbox testing:
+
+```bash
+export DIDIT_API_KEY="your-sandbox-key"
+
+# Test ID verification
+python KYC/didit-agent-skills/didit-id-verification/scripts/verify_id.py front.jpg
+
+# Test liveness detection
+python KYC/didit-agent-skills/didit-passive-liveness/scripts/check_liveness.py selfie.jpg
+
+# Test face matching
+python KYC/didit-agent-skills/didit-face-match/scripts/match_faces.py selfie.jpg id_photo.jpg
+
+# Test phone OTP via WhatsApp
+python KYC/didit-agent-skills/didit-phone-verification/scripts/verify_phone.py send +263771234567
+```
+
+See `KYC/didit-agent-skills/README.md` for the full index and authentication details.
