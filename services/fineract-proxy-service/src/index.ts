@@ -24,6 +24,8 @@
  *   GET  /api/v1/fineract/trial-balance       - Trial balance
  *   GET  /api/v1/fineract/reconciliation      - Latest reconciliation results
  *   POST /api/v1/fineract/reconciliation/run  - Trigger manual reconciliation
+ *   GET  /api/v1/fineract/reports             - List available reports
+ *   GET  /api/v1/fineract/reports/{name}      - Run a named report
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
@@ -161,6 +163,15 @@ export const handler = async (
     }
     if (path === '/api/v1/fineract/reconciliation/run' && method === 'POST') {
       return handleRunReconciliation(event);
+    }
+
+    // ---- FINERACT REPORTS ----
+    if (path === '/api/v1/fineract/reports' && method === 'GET') {
+      return handleGetReports(event);
+    }
+    const reportMatch = path.match(/^\/api\/v1\/fineract\/reports\/([^/]+)$/);
+    if (reportMatch && method === 'GET') {
+      return handleRunReport(event, reportMatch[1]);
     }
 
     return err(404, 'Not Found', event);
@@ -1015,4 +1026,45 @@ function getAgingBucket(daysPastDue: number): '1-30' | '31-60' | '61-90' | '90+'
   if (daysPastDue <= 60) return '31-60';
   if (daysPastDue <= 90) return '61-90';
   return '90+';
+}
+
+// ============================================================
+// REPORT HANDLERS
+// ============================================================
+
+/** GET /api/v1/fineract/reports - list available reports */
+async function handleGetReports(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  const fineract = await getFineractClient();
+  try {
+    const reports = await fineract.listReports();
+    const mapped = reports.map((r) => ({
+      id: r.id,
+      reportName: r.reportName,
+      reportType: r.reportType,
+      reportSubType: r.reportSubType || '',
+      reportCategory: r.reportCategory || '',
+      description: r.description || '',
+    }));
+    return ok(mapped, event);
+  } catch (e) {
+    console.error('[fineract-proxy] Failed to list reports:', e);
+    return err(500, 'Failed to fetch reports from Fineract', event);
+  }
+}
+
+/** GET /api/v1/fineract/reports/{reportName} - run a named report */
+async function handleRunReport(
+  event: APIGatewayProxyEvent,
+  reportName: string
+): Promise<APIGatewayProxyResult> {
+  const fineract = await getFineractClient();
+  const qs = event.queryStringParameters || {};
+
+  try {
+    const result = await fineract.runReport(reportName, qs as Record<string, string>);
+    return ok(result, event);
+  } catch (e) {
+    console.error(`[fineract-proxy] Failed to run report ${reportName}:`, e);
+    return err(500, `Failed to run report: ${e instanceof Error ? e.message : 'unknown error'}`, event);
+  }
 }

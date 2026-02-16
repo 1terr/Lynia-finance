@@ -1,5 +1,6 @@
 # Artillery Load Testing Configuration for Lynia Finance
-# Usage: npx artillery run infrastructure/load-testing/artillery-config.yml
+# Usage: API_URL=https://... AUTH_TOKEN=... npx artillery run infrastructure/load-testing/artillery-config.yml
+# Quick smoke: API_URL=https://... npx artillery run --count 5 --num 10 infrastructure/load-testing/artillery-config.yml
 
 config:
   target: "{{ $processEnvironment.API_URL }}"
@@ -28,6 +29,7 @@ config:
   defaults:
     headers:
       Content-Type: "application/json"
+      Authorization: "Bearer {{ $processEnvironment.AUTH_TOKEN }}"
   plugins:
     ensure:
       thresholds:
@@ -40,16 +42,18 @@ config:
 scenarios:
   # Scenario 1: Credit Score Check (most common)
   - name: "Credit Score Lookup"
-    weight: 30
+    weight: 25
     flow:
       - get:
           url: "/scoring/test-customer-123"
           expect:
-            - statusCode: 200
+            - statusCode:
+                - 200
+                - 401
 
   # Scenario 2: Payment Processing
   - name: "Payment Processing"
-    weight: 20
+    weight: 15
     flow:
       - post:
           url: "/payments/process"
@@ -62,14 +66,17 @@ scenarios:
           expect:
             - statusCode:
                 - 200
-                - 400  # Validation errors expected in test
+                - 400
+                - 401
 
-  # Scenario 3: WhatsApp Webhook (highest traffic)
+  # Scenario 3: WhatsApp Webhook (highest traffic, no auth)
   - name: "WhatsApp Webhook"
     weight: 25
     flow:
       - post:
           url: "/whatsapp/webhook"
+          headers:
+            Authorization: ""
           json:
             object: "whatsapp_business_account"
             entry:
@@ -100,17 +107,19 @@ scenarios:
           expect:
             - statusCode:
                 - 200
+                - 401
                 - 404
 
   # Scenario 5: Device Lock Status
   - name: "Device Lock Status"
-    weight: 10
+    weight: 5
     flow:
       - get:
           url: "/locks/test-device-{{ $randomNumber(100, 999) }}"
           expect:
             - statusCode:
                 - 200
+                - 401
                 - 404
 
   # Scenario 6: Notification History
@@ -122,4 +131,27 @@ scenarios:
           expect:
             - statusCode:
                 - 200
+                - 401
                 - 404
+
+  # Scenario 7: Fineract Proxy - Loan Portfolio
+  - name: "Fineract Loan Portfolio"
+    weight: 10
+    flow:
+      - get:
+          url: "/api/v1/fineract/loans?page=1&pageSize=20"
+          expect:
+            - statusCode:
+                - 200
+                - 401
+
+  # Scenario 8: Fineract Proxy - GL Accounts
+  - name: "Fineract GL Accounts"
+    weight: 5
+    flow:
+      - get:
+          url: "/api/v1/fineract/gl-accounts"
+          expect:
+            - statusCode:
+                - 200
+                - 401

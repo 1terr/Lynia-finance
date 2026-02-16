@@ -27,6 +27,7 @@ export const QUEUE_NAMES = {
   DEVICE_LOCKS: `${ENV}-lynia-device-locks`,
   CREDIT_SCORING: `${ENV}-lynia-credit-scoring`,
   WHATSAPP_MESSAGE_RETRY: `${ENV}-lynia-whatsapp-message-retry`,
+  FINERACT_SYNC_RETRY: `${ENV}-lynia-fineract-sync-retry`,
 } as const;
 
 /**
@@ -189,5 +190,23 @@ export const SQSQueues = {
       queueName: QUEUE_NAMES.WHATSAPP_MESSAGE_RETRY,
       message: { ...payload, timestamp: new Date().toISOString() },
       delaySeconds: Math.min(900, 30 * Math.pow(2, payload.retryCount || 0)),
+    }),
+
+  /** Queue a failed Fineract sync operation for retry with exponential backoff */
+  retryFineractSync: (payload: {
+    entityType: string;
+    entityId: string;
+    operation: string;
+    requestPayload: Record<string, unknown>;
+    retryCount?: number;
+    originalError?: string;
+    syncLogId?: string;
+  }) =>
+    publishMessage({
+      queueName: QUEUE_NAMES.FINERACT_SYNC_RETRY,
+      message: { ...payload, timestamp: new Date().toISOString() },
+      // Exponential backoff: 60s, 300s, 900s (max)
+      delaySeconds: Math.min(900, 60 * Math.pow(5, payload.retryCount || 0)),
+      attributes: { entityType: payload.entityType, operation: payload.operation },
     }),
 };

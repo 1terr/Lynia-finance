@@ -518,6 +518,23 @@ export class FineractClient {
     }
   }
 
+  // ----------------------------------------------------------
+  // REPORTS
+  // ----------------------------------------------------------
+
+  /** List available Fineract report definitions */
+  async listReports(): Promise<Array<{ id: number; reportName: string; reportType: string; reportSubType: string; reportCategory: string; description: string }>> {
+    return request<Array<{ id: number; reportName: string; reportType: string; reportSubType: string; reportCategory: string; description: string }>>('GET', '/reports');
+  }
+
+  /** Run a named Fineract report with query parameters */
+  async runReport(reportName: string, params?: Record<string, string>): Promise<unknown> {
+    const query = params
+      ? '?' + Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
+      : '';
+    return request<unknown>('GET', `/runreports/${encodeURIComponent(reportName)}${query}`);
+  }
+
   /** Get circuit breaker state */
   getCircuitState(): string {
     return fineractBreaker.getState();

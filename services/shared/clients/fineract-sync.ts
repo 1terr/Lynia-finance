@@ -12,6 +12,7 @@
 
 import { getFineractClient, FineractApiError, parseFineractDate } from './fineract';
 import { db } from './database';
+import { SQSQueues } from '../utils/sqs-publisher';
 
 // ============================================================
 // SYNC LOGGING
@@ -30,6 +31,33 @@ interface SyncLogEntry {
   http_status_code?: number;
   duration_ms?: number;
   lambda_request_id?: string;
+}
+
+/**
+ * Queue a failed sync for SQS-based retry with exponential backoff.
+ * Non-blocking — errors are caught and logged.
+ */
+async function queueSyncRetry(entry: {
+  entityType: string;
+  entityId: string;
+  operation: string;
+  requestPayload: Record<string, unknown>;
+  errorMessage: string;
+}): Promise<void> {
+  try {
+    await SQSQueues.retryFineractSync({
+      entityType: entry.entityType,
+      entityId: entry.entityId,
+      operation: entry.operation,
+      requestPayload: entry.requestPayload,
+      retryCount: 0,
+      originalError: entry.errorMessage,
+    });
+    console.log(`[fineract-sync] Queued SQS retry for ${entry.entityType}:${entry.operation} (${entry.entityId})`);
+  } catch (sqsError) {
+    // SQS publish failure is non-fatal; reconciliation job is the safety net
+    console.error('[fineract-sync] Failed to queue SQS retry:', sqsError);
+  }
 }
 
 async function logSync(entry: SyncLogEntry): Promise<void> {
@@ -130,6 +158,13 @@ export async function syncCustomerToFineract(params: {
     });
 
     console.error(`[fineract-sync] Failed to sync customer ${params.customerId}:`, error);
+    await queueSyncRetry({
+      entityType: 'client',
+      entityId: params.customerId,
+      operation: 'create',
+      requestPayload: params as unknown as Record<string, unknown>,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -214,6 +249,13 @@ export async function syncLoanToFineract(params: {
     });
 
     console.error(`[fineract-sync] Failed to sync loan ${params.loanId}:`, error);
+    await queueSyncRetry({
+      entityType: 'loan',
+      entityId: params.loanId,
+      operation: 'create',
+      requestPayload: params as unknown as Record<string, unknown>,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
@@ -261,6 +303,13 @@ export async function approveLoanInFineract(params: {
     });
 
     console.error(`[fineract-sync] Failed to approve loan ${params.loanId} in Fineract:`, error);
+    await queueSyncRetry({
+      entityType: 'loan',
+      entityId: params.loanId,
+      operation: 'approve',
+      requestPayload: params as unknown as Record<string, unknown>,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }
@@ -312,6 +361,13 @@ export async function disburseLoanInFineract(params: {
     });
 
     console.error(`[fineract-sync] Failed to disburse loan ${params.loanId}:`, error);
+    await queueSyncRetry({
+      entityType: 'loan',
+      entityId: params.loanId,
+      operation: 'disburse',
+      requestPayload: params as unknown as Record<string, unknown>,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return false;
   }
 }
@@ -389,6 +445,13 @@ export async function syncRepaymentToFineract(params: {
     });
 
     console.error(`[fineract-sync] Failed to sync repayment ${params.paymentId}:`, error);
+    await queueSyncRetry({
+      entityType: 'repayment',
+      entityId: params.paymentId,
+      operation: 'repayment',
+      requestPayload: params as unknown as Record<string, unknown>,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }

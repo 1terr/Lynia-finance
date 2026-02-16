@@ -203,6 +203,37 @@ Resources:
           Value: dead-letter
 
   # ==========================================================
+  # 7. FINERACT SYNC RETRY QUEUE
+  # ==========================================================
+
+  FineractSyncRetryQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-fineract-sync-retry"
+      VisibilityTimeout: 120
+      MessageRetentionPeriod: 604800  # 7 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt FineractSyncRetryDLQ.Arn
+        maxReceiveCount: 5
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: fineract-sync
+
+  FineractSyncRetryDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-fineract-sync-retry-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
   # DLQ ALARM (alert on DLQ messages)
   # ==========================================================
 
@@ -308,6 +339,23 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  FineractSyncRetryDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-sync-retry-dlq-messages"
+      AlarmDescription: "Fineract Sync Retry DLQ has messages - exhausted sync retries detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt FineractSyncRetryDLQ.QueueName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 Outputs:
   NotificationQueueUrl:
     Description: Notification queue URL
@@ -380,3 +428,15 @@ Outputs:
     Value: !GetAtt WhatsAppMessageRetryQueue.Arn
     Export:
       Name: !Sub "${Environment}-lynia-whatsapp-message-retry-queue-arn"
+
+  FineractSyncRetryQueueUrl:
+    Description: Fineract sync retry queue URL
+    Value: !Ref FineractSyncRetryQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-sync-retry-queue-url"
+
+  FineractSyncRetryQueueArn:
+    Description: Fineract sync retry queue ARN
+    Value: !GetAtt FineractSyncRetryQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-fineract-sync-retry-queue-arn"

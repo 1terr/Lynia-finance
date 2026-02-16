@@ -26,6 +26,8 @@ export interface Customer {
   updated_at: string;
 }
 
+export type Currency = 'USD' | 'ZWL' | 'ZAR';
+
 export interface Loan {
   id: string;
   customer_id: string;
@@ -37,6 +39,7 @@ export interface Loan {
   monthly_installment_usd: number;
   total_amount_due_usd: number;
   outstanding_balance_usd: number;
+  currency: Currency;
   loan_status: 'pending' | 'approved' | 'active' | 'paid_off' | 'defaulted';
   disbursement_date?: string;
   maturity_date?: string;
@@ -68,12 +71,25 @@ export interface Payment {
   loan_id: string;
   customer_id: string;
   payment_amount_usd: number;
+  currency: Currency;
   payment_method: 'ecocash' | 'onemoney' | 'cash' | 'bank_transfer';
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   transaction_reference?: string;
   payment_date: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface ExchangeRate {
+  id: string;
+  from_currency: Currency;
+  to_currency: Currency;
+  rate: number;
+  inverse_rate: number;
+  source: 'RBZ' | 'INTERBANK';
+  effective_date: string;
+  fetched_at: string;
+  created_at: string;
 }
 
 export interface KYCVerification {

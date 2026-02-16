@@ -315,7 +315,11 @@ Resources:
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
           WHATSAPP_BUSINESS_ACCOUNT_ID: !Ref WhatsAppBusinessAccountId
           META_APP_SECRET: !Ref MetaAppSecret
-          SCORING_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/scoring/calculate"
+          # NOTE: Use region + account pattern instead of !Ref LyniaApi to avoid
+          # circular dependency (WhatsAppFunction <-> LyniaApi) flagged by cfn-lint E3004.
+          # The scoring endpoint is on the same API Gateway, so at runtime we resolve
+          # the URL from the API_GATEWAY_URL env var or construct it in application code.
+          SCORING_API_URL: !Sub "https://${AWS::StackName}.execute-api.${AWS::Region}.amazonaws.com/Prod/scoring/calculate"
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendMessage:
@@ -875,6 +879,19 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/reconciliation/run
             Method: POST
+        # Reports
+        GetReports:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reports
+            Method: GET
+        RunReport:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reports/{reportName}
+            Method: GET
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

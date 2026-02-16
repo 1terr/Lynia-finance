@@ -16,7 +16,9 @@
     "test:coverage": "jest --coverage",
     "test:watch": "jest --watch",
     "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "test:load": "artillery run infrastructure/load-testing/artillery-config.yml",
+    "test:load:quick": "artillery run --count 5 --num 10 infrastructure/load-testing/artillery-config.yml"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch": "^3.990.0",

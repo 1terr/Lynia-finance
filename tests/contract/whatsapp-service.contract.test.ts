@@ -65,6 +65,10 @@ jest.mock('../../services/whatsapp-service/src/onboarding', () => ({
   ),
 }));
 
+jest.mock('../../services/whatsapp-service/src/loan-commands', () => ({
+  routeLoanCommand: jest.fn().mockResolvedValue(null),
+}));
+
 // Set environment variables before import
 process.env.WHATSAPP_PHONE_NUMBER_ID = 'test_phone_id';
 process.env.WHATSAPP_ACCESS_TOKEN = 'test_access_token';
