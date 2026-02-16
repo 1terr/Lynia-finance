@@ -308,22 +308,23 @@ jobs:
         id: resolve-staging-infra
         run: |
           VPC_ENABLED="false"
-          SUBNET1=""
-          SUBNET2=""
+          SUBNET1="subnet-placeholder"
+          SUBNET2="subnet-placeholder"
           LAMBDA_SG="sg-00000000"
           if aws cloudformation describe-stacks --stack-name staging-lynia-vpc --region ${{ env.AWS_REGION }} &>/dev/null; then
-            SUBNET1=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
-            SUBNET2=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            SUBNET1=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "subnet-placeholder")
+            SUBNET2=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "subnet-placeholder")
             LAMBDA_SG=$(aws cloudformation describe-stacks --stack-name staging-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='LambdaSecurityGroupId'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "sg-00000000")
-            if [ -n "$SUBNET1" ] && [ "$SUBNET1" != "None" ]; then VPC_ENABLED="true"; fi
+            if [ -n "$SUBNET1" ] && [ "$SUBNET1" != "None" ] && [ "$SUBNET1" != "subnet-placeholder" ]; then VPC_ENABLED="true"; fi
           fi
           echo "vpc_enabled=$VPC_ENABLED" >> $GITHUB_OUTPUT
           echo "subnet1=$SUBNET1" >> $GITHUB_OUTPUT
           echo "subnet2=$SUBNET2" >> $GITHUB_OUTPUT
           echo "lambda_sg=$LAMBDA_SG" >> $GITHUB_OUTPUT
-          COGNITO_ARN=""
+          COGNITO_ARN="arn:aws:cognito-idp:us-east-1:000000000000:userpool/placeholder"
           if aws cloudformation describe-stacks --stack-name staging-lynia-cognito --region ${{ env.AWS_REGION }} &>/dev/null; then
-            COGNITO_ARN=$(aws cloudformation describe-stacks --stack-name staging-lynia-cognito --query "Stacks[0].Outputs[?OutputKey=='UserPoolArn'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            RESOLVED_ARN=$(aws cloudformation describe-stacks --stack-name staging-lynia-cognito --query "Stacks[0].Outputs[?OutputKey=='UserPoolArn'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            if [ -n "$RESOLVED_ARN" ] && [ "$RESOLVED_ARN" != "None" ]; then COGNITO_ARN="$RESOLVED_ARN"; fi
           fi
           echo "cognito_arn=$COGNITO_ARN" >> $GITHUB_OUTPUT
 
@@ -334,26 +335,26 @@ jobs:
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --parameter-overrides \
-              Environment=staging \
-              VpcEnabled=${{ steps.resolve-staging-infra.outputs.vpc_enabled }} \
-              PrivateSubnet1Id=${{ steps.resolve-staging-infra.outputs.subnet1 }} \
-              PrivateSubnet2Id=${{ steps.resolve-staging-infra.outputs.subnet2 }} \
-              LambdaSecurityGroupId=${{ steps.resolve-staging-infra.outputs.lambda_sg }} \
-              CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }} \
-              WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID }} \
-              WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN }} \
-              WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN }} \
-              SmilePartnerId=${{ secrets.STAGING_SMILE_PARTNER_ID }} \
-              SmileApiKey=${{ secrets.STAGING_SMILE_API_KEY }} \
-              SmileEnvironment=sandbox \
-              EcocashMerchantId=${{ secrets.STAGING_ECOCASH_MERCHANT_ID }} \
-              EcocashApiKey=${{ secrets.STAGING_ECOCASH_API_KEY }} \
-              OnemoneyMerchantId=${{ secrets.STAGING_ONEMONEY_MERCHANT_ID }} \
-              OnemoneyApiKey=${{ secrets.STAGING_ONEMONEY_API_KEY }} \
-              TrustonicApiKey=${{ secrets.STAGING_TRUSTONIC_API_KEY }} \
-              TrustonicApiSecret=${{ secrets.STAGING_TRUSTONIC_API_SECRET }} \
-              SmsProvider=twilio \
-              SmsApiKey=${{ secrets.STAGING_SMS_API_KEY }}
+              "Environment=staging" \
+              "VpcEnabled=${{ steps.resolve-staging-infra.outputs.vpc_enabled }}" \
+              "PrivateSubnet1Id=${{ steps.resolve-staging-infra.outputs.subnet1 }}" \
+              "PrivateSubnet2Id=${{ steps.resolve-staging-infra.outputs.subnet2 }}" \
+              "LambdaSecurityGroupId=${{ steps.resolve-staging-infra.outputs.lambda_sg }}" \
+              "CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }}" \
+              "WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID || 'placeholder' }}" \
+              "WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN || 'placeholder' }}" \
+              "WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN || 'placeholder' }}" \
+              "SmilePartnerId=${{ secrets.STAGING_SMILE_PARTNER_ID || 'placeholder' }}" \
+              "SmileApiKey=${{ secrets.STAGING_SMILE_API_KEY || 'placeholder' }}" \
+              "SmileEnvironment=sandbox" \
+              "EcocashMerchantId=${{ secrets.STAGING_ECOCASH_MERCHANT_ID || 'placeholder' }}" \
+              "EcocashApiKey=${{ secrets.STAGING_ECOCASH_API_KEY || 'placeholder' }}" \
+              "OnemoneyMerchantId=${{ secrets.STAGING_ONEMONEY_MERCHANT_ID || 'placeholder' }}" \
+              "OnemoneyApiKey=${{ secrets.STAGING_ONEMONEY_API_KEY || 'placeholder' }}" \
+              "TrustonicApiKey=${{ secrets.STAGING_TRUSTONIC_API_KEY || 'placeholder' }}" \
+              "TrustonicApiSecret=${{ secrets.STAGING_TRUSTONIC_API_SECRET || 'placeholder' }}" \
+              "SmsProvider=twilio" \
+              "SmsApiKey=${{ secrets.STAGING_SMS_API_KEY || 'placeholder' }}"
         env:
           SAM_CLI_TELEMETRY: 0
 
