@@ -19,7 +19,7 @@ Resources:
     Properties:
       FunctionName: !Sub ${Environment}-lynia-fineract-init
       Handler: index.handler
-      Runtime: nodejs18.x
+      Runtime: nodejs20.x
       CodeUri: fineract-init-lambda/
       Timeout: 120
       MemorySize: 256

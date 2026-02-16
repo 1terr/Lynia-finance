@@ -5,7 +5,7 @@ import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
 import { OmariProvider, OmariWebhook } from './omari-provider';
 import { getSecurityHeaders } from '../../shared/utils/response';
 import { db } from '../../shared/clients/database';
-import { syncRepaymentToFineract } from '../../shared/clients/fineract-sync';
+import { syncRepaymentToFineract, disburseLoanInFineract } from '../../shared/clients/fineract-sync';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
@@ -387,7 +387,7 @@ async function syncPaymentToFineract(paymentId: string): Promise<void> {
   try {
     const { data: payment } = await db
       .from('payments')
-      .select('id, loan_id, amount, completed_at, fineract_transaction_id')
+      .select('id, loan_id, amount, completed_at, fineract_transaction_id, payment_type')
       .eq('id', paymentId)
       .single()
       .execute();
@@ -410,6 +410,17 @@ async function syncPaymentToFineract(paymentId: string): Promise<void> {
       amount: payment.amount,
       transactionDate: new Date(payment.completed_at),
     });
+
+    // If this is a deposit (down payment), disburse the loan in Fineract
+    if (payment.payment_type === 'deposit') {
+      disburseLoanInFineract({
+        loanId: payment.loan_id,
+        fineractLoanId: loan.fineract_loan_id,
+        disbursementDate: new Date(payment.completed_at),
+      }).catch((err) => {
+        console.error(`[fineract-sync] Background disbursement sync failed for loan ${payment.loan_id}:`, err);
+      });
+    }
   } catch (error) {
     console.error(`[fineract-sync] Failed to sync payment ${paymentId}:`, error);
   }

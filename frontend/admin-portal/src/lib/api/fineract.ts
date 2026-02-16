@@ -5,8 +5,36 @@
  * proxy requests to the Fineract core banking engine.
  */
 
-import { fetchAPI } from '@/lib/api/client';
+import { getSession } from '@/lib/auth/cognito';
 import { MAX_PAGE_SIZE } from '@/lib/utils';
+
+/**
+ * Fineract API base URL.
+ * The Fineract proxy runs on a separate API Gateway to avoid circular
+ * dependency in the main SAM stack. Falls back to the main API if unset.
+ */
+const FINERACT_API_BASE = process.env.NEXT_PUBLIC_FINERACT_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+/** Authenticated fetch against the Fineract proxy API */
+async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise<T> {
+  const session = await getSession();
+  if (!session) throw new Error('Authentication required. Please sign in.');
+  const token = session.getIdToken().getJwtToken();
+
+  const res = await fetch(`${FINERACT_API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...options?.headers,
+    },
+  });
+
+  if (res.status === 401) throw new Error('Session expired. Redirecting to login.');
+  if (res.status === 403) throw new Error('You do not have permission to perform this action.');
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  return res.json();
+}
 import type {
   FineractLoanView,
   FineractLoanDetail,
@@ -49,7 +77,7 @@ export async function getFineractLoans(
   if (status) params.set('status', status);
   if (search) params.set('search', search);
 
-  return fetchAPI<PaginatedResponse<FineractLoanView>>(
+  return fetchFineractAPI<PaginatedResponse<FineractLoanView>>(
     `/api/v1/fineract/loans?${params.toString()}`
   );
 }
@@ -59,7 +87,7 @@ export async function getFineractLoanDetail(
   lyniaLoanId: string
 ): Promise<FineractLoanDetail | null> {
   try {
-    return await fetchAPI<FineractLoanDetail>(
+    return await fetchFineractAPI<FineractLoanDetail>(
       `/api/v1/fineract/loans/${lyniaLoanId}`
     );
   } catch {
@@ -77,7 +105,7 @@ export async function getPendingApprovalLoans(
   params.set('page', String(page));
   params.set('limit', String(limit));
 
-  return fetchAPI<PaginatedResponse<FineractLoanView>>(
+  return fetchFineractAPI<PaginatedResponse<FineractLoanView>>(
     `/api/v1/fineract/loans/pending?${params.toString()}`
   );
 }
@@ -91,7 +119,7 @@ export async function approveFineractLoan(
   lyniaLoanId: string,
   request: ApproveLoanRequest
 ): Promise<FineractActionResponse> {
-  return fetchAPI<FineractActionResponse>(
+  return fetchFineractAPI<FineractActionResponse>(
     `/api/v1/fineract/loans/${lyniaLoanId}/approve`,
     {
       method: 'POST',
@@ -105,7 +133,7 @@ export async function disburseFineractLoan(
   lyniaLoanId: string,
   request: DisburseLoanRequest
 ): Promise<FineractActionResponse> {
-  return fetchAPI<FineractActionResponse>(
+  return fetchFineractAPI<FineractActionResponse>(
     `/api/v1/fineract/loans/${lyniaLoanId}/disburse`,
     {
       method: 'POST',
@@ -119,7 +147,7 @@ export async function recordFineractRepayment(
   lyniaLoanId: string,
   request: RecordRepaymentRequest
 ): Promise<FineractActionResponse> {
-  return fetchAPI<FineractActionResponse>(
+  return fetchFineractAPI<FineractActionResponse>(
     `/api/v1/fineract/loans/${lyniaLoanId}/repayment`,
     {
       method: 'POST',
@@ -134,7 +162,7 @@ export async function recordFineractRepayment(
 
 /** Fetch all Fineract loan products */
 export async function getFineractLoanProducts(): Promise<FineractLoanProductView[]> {
-  return fetchAPI<FineractLoanProductView[]>('/api/v1/fineract/loan-products');
+  return fetchFineractAPI<FineractLoanProductView[]>('/api/v1/fineract/loan-products');
 }
 
 /** Fetch a single loan product */
@@ -142,7 +170,7 @@ export async function getFineractLoanProduct(
   productId: number
 ): Promise<FineractLoanProductView | null> {
   try {
-    return await fetchAPI<FineractLoanProductView>(
+    return await fetchFineractAPI<FineractLoanProductView>(
       `/api/v1/fineract/loan-products/${productId}`
     );
   } catch {
@@ -156,7 +184,7 @@ export async function getFineractLoanProduct(
 
 /** Fetch all GL accounts */
 export async function getGLAccounts(): Promise<GLAccount[]> {
-  return fetchAPI<GLAccount[]>('/api/v1/fineract/gl-accounts');
+  return fetchFineractAPI<GLAccount[]>('/api/v1/fineract/gl-accounts');
 }
 
 /** Fetch journal entries with filters */
@@ -181,7 +209,7 @@ export async function getJournalEntries(
   if (fromDate) params.set('fromDate', fromDate);
   if (toDate) params.set('toDate', toDate);
 
-  return fetchAPI<PaginatedResponse<JournalEntry>>(
+  return fetchFineractAPI<PaginatedResponse<JournalEntry>>(
     `/api/v1/fineract/journal-entries?${params.toString()}`
   );
 }
@@ -196,7 +224,7 @@ export async function getTrialBalance(
   if (toDate) params.set('toDate', toDate);
 
   const query = params.toString();
-  return fetchAPI<TrialBalanceEntry[]>(
+  return fetchFineractAPI<TrialBalanceEntry[]>(
     `/api/v1/fineract/trial-balance${query ? `?${query}` : ''}`
   );
 }
@@ -207,12 +235,12 @@ export async function getTrialBalance(
 
 /** Fetch latest reconciliation results */
 export async function getReconciliationResults(): Promise<ReconciliationResult> {
-  return fetchAPI<ReconciliationResult>('/api/v1/fineract/reconciliation');
+  return fetchFineractAPI<ReconciliationResult>('/api/v1/fineract/reconciliation');
 }
 
 /** Trigger a manual reconciliation run */
 export async function triggerReconciliation(): Promise<ReconciliationResult> {
-  return fetchAPI<ReconciliationResult>('/api/v1/fineract/reconciliation/run', {
+  return fetchFineractAPI<ReconciliationResult>('/api/v1/fineract/reconciliation/run', {
     method: 'POST',
   });
 }
@@ -231,12 +259,12 @@ export async function getOverdueLoans(
   params.set('page', String(page));
   params.set('limit', String(limit));
 
-  return fetchAPI<PaginatedResponse<OverdueLoan>>(
+  return fetchFineractAPI<PaginatedResponse<OverdueLoan>>(
     `/api/v1/fineract/loans/overdue?${params.toString()}`
   );
 }
 
 /** Fetch aging summary */
 export async function getAgingSummary(): Promise<AgingSummary> {
-  return fetchAPI<AgingSummary>('/api/v1/fineract/loans/aging-summary');
+  return fetchFineractAPI<AgingSummary>('/api/v1/fineract/loans/aging-summary');
 }

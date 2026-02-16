@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Lynia Finance - Fineract Proxy API
+  Separate stack for Fineract proxy endpoints to avoid circular dependency
+  with the main API Gateway stack.
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 1024
+    Runtime: nodejs20.x
+    Architectures:
+      - arm64
+    Tracing: Active
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        DB_SECRET_NAME: !Sub "${Environment}/lynia/database"
+        FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
+        LOG_LEVEL: info
+        SECRETS_PREFIX: !Sub "${Environment}/lynia"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Deployment environment
+
+  CognitoUserPoolArn:
+    Type: String
+    Description: Cognito User Pool ARN for API Gateway authorizer
+
+  VpcEnabled:
+    Type: String
+    Default: "false"
+    AllowedValues:
+      - "true"
+      - "false"
+    Description: Enable VPC configuration for Lambda functions
+
+  PrivateSubnet1Id:
+    Type: String
+    Default: ""
+    Description: Private Subnet 1 ID from VPC stack
+
+  PrivateSubnet2Id:
+    Type: String
+    Default: ""
+    Description: Private Subnet 2 ID from VPC stack
+
+  LambdaSecurityGroupId:
+    Type: String
+    Default: "sg-00000000"
+    AllowedPattern: "^sg-[a-fA-F0-9]{8,17}$"
+    Description: Lambda Security Group ID from VPC stack
+
+Conditions:
+  UseVPC: !Equals [!Ref VpcEnabled, "true"]
+
+Resources:
+  # =====================================================
+  # REST API (v1) with Cognito Authorizer
+  # =====================================================
+  FineractApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub ${Environment}-lynia-fineract-api
+      StageName: Prod
+      TracingEnabled: true
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !Ref CognitoUserPoolArn
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+
+  # =====================================================
+  # FINERACT PROXY FUNCTION
+  # =====================================================
+  FineractProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-fineract-proxy
+      CodeUri: services/
+      Handler: fineract-proxy-service/src/index.handler
+      Description: Fineract proxy - serves admin portal Fineract UI pages with live data from Fineract ALB
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      VpcConfig: !If
+        - UseVPC
+        - SecurityGroupIds:
+            - !Ref LambdaSecurityGroupId
+          SubnetIds:
+            - !Ref PrivateSubnet1Id
+            - !Ref PrivateSubnet2Id
+        - !Ref "AWS::NoValue"
+      Events:
+        FineractProxyGet:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FineractApi
+            Path: /api/v1/fineract/{proxy+}
+            Method: GET
+        FineractProxyPost:
+          Type: Api
+          Properties:
+            RestApiId: !Ref FineractApi
+            Path: /api/v1/fineract/{proxy+}
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - fineract-proxy-service/src/index.ts
+
+Outputs:
+  FineractApiUrl:
+    Description: Fineract Proxy API endpoint URL
+    Value: !Sub "https://${FineractApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+    Export:
+      Name: !Sub ${Environment}-lynia-fineract-api-url
+
+  FineractApiId:
+    Description: Fineract API Gateway REST API ID
+    Value: !Ref FineractApi
+    Export:
+      Name: !Sub ${Environment}-lynia-fineract-api-id
+
+  FineractProxyFunctionArn:
+    Description: Fineract Proxy Service Lambda Function ARN
+    Value: !GetAtt FineractProxyFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-fineract-proxy-arn

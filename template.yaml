@@ -755,6 +755,221 @@ Resources:
         EntryPoints:
           - shared/clients/fineract-reconcile.ts
 
+  # =====================================================
+  # 9. FINERACT PROXY SERVICE (Admin Portal Backend)
+  # =====================================================
+  FineractProxyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-fineract-proxy
+      CodeUri: services/
+      Handler: fineract-proxy-service/src/index.handler
+      Description: Fineract proxy API - merges Lynia DB with live Fineract data for admin portal
+      MemorySize: 512
+      Timeout: 60
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        # Loan Portfolio
+        GetLoans:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans
+            Method: GET
+        GetPendingLoans:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/pending
+            Method: GET
+        GetOverdueLoans:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/overdue
+            Method: GET
+        GetAgingSummary:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/aging-summary
+            Method: GET
+        GetLoanDetail:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}
+            Method: GET
+        ApproveLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/approve
+            Method: POST
+        DisburseLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/disburse
+            Method: POST
+        RecordRepayment:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/repayment
+            Method: POST
+        # Loan Products
+        GetLoanProducts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loan-products
+            Method: GET
+        GetLoanProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loan-products/{productId}
+            Method: GET
+        # GL Accounting
+        GetGLAccounts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/gl-accounts
+            Method: GET
+        GetJournalEntries:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/journal-entries
+            Method: GET
+        GetTrialBalance:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/trial-balance
+            Method: GET
+        # Reconciliation
+        GetReconciliation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reconciliation
+            Method: GET
+        RunReconciliation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reconciliation/run
+            Method: POST
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - fineract-proxy-service/src/index.ts
+
+  # =====================================================
+  # FINERACT CLOUDWATCH DASHBOARD
+  # =====================================================
+  FineractDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Condition: IsNotDev
+    Properties:
+      DashboardName: !Sub ${Environment}-lynia-fineract
+      DashboardBody: !Sub |
+        {
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0, "y": 0, "width": 24, "height": 1,
+              "properties": { "markdown": "# Fineract Integration Health - ${Environment}" }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Proxy Service - Invocations & Errors",
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${Environment}-lynia-fineract-proxy", {"stat": "Sum"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${Environment}-lynia-fineract-proxy", {"stat": "Sum", "color": "#d62728"}]
+                ],
+                "period": 300, "region": "${AWS::Region}", "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 8, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Proxy Service - Latency (ms)",
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-lynia-fineract-proxy", {"stat": "p50", "label": "p50"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-lynia-fineract-proxy", {"stat": "p95", "label": "p95"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-lynia-fineract-proxy", {"stat": "p99", "label": "p99", "color": "#d62728"}]
+                ],
+                "period": 300, "region": "${AWS::Region}", "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 16, "y": 1, "width": 8, "height": 6,
+              "properties": {
+                "title": "Reconciliation Service - Invocations & Errors",
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${Environment}-lynia-fineract-reconciliation", {"stat": "Sum"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${Environment}-lynia-fineract-reconciliation", {"stat": "Sum", "color": "#d62728"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Environment}-lynia-fineract-reconciliation", {"stat": "Average", "color": "#ff7f0e"}]
+                ],
+                "period": 300, "region": "${AWS::Region}", "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0, "y": 7, "width": 12, "height": 6,
+              "properties": {
+                "title": "Fineract Sync - Success / Failure",
+                "metrics": [
+                  ["Lynia/${Environment}", "FineractSyncSuccess", {"stat": "Sum", "color": "#2ca02c"}],
+                  ["Lynia/${Environment}", "FineractSyncFailure", {"stat": "Sum", "color": "#d62728"}],
+                  ["Lynia/${Environment}", "FineractReconciliationDiscrepancies", {"stat": "Sum", "color": "#ff7f0e"}]
+                ],
+                "period": 300, "region": "${AWS::Region}", "view": "timeSeries"
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12, "y": 7, "width": 12, "height": 6,
+              "properties": {
+                "title": "Fineract API Latency (via Proxy)",
+                "metrics": [
+                  ["Lynia/${Environment}", "FineractApiLatency", {"stat": "p50", "label": "p50"}],
+                  ["Lynia/${Environment}", "FineractApiLatency", {"stat": "p95", "label": "p95"}],
+                  ["Lynia/${Environment}", "FineractApiLatency", {"stat": "p99", "label": "p99", "color": "#d62728"}]
+                ],
+                "period": 300, "region": "${AWS::Region}", "view": "timeSeries"
+              }
+            }
+          ]
+        }
+
 Outputs:
   # API Gateway
   ApiGatewayUrl:
@@ -817,3 +1032,10 @@ Outputs:
     Value: !GetAtt FineractReconciliationFunction.Arn
     Export:
       Name: !Sub ${Environment}-lynia-fineract-reconciliation-arn
+
+  FineractProxyFunctionArn:
+    Description: Fineract Proxy Service Lambda Function ARN
+    Value: !GetAtt FineractProxyFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-fineract-proxy-arn
+

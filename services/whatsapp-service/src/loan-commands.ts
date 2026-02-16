@@ -16,6 +16,7 @@
  */
 
 import { db } from '../../shared/clients/database';
+import { getFineractLoanBalance, getFineractRepaymentSchedule } from '../../shared/clients/fineract-sync';
 
 // ===================================================================
 // COMMAND DEFINITIONS
@@ -132,10 +133,34 @@ async function handleBalance(phoneNumber: string): Promise<string> {
     return `Hi ${customer.first_name}! You don't have any active loans.\n\nWant to apply? Reply *APPLY* to get started.`;
   }
 
-  const outstanding = loan.total_amount_due - (loan.total_amount_paid || 0);
-  const nextDue = loan.next_payment_date
-    ? new Date(loan.next_payment_date).toLocaleDateString('en-ZW', { weekday: 'short', month: 'short', day: 'numeric' })
-    : 'N/A';
+  // Try Fineract for real-time balance (source of truth for accounting)
+  let outstanding: number;
+  let nextDue: string;
+  let nextDueAmount: number;
+
+  if (loan.fineract_loan_id && process.env.FINERACT_SECRET_NAME) {
+    try {
+      const fBalance = await getFineractLoanBalance(loan.fineract_loan_id);
+      if (fBalance) {
+        outstanding = fBalance.totalOutstanding;
+        nextDue = fBalance.nextDueDate
+          ? fBalance.nextDueDate.toLocaleDateString('en-ZW', { weekday: 'short', month: 'short', day: 'numeric' })
+          : 'N/A';
+        nextDueAmount = fBalance.nextDueAmount;
+      }
+    } catch {
+      // Fallback to Lynia DB data below
+    }
+  }
+
+  // Fallback: use Lynia DB data if Fineract unavailable
+  if (outstanding! === undefined) {
+    outstanding = loan.total_amount_due - (loan.total_amount_paid || 0);
+    nextDue = loan.next_payment_date
+      ? new Date(loan.next_payment_date).toLocaleDateString('en-ZW', { weekday: 'short', month: 'short', day: 'numeric' })
+      : 'N/A';
+    nextDueAmount = loan.monthly_installment_amount;
+  }
 
   return `💰 *Loan Balance*
 
@@ -147,11 +172,11 @@ Device: ${loan.device_model || 'Smartphone'}
 📊 *Summary:*
 • Total Loan: $${loan.total_amount_due?.toFixed(2)}
 • Amount Paid: $${(loan.total_amount_paid || 0).toFixed(2)}
-• Outstanding: *$${outstanding.toFixed(2)}*
+• Outstanding: *$${outstanding!.toFixed(2)}*
 • Monthly Payment: $${loan.monthly_installment_amount?.toFixed(2)}
 
-📅 Next Payment: *${nextDue}*
-💵 Amount Due: *$${loan.monthly_installment_amount?.toFixed(2)}*
+📅 Next Payment: *${nextDue!}*
+💵 Amount Due: *$${nextDueAmount!?.toFixed(2)}*
 
 Reply:
 1 - Pay now
@@ -217,6 +242,30 @@ async function handleSchedule(phoneNumber: string): Promise<string> {
 
   if (!loan) return `Hi ${customer.first_name}! No active loan found.`;
 
+  // Try Fineract for real-time schedule (source of truth for accounting)
+  if (loan.fineract_loan_id && process.env.FINERACT_SECRET_NAME) {
+    try {
+      const schedule = await getFineractRepaymentSchedule(loan.fineract_loan_id);
+      if (schedule && schedule.length > 0) {
+        let message = `📅 *Payment Schedule*\n\nLoan: ${loan.loan_reference || loan.id}\n\n`;
+
+        for (const period of schedule) {
+          const dateStr = period.dueDate.toLocaleDateString('en-ZW', { month: 'short', day: 'numeric', year: '2-digit' });
+          message += `${period.complete ? '✅' : '⬜'} Month ${period.period}: $${period.totalDue.toFixed(2)} - ${dateStr}\n`;
+        }
+
+        const totalOutstanding = schedule.reduce((sum, p) => sum + p.outstanding, 0);
+        const pendingCount = schedule.filter((p) => !p.complete).length;
+        message += `\n*Remaining:* $${totalOutstanding.toFixed(2)} (${pendingCount} payments)`;
+
+        return message;
+      }
+    } catch {
+      // Fallback to Lynia DB schedule below
+    }
+  }
+
+  // Fallback: calculate schedule from Lynia DB data
   const monthlyAmount = loan.monthly_installment_amount || 0;
   const termMonths = loan.term_months || 6;
   const startDate = new Date(loan.disbursement_date || loan.created_at);

@@ -90,6 +90,18 @@ API_URL=$(aws cloudformation describe-stacks \
 
 log "API URL: ${API_URL:-not found}"
 
+# Resolve Fineract Proxy API URL (separate stack)
+FINERACT_PROXY_STACK="lynia-fineract-proxy-${ENVIRONMENT/development/dev}"
+[ "$ENVIRONMENT" = "staging" ] && FINERACT_PROXY_STACK="lynia-fineract-proxy-staging"
+[ "$ENVIRONMENT" = "production" ] && FINERACT_PROXY_STACK="lynia-fineract-proxy-prod"
+
+FINERACT_API_URL=$(aws cloudformation describe-stacks \
+  --stack-name "$FINERACT_PROXY_STACK" \
+  --query 'Stacks[0].Outputs[?OutputKey==`FineractApiUrl`].OutputValue' \
+  --output text --region "$REGION" 2>/dev/null || echo "")
+
+log "Fineract API URL: ${FINERACT_API_URL:-not found}"
+
 # ============================================================================
 # Step 2: Build frontend applications
 # ============================================================================
@@ -99,6 +111,7 @@ pnpm install --frozen-lockfile
 build_admin() {
   log "Building admin portal..."
   NEXT_PUBLIC_API_URL="$API_URL" \
+  NEXT_PUBLIC_FINERACT_API_URL="$FINERACT_API_URL" \
   NEXT_PUBLIC_COGNITO_USER_POOL_ID="$COGNITO_POOL_ID" \
   NEXT_PUBLIC_COGNITO_CLIENT_ID="$ADMIN_CLIENT_ID" \
   NEXT_PUBLIC_COGNITO_REGION="$REGION" \

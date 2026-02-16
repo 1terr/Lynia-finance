@@ -66,6 +66,10 @@ async function getConfig(): Promise<FineractClientConfig> {
     rejectUnauthorized: process.env.NODE_ENV === 'production',
   };
 
+  if (!cachedConfig.rejectUnauthorized) {
+    console.warn('[fineract-client] TLS certificate validation disabled (non-production environment)');
+  }
+
   return cachedConfig;
 }
 

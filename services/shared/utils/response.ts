@@ -15,6 +15,7 @@ const ALLOWED_ORIGINS: string[] = [
   'https://admin.lyniafinance.com',
   'https://app.lyniafinance.com',
   'https://distributor.lyniafinance.com',
+  'https://d1qwfy2tsdmpe4.cloudfront.net',
   ...(process.env.NODE_ENV !== 'production'
     ? ['http://localhost:3000', 'http://localhost:3001']
     : []),
