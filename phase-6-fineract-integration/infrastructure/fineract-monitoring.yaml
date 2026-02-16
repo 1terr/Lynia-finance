@@ -15,6 +15,14 @@ Parameters:
     Type: String
     Default: alerts@lynia.co.zw
 
+  ALBFullName:
+    Type: String
+    Description: ALB full name in format app/<name>/<id> (from ALB ARN after loadbalancer/)
+
+  TargetGroupFullName:
+    Type: String
+    Description: Target group full name in format targetgroup/<name>/<id>
+
 Conditions:
   IsProduction: !Equals [!Ref Environment, production]
 
@@ -115,8 +123,9 @@ Resources:
       MetricName: UnHealthyHostCount
       Dimensions:
         - Name: LoadBalancer
-          Value: !ImportValue
-            Fn::Sub: "${Environment}-lynia-fineract-alb-arn"
+          Value: !Ref ALBFullName
+        - Name: TargetGroup
+          Value: !Ref TargetGroupFullName
       Statistic: Maximum
       Period: 60
       EvaluationPeriods: 2
@@ -136,8 +145,7 @@ Resources:
       MetricName: HTTPCode_Target_5XX_Count
       Dimensions:
         - Name: LoadBalancer
-          Value: !ImportValue
-            Fn::Sub: "${Environment}-lynia-fineract-alb-arn"
+          Value: !Ref ALBFullName
       Statistic: Sum
       Period: 300
       EvaluationPeriods: 2
@@ -157,8 +165,7 @@ Resources:
       MetricName: TargetResponseTime
       Dimensions:
         - Name: LoadBalancer
-          Value: !ImportValue
-            Fn::Sub: "${Environment}-lynia-fineract-alb-arn"
+          Value: !Ref ALBFullName
       ExtendedStatistic: p95
       Period: 300
       EvaluationPeriods: 3
@@ -213,8 +220,8 @@ Resources:
               "properties": {
                 "title": "Fineract ALB - Request Count & Latency",
                 "metrics": [
-                  ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "Requests"}],
-                  ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${FineractALBFullName}", {"stat": "p95", "label": "p95 Latency", "yAxis": "right"}]
+                  ["AWS/ApplicationELB", "RequestCount", "LoadBalancer", "${ALBFullName}", {"stat": "Sum", "label": "Requests"}],
+                  ["AWS/ApplicationELB", "TargetResponseTime", "LoadBalancer", "${ALBFullName}", {"stat": "p95", "label": "p95 Latency", "yAxis": "right"}]
                 ],
                 "period": 300,
                 "region": "${AWS::Region}"
@@ -226,9 +233,9 @@ Resources:
               "properties": {
                 "title": "Fineract ALB - HTTP Status Codes",
                 "metrics": [
-                  ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "2xx", "color": "#2ca02c"}],
-                  ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "4xx", "color": "#ff7f0e"}],
-                  ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "${FineractALBFullName}", {"stat": "Sum", "label": "5xx", "color": "#d62728"}]
+                  ["AWS/ApplicationELB", "HTTPCode_Target_2XX_Count", "LoadBalancer", "${ALBFullName}", {"stat": "Sum", "label": "2xx", "color": "#2ca02c"}],
+                  ["AWS/ApplicationELB", "HTTPCode_Target_4XX_Count", "LoadBalancer", "${ALBFullName}", {"stat": "Sum", "label": "4xx", "color": "#ff7f0e"}],
+                  ["AWS/ApplicationELB", "HTTPCode_Target_5XX_Count", "LoadBalancer", "${ALBFullName}", {"stat": "Sum", "label": "5xx", "color": "#d62728"}]
                 ],
                 "period": 300,
                 "region": "${AWS::Region}"
@@ -237,11 +244,6 @@ Resources:
           ]
         }
 
-  # Placeholder for ALB full name reference
-  FineractALBFullName:
-    Type: AWS::CloudFormation::WaitConditionHandle
-    Metadata:
-      Note: "Replace ${FineractALBFullName} in dashboard JSON with actual ALB full name after deployment"
 
 Outputs:
   FineractAlertTopicArn:

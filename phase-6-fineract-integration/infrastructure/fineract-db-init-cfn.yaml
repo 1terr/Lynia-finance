@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Lynia Finance - Fineract Database Initialization via Lambda
+  Creates fineract_tenants and fineract_default databases on RDS
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+  DBAdminUser:
+    Type: String
+    NoEcho: true
+
+  DBAdminPassword:
+    Type: String
+    NoEcho: true
+
+  FineractDBUser:
+    Type: String
+    Default: fineract_admin
+    NoEcho: true
+
+  FineractDBPassword:
+    Type: String
+    NoEcho: true
+
+Resources:
+  DBInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Environment}-lynia-fineract-db-init"
+      Runtime: nodejs18.x
+      Handler: index.handler
+      CodeUri: fineract-db-init-lambda/
+      Timeout: 120
+      MemorySize: 256
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue
+            Fn::Sub: "${Environment}-lynia-lambda-sg-id"
+        SubnetIds:
+          - !ImportValue
+            Fn::Sub: "${Environment}-lynia-private-subnet-1"
+          - !ImportValue
+            Fn::Sub: "${Environment}-lynia-private-subnet-2"
+      Environment:
+        Variables:
+          RDS_HOST: !ImportValue
+            Fn::Sub: "${Environment}-lynia-db-endpoint"
+          RDS_PORT: "5432"
+          DB_ADMIN_USER: !Ref DBAdminUser
+          DB_ADMIN_PASSWORD: !Ref DBAdminPassword
+          FINERACT_DB_USER: !Ref FineractDBUser
+          FINERACT_DB_PASSWORD: !Ref FineractDBPassword
+      Policies:
+        - VPCAccessPolicy: {}
+
+  DBInitCustomResource:
+    Type: Custom::FineractDBInit
+    Properties:
+      ServiceToken: !GetAtt DBInitFunction.Arn
+      # Change this value to force re-run
+      RunId: "initial-setup-1"
+
+Outputs:
+  DBInitStatus:
+    Description: Database initialization status
+    Value: "Complete"

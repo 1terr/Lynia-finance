@@ -16,6 +16,10 @@ Parameters:
     Default: latest
     Description: Docker image tag for apache/fineract
 
+  FineractSecretArn:
+    Type: String
+    Description: Full ARN of the Fineract Secrets Manager secret (including random suffix)
+
 Conditions:
   IsProduction: !Equals [!Ref Environment, production]
 
@@ -52,18 +56,18 @@ Resources:
           ToPort: 8443
           SourceSecurityGroupId: !ImportValue
             Fn::Sub: "${Environment}-lynia-lambda-sg-id"
-          Description: "Lambda functions → Fineract API"
+          Description: "Lambda functions to Fineract API"
         - IpProtocol: tcp
           FromPort: 8443
           ToPort: 8443
           SourceSecurityGroupId: !Ref ALBSecurityGroup
-          Description: "ALB health checks → Fineract"
+          Description: "ALB health checks to Fineract"
       SecurityGroupEgress:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
           CidrIp: "10.0.0.0/16"
-          Description: "Fineract → RDS PostgreSQL"
+          Description: "Fineract to RDS PostgreSQL"
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
@@ -86,7 +90,7 @@ Resources:
           ToPort: 8443
           SourceSecurityGroupId: !ImportValue
             Fn::Sub: "${Environment}-lynia-lambda-sg-id"
-          Description: "Lambda functions → ALB"
+          Description: "Lambda functions to ALB"
       Tags:
         - Key: Name
           Value: !Sub "${Environment}-lynia-fineract-alb-sg"
@@ -99,7 +103,12 @@ Resources:
       FromPort: 8443
       ToPort: 8443
       DestinationSecurityGroupId: !Ref FineractSecurityGroup
-      Description: "ALB → Fineract tasks"
+      Description: "ALB to Fineract tasks"
+
+  # NOTE: Fineract SG must be allowed in the VPC endpoint security group
+  # (production-lynia-vpce-sg) for Secrets Manager and CloudWatch Logs access.
+  # This was added manually via: aws ec2 authorize-security-group-ingress
+  # --group-id sg-0ba14576c454cb9e7 --protocol tcp --port 443 --source-group <fineract-sg-id>
 
   # Allow Fineract to access existing RDS security group
   FineractToRDSIngress:
@@ -111,7 +120,7 @@ Resources:
       FromPort: 5432
       ToPort: 5432
       SourceSecurityGroupId: !Ref FineractSecurityGroup
-      Description: "Fineract ECS → RDS PostgreSQL"
+      Description: "Fineract ECS to RDS PostgreSQL"
 
   # ==========================================================
   # IAM ROLES
@@ -178,6 +187,7 @@ Resources:
   # ==========================================================
   FineractLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Retain
     Properties:
       LogGroupName: !Sub "/ecs/${Environment}-lynia-fineract"
       RetentionInDays: !If [IsProduction, 90, 14]
@@ -278,33 +288,26 @@ Resources:
               Value: "-Xmx1G -XX:MinRAMPercentage=25 -XX:MaxRAMPercentage=80 -XX:TieredStopAtLevel=1 -XX:+UseContainerSupport -XX:+UseStringDeduplication --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED"
           Secrets:
             - Name: FINERACT_HIKARI_JDBC_URL
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:jdbc_url::"
+              ValueFrom: !Sub "${FineractSecretArn}:jdbc_url::"
             - Name: FINERACT_HIKARI_USERNAME
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_username::"
+              ValueFrom: !Sub "${FineractSecretArn}:db_username::"
             - Name: FINERACT_HIKARI_PASSWORD
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_password::"
+              ValueFrom: !Sub "${FineractSecretArn}:db_password::"
             - Name: FINERACT_DEFAULT_TENANTDB_HOSTNAME
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_host::"
+              ValueFrom: !Sub "${FineractSecretArn}:db_host::"
             - Name: FINERACT_DEFAULT_TENANTDB_UID
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_username::"
+              ValueFrom: !Sub "${FineractSecretArn}:db_username::"
             - Name: FINERACT_DEFAULT_TENANTDB_PWD
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:db_password::"
+              ValueFrom: !Sub "${FineractSecretArn}:db_password::"
             - Name: FINERACT_DEFAULT_MASTER_PASSWORD
-              ValueFrom: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract:master_password::"
+              ValueFrom: !Sub "${FineractSecretArn}:master_password::"
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref FineractLogGroup
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: fineract
-          HealthCheck:
-            Command:
-              - CMD-SHELL
-              - "curl -kfs https://localhost:8443/fineract-provider/actuator/health || exit 1"
-            Interval: 30
-            Timeout: 10
-            Retries: 5
-            StartPeriod: 180
+          # Health check via ALB target group only (curl not available in Fineract image)
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -359,8 +362,8 @@ Resources:
       Protocol: HTTPS
       SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
       Certificates:
-        - CertificateArn: !ImportValue
-            Fn::Sub: "${Environment}-lynia-internal-cert-arn"
+        # Use existing api.lyniafinance.com ACM cert for internal ALB
+        - CertificateArn: arn:aws:acm:us-east-1:849695476598:certificate/80913a46-ec85-4e7b-b6f7-b83d976da6de
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref FineractTargetGroup
