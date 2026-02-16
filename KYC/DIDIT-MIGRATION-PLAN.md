@@ -128,7 +128,7 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 | # | Deliverable | File | Status |
 |---|-------------|------|--------|
 | 1.1 | Provider-neutral KYC types | `services/shared/types/kyc-provider.ts` (NEW) | DONE |
-| 1.2 | DIDIT service client | `services/kyc-service/src/didit-service.ts` (NEW) | TODO |
+| 1.2 | DIDIT service client | `services/kyc-service/src/didit-service.ts` (NEW) | DONE |
 | 1.3 | SmileIdentityService adapter | `services/kyc-service/src/smile-identity-service.ts` (MODIFY) | TODO |
 | 1.4 | Provider factory | `services/kyc-service/src/kyc-provider-factory.ts` (NEW) | TODO |
 | 1.5 | Add `form-data` dependency | `services/kyc-service/package.json` (MODIFY) | TODO |
@@ -416,20 +416,20 @@ export const mockDiditResponses = {
 | DIDIT API research | DONE | Documented all endpoints, auth, webhooks, response formats |
 | Architecture decision | DONE | Standalone APIs (not session-based) for WhatsApp flow |
 | Provider abstraction design | DONE | `KYCProvider` interface with normalized types |
-| Provider-neutral types file | DONE | `services/shared/types/kyc-provider.ts` created |
+| Provider-neutral types file | DONE | `services/shared/types/kyc-provider.ts` committed |
+| DIDIT service client | DONE | `services/kyc-service/src/didit-service.ts` committed |
 | Migration plan document | DONE | This file |
 
 ### In Progress
 
 | Item | Status | Next Step |
 |------|--------|-----------|
-| DIDIT service client | IN PROGRESS | Create `didit-service.ts` |
+| SmileIdentityService adapter | IN PROGRESS | Add `implements KYCProvider` |
 
 ### Remaining
 
 | Item | Est. Effort | Dependencies |
 |------|-------------|-------------|
-| DIDIT service client (`didit-service.ts`) | Medium | Types (done) |
 | SmileIdentityService adapter | Small | Types (done) |
 | Provider factory | Small | Both service classes |
 | Lambda handler refactor (`index.ts`) | Medium | Factory, both services |
