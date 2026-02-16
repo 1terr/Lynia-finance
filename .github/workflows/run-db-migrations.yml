@@ -45,7 +45,12 @@ jobs:
         id: rds
         run: |
           ENV="${{ github.event.inputs.environment }}"
-          RDS_STACK="${ENV}-lynia-rds"
+          # Production RDS stack uses lynia-rds-production naming convention
+          if [ "${ENV}" = "production" ]; then
+            RDS_STACK="lynia-rds-production"
+          else
+            RDS_STACK="${ENV}-lynia-rds"
+          fi
           VPC_STACK="${ENV}-lynia-vpc"
 
           echo "=== Fetching RDS details from ${RDS_STACK} ==="

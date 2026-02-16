@@ -40,6 +40,8 @@ env:
   PNPM_VERSION: '9'
   DEPLOY_ENV: ${{ inputs.environment || 'production' }}
   DEPLOY_APP: ${{ inputs.application || 'both' }}
+  # Production frontend stack uses lynia-finance-prod-frontend naming convention
+  FRONTEND_STACK: ${{ (inputs.environment || 'production') == 'production' && 'lynia-finance-prod-frontend' || format('{0}-lynia-frontend', inputs.environment || 'production') }}
 
 jobs:
   # ================================================================
@@ -276,7 +278,7 @@ jobs:
       - name: Invalidate CloudFront cache
         run: |
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --stack-name ${{ env.FRONTEND_STACK }} \
             --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalDistributionId`].OutputValue' \
             --output text 2>/dev/null || echo "")
 
@@ -295,7 +297,7 @@ jobs:
         id: get-url
         run: |
           URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --stack-name ${{ env.FRONTEND_STACK }} \
             --query 'Stacks[0].Outputs[?OutputKey==`AdminPortalUrl`].OutputValue' \
             --output text 2>/dev/null || echo "https://admin.lyniafinance.com")
           echo "url=$URL" >> $GITHUB_OUTPUT
@@ -400,7 +402,7 @@ jobs:
       - name: Invalidate CloudFront cache
         run: |
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --stack-name ${{ env.FRONTEND_STACK }} \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardDistributionId`].OutputValue' \
             --output text 2>/dev/null || echo "")
 
@@ -414,7 +416,7 @@ jobs:
         id: get-url
         run: |
           URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --stack-name ${{ env.FRONTEND_STACK }} \
             --query 'Stacks[0].Outputs[?OutputKey==`DistributorDashboardUrl`].OutputValue' \
             --output text 2>/dev/null || echo "https://distributor.lyniafinance.com")
           echo "url=$URL" >> $GITHUB_OUTPUT
@@ -515,7 +517,7 @@ jobs:
       - name: Invalidate CloudFront cache
         run: |
           DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --stack-name ${{ env.FRONTEND_STACK }} \
             --query 'Stacks[0].Outputs[?OutputKey==`LandingPageDistributionId`].OutputValue' \
             --output text 2>/dev/null || echo "")
 
@@ -534,7 +536,7 @@ jobs:
         id: get-url
         run: |
           URL=$(aws cloudformation describe-stacks \
-            --stack-name ${{ env.DEPLOY_ENV }}-lynia-frontend \
+            --stack-name ${{ env.FRONTEND_STACK }} \
             --query 'Stacks[0].Outputs[?OutputKey==`LandingPageUrl`].OutputValue' \
             --output text 2>/dev/null || echo "https://lyniafinance.com")
           echo "url=$URL" >> $GITHUB_OUTPUT
