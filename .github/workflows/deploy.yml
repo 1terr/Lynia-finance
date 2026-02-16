@@ -607,6 +607,7 @@ jobs:
 
           sam deploy \
             --config-env production \
+            --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --on-failure ROLLBACK \
             --parameter-overrides \
