@@ -27,8 +27,8 @@ Resources:
         SecurityGroupIds:
           - !ImportValue production-lynia-lambda-sg-id
         SubnetIds:
-          - !ImportValue production-lynia-private-subnet-1-id
-          - !ImportValue production-lynia-private-subnet-2-id
+          - !ImportValue production-lynia-private-subnet-1
+          - !ImportValue production-lynia-private-subnet-2
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -43,15 +43,10 @@ Resources:
             - "https://${FineractEndpoint}:8443/fineract-provider/api/v1"
             - FineractEndpoint: !ImportValue production-lynia-fineract-endpoint
           FINERACT_TENANT_ID: default
+          FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
 
-  # Custom Resource triggers initialization on stack creation
-  FineractInitTrigger:
-    Type: Custom::FineractInit
-    DependsOn: FineractInitFunction
-    Properties:
-      ServiceToken: !GetAtt FineractInitFunction.Arn
-      # Change this value to re-trigger initialization
-      InitVersion: "1.0.0"
+  # Note: Invoke manually after deployment:
+  #   aws lambda invoke --function-name production-lynia-fineract-init --payload '{"RequestType":"Create"}' result.json
 
 Outputs:
   FineractInitFunctionArn:

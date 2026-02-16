@@ -16,13 +16,38 @@
 const https = require('https');
 
 // ============================================================
-// CONFIGURATION
+// CONFIGURATION (loaded from env vars + Secrets Manager)
 // ============================================================
 
-const FINERACT_BASE_URL = process.env.FINERACT_BASE_URL || '';
-const FINERACT_USERNAME = process.env.FINERACT_USERNAME || 'mifos';
-const FINERACT_PASSWORD = process.env.FINERACT_PASSWORD || 'password';
-const FINERACT_TENANT_ID = process.env.FINERACT_TENANT_ID || 'default';
+let FINERACT_BASE_URL = process.env.FINERACT_BASE_URL || '';
+let FINERACT_USERNAME = process.env.FINERACT_USERNAME || 'mifos';
+let FINERACT_PASSWORD = process.env.FINERACT_PASSWORD || 'password';
+let FINERACT_TENANT_ID = process.env.FINERACT_TENANT_ID || 'default';
+
+// Load Fineract credentials from Secrets Manager if FINERACT_SECRET_NAME is set
+async function loadFineractCredentials() {
+  const secretName = process.env.FINERACT_SECRET_NAME;
+  if (!secretName) {
+    console.log('No FINERACT_SECRET_NAME set, using env var defaults');
+    return;
+  }
+
+  try {
+    const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
+    const sm = new SecretsManagerClient({ region: process.env.AWS_REGION || 'us-east-1' });
+    const resp = await sm.send(new GetSecretValueCommand({ SecretId: secretName }));
+    const secret = JSON.parse(resp.SecretString);
+
+    if (secret.base_url) FINERACT_BASE_URL = secret.base_url;
+    if (secret.username) FINERACT_USERNAME = secret.username;
+    if (secret.password) FINERACT_PASSWORD = secret.password;
+    if (secret.tenant_id) FINERACT_TENANT_ID = secret.tenant_id;
+
+    console.log(`Loaded Fineract credentials from ${secretName}`);
+  } catch (err) {
+    console.warn(`Failed to load secret ${secretName}: ${err.message}. Using defaults.`);
+  }
+}
 
 // GL Chart of Accounts (18 accounts)
 const GL_ACCOUNTS = [
@@ -47,6 +72,8 @@ const GL_ACCOUNTS = [
   { name: 'Income from Recovery', glCode: '4004', type: 4, usage: 2, parentGlCode: '4000', manualEntriesAllowed: false, description: 'Recovery of written-off loans' },
   { name: 'Loan Write-Off Expense', glCode: '5001', type: 5, usage: 2, parentGlCode: '5000', manualEntriesAllowed: false, description: 'Loans written off as uncollectable' },
   { name: 'Provision Expense', glCode: '5002', type: 5, usage: 2, parentGlCode: '5000', manualEntriesAllowed: false, description: 'Loan loss provisioning per RBZ guidelines' },
+  { name: 'Transfers in Suspense (Asset)', glCode: '1500', type: 1, usage: 2, parentGlCode: '1000', manualEntriesAllowed: true, description: 'Suspense account for funds in transit (asset type)' },
+  { name: 'Goodwill Write-Off', glCode: '5003', type: 5, usage: 2, parentGlCode: '5000', manualEntriesAllowed: false, description: 'Goodwill credit write-off expense' },
 ];
 
 // 3-tier loan products
@@ -131,23 +158,56 @@ function fineractRequest(method, path, body) {
 // ============================================================
 
 async function setupGLAccounts() {
-  const existing = await fineractRequest('GET', '/glaccounts');
-  const existingCodes = new Set(existing.map(a => a.glCode));
   const idMap = {};
 
-  for (const acct of existing) {
-    idMap[acct.glCode] = acct.id;
+  // Step 1: Discover existing accounts by probing individual IDs
+  console.log('Discovering existing GL accounts...');
+  let consecutiveMisses = 0;
+  for (let id = 1; id <= 50; id++) {
+    try {
+      const acct = await fineractRequest('GET', `/glaccounts/${id}`);
+      if (acct.glCode && acct.id) {
+        idMap[acct.glCode] = acct.id;
+        const usageStr = acct.usage && acct.usage.value === 'HEADER' ? 'HEADER' : 'DETAIL';
+        console.log(`  ID ${acct.id}: ${acct.glCode} "${acct.name}" (${usageStr})`);
+        consecutiveMisses = 0;
+      }
+    } catch (err) {
+      if (err.message.includes('404')) {
+        consecutiveMisses++;
+        // Stop probing after 10 consecutive 404s
+        if (consecutiveMisses >= 10) break;
+        continue;
+      }
+      break;
+    }
+  }
+  console.log(`Found ${Object.keys(idMap).length} existing GL accounts`);
+
+  // Step 2: Fix header accounts that were created as detail (usage=2 → usage=1)
+  // Fineract won't let detail accounts be parents. Update them to header.
+  const headerCodes = GL_ACCOUNTS.filter(a => a.usage === 1);
+  for (const header of headerCodes) {
+    if (idMap[header.glCode]) {
+      try {
+        await fineractRequest('PUT', `/glaccounts/${idMap[header.glCode]}`, {
+          name: header.name,
+          usage: 1, // HEADER
+        });
+        console.log(`Updated ${header.glCode} "${header.name}" to HEADER usage`);
+      } catch (err) {
+        console.warn(`Could not update ${header.glCode} to HEADER: ${err.message.substring(0, 200)}`);
+      }
+    }
   }
 
-  console.log(`Found ${existing.length} existing GL accounts`);
-
-  // Create header accounts first, then detail accounts
+  // Step 3: Create missing accounts (header first, then detail)
   const headers = GL_ACCOUNTS.filter(a => a.usage === 1);
   const details = GL_ACCOUNTS.filter(a => a.usage === 2);
 
   for (const account of [...headers, ...details]) {
-    if (existingCodes.has(account.glCode)) {
-      console.log(`GL ${account.glCode} "${account.name}" already exists (ID: ${idMap[account.glCode]})`);
+    if (idMap[account.glCode]) {
+      console.log(`GL ${account.glCode} "${account.name}" exists (ID: ${idMap[account.glCode]})`);
       continue;
     }
 
@@ -169,15 +229,45 @@ async function setupGLAccounts() {
       idMap[account.glCode] = response.resourceId;
       console.log(`Created GL ${account.glCode} "${account.name}" -> ID ${response.resourceId}`);
     } catch (err) {
-      if (err.message.includes('403')) {
-        console.warn(`GL ${account.glCode} may already exist (403). Skipping.`);
-      } else {
-        throw err;
+      // If creation fails (e.g. glCode already exists), try without parentId
+      console.warn(`Failed with parent: ${err.message.substring(0, 200)}`);
+      if (account.parentGlCode) {
+        try {
+          const bodyNoParent = { ...body };
+          delete bodyNoParent.parentId;
+          const response = await fineractRequest('POST', '/glaccounts', bodyNoParent);
+          idMap[account.glCode] = response.resourceId;
+          console.log(`Created GL ${account.glCode} "${account.name}" (no parent) -> ID ${response.resourceId}`);
+        } catch (err2) {
+          console.warn(`Also failed without parent: ${err2.message.substring(0, 200)}`);
+        }
       }
     }
   }
 
-  console.log(`GL account setup complete. ${Object.keys(idMap).length} accounts ready.`);
+  // Step 4: Re-probe to pick up any newly created accounts
+  for (let id = 1; id <= 50; id++) {
+    try {
+      const acct = await fineractRequest('GET', `/glaccounts/${id}`);
+      if (acct.glCode && acct.id && !idMap[acct.glCode]) {
+        idMap[acct.glCode] = acct.id;
+        console.log(`  Re-probe found ID ${acct.id}: ${acct.glCode}`);
+      }
+    } catch (err) {
+      if (err.message.includes('404')) continue;
+      break;
+    }
+  }
+
+  // Verify we have all required accounts
+  const missing = GL_ACCOUNTS.filter(a => !idMap[a.glCode]);
+  if (missing.length > 0) {
+    console.error('Missing GL accounts:', missing.map(a => a.glCode).join(', '));
+    throw new Error(`Failed to resolve ${missing.length} GL account IDs: ${missing.map(a => a.glCode).join(', ')}`);
+  }
+
+  console.log(`GL account setup complete. All ${Object.keys(idMap).length} accounts ready.`);
+  console.log('GL ID Map:', JSON.stringify(idMap));
   return idMap;
 }
 
@@ -207,19 +297,31 @@ async function setupLoanProducts(glAccountIdMap) {
       amortizationType: 0,
       interestType: 0,
       interestCalculationPeriodType: 1,
+      daysInYearType: 365,
+      daysInMonthType: 30,
+      isInterestRecalculationEnabled: false,
+      canDefineInstallmentAmount: false,
+      graceOnPrincipalPayment: 0,
+      graceOnInterestPayment: 0,
+      graceOnInterestCharged: 0,
+      graceOnArrearsAgeing: 0,
+      overdueDaysForNPA: 90,
+      minimumDaysBetweenDisbursalAndFirstRepayment: 1,
       transactionProcessingStrategyCode: 'mifos-standard-strategy',
       locale: 'en',
       dateFormat: 'dd MMMM yyyy',
       accountingRule: 3,
-      // Accrual-based GL account mappings
+      // Accrual-based GL account mappings (accountingRule=3)
       fundSourceAccountId: glAccountIdMap['1001'],
       loanPortfolioAccountId: glAccountIdMap['1100'],
       interestOnLoanAccountId: glAccountIdMap['4001'],
       incomeFromFeeAccountId: glAccountIdMap['4002'],
       incomeFromPenaltyAccountId: glAccountIdMap['4003'],
+      incomeFromRecoveryAccountId: glAccountIdMap['4004'],
       writeOffAccountId: glAccountIdMap['5001'],
+      goodwillCreditAccountId: glAccountIdMap['5003'],
       overpaymentLiabilityAccountId: glAccountIdMap['2001'],
-      transfersInSuspenseAccountId: glAccountIdMap['2100'],
+      transfersInSuspenseAccountId: glAccountIdMap['1500'],
       receivableInterestAccountId: glAccountIdMap['1200'],
       receivableFeeAccountId: glAccountIdMap['1300'],
       receivablePenaltyAccountId: glAccountIdMap['1400'],
@@ -284,6 +386,9 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Step 0: Load credentials from Secrets Manager
+    await loadFineractCredentials();
+
     // Step 1: Health check
     console.log('Checking Fineract health...');
     const offices = await fineractRequest('GET', '/offices');
