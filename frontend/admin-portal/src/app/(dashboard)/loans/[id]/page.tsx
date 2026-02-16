@@ -1,11 +1,9 @@
-import dynamic from 'next/dynamic';
-
-const ClientPage = dynamic(() => import('./_client'), { ssr: false });
+import { redirect } from 'next/navigation';
 
 export function generateStaticParams() {
   return [{ id: '_' }];
 }
 
-export default function Page() {
-  return <ClientPage />;
+export default function Page({ params }: { params: { id: string } }) {
+  redirect(`/loans/${params.id}/fineract`);
 }

@@ -10,7 +10,6 @@ import {
   Smartphone,
   Wallet,
   BarChart3,
-  Landmark,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -47,7 +46,7 @@ const navItems: NavItem[] = [
   },
   {
     label: 'Loans',
-    href: '/loans',
+    href: '/fineract/loans',
     icon: CreditCard,
     requiredPermissions: ['loans:read'],
   },
@@ -62,12 +61,6 @@ const navItems: NavItem[] = [
     href: '/payments',
     icon: Wallet,
     requiredPermissions: ['payments:read'],
-  },
-  {
-    label: 'Fineract',
-    href: '/fineract/loans',
-    icon: Landmark,
-    requiredPermissions: ['loans:read'],
   },
   {
     label: 'Reports',

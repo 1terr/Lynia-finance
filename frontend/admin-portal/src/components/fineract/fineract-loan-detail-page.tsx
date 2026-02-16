@@ -140,6 +140,37 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
         )}
       </div>
 
+      {/* Repayment Progress */}
+      {loan.totalExpectedRepayment > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            Repayment Progress
+          </h2>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500">
+                {formatCurrency(loan.totalRepayment)} paid
+              </span>
+              <span className="font-medium">
+                {((loan.totalRepayment / loan.totalExpectedRepayment) * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="h-3 w-full rounded-full bg-gray-200">
+              <div
+                className="h-3 rounded-full bg-brand-600 transition-all"
+                style={{
+                  width: `${Math.min((loan.totalRepayment / loan.totalExpectedRepayment) * 100, 100)}%`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>Total: {formatCurrency(loan.totalExpectedRepayment)}</span>
+              <span>Remaining: {formatCurrency(loan.totalOutstanding)}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Loan Details Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Loan Info */}

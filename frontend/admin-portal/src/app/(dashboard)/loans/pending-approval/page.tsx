@@ -1,7 +1,5 @@
-import dynamic from 'next/dynamic';
-
-const ClientPage = dynamic(() => import('./_client'), { ssr: false });
+import { redirect } from 'next/navigation';
 
 export default function Page() {
-  return <ClientPage />;
+  redirect('/fineract/approval');
 }
