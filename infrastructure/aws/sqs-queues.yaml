@@ -140,7 +140,39 @@ Resources:
           Value: dead-letter
 
   # ==========================================================
-  # 5. CREDIT SCORING QUEUE
+  # 5. WHATSAPP MESSAGE RETRY QUEUE
+  # ==========================================================
+
+  WhatsAppMessageRetryQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-whatsapp-message-retry"
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20  # Long polling
+      DelaySeconds: 30  # Delay before first delivery to allow transient issues to resolve
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt WhatsAppMessageRetryDLQ.Arn
+        maxReceiveCount: 5  # More retries for messages
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: whatsapp-service
+
+  WhatsAppMessageRetryDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-whatsapp-message-retry-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # 6. CREDIT SCORING QUEUE
   # ==========================================================
 
   CreditScoringQueue:
@@ -259,6 +291,23 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  WhatsAppMessageRetryDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-whatsapp-message-retry-dlq-messages"
+      AlarmDescription: "WhatsApp Message Retry DLQ has messages - failed message delivery detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt WhatsAppMessageRetryDLQ.QueueName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 Outputs:
   NotificationQueueUrl:
     Description: Notification queue URL
@@ -319,3 +368,15 @@ Outputs:
     Value: !GetAtt CreditScoringQueue.Arn
     Export:
       Name: !Sub "${Environment}-lynia-credit-scoring-queue-arn"
+
+  WhatsAppMessageRetryQueueUrl:
+    Description: WhatsApp message retry queue URL
+    Value: !Ref WhatsAppMessageRetryQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-whatsapp-message-retry-queue-url"
+
+  WhatsAppMessageRetryQueueArn:
+    Description: WhatsApp message retry queue ARN
+    Value: !GetAtt WhatsAppMessageRetryQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-whatsapp-message-retry-queue-arn"

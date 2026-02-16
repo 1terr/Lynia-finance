@@ -76,6 +76,18 @@ Parameters:
     NoEcho: true
     Default: ""
 
+  WhatsAppBusinessAccountId:
+    Type: String
+    Description: WhatsApp Business Account ID
+    NoEcho: true
+    Default: ""
+
+  MetaAppSecret:
+    Type: String
+    Description: Meta App Secret for webhook HMAC signature validation
+    NoEcho: true
+    Default: ""
+
   SmilePartnerId:
     Type: String
     Description: Smile Identity Partner ID
@@ -301,7 +313,9 @@ Resources:
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
           WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
-          SCORING_API_URL: "/scoring/calculate"
+          WHATSAPP_BUSINESS_ACCOUNT_ID: !Ref WhatsAppBusinessAccountId
+          META_APP_SECRET: !Ref MetaAppSecret
+          SCORING_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/scoring/calculate"
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendMessage:
@@ -610,7 +624,7 @@ Resources:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
           SMS_API_KEY: !Ref SmsApiKey
-          WHATSAPP_API_URL: "/whatsapp/send"
+          WHATSAPP_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/whatsapp/send"
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendNotification:
