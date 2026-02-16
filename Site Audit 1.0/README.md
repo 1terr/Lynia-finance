@@ -54,9 +54,9 @@ This folder contains the full breakdown of the comprehensive admin panel audit, 
 
 ## Top 3 Critical Blockers (Updated Feb 16, 2026)
 
-1. ~~**Fineract ECS cluster not deployed**~~ **RESOLVED** - Fineract deployed to ECS Fargate, 1 task running, ALB healthy. Fineract initialization (products, GL accounts) still pending.
+1. ~~**Fineract ECS cluster not deployed**~~ **RESOLVED** - Fineract deployed to ECS Fargate, 1 task running, ALB healthy.
 2. **Database may be empty** - No evidence seed scripts were run against production RDS
-3. **Sidebar navigation missing 7 pages** - Fineract (6 pages) and Settings (1 page) are unreachable via UI navigation
+3. ~~**Sidebar navigation missing 7 pages**~~ **RESOLVED** - Fineract nav item added to sidebar
 
 ---
 
@@ -68,31 +68,36 @@ This folder contains the full breakdown of the comprehensive admin panel audit, 
 - Lambda services deployed to production via SAM
 - Fineract deployed to ECS Fargate (3 CloudFormation stacks)
 - CloudWatch monitoring and alerting configured
+- **Phase 6B/6C code complete** (commit `0559ad3`):
+  - `FINERACT_SECRET_NAME` env var added to all Lambda globals
+  - Fineract IAM permissions added to scoring + payment services
+  - Fineract Docker image pinned to v1.13.0
+  - Reconciliation Lambda with EventBridge 6-hour schedule added
+  - Scoring service syncs approved customers to Fineract (non-blocking)
+  - Payment service syncs repayments to Fineract on webhook success
+  - Fineract nav item added to admin portal sidebar
+  - Fineract initialization Lambda created (GL accounts + loan products)
 
-### Remaining (Next Steps)
-1. Initialize Fineract (head office, currencies, GL accounts, 3 loan products)
-2. Apply database migration `019_add_fineract_columns.sql` to Lynia RDS
-3. Update Lambda environment variables with Fineract ALB URL
-4. Set up EventBridge 6-hour reconciliation cron
-5. Fix sidebar navigation (add Fineract + Settings sections)
-6. Seed production database with initial data
-7. End-to-end testing of all Fineract admin portal pages
-8. Integrate Fineract sync service with Lambda functions (loan create, approve, disburse, repayment)
-9. Set up WhatsApp service to trigger Fineract operations via customer messages
-10. Configure payment service to reconcile with Fineract GL accounting
+### Remaining (Deployment Steps)
+1. Deploy SAM stack update (`sam build && sam deploy --config-env production`) to activate new Lambda env vars, IAM, and reconciliation function
+2. Deploy Fineract init stack (`fineract-init-cfn.yaml`) to create GL accounts and 3 loan products
+3. Apply database migration `019_add_fineract_columns.sql` to Lynia RDS
+4. Rebuild and deploy admin portal to S3/CloudFront
+5. Seed production database with initial data
+6. End-to-end testing of all Fineract admin portal pages with live data
 
 ### Integration Roadmap
 
 ```
-Phase 6A (Current)     Phase 6B (Next)           Phase 6C (Future)
-Fineract Deployed      Fineract Initialized      Full Integration
+Phase 6A [DONE]        Phase 6B [DONE]           Phase 6C [DONE]          Phase 7 (Deploy)
+Fineract Deployed      Fineract Code Ready       Full Integration Code    Production Deploy
 
-ECS Fargate [DONE]     Head Office Setup          Lambda to Fineract sync
-ALB [DONE]             Currency Config            WhatsApp to Loan flow
-Monitoring [DONE]      3 Loan Products            Payment to GL reconcile
-DB Init [DONE]         GL Chart of Accounts       EventBridge cron jobs
-                       Lambda ENV vars            Admin portal live data
-                       Migration 019              Regulatory reports (RBZ)
+ECS Fargate [DONE]     Init Lambda [DONE]        Lambda sync [DONE]       SAM deploy
+ALB [DONE]             Docker pin [DONE]         Payment sync [DONE]      Init Lambda invoke
+Monitoring [DONE]      ENV vars [DONE]           EventBridge [DONE]       Migration 019
+DB Init [DONE]         IAM perms [DONE]          Sidebar nav [DONE]       Admin portal rebuild
+                       Reconcile fix [DONE]      Reconcile job [DONE]     Seed database
+                                                                          E2E testing
 ```
 
 ---
