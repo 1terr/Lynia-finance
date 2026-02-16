@@ -67,7 +67,7 @@ if aws cloudformation describe-stacks --stack-name "$COGNITO_STACK" --region "$R
     --output text --region "$REGION" 2>/dev/null || echo "")
   ADMIN_CLIENT_ID=$(aws cloudformation describe-stacks \
     --stack-name "$COGNITO_STACK" \
-    --query "Stacks[0].Outputs[?OutputKey=='AdminPortalClientId'].OutputValue" \
+    --query "Stacks[0].Outputs[?OutputKey=='AdminClientId'].OutputValue" \
     --output text --region "$REGION" 2>/dev/null || echo "")
   DIST_CLIENT_ID=$(aws cloudformation describe-stacks \
     --stack-name "$COGNITO_STACK" \
