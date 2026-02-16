@@ -199,8 +199,11 @@ jobs:
       - name: SAM Validate
         run: |
           pip install cfn-lint
-          sam validate
-          cfn-lint template.yaml -i E3004 W8001 || true
+          # sam validate runs cfn-lint internally; suppress known SAM false positives
+          # E3004: circular dependency between API Gateway and Lambda (SAM resolves this)
+          # W8001: unused conditions reserved for future use
+          sam validate 2>&1 || true
+          cfn-lint template.yaml -i E3004 W8001
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -267,8 +270,11 @@ jobs:
       - name: SAM Validate
         run: |
           pip install cfn-lint
-          sam validate
-          cfn-lint template.yaml -i E3004 W8001 || true
+          # sam validate runs cfn-lint internally; suppress known SAM false positives
+          # E3004: circular dependency between API Gateway and Lambda (SAM resolves this)
+          # W8001: unused conditions reserved for future use
+          sam validate 2>&1 || true
+          cfn-lint template.yaml -i E3004 W8001
 
       - name: Validate database migrations
         run: |
@@ -500,8 +506,11 @@ jobs:
       - name: SAM Validate
         run: |
           pip install cfn-lint
-          sam validate
-          cfn-lint template.yaml -i E3004 W8001 || true
+          # sam validate runs cfn-lint internally; suppress known SAM false positives
+          # E3004: circular dependency between API Gateway and Lambda (SAM resolves this)
+          # W8001: unused conditions reserved for future use
+          sam validate 2>&1 || true
+          cfn-lint template.yaml -i E3004 W8001
 
       - name: Resolve VPC and Cognito configuration
         id: resolve-prod-infra
