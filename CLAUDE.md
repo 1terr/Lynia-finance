@@ -912,6 +912,163 @@ bash infrastructure/aws/scripts/deploy-infrastructure.sh  # Deploy all stacks
 
 ---
 
+## AWS Deployment & CI/CD Rules
+
+Hard-won rules from production deployment debugging. **Follow these exactly.**
+
+### CloudFormation Stack Architecture
+
+The production environment uses these stacks:
+
+| Stack | Purpose | Resources |
+|-------|---------|-----------|
+| `lynia-finance-prod` | **Main stack** — all Lambda functions, API Gateway, Cognito authorizer | ~60 resources |
+| `production-lynia-sqs` | SQS queues (7 main + 7 DLQ) | 14 queues + alarms |
+| `production-lynia-fineract-ecs` | Fineract core banking on ECS Fargate | ECS service + ALB |
+| `production-lynia-fineract-monitoring` | Fineract ECS monitoring dashboard + alarms | Dashboard + 6 alarms |
+| `production-lynia-cognito` | Cognito User Pool | Auth infrastructure |
+| `lynia-rds-production` | PostgreSQL 16 database | RDS instance |
+| `production-lynia-vpc` | VPC with private subnets | Network layer |
+| `lynia-finance-prod-frontend` | Admin portal + distributor dashboard (S3+CloudFront) | Frontend assets |
+| `lynia-finance-production-waf` | WAF rules for API Gateway and CloudFront | Security rules |
+
+### CRITICAL: Resource Naming Across Stacks
+
+**NEVER create a resource with an explicit name (`FunctionName`, `DashboardName`, `QueueName`, etc.) that already exists in another stack.** CloudFormation's `AWS::EarlyValidation::ResourceExistenceCheck` (enabled Nov 2025) will block the changeset.
+
+Before adding a named resource to `template.yaml`:
+```bash
+# Check if a Lambda with that name already exists
+aws lambda get-function --function-name ${ENVIRONMENT}-lynia-${NAME} 2>/dev/null
+
+# Check if a CloudWatch dashboard exists
+aws cloudwatch list-dashboards --dashboard-name-prefix ${ENVIRONMENT}-lynia-${NAME}
+
+# If it exists in another stack, either:
+# 1. Delete the other stack first (if consolidating)
+# 2. Use a different name
+# 3. Remove the explicit name (let CloudFormation auto-generate)
+```
+
+### GitHub Actions Secrets — Shell-Level Fallbacks
+
+**NEVER use `${{ secrets.X || 'default' }}` in GitHub Actions.** It does not reliably handle undefined/empty secrets.
+
+Instead, pass secrets as environment variables and use shell `${VAR:-default}`:
+
+```yaml
+# WRONG — unreliable for empty/undefined secrets:
+"WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID || 'placeholder' }}"
+
+# CORRECT — shell catches empty strings:
+- name: SAM Deploy
+  run: |
+    WA_PHONE="${WHATSAPP_PHONE_ID:-placeholder}"
+    sam deploy --parameter-overrides "WhatsAppPhoneNumberId=${WA_PHONE}" ...
+  env:
+    WHATSAPP_PHONE_ID: ${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}
+```
+
+### SAM Validate & cfn-lint
+
+- `sam validate` (even without `--lint`) runs cfn-lint internally in newer SAM CLI versions
+- Make `sam validate` non-blocking: `sam validate 2>&1 || true`
+- Run `cfn-lint` separately with explicit ignore flags: `cfn-lint template.yaml -i E3004 W8001`
+- **E3004** (circular dependency): Known SAM false positive — API Gateway ↔ Lambda with API events. Break the cycle using template Parameters for inter-service URLs instead of `!Ref ApiGateway` in env vars
+- **W8001** (unused condition): Suppress if the condition is reserved for future use
+- `.cfnlintrc` in repo root provides local suppression
+
+### SAM Deploy Flags for CI/CD
+
+```yaml
+# Staging: non-interactive, allow empty changesets
+sam deploy --config-env staging --no-confirm-changeset --no-fail-on-empty-changeset
+
+# Production: non-interactive, allow empty changesets, rollback on failure
+sam deploy --config-env production --no-confirm-changeset --no-fail-on-empty-changeset --on-failure ROLLBACK
+```
+
+**`--no-confirm-changeset` is REQUIRED** for both environments because `samconfig.toml` has `confirm_changeset = true` for production.
+
+### VPC & Infrastructure Parameter Resolution
+
+VPC configuration is optional (controlled by `UseVPC` condition). When VPC stacks don't exist, parameters must still have valid placeholder values — SAM rejects empty `--parameter-overrides` values.
+
+```bash
+# Pattern: resolve from CloudFormation outputs, fall back to placeholders
+SUBNET1="subnet-placeholder"
+if aws cloudformation describe-stacks --stack-name ${ENV}-lynia-vpc &>/dev/null; then
+  SUBNET1=$(aws cloudformation describe-stacks --stack-name ${ENV}-lynia-vpc \
+    --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text)
+fi
+```
+
+Inter-service API URLs (`ScoringApiUrl`, `WhatsAppApiUrl`) must be resolved from the existing stack's outputs, not hardcoded:
+```bash
+API_BASE=$(aws cloudformation describe-stacks --stack-name lynia-finance-${ENV} \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" --output text)
+SCORING_API_URL="${API_BASE}scoring/calculate"
+WHATSAPP_API_URL="${API_BASE}whatsapp/send"
+```
+
+### Stack Status Handling
+
+| Status | Action |
+|--------|--------|
+| `CREATE_COMPLETE` / `UPDATE_COMPLETE` | Normal — deploy as usual |
+| `UPDATE_ROLLBACK_COMPLETE` | Deployable — previous update failed but rolled back cleanly |
+| `ROLLBACK_COMPLETE` | **Must delete stack first** — then redeploy from scratch |
+| `DELETE_FAILED` | Manual intervention required |
+
+```bash
+# Auto-handle ROLLBACK_COMPLETE in CI/CD
+STACK_STATUS=$(aws cloudformation describe-stacks --stack-name $STACK \
+  --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+if [ "$STACK_STATUS" = "ROLLBACK_COMPLETE" ]; then
+  aws cloudformation delete-stack --stack-name $STACK
+  aws cloudformation wait stack-delete-complete --stack-name $STACK
+fi
+```
+
+### IAM Permissions for Deploy User
+
+The `github-actions-deploy` IAM user needs these permissions. If a deploy fails with `AccessDenied`, check this list:
+
+- CloudFormation (full)
+- Lambda (full)
+- API Gateway (full)
+- IAM (create/update roles and policies)
+- S3 (SAM artifact bucket)
+- CloudWatch (dashboards, alarms, metrics)
+- SQS (`sqs:*` on `arn:aws:sqs:us-east-1:849695476598:*-lynia-*`)
+- Cognito (read for parameter resolution)
+- EC2 (VPC/subnet/SG describe for parameter resolution)
+- Secrets Manager (read for Lambda environment)
+
+### Pre-Deploy Checklist
+
+Before triggering a production deployment:
+
+```markdown
+[ ] All changes committed and pushed to master
+[ ] Staging deploy succeeded (run completes with all stages green)
+[ ] No resource name conflicts (check Lambda names, dashboard names, queue names)
+[ ] GitHub secrets configured for production environment (or shell fallbacks in place)
+[ ] Stack is in a deployable state (not ROLLBACK_COMPLETE)
+[ ] No pending destructive database migrations without rollback plan
+```
+
+### Production API Endpoints
+
+| Gateway | ID | Base URL |
+|---------|-----|----------|
+| Main API | `kly80hrgca` | `https://kly80hrgca.execute-api.us-east-1.amazonaws.com/Prod/` |
+| Fineract Proxy | Now consolidated into Main API | `/api/v1/fineract/*` routes |
+
+Frontend CloudFront: `https://d1qwfy2tsdmpe4.cloudfront.net`
+
+---
+
 ## Remember
 
 > Every feature we build, every line of code we write, serves real people trying to build better lives. A mother buying a smartphone to start a small business. A farmer needing equipment financing. A young person accessing credit for the first time.
