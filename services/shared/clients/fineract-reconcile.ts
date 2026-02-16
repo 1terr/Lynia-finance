@@ -353,7 +353,7 @@ async function retrySyncOperation(sync: FailedSyncRow): Promise<boolean> {
     await db
       .from('fineract_sync_log')
       .update({
-        status: newAttempt >= sync.max_attempts ? 'failed' : 'failed',
+        status: newAttempt >= (sync.max_attempts || 3) ? 'exhausted' : 'failed',
         error_message: error instanceof Error ? error.message : String(error),
         http_status_code: apiError?.statusCode,
       })

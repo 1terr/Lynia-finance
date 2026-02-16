@@ -1,0 +1,7 @@
+{
+  "name": "fineract-init-lambda",
+  "version": "1.0.0",
+  "description": "Lambda function to initialize Fineract with GL accounts and loan products",
+  "main": "index.js",
+  "dependencies": {}
+}
