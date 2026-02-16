@@ -45,6 +45,9 @@ This folder contains the full breakdown of the comprehensive admin panel audit, 
 | [Phase 6 - AWS Architecture](./Phase-6-Fineract-AWS-Architecture.md) | Current Fineract architecture: ECS Fargate, ALB, networking, security, monitoring |
 | [Phase 6 - Lessons Learned](./Phase-6-Deployment-Lessons-Learned.md) | 5 failures, root causes, fixes, and checklist for future deployments |
 | [Phase 6 - Upgrade Guide](./Phase-6-Fineract-Upgrade-Guide.md) | How to upgrade Fineract: patch, minor, and major upgrade procedures |
+| **Phase 6B/6C: Fineract Integration (February 16, 2026)** | |
+| [Phase 6B - Integration Code Report](./Phase-6B-Integration-Code-Report.md) | SAM template changes, IAM permissions, Docker pin, init Lambda, reconcile bug fix |
+| [Phase 6C - Full Integration Report](./Phase-6C-Full-Integration-Report.md) | Scoring sync, payment sync, reconciliation Lambda, sidebar nav, data flow diagrams |
 | **Appendices** | |
 | [Appendix A - Page Inventory](./Appendix-A-Page-Inventory.md) | Complete route-by-route page inventory |
 | [Appendix B - API Inventory](./Appendix-B-API-Inventory.md) | All 66+ API endpoints with methods, paths, and status |
