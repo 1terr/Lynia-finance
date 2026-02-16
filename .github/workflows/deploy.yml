@@ -578,20 +578,20 @@ jobs:
               "CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }}" \
               "ScoringApiUrl=${{ steps.resolve-prod-infra.outputs.scoring_api_url }}" \
               "WhatsAppApiUrl=${{ steps.resolve-prod-infra.outputs.whatsapp_api_url }}" \
-              "WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}" \
-              "WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}" \
-              "WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}" \
-              "SmilePartnerId=${{ secrets.PRODUCTION_SMILE_PARTNER_ID }}" \
-              "SmileApiKey=${{ secrets.PRODUCTION_SMILE_API_KEY }}" \
+              "WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID || 'placeholder' }}" \
+              "WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN || 'placeholder' }}" \
+              "WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN || 'placeholder' }}" \
+              "SmilePartnerId=${{ secrets.PRODUCTION_SMILE_PARTNER_ID || 'placeholder' }}" \
+              "SmileApiKey=${{ secrets.PRODUCTION_SMILE_API_KEY || 'placeholder' }}" \
               "SmileEnvironment=production" \
-              "EcocashMerchantId=${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }}" \
-              "EcocashApiKey=${{ secrets.PRODUCTION_ECOCASH_API_KEY }}" \
-              "OnemoneyMerchantId=${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }}" \
-              "OnemoneyApiKey=${{ secrets.PRODUCTION_ONEMONEY_API_KEY }}" \
-              "TrustonicApiKey=${{ secrets.PRODUCTION_TRUSTONIC_API_KEY }}" \
-              "TrustonicApiSecret=${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET }}" \
+              "EcocashMerchantId=${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID || 'placeholder' }}" \
+              "EcocashApiKey=${{ secrets.PRODUCTION_ECOCASH_API_KEY || 'placeholder' }}" \
+              "OnemoneyMerchantId=${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID || 'placeholder' }}" \
+              "OnemoneyApiKey=${{ secrets.PRODUCTION_ONEMONEY_API_KEY || 'placeholder' }}" \
+              "TrustonicApiKey=${{ secrets.PRODUCTION_TRUSTONIC_API_KEY || 'placeholder' }}" \
+              "TrustonicApiSecret=${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET || 'placeholder' }}" \
               "SmsProvider=twilio" \
-              "SmsApiKey=${{ secrets.PRODUCTION_SMS_API_KEY }}"
+              "SmsApiKey=${{ secrets.PRODUCTION_SMS_API_KEY || 'placeholder' }}"
         env:
           SAM_CLI_TELEMETRY: 0
 
