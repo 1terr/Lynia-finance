@@ -32,7 +32,7 @@ Globals:
         DB_SECRET_NAME: !Sub "${Environment}/lynia/database"
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"
-        API_BASE_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"
+        API_STACK_NAME: !Sub "${AWS::StackName}"
     VpcConfig: !If
       - UseVPC
       - SecurityGroupIds:
@@ -190,12 +190,9 @@ Resources:
           HttpMethod: "*"
           MetricsEnabled: true
           DataTraceEnabled: false
-          LoggingLevel: INFO
+          LoggingLevel: "OFF"
       Auth:
-        DefaultAuthorizer: !If
-          - HasCognitoArn
-          - CognitoAuthorizer
-          - !Ref "AWS::NoValue"
+        DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !Ref CognitoUserPoolArn
@@ -236,8 +233,8 @@ Resources:
       Environment:
         Variables:
           SCORING_MODEL_VERSION: v1
-      AutoPublishAlias: live
-      ReservedConcurrentExecutions: !If [IsProduction, 50, !Ref "AWS::NoValue"]
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
+      # ReservedConcurrentExecutions: !If [IsProduction, 50, !Ref "AWS::NoValue"]  # Disabled - account concurrency limit too low
       Events:
         CalculateScore:
           Type: Api
@@ -251,12 +248,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /scoring/{customerId}
             Method: GET
-        CreditScoringQueue:
-          Type: SQS
-          Properties:
-            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-credit-scoring"
-            BatchSize: 5
-            Enabled: true
+        # CreditScoringQueue:
+        #   Type: SQS
+        #   Properties:
+        #     Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-credit-scoring"
+        #     BatchSize: 5
+        #     Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -302,8 +299,8 @@ Resources:
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
           WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
-          SCORING_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/scoring/calculate"
-      AutoPublishAlias: live
+          SCORING_API_URL: "/scoring/calculate"
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendMessage:
           Type: Api
@@ -375,7 +372,7 @@ Resources:
           SMILE_PARTNER_ID: !Ref SmilePartnerId
           SMILE_API_KEY: !Ref SmileApiKey
           SMILE_ENVIRONMENT: !Ref SmileEnvironment
-      AutoPublishAlias: live
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         InitiateKYC:
           Type: Api
@@ -397,12 +394,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /kyc/{customerId}
             Method: GET
-        KYCProcessingQueue:
-          Type: SQS
-          Properties:
-            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-kyc-processing"
-            BatchSize: 5
-            Enabled: true
+        # KYCProcessingQueue:
+        #   Type: SQS
+        #   Properties:
+        #     Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-kyc-processing"
+        #     BatchSize: 5
+        #     Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -427,8 +424,8 @@ Resources:
       Description: Payment processing service (EcoCash, OneMoney integration)
       MemorySize: 1024
       Timeout: 60
-      AutoPublishAlias: live
-      ReservedConcurrentExecutions: !If [IsProduction, 100, !Ref "AWS::NoValue"]
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
+      # ReservedConcurrentExecutions: !If [IsProduction, 100, !Ref "AWS::NoValue"]  # Disabled - account concurrency limit too low
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -478,12 +475,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /payments/{paymentId}
             Method: GET
-        PaymentCallbackQueue:
-          Type: SQS
-          Properties:
-            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-payment-callbacks"
-            BatchSize: 5
-            Enabled: true
+        # PaymentCallbackQueue:
+        #   Type: SQS
+        #   Properties:
+        #     Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-payment-callbacks"
+        #     BatchSize: 5
+        #     Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -531,7 +528,7 @@ Resources:
         Variables:
           TRUSTONIC_API_KEY: !Ref TrustonicApiKey
           TRUSTONIC_API_SECRET: !Ref TrustonicApiSecret
-      AutoPublishAlias: live
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         LockDevice:
           Type: Api
@@ -557,12 +554,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /locks/process-scheduled
             Method: POST
-        DeviceLockQueue:
-          Type: SQS
-          Properties:
-            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-device-locks"
-            BatchSize: 5
-            Enabled: true
+        # DeviceLockQueue:
+        #   Type: SQS
+        #   Properties:
+        #     Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-device-locks"
+        #     BatchSize: 5
+        #     Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -610,8 +607,8 @@ Resources:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
           SMS_API_KEY: !Ref SmsApiKey
-          WHATSAPP_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/whatsapp/send"
-      AutoPublishAlias: live
+          WHATSAPP_API_URL: "/whatsapp/send"
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendNotification:
           Type: Api
@@ -625,12 +622,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /notifications/{customerId}
             Method: GET
-        NotificationQueue:
-          Type: SQS
-          Properties:
-            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-notifications"
-            BatchSize: 10
-            Enabled: true
+        # NotificationQueue:
+        #   Type: SQS
+        #   Properties:
+        #     Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-notifications"
+        #     BatchSize: 10
+        #     Enabled: true
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -667,7 +664,7 @@ Resources:
               Action:
                 - cloudwatch:PutMetricData
               Resource: "*"
-      AutoPublishAlias: live
+      # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SubmitForm:
           Type: Api
