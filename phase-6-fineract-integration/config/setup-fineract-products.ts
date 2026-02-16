@@ -15,7 +15,6 @@ import { getFineractClient, FineractApiError } from '../../../services/shared/cl
 import type {
   FineractGLAccountCreateRequest,
   FineractLoanProductCreateRequest,
-  FineractCommandResponse,
 } from '../../../services/shared/types/fineract';
 
 import chartOfAccountsConfig from './chart-of-accounts.json';

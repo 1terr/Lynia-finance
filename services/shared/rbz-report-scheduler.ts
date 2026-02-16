@@ -181,7 +181,7 @@ export async function rbzReportSchedulerHandler(
     for (const report of reports) {
       try {
         // Export to CSV
-        const csvContent = exportReportToCSV(report.reportType, report.data);
+        const _csvContent = exportReportToCSV(report.reportType, report.data);
         const csvKey = getReportS3Key(report.reportType, report.periodEnd);
 
         // Store CSV path reference (actual S3 upload would use AWS SDK)
