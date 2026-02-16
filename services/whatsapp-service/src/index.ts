@@ -1,4 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import { createHmac } from 'crypto';
 import { db } from '../../shared/clients/database';
 import axios from 'axios';
 import type {
@@ -7,6 +8,7 @@ import type {
   WhatsAppSendMessageResponse
 } from '../../shared/types';
 import { routeOnboardingMessage, type MessageContext } from './onboarding';
+import { routeLoanCommand } from './loan-commands';
 import {
   sanitizeInput,
   getSuspiciousInputResponse,
@@ -26,11 +28,13 @@ import {
 } from './error-handler';
 import { CircuitBreaker, CircuitOpenError } from './utils/circuit-breaker';
 import { getSecurityHeaders } from '../../shared/utils/response';
+import { SQSQueues } from '../../shared/utils/sqs-publisher';
 
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
-const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN!;
+const VERIFY_TOKEN = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || process.env.WHATSAPP_VERIFY_TOKEN!;
+const META_APP_SECRET = process.env.META_APP_SECRET;
 
 /** Circuit breaker for WhatsApp Cloud API calls */
 const whatsappCircuitBreaker = new CircuitBreaker({
@@ -201,10 +205,64 @@ function verifyWebhook(event: APIGatewayProxyEvent): APIGatewayProxyResult {
 }
 
 /**
+ * Validate Meta webhook HMAC signature (X-Hub-Signature-256)
+ *
+ * Meta signs every webhook payload with the App Secret using HMAC-SHA256.
+ * This prevents spoofed webhook calls from unauthorized sources.
+ */
+function validateWebhookSignature(event: APIGatewayProxyEvent): boolean {
+  if (!META_APP_SECRET) {
+    // Skip validation if META_APP_SECRET is not configured (development only)
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Webhook signature validation skipped: META_APP_SECRET not configured');
+      return true;
+    }
+    console.error('META_APP_SECRET not configured - rejecting webhook');
+    return false;
+  }
+
+  const signature = event.headers['X-Hub-Signature-256'] || event.headers['x-hub-signature-256'];
+  if (!signature) {
+    console.error('Missing X-Hub-Signature-256 header');
+    return false;
+  }
+
+  const body = event.body || '';
+  const expectedSignature = 'sha256=' + createHmac('sha256', META_APP_SECRET).update(body).digest('hex');
+
+  // Constant-time comparison to prevent timing attacks
+  if (signature.length !== expectedSignature.length) {
+    return false;
+  }
+
+  let mismatch = 0;
+  for (let i = 0; i < signature.length; i++) {
+    mismatch |= signature.charCodeAt(i) ^ expectedSignature.charCodeAt(i);
+  }
+
+  if (mismatch !== 0) {
+    console.error('Webhook signature mismatch');
+    return false;
+  }
+
+  return true;
+}
+
+/**
  * Handle incoming webhook from WhatsApp
  */
 async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
+    // Validate webhook signature from Meta
+    if (!validateWebhookSignature(event)) {
+      console.error('Webhook signature validation failed');
+      return {
+        statusCode: 401,
+        body: JSON.stringify({ error: 'Invalid signature' }),
+        headers: getSecurityHeaders(event)
+      };
+    }
+
     const webhookEvent: WhatsAppWebhookEvent = JSON.parse(event.body || '{}');
     console.log('WhatsApp webhook received:', { entryCount: webhookEvent.entry?.length });
 
@@ -220,10 +278,10 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
           }
         }
 
-        // Handle message status updates
+        // Handle message status updates (delivery/read receipts)
         if (value.statuses && value.statuses.length > 0) {
           for (const status of value.statuses) {
-            await updateMessageStatus(status.id, status.status);
+            await updateMessageStatus(status.id, status.status, status.recipient_id, status.timestamp);
           }
         }
       }
@@ -380,7 +438,16 @@ async function processIncomingMessage(
       }
     }
 
-    // 7. Out-of-context loan command detection
+    // 7. For completed users, route loan commands
+    if (messageText.length > 0 && currentState === 'completed') {
+      const loanResponse = await routeLoanCommand(phoneNumber, messageText);
+      if (loanResponse) {
+        await sendTextMessage(phoneNumber, loanResponse);
+        return;
+      }
+    }
+
+    // 7b. Out-of-context loan command detection (for non-completed users)
     if (messageText.length > 0 && currentState !== 'completed') {
       const loanCmd = detectOutOfContextCommand(messageText);
       if (loanCmd) {
@@ -461,14 +528,22 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
     });
   } catch (error) {
     if (error instanceof CircuitOpenError) {
-      console.error(`WhatsApp API circuit open, message to ${to.substring(0, 6)}*** queued`);
+      console.error(`WhatsApp API circuit open, message to ${to.substring(0, 6)}*** queued for retry`);
       await storeMessage({
         phone_number: to,
         message_type: 'text',
         direction: 'outbound',
         content: message,
-        status: 'failed'
+        status: 'queued'
       });
+      // Enqueue for retry via SQS
+      await SQSQueues.retryWhatsAppMessage({
+        phoneNumber: to,
+        messageContent: message,
+        messageType: 'text',
+        retryCount: 0,
+        originalError: 'circuit_open',
+      }).catch(sqsErr => console.error('Failed to enqueue retry:', sqsErr));
       return;
     }
 
@@ -479,14 +554,21 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
         console.error(`WhatsApp API error ${errorCode}: action=${mapped.internalAction}`);
 
         if (mapped.internalAction === 'queue') {
-          // Rate limited - store for retry
+          // Rate limited - enqueue for retry via SQS
           await storeMessage({
             phone_number: to,
             message_type: 'text',
             direction: 'outbound',
             content: message,
-            status: 'failed'
+            status: 'queued'
           });
+          await SQSQueues.retryWhatsAppMessage({
+            phoneNumber: to,
+            messageContent: message,
+            messageType: 'text',
+            retryCount: 0,
+            originalError: `whatsapp_api_${errorCode}`,
+          }).catch(sqsErr => console.error('Failed to enqueue retry:', sqsErr));
           return;
         }
       }
@@ -529,16 +611,36 @@ async function storeMessage(data: {
 }
 
 /**
- * Helper: Update message status
+ * Helper: Update message status from delivery/read receipts
+ *
+ * Tracks message lifecycle: sent → delivered → read → failed
+ * Logs failed deliveries for retry processing and monitoring
  */
-async function updateMessageStatus(messageId: string, status: string): Promise<void> {
+async function updateMessageStatus(
+  messageId: string,
+  status: string,
+  recipientId?: string,
+  timestamp?: string
+): Promise<void> {
   try {
+    const updateData: Record<string, unknown> = { status };
+
+    if (status === 'delivered') {
+      updateData.delivered_at = timestamp ? new Date(parseInt(timestamp) * 1000).toISOString() : new Date().toISOString();
+    } else if (status === 'read') {
+      updateData.read_at = timestamp ? new Date(parseInt(timestamp) * 1000).toISOString() : new Date().toISOString();
+    } else if (status === 'failed') {
+      updateData.failed_at = new Date().toISOString();
+      console.error(`Message delivery failed: ${messageId} to ${recipientId?.substring(0, 6)}***`);
+    }
+
     await db
       .from('whatsapp_messages')
-      .update({ status })
+      .update(updateData)
       .eq('whatsapp_message_id', messageId)
       .execute();
-    console.log(`Updated message ${messageId} status to ${status}`);
+
+    console.log(`Message ${messageId} status: ${status}`);
   } catch (error) {
     console.error('Error updating message status:', error);
   }

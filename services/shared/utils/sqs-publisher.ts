@@ -26,6 +26,7 @@ export const QUEUE_NAMES = {
   KYC_PROCESSING: `${ENV}-lynia-kyc-processing`,
   DEVICE_LOCKS: `${ENV}-lynia-device-locks`,
   CREDIT_SCORING: `${ENV}-lynia-credit-scoring`,
+  WHATSAPP_MESSAGE_RETRY: `${ENV}-lynia-whatsapp-message-retry`,
 } as const;
 
 /**
@@ -172,5 +173,21 @@ export const SQSQueues = {
     publishMessage({
       queueName: QUEUE_NAMES.CREDIT_SCORING,
       message: { ...payload, timestamp: new Date().toISOString() },
+    }),
+
+  /** Queue a failed WhatsApp message for retry */
+  retryWhatsAppMessage: (payload: {
+    phoneNumber: string;
+    messageContent: string;
+    messageType: 'text' | 'template';
+    templateName?: string;
+    templateParams?: Record<string, string>;
+    retryCount?: number;
+    originalError?: string;
+  }) =>
+    publishMessage({
+      queueName: QUEUE_NAMES.WHATSAPP_MESSAGE_RETRY,
+      message: { ...payload, timestamp: new Date().toISOString() },
+      delaySeconds: Math.min(900, 30 * Math.pow(2, payload.retryCount || 0)),
     }),
 };

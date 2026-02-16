@@ -83,15 +83,23 @@ Access Token: [Temporary - 24 hours]
    - Use [Meta Access Token Tool](https://developers.facebook.com/tools/accesstoken/)
    - Exchange for long-lived token (60 days)
 
-**Save these in `.env` file**:
+**Save these in `.env` file** (local dev) or **AWS Secrets Manager** (staging/production):
 ```env
 WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
 WHATSAPP_BUSINESS_ACCOUNT_ID=your_business_account_id
 WHATSAPP_ACCESS_TOKEN=your_long_lived_access_token
-WHATSAPP_VERIFY_TOKEN=lynia_webhook_2025
-META_APP_ID=your_app_id
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=lynia_webhook_2025
 META_APP_SECRET=your_app_secret
 ```
+
+**AWS Secrets Manager** path: `{environment}/lynia/whatsapp`
+
+**SAM Parameters** (passed at deploy time):
+- `WhatsAppPhoneNumberId`
+- `WhatsAppAccessToken`
+- `WhatsAppWebhookVerifyToken`
+- `WhatsAppBusinessAccountId`
+- `MetaAppSecret`
 
 **Time**: 20 minutes
 
@@ -315,16 +323,19 @@ Visit our shop to collect your device.
 
 Before going to production:
 
-- [ ] Business verification completed
-- [ ] Production phone number registered
-- [ ] All message templates approved
-- [ ] Webhook URL uses HTTPS with valid SSL certificate
-- [ ] Error handling implemented in Lambda
-- [ ] CloudWatch alarms configured
-- [ ] Rate limiting implemented (40 requests/second limit)
-- [ ] Message queue for high volume
-- [ ] Customer data privacy compliance
-- [ ] Backup webhook URL configured
+- [ ] Business verification completed on Meta Business Manager
+- [ ] Production phone number registered (+263 Zimbabwe number)
+- [ ] All message templates approved (loan_application_welcome, kyc_verification_request, loan_approved)
+- [ ] Webhook URL uses HTTPS with valid SSL certificate (API Gateway provides this)
+- [ ] HMAC webhook signature validation enabled (META_APP_SECRET configured)
+- [ ] Error handling implemented in Lambda (circuit breaker, retry queue)
+- [ ] CloudWatch alarms configured for DLQ, error rates, latency
+- [ ] Rate limiting implemented (WAF + in-app throttling)
+- [ ] SQS retry queue deployed for failed message delivery
+- [ ] Customer data privacy compliance (PII masking in logs, data encryption)
+- [ ] Secrets stored in AWS Secrets Manager (not environment variables)
+- [ ] WhatsApp API version pinned and documented (currently v18.0)
+- [ ] Loan commands routing verified for completed onboarding users
 
 **Time**: 2-4 hours (spread over days for approvals)
 
@@ -340,28 +351,29 @@ Before going to production:
 │  WhatsApp Cloud API     │
 │  (Meta Infrastructure)  │
 └────────┬────────────────┘
-         │ Webhook POST
+         │ Webhook POST (HMAC signed)
          ▼
 ┌─────────────────────────┐
-│  API Gateway            │
+│  API Gateway + WAF      │
 │  /whatsapp/webhook      │
 └────────┬────────────────┘
          │
          ▼
 ┌─────────────────────────┐
 │  Lambda: WhatsAppFunction│
+│  - Validate HMAC sig    │
 │  - Parse message        │
 │  - Route to handlers    │
-│  - Update Supabase      │
+│  - Update RDS           │
 │  - Send response        │
 └────────┬────────────────┘
          │
-         ▼
-┌─────────────────────────┐
-│  Supabase PostgreSQL    │
-│  - Store conversation   │
-│  - Update customer data │
-└─────────────────────────┘
+    ┌────┴─────────┐
+    ▼              ▼
+┌────────────┐  ┌─────────────────┐
+│ RDS Postgres│  │  SQS Retry Queue│
+│ (VPC)       │  │  (failed msgs)  │
+└────────────┘  └─────────────────┘
 ```
 
 ## API Reference
@@ -545,7 +557,7 @@ After completing this setup:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2025-12-05
+**Document Version**: 1.1
+**Last Updated**: 2026-02-16
 **Author**: Claude Code Assistant
 **Project**: Lynia Finance - Phase 2
