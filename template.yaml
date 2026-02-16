@@ -14,6 +14,12 @@ Metadata:
         # so it incorrectly flags every Ref to these parameters as not matching
         # the sg-*/subnet-* patterns.
         - W1030
+        # SAM creates implicit circular dependencies between API Gateway and
+        # Lambda functions that have both API events and env var refs to the API.
+        # CloudFormation resolves this during stack updates but not during fresh
+        # stack creation. We break the cycle by using parameters for inter-service
+        # URLs instead of !Ref LyniaApi in env vars.
+        - E3004
 
 # Global configuration for all functions
 Globals:
@@ -156,6 +162,17 @@ Parameters:
     Type: String
     Description: SMS Provider API Key
     NoEcho: true
+    Default: ""
+
+  # Inter-service API URLs (passed as parameters to break circular dependencies)
+  ScoringApiUrl:
+    Type: String
+    Description: URL for the scoring API endpoint (breaks circular dep with LyniaApi)
+    Default: ""
+
+  WhatsAppApiUrl:
+    Type: String
+    Description: URL for the WhatsApp send endpoint (breaks circular dep with LyniaApi)
     Default: ""
 
   # VPC Configuration (from VPC stack outputs)
@@ -314,7 +331,7 @@ Resources:
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
           WHATSAPP_BUSINESS_ACCOUNT_ID: !Ref WhatsAppBusinessAccountId
           META_APP_SECRET: !Ref MetaAppSecret
-          SCORING_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/scoring/calculate"
+          SCORING_API_URL: !Ref ScoringApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendMessage:
@@ -623,7 +640,7 @@ Resources:
         Variables:
           SMS_PROVIDER: !Ref SmsProvider
           SMS_API_KEY: !Ref SmsApiKey
-          WHATSAPP_API_URL: !Sub "https://${LyniaApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/whatsapp/send"
+          WHATSAPP_API_URL: !Ref WhatsAppApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendNotification:

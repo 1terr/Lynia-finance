@@ -327,6 +327,18 @@ jobs:
             if [ -n "$RESOLVED_ARN" ] && [ "$RESOLVED_ARN" != "None" ]; then COGNITO_ARN="$RESOLVED_ARN"; fi
           fi
           echo "cognito_arn=$COGNITO_ARN" >> $GITHUB_OUTPUT
+          # Resolve inter-service API URLs from existing stack (empty for fresh deploys)
+          SCORING_API_URL=""
+          WHATSAPP_API_URL=""
+          if aws cloudformation describe-stacks --stack-name lynia-finance-staging --region ${{ env.AWS_REGION }} &>/dev/null; then
+            API_BASE=$(aws cloudformation describe-stacks --stack-name lynia-finance-staging --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            if [ -n "$API_BASE" ] && [ "$API_BASE" != "None" ]; then
+              SCORING_API_URL="${API_BASE}scoring/calculate"
+              WHATSAPP_API_URL="${API_BASE}whatsapp/send"
+            fi
+          fi
+          echo "scoring_api_url=$SCORING_API_URL" >> $GITHUB_OUTPUT
+          echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
 
       - name: SAM Deploy to Staging
         run: |
@@ -341,6 +353,8 @@ jobs:
               "PrivateSubnet2Id=${{ steps.resolve-staging-infra.outputs.subnet2 }}" \
               "LambdaSecurityGroupId=${{ steps.resolve-staging-infra.outputs.lambda_sg }}" \
               "CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }}" \
+              "ScoringApiUrl=${{ steps.resolve-staging-infra.outputs.scoring_api_url }}" \
+              "WhatsAppApiUrl=${{ steps.resolve-staging-infra.outputs.whatsapp_api_url }}" \
               "WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID || 'placeholder' }}" \
               "WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN || 'placeholder' }}" \
               "WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN || 'placeholder' }}" \
@@ -517,24 +531,37 @@ jobs:
         id: resolve-prod-infra
         run: |
           VPC_ENABLED="false"
-          SUBNET1=""
-          SUBNET2=""
+          SUBNET1="subnet-placeholder"
+          SUBNET2="subnet-placeholder"
           LAMBDA_SG="sg-00000000"
           if aws cloudformation describe-stacks --stack-name production-lynia-vpc --region ${{ env.AWS_REGION }} &>/dev/null; then
-            SUBNET1=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
-            SUBNET2=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            SUBNET1=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet1Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "subnet-placeholder")
+            SUBNET2=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='PrivateSubnet2Id'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "subnet-placeholder")
             LAMBDA_SG=$(aws cloudformation describe-stacks --stack-name production-lynia-vpc --query "Stacks[0].Outputs[?OutputKey=='LambdaSecurityGroupId'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "sg-00000000")
-            if [ -n "$SUBNET1" ] && [ "$SUBNET1" != "None" ]; then VPC_ENABLED="true"; fi
+            if [ -n "$SUBNET1" ] && [ "$SUBNET1" != "None" ] && [ "$SUBNET1" != "subnet-placeholder" ]; then VPC_ENABLED="true"; fi
           fi
           echo "vpc_enabled=$VPC_ENABLED" >> $GITHUB_OUTPUT
           echo "subnet1=$SUBNET1" >> $GITHUB_OUTPUT
           echo "subnet2=$SUBNET2" >> $GITHUB_OUTPUT
           echo "lambda_sg=$LAMBDA_SG" >> $GITHUB_OUTPUT
-          COGNITO_ARN=""
+          COGNITO_ARN="arn:aws:cognito-idp:us-east-1:000000000000:userpool/placeholder"
           if aws cloudformation describe-stacks --stack-name production-lynia-cognito --region ${{ env.AWS_REGION }} &>/dev/null; then
-            COGNITO_ARN=$(aws cloudformation describe-stacks --stack-name production-lynia-cognito --query "Stacks[0].Outputs[?OutputKey=='UserPoolArn'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            RESOLVED_ARN=$(aws cloudformation describe-stacks --stack-name production-lynia-cognito --query "Stacks[0].Outputs[?OutputKey=='UserPoolArn'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            if [ -n "$RESOLVED_ARN" ] && [ "$RESOLVED_ARN" != "None" ]; then COGNITO_ARN="$RESOLVED_ARN"; fi
           fi
           echo "cognito_arn=$COGNITO_ARN" >> $GITHUB_OUTPUT
+          # Resolve inter-service API URLs from existing stack
+          SCORING_API_URL=""
+          WHATSAPP_API_URL=""
+          if aws cloudformation describe-stacks --stack-name lynia-finance-prod --region ${{ env.AWS_REGION }} &>/dev/null; then
+            API_BASE=$(aws cloudformation describe-stacks --stack-name lynia-finance-prod --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
+            if [ -n "$API_BASE" ] && [ "$API_BASE" != "None" ]; then
+              SCORING_API_URL="${API_BASE}scoring/calculate"
+              WHATSAPP_API_URL="${API_BASE}whatsapp/send"
+            fi
+          fi
+          echo "scoring_api_url=$SCORING_API_URL" >> $GITHUB_OUTPUT
+          echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
 
       - name: SAM Deploy to Production
         run: |
@@ -543,26 +570,28 @@ jobs:
             --no-fail-on-empty-changeset \
             --on-failure ROLLBACK \
             --parameter-overrides \
-              Environment=production \
-              VpcEnabled=${{ steps.resolve-prod-infra.outputs.vpc_enabled }} \
-              PrivateSubnet1Id=${{ steps.resolve-prod-infra.outputs.subnet1 }} \
-              PrivateSubnet2Id=${{ steps.resolve-prod-infra.outputs.subnet2 }} \
-              LambdaSecurityGroupId=${{ steps.resolve-prod-infra.outputs.lambda_sg }} \
-              CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }} \
-              WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }} \
-              WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN }} \
-              WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN }} \
-              SmilePartnerId=${{ secrets.PRODUCTION_SMILE_PARTNER_ID }} \
-              SmileApiKey=${{ secrets.PRODUCTION_SMILE_API_KEY }} \
-              SmileEnvironment=production \
-              EcocashMerchantId=${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }} \
-              EcocashApiKey=${{ secrets.PRODUCTION_ECOCASH_API_KEY }} \
-              OnemoneyMerchantId=${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }} \
-              OnemoneyApiKey=${{ secrets.PRODUCTION_ONEMONEY_API_KEY }} \
-              TrustonicApiKey=${{ secrets.PRODUCTION_TRUSTONIC_API_KEY }} \
-              TrustonicApiSecret=${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET }} \
-              SmsProvider=twilio \
-              SmsApiKey=${{ secrets.PRODUCTION_SMS_API_KEY }}
+              "Environment=production" \
+              "VpcEnabled=${{ steps.resolve-prod-infra.outputs.vpc_enabled }}" \
+              "PrivateSubnet1Id=${{ steps.resolve-prod-infra.outputs.subnet1 }}" \
+              "PrivateSubnet2Id=${{ steps.resolve-prod-infra.outputs.subnet2 }}" \
+              "LambdaSecurityGroupId=${{ steps.resolve-prod-infra.outputs.lambda_sg }}" \
+              "CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }}" \
+              "ScoringApiUrl=${{ steps.resolve-prod-infra.outputs.scoring_api_url }}" \
+              "WhatsAppApiUrl=${{ steps.resolve-prod-infra.outputs.whatsapp_api_url }}" \
+              "WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}" \
+              "WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}" \
+              "WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}" \
+              "SmilePartnerId=${{ secrets.PRODUCTION_SMILE_PARTNER_ID }}" \
+              "SmileApiKey=${{ secrets.PRODUCTION_SMILE_API_KEY }}" \
+              "SmileEnvironment=production" \
+              "EcocashMerchantId=${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }}" \
+              "EcocashApiKey=${{ secrets.PRODUCTION_ECOCASH_API_KEY }}" \
+              "OnemoneyMerchantId=${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }}" \
+              "OnemoneyApiKey=${{ secrets.PRODUCTION_ONEMONEY_API_KEY }}" \
+              "TrustonicApiKey=${{ secrets.PRODUCTION_TRUSTONIC_API_KEY }}" \
+              "TrustonicApiSecret=${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET }}" \
+              "SmsProvider=twilio" \
+              "SmsApiKey=${{ secrets.PRODUCTION_SMS_API_KEY }}"
         env:
           SAM_CLI_TELEMETRY: 0
 
