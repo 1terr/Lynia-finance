@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Lynia Finance - Phase 6B: Fineract Initialization Lambda
+  Creates GL accounts and loan products in Fineract via Custom Resource.
+  Deploy AFTER the fineract-ecs stack is running and healthy.
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues:
+      - development
+      - staging
+      - production
+
+Resources:
+  FineractInitFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-fineract-init
+      Handler: index.handler
+      Runtime: nodejs18.x
+      CodeUri: fineract-init-lambda/
+      Timeout: 120
+      MemorySize: 256
+      VpcConfig:
+        SecurityGroupIds:
+          - !ImportValue production-lynia-lambda-sg-id
+        SubnetIds:
+          - !ImportValue production-lynia-private-subnet-1-id
+          - !ImportValue production-lynia-private-subnet-2-id
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
+      Environment:
+        Variables:
+          FINERACT_BASE_URL: !Sub
+            - "https://${FineractEndpoint}:8443/fineract-provider/api/v1"
+            - FineractEndpoint: !ImportValue production-lynia-fineract-endpoint
+          FINERACT_TENANT_ID: default
+
+  # Custom Resource triggers initialization on stack creation
+  FineractInitTrigger:
+    Type: Custom::FineractInit
+    DependsOn: FineractInitFunction
+    Properties:
+      ServiceToken: !GetAtt FineractInitFunction.Arn
+      # Change this value to re-trigger initialization
+      InitVersion: "1.0.0"
+
+Outputs:
+  FineractInitFunctionArn:
+    Description: Fineract Init Lambda Function ARN
+    Value: !GetAtt FineractInitFunction.Arn
