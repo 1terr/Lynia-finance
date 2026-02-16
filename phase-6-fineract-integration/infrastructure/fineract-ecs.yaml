@@ -13,8 +13,8 @@ Parameters:
 
   FineractImageTag:
     Type: String
-    Default: latest
-    Description: Docker image tag for apache/fineract
+    Default: '1.13.0'
+    Description: Docker image tag for apache/fineract (pin to specific version for stability)
 
   FineractSecretArn:
     Type: String

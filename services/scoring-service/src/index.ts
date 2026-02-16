@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { db } from '../../shared/clients/database';
 import { getSecurityHeaders } from '../../shared/utils/response';
+import { syncCustomerToFineract } from '../../shared/clients/fineract-sync';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -506,6 +507,13 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
     // Continue even if database storage fails
   }
 
+  // Non-blocking: Sync approved customer to Fineract core banking
+  if (scoreResult.decision === 'approve' && process.env.FINERACT_SECRET_NAME) {
+    syncApprovedCustomerToFineract(scoreResult.customer_id).catch((err) => {
+      console.error('[fineract-sync] Background customer sync failed:', err);
+    });
+  }
+
   return {
     statusCode: 200,
     body: JSON.stringify(scoreResult),
@@ -561,5 +569,36 @@ async function handleGetScore(customerId: string, event: APIGatewayProxyEvent): 
       }),
       headers: getSecurityHeaders(event)
     };
+  }
+}
+
+// ===================================================================
+// FINERACT SYNC (NON-BLOCKING)
+// ===================================================================
+
+/**
+ * Sync an approved customer to Fineract core banking.
+ * Non-blocking: errors are logged but never propagate to the caller.
+ * If Fineract is down, the reconciliation job will retry later.
+ */
+async function syncApprovedCustomerToFineract(customerId: string): Promise<void> {
+  try {
+    const { data: customer } = await db
+      .from('customers')
+      .select('id, first_name, last_name, phone_number, date_of_birth, fineract_client_id')
+      .eq('id', customerId)
+      .single()
+      .execute();
+
+    if (!customer || customer.fineract_client_id) return;
+
+    await syncCustomerToFineract({
+      customerId: customer.id,
+      firstName: customer.first_name,
+      lastName: customer.last_name,
+      mobileNo: customer.phone_number,
+    });
+  } catch (error) {
+    console.error(`[fineract-sync] Failed to sync customer ${customerId}:`, error);
   }
 }

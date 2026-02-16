@@ -4,6 +4,8 @@ import { EcoCashProvider, EcoCashWebhook } from './ecocash-provider';
 import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
 import { OmariProvider, OmariWebhook } from './omari-provider';
 import { getSecurityHeaders } from '../../shared/utils/response';
+import { db } from '../../shared/clients/database';
+import { syncRepaymentToFineract } from '../../shared/clients/fineract-sync';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
@@ -141,6 +143,13 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
       await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
+
+      // Non-blocking: sync repayment to Fineract core banking
+      if (process.env.FINERACT_SECRET_NAME) {
+        syncPaymentToFineract(paymentId).catch((err) => {
+          console.error('[fineract-sync] Background repayment sync failed:', err);
+        });
+      }
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
       await paymentService.checkPaymentStatus(paymentId);
     }
@@ -196,6 +205,13 @@ async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGa
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
       await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
+
+      // Non-blocking: sync repayment to Fineract core banking
+      if (process.env.FINERACT_SECRET_NAME) {
+        syncPaymentToFineract(paymentId).catch((err) => {
+          console.error('[fineract-sync] Background repayment sync failed:', err);
+        });
+      }
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
       await paymentService.checkPaymentStatus(paymentId);
     }
@@ -251,6 +267,13 @@ async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatew
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
       await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
+
+      // Non-blocking: sync repayment to Fineract core banking
+      if (process.env.FINERACT_SECRET_NAME) {
+        syncPaymentToFineract(paymentId).catch((err) => {
+          console.error('[fineract-sync] Background repayment sync failed:', err);
+        });
+      }
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
       await paymentService.checkPaymentStatus(paymentId);
     }
@@ -348,5 +371,46 @@ async function reconcilePayments(event: APIGatewayProxyEvent): Promise<APIGatewa
       }),
       headers: getSecurityHeaders(event)
     };
+  }
+}
+
+// ===================================================================
+// FINERACT SYNC (NON-BLOCKING)
+// ===================================================================
+
+/**
+ * Sync a completed payment to Fineract as a loan repayment.
+ * Non-blocking: errors are logged but never propagate to the caller.
+ * If Fineract is down, the reconciliation job will retry later.
+ */
+async function syncPaymentToFineract(paymentId: string): Promise<void> {
+  try {
+    const { data: payment } = await db
+      .from('payments')
+      .select('id, loan_id, amount, completed_at, fineract_transaction_id')
+      .eq('id', paymentId)
+      .single()
+      .execute();
+
+    if (!payment || payment.fineract_transaction_id) return;
+
+    const { data: loan } = await db
+      .from('loans')
+      .select('id, fineract_loan_id')
+      .eq('id', payment.loan_id)
+      .single()
+      .execute();
+
+    if (!loan?.fineract_loan_id) return;
+
+    await syncRepaymentToFineract({
+      paymentId: payment.id,
+      loanId: payment.loan_id,
+      fineractLoanId: loan.fineract_loan_id,
+      amount: payment.amount,
+      transactionDate: new Date(payment.completed_at),
+    });
+  } catch (error) {
+    console.error(`[fineract-sync] Failed to sync payment ${paymentId}:`, error);
   }
 }
