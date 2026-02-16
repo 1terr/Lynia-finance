@@ -342,6 +342,20 @@ jobs:
 
       - name: SAM Deploy to Staging
         run: |
+          # Shell-level fallbacks for secrets (GitHub Actions || operator unreliable for empty secrets)
+          WA_PHONE="${WHATSAPP_PHONE_ID:-placeholder}"
+          WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
+          WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
+          SMILE_PID="${SMILE_PARTNER_ID:-placeholder}"
+          SMILE_KEY="${SMILE_API_KEY:-placeholder}"
+          ECO_MID="${ECOCASH_MERCHANT_ID:-placeholder}"
+          ECO_KEY="${ECOCASH_API_KEY:-placeholder}"
+          OM_MID="${ONEMONEY_MERCHANT_ID:-placeholder}"
+          OM_KEY="${ONEMONEY_API_KEY:-placeholder}"
+          TRUST_KEY="${TRUSTONIC_API_KEY:-placeholder}"
+          TRUST_SECRET="${TRUSTONIC_API_SECRET:-placeholder}"
+          SMS_KEY="${SMS_API_KEY:-placeholder}"
+
           sam deploy \
             --config-env staging \
             --no-confirm-changeset \
@@ -355,22 +369,34 @@ jobs:
               "CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }}" \
               "ScoringApiUrl=${{ steps.resolve-staging-infra.outputs.scoring_api_url }}" \
               "WhatsAppApiUrl=${{ steps.resolve-staging-infra.outputs.whatsapp_api_url }}" \
-              "WhatsAppPhoneNumberId=${{ secrets.STAGING_WHATSAPP_PHONE_ID || 'placeholder' }}" \
-              "WhatsAppAccessToken=${{ secrets.STAGING_WHATSAPP_TOKEN || 'placeholder' }}" \
-              "WhatsAppWebhookVerifyToken=${{ secrets.STAGING_WEBHOOK_TOKEN || 'placeholder' }}" \
-              "SmilePartnerId=${{ secrets.STAGING_SMILE_PARTNER_ID || 'placeholder' }}" \
-              "SmileApiKey=${{ secrets.STAGING_SMILE_API_KEY || 'placeholder' }}" \
+              "WhatsAppPhoneNumberId=${WA_PHONE}" \
+              "WhatsAppAccessToken=${WA_TOKEN}" \
+              "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
+              "SmilePartnerId=${SMILE_PID}" \
+              "SmileApiKey=${SMILE_KEY}" \
               "SmileEnvironment=sandbox" \
-              "EcocashMerchantId=${{ secrets.STAGING_ECOCASH_MERCHANT_ID || 'placeholder' }}" \
-              "EcocashApiKey=${{ secrets.STAGING_ECOCASH_API_KEY || 'placeholder' }}" \
-              "OnemoneyMerchantId=${{ secrets.STAGING_ONEMONEY_MERCHANT_ID || 'placeholder' }}" \
-              "OnemoneyApiKey=${{ secrets.STAGING_ONEMONEY_API_KEY || 'placeholder' }}" \
-              "TrustonicApiKey=${{ secrets.STAGING_TRUSTONIC_API_KEY || 'placeholder' }}" \
-              "TrustonicApiSecret=${{ secrets.STAGING_TRUSTONIC_API_SECRET || 'placeholder' }}" \
+              "EcocashMerchantId=${ECO_MID}" \
+              "EcocashApiKey=${ECO_KEY}" \
+              "OnemoneyMerchantId=${OM_MID}" \
+              "OnemoneyApiKey=${OM_KEY}" \
+              "TrustonicApiKey=${TRUST_KEY}" \
+              "TrustonicApiSecret=${TRUST_SECRET}" \
               "SmsProvider=twilio" \
-              "SmsApiKey=${{ secrets.STAGING_SMS_API_KEY || 'placeholder' }}"
+              "SmsApiKey=${SMS_KEY}"
         env:
           SAM_CLI_TELEMETRY: 0
+          WHATSAPP_PHONE_ID: ${{ secrets.STAGING_WHATSAPP_PHONE_ID }}
+          WHATSAPP_TOKEN: ${{ secrets.STAGING_WHATSAPP_TOKEN }}
+          WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
+          SMILE_PARTNER_ID: ${{ secrets.STAGING_SMILE_PARTNER_ID }}
+          SMILE_API_KEY: ${{ secrets.STAGING_SMILE_API_KEY }}
+          ECOCASH_MERCHANT_ID: ${{ secrets.STAGING_ECOCASH_MERCHANT_ID }}
+          ECOCASH_API_KEY: ${{ secrets.STAGING_ECOCASH_API_KEY }}
+          ONEMONEY_MERCHANT_ID: ${{ secrets.STAGING_ONEMONEY_MERCHANT_ID }}
+          ONEMONEY_API_KEY: ${{ secrets.STAGING_ONEMONEY_API_KEY }}
+          TRUSTONIC_API_KEY: ${{ secrets.STAGING_TRUSTONIC_API_KEY }}
+          TRUSTONIC_API_SECRET: ${{ secrets.STAGING_TRUSTONIC_API_SECRET }}
+          SMS_API_KEY: ${{ secrets.STAGING_SMS_API_KEY }}
 
       - name: Get API Gateway URL
         id: get-url
@@ -565,6 +591,20 @@ jobs:
 
       - name: SAM Deploy to Production
         run: |
+          # Shell-level fallbacks for secrets (GitHub Actions || operator unreliable for empty secrets)
+          WA_PHONE="${WHATSAPP_PHONE_ID:-placeholder}"
+          WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
+          WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
+          SMILE_PID="${SMILE_PARTNER_ID:-placeholder}"
+          SMILE_KEY="${SMILE_API_KEY:-placeholder}"
+          ECO_MID="${ECOCASH_MERCHANT_ID:-placeholder}"
+          ECO_KEY="${ECOCASH_API_KEY:-placeholder}"
+          OM_MID="${ONEMONEY_MERCHANT_ID:-placeholder}"
+          OM_KEY="${ONEMONEY_API_KEY:-placeholder}"
+          TRUST_KEY="${TRUSTONIC_API_KEY:-placeholder}"
+          TRUST_SECRET="${TRUSTONIC_API_SECRET:-placeholder}"
+          SMS_KEY="${SMS_API_KEY:-placeholder}"
+
           sam deploy \
             --config-env production \
             --no-fail-on-empty-changeset \
@@ -578,22 +618,34 @@ jobs:
               "CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }}" \
               "ScoringApiUrl=${{ steps.resolve-prod-infra.outputs.scoring_api_url }}" \
               "WhatsAppApiUrl=${{ steps.resolve-prod-infra.outputs.whatsapp_api_url }}" \
-              "WhatsAppPhoneNumberId=${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID || 'placeholder' }}" \
-              "WhatsAppAccessToken=${{ secrets.PRODUCTION_WHATSAPP_TOKEN || 'placeholder' }}" \
-              "WhatsAppWebhookVerifyToken=${{ secrets.PRODUCTION_WEBHOOK_TOKEN || 'placeholder' }}" \
-              "SmilePartnerId=${{ secrets.PRODUCTION_SMILE_PARTNER_ID || 'placeholder' }}" \
-              "SmileApiKey=${{ secrets.PRODUCTION_SMILE_API_KEY || 'placeholder' }}" \
+              "WhatsAppPhoneNumberId=${WA_PHONE}" \
+              "WhatsAppAccessToken=${WA_TOKEN}" \
+              "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
+              "SmilePartnerId=${SMILE_PID}" \
+              "SmileApiKey=${SMILE_KEY}" \
               "SmileEnvironment=production" \
-              "EcocashMerchantId=${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID || 'placeholder' }}" \
-              "EcocashApiKey=${{ secrets.PRODUCTION_ECOCASH_API_KEY || 'placeholder' }}" \
-              "OnemoneyMerchantId=${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID || 'placeholder' }}" \
-              "OnemoneyApiKey=${{ secrets.PRODUCTION_ONEMONEY_API_KEY || 'placeholder' }}" \
-              "TrustonicApiKey=${{ secrets.PRODUCTION_TRUSTONIC_API_KEY || 'placeholder' }}" \
-              "TrustonicApiSecret=${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET || 'placeholder' }}" \
+              "EcocashMerchantId=${ECO_MID}" \
+              "EcocashApiKey=${ECO_KEY}" \
+              "OnemoneyMerchantId=${OM_MID}" \
+              "OnemoneyApiKey=${OM_KEY}" \
+              "TrustonicApiKey=${TRUST_KEY}" \
+              "TrustonicApiSecret=${TRUST_SECRET}" \
               "SmsProvider=twilio" \
-              "SmsApiKey=${{ secrets.PRODUCTION_SMS_API_KEY || 'placeholder' }}"
+              "SmsApiKey=${SMS_KEY}"
         env:
           SAM_CLI_TELEMETRY: 0
+          WHATSAPP_PHONE_ID: ${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}
+          WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
+          WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
+          SMILE_PARTNER_ID: ${{ secrets.PRODUCTION_SMILE_PARTNER_ID }}
+          SMILE_API_KEY: ${{ secrets.PRODUCTION_SMILE_API_KEY }}
+          ECOCASH_MERCHANT_ID: ${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }}
+          ECOCASH_API_KEY: ${{ secrets.PRODUCTION_ECOCASH_API_KEY }}
+          ONEMONEY_MERCHANT_ID: ${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }}
+          ONEMONEY_API_KEY: ${{ secrets.PRODUCTION_ONEMONEY_API_KEY }}
+          TRUSTONIC_API_KEY: ${{ secrets.PRODUCTION_TRUSTONIC_API_KEY }}
+          TRUSTONIC_API_SECRET: ${{ secrets.PRODUCTION_TRUSTONIC_API_SECRET }}
+          SMS_API_KEY: ${{ secrets.PRODUCTION_SMS_API_KEY }}
 
       - name: Get Production API Gateway URL
         id: get-prod-url
