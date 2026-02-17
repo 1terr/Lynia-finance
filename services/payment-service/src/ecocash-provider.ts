@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
-import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
 import type {
   PaymentProvider,
@@ -53,10 +52,10 @@ export class EcoCashProvider implements PaymentProvider {
 
   constructor() {
     this.config = {
-      merchant_id: requireEnv('ECOCASH_MERCHANT_ID'),
-      api_key: requireEnv('ECOCASH_API_KEY'),
-      api_secret: requireEnv('ECOCASH_API_SECRET'),
-      webhook_secret: requireEnv('ECOCASH_WEBHOOK_SECRET'),
+      merchant_id: process.env.ECOCASH_MERCHANT_ID || '',
+      api_key: process.env.ECOCASH_API_KEY || '',
+      api_secret: process.env.ECOCASH_API_SECRET || '',
+      webhook_secret: process.env.ECOCASH_WEBHOOK_SECRET || '',
       base_url: process.env.ECOCASH_BASE_URL || 'https://sandbox.ecocash.co.zw/api/v1',
       environment: (process.env.ECOCASH_ENV || 'sandbox') as 'sandbox' | 'production'
     };

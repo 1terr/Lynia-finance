@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
-import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
 import type {
   PaymentProvider,
@@ -59,10 +58,10 @@ export class OmariProvider implements PaymentProvider {
 
   constructor() {
     this.config = {
-      merchant_id: requireEnv('OMARI_MERCHANT_ID'),
-      api_key: requireEnv('OMARI_API_KEY'),
-      api_secret: requireEnv('OMARI_API_SECRET'),
-      webhook_secret: requireEnv('OMARI_WEBHOOK_SECRET'),
+      merchant_id: process.env.OMARI_MERCHANT_ID || '',
+      api_key: process.env.OMARI_API_KEY || '',
+      api_secret: process.env.OMARI_API_SECRET || '',
+      webhook_secret: process.env.OMARI_WEBHOOK_SECRET || '',
       base_url: process.env.OMARI_BASE_URL || 'https://sandbox.omari.co.zw/api/v1',
       environment: (process.env.OMARI_ENV || 'sandbox') as 'sandbox' | 'production'
     };

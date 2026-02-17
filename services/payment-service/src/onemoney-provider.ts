@@ -1,6 +1,5 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
-import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
 import type {
   PaymentProvider,
@@ -50,10 +49,10 @@ export class OneMoneyProvider implements PaymentProvider {
 
   constructor() {
     this.config = {
-      merchant_id: requireEnv('ONEMONEY_MERCHANT_ID'),
-      api_key: requireEnv('ONEMONEY_API_KEY'),
-      api_secret: requireEnv('ONEMONEY_API_SECRET'),
-      webhook_secret: requireEnv('ONEMONEY_WEBHOOK_SECRET'),
+      merchant_id: process.env.ONEMONEY_MERCHANT_ID || '',
+      api_key: process.env.ONEMONEY_API_KEY || '',
+      api_secret: process.env.ONEMONEY_API_SECRET || '',
+      webhook_secret: process.env.ONEMONEY_WEBHOOK_SECRET || '',
       base_url: process.env.ONEMONEY_BASE_URL || 'https://sandbox.onemoney.co.zw/api/v1',
       environment: (process.env.ONEMONEY_ENV || 'sandbox') as 'sandbox' | 'production'
     };
