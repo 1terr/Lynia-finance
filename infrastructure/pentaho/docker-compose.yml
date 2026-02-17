@@ -1,0 +1,43 @@
+# =====================================================
+# Lynia Finance - Local Pentaho Development Environment
+#
+# Usage:
+#   cd infrastructure/pentaho
+#   docker-compose up -d
+#
+# Access:
+#   Pentaho Server: http://localhost:8080/pentaho
+#   Default login: admin / password
+#
+# Run ETL manually:
+#   docker-compose exec pentaho bash /opt/pentaho/etl/jobs/run_nightly_etl.sh
+# =====================================================
+
+version: '3.8'
+
+services:
+  pentaho:
+    build:
+      context: ../..
+      dockerfile: infrastructure/pentaho/Dockerfile
+    container_name: lynia-pentaho
+    ports:
+      - "8080:8080"
+    environment:
+      - ENVIRONMENT=development
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5432
+      - DB_NAME=lynia
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - JAVA_OPTS=-Xms512m -Xmx1536m
+    volumes:
+      # Mount ETL files for live editing during development
+      - ../../services/pentaho-etl:/opt/pentaho/etl
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/pentaho/Login"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s

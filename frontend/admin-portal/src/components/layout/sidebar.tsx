@@ -10,6 +10,7 @@ import {
   Smartphone,
   Wallet,
   BarChart3,
+  TrendingUp,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -66,6 +67,12 @@ const navItems: NavItem[] = [
     label: 'Reports',
     href: '/reports',
     icon: BarChart3,
+    requiredPermissions: ['reports:read'],
+  },
+  {
+    label: 'Analytics',
+    href: '/analytics',
+    icon: TrendingUp,
     requiredPermissions: ['reports:read'],
   },
   {

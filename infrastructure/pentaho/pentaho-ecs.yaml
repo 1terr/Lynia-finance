@@ -1,0 +1,324 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - Pentaho BI Server on ECS Fargate
+  Includes: Pentaho Server service + Nightly ETL scheduled task
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues: [staging, production]
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC to deploy into
+
+  PrivateSubnet1:
+    Type: AWS::EC2::Subnet::Id
+    Description: First private subnet for Fargate tasks
+
+  PrivateSubnet2:
+    Type: AWS::EC2::Subnet::Id
+    Description: Second private subnet for Fargate tasks
+
+  RdsSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Security group that allows access to RDS
+
+  DBSecretArn:
+    Type: String
+    Description: ARN of the Secrets Manager secret for database credentials
+
+  ECSClusterArn:
+    Type: String
+    Description: ARN of existing ECS cluster (reuse Fineract cluster)
+
+  PentahoImageUri:
+    Type: String
+    Description: ECR image URI for Pentaho container
+
+Resources:
+  # =====================================================
+  # Security Group for Pentaho
+  # =====================================================
+  PentahoSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Pentaho BI Server
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          Description: Pentaho Server web interface (internal ALB only)
+          CidrIp: 10.0.0.0/16
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-lynia-pentaho-sg
+
+  # Allow Pentaho to reach RDS
+  PentahoToRdsIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref RdsSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !Ref PentahoSecurityGroup
+      Description: Allow Pentaho to access RDS PostgreSQL
+
+  # =====================================================
+  # IAM Roles
+  # =====================================================
+  PentahoTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Environment}-lynia-pentaho-execution
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SecretsAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref DBSecretArn
+        - PolicyName: CloudWatchLogs
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+
+  PentahoTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Environment}-lynia-pentaho-task
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: SecretsAndS3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Ref DBSecretArn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::${Environment}-lynia-reports/*
+
+  # =====================================================
+  # CloudWatch Log Group
+  # =====================================================
+  PentahoLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${Environment}-lynia-pentaho
+      RetentionInDays: 30
+
+  ETLLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${Environment}-lynia-etl
+      RetentionInDays: 90
+
+  # =====================================================
+  # Task Definition: Pentaho Server
+  # =====================================================
+  PentahoServerTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${Environment}-lynia-pentaho-server
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Cpu: '1024'
+      Memory: '2048'
+      ExecutionRoleArn: !GetAtt PentahoTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt PentahoTaskRole.Arn
+      ContainerDefinitions:
+        - Name: pentaho-server
+          Image: !Ref PentahoImageUri
+          Essential: true
+          PortMappings:
+            - ContainerPort: 8080
+              Protocol: tcp
+          Environment:
+            - Name: ENVIRONMENT
+              Value: !Ref Environment
+          Secrets:
+            - Name: DB_SECRET_NAME
+              ValueFrom: !Ref DBSecretArn
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref PentahoLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: pentaho-server
+          HealthCheck:
+            Command: ['CMD-SHELL', 'curl -f http://localhost:8080/pentaho/Login || exit 1']
+            Interval: 30
+            Timeout: 10
+            Retries: 3
+            StartPeriod: 120
+
+  # =====================================================
+  # ECS Service: Pentaho Server (always running)
+  # =====================================================
+  PentahoServerService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: !Sub ${Environment}-lynia-pentaho
+      Cluster: !Ref ECSClusterArn
+      TaskDefinition: !Ref PentahoServerTaskDef
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+          SecurityGroups:
+            - !Ref PentahoSecurityGroup
+
+  # =====================================================
+  # Task Definition: Nightly ETL
+  # =====================================================
+  ETLTaskDef:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${Environment}-lynia-etl-nightly
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Cpu: '512'
+      Memory: '1024'
+      ExecutionRoleArn: !GetAtt PentahoTaskExecutionRole.Arn
+      TaskRoleArn: !GetAtt PentahoTaskRole.Arn
+      ContainerDefinitions:
+        - Name: etl-runner
+          Image: !Ref PentahoImageUri
+          Essential: true
+          Command:
+            - bash
+            - /opt/pentaho/etl/jobs/run_nightly_etl.sh
+          Environment:
+            - Name: ENVIRONMENT
+              Value: !Ref Environment
+          Secrets:
+            - Name: DB_SECRET_NAME
+              ValueFrom: !Ref DBSecretArn
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ETLLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: etl-nightly
+
+  # =====================================================
+  # EventBridge: Nightly ETL Schedule (02:00 UTC)
+  # =====================================================
+  ETLScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${Environment}-lynia-etl-schedule-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: RunECSTask
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: ecs:RunTask
+                Resource: !Ref ETLTaskDef
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource:
+                  - !GetAtt PentahoTaskExecutionRole.Arn
+                  - !GetAtt PentahoTaskRole.Arn
+
+  NightlyETLSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub ${Environment}-lynia-nightly-etl
+      Description: Run data warehouse ETL nightly at 02:00 UTC
+      ScheduleExpression: cron(0 2 * * ? *)
+      State: ENABLED
+      Targets:
+        - Id: ETLTarget
+          Arn: !Ref ECSClusterArn
+          RoleArn: !GetAtt ETLScheduleRole.Arn
+          EcsParameters:
+            TaskDefinitionArn: !Ref ETLTaskDef
+            LaunchType: FARGATE
+            NetworkConfiguration:
+              AwsVpcConfiguration:
+                AssignPublicIp: DISABLED
+                Subnets:
+                  - !Ref PrivateSubnet1
+                  - !Ref PrivateSubnet2
+                SecurityGroups:
+                  - !Ref PentahoSecurityGroup
+
+  # =====================================================
+  # CloudWatch Alarm: ETL Failure
+  # =====================================================
+  ETLFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub ${Environment}-lynia-etl-failure
+      AlarmDescription: ETL nightly job failed
+      Namespace: AWS/ECS
+      MetricName: TaskFailure
+      Dimensions:
+        - Name: ClusterName
+          Value: !Select [1, !Split ['/', !Ref ECSClusterArn]]
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  PentahoServiceName:
+    Value: !GetAtt PentahoServerService.Name
+    Description: Pentaho Server ECS service name
+
+  ETLTaskDefinitionArn:
+    Value: !Ref ETLTaskDef
+    Description: ETL task definition ARN for manual runs
+
+  PentahoSecurityGroupId:
+    Value: !Ref PentahoSecurityGroup
+    Description: Pentaho security group ID

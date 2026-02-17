@@ -1197,6 +1197,56 @@ Resources:
           - investor-reporting-service/src/index.ts
 
   # =====================================================
+  # 12. DW SYNC SERVICE (Real-Time Data Warehouse)
+  # =====================================================
+  DWSyncFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-dw-sync
+      CodeUri: services/
+      Handler: dw-sync-service/src/index.handler
+      Description: Real-time data warehouse sync - processes business events and updates DW tables
+      MemorySize: 512
+      Timeout: 120
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-dw-sync"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        DWSyncQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-dw-sync"
+            BatchSize: 5
+            MaximumBatchingWindowInSeconds: 10
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - dw-sync-service/src/index.ts
+
+  # =====================================================
   # FINERACT CLOUDWATCH DASHBOARD
   # =====================================================
   FineractDashboard:
