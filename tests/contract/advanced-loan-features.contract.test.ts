@@ -529,7 +529,7 @@ describe('Advanced Loan Features Contract Tests', () => {
           httpMethod: 'POST',
           path: '/loans/write-offs/wo_001/reverse',
           body: JSON.stringify({ reason: 'Erroneous write-off, customer paid' }),
-          roles: 'support',
+          roles: 'customer_support',
         });
 
         const response = await handler(event);
@@ -842,7 +842,7 @@ describe('Advanced Loan Features Contract Tests', () => {
       const event = createAuthEvent({
         httpMethod: 'GET',
         path: '/loans/loan_001/penalties',
-        roles: 'support',
+        roles: 'customer_support',
       });
 
       const response = await handler(event);
@@ -864,7 +864,7 @@ describe('Advanced Loan Features Contract Tests', () => {
           is_active: true,
           effective_from: '2026-01-01',
         }),
-        roles: 'support',
+        roles: 'customer_support',
       });
 
       const response = await handler(event);
