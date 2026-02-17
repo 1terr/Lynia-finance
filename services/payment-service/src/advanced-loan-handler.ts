@@ -189,7 +189,7 @@ async function handleCreatePenaltyConfig(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const { data: body, error: parseError } = parseBody(event);
   if (parseError) return parseError;
@@ -202,7 +202,7 @@ async function handleGetPenaltyConfigs(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const productId = event.queryStringParameters?.product_id;
   const configs = await getActivePenaltyConfigurations(productId);
@@ -213,7 +213,7 @@ async function handleGetPenaltyConfig(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const configId = extractPathParam(event.path, 'configurations');
   const config = await getPenaltyConfiguration(configId);
@@ -224,7 +224,7 @@ async function handleUpdatePenaltyConfig(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const configId = extractPathParam(event.path, 'configurations');
   const { data: body, error: parseError } = parseBody(event);
@@ -242,7 +242,7 @@ async function handleCalculatePenalties(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const loanId = extractLoanId(event.path);
   const calculations = await calculatePenalties(loanId);
@@ -253,7 +253,7 @@ async function handleApplyPenalties(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const loanId = extractLoanId(event.path);
   const result = await applyPenalties(loanId, auth.userId);
@@ -264,7 +264,7 @@ async function handleGetLoanPenalties(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const loanId = extractLoanId(event.path);
   const status = event.queryStringParameters?.status as never;
@@ -276,7 +276,7 @@ async function handleGetPenaltySummary(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const loanId = extractLoanId(event.path);
   const summary = await getLoanPenaltySummary(loanId);
@@ -287,7 +287,7 @@ async function handleWaivePenalty(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const penaltyId = extractPathParam(event.path, 'penalties');
   const { data: body, error: parseError } = parseBody(event);
@@ -310,7 +310,7 @@ async function handleRequestWriteOff(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const { data: body, error: parseError } = parseBody(event);
   if (parseError) return parseError;
@@ -323,7 +323,7 @@ async function handleApproveWriteOff(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const writeOffId = extractPathParam(event.path, 'write-offs');
   const writeOff = await approveWriteOff(writeOffId, auth.userId);
@@ -334,7 +334,7 @@ async function handleRejectWriteOff(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const writeOffId = extractPathParam(event.path, 'write-offs');
   const { data: body, error: parseError } = parseBody(event);
@@ -372,7 +372,7 @@ async function handleGetWriteOff(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const writeOffId = extractPathParam(event.path, 'write-offs');
   const writeOff = await getWriteOff(writeOffId);
@@ -383,7 +383,7 @@ async function handleGetLoanWriteOffs(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const loanId = extractLoanId(event.path);
   const writeOffs = await getLoanWriteOffs(loanId);
@@ -394,7 +394,7 @@ async function handleGetPendingWriteOffs(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const writeOffs = await getPendingWriteOffs();
   return successResponse(writeOffs, 200, event);
@@ -404,7 +404,7 @@ async function handleGetWriteOffSummary(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const summary = await getWriteOffSummary();
   return successResponse(summary, 200, event);
@@ -414,7 +414,7 @@ async function handleCheckWriteOffEligibility(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const loanId = extractLoanId(event.path);
   const eligibility = await checkWriteOffEligibility(loanId);
@@ -425,7 +425,7 @@ async function handleRecordRecovery(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const writeOffId = extractPathParam(event.path, 'write-offs');
   const { data: body, error: parseError } = parseBody(event);
@@ -448,7 +448,7 @@ async function handleRequestReschedule(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const { data: body, error: parseError } = parseBody(event);
   if (parseError) return parseError;
@@ -461,7 +461,7 @@ async function handleApproveReschedule(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const rescheduleId = extractPathParam(event.path, 'reschedules');
   const reschedule = await approveReschedule(rescheduleId, auth.userId);
@@ -472,7 +472,7 @@ async function handleActivateReschedule(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const rescheduleId = extractPathParam(event.path, 'reschedules');
   const reschedule = await activateReschedule(rescheduleId, auth.userId);
@@ -483,7 +483,7 @@ async function handleRejectReschedule(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const rescheduleId = extractPathParam(event.path, 'reschedules');
   const { data: body, error: parseError } = parseBody(event);
@@ -502,7 +502,7 @@ async function handleCancelReschedule(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const rescheduleId = extractPathParam(event.path, 'reschedules');
   const reschedule = await cancelReschedule(rescheduleId, auth.userId);
@@ -524,7 +524,7 @@ async function handleGetReschedule(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const rescheduleId = extractPathParam(event.path, 'reschedules');
   const reschedule = await getReschedule(rescheduleId);
@@ -535,7 +535,7 @@ async function handleGetLoanReschedules(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager', 'support');
+  requireRole(auth, 'admin', 'operations_manager', 'customer_support');
 
   const loanId = extractLoanId(event.path);
   const reschedules = await getLoanReschedules(loanId);
@@ -546,7 +546,7 @@ async function handleGetPendingReschedules(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
   const auth = getAuthContext(event);
-  requireRole(auth, 'admin', 'manager');
+  requireRole(auth, 'admin', 'operations_manager');
 
   const reschedules = await getPendingReschedules();
   return successResponse(reschedules, 200, event);
