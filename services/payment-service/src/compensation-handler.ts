@@ -17,7 +17,7 @@ import { OmariProvider } from './omari-provider';
 import { InnBucksProvider } from './innbucks-provider';
 import { PaymentEventLogger } from './payment-event-logger';
 import { PaymentStateMachine, ConcurrentModificationError } from './payment-state-machine';
-import { publishMessage, QUEUE_NAMES, SQSQueues } from '../../shared/utils/sqs-publisher';
+import { publishMessage, SQSQueues } from '../../shared/utils/sqs-publisher';
 import type { PaymentProvider, PaymentGateway } from './payment-provider.interface';
 
 // ===================================================================

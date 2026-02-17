@@ -6,7 +6,7 @@ import { OmariProvider } from './omari-provider';
 import { InnBucksProvider } from './innbucks-provider';
 import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-analytics';
 import { PaymentEventLogger } from './payment-event-logger';
-import { PaymentStateMachine, ConcurrentModificationError } from './payment-state-machine';
+import { PaymentStateMachine } from './payment-state-machine';
 
 // Re-export for backward compatibility
 export type { PaymentGateway } from './payment-provider.interface';
