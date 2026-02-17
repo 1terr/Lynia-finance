@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { NotificationsDropdown } from '@/components/layout/notifications-dropdown';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -18,7 +19,9 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const user = useAuthStore((s) => s.user);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
 
   // Close profile dropdown on outside click
   useEffect(() => {
@@ -68,13 +71,20 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
           <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
         </button>
 
-        {/* Notifications - LOW-13: Badge hidden until real notification system is implemented */}
-        <button
-          className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
-          title="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-        </button>
+        {/* Notifications */}
+        <div ref={notificationsRef} className="relative">
+          <button
+            onClick={() => setNotificationsOpen(!notificationsOpen)}
+            className="relative flex h-9 w-9 items-center justify-center rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            title="Notifications"
+          >
+            <Bell className="h-5 w-5" />
+          </button>
+          <NotificationsDropdown
+            open={notificationsOpen}
+            onClose={() => setNotificationsOpen(false)}
+          />
+        </div>
 
         {/* Profile dropdown */}
         <div ref={profileRef} className="relative">

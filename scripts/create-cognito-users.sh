@@ -98,11 +98,14 @@ create_user() {
   success "User $email added to group: $group"
 }
 
-# Create admin user
-create_user "admin@lynia.co.zw" "admin" "Lynia Admin"
-
-# Create manager user
-create_user "manager@lynia.co.zw" "manager" "Lynia Manager"
+# Create seed users for all roles
+create_user "admin@lynia.co.zw" "super_admin" "Lynia Super Admin"
+create_user "manager@lynia.co.zw" "operations_manager" "Lynia Manager"
+create_user "finance@lynia.co.zw" "finance_team" "Lynia Finance"
+create_user "kyc@lynia.co.zw" "kyc_reviewer" "Lynia KYC Reviewer"
+create_user "support@lynia.co.zw" "customer_support" "Lynia Support"
+create_user "inventory@lynia.co.zw" "inventory_manager" "Lynia Inventory"
+create_user "reports@lynia.co.zw" "reports_viewer" "Lynia Reports"
 
 # ============================================================================
 # Verify

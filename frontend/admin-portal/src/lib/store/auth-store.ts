@@ -8,6 +8,9 @@ import {
   getSession,
   signOut as cognitoSignOut,
   isCognitoConfigured,
+  forgotPassword as cognitoForgotPassword,
+  confirmForgotPassword as cognitoConfirmForgotPassword,
+  changePassword as cognitoChangePassword,
 } from '@/lib/auth/cognito';
 import type { CognitoUserSession } from '@/lib/auth/cognito';
 
@@ -27,6 +30,9 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   completeNewPassword: (newPassword: string) => Promise<{ error?: string }>;
   completeMfaChallenge: (code: string) => Promise<{ error?: string }>;
+  forgotPassword: (email: string) => Promise<{ error?: string }>;
+  confirmForgotPassword: (email: string, code: string, newPassword: string) => Promise<{ error?: string }>;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ error?: string }>;
   signOutUser: () => void;
   initialize: () => Promise<void>;
 }
@@ -224,6 +230,45 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         'SOFTWARE_TOKEN_MFA',
       );
     });
+  },
+
+  forgotPassword: async (email: string) => {
+    if (!isCognitoConfigured()) {
+      return { error: 'Password reset is not available in demo mode' };
+    }
+    try {
+      await cognitoForgotPassword(email);
+      return {};
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to send reset code';
+      return { error: message };
+    }
+  },
+
+  confirmForgotPassword: async (email: string, code: string, newPassword: string) => {
+    if (!isCognitoConfigured()) {
+      return { error: 'Password reset is not available in demo mode' };
+    }
+    try {
+      await cognitoConfirmForgotPassword(email, code, newPassword);
+      return {};
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to reset password';
+      return { error: message };
+    }
+  },
+
+  changePassword: async (oldPassword: string, newPassword: string) => {
+    if (!isCognitoConfigured()) {
+      return { error: 'Password change is not available in demo mode' };
+    }
+    try {
+      await cognitoChangePassword(oldPassword, newPassword);
+      return {};
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to change password';
+      return { error: message };
+    }
   },
 
   signOutUser: () => {

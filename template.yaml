@@ -225,9 +225,15 @@ Parameters:
     AllowedPattern: "^sg-[a-fA-F0-9]{8,17}$"
     Description: Lambda Security Group ID from VPC stack
 
+  CognitoUserPoolId:
+    Type: String
+    Default: ""
+    Description: Cognito User Pool ID for admin user management
+
 Conditions:
   UseVPC: !Equals [!Ref VpcEnabled, "true"]
   IsProduction: !Equals [!Ref Environment, "production"]
+  HasCognitoPoolId: !Not [!Equals [!Ref CognitoUserPoolId, ""]]
 
 Resources:
   # =====================================================
@@ -948,6 +954,247 @@ Resources:
           - "@aws-sdk/*"
         EntryPoints:
           - fineract-proxy-service/src/index.ts
+
+  # =====================================================
+  # 10. ADMIN SERVICE (User Management, Config, Audit)
+  # =====================================================
+  AdminFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-admin-service
+      CodeUri: services/
+      Handler: admin-service/src/index.handler
+      Description: Admin portal management - users, system config, audit logs
+      MemorySize: 512
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+            - Effect: Allow
+              Action:
+                - cognito-idp:AdminCreateUser
+                - cognito-idp:AdminAddUserToGroup
+                - cognito-idp:AdminRemoveUserFromGroup
+                - cognito-idp:AdminListGroupsForUser
+                - cognito-idp:AdminUpdateUserAttributes
+              Resource:
+                - !Sub "arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Environment:
+        Variables:
+          COGNITO_USER_POOL_ID: !If
+            - HasCognitoPoolId
+            - !Ref CognitoUserPoolId
+            - ""
+      Events:
+        GetCurrentAdmin:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/me
+            Method: GET
+        GetAdminUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/users
+            Method: GET
+        CreateAdminUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/users
+            Method: POST
+        GetAdminUserById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/users/{id}
+            Method: GET
+        UpdateAdminUser:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/users/{id}
+            Method: PATCH
+        GetSystemConfigs:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/config
+            Method: GET
+        UpdateSystemConfig:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/config/{id}
+            Method: PATCH
+        GetAuditLogs:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/audit-logs
+            Method: GET
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - admin-service/src/index.ts
+
+  # =====================================================
+  # 11. INVESTOR REPORTING SERVICE
+  # =====================================================
+  InvestorReportingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-investor-reporting
+      CodeUri: services/
+      Handler: investor-reporting-service/src/index.handler
+      Description: Investor-grade portfolio analytics, loan tape export, borrowing base, and covenant compliance
+      MemorySize: 512
+      Timeout: 60
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        # Portfolio Summary
+        GetPortfolio:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/portfolio
+            Method: GET
+        GetPortfolioOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/portfolio
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Vintage Analysis
+        GetVintages:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/vintages
+            Method: GET
+        GetVintagesOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/vintages
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Loan Tape Export
+        GetLoanTape:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/loan-tape
+            Method: GET
+        GetLoanTapeOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/loan-tape
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Borrowing Base
+        GetBorrowingBase:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/borrowing-base
+            Method: GET
+        GetBorrowingBaseOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/borrowing-base
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Collections
+        GetCollections:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/collections
+            Method: GET
+        GetCollectionsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/collections
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Financials
+        GetFinancials:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/financials
+            Method: GET
+        GetFinancialsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/financials
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Covenant Compliance
+        GetCovenantCompliance:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/covenant-compliance
+            Method: GET
+        GetCovenantComplianceOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/covenant-compliance
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - investor-reporting-service/src/index.ts
 
   # =====================================================
   # FINERACT CLOUDWATCH DASHBOARD

@@ -88,7 +88,15 @@ Resources:
         IdToken: hours
         RefreshToken: days
 
-  # User groups matching current roles
+  # User groups matching frontend AdminRole definitions
+  SuperAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: super_admin
+      UserPoolId: !Ref UserPool
+      Description: Super administrators with full system access including settings write
+      Precedence: 0
+
   AdminGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
@@ -97,21 +105,45 @@ Resources:
       Description: Full system administrators
       Precedence: 1
 
-  ManagerGroup:
+  OperationsManagerGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
-      GroupName: manager
+      GroupName: operations_manager
       UserPoolId: !Ref UserPool
-      Description: Operations managers
+      Description: Operations managers with broad access
       Precedence: 2
 
-  SupportGroup:
+  CustomerSupportGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
-      GroupName: support
+      GroupName: customer_support
       UserPoolId: !Ref UserPool
-      Description: Customer support staff
+      Description: Customer support staff with read access
       Precedence: 3
+
+  FinanceTeamGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: finance_team
+      UserPoolId: !Ref UserPool
+      Description: Finance team with payment and reporting access
+      Precedence: 4
+
+  KycReviewerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: kyc_reviewer
+      UserPoolId: !Ref UserPool
+      Description: KYC document reviewers
+      Precedence: 5
+
+  InventoryManagerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: inventory_manager
+      UserPoolId: !Ref UserPool
+      Description: Device inventory managers
+      Precedence: 6
 
   ReportsViewerGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -119,7 +151,7 @@ Resources:
       GroupName: reports_viewer
       UserPoolId: !Ref UserPool
       Description: Read-only reports access
-      Precedence: 4
+      Precedence: 7
 
   DistributorGroup:
     Type: AWS::Cognito::UserPoolGroup
@@ -127,7 +159,7 @@ Resources:
       GroupName: distributor
       UserPoolId: !Ref UserPool
       Description: Field agents and distributors
-      Precedence: 5
+      Precedence: 8
 
 Outputs:
   UserPoolId:

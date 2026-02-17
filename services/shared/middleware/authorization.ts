@@ -8,7 +8,18 @@
 
 import { APIGatewayProxyEvent } from 'aws-lambda';
 
-type Role = 'admin' | 'manager' | 'support' | 'reports_viewer' | 'distributor' | 'customer';
+type Role =
+  | 'super_admin'
+  | 'admin'
+  | 'operations_manager'
+  | 'customer_support'
+  | 'finance_team'
+  | 'kyc_reviewer'
+  | 'inventory_manager'
+  | 'reports_viewer'
+  | 'distributor'
+  | 'customer'
+  | 'investor';
 
 export interface AuthContext {
   userId: string;
@@ -37,7 +48,7 @@ export function getAuthContext(event: APIGatewayProxyEvent): AuthContext {
  * Replaces: is_admin_or_manager() SQL function
  */
 export function isAdminOrManager(auth: AuthContext): boolean {
-  return auth.roles.some(r => r === 'admin' || r === 'manager');
+  return auth.roles.some(r => r === 'super_admin' || r === 'admin' || r === 'operations_manager');
 }
 
 /**
@@ -45,7 +56,7 @@ export function isAdminOrManager(auth: AuthContext): boolean {
  */
 export function isAdminStaff(auth: AuthContext): boolean {
   return auth.roles.some(r =>
-    ['admin', 'manager', 'support', 'reports_viewer'].includes(r)
+    ['super_admin', 'admin', 'operations_manager', 'customer_support', 'finance_team', 'kyc_reviewer', 'inventory_manager', 'reports_viewer'].includes(r)
   );
 }
 
@@ -110,6 +121,37 @@ export function buildAccessFilter(
 function parseGroups(groups: string | undefined): Role[] {
   if (!groups) return [];
   return groups.split(',').filter(Boolean) as Role[];
+}
+
+/**
+ * Check if the user has investor role.
+ * Investors have read-only access to dw schema data only.
+ */
+export function isInvestor(auth: AuthContext): boolean {
+  return auth.roles.includes('investor');
+}
+
+/**
+ * Validate API key for machine-to-machine investor access.
+ * Used by investor platforms (e.g., Cascade Debt) to pull data
+ * without Cognito JWT authentication.
+ *
+ * The API key is stored in Secrets Manager and passed via
+ * x-api-key header.
+ */
+export function getApiKeyAuth(event: APIGatewayProxyEvent): AuthContext | null {
+  const apiKey = event.headers?.['x-api-key'] || event.headers?.['X-Api-Key'];
+  if (!apiKey) return null;
+
+  // API key validation happens in the handler after comparing
+  // with the secret stored in Secrets Manager.
+  // This function returns a placeholder context that the handler
+  // replaces after validation.
+  return {
+    userId: 'api-key-user',
+    email: 'api@investor.lyniafinance.com',
+    roles: ['investor'],
+  };
 }
 
 function createAuthError(code: string, message: string) {

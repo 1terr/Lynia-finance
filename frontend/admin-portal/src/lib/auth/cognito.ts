@@ -61,3 +61,61 @@ export function signOut(): void {
   const user = getCurrentUser();
   if (user) user.signOut();
 }
+
+/** Initiate forgot-password flow — Cognito sends a verification code to the user's email. */
+export function forgotPassword(email: string): Promise<void> {
+  if (!userPool) return Promise.reject(new Error('Cognito is not configured'));
+
+  const cognitoUser = new CognitoUser({ Username: email, Pool: userPool });
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.forgotPassword({
+      onSuccess: () => resolve(),
+      onFailure: (err: Error) => reject(err),
+      inputVerificationCode: () => resolve(),
+    });
+  });
+}
+
+/** Complete forgot-password flow — verify the code and set the new password. */
+export function confirmForgotPassword(
+  email: string,
+  verificationCode: string,
+  newPassword: string
+): Promise<void> {
+  if (!userPool) return Promise.reject(new Error('Cognito is not configured'));
+
+  const cognitoUser = new CognitoUser({ Username: email, Pool: userPool });
+
+  return new Promise((resolve, reject) => {
+    cognitoUser.confirmPassword(verificationCode, newPassword, {
+      onSuccess: () => resolve(),
+      onFailure: (err: Error) => reject(err),
+    });
+  });
+}
+
+/** Change password for the currently authenticated user. */
+export function changePassword(
+  oldPassword: string,
+  newPassword: string
+): Promise<void> {
+  if (!userPool) return Promise.reject(new Error('Cognito is not configured'));
+
+  const user = getCurrentUser();
+  if (!user) return Promise.reject(new Error('No authenticated user'));
+
+  return new Promise((resolve, reject) => {
+    // getSession is required to refresh auth state before changePassword
+    user.getSession((sessionErr: Error | null) => {
+      if (sessionErr) {
+        reject(sessionErr);
+        return;
+      }
+      user.changePassword(oldPassword, newPassword, (err?: Error) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  });
+}
