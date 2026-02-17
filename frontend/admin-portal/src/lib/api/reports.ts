@@ -1,4 +1,91 @@
 import { fetchAPI } from '@/lib/api/client';
+import type {
+  ReportFilters,
+  LoanDisbursementSummary,
+  PaymentCollectionSummary,
+  KycStatusSummary,
+  DeviceManagementSummary,
+  CustomerAcquisitionSummary,
+  DefaultRateSummary,
+  PortfolioHealthSummary,
+} from '@/types/reports';
+
+// --- Helper to build query params from ReportFilters ---
+
+function buildFilterParams(filters: ReportFilters): string {
+  const params = new URLSearchParams();
+  if (filters.dateRange?.from) params.set('date_from', filters.dateRange.from);
+  if (filters.dateRange?.to) params.set('date_to', filters.dateRange.to);
+  if (filters.product) params.set('product', filters.product);
+  if (filters.distributor) params.set('distributor', filters.distributor);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.tier) params.set('tier', filters.tier);
+  if (filters.paymentMethod) params.set('payment_method', filters.paymentMethod);
+  return params.toString();
+}
+
+// --- Loan Disbursement Report ---
+
+export async function fetchLoanDisbursementReport(
+  filters: ReportFilters
+): Promise<LoanDisbursementSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<LoanDisbursementSummary>(`/api/v1/reports/disbursements?${qs}`);
+}
+
+// --- Payment Collection Report (Detailed) ---
+
+export async function fetchPaymentCollectionReport(
+  filters: ReportFilters
+): Promise<PaymentCollectionSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<PaymentCollectionSummary>(`/api/v1/reports/collections/detailed?${qs}`);
+}
+
+// --- KYC Status Report (Detailed) ---
+
+export async function fetchKycStatusReport(
+  filters: ReportFilters
+): Promise<KycStatusSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<KycStatusSummary>(`/api/v1/reports/kyc/detailed?${qs}`);
+}
+
+// --- Device Management Report ---
+
+export async function fetchDeviceManagementReport(
+  filters: ReportFilters
+): Promise<DeviceManagementSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<DeviceManagementSummary>(`/api/v1/reports/devices?${qs}`);
+}
+
+// --- Customer Acquisition Report ---
+
+export async function fetchCustomerAcquisitionReport(
+  filters: ReportFilters
+): Promise<CustomerAcquisitionSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<CustomerAcquisitionSummary>(`/api/v1/reports/acquisition?${qs}`);
+}
+
+// --- Default Rate Report (Summary) ---
+
+export async function fetchDefaultRateReport(
+  filters: ReportFilters
+): Promise<DefaultRateSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<DefaultRateSummary>(`/api/v1/reports/defaults/summary?${qs}`);
+}
+
+// --- Portfolio Health Report ---
+
+export async function fetchPortfolioHealthReport(
+  filters: ReportFilters
+): Promise<PortfolioHealthSummary> {
+  const qs = buildFilterParams(filters);
+  return fetchAPI<PortfolioHealthSummary>(`/api/v1/reports/portfolio/health?${qs}`);
+}
 
 // --- Collection Report ---
 

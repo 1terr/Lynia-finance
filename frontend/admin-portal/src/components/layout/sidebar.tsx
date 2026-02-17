@@ -64,7 +64,7 @@ const navItems: NavItem[] = [
     requiredPermissions: ['payments:read'],
   },
   {
-    label: 'Reports',
+    label: 'Operations',
     href: '/reports',
     icon: BarChart3,
     requiredPermissions: ['reports:read'],
