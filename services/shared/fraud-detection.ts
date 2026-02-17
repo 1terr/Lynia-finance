@@ -129,7 +129,7 @@ export async function checkVelocity(params: {
 
   // Applications in last 24 hours from same phone
   const { count: dailyCount } = await db
-    .from('whatsapp_onboarding_sessions')
+    .from('whatsapp_sessions')
     .select('*')
     .eq('phone_number', params.phone_number)
     .gte('created_at', oneDayAgo)
@@ -143,7 +143,7 @@ export async function checkVelocity(params: {
 
   // Applications in last week
   const { count: weeklyCount } = await db
-    .from('whatsapp_onboarding_sessions')
+    .from('whatsapp_sessions')
     .select('*')
     .eq('phone_number', params.phone_number)
     .gte('created_at', oneWeekAgo)

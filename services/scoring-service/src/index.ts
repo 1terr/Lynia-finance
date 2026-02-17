@@ -43,16 +43,17 @@ interface ExternalCreditData {
   bank_account_age_months: number;
 }
 
-interface SmileIdentityResult {
+/**
+ * Provider-agnostic KYC verification input for scoring.
+ * All scores normalized to 0-100 scale.
+ * Works with both Smile Identity and Didit providers.
+ */
+interface KYCVerificationInput {
   id_verification: {
     status: 'verified' | 'review' | 'failed';
   };
-  face_match: {
-    confidence: number; // 0-1
-  };
-  liveness: {
-    status: 'passed' | 'failed';
-  };
+  face_match_score: number; // 0-100
+  liveness_passed: boolean;
 }
 
 interface CreditScoreInput {
@@ -77,8 +78,8 @@ interface CreditScoreInput {
   // External credit data (nullable)
   external_credit_data?: ExternalCreditData | null;
 
-  // KYC data
-  kyc_result: SmileIdentityResult;
+  // KYC data (provider-agnostic)
+  kyc_result: KYCVerificationInput;
 }
 
 interface CreditScoreResult {
@@ -279,9 +280,11 @@ function scoreExternalCredit(data: ExternalCreditData | null): number {
 /**
  * Component 5: KYC Verification (10%, 0-100 points)
  *
- * Basic identity verification using Smile Identity API.
+ * Provider-agnostic identity verification scoring.
+ * Works with both Smile Identity and Didit providers.
+ * All input scores are on 0-100 scale.
  */
-function scoreKYCVerification(kycResult: SmileIdentityResult): number {
+function scoreKYCVerification(kycResult: KYCVerificationInput): number {
   let score = 0;
 
   // 1. ID Document Verification (50 points)
@@ -291,14 +294,14 @@ function scoreKYCVerification(kycResult: SmileIdentityResult): number {
     score += 25;
   }
 
-  // 2. Selfie-ID Match (35 points)
-  const faceMatchScore = kycResult.face_match.confidence;
-  if (faceMatchScore >= 0.95) score += 35;
-  else if (faceMatchScore >= 0.85) score += 25;
-  else if (faceMatchScore >= 0.75) score += 15;
+  // 2. Selfie-ID Match (35 points) — score is 0-100
+  const faceMatch = kycResult.face_match_score;
+  if (faceMatch >= 95) score += 35;
+  else if (faceMatch >= 85) score += 25;
+  else if (faceMatch >= 75) score += 15;
 
   // 3. Liveness Check (15 points)
-  if (kycResult.liveness.status === 'passed') {
+  if (kycResult.liveness_passed) {
     score += 15;
   }
 

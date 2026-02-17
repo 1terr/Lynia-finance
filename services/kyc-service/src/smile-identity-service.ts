@@ -2,6 +2,15 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import type {
+  KYCProvider,
+  KYCProviderName,
+  KYCSubmitParams,
+  KYCSubmissionResponse,
+  KYCVerificationResult,
+  KYCDecision,
+  KYCErrorResponse,
+} from '../../shared/types/kyc-provider';
 
 const smileCircuitBreaker = new CircuitBreaker({ name: 'smile-identity-api', failureThreshold: 5, resetTimeout: 60000 });
 
@@ -111,20 +120,12 @@ export interface KYCVerificationResponse {
 }
 
 /**
- * KYC Error Response
- */
-export interface KYCErrorResponse {
-  retriable: boolean;
-  user_message: string;
-  admin_action_required: boolean;
-  retry_after?: Date;
-}
-
-/**
  * Smile Identity Service
- * Handles all KYC verification operations with Smile Identity API
+ * Handles all KYC verification operations with Smile Identity API.
+ * Implements the KYCProvider interface for provider-neutral usage.
  */
-export class SmileIdentityService {
+export class SmileIdentityService implements KYCProvider {
+  readonly providerName: KYCProviderName = 'smile_identity';
   private config: SmileIdentityConfig;
   private client: AxiosInstance;
 
@@ -432,5 +433,116 @@ export class SmileIdentityService {
       decision: 'MANUAL_REVIEW',
       reason: `Confidence score ${confidence}% requires manual review`
     };
+  }
+
+  // =====================================================
+  // KYCProvider Interface Adapter Methods
+  // =====================================================
+
+  /**
+   * Submit verification via the KYCProvider interface.
+   * Wraps submitEnhancedKYC into the normalized format.
+   */
+  async submitVerification(params: KYCSubmitParams): Promise<KYCSubmissionResponse> {
+    const result = await this.submitEnhancedKYC({
+      customer_id: params.customer_id,
+      id_number: params.id_number,
+      id_image_base64: params.id_image_base64,
+      selfie_image_base64: params.selfie_image_base64,
+      first_name: params.first_name,
+      last_name: params.last_name,
+      dob: params.dob,
+      phone_number: params.phone_number,
+    });
+
+    return {
+      success: result.success,
+      provider_job_id: result.smile_job_id,
+      internal_job_id: result.job_id,
+      message: result.message,
+    };
+  }
+
+  /**
+   * Parse Smile Identity webhook payload into a normalized KYCVerificationResult.
+   */
+  parseWebhookPayload(rawPayload: string): KYCVerificationResult {
+    const payload: SmileWebhookPayload = JSON.parse(rawPayload);
+    const r = payload.result;
+
+    return {
+      provider: 'smile_identity',
+      provider_job_id: payload.smile_job_id,
+      internal_job_id: payload.partner_params.job_id,
+      confidence_score: r.confidence_value,
+      face_match_score: r.face_match.score,
+      liveness_score: r.liveness_check.score,
+      liveness_passed: r.liveness_check.passed,
+      document_authentic: r.document_check.authentic,
+      document_tampered: r.document_check.tampered,
+      document_expired: r.document_check.expired,
+      match_result: r.match_result === 'Verified'
+        ? 'verified'
+        : r.match_result === 'Not Verified'
+          ? 'not_verified'
+          : 'manual_review',
+      id_info: {
+        full_name: r.id_info.full_name,
+        id_number: r.id_info.id_number,
+        date_of_birth: r.id_info.dob,
+        gender: r.id_info.gender === 'M' ? 'M' : r.id_info.gender === 'F' ? 'F' : null,
+        nationality: r.id_info.nationality || null,
+        document_type: 'NATIONAL_ID',
+      },
+      raw_response: payload as unknown as Record<string, unknown>,
+      warnings: [],
+    };
+  }
+
+  /**
+   * Determine decision from a normalized KYCVerificationResult.
+   */
+  determineDecision(result: KYCVerificationResult): KYCDecision {
+    const { confidence_score, liveness_passed, document_tampered, document_expired } = result;
+
+    if (
+      result.match_result === 'verified' &&
+      confidence_score >= 85 &&
+      liveness_passed &&
+      result.document_authentic &&
+      !document_tampered &&
+      !document_expired
+    ) {
+      return { decision: 'APPROVED', reason: 'Automatic verification successful' };
+    }
+
+    if (
+      result.match_result === 'not_verified' ||
+      confidence_score < 50 ||
+      !liveness_passed ||
+      document_tampered ||
+      document_expired
+    ) {
+      let reason = 'Verification failed: ';
+      if (!liveness_passed) reason += 'Liveness check failed';
+      else if (document_tampered) reason += 'Document appears tampered';
+      else if (document_expired) reason += 'Document has expired';
+      else if (!result.document_authentic) reason += 'Document not authentic';
+      else reason += 'Low confidence score';
+
+      return { decision: 'REJECTED', reason };
+    }
+
+    return {
+      decision: 'MANUAL_REVIEW',
+      reason: `Confidence score ${confidence_score}% requires manual review`,
+    };
+  }
+
+  /**
+   * Map errors to user-friendly responses via the KYCProvider interface.
+   */
+  handleError(error: unknown): KYCErrorResponse {
+    return this.handleSmileError(error as { response?: { data?: { code?: string; message?: string } } });
   }
 }

@@ -15,6 +15,10 @@
 import { db } from '../../shared/clients/database';
 import axios from 'axios';
 
+const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
+const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
+const KYC_API_URL = process.env.KYC_API_URL!;
+
 // ===================================================================
 // TYPE DEFINITIONS
 // ===================================================================
@@ -65,6 +69,7 @@ export interface OnboardingSession {
     requested_loan_amount?: number;
 
     // KYC
+    id_number?: string;
     id_photo_url?: string;
     selfie_photo_url?: string;
     kyc_verification_id?: string;
@@ -155,7 +160,7 @@ export function validateZimbabwePhoneNumber(phoneNumber: string): {
 export async function getOrCreateSession(phoneNumber: string): Promise<OnboardingSession> {
   // Try to get existing active session
   const { data: existingSession } = await db
-    .from('whatsapp_onboarding_sessions')
+    .from('whatsapp_sessions')
     .select('*')
     .eq('phone_number', phoneNumber)
     .single()
@@ -185,7 +190,7 @@ export async function getOrCreateSession(phoneNumber: string): Promise<Onboardin
   };
 
   const { data: newSession, error } = await db
-    .from('whatsapp_onboarding_sessions')
+    .from('whatsapp_sessions')
     .insert(session)
     .select()
     .single()
@@ -207,7 +212,7 @@ export async function updateSession(
   updates: Partial<OnboardingSession>
 ): Promise<void> {
   const { error } = await db
-    .from('whatsapp_onboarding_sessions')
+    .from('whatsapp_sessions')
     .update({
       ...updates,
       last_activity_at: new Date()
@@ -219,6 +224,32 @@ export async function updateSession(
     console.error('Failed to update session:', error);
     throw new Error('Failed to update session');
   }
+}
+
+// ===================================================================
+// WHATSAPP MEDIA HELPERS
+// ===================================================================
+
+/**
+ * Download media from WhatsApp Cloud API and return as base64.
+ * Step 1: GET media metadata to get the download URL.
+ * Step 2: Download the binary data.
+ * Step 3: Convert to base64.
+ */
+async function downloadWhatsAppMedia(mediaId: string): Promise<string> {
+  const metadataResponse = await axios.get(
+    `${WHATSAPP_API_URL}/${mediaId}`,
+    { headers: { 'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}` } }
+  );
+
+  const downloadUrl = metadataResponse.data.url;
+
+  const mediaResponse = await axios.get(downloadUrl, {
+    headers: { 'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}` },
+    responseType: 'arraybuffer'
+  });
+
+  return Buffer.from(mediaResponse.data).toString('base64');
 }
 
 // ===================================================================
@@ -566,15 +597,11 @@ Perfect! We'll assess your eligibility and show you available devices.
 
 First, we need to verify your identity.
 
-📸 *Step 1: Upload your National ID*
+🪪 *Step 1: Enter your National ID number*
 
-Tips for a clear photo:
-✅ Place ID on flat surface
-✅ Good lighting, no shadows
-✅ All text visible
-✅ Hold phone steady
-
-*Send photo now*`;
+Please type your National ID number:
+Format: *XX-XXXXXXX-X-XX*
+Example: *63-2345678-B-08*`;
   }
 
   if (message === '2' || message.includes('digital')) {
@@ -599,12 +626,57 @@ Reply with *1* or *2*`;
 
 /**
  * Handle KYC_ID_UPLOAD state
+ * Collects National ID number (text) then ID photo (image).
  */
 export async function handleKYCIdUpload(
   session: OnboardingSession,
   context: MessageContext,
   imageUrl?: string
 ): Promise<string> {
+  // Step 1: Collect National ID number (text input)
+  if (!session.state_data.id_number) {
+    const idNumber = context.message.trim();
+
+    // If user sent an image before providing ID number, ask for text first
+    if (imageUrl || idNumber === '[Image received]') {
+      return `First, please type your *National ID number*.
+
+Format: *XX-XXXXXXX-X-XX*
+Example: *63-2345678-B-08*`;
+    }
+
+    // Validate Zimbabwe national ID format (e.g., "63-2345678-B-08")
+    const normalized = idNumber.replace(/[\s-]/g, '');
+    const idPattern = /^\d{2}\d{6,7}[A-Z]\d{2}$/i;
+    if (!idPattern.test(normalized)) {
+      return `Invalid ID number format.
+
+Please enter your National ID number:
+Format: *XX-XXXXXXX-X-XX*
+Example: *63-2345678-B-08*`;
+    }
+
+    await updateSession(context.from, {
+      state_data: {
+        ...session.state_data,
+        id_number: idNumber
+      }
+    });
+
+    return `✅ *ID Number Received!*
+
+📸 *Now send a photo of your National ID*
+
+Tips for a clear photo:
+✅ Place ID on flat surface
+✅ Good lighting, no shadows
+✅ All text visible
+✅ Hold phone steady
+
+*Send photo now*`;
+  }
+
+  // Step 2: Collect ID photo (image input)
   if (!imageUrl) {
     return `Please send a photo of your National ID.
 
@@ -616,7 +688,7 @@ Make sure:
 *Send photo now*`;
   }
 
-  // Store ID photo URL and move to selfie capture
+  // Store ID photo media ID and move to selfie capture
   await updateSession(context.from, {
     current_state: 'kyc_selfie_upload',
     state_data: {
@@ -644,6 +716,7 @@ Tips:
 
 /**
  * Handle KYC_SELFIE_UPLOAD state
+ * Downloads images from WhatsApp and submits to the KYC service.
  */
 export async function handleKYCSelfieUpload(
   session: OnboardingSession,
@@ -662,7 +735,7 @@ Make sure:
 *Send selfie now*`;
   }
 
-  // Store selfie URL and move to KYC processing
+  // Store selfie media ID and transition to processing
   await updateSession(context.from, {
     current_state: 'kyc_processing',
     state_data: {
@@ -672,24 +745,80 @@ Make sure:
     }
   });
 
-  // Simulate KYC verification (in production, call Smile Identity API)
-  // For now, auto-approve for testing
-  const kycResult = {
-    verified: true,
-    confidence: 0.96,
-    liveness_passed: true
-  };
+  try {
+    // Download both images from WhatsApp Cloud API as base64
+    const [idImageBase64, selfieImageBase64] = await Promise.all([
+      downloadWhatsAppMedia(session.state_data.id_photo_url!),
+      downloadWhatsAppMedia(imageUrl)
+    ]);
 
-  if (kycResult.verified) {
+    // Find the customer record
+    const { data: customer } = await db
+      .from('customers')
+      .select('id')
+      .eq('whatsapp_number', context.from)
+      .single()
+      .execute();
+
+    if (!customer) {
+      throw new Error('Customer record not found');
+    }
+
+    // Parse name into first/last
+    const nameParts = (session.state_data.full_name || '').split(/\s+/);
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    // Convert DOB from DD/MM/YYYY to YYYY-MM-DD
+    let dobFormatted: string | undefined;
+    if (session.state_data.date_of_birth) {
+      const [day, month, year] = session.state_data.date_of_birth.split('/');
+      dobFormatted = `${year}-${month}-${day}`;
+    }
+
+    // Call KYC service
+    const kycResponse = await axios.post(`${KYC_API_URL}/kyc/initiate`, {
+      customer_id: customer.id,
+      id_number: session.state_data.id_number,
+      id_image_base64: idImageBase64,
+      selfie_image_base64: selfieImageBase64,
+      first_name: firstName,
+      last_name: lastName,
+      dob: dobFormatted,
+      phone_number: context.from
+    });
+
+    const kycResult = kycResponse.data;
+
+    // Store the KYC submission ID
     await updateSession(context.from, {
-      current_state: 'credit_scoring',
       state_data: {
         ...session.state_data,
-        kyc_status: 'verified'
+        selfie_photo_url: imageUrl,
+        kyc_verification_id: kycResult.kyc_submission_id,
+        kyc_status: 'pending'
       }
     });
 
-    return `✅ *Identity Verified!*
+    // If KYC was processed synchronously (e.g., Didit), check result immediately
+    if (kycResult.status === 'processing') {
+      const statusResponse = await axios.get(
+        `${KYC_API_URL}/kyc/${customer.id}`
+      );
+      const statusResult = statusResponse.data;
+
+      if (statusResult.kyc_status === 'verified') {
+        await updateSession(context.from, {
+          current_state: 'credit_scoring',
+          state_data: {
+            ...session.state_data,
+            selfie_photo_url: imageUrl,
+            kyc_verification_id: kycResult.kyc_submission_id,
+            kyc_status: 'verified'
+          }
+        });
+
+        return `✅ *Identity Verified!*
 
 Great news! Your identity has been confirmed.
 
@@ -701,18 +830,85 @@ We're calculating your loan amount based on:
 ✓ First-time borrower status
 
 This takes about 10 seconds...`;
+      }
+
+      if (statusResult.kyc_status === 'rejected') {
+        const retryCount = (session.state_data.retry_count || 0) + 1;
+        const attemptsRemaining = 3 - retryCount;
+
+        if (attemptsRemaining <= 0) {
+          await updateSession(context.from, {
+            current_state: 'rejected',
+            state_data: {
+              ...session.state_data,
+              kyc_status: 'failed'
+            }
+          });
+
+          return `❌ *Verification Failed*
+
+You have used all 3 verification attempts.
+
+Please contact support for assistance: support@lynia.finance`;
+        }
+
+        // Reset to ID upload for retry
+        await updateSession(context.from, {
+          current_state: 'kyc_id_upload',
+          state_data: {
+            ...session.state_data,
+            kyc_status: 'failed',
+            id_photo_url: undefined,
+            selfie_photo_url: undefined,
+            id_number: undefined,
+            retry_count: retryCount
+          }
+        });
+
+        return `❌ *Verification Unsuccessful*
+
+${statusResult.verification_reason || 'We could not verify your identity.'}
+
+You have ${attemptsRemaining} attempt${attemptsRemaining > 1 ? 's' : ''} remaining.
+
+Please enter your National ID number to try again:
+Format: *XX-XXXXXXX-X-XX*`;
+      }
+    }
+
+    // Async flow (e.g., Smile Identity) — tell customer to wait
+    return `⏳ *Verifying Your Identity...*
+
+Your documents have been submitted for verification.
+
+This usually takes 1-5 minutes. We'll message you as soon as it's complete.
+
+Please wait...`;
+
+  } catch (error) {
+    console.error('KYC initiation failed:', error);
+
+    // Revert to ID upload state for retry
+    await updateSession(context.from, {
+      current_state: 'kyc_id_upload',
+      state_data: {
+        ...session.state_data,
+        kyc_status: 'failed',
+        id_photo_url: undefined,
+        selfie_photo_url: undefined,
+        id_number: undefined
+      }
+    });
+
+    return `⚠️ *Verification Error*
+
+We had trouble processing your documents. This could be due to:
+• Image quality too low
+• Network issues
+
+Please try again. Type your National ID number to restart verification.
+Format: *XX-XXXXXXX-X-XX*`;
   }
-
-  return `❌ *Verification Unsuccessful*
-
-We couldn't verify your identity. This could be because:
-• Photos were too blurry
-• ID doesn't match selfie
-• Liveness check failed
-
-You can try again. Please retake your photos.
-
-Reply *Restart* to begin again.`;
 }
 
 /**
@@ -724,6 +920,16 @@ export async function handleCreditScoring(
 ): Promise<string> {
   // Call credit scoring service
   try {
+    // Fetch real KYC data from the latest submission
+    const { data: kycSubmission } = await db
+      .from('kyc_submissions')
+      .select('verification_confidence, face_match_score, liveness_score, verification_decision')
+      .eq('customer_id', session.customer_id || `temp_${context.from}`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+      .execute();
+
     const scoringPayload = {
       customer_id: session.customer_id || `temp_${context.from}`,
       monthly_income_usd: session.state_data.monthly_income_usd || 200,
@@ -731,10 +937,16 @@ export async function handleCreditScoring(
       household_size: session.state_data.household_size || 1,
       dependents: session.state_data.dependents || 0,
       requested_loan_amount: session.state_data.requested_loan_amount || 250,
-      kyc_result: {
-        id_verification: { status: 'verified' },
-        face_match: { confidence: 0.96 },
-        liveness: { status: 'passed' }
+      kyc_result: kycSubmission ? {
+        face_match_score: kycSubmission.face_match_score ?? 96,
+        liveness_passed: (kycSubmission.liveness_score ?? 0) >= 50,
+        confidence_score: kycSubmission.verification_confidence ?? 96,
+        verification_decision: kycSubmission.verification_decision ?? 'APPROVED',
+      } : {
+        face_match_score: 96,
+        liveness_passed: true,
+        confidence_score: 96,
+        verification_decision: 'APPROVED',
       }
     };
 
@@ -927,6 +1139,197 @@ Welcome to Lynia Finance! 🎉`;
 }
 
 // ===================================================================
+// KYC PROCESSING HANDLERS
+// ===================================================================
+
+/**
+ * Handle KYC_PROCESSING state
+ * Customer messages while KYC is being verified — tell them to wait.
+ */
+async function handleKYCProcessing(
+  session: OnboardingSession,
+  _context: MessageContext
+): Promise<string> {
+  // Check if KYC has been completed while they were waiting
+  if (session.state_data.kyc_verification_id) {
+    const { data: customer } = await db
+      .from('customers')
+      .select('id')
+      .eq('whatsapp_number', _context.from)
+      .single()
+      .execute();
+
+    if (customer) {
+      const { data: kycSubmission } = await db
+        .from('kyc_submissions')
+        .select('status, verification_decision, verification_reason')
+        .eq('id', session.state_data.kyc_verification_id)
+        .single()
+        .execute();
+
+      if (kycSubmission) {
+        if (kycSubmission.status === 'verified') {
+          await updateSession(_context.from, {
+            current_state: 'credit_scoring',
+            state_data: { ...session.state_data, kyc_status: 'verified' }
+          });
+
+          return `✅ *Identity Verified!*
+
+Great news! Your identity has been confirmed.
+
+⏳ *Assessing your eligibility...*
+
+We're calculating your loan amount based on:
+✓ Identity verification
+✓ Income information
+✓ First-time borrower status
+
+This takes about 10 seconds...`;
+        }
+
+        if (kycSubmission.status === 'rejected') {
+          const retryCount = (session.state_data.retry_count || 0) + 1;
+          const attemptsRemaining = 3 - retryCount;
+
+          if (attemptsRemaining <= 0) {
+            await updateSession(_context.from, {
+              current_state: 'rejected',
+              state_data: { ...session.state_data, kyc_status: 'failed' }
+            });
+
+            return `❌ *Verification Failed*
+
+You have used all 3 verification attempts.
+
+Please contact support: support@lynia.finance`;
+          }
+
+          await updateSession(_context.from, {
+            current_state: 'kyc_id_upload',
+            state_data: {
+              ...session.state_data,
+              kyc_status: 'failed',
+              id_photo_url: undefined,
+              selfie_photo_url: undefined,
+              id_number: undefined,
+              retry_count: retryCount
+            }
+          });
+
+          return `❌ *Verification Unsuccessful*
+
+${kycSubmission.verification_reason || 'We could not verify your identity.'}
+
+You have ${attemptsRemaining} attempt${attemptsRemaining > 1 ? 's' : ''} remaining.
+
+Enter your National ID number to try again:
+Format: *XX-XXXXXXX-X-XX*`;
+        }
+      }
+    }
+  }
+
+  return `⏳ *Still Verifying...*
+
+Your identity verification is being processed.
+
+This usually takes 1-5 minutes. We'll message you as soon as it's complete.
+
+Please wait a bit longer.`;
+}
+
+/**
+ * Resume onboarding after KYC callback completes.
+ * Called by the KYC service when a verification result arrives.
+ * Returns the message to send to the customer.
+ */
+export async function resumeOnboardingAfterKYC(
+  phoneNumber: string,
+  kycStatus: 'verified' | 'rejected' | 'manual_review',
+  reason?: string
+): Promise<string | null> {
+  const { data: session } = await db
+    .from('whatsapp_sessions')
+    .select('*')
+    .eq('phone_number', phoneNumber)
+    .single()
+    .execute();
+
+  if (!session || session.current_state !== 'kyc_processing') {
+    return null;
+  }
+
+  const stateData = session.state_data || {};
+
+  if (kycStatus === 'verified') {
+    await updateSession(phoneNumber, {
+      current_state: 'credit_scoring',
+      state_data: { ...stateData, kyc_status: 'verified' }
+    });
+
+    return `✅ *Identity Verified!*
+
+Great news! Your identity has been confirmed.
+
+⏳ *Assessing your eligibility...*
+
+We're calculating your loan amount based on:
+✓ Identity verification
+✓ Income information
+✓ First-time borrower status
+
+Reply with any message to continue.`;
+  }
+
+  if (kycStatus === 'rejected') {
+    const retryCount = (stateData.retry_count || 0) + 1;
+    const attemptsRemaining = 3 - retryCount;
+
+    if (attemptsRemaining <= 0) {
+      await updateSession(phoneNumber, {
+        current_state: 'rejected',
+        state_data: { ...stateData, kyc_status: 'failed' }
+      });
+
+      return `❌ *Verification Failed*
+
+You have used all 3 verification attempts.
+
+Please contact support: support@lynia.finance`;
+    }
+
+    await updateSession(phoneNumber, {
+      current_state: 'kyc_id_upload',
+      state_data: {
+        ...stateData,
+        kyc_status: 'failed',
+        id_photo_url: undefined,
+        selfie_photo_url: undefined,
+        id_number: undefined,
+        retry_count: retryCount
+      }
+    });
+
+    return `❌ *Verification Unsuccessful*
+
+${reason || 'We could not verify your identity.'}
+
+You have ${attemptsRemaining} attempt${attemptsRemaining > 1 ? 's' : ''} remaining.
+
+Enter your National ID number to try again:
+Format: *XX-XXXXXXX-X-XX*`;
+  }
+
+  // manual_review
+  return `⏸️ *Manual Review Required*
+
+Your verification needs additional review by our team. This typically takes 2-12 hours.
+
+You'll receive a WhatsApp message when complete.`;
+}
+
+// ===================================================================
 // MAIN ONBOARDING ROUTER
 // ===================================================================
 
@@ -972,6 +1375,8 @@ export async function routeOnboardingMessage(
         return handleKYCSelfieUpload(session, context, imageUrl);
 
       case 'kyc_processing':
+        return handleKYCProcessing(session, context);
+
       case 'credit_scoring':
         return handleCreditScoring(session, context);
 

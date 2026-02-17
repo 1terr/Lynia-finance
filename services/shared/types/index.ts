@@ -377,3 +377,19 @@ export interface WhatsAppSendMessageResponse {
     id: string;
   }>;
 }
+
+// =====================================================
+// KYC PROVIDER TYPES (re-exported from kyc-provider.ts)
+// =====================================================
+
+export type {
+  KYCProvider,
+  KYCProviderName,
+  KYCSubmitParams,
+  KYCSubmissionResponse,
+  KYCVerificationResult,
+  KYCExtractedInfo,
+  KYCWarning,
+  KYCDecision,
+  KYCErrorResponse,
+} from './kyc-provider';

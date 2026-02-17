@@ -403,7 +403,7 @@ async function processIncomingMessage(
     // 5. Unexpected message type handling
     // Get current conversation state to determine expected input
     const { data: session } = await db
-      .from('whatsapp_onboarding_sessions')
+      .from('whatsapp_sessions')
       .select('current_state')
       .eq('phone_number', phoneNumber)
       .single()
@@ -426,7 +426,7 @@ async function processIncomingMessage(
           if (globalCmd === 'cancel') {
             // Save progress and reset state
             await db
-              .from('whatsapp_onboarding_sessions')
+              .from('whatsapp_sessions')
               .update({ current_state: 'welcome', last_activity_at: new Date() })
               .eq('phone_number', phoneNumber)
               .execute();

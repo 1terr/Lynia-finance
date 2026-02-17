@@ -109,6 +109,20 @@ export async function getSmileIdentitySecrets(): Promise<{
 }
 
 /**
+ * Retrieve Didit (KYC) credentials.
+ */
+export async function getDiditSecrets(): Promise<{
+  DIDIT_API_KEY: string;
+  DIDIT_WEBHOOK_SECRET: string;
+}> {
+  const secrets = await getSecret(buildSecretName('didit'));
+  return {
+    DIDIT_API_KEY: secrets.DIDIT_API_KEY,
+    DIDIT_WEBHOOK_SECRET: secrets.DIDIT_WEBHOOK_SECRET,
+  };
+}
+
+/**
  * Retrieve EcoCash payment credentials.
  */
 export async function getEcocashSecrets(): Promise<{

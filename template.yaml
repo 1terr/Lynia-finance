@@ -114,6 +114,26 @@ Parameters:
       - sandbox
       - production
 
+  DiditApiKey:
+    Type: String
+    Description: Didit KYC API Key
+    NoEcho: true
+    Default: ""
+
+  DiditWebhookSecret:
+    Type: String
+    Description: Didit Webhook Secret for signature verification
+    NoEcho: true
+    Default: ""
+
+  KYCProvider:
+    Type: String
+    Description: Active KYC provider (smile_identity or didit)
+    Default: smile_identity
+    AllowedValues:
+      - smile_identity
+      - didit
+
   EcocashMerchantId:
     Type: String
     Description: EcoCash Merchant ID
@@ -173,6 +193,11 @@ Parameters:
   WhatsAppApiUrl:
     Type: String
     Description: URL for the WhatsApp send endpoint (breaks circular dep with LyniaApi)
+    Default: ""
+
+  KycApiUrl:
+    Type: String
+    Description: URL for the KYC API endpoint (breaks circular dep with LyniaApi)
     Default: ""
 
   # VPC Configuration (from VPC stack outputs)
@@ -332,6 +357,7 @@ Resources:
           WHATSAPP_BUSINESS_ACCOUNT_ID: !Ref WhatsAppBusinessAccountId
           META_APP_SECRET: !Ref MetaAppSecret
           SCORING_API_URL: !Ref ScoringApiUrl
+          KYC_API_URL: !Ref KycApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         SendMessage:
@@ -387,6 +413,8 @@ Resources:
               Resource:
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/smile-identity-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/didit-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/whatsapp-*"
             - Effect: Allow
               Action:
                 - sqs:SendMessage
@@ -401,9 +429,14 @@ Resources:
               Resource: "*"
       Environment:
         Variables:
+          KYC_PROVIDER: !Ref KYCProvider
           SMILE_PARTNER_ID: !Ref SmilePartnerId
           SMILE_API_KEY: !Ref SmileApiKey
           SMILE_ENVIRONMENT: !Ref SmileEnvironment
+          DIDIT_API_KEY: !Ref DiditApiKey
+          DIDIT_WEBHOOK_SECRET: !Ref DiditWebhookSecret
+          WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
+          WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         InitiateKYC:

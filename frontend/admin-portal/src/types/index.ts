@@ -151,10 +151,16 @@ export interface KYCSubmission {
   id_document_front_url: string | null;
   id_document_back_url: string | null;
   selfie_image_url: string | null;
+  kyc_provider: 'smile_identity' | 'didit' | null;
+  provider_response: Record<string, unknown> | null;
   smile_identity_result: Record<string, unknown> | null;
   extracted_first_name: string | null;
   extracted_last_name: string | null;
   extracted_date_of_birth: string | null;
+  verification_decision: string | null;
+  verification_confidence: number | null;
+  face_match_score: number | null;
+  liveness_score: number | null;
   created_at: string;
   customer?: Customer;
 }

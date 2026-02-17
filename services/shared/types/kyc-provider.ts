@@ -75,6 +75,8 @@ export interface KYCSubmissionResponse {
   provider_job_id: string;
   internal_job_id: string;
   message: string;
+  /** Present when the provider returns results synchronously (e.g., Didit standalone APIs) */
+  synchronous_result?: KYCVerificationResult;
 }
 
 // =====================================================

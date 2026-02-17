@@ -353,7 +353,11 @@ Please type your answer.`;
  * Get expected input type for a given conversation state
  */
 export function getExpectedInputType(state: string): ExpectedInputType {
-  if (state === 'kyc_id_upload' || state === 'kyc_selfie_upload') {
+  // kyc_id_upload accepts both text (ID number) and image (ID photo)
+  if (state === 'kyc_id_upload') {
+    return 'any';
+  }
+  if (state === 'kyc_selfie_upload') {
     return 'image';
   }
   return 'text';

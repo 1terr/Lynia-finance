@@ -234,17 +234,16 @@ export class DiditService implements KYCProvider {
 
       console.log(`DIDIT verification completed: ${provider_job_id}`);
 
-      // Attach combined result so the handler can store it in the database.
-      // The _combinedResult property is stripped by the handler after extraction.
-      const response: KYCSubmissionResponse & { _combinedResult?: DiditCombinedResult } = {
+      // Parse combined result into a normalized KYCVerificationResult
+      const normalizedResult = this.parseCombinedResult(combinedResult, customer_id, internal_job_id);
+
+      return {
         success: true,
         provider_job_id,
         internal_job_id,
         message: 'KYC verification completed. Processing results.',
-        _combinedResult: combinedResult,
+        synchronous_result: normalizedResult,
       };
-
-      return response;
     } catch (error) {
       console.error('DIDIT API error:', error);
       throw error;

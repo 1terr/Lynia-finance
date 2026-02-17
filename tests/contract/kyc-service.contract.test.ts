@@ -43,18 +43,28 @@ jest.mock('../../services/shared/clients/database', () => ({
   queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
-const mockSubmitEnhancedKYC = jest.fn();
+const mockSubmitVerification = jest.fn();
 const mockVerifyWebhookSignature = jest.fn().mockReturnValue(true);
-const mockDetermineVerificationDecision = jest.fn();
-const mockHandleSmileError = jest.fn();
+const mockParseWebhookPayload = jest.fn();
+const mockDetermineDecision = jest.fn();
+const mockHandleError = jest.fn();
 
-jest.mock('../../services/kyc-service/src/smile-identity-service', () => ({
-  SmileIdentityService: jest.fn().mockImplementation(() => ({
-    submitEnhancedKYC: mockSubmitEnhancedKYC,
+jest.mock('../../services/kyc-service/src/kyc-provider-factory', () => ({
+  createKYCProvider: jest.fn(() => ({
+    providerName: 'smile_identity',
+    submitVerification: mockSubmitVerification,
     verifyWebhookSignature: mockVerifyWebhookSignature,
-    determineVerificationDecision: mockDetermineVerificationDecision,
-    handleSmileError: mockHandleSmileError,
+    parseWebhookPayload: mockParseWebhookPayload,
+    determineDecision: mockDetermineDecision,
+    handleError: mockHandleError,
   })),
+}));
+
+jest.mock('axios', () => ({
+  ...jest.requireActual('axios'),
+  post: jest.fn().mockResolvedValue({ data: { messages: [{ id: 'msg_test' }] } }),
+  get: jest.fn().mockResolvedValue({ data: {} }),
+  isAxiosError: jest.fn().mockReturnValue(false),
 }));
 
 jest.mock('../../services/kyc-service/src/image-processor', () => ({
@@ -126,11 +136,12 @@ describe('KYC Service Contract Tests', () => {
       mockQueryBuilder.execute
         .mockResolvedValueOnce({ data: null, error: { code: 'PGRST116' } });
 
-      // Smile Identity submission
-      mockSubmitEnhancedKYC.mockResolvedValue({
-        job_id: 'job_001',
-        smile_job_id: 'smile_job_001',
-        message: 'KYC verification submitted successfully',
+      // KYC provider submission
+      mockSubmitVerification.mockResolvedValue({
+        success: true,
+        provider_job_id: 'provider_job_001',
+        internal_job_id: 'job_001',
+        message: 'KYC verification submitted.',
       });
 
       // Insert submission
@@ -159,7 +170,7 @@ describe('KYC Service Contract Tests', () => {
       expect(body).toHaveProperty('success', true);
       expect(body).toHaveProperty('message');
       expect(body).toHaveProperty('kyc_submission_id', 'kyc_sub_001');
-      expect(body).toHaveProperty('smile_job_id', 'smile_job_001');
+      expect(body).toHaveProperty('provider_job_id', 'provider_job_001');
       expect(body).toHaveProperty('status', 'pending');
     });
 
@@ -276,7 +287,7 @@ describe('KYC Service Contract Tests', () => {
           id: 'kyc_sub_pending',
           customer_id: 'cust_001',
           status: 'pending',
-          smile_identity_transaction_id: 'smile_pending_job',
+          provider_job_id: 'pending_provider_job',
         },
         error: null,
       });
@@ -295,17 +306,17 @@ describe('KYC Service Contract Tests', () => {
       expect(parsed).toHaveProperty('message', 'KYC verification already in progress');
       expect(parsed).toHaveProperty('status', 'pending');
       expect(parsed).toHaveProperty('kyc_submission_id', 'kyc_sub_pending');
-      expect(parsed).toHaveProperty('smile_job_id', 'smile_pending_job');
+      expect(parsed).toHaveProperty('provider_job_id', 'pending_provider_job');
     });
 
-    it('should return 500 when Smile Identity submission fails', async () => {
+    it('should return 500 when KYC provider submission fails', async () => {
       // No existing submission
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: { code: 'PGRST116' },
       });
 
-      mockSubmitEnhancedKYC.mockRejectedValue(new Error('Smile API unavailable'));
+      mockSubmitVerification.mockRejectedValue(new Error('KYC provider unavailable'));
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -345,19 +356,47 @@ describe('KYC Service Contract Tests', () => {
       },
     };
 
+    /** Normalized KYCVerificationResult returned by parseWebhookPayload */
+    const normalizedResult = {
+      provider: 'smile_identity' as const,
+      provider_job_id: 'job_001',
+      internal_job_id: 'internal_001',
+      confidence_score: 95,
+      face_match_score: 92,
+      liveness_score: 98,
+      liveness_passed: true,
+      document_authentic: true,
+      document_tampered: false,
+      document_expired: false,
+      match_result: 'verified' as const,
+      id_info: {
+        full_name: 'John Moyo',
+        id_number: '63-123456A47',
+        date_of_birth: '1990-05-15',
+        gender: 'M' as const,
+        nationality: 'ZW',
+        document_type: 'NATIONAL_ID',
+      },
+      raw_response: callbackPayload,
+      warnings: [],
+    };
+
     it('should return 200 with success message for APPROVED callback', async () => {
-      // Fetch submission
+      // Parse webhook returns normalized result
+      mockParseWebhookPayload.mockReturnValue(normalizedResult);
+
+      // Fetch submission by provider_job_id
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
-          smile_identity_transaction_id: 'job_001',
+          provider_job_id: 'job_001',
           status: 'pending',
         },
         error: null,
       });
 
-      mockDetermineVerificationDecision.mockReturnValue({
+      mockDetermineDecision.mockReturnValue({
         decision: 'APPROVED',
         reason: 'All checks passed',
       });
@@ -380,17 +419,20 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should verify x-signature header when present', async () => {
+      // Parse webhook returns normalized result
+      mockParseWebhookPayload.mockReturnValue(normalizedResult);
+
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
-          smile_identity_transaction_id: 'job_001',
+          provider_job_id: 'job_001',
           status: 'pending',
         },
         error: null,
       });
 
-      mockDetermineVerificationDecision.mockReturnValue({
+      mockDetermineDecision.mockReturnValue({
         decision: 'APPROVED',
         reason: 'All checks passed',
       });
@@ -408,7 +450,7 @@ describe('KYC Service Contract Tests', () => {
 
       await handler(event);
 
-      expect(mockVerifyWebhookSignature).toHaveBeenCalledWith('some-sig-value', bodyStr);
+      expect(mockVerifyWebhookSignature).toHaveBeenCalledWith('some-sig-value', bodyStr, undefined);
     });
 
     it('should return 401 when signature verification fails', async () => {
@@ -432,6 +474,9 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 404 when submission not found', async () => {
+      // Parse webhook returns normalized result
+      mockParseWebhookPayload.mockReturnValue(normalizedResult);
+
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: { code: 'PGRST116', message: 'No rows found' },
@@ -452,17 +497,23 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should process REJECTED decision correctly', async () => {
+      // Parse webhook returns normalized result
+      mockParseWebhookPayload.mockReturnValue({
+        ...normalizedResult,
+        match_result: 'not_verified' as const,
+      });
+
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
-          smile_identity_transaction_id: 'job_001',
+          provider_job_id: 'job_001',
           status: 'pending',
         },
         error: null,
       });
 
-      mockDetermineVerificationDecision.mockReturnValue({
+      mockDetermineDecision.mockReturnValue({
         decision: 'REJECTED',
         reason: 'ID verification failed',
       });
@@ -482,17 +533,24 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should process MANUAL_REVIEW decision correctly', async () => {
+      // Parse webhook returns normalized result with low confidence
+      mockParseWebhookPayload.mockReturnValue({
+        ...normalizedResult,
+        confidence_score: 55,
+        match_result: 'manual_review' as const,
+      });
+
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: {
           id: 'kyc_sub_001',
           customer_id: 'cust_001',
-          smile_identity_transaction_id: 'job_001',
+          provider_job_id: 'job_001',
           status: 'pending',
         },
         error: null,
       });
 
-      mockDetermineVerificationDecision.mockReturnValue({
+      mockDetermineDecision.mockReturnValue({
         decision: 'MANUAL_REVIEW',
         reason: 'Low confidence score',
       });
@@ -512,6 +570,9 @@ describe('KYC Service Contract Tests', () => {
     });
 
     it('should return 500 when callback processing throws', async () => {
+      // Parse webhook returns normalized result
+      mockParseWebhookPayload.mockReturnValue(normalizedResult);
+
       mockQueryBuilder.execute.mockRejectedValue(new Error('DB connection lost'));
 
       const event = createAPIGatewayEvent({

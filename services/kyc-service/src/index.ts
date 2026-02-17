@@ -1,7 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { db } from '../../shared/clients/database';
 import { getSecurityHeaders } from '../../shared/utils/response';
-import { SmileIdentityService, SmileWebhookPayload } from './smile-identity-service';
+import { createKYCProvider } from './kyc-provider-factory';
+import type { KYCVerificationResult } from '../../shared/types/kyc-provider';
+import axios from 'axios';
 import {
   validateImage as _validateImage,
   bufferToBase64 as _bufferToBase64,
@@ -9,11 +11,15 @@ import {
   validateZimbabweIDNumber
 } from './image-processor';
 
-const smileService = new SmileIdentityService();
+const kycProvider = createKYCProvider();
+
+const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
+const WHATSAPP_PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN;
 
 /**
  * KYC Service Lambda Handler
- * Handles KYC verification via Smile Identity
+ * Handles KYC verification via configurable provider (Smile Identity or Didit)
  */
 export const handler = async (
   event: APIGatewayProxyEvent
@@ -26,7 +32,7 @@ export const handler = async (
     if (path === '/kyc/initiate' && method === 'POST') {
       return await initiateKYC(event);
     } else if (path === '/kyc/callback' && method === 'POST') {
-      return await handleSmileCallback(event);
+      return await handleKYCCallback(event);
     } else if (path.match(/\/kyc\/[^/]+$/) && method === 'GET') {
       const customerId = event.pathParameters?.customerId;
       return await getKYCStatus(customerId!, event);
@@ -54,7 +60,7 @@ export const handler = async (
 
 /**
  * POST /kyc/initiate
- * Initiate KYC verification with Smile Identity
+ * Initiate KYC verification via the configured provider
  */
 async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
@@ -95,7 +101,7 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
       };
     }
 
-    console.log(`Initiating KYC for customer ${customer_id}`);
+    console.log(`Initiating KYC for customer ${customer_id} via ${kycProvider.providerName}`);
 
     // Check for existing KYC submission
     const { data: existingSubmission } = await db
@@ -131,14 +137,14 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
           message: 'KYC verification already in progress',
           status: 'pending',
           kyc_submission_id: existingSubmission.id,
-          smile_job_id: existingSubmission.smile_identity_transaction_id
+          provider_job_id: existingSubmission.provider_job_id
         }),
         headers: getSecurityHeaders(event)
       };
     }
 
-    // Submit to Smile Identity
-    const smileResult = await smileService.submitEnhancedKYC({
+    // Submit to KYC provider
+    const providerResult = await kycProvider.submitVerification({
       customer_id,
       id_number: idValidation.normalized!,
       id_image_base64,
@@ -149,21 +155,23 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
       phone_number
     });
 
-    // Save KYC submission record
+    // Save KYC submission record (provider-agnostic columns)
+    const insertData: Record<string, unknown> = {
+      customer_id: customer_id,
+      id_document_type: 'NATIONAL_ID',
+      id_number: idValidation.normalized,
+      id_document_url: `stored_in_${kycProvider.providerName}`,
+      selfie_url: `stored_in_${kycProvider.providerName}`,
+      kyc_provider: kycProvider.providerName,
+      provider_job_id: providerResult.provider_job_id,
+      status: 'pending',
+      submitted_at: new Date().toISOString(),
+      created_at: new Date().toISOString()
+    };
+
     const { data: submission, error: submissionError } = await db
       .from('kyc_submissions')
-      .insert({
-        customer_id: customer_id,
-        id_document_type: 'NATIONAL_ID',
-        id_number: idValidation.normalized,
-        id_document_photo_url: 'stored_in_smile', // Images sent directly to Smile
-        selfie_photo_url: 'stored_in_smile',
-        smile_identity_transaction_id: smileResult.job_id,
-        smile_identity_job_id: smileResult.smile_job_id,
-        status: 'pending',
-        submitted_at: new Date().toISOString(),
-        created_at: new Date().toISOString()
-      })
+      .insert(insertData)
       .select()
       .single()
       .execute();
@@ -175,14 +183,24 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
 
     console.log(`KYC submission created: ${submission.id}`);
 
+    // If provider returned results synchronously (e.g., Didit standalone APIs),
+    // process the decision immediately
+    if (providerResult.synchronous_result) {
+      await processKYCResult(
+        submission.id,
+        customer_id,
+        providerResult.synchronous_result
+      );
+    }
+
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
-        message: smileResult.message,
+        message: providerResult.message,
         kyc_submission_id: submission.id,
-        smile_job_id: smileResult.smile_job_id,
-        status: 'pending'
+        provider_job_id: providerResult.provider_job_id,
+        status: providerResult.synchronous_result ? 'processing' : 'pending'
       }),
       headers: getSecurityHeaders(event)
     };
@@ -190,9 +208,9 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
   } catch (error) {
     console.error('Error initiating KYC:', error);
 
-    // Handle Smile Identity errors
+    // Handle provider errors via the unified interface
     if (error instanceof Error && error.message.includes('KYC verification failed')) {
-      const errorResponse = smileService.handleSmileError(error as unknown as { response?: { data?: { code?: string; message?: string } } });
+      const errorResponse = kycProvider.handleError(error);
 
       return {
         statusCode: 400,
@@ -219,14 +237,18 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
 
 /**
  * POST /kyc/callback
- * Handle Smile Identity webhook callback
+ * Handle KYC provider webhook callback (provider-agnostic)
  */
-async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+async function handleKYCCallback(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
     // Verify webhook signature (mandatory — reject unsigned requests)
-    const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
+    const receivedSignature =
+      event.headers['x-signature'] || event.headers['X-Signature'] ||
+      event.headers['x-webhook-signature'] || event.headers['X-Webhook-Signature'] || '';
+    const timestamp = event.headers['x-webhook-timestamp'] || event.headers['X-Webhook-Timestamp'];
+
     if (!receivedSignature) {
-      console.warn('Smile Identity webhook rejected: missing signature header');
+      console.warn('KYC webhook rejected: missing signature header');
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Missing signature' }),
@@ -234,9 +256,9 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
       };
     }
 
-    const isValid = smileService.verifyWebhookSignature(receivedSignature, event.body || '');
+    const isValid = kycProvider.verifyWebhookSignature(receivedSignature, event.body || '', timestamp);
     if (!isValid) {
-      console.warn('Smile Identity webhook rejected: invalid signature');
+      console.warn('KYC webhook rejected: invalid signature');
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid signature' }),
@@ -244,25 +266,21 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
       };
     }
 
-    const payload: SmileWebhookPayload = JSON.parse(event.body || '{}');
+    // Parse the webhook payload into a normalized result
+    const verificationResult = kycProvider.parseWebhookPayload(event.body || '{}');
 
-    console.log(`Processing Smile callback for job ${payload.smile_job_id}`);
+    console.log(`Processing ${kycProvider.providerName} callback for job ${verificationResult.provider_job_id}`);
 
-    // Extract IDs
-    const customer_id = payload.partner_params.user_id;
-    const job_id = payload.partner_params.job_id;
-
-    // Fetch KYC submission
+    // Fetch KYC submission by provider job ID
     const { data: submission, error: fetchError } = await db
       .from('kyc_submissions')
       .select('*')
-      .eq('customer_id', customer_id)
-      .eq('smile_identity_transaction_id', job_id)
+      .eq('provider_job_id', verificationResult.provider_job_id)
       .single()
       .execute();
 
     if (fetchError || !submission) {
-      console.error(`KYC submission not found for job ${job_id}`);
+      console.error(`KYC submission not found for provider job ${verificationResult.provider_job_id}`);
       return {
         statusCode: 404,
         body: JSON.stringify({ error: 'Submission not found' }),
@@ -270,76 +288,8 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
       };
     }
 
-    // Determine verification decision
-    const { decision, reason } = smileService.determineVerificationDecision(payload.result);
-
-    console.log(`KYC decision for ${customer_id}: ${decision} - ${reason}`);
-
-    // Update KYC submission
-    const updateData: Record<string, unknown> = {
-      verification_decision: decision,
-      verification_reason: reason,
-      verification_confidence: payload.result.confidence_value,
-      liveness_score: payload.result.liveness_check.score,
-      face_match_score: payload.result.face_match.score,
-      smile_identity_response: payload,
-      updated_at: new Date().toISOString()
-    };
-
-    if (decision === 'APPROVED') {
-      updateData.status = 'verified';
-      updateData.verified_at = new Date().toISOString();
-    } else if (decision === 'REJECTED') {
-      updateData.status = 'rejected';
-      updateData.rejected_at = new Date().toISOString();
-    } else {
-      updateData.status = 'manual_review';
-      updateData.manual_review_required = true;
-    }
-
-    await db
-      .from('kyc_submissions')
-      .update(updateData)
-      .eq('id', submission.id)
-      .execute();
-
-    // Update customer KYC status
-    if (decision === 'APPROVED') {
-      await db
-        .from('customers')
-        .update({
-          kyc_status: 'verified',
-          kyc_verified_at: new Date().toISOString(),
-          full_name: payload.result.id_info.full_name,
-          date_of_birth: payload.result.id_info.dob,
-          gender: payload.result.id_info.gender === 'M' ? 'male' : 'female'
-        })
-        .eq('id', customer_id)
-        .execute();
-
-      console.log(`Customer ${customer_id} KYC approved`);
-
-      // TODO: Trigger credit scoring (would be called by onboarding flow)
-    } else if (decision === 'MANUAL_REVIEW') {
-      // Create manual review task
-      await db
-        .from('kyc_manual_reviews')
-        .insert({
-          kyc_submission_id: submission.id,
-          customer_id: customer_id,
-          review_status: 'pending',
-          sla_deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
-          priority: 'normal',
-          created_at: new Date().toISOString()
-        })
-        .execute();
-
-      console.log(`Manual review created for customer ${customer_id}`);
-
-      // TODO: Notify admin team
-    }
-
-    // TODO: Send notification to customer via WhatsApp
+    // Process the KYC result
+    await processKYCResult(submission.id, submission.customer_id, verificationResult);
 
     return {
       statusCode: 200,
@@ -348,12 +298,228 @@ async function handleSmileCallback(event: APIGatewayProxyEvent): Promise<APIGate
     };
 
   } catch (error) {
-    console.error('Error processing Smile webhook:', error);
+    console.error('Error processing KYC webhook:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal server error' }),
       headers: { 'Content-Type': 'application/json' }
     };
+  }
+}
+
+/**
+ * Process a KYC verification result (used by both synchronous and callback flows).
+ */
+async function processKYCResult(
+  submissionId: string,
+  customerId: string,
+  result: KYCVerificationResult
+): Promise<void> {
+  // Determine verification decision
+  const { decision, reason } = kycProvider.determineDecision(result);
+
+  console.log(`KYC decision for ${customerId}: ${decision} - ${reason}`);
+
+  // Update KYC submission with provider-agnostic columns
+  const updateData: Record<string, unknown> = {
+    verification_decision: decision,
+    verification_reason: reason,
+    verification_confidence: result.confidence_score,
+    liveness_score: result.liveness_score,
+    face_match_score: result.face_match_score,
+    provider_response: result.raw_response,
+    updated_at: new Date().toISOString()
+  };
+
+  if (decision === 'APPROVED') {
+    updateData.status = 'verified';
+    updateData.verified_at = new Date().toISOString();
+  } else if (decision === 'REJECTED') {
+    updateData.status = 'rejected';
+    updateData.rejected_at = new Date().toISOString();
+  } else {
+    updateData.status = 'manual_review';
+    updateData.manual_review_required = true;
+  }
+
+  await db
+    .from('kyc_submissions')
+    .update(updateData)
+    .eq('id', submissionId)
+    .execute();
+
+  // Update customer KYC status
+  if (decision === 'APPROVED') {
+    await db
+      .from('customers')
+      .update({
+        kyc_status: 'verified',
+        kyc_verified_at: new Date().toISOString(),
+        full_name: result.id_info.full_name,
+        date_of_birth: result.id_info.date_of_birth,
+        gender: result.id_info.gender === 'M' ? 'male' : 'female'
+      })
+      .eq('id', customerId)
+      .execute();
+
+    console.log(`Customer ${customerId} KYC approved via ${result.provider}`);
+  } else if (decision === 'MANUAL_REVIEW') {
+    // Create manual review task
+    await db
+      .from('kyc_manual_reviews')
+      .insert({
+        kyc_submission_id: submissionId,
+        customer_id: customerId,
+        review_status: 'pending',
+        sla_deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        priority: 'normal',
+        created_at: new Date().toISOString()
+      })
+      .execute();
+
+    console.log(`Manual review created for customer ${customerId}`);
+  }
+
+  // Send KYC result notification to customer via WhatsApp
+  await sendKYCResultNotification(customerId, decision, reason);
+}
+
+/**
+ * Send KYC result notification to customer via WhatsApp Cloud API.
+ * Updates the onboarding session state based on the KYC decision.
+ */
+async function sendKYCResultNotification(
+  customerId: string,
+  decision: string,
+  reason: string
+): Promise<void> {
+  if (!WHATSAPP_PHONE_NUMBER_ID || !WHATSAPP_ACCESS_TOKEN) {
+    console.warn('WhatsApp credentials not configured, skipping KYC notification');
+    return;
+  }
+
+  try {
+    // Look up customer phone number
+    const { data: customer } = await db
+      .from('customers')
+      .select('phone_number, whatsapp_number')
+      .eq('id', customerId)
+      .single()
+      .execute();
+
+    if (!customer) {
+      console.warn(`Customer ${customerId} not found, skipping notification`);
+      return;
+    }
+
+    const phoneNumber = customer.whatsapp_number || customer.phone_number;
+    if (!phoneNumber) {
+      console.warn(`No phone number for customer ${customerId}`);
+      return;
+    }
+
+    // Build notification message based on decision
+    let message: string;
+    if (decision === 'APPROVED') {
+      message = `✅ *Identity Verified!*
+
+Great news! Your identity has been confirmed.
+
+⏳ *Assessing your eligibility...*
+
+We're calculating your loan amount based on:
+✓ Identity verification
+✓ Income information
+✓ First-time borrower status
+
+Reply with any message to continue.`;
+    } else if (decision === 'REJECTED') {
+      message = `❌ *Verification Unsuccessful*
+
+${reason || 'We could not verify your identity.'}
+
+You may have remaining attempts. Reply with any message to check your options.`;
+    } else {
+      // MANUAL_REVIEW
+      message = `⏸️ *Manual Review Required*
+
+Your verification needs additional review by our team. This typically takes 2-12 hours.
+
+You'll receive a WhatsApp message when complete.`;
+    }
+
+    // Update onboarding session state
+    const kycStatus = decision === 'APPROVED' ? 'verified'
+      : decision === 'REJECTED' ? 'rejected'
+      : 'manual_review';
+
+    // Update session: move to credit_scoring if approved, back to kyc_id_upload if rejected
+    const { data: session } = await db
+      .from('whatsapp_sessions')
+      .select('current_state, state_data')
+      .eq('phone_number', phoneNumber)
+      .single()
+      .execute();
+
+    if (session && session.current_state === 'kyc_processing') {
+      const stateData = session.state_data || {};
+
+      if (decision === 'APPROVED') {
+        await db
+          .from('whatsapp_sessions')
+          .update({
+            current_state: 'credit_scoring',
+            state_data: { ...stateData, kyc_status: 'verified' },
+            last_activity_at: new Date()
+          })
+          .eq('phone_number', phoneNumber)
+          .execute();
+      } else if (decision === 'REJECTED') {
+        const retryCount = (stateData.retry_count || 0) + 1;
+        const nextState = retryCount >= 3 ? 'rejected' : 'kyc_id_upload';
+
+        await db
+          .from('whatsapp_sessions')
+          .update({
+            current_state: nextState,
+            state_data: {
+              ...stateData,
+              kyc_status: kycStatus,
+              id_photo_url: undefined,
+              selfie_photo_url: undefined,
+              id_number: undefined,
+              retry_count: retryCount
+            },
+            last_activity_at: new Date()
+          })
+          .eq('phone_number', phoneNumber)
+          .execute();
+      }
+    }
+
+    // Send WhatsApp message via Cloud API
+    const sanitizedPhone = phoneNumber.replace(/[\s\-+()]/g, '');
+    await axios.post(
+      `${WHATSAPP_API_URL}/${WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: sanitizedPhone,
+        type: 'text',
+        text: { body: message }
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${WHATSAPP_ACCESS_TOKEN}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    console.log(`KYC notification sent to customer ${customerId} (${decision})`);
+
+  } catch (error) {
+    // Non-fatal: log but don't fail the KYC processing
+    console.error('Failed to send KYC notification:', error instanceof Error ? error.message : error);
   }
 }
 
@@ -382,7 +548,6 @@ async function getKYCStatus(customerId: string, event: APIGatewayProxyEvent): Pr
       .execute();
 
     if (error || !submission) {
-      // No KYC submission found
       return {
         statusCode: 200,
         body: JSON.stringify({
@@ -400,6 +565,7 @@ async function getKYCStatus(customerId: string, event: APIGatewayProxyEvent): Pr
         customer_id: customerId,
         kyc_status: submission.status,
         kyc_submission_id: submission.id,
+        kyc_provider: submission.kyc_provider,
         submitted_at: submission.submitted_at,
         verified_at: submission.verified_at,
         rejected_at: submission.rejected_at,
@@ -475,8 +641,7 @@ async function retryKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxyRes
     }
 
     // Check if last submission is retriable
-    const nonRetriableStatuses = ['verified'];
-    if (nonRetriableStatuses.includes(lastSubmission.status)) {
+    if (lastSubmission.status === 'verified') {
       return {
         statusCode: 400,
         body: JSON.stringify({

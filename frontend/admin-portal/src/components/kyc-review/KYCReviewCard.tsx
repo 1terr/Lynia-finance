@@ -41,8 +41,9 @@ export function KYCReviewCard({
   const { approveKYC, rejectKYC, isSubmitting } = useKYCActions();
 
   const customer = submission.customers;
-  const confidence = getConfidenceLevel(submission.confidence_score);
-  const smileResult = submission.smile_identity_response;
+  const confidence = getConfidenceLevel(submission.verification_confidence ?? submission.confidence_score);
+  const providerResult = submission.provider_response || submission.smile_identity_response;
+  const providerName = submission.kyc_provider || 'smile_identity';
 
   // Calculate SLA deadline (24 hours from submission)
   const slaDeadline = new Date(
@@ -193,24 +194,29 @@ export function KYCReviewCard({
                 </div>
               )}
 
-              {/* Smile Identity Results */}
-              {smileResult && (
+              {/* KYC Provider Results (provider-agnostic) */}
+              {(providerResult || submission.verification_confidence != null) && (
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h4 className="text-sm font-medium text-gray-900 mb-3">
-                    Verification Checks
-                  </h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-gray-900">
+                      Verification Checks
+                    </h4>
+                    <Badge variant="outline" className="text-xs">
+                      {providerName === 'didit' ? 'Didit' : 'Smile Identity'}
+                    </Badge>
+                  </div>
                   <div className="space-y-2">
                     <VerificationCheck
                       label="Face Match"
-                      passed={smileResult.face_match}
+                      passed={submission.face_match_score != null ? submission.face_match_score >= 85 : providerResult?.face_match}
                     />
                     <VerificationCheck
                       label="Liveness Check"
-                      passed={smileResult.liveness_check}
+                      passed={submission.liveness_score != null ? submission.liveness_score >= 50 : providerResult?.liveness_check}
                     />
                     <VerificationCheck
                       label="ID Validation"
-                      passed={smileResult.id_validation}
+                      passed={providerResult?.id_validation ?? submission.verification_decision === 'APPROVED'}
                     />
                     <div className="pt-2 border-t border-gray-100">
                       <div className="flex justify-between items-center">
@@ -220,14 +226,14 @@ export function KYCReviewCard({
                         <span
                           className={cn(
                             'text-lg font-bold',
-                            smileResult.confidence >= 85
+                            (submission.verification_confidence ?? providerResult?.confidence ?? 0) >= 85
                               ? 'text-green-600'
-                              : smileResult.confidence >= 50
+                              : (submission.verification_confidence ?? providerResult?.confidence ?? 0) >= 50
                               ? 'text-yellow-600'
                               : 'text-red-600'
                           )}
                         >
-                          {smileResult.confidence}%
+                          {submission.verification_confidence ?? providerResult?.confidence ?? 0}%
                         </span>
                       </div>
                     </div>
