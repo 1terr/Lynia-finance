@@ -330,15 +330,18 @@ jobs:
           # Resolve inter-service API URLs from existing stack (empty for fresh deploys)
           SCORING_API_URL=""
           WHATSAPP_API_URL=""
+          KYC_API_URL=""
           if aws cloudformation describe-stacks --stack-name lynia-finance-staging --region ${{ env.AWS_REGION }} &>/dev/null; then
             API_BASE=$(aws cloudformation describe-stacks --stack-name lynia-finance-staging --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
             if [ -n "$API_BASE" ] && [ "$API_BASE" != "None" ]; then
               SCORING_API_URL="${API_BASE}scoring/calculate"
               WHATSAPP_API_URL="${API_BASE}whatsapp/send"
+              KYC_API_URL="${API_BASE}"
             fi
           fi
           echo "scoring_api_url=$SCORING_API_URL" >> $GITHUB_OUTPUT
           echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
+          echo "kyc_api_url=$KYC_API_URL" >> $GITHUB_OUTPUT
 
       - name: SAM Deploy to Staging
         run: |
@@ -346,8 +349,13 @@ jobs:
           WA_PHONE="${WHATSAPP_PHONE_ID:-placeholder}"
           WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
+          WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
+          META_SECRET="${META_APP_SECRET:-placeholder}"
           SMILE_PID="${SMILE_PARTNER_ID:-placeholder}"
           SMILE_KEY="${SMILE_API_KEY:-placeholder}"
+          DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
+          DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
+          KYC_PROV="${KYC_PROVIDER:-smile_identity}"
           ECO_MID="${ECOCASH_MERCHANT_ID:-placeholder}"
           ECO_KEY="${ECOCASH_API_KEY:-placeholder}"
           OM_MID="${ONEMONEY_MERCHANT_ID:-placeholder}"
@@ -369,12 +377,18 @@ jobs:
               "CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }}" \
               "ScoringApiUrl=${{ steps.resolve-staging-infra.outputs.scoring_api_url }}" \
               "WhatsAppApiUrl=${{ steps.resolve-staging-infra.outputs.whatsapp_api_url }}" \
+              "KycApiUrl=${{ steps.resolve-staging-infra.outputs.kyc_api_url }}" \
               "WhatsAppPhoneNumberId=${WA_PHONE}" \
               "WhatsAppAccessToken=${WA_TOKEN}" \
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
+              "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
+              "MetaAppSecret=${META_SECRET}" \
               "SmilePartnerId=${SMILE_PID}" \
               "SmileApiKey=${SMILE_KEY}" \
               "SmileEnvironment=sandbox" \
+              "DiditApiKey=${DIDIT_KEY}" \
+              "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
+              "KYCProvider=${KYC_PROV}" \
               "EcocashMerchantId=${ECO_MID}" \
               "EcocashApiKey=${ECO_KEY}" \
               "OnemoneyMerchantId=${OM_MID}" \
@@ -388,8 +402,13 @@ jobs:
           WHATSAPP_PHONE_ID: ${{ secrets.STAGING_WHATSAPP_PHONE_ID }}
           WHATSAPP_TOKEN: ${{ secrets.STAGING_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
+          WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          META_APP_SECRET: ${{ secrets.STAGING_META_APP_SECRET }}
           SMILE_PARTNER_ID: ${{ secrets.STAGING_SMILE_PARTNER_ID }}
           SMILE_API_KEY: ${{ secrets.STAGING_SMILE_API_KEY }}
+          DIDIT_API_KEY: ${{ secrets.STAGING_DIDIT_API_KEY }}
+          DIDIT_WEBHOOK_SECRET: ${{ secrets.STAGING_DIDIT_WEBHOOK_SECRET }}
+          KYC_PROVIDER: ${{ secrets.STAGING_KYC_PROVIDER }}
           ECOCASH_MERCHANT_ID: ${{ secrets.STAGING_ECOCASH_MERCHANT_ID }}
           ECOCASH_API_KEY: ${{ secrets.STAGING_ECOCASH_API_KEY }}
           ONEMONEY_MERCHANT_ID: ${{ secrets.STAGING_ONEMONEY_MERCHANT_ID }}
@@ -579,15 +598,18 @@ jobs:
           # Resolve inter-service API URLs from existing stack
           SCORING_API_URL=""
           WHATSAPP_API_URL=""
+          KYC_API_URL=""
           if aws cloudformation describe-stacks --stack-name lynia-finance-prod --region ${{ env.AWS_REGION }} &>/dev/null; then
             API_BASE=$(aws cloudformation describe-stacks --stack-name lynia-finance-prod --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" --output text --region ${{ env.AWS_REGION }} 2>/dev/null || echo "")
             if [ -n "$API_BASE" ] && [ "$API_BASE" != "None" ]; then
               SCORING_API_URL="${API_BASE}scoring/calculate"
               WHATSAPP_API_URL="${API_BASE}whatsapp/send"
+              KYC_API_URL="${API_BASE}"
             fi
           fi
           echo "scoring_api_url=$SCORING_API_URL" >> $GITHUB_OUTPUT
           echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
+          echo "kyc_api_url=$KYC_API_URL" >> $GITHUB_OUTPUT
 
       - name: SAM Deploy to Production
         run: |
@@ -595,8 +617,13 @@ jobs:
           WA_PHONE="${WHATSAPP_PHONE_ID:-placeholder}"
           WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
+          WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
+          META_SECRET="${META_APP_SECRET:-placeholder}"
           SMILE_PID="${SMILE_PARTNER_ID:-placeholder}"
           SMILE_KEY="${SMILE_API_KEY:-placeholder}"
+          DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
+          DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
+          KYC_PROV="${KYC_PROVIDER:-smile_identity}"
           ECO_MID="${ECOCASH_MERCHANT_ID:-placeholder}"
           ECO_KEY="${ECOCASH_API_KEY:-placeholder}"
           OM_MID="${ONEMONEY_MERCHANT_ID:-placeholder}"
@@ -619,12 +646,18 @@ jobs:
               "CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }}" \
               "ScoringApiUrl=${{ steps.resolve-prod-infra.outputs.scoring_api_url }}" \
               "WhatsAppApiUrl=${{ steps.resolve-prod-infra.outputs.whatsapp_api_url }}" \
+              "KycApiUrl=${{ steps.resolve-prod-infra.outputs.kyc_api_url }}" \
               "WhatsAppPhoneNumberId=${WA_PHONE}" \
               "WhatsAppAccessToken=${WA_TOKEN}" \
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
+              "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
+              "MetaAppSecret=${META_SECRET}" \
               "SmilePartnerId=${SMILE_PID}" \
               "SmileApiKey=${SMILE_KEY}" \
               "SmileEnvironment=production" \
+              "DiditApiKey=${DIDIT_KEY}" \
+              "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
+              "KYCProvider=${KYC_PROV}" \
               "EcocashMerchantId=${ECO_MID}" \
               "EcocashApiKey=${ECO_KEY}" \
               "OnemoneyMerchantId=${OM_MID}" \
@@ -638,8 +671,13 @@ jobs:
           WHATSAPP_PHONE_ID: ${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}
           WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
+          WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
           SMILE_PARTNER_ID: ${{ secrets.PRODUCTION_SMILE_PARTNER_ID }}
           SMILE_API_KEY: ${{ secrets.PRODUCTION_SMILE_API_KEY }}
+          DIDIT_API_KEY: ${{ secrets.PRODUCTION_DIDIT_API_KEY }}
+          DIDIT_WEBHOOK_SECRET: ${{ secrets.PRODUCTION_DIDIT_WEBHOOK_SECRET }}
+          KYC_PROVIDER: ${{ secrets.PRODUCTION_KYC_PROVIDER }}
           ECOCASH_MERCHANT_ID: ${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }}
           ECOCASH_API_KEY: ${{ secrets.PRODUCTION_ECOCASH_API_KEY }}
           ONEMONEY_MERCHANT_ID: ${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }}

@@ -305,6 +305,9 @@ importers:
       axios:
         specifier: ^1.6.5
         version: 1.13.4
+      form-data:
+        specifier: ^4.0.5
+        version: 4.0.5
     devDependencies:
       '@types/aws-lambda':
         specifier: ^8.10.131
