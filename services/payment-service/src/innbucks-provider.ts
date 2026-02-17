@@ -8,7 +8,7 @@
 
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
-import { requireEnv } from '../../shared/utils/require-env';
+
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
 import type {
   PaymentProvider,
@@ -59,8 +59,8 @@ export class InnBucksProvider implements PaymentProvider {
 
   constructor() {
     this.config = {
-      merchant_id: requireEnv('INNBUCKS_MERCHANT_ID'),
-      api_key: requireEnv('INNBUCKS_API_KEY'),
+      merchant_id: process.env.INNBUCKS_MERCHANT_ID || '',
+      api_key: process.env.INNBUCKS_API_KEY || '',
       api_secret: process.env.INNBUCKS_API_SECRET || '',
       webhook_secret: process.env.INNBUCKS_WEBHOOK_SECRET || '',
       base_url: process.env.INNBUCKS_API_URL || 'https://sandbox.innbucks.co.zw/api/v1',
