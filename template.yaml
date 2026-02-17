@@ -1201,6 +1201,7 @@ Resources:
   # =====================================================
   DWSyncFunction:
     Type: AWS::Serverless::Function
+    Condition: IsProduction
     Properties:
       FunctionName: !Sub ${Environment}-lynia-dw-sync
       CodeUri: services/
