@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { db, query, queryOne } from '../../shared/clients/database';
+import { db, query } from '../../shared/clients/database';
 import { getSecurityHeaders, successResponse, errorResponse } from '../../shared/utils/response';
 import { getAuthContext, isAdminOrManager } from '../../shared/middleware/authorization';
 
