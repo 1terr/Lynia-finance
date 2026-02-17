@@ -30,6 +30,11 @@ import type {
   FineractGLAccountCreateRequest,
   FineractJournalEntry,
   FineractOffice,
+  InteropIdentifierType,
+  FineractInteropPartyResponse,
+  FineractInteropTransferRequest,
+  FineractInteropTransferResponse,
+  FineractInteropHealthResponse,
 } from '../types/fineract';
 
 // ============================================================
@@ -474,6 +479,132 @@ export class FineractClient {
       'GET',
       `/journalentries${query}`
     );
+  }
+
+  // ----------------------------------------------------------
+  // INTEROPERATION MODULE (Mojaloop-compatible)
+  // ----------------------------------------------------------
+  // Fineract 1.13.0 ships with interop endpoints disabled by default.
+  // Enable by setting enable-payment-hub-integration=true in c_configuration.
+  // These methods are gated by FINERACT_USE_INTEROP env var in fineract-sync.ts.
+
+  /**
+   * Register a party identifier (e.g., MSISDN) for a Fineract account.
+   * Maps a customer's phone number to their Fineract savings/loan account
+   * so that Mojaloop-compatible systems can route payments by MSISDN.
+   */
+  async registerInteropParty(params: {
+    idType: InteropIdentifierType;
+    idValue: string;
+    accountId: string; // Fineract account external ID
+    subIdOrType?: string;
+  }): Promise<FineractCommandResponse> {
+    const path = params.subIdOrType
+      ? `/interoperation/parties/${params.idType}/${params.idValue}/${params.subIdOrType}`
+      : `/interoperation/parties/${params.idType}/${params.idValue}`;
+
+    return request<FineractCommandResponse>('POST', path, {
+      accountId: params.accountId,
+    });
+  }
+
+  /**
+   * Look up a party by identifier (e.g., MSISDN).
+   * Returns party information if the identifier is registered.
+   */
+  async lookupInteropParty(params: {
+    idType: InteropIdentifierType;
+    idValue: string;
+    subIdOrType?: string;
+  }): Promise<FineractInteropPartyResponse> {
+    const path = params.subIdOrType
+      ? `/interoperation/parties/${params.idType}/${params.idValue}/${params.subIdOrType}`
+      : `/interoperation/parties/${params.idType}/${params.idValue}`;
+
+    return request<FineractInteropPartyResponse>('GET', path);
+  }
+
+  /**
+   * Delete a party identifier registration.
+   */
+  async deleteInteropParty(params: {
+    idType: InteropIdentifierType;
+    idValue: string;
+    subIdOrType?: string;
+  }): Promise<void> {
+    const path = params.subIdOrType
+      ? `/interoperation/parties/${params.idType}/${params.idValue}/${params.subIdOrType}`
+      : `/interoperation/parties/${params.idType}/${params.idValue}`;
+
+    await request<void>('DELETE', path);
+  }
+
+  /**
+   * Prepare an interop transfer (Phase 1 of two-phase commit).
+   * Reserves funds on the payer side without completing the transfer.
+   */
+  async prepareInteropTransfer(
+    transfer: FineractInteropTransferRequest
+  ): Promise<FineractInteropTransferResponse> {
+    return request<FineractInteropTransferResponse>(
+      'POST',
+      '/interoperation/transfers',
+      { ...transfer, action: 'PREPARE' }
+    );
+  }
+
+  /**
+   * Commit a previously prepared interop transfer (Phase 2).
+   * Completes the fund movement that was reserved during prepare.
+   */
+  async commitInteropTransfer(
+    transferId: string
+  ): Promise<FineractInteropTransferResponse> {
+    return request<FineractInteropTransferResponse>(
+      'PUT',
+      `/interoperation/transfers/${transferId}`,
+      { transferState: 'COMMITTED' }
+    );
+  }
+
+  /**
+   * Release (abort) a previously prepared interop transfer.
+   * Releases the reserved funds back to the payer.
+   */
+  async releaseInteropTransfer(
+    transferId: string
+  ): Promise<FineractInteropTransferResponse> {
+    return request<FineractInteropTransferResponse>(
+      'PUT',
+      `/interoperation/transfers/${transferId}`,
+      { transferState: 'ABORTED' }
+    );
+  }
+
+  /**
+   * Get the status of an interop transfer.
+   */
+  async getInteropTransfer(
+    transferId: string
+  ): Promise<FineractInteropTransferResponse> {
+    return request<FineractInteropTransferResponse>(
+      'GET',
+      `/interoperation/transfers/${transferId}`
+    );
+  }
+
+  /**
+   * Check if the interop module is healthy and enabled.
+   */
+  async interopHealthCheck(): Promise<FineractInteropHealthResponse | null> {
+    try {
+      return await request<FineractInteropHealthResponse>(
+        'GET',
+        '/interoperation/health'
+      );
+    } catch {
+      return null;
+    }
   }
 
   // ----------------------------------------------------------

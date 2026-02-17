@@ -234,6 +234,68 @@ Resources:
           Value: dead-letter
 
   # ==========================================================
+  # 8. DATA WAREHOUSE REAL-TIME SYNC QUEUE
+  # ==========================================================
+
+  DWSyncQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-dw-sync"
+      VisibilityTimeout: 120  # Longer for multi-statement SQL processing
+      MessageRetentionPeriod: 345600  # 4 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DWSyncDLQ.Arn
+        maxReceiveCount: 5
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: dw-sync-service
+
+  DWSyncDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-dw-sync-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
+  # 9. PAYMENT COMPENSATION QUEUE
+  # ==========================================================
+
+  PaymentCompensationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-payment-compensation"
+      VisibilityTimeout: 300  # 5 min — compensation handlers may poll providers
+      MessageRetentionPeriod: 604800  # 7 days
+      ReceiveMessageWaitTimeSeconds: 20
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt PaymentCompensationDLQ.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: payment-service
+
+  PaymentCompensationDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${Environment}-lynia-payment-compensation-dlq"
+      MessageRetentionPeriod: 1209600  # 14 days
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Type
+          Value: dead-letter
+
+  # ==========================================================
   # DLQ ALARM (alert on DLQ messages)
   # ==========================================================
 
@@ -356,6 +418,40 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  DWSyncDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-dw-sync-dlq-messages"
+      AlarmDescription: "DW Sync DLQ has messages - failed data warehouse sync detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DWSyncDLQ.QueueName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  PaymentCompensationDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-payment-compensation-dlq-messages"
+      AlarmDescription: "Payment Compensation DLQ has messages - unresolvable payment failures detected"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt PaymentCompensationDLQ.QueueName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
 Outputs:
   NotificationQueueUrl:
     Description: Notification queue URL
@@ -440,3 +536,27 @@ Outputs:
     Value: !GetAtt FineractSyncRetryQueue.Arn
     Export:
       Name: !Sub "${Environment}-lynia-fineract-sync-retry-queue-arn"
+
+  DWSyncQueueUrl:
+    Description: DW sync queue URL
+    Value: !Ref DWSyncQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-dw-sync-queue-url"
+
+  DWSyncQueueArn:
+    Description: DW sync queue ARN
+    Value: !GetAtt DWSyncQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-dw-sync-queue-arn"
+
+  PaymentCompensationQueueUrl:
+    Description: Payment compensation queue URL
+    Value: !Ref PaymentCompensationQueue
+    Export:
+      Name: !Sub "${Environment}-lynia-payment-compensation-queue-url"
+
+  PaymentCompensationQueueArn:
+    Description: Payment compensation queue ARN
+    Value: !GetAtt PaymentCompensationQueue.Arn
+    Export:
+      Name: !Sub "${Environment}-lynia-payment-compensation-queue-arn"

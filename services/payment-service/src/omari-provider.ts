@@ -1,8 +1,15 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
-import { PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import type {
+  PaymentProvider,
+  PaymentRequest,
+  PaymentResponse,
+  PaymentStatusResponse,
+  ProviderCapabilities,
+  ProviderHealthResult,
+} from './payment-provider.interface';
 
 const omariCircuitBreaker = new CircuitBreaker({ name: 'omari-api', failureThreshold: 5, resetTimeout: 60000 });
 
@@ -45,7 +52,8 @@ export interface OmariWebhook {
  * O'mari Payment Provider
  * Handles all O'mari payment operations via direct API integration.
  */
-export class OmariProvider {
+export class OmariProvider implements PaymentProvider {
+  readonly name = 'omari' as const;
   private config: OmariConfig;
   private client: AxiosInstance;
 
@@ -205,13 +213,27 @@ We will confirm your payment within 5 minutes.`;
   /**
    * Health check for provider availability
    */
-  async healthCheck(): Promise<{ healthy: boolean; latencyMs: number }> {
+  async healthCheck(): Promise<ProviderHealthResult> {
     const start = Date.now();
     try {
       await this.client.get('/health', { timeout: 5000 });
-      return { healthy: true, latencyMs: Date.now() - start };
+      return { healthy: true, latencyMs: Date.now() - start, circuitState: omariCircuitBreaker.getState() };
     } catch {
-      return { healthy: false, latencyMs: Date.now() - start };
+      return { healthy: false, latencyMs: Date.now() - start, circuitState: omariCircuitBreaker.getState() };
     }
+  }
+
+  /**
+   * Describe provider capabilities
+   */
+  getCapabilities(): ProviderCapabilities {
+    return {
+      supportsRefund: false,
+      supportsStatusPolling: true,
+      supportsWebhook: true,
+      supportsUSSD: true,
+      maxTransactionAmountUSD: 2000,
+      supportedCurrencies: ['USD', 'ZWL'],
+    };
   }
 }

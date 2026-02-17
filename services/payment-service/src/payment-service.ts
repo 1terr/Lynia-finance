@@ -1,15 +1,16 @@
 import { db } from '../../shared/clients/database';
-import { EcoCashProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
+import type { PaymentProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse, ProviderHealthResult } from './payment-provider.interface';
+import { EcoCashProvider } from './ecocash-provider';
 import { OneMoneyProvider } from './onemoney-provider';
 import { OmariProvider } from './omari-provider';
+import { InnBucksProvider } from './innbucks-provider';
 import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-analytics';
+import { PaymentEventLogger } from './payment-event-logger';
+import { PaymentStateMachine, ConcurrentModificationError } from './payment-state-machine';
 
-/**
- * Payment Gateway Type
- * Direct integrations with all 4 Zimbabwe mobile money providers.
- * Paynow aggregator removed in favour of direct provider APIs (lower fees, better control).
- */
-export type PaymentGateway = 'ecocash' | 'onemoney' | 'omari' | 'innbucks';
+// Re-export for backward compatibility
+export type { PaymentGateway } from './payment-provider.interface';
+import type { PaymentGateway } from './payment-provider.interface';
 
 /**
  * Payment Initiation Request
@@ -34,7 +35,7 @@ export interface Payment {
   customer_id: string;
   amount: number;
   currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'held' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'released';
   gateway: PaymentGateway;
   gateway_transaction_id?: string;
   gateway_reference?: string;
@@ -43,6 +44,10 @@ export interface Payment {
   initiated_at: Date;
   completed_at?: Date;
   failed_at?: Date;
+  held_at?: Date;
+  hold_expires_at?: Date;
+  released_at?: Date;
+  release_reason?: string;
 }
 
 /**
@@ -60,16 +65,43 @@ const TRANSACTION_LIMITS = {
  * Handles all payment operations across multiple gateways
  */
 export class PaymentService {
-  private ecocashProvider: EcoCashProvider;
-  private onemoneyProvider: OneMoneyProvider;
-  private omariProvider: OmariProvider;
+  private providers: Map<PaymentGateway, PaymentProvider>;
   private analytics: PaymentAnalyticsService;
+  private eventLogger: PaymentEventLogger;
+  private stateMachine: PaymentStateMachine;
 
   constructor() {
-    this.ecocashProvider = new EcoCashProvider();
-    this.onemoneyProvider = new OneMoneyProvider();
-    this.omariProvider = new OmariProvider();
+    this.providers = new Map<PaymentGateway, PaymentProvider>([
+      ['ecocash', new EcoCashProvider()],
+      ['onemoney', new OneMoneyProvider()],
+      ['omari', new OmariProvider()],
+      ['innbucks', new InnBucksProvider()],
+    ]);
     this.analytics = new PaymentAnalyticsService();
+    this.eventLogger = new PaymentEventLogger();
+    this.stateMachine = new PaymentStateMachine(this.eventLogger);
+  }
+
+  /**
+   * Get a provider by gateway name. Throws if not found.
+   */
+  private getProvider(gateway: PaymentGateway): PaymentProvider {
+    const provider = this.providers.get(gateway);
+    if (!provider) {
+      throw new Error(`Unknown payment gateway: ${gateway}`);
+    }
+    return provider;
+  }
+
+  /**
+   * Get health status of all providers
+   */
+  async getProviderHealth(): Promise<Record<PaymentGateway, ProviderHealthResult>> {
+    const results: Record<string, ProviderHealthResult> = {};
+    for (const [name, provider] of this.providers) {
+      results[name] = await provider.healthCheck();
+    }
+    return results as Record<PaymentGateway, ProviderHealthResult>;
   }
 
   /**
@@ -171,7 +203,7 @@ export class PaymentService {
       // Generate payment reference
       const paymentReference = this.generatePaymentReference();
 
-      // Create payment record in database
+      // Create payment record in database (status: pending)
       const { data: payment, error: paymentError } = await db
         .from('payments')
         .insert({
@@ -196,6 +228,28 @@ export class PaymentService {
         throw new Error('Failed to create payment record');
       }
 
+      // Log initial event
+      this.eventLogger.logEvent({
+        payment_id: payment.id,
+        loan_id: request.loan_id,
+        customer_id: request.customer_id,
+        to_status: 'pending',
+        event_type: 'initiated',
+        gateway,
+      }).catch(() => {});
+
+      // Transition pending -> held (PREPARE phase)
+      try {
+        await this.stateMachine.transition(payment.id, 'pending', 'held', {
+          gateway,
+          loan_id: request.loan_id,
+          customer_id: request.customer_id,
+        });
+      } catch (err) {
+        console.error(`Failed to transition payment ${payment.id} to held:`, err);
+        // Fall through — provider call will still work with pending status
+      }
+
       // Prepare payment request
       const paymentReq: PaymentRequest = {
         amount: request.amount,
@@ -206,30 +260,50 @@ export class PaymentService {
       };
 
       // Initiate payment via selected gateway
+      const provider = this.getProvider(gateway);
       let response: PaymentResponse;
-      let instructions: string;
-
-      if (gateway === 'ecocash') {
-        response = await this.ecocashProvider.initiatePayment(paymentReq);
-        instructions = this.ecocashProvider.generatePaymentInstructions(request.amount, paymentReference);
-      } else if (gateway === 'omari') {
-        response = await this.omariProvider.initiatePayment(paymentReq);
-        instructions = this.omariProvider.generatePaymentInstructions(request.amount, paymentReference);
-      } else if (gateway === 'onemoney') {
-        response = await this.onemoneyProvider.initiatePayment(paymentReq);
-        instructions = this.onemoneyProvider.generatePaymentInstructions(request.amount, paymentReference);
-      } else {
-        // InnBucks or fallback to EcoCash
-        response = await this.ecocashProvider.initiatePayment(paymentReq);
-        instructions = this.ecocashProvider.generatePaymentInstructions(request.amount, paymentReference);
+      try {
+        response = await provider.initiatePayment(paymentReq);
+      } catch (providerError) {
+        // Provider failed — release the hold
+        try {
+          await this.stateMachine.transition(payment.id, 'held', 'released', {
+            gateway,
+            release_reason: `Provider error: ${providerError instanceof Error ? providerError.message : 'Unknown'}`,
+            loan_id: request.loan_id,
+            customer_id: request.customer_id,
+          });
+        } catch {
+          // If hold transition failed (e.g., still pending), mark as failed directly
+          await db.from('payments').update({ status: 'failed', failed_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', payment.id).execute();
+        }
+        throw providerError;
       }
 
-      // Update payment record with gateway transaction ID
+      const instructions = provider.generatePaymentInstructions(request.amount, paymentReference);
+
+      // Transition held -> processing (COMMIT phase — provider accepted)
+      try {
+        await this.stateMachine.transition(payment.id, 'held', 'processing', {
+          gateway,
+          provider_transaction_id: response.transaction_id,
+          loan_id: request.loan_id,
+          customer_id: request.customer_id,
+        });
+      } catch {
+        // Fallback: direct update if state machine fails (e.g., still pending)
+        await db.from('payments').update({
+          gateway_transaction_id: response.transaction_id,
+          status: 'processing',
+          updated_at: new Date().toISOString()
+        }).eq('id', payment.id).execute();
+      }
+
+      // Also update gateway_transaction_id
       await db
         .from('payments')
         .update({
           gateway_transaction_id: response.transaction_id,
-          status: response.status,
           updated_at: new Date().toISOString()
         })
         .eq('id', payment.id)
@@ -269,25 +343,15 @@ export class PaymentService {
         throw new Error('Payment not found');
       }
 
-      // If payment is already completed/failed, return cached status
-      if (['completed', 'failed', 'cancelled'].includes(payment.status)) {
+      // If payment is in a terminal state, return cached status
+      if (['completed', 'failed', 'cancelled', 'released'].includes(payment.status)) {
         return payment;
       }
 
       // Check status with gateway if pending/processing
       if (payment.gateway_transaction_id) {
-        let statusResponse: PaymentStatusResponse;
-
-        if (payment.gateway === 'ecocash') {
-          statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);
-        } else if (payment.gateway === 'omari') {
-          statusResponse = await this.omariProvider.checkPaymentStatus(payment.gateway_transaction_id);
-        } else if (payment.gateway === 'onemoney') {
-          statusResponse = await this.onemoneyProvider.checkPaymentStatus(payment.gateway_transaction_id);
-        } else {
-          // InnBucks or unknown - use EcoCash as fallback
-          statusResponse = await this.ecocashProvider.checkPaymentStatus(payment.gateway_transaction_id);
-        }
+        const provider = this.getProvider(payment.gateway);
+        const statusResponse = await provider.checkPaymentStatus(payment.gateway_transaction_id);
 
         // Update database if status changed
         if (statusResponse.status !== payment.status) {
@@ -514,13 +578,49 @@ export class PaymentService {
     updated: number;
     completed: number;
     failed: number;
+    released: number;
   }> {
     try {
       console.log(`Starting payment reconciliation (max age: ${maxAge} hours)`);
 
       const cutoffTime = new Date(Date.now() - maxAge * 60 * 60 * 1000);
 
-      // Fetch all pending/processing payments
+      // Phase 1: Release expired holds
+      let released = 0;
+      const { data: expiredHolds } = await db
+        .from('payments')
+        .select('*')
+        .eq('status', 'held')
+        .lt('hold_expires_at', new Date().toISOString())
+        .execute();
+
+      for (const held of (expiredHolds || [])) {
+        try {
+          // Last-chance: poll provider if we have a transaction ID
+          if (held.gateway_transaction_id) {
+            const provider = this.getProvider(held.gateway);
+            const providerStatus = await provider.checkPaymentStatus(held.gateway_transaction_id);
+            if (providerStatus.status === 'completed') {
+              await this.stateMachine.transition(held.id, 'held', 'processing', {
+                gateway: held.gateway,
+                actor_type: 'reconciliation',
+              });
+              continue;
+            }
+          }
+          // Release the expired hold
+          await this.stateMachine.transition(held.id, 'held', 'released', {
+            gateway: held.gateway,
+            release_reason: 'Hold expired during reconciliation',
+            actor_type: 'reconciliation',
+          });
+          released++;
+        } catch (err) {
+          console.error(`Error releasing expired hold for payment ${held.id}:`, err);
+        }
+      }
+
+      // Phase 2: Reconcile pending/processing payments (existing behavior)
       const { data: payments, error } = await db
         .from('payments')
         .select('*')
@@ -556,9 +656,9 @@ export class PaymentService {
         }
       }
 
-      console.log(`Reconciliation complete: ${checked} checked, ${updated} updated, ${completed} completed, ${failed} failed`);
+      console.log(`Reconciliation complete: ${checked} checked, ${updated} updated, ${completed} completed, ${failed} failed, ${released} released`);
 
-      return { checked, updated, completed, failed };
+      return { checked, updated, completed, failed, released };
 
     } catch (error) {
       console.error('Error during payment reconciliation:', error);

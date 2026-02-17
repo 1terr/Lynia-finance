@@ -2,6 +2,17 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import type {
+  PaymentProvider,
+  PaymentRequest,
+  PaymentResponse,
+  PaymentStatusResponse,
+  ProviderCapabilities,
+  ProviderHealthResult,
+} from './payment-provider.interface';
+
+// Re-export canonical types for backward compatibility
+export type { PaymentRequest, PaymentResponse, PaymentStatusResponse } from './payment-provider.interface';
 
 const ecocashCircuitBreaker = new CircuitBreaker({ name: 'ecocash-api', failureThreshold: 5, resetTimeout: 60000 });
 
@@ -15,43 +26,6 @@ interface EcoCashConfig {
   webhook_secret: string;
   base_url: string;
   environment: 'sandbox' | 'production';
-}
-
-/**
- * Payment Request
- */
-export interface PaymentRequest {
-  amount: number;
-  currency: 'USD' | 'ZWL';
-  customer_phone: string; // +263771234567
-  reference: string; // Our payment ID
-  description: string;
-}
-
-/**
- * Payment Response
- */
-export interface PaymentResponse {
-  success: boolean;
-  transaction_id: string;
-  payment_url?: string;
-  ussd_code?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  message: string;
-}
-
-/**
- * Payment Status Response
- */
-export interface PaymentStatusResponse {
-  transaction_id: string;
-  reference: string;
-  amount: number;
-  currency: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
-  customer_phone: string;
-  completed_at?: Date;
-  failure_reason?: string;
 }
 
 /**
@@ -72,7 +46,8 @@ export interface EcoCashWebhook {
  * EcoCash Payment Provider
  * Handles all EcoCash payment operations
  */
-export class EcoCashProvider {
+export class EcoCashProvider implements PaymentProvider {
+  readonly name = 'ecocash' as const;
   private config: EcoCashConfig;
   private client: AxiosInstance;
 
@@ -245,5 +220,32 @@ Reply with your EcoCash reference number (e.g., MP123456)
 
 We'll confirm your payment within 5 minutes.
     `.trim();
+  }
+
+  /**
+   * Health check for provider availability
+   */
+  async healthCheck(): Promise<ProviderHealthResult> {
+    const start = Date.now();
+    try {
+      await this.client.get('/health', { timeout: 5000 });
+      return { healthy: true, latencyMs: Date.now() - start, circuitState: ecocashCircuitBreaker.getState() };
+    } catch {
+      return { healthy: false, latencyMs: Date.now() - start, circuitState: ecocashCircuitBreaker.getState() };
+    }
+  }
+
+  /**
+   * Describe provider capabilities
+   */
+  getCapabilities(): ProviderCapabilities {
+    return {
+      supportsRefund: false,
+      supportsStatusPolling: true,
+      supportsWebhook: true,
+      supportsUSSD: true,
+      maxTransactionAmountUSD: 2000,
+      supportedCurrencies: ['USD', 'ZWL'],
+    };
   }
 }

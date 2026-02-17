@@ -1,8 +1,15 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
-import { PaymentRequest, PaymentResponse, PaymentStatusResponse } from './ecocash-provider';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import type {
+  PaymentProvider,
+  PaymentRequest,
+  PaymentResponse,
+  PaymentStatusResponse,
+  ProviderCapabilities,
+  ProviderHealthResult,
+} from './payment-provider.interface';
 
 const onemoneyCircuitBreaker = new CircuitBreaker({ name: 'onemoney-api', failureThreshold: 5, resetTimeout: 60000 });
 
@@ -36,7 +43,8 @@ export interface OneMoneyWebhook {
  * OneMoney Payment Provider
  * Handles all OneMoney payment operations
  */
-export class OneMoneyProvider {
+export class OneMoneyProvider implements PaymentProvider {
+  readonly name = 'onemoney' as const;
   private config: OneMoneyConfig;
   private client: AxiosInstance;
 
@@ -209,5 +217,32 @@ Reply with your OneMoney reference number (e.g., OM123456)
 
 We'll confirm your payment within 5 minutes.
     `.trim();
+  }
+
+  /**
+   * Health check for provider availability
+   */
+  async healthCheck(): Promise<ProviderHealthResult> {
+    const start = Date.now();
+    try {
+      await this.client.get('/health', { timeout: 5000 });
+      return { healthy: true, latencyMs: Date.now() - start, circuitState: onemoneyCircuitBreaker.getState() };
+    } catch {
+      return { healthy: false, latencyMs: Date.now() - start, circuitState: onemoneyCircuitBreaker.getState() };
+    }
+  }
+
+  /**
+   * Describe provider capabilities
+   */
+  getCapabilities(): ProviderCapabilities {
+    return {
+      supportsRefund: false,
+      supportsStatusPolling: true,
+      supportsWebhook: true,
+      supportsUSSD: true,
+      maxTransactionAmountUSD: 2000,
+      supportedCurrencies: ['USD', 'ZWL'],
+    };
   }
 }

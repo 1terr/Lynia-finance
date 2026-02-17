@@ -72,8 +72,8 @@ export interface Payment {
   customer_id: string;
   payment_amount_usd: number;
   currency: Currency;
-  payment_method: 'ecocash' | 'onemoney' | 'cash' | 'bank_transfer';
-  payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_method: 'ecocash' | 'onemoney' | 'omari' | 'innbucks' | 'cash' | 'bank_transfer';
+  payment_status: 'pending' | 'held' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'released' | 'refunded';
   transaction_reference?: string;
   payment_date: string;
   created_at: string;
@@ -169,7 +169,7 @@ export interface ProcessPaymentRequest {
   loanId: string;
   customerId: string;
   amount: number;
-  paymentMethod: 'ecocash' | 'onemoney';
+  paymentMethod: 'ecocash' | 'onemoney' | 'omari' | 'innbucks';
   phoneNumber: string;
 }
 

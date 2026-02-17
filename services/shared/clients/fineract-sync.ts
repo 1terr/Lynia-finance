@@ -13,6 +13,11 @@
 import { getFineractClient, FineractApiError, parseFineractDate } from './fineract';
 import { db } from './database';
 import { SQSQueues } from '../utils/sqs-publisher';
+import { randomUUID } from 'crypto';
+
+// Feature flag: enable Fineract interop module (Mojaloop-compatible two-phase transfers)
+// Requires enable-payment-hub-integration=true in Fineract c_configuration table
+const FINERACT_USE_INTEROP = process.env.FINERACT_USE_INTEROP === 'true';
 
 // ============================================================
 // SYNC LOGGING
@@ -141,6 +146,45 @@ export async function syncCustomerToFineract(params: {
     });
 
     console.log(`[fineract-sync] Customer ${params.customerId} → Fineract client ${fineractClientId}`);
+
+    // Register MSISDN with interop module for Mojaloop party lookup
+    if (FINERACT_USE_INTEROP && params.mobileNo) {
+      try {
+        await fineract.registerInteropParty({
+          idType: 'MSISDN',
+          idValue: params.mobileNo.replace(/^\+/, ''), // Strip leading +
+          accountId: params.customerId,
+        });
+
+        await logSync({
+          entity_type: 'client',
+          entity_id: params.customerId,
+          fineract_id: fineractClientId,
+          operation: 'register_interop_party',
+          direction: 'outbound',
+          status: 'success',
+          request_payload: { idType: 'MSISDN', idValue: params.mobileNo },
+          duration_ms: Date.now() - startTime,
+        });
+
+        console.log(`[fineract-sync] Registered MSISDN ${params.mobileNo} for interop party lookup`);
+      } catch (interopError) {
+        // Non-fatal — interop registration failure shouldn't block customer sync
+        console.warn(`[fineract-sync] Failed to register interop party for ${params.customerId}:`, interopError);
+
+        await logSync({
+          entity_type: 'client',
+          entity_id: params.customerId,
+          fineract_id: fineractClientId,
+          operation: 'register_interop_party',
+          direction: 'outbound',
+          status: 'failed',
+          error_message: interopError instanceof Error ? interopError.message : String(interopError),
+          duration_ms: Date.now() - startTime,
+        });
+      }
+    }
+
     return fineractClientId;
   } catch (error) {
     const apiError = error instanceof FineractApiError ? error : null;
@@ -322,11 +366,23 @@ export async function disburseLoanInFineract(params: {
   loanId: string;
   fineractLoanId: number;
   disbursementDate?: Date;
+  /** Payee MSISDN for interop two-phase disbursement (optional) */
+  payeeMsisdn?: string;
+  /** Disbursement amount in USD for interop (optional — only needed for interop) */
+  amount?: number;
+  currency?: string;
 }): Promise<boolean> {
   const startTime = Date.now();
 
   try {
     const fineract = await getFineractClient();
+
+    // Feature-flagged: use interop two-phase disbursement if enabled and MSISDN provided
+    if (FINERACT_USE_INTEROP && params.payeeMsisdn && params.amount) {
+      return await disburseViaInterop(fineract, params, startTime);
+    }
+
+    // Standard disbursement path
     const response = await fineract.disburseLoan(
       params.fineractLoanId,
       params.disbursementDate
@@ -366,6 +422,111 @@ export async function disburseLoanInFineract(params: {
       entityId: params.loanId,
       operation: 'disburse',
       requestPayload: params as unknown as Record<string, unknown>,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return false;
+  }
+}
+
+/**
+ * Two-phase interop disbursement: PREPARE → COMMIT (or RELEASE on failure).
+ * Uses Fineract's Mojaloop-compatible interop endpoints for fund reservation.
+ * This gives us safe two-phase commit semantics for disbursements.
+ */
+async function disburseViaInterop(
+  fineract: Awaited<ReturnType<typeof getFineractClient>>,
+  params: {
+    loanId: string;
+    fineractLoanId: number;
+    disbursementDate?: Date;
+    payeeMsisdn?: string;
+    amount?: number;
+    currency?: string;
+  },
+  startTime: number
+): Promise<boolean> {
+  const transferId = randomUUID();
+  const fspId = process.env.FINERACT_FSP_ID || 'lynia-finance';
+
+  try {
+    // Phase 1: PREPARE — reserve the funds
+    const prepareResponse = await fineract.prepareInteropTransfer({
+      transferId,
+      payerFsp: fspId,
+      payeeFsp: fspId, // Internal transfer — same FSP
+      amount: {
+        amount: (params.amount!).toFixed(2),
+        currency: params.currency || 'USD',
+      },
+      note: `Loan disbursement for ${params.loanId}`,
+    });
+
+    await logSync({
+      entity_type: 'loan',
+      entity_id: params.loanId,
+      fineract_id: params.fineractLoanId,
+      operation: 'interop_prepare',
+      direction: 'outbound',
+      status: 'success',
+      request_payload: { transferId, payeeMsisdn: params.payeeMsisdn },
+      response_payload: prepareResponse,
+      duration_ms: Date.now() - startTime,
+    });
+
+    if (prepareResponse.transferState !== 'RESERVED') {
+      throw new Error(`Unexpected transfer state after prepare: ${prepareResponse.transferState}`);
+    }
+
+    // Phase 2: COMMIT — complete the transfer
+    const commitResponse = await fineract.commitInteropTransfer(transferId);
+
+    // Also disburse via standard Fineract loan API to update loan status
+    await fineract.disburseLoan(params.fineractLoanId, params.disbursementDate);
+
+    await logSync({
+      entity_type: 'loan',
+      entity_id: params.loanId,
+      fineract_id: params.fineractLoanId,
+      operation: 'interop_commit',
+      direction: 'outbound',
+      status: 'success',
+      request_payload: { transferId },
+      response_payload: commitResponse,
+      duration_ms: Date.now() - startTime,
+    });
+
+    console.log(`[fineract-sync] Loan ${params.loanId} disbursed via interop (transfer ${transferId})`);
+    return true;
+  } catch (error) {
+    // Release the reserved funds if prepare succeeded but commit failed
+    try {
+      await fineract.releaseInteropTransfer(transferId);
+      console.log(`[fineract-sync] Released interop transfer ${transferId} after failure`);
+    } catch (releaseError) {
+      console.error(`[fineract-sync] Failed to release interop transfer ${transferId}:`, releaseError);
+    }
+
+    const apiError = error instanceof FineractApiError ? error : null;
+
+    await logSync({
+      entity_type: 'loan',
+      entity_id: params.loanId,
+      fineract_id: params.fineractLoanId,
+      operation: 'interop_disburse',
+      direction: 'outbound',
+      status: 'failed',
+      request_payload: { transferId, payeeMsisdn: params.payeeMsisdn },
+      error_message: error instanceof Error ? error.message : String(error),
+      http_status_code: apiError?.statusCode,
+      duration_ms: Date.now() - startTime,
+    });
+
+    console.error(`[fineract-sync] Interop disbursement failed for loan ${params.loanId}:`, error);
+    await queueSyncRetry({
+      entityType: 'loan',
+      entityId: params.loanId,
+      operation: 'interop_disburse',
+      requestPayload: { ...params, transferId } as unknown as Record<string, unknown>,
       errorMessage: error instanceof Error ? error.message : String(error),
     });
     return false;

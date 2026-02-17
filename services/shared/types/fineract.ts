@@ -521,6 +521,92 @@ export interface LyniaFineractTransactionMapping {
 }
 
 // ============================================================
+// INTEROPERATION MODULE TYPES (Mojaloop-compatible)
+// ============================================================
+
+/** Identifier type for interop party lookup */
+export type InteropIdentifierType = 'MSISDN' | 'ACCOUNT_ID' | 'EMAIL' | 'PERSONAL_ID' | 'BUSINESS' | 'DEVICE' | 'IBAN' | 'ALIAS';
+
+/** Interop transaction role */
+export type InteropTransactionRole = 'PAYER' | 'PAYEE';
+
+/** Interop transfer action type */
+export type InteropActionType = 'PREPARE' | 'CREATE';
+
+/** Interop transaction state */
+export type InteropTransferState = 'RECEIVED' | 'RESERVED' | 'COMMITTED' | 'ABORTED';
+
+/** Register a party identifier (e.g., MSISDN) with Fineract interop */
+export interface FineractInteropPartyRequest {
+  idType: InteropIdentifierType;
+  idValue: string;
+  subIdOrType?: string;
+}
+
+/** Party lookup response */
+export interface FineractInteropPartyResponse {
+  party: {
+    partyIdInfo: {
+      partyIdType: InteropIdentifierType;
+      partyIdentifier: string;
+      partySubIdOrType?: string;
+      fspId: string;
+    };
+    name?: string;
+    personalInfo?: {
+      complexName?: {
+        firstName?: string;
+        middleName?: string;
+        lastName?: string;
+      };
+      dateOfBirth?: string;
+    };
+  };
+}
+
+/** Interop transfer prepare/create request */
+export interface FineractInteropTransferRequest {
+  transferId: string; // UUID
+  payeeFsp: string;
+  payerFsp: string;
+  amount: {
+    amount: string; // Decimal string, e.g. "100.00"
+    currency: string; // ISO 4217 e.g. "USD"
+  };
+  ilpPacket?: string;
+  condition?: string;
+  expiration?: string; // ISO 8601 datetime
+  note?: string;
+  extensionList?: Array<{ key: string; value: string }>;
+}
+
+/** Interop transfer response */
+export interface FineractInteropTransferResponse {
+  transferId: string;
+  transferState: InteropTransferState;
+  completedTimestamp?: string;
+  fulfilment?: string;
+  extensionList?: Array<{ key: string; value: string }>;
+}
+
+/** Interop account identifier registration */
+export interface FineractInteropIdentifier {
+  idType: InteropIdentifierType;
+  idValue: string;
+  subIdOrType?: string;
+  fspId?: string;
+}
+
+/** Interop health check response */
+export interface FineractInteropHealthResponse {
+  status: string;
+  startedAt?: string;
+  versionInfo?: {
+    version?: string;
+  };
+}
+
+// ============================================================
 // FINERACT CLIENT CONFIGURATION
 // ============================================================
 

@@ -3,14 +3,19 @@ import { PaymentService, InitiatePaymentRequest } from './payment-service';
 import { EcoCashProvider, EcoCashWebhook } from './ecocash-provider';
 import { OneMoneyProvider, OneMoneyWebhook } from './onemoney-provider';
 import { OmariProvider, OmariWebhook } from './omari-provider';
+import { InnBucksProvider, InnBucksWebhook } from './innbucks-provider';
+import { PaymentEventLogger } from './payment-event-logger';
 import { getSecurityHeaders } from '../../shared/utils/response';
 import { db } from '../../shared/clients/database';
 import { syncRepaymentToFineract, disburseLoanInFineract } from '../../shared/clients/fineract-sync';
+import { SQSQueues } from '../../shared/utils/sqs-publisher';
 
 const paymentService = new PaymentService();
 const ecocashProvider = new EcoCashProvider();
 const onemoneyProvider = new OneMoneyProvider();
 const omariProvider = new OmariProvider();
+const innbucksProvider = new InnBucksProvider();
+const eventLogger = new PaymentEventLogger();
 
 /**
  * Payment Service Lambda Handler
@@ -32,6 +37,8 @@ export const handler = async (
       return await handleOneMoneyWebhook(event);
     } else if (path === '/payments/webhook/omari' && method === 'POST') {
       return await handleOmariWebhook(event);
+    } else if (path === '/payments/webhook/innbucks' && method === 'POST') {
+      return await handleInnBucksWebhook(event);
     } else if (path.match(/\/payments\/[^/]+$/) && method === 'GET') {
       const paymentId = event.pathParameters?.paymentId;
       return await getPaymentStatus(paymentId!, event);
@@ -139,6 +146,18 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
 
     const paymentId = payload.merchant_reference;
 
+    // Log webhook receipt
+    eventLogger.logEvent({
+      payment_id: paymentId,
+      to_status: payload.status === 'SUCCESS' ? 'completed' : payload.status.toLowerCase(),
+      event_type: 'webhook_received',
+      gateway: 'ecocash',
+      provider_transaction_id: payload.transaction_id,
+      actor_type: 'webhook',
+      actor_id: 'ecocash-webhook',
+      provider_response: payload as unknown as Record<string, unknown>,
+    }).catch(() => {});
+
     if (payload.status === 'SUCCESS') {
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
@@ -150,6 +169,15 @@ async function handleEcoCashWebhook(event: APIGatewayProxyEvent): Promise<APIGat
           console.error('[fineract-sync] Background repayment sync failed:', err);
         });
       }
+
+      // Non-blocking: real-time DW sync
+      SQSQueues.syncDataWarehouse({
+        eventType: 'payment.confirmed',
+        entityId: paymentId,
+        entityType: 'payment',
+      }).catch((err) => {
+        console.error('[dw-sync] Background DW sync failed:', err);
+      });
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
       await paymentService.checkPaymentStatus(paymentId);
     }
@@ -201,6 +229,17 @@ async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGa
 
     const paymentId = payload.merchant_reference;
 
+    eventLogger.logEvent({
+      payment_id: paymentId,
+      to_status: payload.status === 'SUCCESS' ? 'completed' : payload.status.toLowerCase(),
+      event_type: 'webhook_received',
+      gateway: 'onemoney',
+      provider_transaction_id: payload.transaction_id,
+      actor_type: 'webhook',
+      actor_id: 'onemoney-webhook',
+      provider_response: payload as unknown as Record<string, unknown>,
+    }).catch(() => {});
+
     if (payload.status === 'SUCCESS') {
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
@@ -212,6 +251,15 @@ async function handleOneMoneyWebhook(event: APIGatewayProxyEvent): Promise<APIGa
           console.error('[fineract-sync] Background repayment sync failed:', err);
         });
       }
+
+      // Non-blocking: real-time DW sync
+      SQSQueues.syncDataWarehouse({
+        eventType: 'payment.confirmed',
+        entityId: paymentId,
+        entityType: 'payment',
+      }).catch((err) => {
+        console.error('[dw-sync] Background DW sync failed:', err);
+      });
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
       await paymentService.checkPaymentStatus(paymentId);
     }
@@ -263,6 +311,17 @@ async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatew
 
     const paymentId = payload.merchant_reference;
 
+    eventLogger.logEvent({
+      payment_id: paymentId,
+      to_status: payload.status === 'SUCCESS' ? 'completed' : payload.status.toLowerCase(),
+      event_type: 'webhook_received',
+      gateway: 'omari',
+      provider_transaction_id: payload.transaction_id,
+      actor_type: 'webhook',
+      actor_id: 'omari-webhook',
+      provider_response: payload as unknown as Record<string, unknown>,
+    }).catch(() => {});
+
     if (payload.status === 'SUCCESS') {
       await paymentService.checkPaymentStatus(paymentId);
       await paymentService.processPaymentCompletion(paymentId);
@@ -274,6 +333,15 @@ async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatew
           console.error('[fineract-sync] Background repayment sync failed:', err);
         });
       }
+
+      // Non-blocking: real-time DW sync
+      SQSQueues.syncDataWarehouse({
+        eventType: 'payment.confirmed',
+        entityId: paymentId,
+        entityType: 'payment',
+      }).catch((err) => {
+        console.error('[dw-sync] Background DW sync failed:', err);
+      });
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
       await paymentService.checkPaymentStatus(paymentId);
     }
@@ -286,6 +354,81 @@ async function handleOmariWebhook(event: APIGatewayProxyEvent): Promise<APIGatew
 
   } catch (error) {
     console.error('Error processing O\'mari webhook:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Webhook processing failed' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
+  }
+}
+
+/**
+ * POST /payments/webhook/innbucks
+ * Handle InnBucks webhook
+ */
+async function handleInnBucksWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
+  try {
+    // Verify webhook signature
+    const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
+    if (receivedSignature) {
+      const isValid = innbucksProvider.verifyWebhookSignature(receivedSignature, event.body || '');
+      if (!isValid) {
+        console.warn('InnBucks webhook rejected: invalid signature');
+        return {
+          statusCode: 401,
+          body: JSON.stringify({ error: 'Invalid signature' }),
+          headers: { 'Content-Type': 'application/json' }
+        };
+      }
+    }
+
+    const payload: InnBucksWebhook = JSON.parse(event.body || '{}');
+
+    const paymentId = payload.merchant_reference;
+
+    eventLogger.logEvent({
+      payment_id: paymentId,
+      to_status: payload.status === 'SUCCESS' ? 'completed' : payload.status.toLowerCase(),
+      event_type: 'webhook_received',
+      gateway: 'innbucks',
+      provider_transaction_id: payload.transaction_id,
+      actor_type: 'webhook',
+      actor_id: 'innbucks-webhook',
+      provider_response: payload as unknown as Record<string, unknown>,
+    }).catch(() => {});
+
+    if (payload.status === 'SUCCESS') {
+      await paymentService.checkPaymentStatus(paymentId);
+      await paymentService.processPaymentCompletion(paymentId);
+      await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
+
+      // Non-blocking: sync repayment to Fineract core banking
+      if (process.env.FINERACT_SECRET_NAME) {
+        syncPaymentToFineract(paymentId).catch((err) => {
+          console.error('[fineract-sync] Background repayment sync failed:', err);
+        });
+      }
+
+      // Non-blocking: real-time DW sync
+      SQSQueues.syncDataWarehouse({
+        eventType: 'payment.confirmed',
+        entityId: paymentId,
+        entityType: 'payment',
+      }).catch((err) => {
+        console.error('[dw-sync] Background DW sync failed:', err);
+      });
+    } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
+      await paymentService.checkPaymentStatus(paymentId);
+    }
+
+    return {
+      statusCode: 200,
+      body: JSON.stringify({ message: 'Webhook processed successfully' }),
+      headers: { 'Content-Type': 'application/json' }
+    };
+
+  } catch (error) {
+    console.error('Error processing InnBucks webhook:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Webhook processing failed' }),

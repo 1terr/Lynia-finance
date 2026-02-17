@@ -28,6 +28,8 @@ export const QUEUE_NAMES = {
   CREDIT_SCORING: `${ENV}-lynia-credit-scoring`,
   WHATSAPP_MESSAGE_RETRY: `${ENV}-lynia-whatsapp-message-retry`,
   FINERACT_SYNC_RETRY: `${ENV}-lynia-fineract-sync-retry`,
+  DW_SYNC: `${ENV}-lynia-dw-sync`,
+  PAYMENT_COMPENSATION: `${ENV}-lynia-payment-compensation`,
 } as const;
 
 /**
@@ -208,5 +210,44 @@ export const SQSQueues = {
       // Exponential backoff: 60s, 300s, 900s (max)
       delaySeconds: Math.min(900, 60 * Math.pow(5, payload.retryCount || 0)),
       attributes: { entityType: payload.entityType, operation: payload.operation },
+    }),
+
+  /** Queue a real-time data warehouse sync event */
+  syncDataWarehouse: (payload: {
+    eventType: 'payment.confirmed' | 'loan.created' | 'loan.disbursed' | 'loan.status_changed' | 'loan.written_off' | 'kyc.completed' | 'credit.scored';
+    entityId: string;
+    entityType: 'payment' | 'loan' | 'kyc' | 'credit_score';
+    metadata?: Record<string, unknown>;
+  }) =>
+    publishMessage({
+      queueName: QUEUE_NAMES.DW_SYNC,
+      message: { ...payload, timestamp: new Date().toISOString() },
+      attributes: { eventType: payload.eventType, entityType: payload.entityType },
+    }),
+
+  /** Queue a payment compensation action (hold timeout, missing webhook, etc.) */
+  queueCompensation: (payload: {
+    action: 'hold_timeout' | 'webhook_missing' | 'fineract_sync_failed' | 'provider_error';
+    paymentId: string;
+    gateway: 'ecocash' | 'onemoney' | 'omari' | 'innbucks';
+    currentStatus: string;
+    failureReason?: string;
+    metadata?: Record<string, unknown>;
+    delaySeconds?: number;
+  }) =>
+    publishMessage({
+      queueName: QUEUE_NAMES.PAYMENT_COMPENSATION,
+      message: {
+        action: payload.action,
+        paymentId: payload.paymentId,
+        gateway: payload.gateway,
+        currentStatus: payload.currentStatus,
+        failureReason: payload.failureReason,
+        metadata: payload.metadata,
+        retryCount: 0,
+        timestamp: new Date().toISOString(),
+      },
+      delaySeconds: payload.delaySeconds,
+      attributes: { action: payload.action },
     }),
 };
