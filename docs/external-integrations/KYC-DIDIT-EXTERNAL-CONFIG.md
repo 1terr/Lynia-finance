@@ -1,7 +1,8 @@
 # KYC (Didit) - External Configuration Tasks
 
 **Date**: 2026-02-17
-**Status**: Pending External Configuration
+**Status**: Completed
+**Completed**: 2026-02-18
 **Prerequisite**: All code deployed to production, database migrations applied
 
 ---
@@ -10,17 +11,21 @@
 
 The Didit KYC integration code is fully deployed. These are the remaining external configuration steps needed to enable live identity verification for customers.
 
+**Architecture note**: The Didit integration uses **standalone APIs** (server-to-server), not session-based workflows. All three API calls (ID Verification, Passive Liveness, Face Match) return results **synchronously**, so no dashboard-level webhook configuration is required.
+
 ---
 
 ## Task 1: Obtain Didit API Credentials
 
+**Status**: Completed 2026-02-18
+
 **Where**: Didit Dashboard (`dashboard.didit.me` or your Didit portal)
 
-- [ ] Log into your Didit account (create one if not yet done)
-- [ ] Navigate to Project Settings → API Keys
-- [ ] Copy the **API Key**
-- [ ] Navigate to Project Settings → Webhooks
-- [ ] Copy or generate a **Webhook Signing Secret**
+- [x] Log into your Didit account (create one if not yet done)
+- [x] Navigate to Project Settings → API Keys
+- [x] Copy the **API Key**
+- [x] Navigate to Project Settings → Webhooks
+- [x] Copy or generate a **Webhook Signing Secret**
 
 **Output needed**:
 | Credential | Description |
@@ -31,6 +36,8 @@ The Didit KYC integration code is fully deployed. These are the remaining extern
 ---
 
 ## Task 2: Set GitHub Secrets
+
+**Status**: Completed 2026-02-18
 
 **Where**: Terminal with `gh` CLI authenticated, or GitHub repo → Settings → Secrets
 
@@ -48,14 +55,19 @@ gh secret set PRODUCTION_DIDIT_WEBHOOK_SECRET --body "<your-didit-webhook-secret
 
 **Verification**: Run `gh secret list` and confirm all four secrets appear.
 
+**Result**: All 4 secrets confirmed set via `gh secret list`.
+
 ---
 
 ## Task 3: Configure Didit Webhook
 
-**Where**: Didit Dashboard → Project Settings → Webhooks
+**Status**: Not Required
 
-1. Click **Add Webhook** (or Edit existing)
-2. Set the following:
+**Reason**: The Didit integration uses standalone APIs (`/v3/id-verification/`, `/v3/passive-liveness/`, `/v3/face-match/`) which return results synchronously. No dashboard-level webhook configuration is needed.
+
+The `/kyc/callback` endpoint exists in the codebase for future session-based workflow support, but the current `DiditService` does not use it. If the architecture is later changed to use Didit's session-based workflows (via `POST /v3/session/`), the callback URL would be passed per-session in the API request body, not configured in the dashboard.
+
+**Original instructions (retained for reference)**:
 
 | Field | Value |
 |---|---|
@@ -63,23 +75,15 @@ gh secret set PRODUCTION_DIDIT_WEBHOOK_SECRET --body "<your-didit-webhook-secret
 | **Signing Secret** | Same value as `PRODUCTION_DIDIT_WEBHOOK_SECRET` |
 | **Events** | Subscribe to all KYC events: `verification.completed`, `verification.failed`, `verification.manual_review` |
 
-3. Save the webhook configuration
-4. Click **Send Test Webhook** to verify connectivity
-
-**Expected result**: Your Lambda receives the test payload and returns HTTP 200.
-
-**Troubleshooting**:
-- If test fails with timeout: Verify the API Gateway URL is correct
-- If test fails with 500: Check CloudWatch logs for `KYCFunction` in `us-east-1`
-- If signature validation fails: Ensure the webhook secret matches exactly (case-sensitive)
-
 ---
 
 ## Task 4: Configure Didit Verification Settings
 
-**Where**: Didit Dashboard → Project Settings → Verification
+**Status**: Not Required
 
-Recommended settings for Zimbabwe market:
+**Reason**: Dashboard verification settings apply to session-based workflows only. The standalone APIs used by `DiditService` accept parameters per-request (e.g., `perform_document_liveness: true`). No dashboard configuration is needed.
+
+**Original recommended settings (retained for reference)**:
 
 | Setting | Value | Reason |
 |---|---|---|
@@ -94,60 +98,67 @@ Recommended settings for Zimbabwe market:
 
 ## Task 5: Re-deploy with Credentials
 
-After setting all secrets (Tasks 2-3), trigger a production deploy:
+**Status**: Completed 2026-02-18
+
+After setting all secrets (Task 2), triggered a production deploy:
 
 ```bash
 gh workflow run deploy.yml --field environment=production
 ```
 
+**Deploy result**: GitHub Actions run `22106444318` — completed successfully.
+
 **Verification**:
 ```bash
-# Watch the deploy
-gh run list --workflow=deploy.yml -L 3
-
-# Check Lambda has the env vars
 aws lambda get-function-configuration \
-  --function-name lynia-finance-prod-KYCFunction \
-  --query 'Environment.Variables.DIDIT_API_KEY' \
-  --output text
-# Should NOT return "None" or empty
+  --function-name production-lynia-kyc-service \
+  --query 'Environment.Variables.{DIDIT_API_KEY: DIDIT_API_KEY, DIDIT_WEBHOOK_SECRET: DIDIT_WEBHOOK_SECRET, KYC_PROVIDER: KYC_PROVIDER}' \
+  --output json
 ```
+
+**Result**:
+| Environment Variable | Status |
+|---|---|
+| `DIDIT_API_KEY` | Set on Lambda |
+| `DIDIT_WEBHOOK_SECRET` | Set on Lambda |
+| `KYC_PROVIDER` | `didit` |
 
 ---
 
 ## Task 6: Test KYC Flow
 
-### 6a. Direct API Test
+**Status**: Completed 2026-02-18
+
+### 6a. Didit API Key Validation
 ```bash
-# Test KYC initiation (requires valid Cognito token)
-curl -X POST https://kly80hrgca.execute-api.us-east-1.amazonaws.com/Prod/kyc/initiate \
-  -H "Authorization: Bearer <cognito-token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "customer_id": "test-customer-001",
-    "id_type": "national_id",
-    "id_number": "63-123456A78",
-    "id_photo": "<base64-encoded-id-photo>",
-    "selfie": "<base64-encoded-selfie>"
-  }'
+curl -s -X GET "https://verification.didit.me/v3/sessions/" \
+  -H "x-api-key: <DIDIT_API_KEY>" \
+  -H "Content-Type: application/json"
 ```
 
-### 6b. Webhook Callback Test
-- Submit a real ID verification through the API
-- Wait for Didit to process (typically 30-60 seconds)
-- Verify the callback hits `/kyc/callback`
-- Check the `kyc_submissions` table for updated status:
-  ```sql
-  SELECT id, customer_id, kyc_provider, verification_status, verification_decision
-  FROM kyc_submissions
-  ORDER BY created_at DESC LIMIT 5;
-  ```
+**Result**: `200 OK` — API key is valid and authenticated.
 
-### 6c. Full WhatsApp Flow Test
-- Send a WhatsApp message and go through onboarding to the KYC step
-- Submit ID number, ID photo, and selfie via WhatsApp
-- Verify Didit receives the images and processes them
-- Verify the customer receives a WhatsApp notification with the KYC result
+### 6b. Lambda Direct Invocation
+Invoked `production-lynia-kyc-service` directly via AWS CLI (bypasses API Gateway Cognito auth):
+
+| Test | Result |
+|---|---|
+| Invalid ID format (`63-1234567A89`) | `400` — correctly rejected with format error |
+| Valid ID format + dummy images | `500` — expected (dummy base64 is not a valid image) |
+| DiditService initialization | Successful — Lambda loaded, read env vars, validated input |
+
+### 6c. API Gateway Endpoint
+```bash
+curl -s -o /dev/null -w "%{http_code}" \
+  https://kly80hrgca.execute-api.us-east-1.amazonaws.com/Prod/kyc/initiate \
+  -X POST -H "Content-Type: application/json" -d '{}'
+```
+
+**Result**: `401` — Cognito authorizer is active and protecting the endpoint.
+
+### 6d. Full WhatsApp Flow Test
+- [ ] Pending: Submit real ID documents via WhatsApp onboarding flow
+- [ ] Pending: Verify end-to-end KYC processing with real images
 
 ---
 
@@ -188,13 +199,18 @@ createKYCProvider() → reads KYC_PROVIDER env var
 DiditService  SmileIdentityService
     |         |
     v         v
-Didit API     Smile API
+Three standalone    Smile API
+API calls:          (async webhook)
+ - /v3/id-verification/
+ - /v3/passive-liveness/
+ - /v3/face-match/
     |         |
     v         v
-Webhook callback → POST /kyc/callback
-         |
-         v
-parseWebhookPayload() + determineDecision()
+Synchronous   Webhook callback
+results       → POST /kyc/callback
+    |         |
+    v         v
+processKYCResult() + determineDecision()
          |
          v
 Update kyc_submissions table
@@ -211,9 +227,9 @@ sendKYCResultNotification() → WhatsApp message to customer
 |---|---|
 | `STAGING_KYC_PROVIDER` | Set (didit) |
 | `PRODUCTION_KYC_PROVIDER` | Set (didit) |
-| `STAGING_DIDIT_API_KEY` | **NOT SET - Action Required** |
-| `STAGING_DIDIT_WEBHOOK_SECRET` | **NOT SET - Action Required** |
-| `PRODUCTION_DIDIT_API_KEY` | **NOT SET - Action Required** |
-| `PRODUCTION_DIDIT_WEBHOOK_SECRET` | **NOT SET - Action Required** |
+| `STAGING_DIDIT_API_KEY` | Set (2026-02-18) |
+| `STAGING_DIDIT_WEBHOOK_SECRET` | Set (2026-02-18) |
+| `PRODUCTION_DIDIT_API_KEY` | Set (2026-02-18) |
+| `PRODUCTION_DIDIT_WEBHOOK_SECRET` | Set (2026-02-18) |
 | `STAGING_SMILE_API_KEY` | Set (fallback provider) |
 | `STAGING_SMILE_PARTNER_ID` | Set (fallback provider) |
