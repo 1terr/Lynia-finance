@@ -259,19 +259,178 @@ export interface AuditLog {
 
 // --- Loan Products ---
 
+export type ProductType = 'asset_financing' | 'digital_credit';
+export type ProductCategory = 'smartphone' | 'digital';
+export type ProductStatus = 'active' | 'inactive' | 'launching_soon';
+
 export interface LoanProduct {
   id: string;
-  product_name: string;
   product_code: string;
+  product_name: string;
+  product_type: ProductType;
+  product_category: ProductCategory;
+  status: ProductStatus;
   min_amount_usd: number;
   max_amount_usd: number;
+  loan_term_months: number;
   min_term_months: number;
   max_term_months: number;
   interest_rate_annual: number;
+  interest_rate_monthly: number;
   deposit_percentage: number;
-  is_active: boolean;
+  min_deposit_usd: number;
+  requires_device: boolean;
+  requires_organization_verification: boolean;
+  allowed_disbursement_methods: string[];
+  max_active_loans: number;
+  display_order: number;
+  description?: string;
+  scoring_config?: Record<string, unknown>;
+  fineract_product_id?: number;
   created_at: string;
   updated_at: string;
+  deleted_at?: string;
+}
+
+export interface CreateProductInput {
+  product_code: string;
+  product_name: string;
+  product_type: ProductType;
+  product_category: ProductCategory;
+  status?: ProductStatus;
+  min_amount_usd: number;
+  max_amount_usd: number;
+  loan_term_months?: number;
+  min_term_months: number;
+  max_term_months: number;
+  interest_rate_annual: number;
+  interest_rate_monthly: number;
+  deposit_percentage?: number;
+  min_deposit_usd?: number;
+  requires_device?: boolean;
+  requires_organization_verification?: boolean;
+  allowed_disbursement_methods?: string[];
+  max_active_loans?: number;
+  display_order?: number;
+  description?: string;
+}
+
+// --- Device Models ---
+
+export interface DeviceModel {
+  id: string;
+  brand: string;
+  model_name: string;
+  model_code: string;
+  storage_gb?: number;
+  ram_gb?: number;
+  screen_size_inches?: number;
+  device_type: string;
+  retail_price_usd: number;
+  wholesale_price_usd: number;
+  min_deposit_percentage?: number;
+  max_term_months?: number;
+  is_active: boolean;
+  available_stock: number;
+  image_url?: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+}
+
+export interface CreateDeviceModelInput {
+  brand: string;
+  model_name: string;
+  model_code: string;
+  storage_gb?: number;
+  ram_gb?: number;
+  screen_size_inches?: number;
+  device_type?: string;
+  retail_price_usd: number;
+  wholesale_price_usd: number;
+  min_deposit_percentage?: number;
+  max_term_months?: number;
+  is_active?: boolean;
+  available_stock?: number;
+  image_url?: string;
+}
+
+// --- Organizations ---
+
+export type OrgType = 'government' | 'corporate' | 'cooperative' | 'ngo';
+export type VerificationMethod = 'excel_upload' | 'api' | 'manual';
+export type MemberEmploymentStatus = 'active' | 'retired' | 'suspended';
+
+export interface Organization {
+  id: string;
+  org_code: string;
+  org_name: string;
+  org_type: OrgType;
+  verification_method: VerificationMethod;
+  api_endpoint?: string;
+  scoring_trust_level: number;
+  contact_person?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  is_active: boolean;
+  total_members: number;
+  last_data_import_at?: string;
+  created_at: string;
+  updated_at: string;
+  deleted_at?: string;
+  member_count?: number;
+}
+
+export interface CreateOrganizationInput {
+  org_code: string;
+  org_name: string;
+  org_type: OrgType;
+  verification_method?: VerificationMethod;
+  api_endpoint?: string;
+  scoring_trust_level?: number;
+  contact_person?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  is_active?: boolean;
+}
+
+export interface OrganizationMember {
+  id: string;
+  organization_id: string;
+  phone_number: string | null;
+  employee_number?: string;
+  employment_status: MemberEmploymentStatus;
+  employment_start_date?: string;
+  department?: string;
+  grade_level?: string;
+  monthly_salary_usd?: number;
+  salary_verified: boolean;
+  import_batch_id?: string;
+  data_source?: string;
+  is_active: boolean;
+  customer_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MemberImportInput {
+  national_id?: string;
+  phone_number?: string;
+  employee_number?: string;
+  employment_status?: MemberEmploymentStatus;
+  employment_start_date?: string;
+  department?: string;
+  grade_level?: string;
+  monthly_salary_usd?: number;
+  salary_verified?: boolean;
+}
+
+export interface MemberImportResult {
+  import_batch_id: string;
+  total: number;
+  inserted: number;
+  skipped: number;
+  errors: number;
 }
 
 // --- Notifications ---
