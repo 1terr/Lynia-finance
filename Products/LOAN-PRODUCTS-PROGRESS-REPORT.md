@@ -3,7 +3,7 @@
 **Date**: 2026-02-19
 **Status**: In Progress (Backend Complete, Frontend Pending)
 **Branch**: `master`
-**Latest Commit**: `60eca68` - fix: add missing product_category to score result and verify-organization endpoint
+**Latest Commit**: `d774763` - docs: update loan product progress report and add scoring contract tests
 
 ---
 
@@ -196,7 +196,8 @@ All routes inherit the Cognito authorizer from `LyniaApi`. No new Lambda functio
 |------|--------|-------------|-----------------|
 | 2026-02-19 | `65268c0` | Database migration + backend CRUD API | Deployed (staging + production) |
 | 2026-02-19 | `d595dcb` | Template.yaml 16 API routes + scoring weights | Failed CI (missing product_category) |
-| 2026-02-19 | `60eca68` | Fix: product_category + verify-organization endpoint | Deploying... |
+| 2026-02-19 | `60eca68` | Fix: product_category + verify-organization endpoint | Deployed |
+| 2026-02-19 | `d774763` | Progress report + scoring contract tests (37 tests) | Deployed |
 
 ---
 
@@ -233,6 +234,38 @@ All routes inherit the Cognito authorizer from `LyniaApi`. No new Lambda functio
 | `/scoring/calculate` | POST | Calculate credit score (now product-category-aware) |
 | `/scoring/{customerId}` | GET | Get existing score |
 | **`/scoring/verify-organization`** (new) | **POST** | Verify organization membership by phone |
+
+---
+
+## Test Results
+
+### Scoring Service Contract Tests — 37/37 passing
+
+| Test Group | Tests | Status |
+|------------|-------|--------|
+| POST /scoring/calculate (existing) | 13 | All passing |
+| GET /scoring/{customerId} | 4 | All passing |
+| Unknown routes | 3 | All passing |
+| Top-level error handling | 1 | All passing |
+| **POST /scoring/verify-organization** (new) | **5** | All passing |
+| **Digital loan org verification** (new) | **11** | All passing |
+
+### Credit Score Data Flow Integration Tests — 19/19 passing
+
+All existing integration tests pass with zero regressions after the 6-component scoring model changes.
+
+### New Test Coverage (Phase 4)
+
+| Scenario | Expected Score | Result |
+|----------|---------------|--------|
+| Government employee (trust 90), active, 5+ yrs, salary verified | 200/200 | Pass |
+| Corporate employee (trust 70), active, 2-5 yrs, no salary | 140/200 | Pass |
+| Retired government employee, 5+ yrs, salary verified | 175/200 | Pass |
+| New government employee (<1 yr), salary verified | 170/200 | Pass |
+| Suspended government employee, 5+ yrs | 120/200 | Pass |
+| Cooperative (trust 50), active, 1-2 yrs, salary verified | 140/200 | Pass |
+| Digital loan weight redistribution (total = 1000) | mobileMoney ≤ 100, externalCredit ≤ 50, org ≤ 200 | Pass |
+| Smartphone default (org_verification = 0) | 0 | Pass |
 
 ---
 
