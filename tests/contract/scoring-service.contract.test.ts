@@ -166,6 +166,7 @@ describe('Scoring Service Contract Tests', () => {
 
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('customer_id', 'cust_001');
+      expect(body).toHaveProperty('product_category', 'smartphone');
       expect(body).toHaveProperty('total_raw_score');
       expect(body).toHaveProperty('scaled_score');
       expect(body).toHaveProperty('components');
@@ -202,6 +203,8 @@ describe('Scoring Service Contract Tests', () => {
 
       expect(components.kyc_verification).toBeGreaterThanOrEqual(0);
       expect(components.kyc_verification).toBeLessThanOrEqual(100);
+
+      expect(components.org_verification).toBe(0); // 0 for smartphone loans
     });
 
     it('should return total_raw_score in range 0-1000', async () => {
@@ -551,6 +554,416 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error');
       expect(response.headers).toHaveProperty('Content-Type', 'application/json');
+    });
+  });
+
+  // =========================================================================
+  // POST /scoring/verify-organization
+  // =========================================================================
+  describe('POST /scoring/verify-organization', () => {
+    it('should return 400 when phone_number is missing', async () => {
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/verify-organization',
+        body: JSON.stringify({}),
+      });
+
+      const response = await handler(event);
+
+      expect(response.statusCode).toBe(400);
+      const body = parseResponseBody(response);
+      expect(body).toHaveProperty('error', 'phone_number is required');
+    });
+
+    it('should return found: false when member not found', async () => {
+      mockQueryBuilder.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116', message: 'No rows' } });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/verify-organization',
+        body: JSON.stringify({ phone_number: '+263770000000' }),
+      });
+
+      const response = await handler(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = parseResponseBody(response);
+      expect(body).toEqual({ found: false });
+    });
+
+    it('should return found: true with org data when member exists', async () => {
+      // First call: organization_members lookup
+      // Second call: organizations lookup
+      let callCount = 0;
+      mockQueryBuilder.execute.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            data: {
+              organization_id: 'org-uuid-123',
+              employment_status: 'active',
+              employment_start_date: '2018-03-01',
+              salary_verified: true,
+              monthly_salary_usd: 450.00,
+              customer_id: 'cust-123',
+            },
+            error: null,
+          });
+        }
+        return Promise.resolve({
+          data: {
+            id: 'org-uuid-123',
+            org_name: 'Civil Service Commission',
+            org_type: 'government',
+            scoring_trust_level: 90,
+          },
+          error: null,
+        });
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/verify-organization',
+        body: JSON.stringify({ phone_number: '+263771234567' }),
+      });
+
+      const response = await handler(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      expect(body.found).toBe(true);
+      expect(body.org_name).toBe('Civil Service Commission');
+      expect(body.org_type).toBe('government');
+      expect(body.scoring_trust_level).toBe(90);
+      expect(body.employment_status).toBe('active');
+      expect(body.salary_verified).toBe(true);
+      expect(body.monthly_salary_usd).toBe(450.00);
+      expect(typeof body.tenure_months).toBe('number');
+    });
+
+    it('should return found: false when org is inactive', async () => {
+      let callCount = 0;
+      mockQueryBuilder.execute.mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return Promise.resolve({
+            data: {
+              organization_id: 'org-uuid-123',
+              employment_status: 'active',
+              employment_start_date: '2020-01-01',
+              salary_verified: false,
+              monthly_salary_usd: 0,
+              customer_id: null,
+            },
+            error: null,
+          });
+        }
+        // Org not found (inactive filtered out)
+        return Promise.resolve({ data: null, error: null });
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/verify-organization',
+        body: JSON.stringify({ phone_number: '+263771111111' }),
+      });
+
+      const response = await handler(event);
+
+      expect(response.statusCode).toBe(200);
+      const body = parseResponseBody(response);
+      expect(body).toEqual({ found: false });
+    });
+
+    it('should return 500 when database throws', async () => {
+      mockQueryBuilder.execute.mockRejectedValue(new Error('Connection lost'));
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/verify-organization',
+        body: JSON.stringify({ phone_number: '+263771234567' }),
+      });
+
+      const response = await handler(event);
+
+      expect(response.statusCode).toBe(500);
+      const body = parseResponseBody(response);
+      expect(body).toHaveProperty('error', 'Failed to verify organization membership');
+    });
+  });
+
+  // =========================================================================
+  // Organization Verification Scoring (6-component digital loans)
+  // =========================================================================
+  describe('POST /scoring/calculate - Digital loan with org verification', () => {
+    it('should score 200/200 for government employee with active status, 5+ years, verified salary', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 95,
+          salary_verified: true,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      expect(body.product_category).toBe('digital');
+      // Org verification raw: 80 (gov) + 50 (active) + 40 (5+ yrs) + 30 (verified) = 200/200
+      // Scaled to weight 200: (200/200) * 200 = 200
+      expect(components.org_verification).toBe(200);
+    });
+
+    it('should score 140/200 for corporate employee with active status, 2-5 years, unverified salary', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 70,
+          employment_status: 'active',
+          tenure_months: 36,
+          salary_verified: false,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      // Org verification raw: 60 (corp) + 50 (active) + 30 (2-5yr) + 0 (not verified) = 140/200
+      // Scaled to weight 200: (140/200) * 200 = 140
+      expect(components.org_verification).toBe(140);
+    });
+
+    it('should score 175/200 for retired government employee with 5+ years and verified salary', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'retired',
+          tenure_months: 240,
+          salary_verified: true,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      // 80 (gov) + 25 (retired) + 40 (5+ yrs) + 30 (verified) = 175/200
+      // Scaled: (175/200) * 200 = 175
+      expect(components.org_verification).toBe(175);
+    });
+
+    it('should score 170/200 for new government employee (<1 year) with verified salary', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 6,
+          salary_verified: true,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      // 80 (gov) + 50 (active) + 10 (<1yr) + 30 (verified) = 170/200
+      // Scaled: (170/200) * 200 = 170
+      expect(components.org_verification).toBe(170);
+    });
+
+    it('should use 5-component model with org_verification=0 for smartphone loans', async () => {
+      const input = buildScoringInput({
+        product_category: 'smartphone',
+        org_verification: null,
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      expect(body.product_category).toBe('smartphone');
+      expect(components.org_verification).toBe(0);
+    });
+
+    it('should default to smartphone product_category when not specified', async () => {
+      const input = buildScoringInput(); // no product_category
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+
+      expect(body.product_category).toBe('smartphone');
+    });
+
+    it('should redistribute weights correctly for digital loans', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 95,
+          salary_verified: true,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      // For digital loans:
+      // mobile_money max = 100 (halved from 200)
+      // external_credit max = 50 (reduced from 150)
+      // org_verification max = 200 (new)
+      expect(components.mobile_money).toBeLessThanOrEqual(100);
+      expect(components.external_credit).toBeLessThanOrEqual(50);
+      expect(components.org_verification).toBeLessThanOrEqual(200);
+
+      // Total should still be in 0-1000 range
+      const total = Object.values(components).reduce((a, b) => a + b, 0);
+      expect(total).toBeGreaterThanOrEqual(0);
+      expect(total).toBeLessThanOrEqual(1000);
+    });
+
+    it('should scale final score to 300-850 range for digital loans', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 95,
+          salary_verified: true,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, number>>(response);
+
+      expect(body.scaled_score).toBeGreaterThanOrEqual(300);
+      expect(body.scaled_score).toBeLessThanOrEqual(850);
+    });
+
+    it('should give org_verification=0 for digital loan with no org data', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: null,
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      expect(components.org_verification).toBe(0);
+    });
+
+    it('should score 0 for employment_status=suspended', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'suspended',
+          tenure_months: 60,
+          salary_verified: false,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      // 80 (gov) + 0 (suspended) + 40 (5+ yrs) + 0 (not verified) = 120/200
+      // Scaled: (120/200) * 200 = 120
+      expect(components.org_verification).toBe(120);
+    });
+
+    it('should score cooperative org type correctly (trust 40-59)', async () => {
+      const input = buildScoringInput({
+        product_category: 'digital',
+        org_verification: {
+          scoring_trust_level: 50,
+          employment_status: 'active',
+          tenure_months: 18,
+          salary_verified: true,
+        },
+      });
+
+      const event = createAPIGatewayEvent({
+        httpMethod: 'POST',
+        path: '/scoring/calculate',
+        body: JSON.stringify(input),
+      });
+
+      const response = await handler(event);
+      const body = parseResponseBody<Record<string, unknown>>(response);
+      const components = body.components as Record<string, number>;
+
+      // 40 (coop) + 50 (active) + 20 (1-2yr) + 30 (verified) = 140/200
+      // Scaled: (140/200) * 200 = 140
+      expect(components.org_verification).toBe(140);
     });
   });
 });
