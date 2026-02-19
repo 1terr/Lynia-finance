@@ -1042,6 +1042,105 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /admin/audit-logs
             Method: GET
+        # Product CRUD routes
+        GetProducts:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/products
+            Method: GET
+        GetProductById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/products/{id}
+            Method: GET
+        CreateProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/products
+            Method: POST
+        UpdateProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/products/{id}
+            Method: PATCH
+        DeleteProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/products/{id}
+            Method: DELETE
+        # Device Model CRUD routes
+        GetDeviceModels:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/device-models
+            Method: GET
+        GetDeviceModelById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/device-models/{id}
+            Method: GET
+        CreateDeviceModel:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/device-models
+            Method: POST
+        UpdateDeviceModel:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/device-models/{id}
+            Method: PATCH
+        DeleteDeviceModel:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/device-models/{id}
+            Method: DELETE
+        # Organization CRUD routes
+        GetOrganizations:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/organizations
+            Method: GET
+        GetOrganizationById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/organizations/{id}
+            Method: GET
+        CreateOrganization:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/organizations
+            Method: POST
+        UpdateOrganization:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/organizations/{id}
+            Method: PATCH
+        ImportOrgMembers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/organizations/{id}/import
+            Method: POST
+        GetOrgMembers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/organizations/{id}/members
+            Method: GET
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

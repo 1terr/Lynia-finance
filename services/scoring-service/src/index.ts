@@ -56,8 +56,18 @@ interface KYCVerificationInput {
   liveness_passed: boolean;
 }
 
+interface OrgVerificationData {
+  scoring_trust_level: number;
+  employment_status: string;
+  tenure_months: number;
+  salary_verified: boolean;
+}
+
 interface CreditScoreInput {
   customer_id: string;
+
+  // Product category: 'smartphone' (default) or 'digital'
+  product_category?: 'smartphone' | 'digital';
 
   // Affordability data
   monthly_income_usd: number;
@@ -80,18 +90,32 @@ interface CreditScoreInput {
 
   // KYC data (provider-agnostic)
   kyc_result: KYCVerificationInput;
+
+  // Organization verification data (for digital loans)
+  org_verification?: OrgVerificationData | null;
+}
+
+interface ScoringWeights {
+  affordability: number;
+  repayment: number;
+  mobileMoney: number;
+  externalCredit: number;
+  kycVerification: number;
+  orgVerification: number;
 }
 
 interface CreditScoreResult {
   customer_id: string;
+  product_category: 'smartphone' | 'digital';
   total_raw_score: number; // 0-1000
   scaled_score: number; // 300-850
   components: {
-    affordability: number; // 0-300
-    repayment_willingness: number; // 0-250
-    mobile_money: number; // 0-200
-    external_credit: number; // 0-150
-    kyc_verification: number; // 0-100
+    affordability: number;
+    repayment_willingness: number;
+    mobile_money: number;
+    external_credit: number;
+    kyc_verification: number;
+    org_verification: number;
   };
   decision: 'approve' | 'review' | 'reject';
   credit_limit_usd: number;
@@ -309,11 +333,85 @@ function scoreKYCVerification(kycResult: KYCVerificationInput): number {
 }
 
 // ===================================================================
+// SCORING WEIGHTS & ORGANIZATION VERIFICATION
+// ===================================================================
+
+/**
+ * Get scoring component weights based on product category.
+ *
+ * Smartphone loans use the standard 5-component model (org verification = 0).
+ * Digital loans redistribute weight to include a 6th org verification component
+ * by reducing mobile money (200→100) and external credit (150→50).
+ * Total always sums to 1000.
+ */
+function getScoringWeights(productCategory: 'smartphone' | 'digital'): ScoringWeights {
+  if (productCategory === 'digital') {
+    return {
+      affordability: 300,
+      repayment: 250,
+      mobileMoney: 100,
+      externalCredit: 50,
+      kycVerification: 100,
+      orgVerification: 200,
+    };
+  }
+  return {
+    affordability: 300,
+    repayment: 250,
+    mobileMoney: 200,
+    externalCredit: 150,
+    kycVerification: 100,
+    orgVerification: 0,
+  };
+}
+
+/**
+ * Component 6: Organization Verification (up to 200 points for digital loans)
+ *
+ * Scores based on 4 sub-factors:
+ * - Organization trust level:  up to 80 pts
+ * - Employment status:         up to 50 pts
+ * - Employment tenure:         up to 40 pts
+ * - Salary verification:       up to 30 pts
+ */
+function calculateOrgVerificationScore(data: OrgVerificationData | null | undefined): number {
+  if (!data) return 0;
+
+  let score = 0;
+
+  // 1. Organization Trust Level (80 points max)
+  if (data.scoring_trust_level >= 80) score += 80;       // Government
+  else if (data.scoring_trust_level >= 60) score += 60;   // Corporate
+  else if (data.scoring_trust_level >= 40) score += 40;   // Cooperative
+  else score += 20;                                       // Other
+
+  // 2. Employment Status (50 points max)
+  if (data.employment_status === 'active') score += 50;
+  else if (data.employment_status === 'retired') score += 25;
+  // suspended/other: 0 pts
+
+  // 3. Employment Tenure (40 points max)
+  if (data.tenure_months >= 60) score += 40;       // 5+ years
+  else if (data.tenure_months >= 24) score += 30;  // 2-5 years
+  else if (data.tenure_months >= 12) score += 20;  // 1-2 years
+  else score += 10;                                // <1 year
+
+  // 4. Salary Verification (30 points max)
+  if (data.salary_verified) score += 30;
+
+  return Math.min(score, 200);
+}
+
+// ===================================================================
 // MAIN SCORING FUNCTION
 // ===================================================================
 
 /**
- * Calculate complete credit score using 5-component rule-based algorithm
+ * Calculate complete credit score using rule-based algorithm.
+ *
+ * Smartphone loans use a 5-component model (org verification = 0).
+ * Digital loans use a 6-component model with redistributed weights,
+ * reducing mobile money and external credit to make room for org verification.
  *
  * Returns:
  * - Raw score: 0-1000
@@ -322,32 +420,46 @@ function scoreKYCVerification(kycResult: KYCVerificationInput): number {
  * - Credit tier and limit
  */
 async function calculateRuleBasedScore(input: CreditScoreInput): Promise<CreditScoreResult> {
-  // Calculate each component (total raw score: 0-1000)
+  const productCategory = input.product_category || 'smartphone';
+  const weights = getScoringWeights(productCategory);
+
+  // Calculate raw sub-scores (each on its own 0-maxPoints scale)
+  const rawAffordability = scoreAffordability({
+    monthly_income_usd: input.monthly_income_usd,
+    existing_debt_obligations_usd: input.existing_debt_obligations_usd,
+    household_size: input.household_size,
+    dependents: input.dependents,
+    requested_loan_amount: input.requested_loan_amount
+  }); // 0-300
+
+  const rawRepayment = scoreRepaymentWillingness(
+    input.previous_loans_count !== undefined ? {
+      previous_loans_count: input.previous_loans_count,
+      on_time_payment_rate: input.on_time_payment_rate || 0,
+      days_since_last_payment: 0,
+      total_payments_made: 0,
+      bill_payment_consistency: input.bill_payment_consistency || 0,
+      communication_response_rate: input.communication_response_rate || 0
+    } : null
+  ); // 0-250
+
+  const rawMobileMoney = scoreMobileMoneyActivity(input.mobile_money_profile || null); // 0-200
+  const rawExternalCredit = scoreExternalCredit(input.external_credit_data || null); // 0-150
+  const rawKyc = scoreKYCVerification(input.kyc_result); // 0-100
+  const rawOrgVerification = calculateOrgVerificationScore(input.org_verification); // 0-200
+
+  // Scale each component to its weighted allocation
+  // For smartphone: standard max points = weight (no scaling needed for components 1-5, org=0)
+  // For digital: scale mobile money (200→100), external credit (150→50), add org (0→200)
   const components = {
-    affordability: scoreAffordability({
-      monthly_income_usd: input.monthly_income_usd,
-      existing_debt_obligations_usd: input.existing_debt_obligations_usd,
-      household_size: input.household_size,
-      dependents: input.dependents,
-      requested_loan_amount: input.requested_loan_amount
-    }), // 0-300
-
-    repayment_willingness: scoreRepaymentWillingness(
-      input.previous_loans_count !== undefined ? {
-        previous_loans_count: input.previous_loans_count,
-        on_time_payment_rate: input.on_time_payment_rate || 0,
-        days_since_last_payment: 0,
-        total_payments_made: 0,
-        bill_payment_consistency: input.bill_payment_consistency || 0,
-        communication_response_rate: input.communication_response_rate || 0
-      } : null
-    ), // 0-250
-
-    mobile_money: scoreMobileMoneyActivity(input.mobile_money_profile || null), // 0-200
-
-    external_credit: scoreExternalCredit(input.external_credit_data || null), // 0-150
-
-    kyc_verification: scoreKYCVerification(input.kyc_result) // 0-100
+    affordability: Math.round((rawAffordability / 300) * weights.affordability),
+    repayment_willingness: Math.round((rawRepayment / 250) * weights.repayment),
+    mobile_money: Math.round((rawMobileMoney / 200) * weights.mobileMoney),
+    external_credit: Math.round((rawExternalCredit / 150) * weights.externalCredit),
+    kyc_verification: Math.round((rawKyc / 100) * weights.kycVerification),
+    org_verification: weights.orgVerification > 0
+      ? Math.round((rawOrgVerification / 200) * weights.orgVerification)
+      : 0,
   };
 
   // Calculate total raw score (0-1000)
