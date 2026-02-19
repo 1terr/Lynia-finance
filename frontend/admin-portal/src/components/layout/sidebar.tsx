@@ -7,6 +7,7 @@ import {
   Users,
   FileCheck,
   CreditCard,
+  Package,
   Smartphone,
   Wallet,
   BarChart3,
@@ -50,6 +51,12 @@ const navItems: NavItem[] = [
     href: '/fineract/loans',
     icon: CreditCard,
     requiredPermissions: ['loans:read'],
+  },
+  {
+    label: 'Products',
+    href: '/products',
+    icon: Package,
+    requiredPermissions: ['settings:read'],
   },
   {
     label: 'Devices',

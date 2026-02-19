@@ -832,7 +832,7 @@ async function syncApprovedLoanToFineract(customerId: string, scoreResult: Credi
 
     const { data: loan } = await db
       .from('loans')
-      .select('id, fineract_loan_id, loan_amount_usd, term_months')
+      .select('id, fineract_loan_id, loan_amount_usd, term_months, product_id')
       .eq('customer_id', customerId)
       .is('fineract_loan_id', null)
       .order('created_at', { ascending: false })
@@ -842,14 +842,36 @@ async function syncApprovedLoanToFineract(customerId: string, scoreResult: Credi
 
     if (!loan) return;
 
-    // Map credit tier to Fineract loan product ID
-    // Tier 1 Entry (LT1E) = 1, Tier 2 Standard (LT2S) = 2, Tier 3 Premium (LT3P) = 3
-    const tierToProductId: Record<string, number> = {
-      'Tier 1': 1,
-      'Tier 2': 2,
-      'Tier 3': 3,
-    };
-    const fineractProductId = tierToProductId[scoreResult.tier] || 1;
+    // Database-driven Fineract product mapping
+    // Look up fineract_product_id from loan_products table when product_id is available
+    let fineractProductId: number;
+    if (loan.product_id) {
+      try {
+        const { data: loanProduct } = await db
+          .from('loan_products')
+          .select('fineract_product_id, product_category')
+          .eq('id', loan.product_id)
+          .single()
+          .execute();
+
+        if (loanProduct?.fineract_product_id) {
+          fineractProductId = loanProduct.fineract_product_id;
+        } else {
+          // Fallback to tier mapping when fineract_product_id is not set
+          const tierToProductId: Record<string, number> = { 'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3 };
+          fineractProductId = tierToProductId[scoreResult.tier] || 1;
+        }
+      } catch {
+        // Database query failed — fall back to tier mapping for resilience
+        const tierToProductId: Record<string, number> = { 'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3 };
+        fineractProductId = tierToProductId[scoreResult.tier] || 1;
+      }
+    } else {
+      // Backward-compatible fallback for existing loans without product_id
+      // Tier 1 Entry (LT1E) = 1, Tier 2 Standard (LT2S) = 2, Tier 3 Premium (LT3P) = 3
+      const tierToProductId: Record<string, number> = { 'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3 };
+      fineractProductId = tierToProductId[scoreResult.tier] || 1;
+    }
 
     const fineractLoanId = await syncLoanToFineract({
       loanId: loan.id,
