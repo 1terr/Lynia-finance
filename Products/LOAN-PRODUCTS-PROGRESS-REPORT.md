@@ -3,7 +3,7 @@
 **Date**: 2026-02-19
 **Status**: In Progress (Backend Complete, Frontend Pending)
 **Branch**: `master`
-**Latest Commit**: `d774763` - docs: update loan product progress report and add scoring contract tests
+**Latest Commit**: `ecd8138` - docs: update progress report with test results and deployment history
 
 ---
 
@@ -198,6 +198,7 @@ All routes inherit the Cognito authorizer from `LyniaApi`. No new Lambda functio
 | 2026-02-19 | `d595dcb` | Template.yaml 16 API routes + scoring weights | Failed CI (missing product_category) |
 | 2026-02-19 | `60eca68` | Fix: product_category + verify-organization endpoint | Deployed |
 | 2026-02-19 | `d774763` | Progress report + scoring contract tests (37 tests) | Deployed |
+| 2026-02-19 | `ecd8138` | Progress report update with test results | Deployed (staging + production v97) |
 
 ---
 
@@ -293,5 +294,15 @@ All existing integration tests pass with zero regressions after the 6-component 
 
 ---
 
-*Report generated: February 19, 2026*
+## Live Verification
+
+| Endpoint | URL | Status |
+|----------|-----|--------|
+| Production API | `https://kly80hrgca.execute-api.us-east-1.amazonaws.com/Prod/` | 401 (auth required - working) |
+| CloudFront Frontend | `https://d1qwfy2tsdmpe4.cloudfront.net` | 200 (live) |
+| GitHub Release | `v97` (Production Release) | Created 2026-02-19 |
+
+---
+
+*Report updated: February 19, 2026*
 *Implementation by: Claude Code (AI-assisted development)*
