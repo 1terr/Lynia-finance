@@ -364,6 +364,11 @@ jobs:
           TRUST_SECRET="${TRUSTONIC_API_SECRET:-placeholder}"
           SMS_KEY="${SMS_API_KEY:-placeholder}"
 
+          # Shell-level fallbacks for inter-service API URLs (empty on fresh stack creation)
+          SCORING_URL="${STAGING_SCORING_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod/scoring/calculate}"
+          WHATSAPP_URL="${STAGING_WHATSAPP_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod/whatsapp/send}"
+          KYC_URL="${STAGING_KYC_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod/}"
+
           sam deploy \
             --config-env staging \
             --no-confirm-changeset \
@@ -375,9 +380,9 @@ jobs:
               "PrivateSubnet2Id=${{ steps.resolve-staging-infra.outputs.subnet2 }}" \
               "LambdaSecurityGroupId=${{ steps.resolve-staging-infra.outputs.lambda_sg }}" \
               "CognitoUserPoolArn=${{ steps.resolve-staging-infra.outputs.cognito_arn }}" \
-              "ScoringApiUrl=${{ steps.resolve-staging-infra.outputs.scoring_api_url }}" \
-              "WhatsAppApiUrl=${{ steps.resolve-staging-infra.outputs.whatsapp_api_url }}" \
-              "KycApiUrl=${{ steps.resolve-staging-infra.outputs.kyc_api_url }}" \
+              "ScoringApiUrl=${SCORING_URL}" \
+              "WhatsAppApiUrl=${WHATSAPP_URL}" \
+              "KycApiUrl=${KYC_URL}" \
               "WhatsAppPhoneNumberId=${WA_PHONE}" \
               "WhatsAppAccessToken=${WA_TOKEN}" \
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
@@ -399,6 +404,9 @@ jobs:
               "SmsApiKey=${SMS_KEY}"
         env:
           SAM_CLI_TELEMETRY: 0
+          STAGING_SCORING_API_URL: ${{ steps.resolve-staging-infra.outputs.scoring_api_url }}
+          STAGING_WHATSAPP_API_URL: ${{ steps.resolve-staging-infra.outputs.whatsapp_api_url }}
+          STAGING_KYC_API_URL: ${{ steps.resolve-staging-infra.outputs.kyc_api_url }}
           WHATSAPP_PHONE_ID: ${{ secrets.STAGING_WHATSAPP_PHONE_ID }}
           WHATSAPP_TOKEN: ${{ secrets.STAGING_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
@@ -632,6 +640,11 @@ jobs:
           TRUST_SECRET="${TRUSTONIC_API_SECRET:-placeholder}"
           SMS_KEY="${SMS_API_KEY:-placeholder}"
 
+          # Shell-level fallbacks for inter-service API URLs (empty on fresh stack creation)
+          SCORING_URL="${PROD_SCORING_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod/scoring/calculate}"
+          WHATSAPP_URL="${PROD_WHATSAPP_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod/whatsapp/send}"
+          KYC_URL="${PROD_KYC_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod/}"
+
           sam deploy \
             --config-env production \
             --no-confirm-changeset \
@@ -644,9 +657,9 @@ jobs:
               "PrivateSubnet2Id=${{ steps.resolve-prod-infra.outputs.subnet2 }}" \
               "LambdaSecurityGroupId=${{ steps.resolve-prod-infra.outputs.lambda_sg }}" \
               "CognitoUserPoolArn=${{ steps.resolve-prod-infra.outputs.cognito_arn }}" \
-              "ScoringApiUrl=${{ steps.resolve-prod-infra.outputs.scoring_api_url }}" \
-              "WhatsAppApiUrl=${{ steps.resolve-prod-infra.outputs.whatsapp_api_url }}" \
-              "KycApiUrl=${{ steps.resolve-prod-infra.outputs.kyc_api_url }}" \
+              "ScoringApiUrl=${SCORING_URL}" \
+              "WhatsAppApiUrl=${WHATSAPP_URL}" \
+              "KycApiUrl=${KYC_URL}" \
               "WhatsAppPhoneNumberId=${WA_PHONE}" \
               "WhatsAppAccessToken=${WA_TOKEN}" \
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
@@ -668,6 +681,9 @@ jobs:
               "SmsApiKey=${SMS_KEY}"
         env:
           SAM_CLI_TELEMETRY: 0
+          PROD_SCORING_API_URL: ${{ steps.resolve-prod-infra.outputs.scoring_api_url }}
+          PROD_WHATSAPP_API_URL: ${{ steps.resolve-prod-infra.outputs.whatsapp_api_url }}
+          PROD_KYC_API_URL: ${{ steps.resolve-prod-infra.outputs.kyc_api_url }}
           WHATSAPP_PHONE_ID: ${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}
           WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
