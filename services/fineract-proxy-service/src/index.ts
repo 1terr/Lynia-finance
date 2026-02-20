@@ -107,6 +107,11 @@ export const handler = async (
     const path = event.path.replace(/\/$/, ''); // strip trailing slash
     const method = event.httpMethod;
 
+    // OPTIONS preflight
+    if (method === 'OPTIONS') {
+      return { statusCode: 200, body: '', headers: getSecurityHeaders(event) };
+    }
+
     // ---- LOANS: list / pending / overdue / aging-summary ----
     if (path === '/api/v1/fineract/loans' && method === 'GET') {
       return handleGetLoans(event);

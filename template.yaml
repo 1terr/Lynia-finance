@@ -944,6 +944,143 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/reports/{reportName}
             Method: GET
+        # CORS preflight OPTIONS for /api/v1/fineract/* routes
+        FineractLoansOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoansPendingOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/pending
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoansOverdueOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/overdue
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoansAgingOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/aging-summary
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoanDetailOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoanApproveOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/approve
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoanDisburseOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/disburse
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoanRepaymentOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/repayment
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoanProductsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loan-products
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractLoanProductByIdOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loan-products/{productId}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractGLAccountsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/gl-accounts
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractJournalEntriesOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/journal-entries
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractTrialBalanceOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/trial-balance
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractReconciliationOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reconciliation
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractReconciliationRunOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reconciliation/run
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractReportsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reports
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        FineractReportByNameOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/reports/{reportName}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
