@@ -15,7 +15,7 @@ export function FineractHealth({ data, isLoading }: FineractHealthProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Fineract Health</CardTitle>
+          <CardTitle>Core Banking System Health</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -32,12 +32,12 @@ export function FineractHealth({ data, isLoading }: FineractHealthProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Fineract Health</CardTitle>
+          <CardTitle>Core Banking System Health</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center gap-2 py-4 text-gray-500">
             <XCircle className="h-8 w-8 text-gray-400" />
-            <p className="text-sm">Unable to load Fineract status</p>
+            <p className="text-sm">Unable to load system status</p>
           </div>
         </CardContent>
       </Card>
@@ -58,7 +58,7 @@ export function FineractHealth({ data, isLoading }: FineractHealthProps) {
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <RefreshCw className="h-4 w-4 text-gray-400" />
-          Fineract Health
+          Core Banking System Health
         </CardTitle>
       </CardHeader>
       <CardContent>
