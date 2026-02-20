@@ -13,37 +13,76 @@ import {
   userPool,
   getSession,
   isCognitoConfigured,
+  signOut,
 } from '@/lib/auth/cognito';
 import { buildDistributorFromSession } from '@/lib/auth/build-distributor';
 
 export { isCognitoConfigured };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '';
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
 
-/** Get the current session's JWT token for API calls. */
-async function getAuthToken(): Promise<string | null> {
-  try {
-    const session = await getSession();
-    if (session && session.isValid()) {
-      return session.getIdToken().getJwtToken();
-    }
-  } catch {
-    // No valid session
-  }
-  return null;
+// ═══════════════════════════════════════════════════════
+// Authenticated API Client
+// ═══════════════════════════════════════════════════════
+
+interface APIEnvelope<T> {
+  success: boolean;
+  data: T;
+  error?: string;
 }
 
-/** Build standard headers with auth token. */
-async function authHeaders(): Promise<Record<string, string>> {
-  const token = await getAuthToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
+  const session = await getSession();
+
+  if (!session) {
+    handleSessionExpired();
+    throw new Error('Authentication required. Please sign in.');
   }
-  return headers;
+
+  const token = session.getIdToken().getJwtToken();
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...options?.headers,
+    },
+  });
+
+  if (res.status === 401) {
+    handleSessionExpired();
+    throw new Error('Session expired. Redirecting to login.');
+  }
+
+  if (res.status === 403) {
+    throw new Error('You do not have permission to perform this action.');
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body as { error?: string }).error || `API error: ${res.status}`);
+  }
+
+  const json = await res.json() as APIEnvelope<T>;
+
+  // Unwrap { success, data } envelope
+  if (json && typeof json === 'object' && 'data' in json) {
+    return json.data;
+  }
+  return json as unknown as T;
 }
+
+function handleSessionExpired(): void {
+  signOut();
+  if (typeof window !== 'undefined') {
+    window.location.href = '/login';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// Mock Data (development fallback when Cognito not configured)
+// ═══════════════════════════════════════════════════════
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -122,45 +161,90 @@ const mockCommissions: CommissionEntry[] = [
   { id: 'com_006', loan_id: 'LYN-2026-088', device_model: 'Samsung Galaxy A14', customer_name: 'Tinotenda Marufu', device_retail_price: 200, commission_percentage: 5.0, commission_amount: 10.00, payment_status: 'pending', calculation_date: '2026-02-05T00:00:00Z', paid_at: null },
 ];
 
+// ═══════════════════════════════════════════════════════
+// Helper: use real API when Cognito configured, mock otherwise
+// ═══════════════════════════════════════════════════════
+
+function useMock(): boolean {
+  return !isCognitoConfigured();
+}
+
+// ═══════════════════════════════════════════════════════
+// Profile
+// ═══════════════════════════════════════════════════════
+
 export async function fetchDistributorProfile(): Promise<Distributor> {
-  await delay(400);
-  return { ...mockDistributor };
+  if (useMock()) {
+    await delay(400);
+    return { ...mockDistributor };
+  }
+  return fetchAPI<Distributor>('/api/v1/distributor/profile');
 }
 
 export async function updateDistributorProfile(updates: Partial<Distributor>): Promise<Distributor> {
-  await delay(400);
-  Object.assign(mockDistributor, updates);
-  return { ...mockDistributor };
+  if (useMock()) {
+    await delay(400);
+    Object.assign(mockDistributor, updates);
+    return { ...mockDistributor };
+  }
+  return fetchAPI<Distributor>('/api/v1/distributor/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
 }
+
+// ═══════════════════════════════════════════════════════
+// Dashboard Stats
+// ═══════════════════════════════════════════════════════
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  await delay(400);
-  return {
-    total_devices_distributed: mockDistributor.total_devices_distributed,
-    current_inventory: mockDistributor.current_inventory_count,
-    pending_handovers: mockPendingHandovers.filter((h) => h.status === 'pending').length,
-    total_commissions_earned: mockDistributor.total_commissions_earned,
-    total_commissions_paid: mockDistributor.total_commissions_paid,
-    pending_commissions: mockDistributor.pending_commissions,
-    average_rating: mockDistributor.average_rating,
-    monthly_handovers: 6,
-  };
+  if (useMock()) {
+    await delay(400);
+    return {
+      total_devices_distributed: mockDistributor.total_devices_distributed,
+      current_inventory: mockDistributor.current_inventory_count,
+      pending_handovers: mockPendingHandovers.filter((h) => h.status === 'pending').length,
+      total_commissions_earned: mockDistributor.total_commissions_earned,
+      total_commissions_paid: mockDistributor.total_commissions_paid,
+      pending_commissions: mockDistributor.pending_commissions,
+      average_rating: mockDistributor.average_rating,
+      monthly_handovers: 6,
+    };
+  }
+  return fetchAPI<DashboardStats>('/api/v1/distributor/stats');
 }
 
+// ═══════════════════════════════════════════════════════
+// Inventory & Handovers & Commissions
+// ═══════════════════════════════════════════════════════
+
 export async function fetchPendingHandovers(): Promise<PendingHandover[]> {
-  await delay(400);
-  return [...mockPendingHandovers];
+  if (useMock()) {
+    await delay(400);
+    return [...mockPendingHandovers];
+  }
+  return fetchAPI<PendingHandover[]>('/api/v1/distributor/handovers?status=initiated');
 }
 
 export async function fetchInventory(): Promise<InventoryDevice[]> {
-  await delay(400);
-  return [...mockInventory];
+  if (useMock()) {
+    await delay(400);
+    return [...mockInventory];
+  }
+  return fetchAPI<InventoryDevice[]>('/api/v1/distributor/inventory');
 }
 
 export async function fetchCommissions(): Promise<CommissionEntry[]> {
-  await delay(400);
-  return [...mockCommissions];
+  if (useMock()) {
+    await delay(400);
+    return [...mockCommissions];
+  }
+  return fetchAPI<CommissionEntry[]>('/api/v1/distributor/commissions');
 }
+
+// ═══════════════════════════════════════════════════════
+// Authentication
+// ═══════════════════════════════════════════════════════
 
 export async function loginDistributor(email: string, password: string): Promise<Distributor> {
   if (!isCognitoConfigured()) {
@@ -195,52 +279,71 @@ export async function loginDistributor(email: string, password: string): Promise
   });
 }
 
-// ── Handover API ──
+// ═══════════════════════════════════════════════════════
+// Handover API
+// ═══════════════════════════════════════════════════════
 
 export async function verifyCustomerIdentity(
   handoverId: string,
   nationalId: string,
 ): Promise<{ verified: boolean; message: string }> {
-  await delay(800);
-  const handover = mockPendingHandovers.find((h) => h.id === handoverId);
-  if (!handover) return { verified: false, message: 'Handover not found' };
-  // Simulate: any valid-looking Zim ID passes
-  const valid = /^\d{2}-\d{6,7}[A-Z]\d{2}$/.test(nationalId);
-  return {
-    verified: valid,
-    message: valid ? 'Identity verified successfully' : 'Invalid National ID format',
-  };
+  if (useMock()) {
+    await delay(800);
+    const handover = mockPendingHandovers.find((h) => h.id === handoverId);
+    if (!handover) return { verified: false, message: 'Handover not found' };
+    const valid = /^\d{2}-\d{6,7}[A-Z]\d{2}$/.test(nationalId);
+    return {
+      verified: valid,
+      message: valid ? 'Identity verified successfully' : 'Invalid National ID format',
+    };
+  }
+  return fetchAPI<{ verified: boolean; message: string }>(
+    `/api/v1/distributor/handovers/${handoverId}/verify-identity`,
+    { method: 'POST', body: JSON.stringify({ national_id: nationalId }) },
+  );
 }
 
 export async function verifyImei(
-  _handoverId: string,
+  handoverId: string,
   imei: string,
   expectedImei: string,
 ): Promise<{ verified: boolean; message: string }> {
-  await delay(600);
-  const valid = imei.length === 15 && /^\d{15}$/.test(imei);
-  if (!valid) return { verified: false, message: 'IMEI must be exactly 15 digits' };
-  const matches = imei === expectedImei;
-  return {
-    verified: matches,
-    message: matches ? 'IMEI verified — matches device record' : 'IMEI does not match the assigned device',
-  };
+  if (useMock()) {
+    await delay(600);
+    const valid = imei.length === 15 && /^\d{15}$/.test(imei);
+    if (!valid) return { verified: false, message: 'IMEI must be exactly 15 digits' };
+    const matches = imei === expectedImei;
+    return {
+      verified: matches,
+      message: matches ? 'IMEI verified — matches device record' : 'IMEI does not match the assigned device',
+    };
+  }
+  return fetchAPI<{ verified: boolean; message: string }>(
+    `/api/v1/distributor/handovers/${handoverId}/verify-imei`,
+    { method: 'POST', body: JSON.stringify({ imei, expected_imei: expectedImei }) },
+  );
 }
 
 export async function verifyDepositPayment(
-  _handoverId: string,
+  handoverId: string,
   paymentMethod: string,
   transactionRef: string,
 ): Promise<{ verified: boolean; amount: number; message: string }> {
-  await delay(1000);
-  if (!transactionRef || transactionRef.length < 4) {
-    return { verified: false, amount: 0, message: 'Invalid transaction reference' };
+  if (useMock()) {
+    await delay(1000);
+    if (!transactionRef || transactionRef.length < 4) {
+      return { verified: false, amount: 0, message: 'Invalid transaction reference' };
+    }
+    return {
+      verified: true,
+      amount: 40,
+      message: `Deposit of $40.00 verified via ${paymentMethod}`,
+    };
   }
-  return {
-    verified: true,
-    amount: 40,
-    message: `Deposit of $40.00 verified via ${paymentMethod}`,
-  };
+  return fetchAPI<{ verified: boolean; amount: number; message: string }>(
+    `/api/v1/distributor/handovers/${handoverId}/verify-deposit`,
+    { method: 'POST', body: JSON.stringify({ payment_method: paymentMethod, transaction_ref: transactionRef }) },
+  );
 }
 
 export async function submitHandover(data: {
@@ -253,18 +356,24 @@ export async function submitHandover(data: {
   deposit_payment_method: string;
   deposit_transaction_ref: string;
 }): Promise<HandoverResult> {
-  await delay(1200);
-  const handover = mockPendingHandovers.find((h) => h.id === data.handover_id);
-  if (!handover) throw new Error('Handover not found');
-  const commission = handover.loan_amount * 0.05;
-  const nextPayment = new Date();
-  nextPayment.setDate(nextPayment.getDate() + 30);
-  return {
-    success: true,
-    handover_id: data.handover_id,
-    loan_id: handover.loan_id,
-    commission_amount: commission,
-    next_payment_date: nextPayment.toISOString(),
-    message: `Device handed over to ${handover.customer_name}. Loan ${handover.loan_id} is now active.`,
-  };
+  if (useMock()) {
+    await delay(1200);
+    const handover = mockPendingHandovers.find((h) => h.id === data.handover_id);
+    if (!handover) throw new Error('Handover not found');
+    const commission = handover.loan_amount * 0.05;
+    const nextPayment = new Date();
+    nextPayment.setDate(nextPayment.getDate() + 30);
+    return {
+      success: true,
+      handover_id: data.handover_id,
+      loan_id: handover.loan_id,
+      commission_amount: commission,
+      next_payment_date: nextPayment.toISOString(),
+      message: `Device handed over to ${handover.customer_name}. Loan ${handover.loan_id} is now active.`,
+    };
+  }
+  return fetchAPI<HandoverResult>('/api/v1/distributor/handovers', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }

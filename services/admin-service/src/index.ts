@@ -165,6 +165,17 @@ export const handler = async (
       return await handleUpdateTransfer(event, auth, transferIdMatch[1]);
     }
 
+    // ─── Inventory Reports ───
+    if (path === '/admin/reports/inventory' && method === 'GET') {
+      return await handleInventoryReport(event, auth);
+    }
+    if (path === '/admin/reports/inventory/movements' && method === 'GET') {
+      return await handleMovementsReport(event, auth);
+    }
+    if (path === '/admin/reports/inventory/low-stock' && method === 'GET') {
+      return await handleLowStockReport(event, auth);
+    }
+
     // ─── Dashboard routes ───
     if (path === '/api/v1/dashboard/metrics' && method === 'GET') {
       return await handleDashboardMetrics(event);
@@ -1612,6 +1623,824 @@ async function handleGetOrgMembers(
 }
 
 // ═══════════════════════════════════════════════════════════
+// INVENTORY MANAGEMENT ENDPOINTS
+// ═══════════════════════════════════════════════════════════
+
+const IMEI_REGEX = /^\d{15}$/;
+
+const VALID_DEVICE_STATUSES = [
+  'in_stock', 'assigned', 'reserved', 'sold', 'returned',
+  'repossessed', 'damaged', 'lost', 'written_off',
+] as const;
+
+// ─── GET /admin/devices ───
+
+async function handleGetDevices(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const qs = event.queryStringParameters || {};
+  const page = Math.max(1, parseInt(qs.page || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
+  const offset = (page - 1) * limit;
+
+  let whereClause = 'deleted_at IS NULL';
+  const params: unknown[] = [];
+
+  if (qs.status) {
+    params.push(qs.status);
+    whereClause += ` AND status = $${params.length}`;
+  }
+
+  if (qs.lock_status) {
+    params.push(qs.lock_status);
+    whereClause += ` AND lock_status = $${params.length}`;
+  }
+
+  if (qs.device_model_id) {
+    params.push(qs.device_model_id);
+    whereClause += ` AND device_model_id = $${params.length}`;
+  }
+
+  if (qs.search) {
+    params.push(`%${qs.search}%`);
+    const idx = params.length;
+    whereClause += ` AND (imei ILIKE $${idx} OR manufacturer ILIKE $${idx} OR model ILIKE $${idx} OR serial_number ILIKE $${idx})`;
+  }
+
+  const { data: countRows } = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM devices WHERE ${whereClause}`,
+    params
+  );
+  const total = parseInt(countRows[0]?.count || '0');
+
+  params.push(limit, offset);
+  const { data: rows, error } = await query(
+    `SELECT d.*, c.full_name as customer_name, c.phone_number as customer_phone
+     FROM devices d
+     LEFT JOIN customers c ON d.customer_id = c.id
+     WHERE d.${whereClause}
+     ORDER BY d.created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+
+  if (error) {
+    console.error('Error fetching devices:', error.message);
+    return errorResponse('Failed to fetch devices', 500, {}, event);
+  }
+
+  return successResponse({ data: rows, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
+}
+
+// ─── GET /admin/devices/:id ───
+
+async function handleGetDeviceById(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx,
+  deviceId: string
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const { data: rows } = await query(
+    `SELECT d.*, c.full_name as customer_name, c.phone_number as customer_phone,
+            dm.brand, dm.model_name as catalog_model_name
+     FROM devices d
+     LEFT JOIN customers c ON d.customer_id = c.id
+     LEFT JOIN device_models dm ON d.device_model_id = dm.id
+     WHERE d.id = $1 AND d.deleted_at IS NULL`,
+    [deviceId]
+  );
+
+  if (!rows || rows.length === 0) {
+    return errorResponse('Device not found', 404, {}, event);
+  }
+
+  return successResponse(rows[0], 200, event);
+}
+
+// ─── POST /admin/devices ───
+
+async function handleCreateDevice(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+
+  // Validate required fields
+  if (!body.imei) {
+    return errorResponse('Missing required field: imei', 400, { code: 'VAL_REQ_001' }, event);
+  }
+  if (!IMEI_REGEX.test(body.imei)) {
+    return errorResponse('IMEI must be exactly 15 digits', 400, { code: 'VAL_FMT_001' }, event);
+  }
+  if (!body.manufacturer) {
+    return errorResponse('Missing required field: manufacturer', 400, { code: 'VAL_REQ_001' }, event);
+  }
+  if (!body.model) {
+    return errorResponse('Missing required field: model', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  // Check IMEI uniqueness
+  const { data: existing } = await db.from('devices')
+    .select('id')
+    .eq('imei', body.imei)
+    .maybeSingle()
+    .execute();
+
+  if (existing) {
+    return errorResponse('A device with this IMEI already exists', 409, {}, event);
+  }
+
+  const insertData: Record<string, unknown> = {
+    imei: body.imei,
+    serial_number: body.serial_number || null,
+    manufacturer: body.manufacturer,
+    model: body.model,
+    device_type: body.device_type || 'smartphone',
+    storage_gb: body.storage_gb || null,
+    color: body.color || null,
+    condition: body.condition || 'new',
+    purchase_price_usd: body.purchase_price_usd || null,
+    retail_price_usd: body.retail_price_usd || null,
+    device_model_id: body.device_model_id || null,
+    status: 'in_stock',
+    location: body.location || 'Warehouse',
+    lock_status: 'unlocked',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: created, error } = await db.from('devices').insert(insertData).execute();
+
+  if (error) {
+    console.error('Error creating device:', error.message);
+    if (error.message.includes('unique') || error.message.includes('duplicate')) {
+      return errorResponse('A device with this IMEI already exists', 409, {}, event);
+    }
+    return errorResponse('Failed to create device', 500, {}, event);
+  }
+
+  const row = Array.isArray(created) ? created[0] : created;
+
+  await auditLog(auth, 'device.create', 'device', row.id as string,
+    `Registered device: ${body.manufacturer} ${body.model} (IMEI: ${body.imei})`, {
+    imei: body.imei, manufacturer: body.manufacturer, model: body.model,
+  });
+
+  return successResponse(row, 201, event);
+}
+
+// ─── POST /admin/devices/bulk-import ───
+
+async function handleBulkImportDevices(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const devices = body.devices;
+
+  if (!Array.isArray(devices) || devices.length === 0) {
+    return errorResponse('devices must be a non-empty array', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  if (devices.length > 500) {
+    return errorResponse('Maximum 500 devices per bulk import', 400, { code: 'VAL_RNG_001' }, event);
+  }
+
+  const importBatchId = `import_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  let inserted = 0;
+  let skipped = 0;
+  let errors = 0;
+  const errorDetails: { imei: string; error: string }[] = [];
+
+  for (const device of devices) {
+    try {
+      if (!device.imei || !IMEI_REGEX.test(device.imei)) {
+        errorDetails.push({ imei: device.imei || 'missing', error: 'Invalid IMEI format' });
+        errors++;
+        continue;
+      }
+
+      if (!device.manufacturer || !device.model) {
+        errorDetails.push({ imei: device.imei, error: 'Missing manufacturer or model' });
+        errors++;
+        continue;
+      }
+
+      // Check for duplicate IMEI
+      const { data: dup } = await db.from('devices')
+        .select('id')
+        .eq('imei', device.imei)
+        .maybeSingle()
+        .execute();
+
+      if (dup) {
+        skipped++;
+        continue;
+      }
+
+      await db.from('devices').insert({
+        imei: device.imei,
+        serial_number: device.serial_number || null,
+        manufacturer: device.manufacturer,
+        model: device.model,
+        device_type: device.device_type || 'smartphone',
+        storage_gb: device.storage_gb || null,
+        color: device.color || null,
+        condition: device.condition || 'new',
+        purchase_price_usd: device.purchase_price_usd || null,
+        retail_price_usd: device.retail_price_usd || null,
+        device_model_id: device.device_model_id || null,
+        status: 'in_stock',
+        location: device.location || body.default_location || 'Warehouse',
+        lock_status: 'unlocked',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).execute();
+
+      inserted++;
+    } catch (err) {
+      console.error('Error importing device:', (err as Error).message);
+      errorDetails.push({ imei: device.imei || 'unknown', error: (err as Error).message });
+      errors++;
+    }
+  }
+
+  await auditLog(auth, 'device.bulk_import', 'device', null,
+    `Bulk imported devices: ${inserted} inserted, ${skipped} skipped, ${errors} errors`, {
+    import_batch_id: importBatchId,
+    total: devices.length,
+    inserted,
+    skipped,
+    errors,
+  });
+
+  return successResponse({
+    import_batch_id: importBatchId,
+    total: devices.length,
+    inserted,
+    skipped,
+    errors,
+    error_details: errorDetails.slice(0, 50),
+  }, 200, event);
+}
+
+// ─── PATCH /admin/devices/:id ───
+
+async function handleUpdateDevice(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx,
+  deviceId: string
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
+
+  const allowedFields = [
+    'serial_number', 'manufacturer', 'model', 'device_type', 'storage_gb',
+    'color', 'condition', 'purchase_price_usd', 'retail_price_usd',
+    'device_model_id', 'status', 'location',
+  ];
+
+  for (const field of allowedFields) {
+    if (body[field] !== undefined) {
+      // Validate status if being changed
+      if (field === 'status' && !(VALID_DEVICE_STATUSES as readonly string[]).includes(body[field])) {
+        return errorResponse(`Invalid status: ${body[field]}`, 400, { code: 'VAL_FMT_001' }, event);
+      }
+      updates[field] = body[field];
+    }
+  }
+
+  const { data: updated, error } = await db.from('devices')
+    .update(updates)
+    .eq('id', deviceId)
+    .is('deleted_at', null)
+    .execute();
+
+  if (error) {
+    console.error('Error updating device:', error.message);
+    return errorResponse('Failed to update device', 500, {}, event);
+  }
+
+  const row = Array.isArray(updated) ? updated[0] : updated;
+  if (!row) {
+    return errorResponse('Device not found', 404, {}, event);
+  }
+
+  await auditLog(auth, 'device.update', 'device', deviceId, `Updated device: ${deviceId}`, updates);
+
+  return successResponse(row, 200, event);
+}
+
+// ─── GET /admin/devices/stats ───
+
+async function handleGetDeviceInventoryStats(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const { data: rows } = await query<{ status: string; count: string }>(
+    `SELECT status, COUNT(*) as count FROM devices WHERE deleted_at IS NULL GROUP BY status`
+  );
+
+  const stats: Record<string, number> = {
+    in_stock: 0, assigned: 0, reserved: 0, sold: 0,
+    returned: 0, repossessed: 0, damaged: 0, lost: 0, written_off: 0,
+    locked: 0,
+  };
+
+  for (const row of rows) {
+    stats[row.status] = parseInt(row.count);
+  }
+
+  // Get locked count separately (lock_status is independent of status)
+  const { data: lockRows } = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM devices WHERE lock_status = 'locked' AND deleted_at IS NULL`
+  );
+  stats.locked = parseInt(lockRows[0]?.count || '0');
+
+  return successResponse(stats, 200, event);
+}
+
+// ─── GET /admin/devices/:id/movements ───
+
+async function handleGetDeviceMovements(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx,
+  deviceId: string
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const qs = event.queryStringParameters || {};
+  const page = Math.max(1, parseInt(qs.page || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '50')));
+  const offset = (page - 1) * limit;
+
+  const { data: countRows } = await query<{ count: string }>(
+    'SELECT COUNT(*) as count FROM inventory_movements WHERE device_id = $1',
+    [deviceId]
+  );
+  const total = parseInt(countRows[0]?.count || '0');
+
+  const { data: rows, error } = await query(
+    `SELECT m.*, a.full_name as performed_by_name, a.email as performed_by_email
+     FROM inventory_movements m
+     LEFT JOIN admin_users a ON m.performed_by = a.id
+     WHERE m.device_id = $1
+     ORDER BY m.created_at DESC
+     LIMIT $2 OFFSET $3`,
+    [deviceId, limit, offset]
+  );
+
+  if (error) {
+    console.error('Error fetching device movements:', error.message);
+    return errorResponse('Failed to fetch device movements', 500, {}, event);
+  }
+
+  return successResponse({ data: rows, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
+}
+
+// ─── GET /admin/inventory/adjustments ───
+
+async function handleGetAdjustments(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const qs = event.queryStringParameters || {};
+  const page = Math.max(1, parseInt(qs.page || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
+  const offset = (page - 1) * limit;
+
+  let whereClause = '1=1';
+  const params: unknown[] = [];
+
+  if (qs.approval_status) {
+    params.push(qs.approval_status);
+    whereClause += ` AND a.approval_status = $${params.length}`;
+  }
+
+  if (qs.adjustment_type) {
+    params.push(qs.adjustment_type);
+    whereClause += ` AND a.adjustment_type = $${params.length}`;
+  }
+
+  const { data: countRows } = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM inventory_adjustments a WHERE ${whereClause}`,
+    params
+  );
+  const total = parseInt(countRows[0]?.count || '0');
+
+  params.push(limit, offset);
+  const { data: rows, error } = await query(
+    `SELECT a.*,
+            d.imei as device_imei, d.manufacturer, d.model as device_model,
+            req.full_name as requested_by_name, req.email as requested_by_email,
+            appr.full_name as approved_by_name
+     FROM inventory_adjustments a
+     LEFT JOIN devices d ON a.device_id = d.id
+     LEFT JOIN admin_users req ON a.requested_by = req.id
+     LEFT JOIN admin_users appr ON a.approved_by = appr.id
+     WHERE ${whereClause}
+     ORDER BY a.created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+
+  if (error) {
+    console.error('Error fetching adjustments:', error.message);
+    return errorResponse('Failed to fetch adjustments', 500, {}, event);
+  }
+
+  return successResponse({ data: rows, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
+}
+
+// ─── POST /admin/inventory/adjustments ───
+
+async function handleCreateAdjustment(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+
+  if (!body.device_id) {
+    return errorResponse('Missing required field: device_id', 400, { code: 'VAL_REQ_001' }, event);
+  }
+  if (!body.adjustment_type) {
+    return errorResponse('Missing required field: adjustment_type', 400, { code: 'VAL_REQ_001' }, event);
+  }
+  if (!body.reason) {
+    return errorResponse('Missing required field: reason', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  const validTypes = ['add', 'remove', 'damage', 'write_off', 'found', 'audit_correction'];
+  if (!validTypes.includes(body.adjustment_type)) {
+    return errorResponse(`Invalid adjustment_type. Must be one of: ${validTypes.join(', ')}`, 400, { code: 'VAL_FMT_001' }, event);
+  }
+
+  // Get current device status
+  const { data: device } = await db.from('devices')
+    .select('id, status')
+    .eq('id', body.device_id)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .execute();
+
+  if (!device) {
+    return errorResponse('Device not found', 404, {}, event);
+  }
+
+  const insertData: Record<string, unknown> = {
+    device_id: body.device_id,
+    device_model_id: body.device_model_id || null,
+    adjustment_type: body.adjustment_type,
+    reason: body.reason,
+    previous_status: (device as Record<string, unknown>).status,
+    new_status: body.new_status || null,
+    requested_by: auth.userId,
+    approval_status: 'pending',
+    notes: body.notes || null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: created, error } = await db.from('inventory_adjustments').insert(insertData).execute();
+
+  if (error) {
+    console.error('Error creating adjustment:', error.message);
+    return errorResponse('Failed to create adjustment', 500, {}, event);
+  }
+
+  const row = Array.isArray(created) ? created[0] : created;
+
+  await auditLog(auth, 'inventory.adjustment.create', 'inventory_adjustment', row.id as string,
+    `Created inventory adjustment: ${body.adjustment_type} for device ${body.device_id}`, {
+    adjustment_type: body.adjustment_type, device_id: body.device_id,
+  });
+
+  return successResponse(row, 201, event);
+}
+
+// ─── POST /admin/inventory/adjustments/:id/approve ───
+
+async function handleApproveAdjustment(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx,
+  adjustmentId: string
+): Promise<APIGatewayProxyResult> {
+  if (!auth.roles.some(r => COGNITO_ADMIN_ROLES.includes(r))) {
+    return errorResponse('Only administrators can approve adjustments', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const action = body.action; // 'approve' or 'reject'
+
+  if (!['approve', 'reject'].includes(action)) {
+    return errorResponse('action must be approve or reject', 400, { code: 'VAL_FMT_001' }, event);
+  }
+
+  // Get adjustment
+  const { data: adj } = await db.from('inventory_adjustments')
+    .select('*')
+    .eq('id', adjustmentId)
+    .eq('approval_status', 'pending')
+    .maybeSingle()
+    .execute();
+
+  if (!adj) {
+    return errorResponse('Pending adjustment not found', 404, {}, event);
+  }
+
+  const adjRecord = adj as Record<string, unknown>;
+
+  if (action === 'approve') {
+    // Apply the adjustment to the device
+    if (adjRecord.new_status) {
+      await db.from('devices')
+        .update({
+          status: adjRecord.new_status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', adjRecord.device_id as string)
+        .execute();
+    }
+
+    await db.from('inventory_adjustments')
+      .update({
+        approval_status: 'approved',
+        approved_by: auth.userId,
+        approved_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', adjustmentId)
+      .execute();
+  } else {
+    await db.from('inventory_adjustments')
+      .update({
+        approval_status: 'rejected',
+        approved_by: auth.userId,
+        approved_at: new Date().toISOString(),
+        rejection_reason: body.rejection_reason || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', adjustmentId)
+      .execute();
+  }
+
+  await auditLog(auth, `inventory.adjustment.${action}`, 'inventory_adjustment', adjustmentId,
+    `${action === 'approve' ? 'Approved' : 'Rejected'} adjustment ${adjustmentId}`);
+
+  return successResponse({ message: `Adjustment ${action}d successfully` }, 200, event);
+}
+
+// ─── GET /admin/inventory/transfers ───
+
+async function handleGetTransfers(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const qs = event.queryStringParameters || {};
+  const page = Math.max(1, parseInt(qs.page || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
+  const offset = (page - 1) * limit;
+
+  let whereClause = '1=1';
+  const params: unknown[] = [];
+
+  if (qs.status) {
+    params.push(qs.status);
+    whereClause += ` AND t.status = $${params.length}`;
+  }
+
+  const { data: countRows } = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM stock_transfers t WHERE ${whereClause}`,
+    params
+  );
+  const total = parseInt(countRows[0]?.count || '0');
+
+  params.push(limit, offset);
+  const { data: rows, error } = await query(
+    `SELECT t.*,
+            d.imei as device_imei, d.manufacturer, d.model as device_model,
+            fd.business_name as from_distributor_name,
+            td.business_name as to_distributor_name,
+            req.full_name as requested_by_name
+     FROM stock_transfers t
+     LEFT JOIN devices d ON t.device_id = d.id
+     LEFT JOIN distributors fd ON t.from_distributor_id = fd.id
+     LEFT JOIN distributors td ON t.to_distributor_id = td.id
+     LEFT JOIN admin_users req ON t.requested_by = req.id
+     WHERE ${whereClause}
+     ORDER BY t.created_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  );
+
+  if (error) {
+    console.error('Error fetching transfers:', error.message);
+    return errorResponse('Failed to fetch transfers', 500, {}, event);
+  }
+
+  return successResponse({ data: rows, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
+}
+
+// ─── POST /admin/inventory/transfers ───
+
+async function handleCreateTransfer(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+
+  if (!body.device_id) {
+    return errorResponse('Missing required field: device_id', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  // Verify device exists and is transferable
+  const { data: device } = await db.from('devices')
+    .select('id, status')
+    .eq('id', body.device_id)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .execute();
+
+  if (!device) {
+    return errorResponse('Device not found', 404, {}, event);
+  }
+
+  const deviceRecord = device as Record<string, unknown>;
+  if (!['in_stock', 'assigned'].includes(deviceRecord.status as string)) {
+    return errorResponse(`Cannot transfer device with status: ${deviceRecord.status}`, 400, { code: 'VAL_FMT_001' }, event);
+  }
+
+  const insertData: Record<string, unknown> = {
+    device_id: body.device_id,
+    from_distributor_id: body.from_distributor_id || null,
+    to_distributor_id: body.to_distributor_id || null,
+    from_location: body.from_location || null,
+    to_location: body.to_location || null,
+    status: 'requested',
+    requested_by: auth.userId,
+    notes: body.notes || null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const { data: created, error } = await db.from('stock_transfers').insert(insertData).execute();
+
+  if (error) {
+    console.error('Error creating transfer:', error.message);
+    return errorResponse('Failed to create transfer', 500, {}, event);
+  }
+
+  const row = Array.isArray(created) ? created[0] : created;
+
+  await auditLog(auth, 'inventory.transfer.create', 'stock_transfer', row.id as string,
+    `Created stock transfer for device ${body.device_id}`, {
+    device_id: body.device_id,
+    from_distributor_id: body.from_distributor_id,
+    to_distributor_id: body.to_distributor_id,
+  });
+
+  return successResponse(row, 201, event);
+}
+
+// ─── PATCH /admin/inventory/transfers/:id ───
+
+async function handleUpdateTransfer(
+  event: APIGatewayProxyEvent,
+  auth: AuthCtx,
+  transferId: string
+): Promise<APIGatewayProxyResult> {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const newStatus = body.status;
+
+  const validTransitions: Record<string, string[]> = {
+    requested: ['approved', 'cancelled'],
+    approved: ['in_transit', 'cancelled'],
+    in_transit: ['received', 'cancelled'],
+  };
+
+  // Get current transfer
+  const { data: transfer } = await db.from('stock_transfers')
+    .select('*')
+    .eq('id', transferId)
+    .maybeSingle()
+    .execute();
+
+  if (!transfer) {
+    return errorResponse('Transfer not found', 404, {}, event);
+  }
+
+  const transferRecord = transfer as Record<string, unknown>;
+  const currentStatus = transferRecord.status as string;
+
+  if (!validTransitions[currentStatus]?.includes(newStatus)) {
+    return errorResponse(
+      `Cannot transition from ${currentStatus} to ${newStatus}`,
+      400, { code: 'VAL_FMT_001' }, event
+    );
+  }
+
+  const updates: Record<string, unknown> = {
+    status: newStatus,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (newStatus === 'approved') {
+    updates.approved_by = auth.userId;
+    updates.approved_at = new Date().toISOString();
+  } else if (newStatus === 'in_transit') {
+    updates.shipped_at = new Date().toISOString();
+  } else if (newStatus === 'received') {
+    updates.received_at = new Date().toISOString();
+
+    // Update device location and agent_inventory
+    if (transferRecord.to_distributor_id) {
+      await db.from('devices')
+        .update({
+          status: 'assigned',
+          location: transferRecord.to_location || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', transferRecord.device_id as string)
+        .execute();
+
+      // Create agent_inventory record
+      await db.from('agent_inventory').insert({
+        distributor_id: transferRecord.to_distributor_id,
+        device_id: transferRecord.device_id,
+        assigned_date: new Date().toISOString().split('T')[0],
+        status: 'available',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }).execute();
+    }
+  } else if (newStatus === 'cancelled') {
+    updates.cancelled_at = new Date().toISOString();
+    updates.cancellation_reason = body.cancellation_reason || null;
+  }
+
+  const { error } = await db.from('stock_transfers')
+    .update(updates)
+    .eq('id', transferId)
+    .execute();
+
+  if (error) {
+    console.error('Error updating transfer:', error.message);
+    return errorResponse('Failed to update transfer', 500, {}, event);
+  }
+
+  await auditLog(auth, `inventory.transfer.${newStatus}`, 'stock_transfer', transferId,
+    `Updated transfer ${transferId} to ${newStatus}`);
+
+  return successResponse({ message: `Transfer updated to ${newStatus}` }, 200, event);
+}
+
+// ═══════════════════════════════════════════════════════════
 // DASHBOARD ENDPOINTS
 // ═══════════════════════════════════════════════════════════
 
@@ -1966,4 +2795,209 @@ function mapActionToEventType(action: string): string {
   if (action.includes('unlock')) return 'unlock';
   if (action.includes('login')) return 'login';
   return 'update';
+}
+
+// ═══════════════════════════════════════════════════════
+// Inventory Reports
+// ═══════════════════════════════════════════════════════
+
+/**
+ * GET /admin/reports/inventory
+ * Stock summary by device model — counts by status, total value, aging
+ */
+async function handleInventoryReport(
+  event: APIGatewayProxyEvent,
+  _auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  // Stock by model
+  const byModel = await query(`
+    SELECT
+      dm.id AS device_model_id,
+      dm.manufacturer,
+      dm.model_name,
+      dm.available_stock,
+      dm.reorder_level,
+      COUNT(d.id) AS total_units,
+      COUNT(d.id) FILTER (WHERE d.status = 'in_stock') AS in_stock,
+      COUNT(d.id) FILTER (WHERE d.status = 'assigned') AS assigned,
+      COUNT(d.id) FILTER (WHERE d.status = 'reserved') AS reserved,
+      COUNT(d.id) FILTER (WHERE d.status = 'sold') AS sold,
+      COUNT(d.id) FILTER (WHERE d.status = 'damaged') AS damaged,
+      COUNT(d.id) FILTER (WHERE d.status = 'returned') AS returned,
+      COUNT(d.id) FILTER (WHERE d.status = 'lost') AS lost,
+      COUNT(d.id) FILTER (WHERE d.status = 'written_off') AS written_off,
+      COALESCE(SUM(d.retail_price_usd) FILTER (WHERE d.status = 'in_stock'), 0) AS in_stock_value,
+      COALESCE(SUM(d.retail_price_usd), 0) AS total_value
+    FROM device_models dm
+    LEFT JOIN devices d ON d.device_model_id = dm.id AND d.deleted_at IS NULL
+    GROUP BY dm.id, dm.manufacturer, dm.model_name, dm.available_stock, dm.reorder_level
+    ORDER BY dm.manufacturer, dm.model_name
+  `);
+
+  // Overall totals
+  const totals = await queryOne(`
+    SELECT
+      COUNT(*) AS total_devices,
+      COUNT(*) FILTER (WHERE status = 'in_stock') AS total_in_stock,
+      COUNT(*) FILTER (WHERE status = 'sold') AS total_sold,
+      COUNT(*) FILTER (WHERE status = 'damaged') AS total_damaged,
+      COUNT(*) FILTER (WHERE status = 'lost') AS total_lost,
+      COUNT(*) FILTER (WHERE status = 'written_off') AS total_written_off,
+      COALESCE(SUM(retail_price_usd), 0) AS total_inventory_value,
+      COALESCE(SUM(retail_price_usd) FILTER (WHERE status = 'in_stock'), 0) AS available_inventory_value
+    FROM devices
+    WHERE deleted_at IS NULL
+  `);
+
+  // Aging — how long devices have been in_stock
+  const aging = await query(`
+    SELECT
+      CASE
+        WHEN NOW() - d.created_at < INTERVAL '30 days' THEN '0-30 days'
+        WHEN NOW() - d.created_at < INTERVAL '60 days' THEN '31-60 days'
+        WHEN NOW() - d.created_at < INTERVAL '90 days' THEN '61-90 days'
+        ELSE '90+ days'
+      END AS age_bracket,
+      COUNT(*) AS count,
+      COALESCE(SUM(d.retail_price_usd), 0) AS value
+    FROM devices d
+    WHERE d.status = 'in_stock' AND d.deleted_at IS NULL
+    GROUP BY age_bracket
+    ORDER BY
+      CASE age_bracket
+        WHEN '0-30 days' THEN 1
+        WHEN '31-60 days' THEN 2
+        WHEN '61-90 days' THEN 3
+        ELSE 4
+      END
+  `);
+
+  return successResponse({
+    by_model: byModel.rows,
+    totals: totals || {},
+    aging: aging.rows,
+    generated_at: new Date().toISOString(),
+  }, 200, event);
+}
+
+/**
+ * GET /admin/reports/inventory/movements
+ * Movement summary — aggregated by movement_type, time period
+ */
+async function handleMovementsReport(
+  event: APIGatewayProxyEvent,
+  _auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  const params = event.queryStringParameters || {};
+  const days = parseInt(params.days || '30', 10);
+  const sinceDate = new Date();
+  sinceDate.setDate(sinceDate.getDate() - days);
+
+  // Movements by type
+  const byType = await query(`
+    SELECT
+      movement_type,
+      COUNT(*) AS count,
+      MIN(created_at) AS earliest,
+      MAX(created_at) AS latest
+    FROM inventory_movements
+    WHERE created_at >= $1
+    GROUP BY movement_type
+    ORDER BY count DESC
+  `, [sinceDate.toISOString()]);
+
+  // Daily movement counts
+  const daily = await query(`
+    SELECT
+      DATE(created_at) AS date,
+      movement_type,
+      COUNT(*) AS count
+    FROM inventory_movements
+    WHERE created_at >= $1
+    GROUP BY DATE(created_at), movement_type
+    ORDER BY date DESC
+  `, [sinceDate.toISOString()]);
+
+  // Recent movements (last 50)
+  const recent = await query(`
+    SELECT
+      im.id,
+      im.device_id,
+      im.movement_type,
+      im.from_status,
+      im.to_status,
+      im.from_location,
+      im.to_location,
+      im.notes,
+      im.created_at,
+      d.imei AS device_imei,
+      d.manufacturer,
+      d.model AS device_model,
+      au.email AS performed_by_name
+    FROM inventory_movements im
+    LEFT JOIN devices d ON d.id = im.device_id
+    LEFT JOIN admin_users au ON au.id = im.performed_by
+    WHERE im.created_at >= $1
+    ORDER BY im.created_at DESC
+    LIMIT 50
+  `, [sinceDate.toISOString()]);
+
+  return successResponse({
+    period_days: days,
+    by_type: byType.rows,
+    daily: daily.rows,
+    recent: recent.rows,
+    generated_at: new Date().toISOString(),
+  }, 200, event);
+}
+
+/**
+ * GET /admin/reports/inventory/low-stock
+ * Models where available_stock <= reorder_level
+ */
+async function handleLowStockReport(
+  event: APIGatewayProxyEvent,
+  _auth: AuthCtx
+): Promise<APIGatewayProxyResult> {
+  const lowStock = await query(`
+    SELECT
+      dm.id,
+      dm.manufacturer,
+      dm.model_name,
+      dm.available_stock,
+      dm.reorder_level,
+      dm.lead_time_days,
+      dm.retail_price_usd,
+      (dm.reorder_level - dm.available_stock) AS deficit,
+      COUNT(d.id) FILTER (WHERE d.status = 'in_stock') AS actual_in_stock,
+      COUNT(d.id) FILTER (WHERE d.status = 'reserved') AS reserved,
+      COUNT(d.id) FILTER (WHERE d.status = 'assigned') AS assigned_to_distributors
+    FROM device_models dm
+    LEFT JOIN devices d ON d.device_model_id = dm.id AND d.deleted_at IS NULL
+    WHERE dm.reorder_level > 0
+    GROUP BY dm.id, dm.manufacturer, dm.model_name, dm.available_stock,
+             dm.reorder_level, dm.lead_time_days, dm.retail_price_usd
+    HAVING dm.available_stock <= dm.reorder_level
+    ORDER BY (dm.reorder_level - dm.available_stock) DESC
+  `);
+
+  const outOfStock = await query(`
+    SELECT
+      dm.id,
+      dm.manufacturer,
+      dm.model_name,
+      dm.retail_price_usd
+    FROM device_models dm
+    WHERE dm.available_stock = 0
+      AND dm.active = true
+    ORDER BY dm.manufacturer, dm.model_name
+  `);
+
+  return successResponse({
+    low_stock_models: lowStock.rows,
+    out_of_stock_models: outOfStock.rows,
+    total_low_stock: lowStock.rows.length,
+    total_out_of_stock: outOfStock.rows.length,
+    generated_at: new Date().toISOString(),
+  }, 200, event);
 }

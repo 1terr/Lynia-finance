@@ -82,6 +82,8 @@ export function StepConfirm({ data, onUpdate }: Props) {
         <CheckItem label={`Identity verified (${data.customer_national_id})`} checked={data.identity_verified} />
         <CheckItem label={`IMEI verified (${data.scanned_imei})`} checked={data.imei_verified} />
         <CheckItem label={`Device condition recorded`} checked={data.device_condition.powers_on} />
+        <CheckItem label="Lynia app installed &amp; configured" checked={data.app_installed && data.app_configured} />
+        <CheckItem label="Remote lock test passed" checked={data.lock_test_passed} />
         <CheckItem label={`${data.device_photos.filter(Boolean).length} photos captured`} checked={data.device_photos.filter(Boolean).length >= 2} />
         <CheckItem label="Customer signature obtained" checked={data.signature_data_url !== null} />
       </div>

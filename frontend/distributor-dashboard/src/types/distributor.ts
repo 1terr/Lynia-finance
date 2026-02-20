@@ -120,8 +120,11 @@ export interface HandoverData {
   // Step 3: IMEI verification
   scanned_imei: string;
   imei_verified: boolean;
-  // Step 4: Device condition
+  // Step 4: Device condition + app/lock setup
   device_condition: DeviceCondition;
+  app_installed: boolean;
+  app_configured: boolean;
+  lock_test_passed: boolean;
   // Step 5: Device photos
   device_photos: string[];
   // Step 6: Signature

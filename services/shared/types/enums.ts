@@ -12,10 +12,20 @@
 
 // ── Device Status ──
 // Matches admin portal + database schema
-export type DeviceStatus = 'in_stock' | 'allocated' | 'active' | 'locked' | 'returned' | 'damaged';
+export type DeviceStatus =
+  | 'in_stock'        // At warehouse, not assigned to any distributor
+  | 'assigned'        // Assigned to distributor, awaiting handover
+  | 'reserved'        // Held for approved loan (48h TTL)
+  | 'sold'            // Handed over to customer, loan active
+  | 'returned'        // Returned by customer (voluntary or repossession)
+  | 'repossessed'     // Recovered via repossession process
+  | 'damaged'         // Non-functional, needs assessment
+  | 'lost'            // Cannot be located
+  | 'written_off';    // Removed from inventory permanently
 
 export const DEVICE_STATUSES: DeviceStatus[] = [
-  'in_stock', 'allocated', 'active', 'locked', 'returned', 'damaged',
+  'in_stock', 'assigned', 'reserved', 'sold', 'returned',
+  'repossessed', 'damaged', 'lost', 'written_off',
 ];
 
 // ── Device Condition ──
@@ -34,7 +44,7 @@ export const DEVICE_CONDITION_LABELS: Record<DeviceCondition, string> = {
 };
 
 // ── Lock Status ──
-export type LockStatus = 'unlocked' | 'locked' | 'pending';
+export type LockStatus = 'unlocked' | 'locked' | 'emergency_unlocked' | 'pending';
 
 // ── KYC Status ──
 // Superset from database schema — most complete enum

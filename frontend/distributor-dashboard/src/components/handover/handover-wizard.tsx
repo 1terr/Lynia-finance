@@ -26,6 +26,9 @@ const initialData: HandoverData = {
   scanned_imei: '',
   imei_verified: false,
   device_condition: { ...INITIAL_DEVICE_CONDITION },
+  app_installed: false,
+  app_configured: false,
+  lock_test_passed: false,
   device_photos: [],
   signature_data_url: null,
   deposit_payment_method: 'ecocash',
@@ -52,7 +55,7 @@ export function HandoverWizard({ handovers, onComplete }: Props) {
       case 1: return data.selected_handover !== null;
       case 2: return data.identity_verified;
       case 3: return data.imei_verified;
-      case 4: return data.device_condition.powers_on;
+      case 4: return data.device_condition.powers_on && data.app_installed && data.lock_test_passed;
       case 5: return data.device_photos.length >= 2;
       case 6: return data.signature_data_url !== null;
       case 7: return data.deposit_verified;
@@ -169,6 +172,10 @@ export function HandoverWizard({ handovers, onComplete }: Props) {
           <StepDeviceCondition
             condition={data.device_condition}
             onUpdate={(c) => update({ device_condition: c })}
+            appInstalled={data.app_installed}
+            appConfigured={data.app_configured}
+            lockTestPassed={data.lock_test_passed}
+            onAppUpdate={update}
           />
         )}
         {step === 5 && (

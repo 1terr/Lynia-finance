@@ -3,11 +3,16 @@
 import type { DeviceCondition, ConditionRating } from '@/types/distributor';
 import { ACCESSORY_OPTIONS } from '@/types/distributor';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, XCircle, Monitor, Battery, Box, Headphones } from 'lucide-react';
+import type { HandoverData } from '@/types/distributor';
+import { CheckCircle2, XCircle, Monitor, Box, Headphones, Shield, Smartphone as SmartphoneIcon, Lock } from 'lucide-react';
 
 interface Props {
   condition: DeviceCondition;
   onUpdate: (c: DeviceCondition) => void;
+  appInstalled: boolean;
+  appConfigured: boolean;
+  lockTestPassed: boolean;
+  onAppUpdate: (partial: Partial<HandoverData>) => void;
 }
 
 const CONDITION_RATINGS: { value: ConditionRating; label: string; color: string }[] = [
@@ -91,7 +96,9 @@ function BoolToggle({
   );
 }
 
-export function StepDeviceCondition({ condition, onUpdate }: Props) {
+export function StepDeviceCondition({
+  condition, onUpdate, appInstalled, appConfigured, lockTestPassed, onAppUpdate,
+}: Props) {
   const set = <K extends keyof DeviceCondition>(key: K, val: DeviceCondition[K]) =>
     onUpdate({ ...condition, [key]: val });
 
@@ -142,6 +149,49 @@ export function StepDeviceCondition({ condition, onUpdate }: Props) {
           <BoolToggle label="Cellular Works" value={condition.cellular_works} onChange={(v) => set('cellular_works', v)} />
           <BoolToggle label="Calls Work" value={condition.calls_work} onChange={(v) => set('calls_work', v)} />
         </div>
+      </div>
+
+      {/* App & Lock Setup */}
+      <div className="space-y-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Shield className="h-3.5 w-3.5" /> App &amp; Lock Setup
+        </h3>
+        <p className="text-xs text-muted-foreground">
+          Install the Lynia app, configure it, and verify the remote lock works before handing over.
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <BoolToggle
+            label="Lynia App Installed"
+            value={appInstalled}
+            onChange={(v) => onAppUpdate({ app_installed: v })}
+          />
+          <BoolToggle
+            label="App Configured"
+            value={appConfigured}
+            onChange={(v) => onAppUpdate({ app_configured: v })}
+          />
+          <BoolToggle
+            label="Remote Lock Test Passed"
+            value={lockTestPassed}
+            onChange={(v) => onAppUpdate({ lock_test_passed: v })}
+          />
+        </div>
+        {!appInstalled && (
+          <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 p-2.5">
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 font-medium flex items-center gap-1.5">
+              <SmartphoneIcon className="h-3.5 w-3.5" />
+              Install the Lynia app on the device before proceeding.
+            </p>
+          </div>
+        )}
+        {appInstalled && !lockTestPassed && (
+          <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 p-2.5">
+            <p className="text-xs text-yellow-700 dark:text-yellow-400 font-medium flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" />
+              Test the remote lock before handing over the device.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Accessories */}

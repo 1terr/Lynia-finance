@@ -11,7 +11,9 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Device, DeviceStatus, LockStatus } from '@/types';
-import { Search, Smartphone, Lock, Unlock, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Search, Smartphone, Lock, Package, Plus, ArrowRightLeft, ClipboardList, Handshake, BarChart3 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -125,9 +127,51 @@ export default function DevicesPage() {
             Manage device inventory, lock status, and assignments.
           </p>
         </div>
-        {data && (
-          <p className="text-sm text-gray-500">{data.total} total devices</p>
-        )}
+        <div className="flex items-center gap-2">
+          {data && (
+            <p className="mr-2 text-sm text-gray-500">{data.total} total</p>
+          )}
+          <Link href="/devices/add">
+            <Button size="sm">
+              <Plus className="mr-1.5 h-4 w-4" />
+              Add Device
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-2">
+        <Link href="/devices/handovers">
+          <Button variant="outline" size="sm">
+            <Handshake className="mr-1.5 h-4 w-4" />
+            Handovers
+          </Button>
+        </Link>
+        <Link href="/devices/lock-unlock">
+          <Button variant="outline" size="sm">
+            <Lock className="mr-1.5 h-4 w-4" />
+            Lock/Unlock
+          </Button>
+        </Link>
+        <Link href="/devices/adjustments">
+          <Button variant="outline" size="sm">
+            <ClipboardList className="mr-1.5 h-4 w-4" />
+            Adjustments
+          </Button>
+        </Link>
+        <Link href="/devices/transfers">
+          <Button variant="outline" size="sm">
+            <ArrowRightLeft className="mr-1.5 h-4 w-4" />
+            Transfers
+          </Button>
+        </Link>
+        <Link href="/devices/reports">
+          <Button variant="outline" size="sm">
+            <BarChart3 className="mr-1.5 h-4 w-4" />
+            Reports
+          </Button>
+        </Link>
       </div>
 
       {/* Stats Cards */}

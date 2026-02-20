@@ -253,6 +253,7 @@ Resources:
           LoggingLevel: "OFF"
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !Ref CognitoUserPoolArn
@@ -1255,6 +1256,201 @@ Resources:
             Method: OPTIONS
             Auth:
               Authorizer: NONE
+        # Inventory management routes
+        GetAdminDevices:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices
+            Method: GET
+        CreateAdminDevice:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices
+            Method: POST
+        BulkImportDevices:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/bulk-import
+            Method: POST
+        GetAdminDeviceStats:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/stats
+            Method: GET
+        GetAdminDeviceById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/{id}
+            Method: GET
+        UpdateAdminDevice:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/{id}
+            Method: PATCH
+        GetDeviceMovements:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/{id}/movements
+            Method: GET
+        GetInventoryAdjustments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/adjustments
+            Method: GET
+        CreateInventoryAdjustment:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/adjustments
+            Method: POST
+        ApproveInventoryAdjustment:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/adjustments/{id}/approve
+            Method: POST
+        GetStockTransfers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/transfers
+            Method: GET
+        CreateStockTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/transfers
+            Method: POST
+        UpdateStockTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/transfers/{id}
+            Method: PATCH
+        # CORS preflight OPTIONS for inventory routes
+        AdminDevicesOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminDevicesBulkImportOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/bulk-import
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminDevicesStatsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/stats
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminDeviceByIdOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/{id}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminDeviceMovementsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/devices/{id}/movements
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminAdjustmentsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/adjustments
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminAdjustmentApproveOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/adjustments/{id}/approve
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminTransfersOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/transfers
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminTransferByIdOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/inventory/transfers/{id}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        # Inventory report routes
+        GetInventoryReport:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/reports/inventory
+            Method: GET
+        GetMovementsReport:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/reports/inventory/movements
+            Method: GET
+        GetLowStockReport:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/reports/inventory/low-stock
+            Method: GET
+        AdminReportsInventoryOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/reports/inventory
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminReportsMovementsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/reports/inventory/movements
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        AdminReportsLowStockOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/reports/inventory/low-stock
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         # Dashboard routes
         GetDashboardMetrics:
           Type: Api
@@ -1340,7 +1536,139 @@ Resources:
           - admin-service/src/index.ts
 
   # =====================================================
-  # 11. INVESTOR REPORTING SERVICE
+  # 11. DISTRIBUTOR SERVICE (Distributor Dashboard API)
+  # =====================================================
+  DistributorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-distributor-service
+      CodeUri: services/
+      Handler: distributor-service/src/index.handler
+      Description: Distributor dashboard API - profile, inventory, handovers, commissions
+      MemorySize: 512
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        GetDistributorProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/profile
+            Method: GET
+        UpdateDistributorProfile:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/profile
+            Method: PATCH
+        GetDistributorStats:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/stats
+            Method: GET
+        GetDistributorInventory:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/inventory
+            Method: GET
+        GetDistributorHandovers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers
+            Method: GET
+        SubmitDistributorHandover:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers
+            Method: POST
+        DistributorHandoverAction:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/{id}/{action}
+            Method: POST
+        GetDistributorCommissions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/commissions
+            Method: GET
+        DistributorProfileOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/profile
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        DistributorStatsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/stats
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        DistributorInventoryOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/inventory
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        DistributorHandoversOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        DistributorHandoverActionOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/{id}/{action}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        DistributorCommissionsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/commissions
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - distributor-service/src/index.ts
+
+  # =====================================================
+  # 12. INVESTOR REPORTING SERVICE
   # =====================================================
   InvestorReportingFunction:
     Type: AWS::Serverless::Function
