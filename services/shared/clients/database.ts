@@ -229,12 +229,11 @@ export class QueryBuilder<T = Record<string, unknown>> {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   async execute(): Promise<{ data: any; error: Error | null; count?: number }> {
-    const p = await getPool();
-    const where = this.whereClauses.length > 0
-      ? ` WHERE ${this.whereClauses.join(' AND ')}`
-      : '';
-
     try {
+      const p = await getPool();
+      const where = this.whereClauses.length > 0
+        ? ` WHERE ${this.whereClauses.join(' AND ')}`
+        : '';
       let sql: string;
       let params: unknown[];
 

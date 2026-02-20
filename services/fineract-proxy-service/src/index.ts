@@ -114,69 +114,69 @@ export const handler = async (
 
     // ---- LOANS: list / pending / overdue / aging-summary ----
     if (path === '/api/v1/fineract/loans' && method === 'GET') {
-      return handleGetLoans(event);
+      return await handleGetLoans(event);
     }
     if (path === '/api/v1/fineract/loans/pending' && method === 'GET') {
-      return handleGetPendingLoans(event);
+      return await handleGetPendingLoans(event);
     }
     if (path === '/api/v1/fineract/loans/overdue' && method === 'GET') {
-      return handleGetOverdueLoans(event);
+      return await handleGetOverdueLoans(event);
     }
     if (path === '/api/v1/fineract/loans/aging-summary' && method === 'GET') {
-      return handleGetAgingSummary(event);
+      return await handleGetAgingSummary(event);
     }
 
     // ---- LOAN DETAIL & ACTIONS (/loans/{id}/...) ----
     const loanActionMatch = path.match(/^\/api\/v1\/fineract\/loans\/([^/]+)\/(approve|disburse|repayment)$/);
     if (loanActionMatch && method === 'POST') {
       const [, loanId, action] = loanActionMatch;
-      return handleLoanAction(event, loanId, action);
+      return await handleLoanAction(event, loanId, action);
     }
 
     const loanDetailMatch = path.match(/^\/api\/v1\/fineract\/loans\/([^/]+)$/);
     if (loanDetailMatch && method === 'GET') {
-      return handleGetLoanDetail(event, loanDetailMatch[1]);
+      return await handleGetLoanDetail(event, loanDetailMatch[1]);
     }
 
     // ---- LOAN PRODUCTS ----
     if (path === '/api/v1/fineract/loan-products' && method === 'GET') {
-      return handleGetLoanProducts(event);
+      return await handleGetLoanProducts(event);
     }
     const productMatch = path.match(/^\/api\/v1\/fineract\/loan-products\/(\d+)$/);
     if (productMatch && method === 'GET') {
-      return handleGetLoanProduct(event, parseInt(productMatch[1], 10));
+      return await handleGetLoanProduct(event, parseInt(productMatch[1], 10));
     }
 
     // ---- GL ACCOUNTS ----
     if (path === '/api/v1/fineract/gl-accounts' && method === 'GET') {
-      return handleGetGLAccounts(event);
+      return await handleGetGLAccounts(event);
     }
 
     // ---- JOURNAL ENTRIES ----
     if (path === '/api/v1/fineract/journal-entries' && method === 'GET') {
-      return handleGetJournalEntries(event);
+      return await handleGetJournalEntries(event);
     }
 
     // ---- TRIAL BALANCE ----
     if (path === '/api/v1/fineract/trial-balance' && method === 'GET') {
-      return handleGetTrialBalance(event);
+      return await handleGetTrialBalance(event);
     }
 
     // ---- RECONCILIATION ----
     if (path === '/api/v1/fineract/reconciliation' && method === 'GET') {
-      return handleGetReconciliation(event);
+      return await handleGetReconciliation(event);
     }
     if (path === '/api/v1/fineract/reconciliation/run' && method === 'POST') {
-      return handleRunReconciliation(event);
+      return await handleRunReconciliation(event);
     }
 
     // ---- FINERACT REPORTS ----
     if (path === '/api/v1/fineract/reports' && method === 'GET') {
-      return handleGetReports(event);
+      return await handleGetReports(event);
     }
     const reportMatch = path.match(/^\/api\/v1\/fineract\/reports\/([^/]+)$/);
     if (reportMatch && method === 'GET') {
-      return handleRunReport(event, reportMatch[1]);
+      return await handleRunReport(event, reportMatch[1]);
     }
 
     return err(404, 'Not Found', event);
@@ -801,13 +801,18 @@ async function handleGetTrialBalance(event: APIGatewayProxyEvent): Promise<APIGa
 /** GET /api/v1/fineract/reconciliation */
 async function handleGetReconciliation(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   // Query the most recent reconciliation log entries
-  const { data: recentLogs } = await db
+  const { data: recentLogs, error: logsError } = await db
     .from('fineract_sync_log')
     .select('id, entity_type, entity_id, fineract_id, operation, status, error_message, created_at')
     .eq('operation', 'reconcile')
     .order('created_at', { ascending: false })
     .limit(100)
     .execute();
+
+  if (logsError) {
+    console.error('[fineract-proxy] Reconciliation query failed:', logsError.message);
+    return err(500, 'Failed to query reconciliation data', event);
+  }
 
   const logs = (recentLogs as unknown as Array<{
     entity_id: string;
@@ -837,11 +842,15 @@ async function handleGetReconciliation(event: APIGatewayProxyEvent): Promise<API
     });
 
   // Count retried syncs
-  const { data: retryLogs } = await db
+  const { data: retryLogs, error: retryError } = await db
     .from('fineract_sync_log')
     .select('id, status')
     .eq('status', 'retrying')
     .execute();
+
+  if (retryError) {
+    console.error('[fineract-proxy] Retry query failed:', retryError.message);
+  }
 
   const retryCount = Array.isArray(retryLogs) ? retryLogs.length : 0;
 
