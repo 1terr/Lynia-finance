@@ -38,7 +38,7 @@ async function getPool(): Promise<Pool> {
     database: secret.database,
     user: secret.username,
     password: secret.password,
-    ssl: { rejectUnauthorized: true },
+    ssl: { rejectUnauthorized: false },
     max: 5,
     idleTimeoutMillis: 60000,
     connectionTimeoutMillis: 5000,
