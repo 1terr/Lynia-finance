@@ -213,6 +213,7 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
   const [searchInput, setSearchInput] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', filters],
@@ -224,6 +225,10 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       setShowAddModal(false);
+      setCreateError(null);
+    },
+    onError: (error: Error) => {
+      setCreateError(error.message || 'Failed to create user. Please try again.');
     },
   });
 
@@ -359,9 +364,10 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
       {/* Add User Modal */}
       <AddUserModal
         open={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        onClose={() => { setShowAddModal(false); setCreateError(null); }}
         onSubmit={(userData) => createMutation.mutate(userData)}
         isLoading={createMutation.isPending}
+        error={createError}
       />
 
       {/* Edit User Modal */}
@@ -389,11 +395,13 @@ function AddUserModal({
   onClose,
   onSubmit,
   isLoading,
+  error,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: CreateAdminUserData) => void;
   isLoading: boolean;
+  error?: string | null;
 }) {
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -408,6 +416,11 @@ function AddUserModal({
   return (
     <Modal open={open} onClose={onClose} title="Add Admin User" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>

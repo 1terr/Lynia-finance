@@ -29,12 +29,12 @@ export async function getAdminUsers(filters: AdminUserFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/admin/users?${params.toString()}`);
+  }>(`/admin/users?${params.toString()}`);
 }
 
 export async function getAdminUserById(id: string): Promise<AdminUser | null> {
   try {
-    return await fetchAPI<AdminUser>(`/api/v1/admin/users/${id}`);
+    return await fetchAPI<AdminUser>(`/admin/users/${id}`);
   } catch {
     return null;
   }
@@ -48,7 +48,7 @@ export interface CreateAdminUserData {
 }
 
 export async function createAdminUser(userData: CreateAdminUserData): Promise<AdminUser> {
-  return fetchAPI<AdminUser>('/api/v1/admin/users', {
+  return fetchAPI<AdminUser>('/admin/users', {
     method: 'POST',
     body: JSON.stringify(userData),
   });
@@ -66,7 +66,7 @@ export async function updateAdminUser(
   updates: UpdateAdminUserData,
   adminId?: string
 ): Promise<AdminUser> {
-  return fetchAPI<AdminUser>(`/api/v1/admin/users/${id}`, {
+  return fetchAPI<AdminUser>(`/admin/users/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ ...updates, admin_id: adminId }),
   });
@@ -75,7 +75,7 @@ export async function updateAdminUser(
 // --- System Config ---
 
 export async function getSystemConfigs(): Promise<SystemConfig[]> {
-  return fetchAPI<SystemConfig[]>('/api/v1/admin/config');
+  return fetchAPI<SystemConfig[]>('/admin/config');
 }
 
 export async function updateSystemConfig(
@@ -83,7 +83,7 @@ export async function updateSystemConfig(
   configValue: Record<string, unknown>,
   adminId: string
 ): Promise<SystemConfig> {
-  return fetchAPI<SystemConfig>(`/api/v1/admin/config/${id}`, {
+  return fetchAPI<SystemConfig>(`/admin/config/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ config_value: configValue, admin_id: adminId }),
   });
@@ -120,5 +120,5 @@ export async function getAuditLogs(filters: AuditLogFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/admin/audit-logs?${params.toString()}`);
+  }>(`/admin/audit-logs?${params.toString()}`);
 }

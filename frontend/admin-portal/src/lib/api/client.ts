@@ -59,7 +59,7 @@ function handleSessionExpired(): void {
 
 export async function getCurrentAdmin(): Promise<AdminUser | null> {
   try {
-    return await fetchAPI<AdminUser>('/api/v1/admin/me');
+    return await fetchAPI<AdminUser>('/admin/me');
   } catch {
     return null;
   }
