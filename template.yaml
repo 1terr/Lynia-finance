@@ -35,7 +35,7 @@ Globals:
     Environment:
       Variables:
         NODE_ENV: !Ref Environment
-        DB_SECRET_NAME: !Sub "${Environment}/lynia/database"
+        DB_SECRET_NAME: !Sub "lynia/${Environment}/database"
         FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"
