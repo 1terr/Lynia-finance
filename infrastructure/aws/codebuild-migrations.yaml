@@ -1,0 +1,126 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Lynia Finance - CodeBuild project for running database migrations inside the VPC.
+  This solves the connectivity issue where GitHub Actions runners cannot reach
+  RDS instances in private subnets (PubliclyAccessible: false).
+
+Parameters:
+  Environment:
+    Type: String
+    AllowedValues: [development, staging, production]
+  ArtifactBucket:
+    Type: String
+    Description: S3 bucket for migration source uploads
+    Default: lynia-finance-production-templates
+
+Resources:
+  MigrationCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Environment}-lynia-codebuild-migrations-role"
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildMigrationPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # CloudWatch Logs
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${Environment}-lynia-db-migrations"
+                  - !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/codebuild/${Environment}-lynia-db-migrations:*"
+              # S3 source access
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource:
+                  - !Sub "arn:aws:s3:::${ArtifactBucket}/db-migrations/*"
+              # VPC ENI management (required for VPC-attached CodeBuild)
+              - Effect: Allow
+                Action:
+                  - ec2:CreateNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeSubnets
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeDhcpOptions
+                  - ec2:DescribeVpcs
+                  - ec2:CreateNetworkInterfacePermission
+                Resource: "*"
+              # Secrets Manager (for DB password retrieval)
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/*"
+
+  MigrationCodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${Environment}-lynia-db-migrations"
+      Description: Runs database migrations inside the VPC to reach private RDS
+      ServiceRole: !GetAtt MigrationCodeBuildRole.Arn
+      TimeoutInMinutes: 15
+      Source:
+        Type: S3
+        Location: !Sub "${ArtifactBucket}/db-migrations/source.zip"
+        BuildSpec: database/buildspec-migrations.yml
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        EnvironmentVariables:
+          - Name: ENVIRONMENT
+            Value: !Ref Environment
+          - Name: DB_HOST
+            Value: placeholder
+          - Name: DB_PORT
+            Value: "5432"
+          - Name: DB_PASSWORD
+            Value: placeholder
+            Type: PLAINTEXT
+      Artifacts:
+        Type: NO_ARTIFACTS
+      LogsConfig:
+        CloudWatchLogs:
+          Status: ENABLED
+          GroupName: !Sub "/aws/codebuild/${Environment}-lynia-db-migrations"
+      VpcConfig:
+        VpcId: !ImportValue
+          Fn::Sub: "${Environment}-lynia-vpc-id"
+        Subnets:
+          - !ImportValue
+            Fn::Sub: "${Environment}-lynia-private-subnet-1"
+          - !ImportValue
+            Fn::Sub: "${Environment}-lynia-private-subnet-2"
+        SecurityGroupIds:
+          - !ImportValue
+            Fn::Sub: "${Environment}-lynia-lambda-sg-id"
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: lynia-finance
+        - Key: Purpose
+          Value: database-migrations
+
+Outputs:
+  CodeBuildProjectName:
+    Value: !Ref MigrationCodeBuildProject
+    Export:
+      Name: !Sub "${Environment}-lynia-codebuild-migrations"
+  CodeBuildProjectArn:
+    Value: !GetAtt MigrationCodeBuildProject.Arn
+  CodeBuildRoleArn:
+    Value: !GetAtt MigrationCodeBuildRole.Arn

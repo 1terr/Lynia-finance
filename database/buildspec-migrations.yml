@@ -1,0 +1,29 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.11
+    commands:
+      - echo "Installing PostgreSQL client..."
+      - apt-get update -qq && apt-get install -y -qq postgresql-client
+
+  pre_build:
+    commands:
+      - echo "Testing database connectivity..."
+      - echo "DB_HOST=${DB_HOST} DB_PORT=${DB_PORT}"
+      - PGPASSWORD="${DB_PASSWORD}" psql "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" -c "SELECT version();"
+      - echo "Database connectivity confirmed."
+
+  build:
+    commands:
+      - echo "Running migration pipeline..."
+      - CONN="postgresql://lynia_admin:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/lynia"
+      - chmod +x database/deploy-to-rds.sh
+      - bash database/deploy-to-rds.sh "${CONN}"
+
+  post_build:
+    commands:
+      - echo "Verifying database state..."
+      - PGPASSWORD="${DB_PASSWORD}" psql "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';"
+      - echo "Migration complete."

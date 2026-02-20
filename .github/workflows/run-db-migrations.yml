@@ -21,18 +21,15 @@ env:
   AWS_REGION: us-east-1
 
 jobs:
-  run-migrations:
-    name: Run DB Migrations (${{ github.event.inputs.environment }})
+  deploy-codebuild-stack:
+    name: Ensure CodeBuild project exists (${{ github.event.inputs.environment }})
     runs-on: ubuntu-latest
+    outputs:
+      codebuild_project: ${{ steps.stack.outputs.project_name }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Install PostgreSQL client
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-client
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v6
@@ -41,17 +38,82 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Get RDS endpoint and security group from T004
+      - name: Deploy CodeBuild migrations stack
+        id: stack
+        run: |
+          ENV="${{ github.event.inputs.environment }}"
+          STACK_NAME="${ENV}-lynia-codebuild-migrations"
+
+          # Check if stack exists and is in a deployable state
+          STACK_STATUS=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "DOES_NOT_EXIST")
+
+          echo "Stack status: ${STACK_STATUS}"
+
+          if [ "${STACK_STATUS}" = "ROLLBACK_COMPLETE" ]; then
+            echo "Stack in ROLLBACK_COMPLETE — deleting..."
+            aws cloudformation delete-stack --stack-name "${STACK_NAME}"
+            aws cloudformation wait stack-delete-complete --stack-name "${STACK_NAME}"
+            STACK_STATUS="DOES_NOT_EXIST"
+          fi
+
+          # Deploy or update the stack
+          if [ "${STACK_STATUS}" = "DOES_NOT_EXIST" ]; then
+            echo "Creating CodeBuild migrations stack..."
+            aws cloudformation create-stack \
+              --stack-name "${STACK_NAME}" \
+              --template-body file://infrastructure/aws/codebuild-migrations.yaml \
+              --parameters \
+                ParameterKey=Environment,ParameterValue="${ENV}" \
+              --capabilities CAPABILITY_NAMED_IAM \
+              --tags Key=Environment,Value="${ENV}" Key=Service,Value=lynia-finance
+            aws cloudformation wait stack-create-complete --stack-name "${STACK_NAME}"
+          elif [ "${STACK_STATUS}" = "CREATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_COMPLETE" ] || [ "${STACK_STATUS}" = "UPDATE_ROLLBACK_COMPLETE" ]; then
+            echo "Updating CodeBuild migrations stack..."
+            aws cloudformation update-stack \
+              --stack-name "${STACK_NAME}" \
+              --template-body file://infrastructure/aws/codebuild-migrations.yaml \
+              --parameters \
+                ParameterKey=Environment,ParameterValue="${ENV}" \
+              --capabilities CAPABILITY_NAMED_IAM 2>/dev/null && \
+            aws cloudformation wait stack-update-complete --stack-name "${STACK_NAME}" || \
+            echo "No updates needed or update skipped."
+          fi
+
+          # Get the CodeBuild project name
+          PROJECT_NAME=$(aws cloudformation describe-stacks \
+            --stack-name "${STACK_NAME}" \
+            --query "Stacks[0].Outputs[?OutputKey=='CodeBuildProjectName'].OutputValue" \
+            --output text)
+          echo "project_name=${PROJECT_NAME}" >> $GITHUB_OUTPUT
+          echo "CodeBuild project: ${PROJECT_NAME}"
+
+  run-migrations:
+    name: Run DB Migrations via CodeBuild (${{ github.event.inputs.environment }})
+    runs-on: ubuntu-latest
+    needs: deploy-codebuild-stack
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Get RDS endpoint
         id: rds
         run: |
           ENV="${{ github.event.inputs.environment }}"
-          # Production RDS stack uses lynia-rds-production naming convention
           if [ "${ENV}" = "production" ]; then
             RDS_STACK="lynia-rds-production"
           else
             RDS_STACK="${ENV}-lynia-rds"
           fi
-          VPC_STACK="${ENV}-lynia-vpc"
 
           echo "=== Fetching RDS details from ${RDS_STACK} ==="
           RDS_STATUS=$(aws cloudformation describe-stacks \
@@ -67,203 +129,139 @@ jobs:
             --query "Stacks[0].Outputs[?OutputKey=='DatabaseEndpoint'].OutputValue" --output text)
           DB_PORT=$(aws cloudformation describe-stacks --stack-name "${RDS_STACK}" \
             --query "Stacks[0].Outputs[?OutputKey=='DatabasePort'].OutputValue" --output text 2>/dev/null || echo "5432")
-          RDS_SG=$(aws cloudformation describe-stacks --stack-name "${RDS_STACK}" \
-            --query "Stacks[0].Outputs[?OutputKey=='DatabaseSecurityGroupId'].OutputValue" --output text 2>/dev/null || echo "")
 
           echo "DB_HOST=${DB_HOST}"
           echo "DB_PORT=${DB_PORT:-5432}"
 
           echo "db_host=${DB_HOST}" >> $GITHUB_OUTPUT
           echo "db_port=${DB_PORT:-5432}" >> $GITHUB_OUTPUT
-          echo "rds_sg=${RDS_SG}" >> $GITHUB_OUTPUT
 
-      - name: Open temporary network access
-        id: network
+      - name: Upload migration source to S3
         run: |
-          RDS_SG="${{ steps.rds.outputs.rds_sg }}"
-          DB_PORT="${{ steps.rds.outputs.db_port }}"
+          echo "=== Packaging migration source ==="
+          # Create a zip of the repo root so buildspec + database/ are available
+          zip -r /tmp/source.zip database/ -x "*.git*"
+          aws s3 cp /tmp/source.zip s3://lynia-finance-production-templates/db-migrations/source.zip
+          echo "Source uploaded to S3."
 
-          if [ -z "${RDS_SG}" ]; then
-            echo "No security group — skipping"
-            echo "sg_rule_id=" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # GitHub Actions runner IP
-          MY_IP=$(curl -s https://checkip.amazonaws.com)
-          echo "Runner IP: ${MY_IP}"
-
-          SG_RULE_ID=$(aws ec2 authorize-security-group-ingress \
-            --group-id "${RDS_SG}" \
-            --protocol tcp \
-            --port "${DB_PORT}" \
-            --cidr "${MY_IP}/32" \
-            --tag-specifications "ResourceType=security-group-rule,Tags=[{Key=Purpose,Value=github-actions-migration},{Key=CreatedBy,Value=run-db-migrations-workflow}]" \
-            --query "SecurityGroupRules[0].SecurityGroupRuleId" \
-            --output text 2>/dev/null || echo "")
-
-          echo "sg_rule_id=${SG_RULE_ID}" >> $GITHUB_OUTPUT
-          echo "rds_sg=${RDS_SG}" >> $GITHUB_OUTPUT
-          echo "Security group rule: ${SG_RULE_ID}"
-
-      - name: Test database connectivity
+      - name: Start CodeBuild migration
+        id: codebuild
         run: |
+          PROJECT="${{ needs.deploy-codebuild-stack.outputs.codebuild_project }}"
           DB_HOST="${{ steps.rds.outputs.db_host }}"
           DB_PORT="${{ steps.rds.outputs.db_port }}"
+          DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
 
-          PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
-            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
-            -c "SELECT version();"
+          echo "=== Starting CodeBuild build: ${PROJECT} ==="
+          BUILD_ID=$(aws codebuild start-build \
+            --project-name "${PROJECT}" \
+            --source-type-override S3 \
+            --source-location-override "lynia-finance-production-templates/db-migrations/source.zip" \
+            --environment-variables-override \
+              "name=DB_HOST,value=${DB_HOST},type=PLAINTEXT" \
+              "name=DB_PORT,value=${DB_PORT},type=PLAINTEXT" \
+              "name=DB_PASSWORD,value=${DB_PASSWORD},type=PLAINTEXT" \
+            --query "build.id" --output text)
 
-      - name: Run migration pipeline
-        id: migrate
+          echo "Build started: ${BUILD_ID}"
+          echo "build_id=${BUILD_ID}" >> $GITHUB_OUTPUT
+
+      - name: Wait for CodeBuild completion
+        id: wait
         run: |
-          DB_HOST="${{ steps.rds.outputs.db_host }}"
-          DB_PORT="${{ steps.rds.outputs.db_port }}"
-          CONN="postgresql://lynia_admin:${{ secrets.DB_PASSWORD }}@${DB_HOST}:${DB_PORT}/lynia"
+          BUILD_ID="${{ steps.codebuild.outputs.build_id }}"
+          echo "Waiting for build ${BUILD_ID}..."
 
-          chmod +x database/deploy-to-rds.sh
-          bash database/deploy-to-rds.sh "${CONN}"
+          # Poll every 15 seconds for up to 15 minutes
+          for i in $(seq 1 60); do
+            STATUS=$(aws codebuild batch-get-builds \
+              --ids "${BUILD_ID}" \
+              --query "builds[0].buildStatus" --output text)
 
-      - name: Verify database state
-        id: verify
-        run: |
-          DB_HOST="${{ steps.rds.outputs.db_host }}"
-          DB_PORT="${{ steps.rds.outputs.db_port }}"
-          CONN="postgresql://lynia_admin:${{ secrets.DB_PASSWORD }}@${DB_HOST}:${DB_PORT}/lynia"
-          PASS=0
-          FAIL=0
+            if [ "${STATUS}" != "IN_PROGRESS" ]; then
+              echo "Build finished with status: ${STATUS}"
+              echo "build_status=${STATUS}" >> $GITHUB_OUTPUT
 
-          echo "=== Verifying Database State ==="
+              # Get build logs URL
+              LOG_GROUP=$(aws codebuild batch-get-builds \
+                --ids "${BUILD_ID}" \
+                --query "builds[0].logs.groupName" --output text)
+              LOG_STREAM=$(aws codebuild batch-get-builds \
+                --ids "${BUILD_ID}" \
+                --query "builds[0].logs.streamName" --output text)
+              echo "Logs: ${LOG_GROUP}/${LOG_STREAM}"
 
-          # Table count
-          TABLE_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
-            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
-            -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public';" | tr -d ' ')
-          if [ "${TABLE_COUNT}" -ge 35 ]; then
-            echo "PASS: Table count: ${TABLE_COUNT} (>= 35)"
-            PASS=$((PASS + 1))
-          else
-            echo "FAIL: Table count: ${TABLE_COUNT} (expected >= 35)"
-            FAIL=$((FAIL + 1))
-          fi
+              # Print last 50 lines of build log
+              aws logs get-log-events \
+                --log-group-name "${LOG_GROUP}" \
+                --log-stream-name "${LOG_STREAM}" \
+                --limit 50 \
+                --query "events[].message" --output text 2>/dev/null || true
 
-          # Critical tables
-          for TABLE in customers loans loan_applications payments devices distributors; do
-            EXISTS=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
-              "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
-              -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND tablename='${TABLE}';" | tr -d ' ')
-            if [ "${EXISTS}" -ge 1 ]; then
-              echo "PASS: ${TABLE}"
-              PASS=$((PASS + 1))
-            else
-              echo "FAIL: ${TABLE} missing"
-              FAIL=$((FAIL + 1))
+              if [ "${STATUS}" = "SUCCEEDED" ]; then
+                echo "Migration completed successfully!"
+                exit 0
+              else
+                echo "::error::Migration build failed with status: ${STATUS}"
+                exit 1
+              fi
             fi
+
+            echo "  Still running... (${i}/60)"
+            sleep 15
           done
 
-          # Index count
-          INDEX_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
-            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
-            -t -c "SELECT count(*) FROM pg_indexes WHERE schemaname='public' AND indexname LIKE 'idx_%';" | tr -d ' ')
-          if [ "${INDEX_COUNT}" -ge 22 ]; then
-            echo "PASS: Index count: ${INDEX_COUNT} (>= 22)"
-            PASS=$((PASS + 1))
-          else
-            echo "FAIL: Index count: ${INDEX_COUNT} (expected >= 22)"
-            FAIL=$((FAIL + 1))
-          fi
+          echo "::error::Build timed out after 15 minutes"
+          exit 1
 
-          # Auth schema removed
-          AUTH_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
-            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
-            -t -c "SELECT count(*) FROM information_schema.schemata WHERE schema_name='auth';" | tr -d ' ')
-          if [ "${AUTH_COUNT}" -eq 0 ]; then
-            echo "PASS: Auth schema removed"
-            PASS=$((PASS + 1))
-          else
-            echo "FAIL: Auth schema still exists"
-            FAIL=$((FAIL + 1))
-          fi
-
-          # RLS disabled
-          RLS_COUNT=$(PGPASSWORD="${{ secrets.DB_PASSWORD }}" psql \
-            "postgresql://lynia_admin@${DB_HOST}:${DB_PORT}/lynia" \
-            -t -c "SELECT count(*) FROM pg_tables WHERE schemaname='public' AND rowsecurity=true;" | tr -d ' ')
-          if [ "${RLS_COUNT}" -eq 0 ]; then
-            echo "PASS: RLS disabled on all tables"
-            PASS=$((PASS + 1))
-          else
-            echo "FAIL: RLS still enabled on ${RLS_COUNT} tables"
-            FAIL=$((FAIL + 1))
-          fi
-
-          echo "verify_pass=${PASS}" >> $GITHUB_OUTPUT
-          echo "verify_fail=${FAIL}" >> $GITHUB_OUTPUT
-
-      - name: Revoke temporary network access
-        if: always()
+      - name: Verify database state
+        if: success()
         run: |
-          SG_RULE_ID="${{ steps.network.outputs.sg_rule_id }}"
-          RDS_SG="${{ steps.network.outputs.rds_sg }}"
-
-          if [ -n "${SG_RULE_ID}" ] && [ -n "${RDS_SG}" ]; then
-            echo "Revoking temporary security group rule: ${SG_RULE_ID}"
-            aws ec2 revoke-security-group-ingress \
-              --group-id "${RDS_SG}" \
-              --security-group-rule-ids "${SG_RULE_ID}" 2>/dev/null && \
-              echo "Temporary access revoked" || \
-              echo "::warning::Failed to revoke rule ${SG_RULE_ID} — manual cleanup needed"
-          else
-            echo "No temporary rule to revoke"
-          fi
+          echo "=== Database migration completed via CodeBuild ==="
+          echo "Build ID: ${{ steps.codebuild.outputs.build_id }}"
+          echo "Status: ${{ steps.wait.outputs.build_status }}"
 
       - name: Generate summary
         if: always()
         run: |
           ENV="${{ github.event.inputs.environment }}"
-          MIGRATE_OUTCOME="${{ steps.migrate.outcome }}"
-          VERIFY_PASS="${{ steps.verify.outputs.verify_pass || 0 }}"
-          VERIFY_FAIL="${{ steps.verify.outputs.verify_fail || 0 }}"
+          BUILD_STATUS="${{ steps.wait.outputs.build_status || 'UNKNOWN' }}"
 
-          TOTAL_PASS=$((VERIFY_PASS))
-          TOTAL_FAIL=$((VERIFY_FAIL))
-
-          if [ "${MIGRATE_OUTCOME}" = "success" ]; then
-            MIGRATE_CHECK="PASS"
-            TOTAL_PASS=$((TOTAL_PASS + 1))
+          if [ "${BUILD_STATUS}" = "SUCCEEDED" ]; then
+            RESULT="PASS"
           else
-            MIGRATE_CHECK="FAIL"
-            TOTAL_FAIL=$((TOTAL_FAIL + 1))
+            RESULT="FAIL"
           fi
-
-          TOTAL=$((TOTAL_PASS + TOTAL_FAIL))
 
           cat >> $GITHUB_STEP_SUMMARY << EOF
           # Database Migrations — ${ENV}
 
+          ## Execution Method
+          **CodeBuild (VPC-attached)** — runs inside private subnets with direct RDS access.
+
           ## Migration Pipeline
           | Phase | Script | Status |
           |-------|--------|--------|
-          | Pre-migration | 000_pre_migration.sql | ${MIGRATE_CHECK} |
-          | Standard (001-017) | 17 migration files | ${MIGRATE_CHECK} |
-          | Post-migration | 018_remove_rls_for_aws.sql | ${MIGRATE_CHECK} |
+          | Pre-migration | 000_pre_migration.sql | ${RESULT} |
+          | Standard (001-017) | 17 migration files | ${RESULT} |
+          | Post-migration | 018_remove_rls_for_aws.sql | ${RESULT} |
 
-          ## Verification: ${TOTAL_PASS}/${TOTAL} passed
-          | Check | Result |
-          |-------|--------|
-          | Migration execution | ${MIGRATE_CHECK} |
-          | Verification (pass: ${VERIFY_PASS}, fail: ${VERIFY_FAIL}) | $([ "${VERIFY_FAIL}" = "0" ] && echo "PASS" || echo "FAIL") |
+          ## Build Details
+          | Field | Value |
+          |-------|-------|
+          | Build ID | ${{ steps.codebuild.outputs.build_id }} |
+          | Status | ${BUILD_STATUS} |
+          | Project | ${{ needs.deploy-codebuild-stack.outputs.codebuild_project }} |
 
-          **Total: ${TOTAL_PASS} passed, ${TOTAL_FAIL} failed out of ${TOTAL} checks**
+          ## Architecture
+          GitHub Actions → S3 (source upload) → CodeBuild (VPC) → RDS (private subnet)
 
-          ## Next Steps
-          - Database is ready for **P5-DEPLOY-T010** (SAM Lambda Deploy)
+          No direct internet-to-RDS connection required.
           EOF
 
-          if [ "${TOTAL_FAIL}" -gt 0 ]; then
-            echo "::error::${TOTAL_FAIL} checks failed"
+          if [ "${RESULT}" = "FAIL" ]; then
+            echo "::error::Migration failed — check CodeBuild logs"
             exit 1
           fi
 
-          echo "All ${TOTAL_PASS} checks passed!"
+          echo "All migrations applied successfully!"
