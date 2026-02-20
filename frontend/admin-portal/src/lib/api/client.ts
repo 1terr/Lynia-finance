@@ -44,7 +44,13 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
     throw new Error(`API error: ${res.status}`);
   }
 
-  return res.json();
+  const json = await res.json();
+
+  // Unwrap { success, data } envelope if present
+  if (json && typeof json === 'object' && 'data' in json) {
+    return json.data as T;
+  }
+  return json as T;
 }
 
 /** Clear Cognito session and redirect to login on auth failure. */
@@ -68,36 +74,26 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
 
 // --- Dashboard ---
 
-/** Unwrap the { success, data } envelope used by admin-service endpoints. */
-async function fetchAdminAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const response = await fetchAPI<{ success: boolean; data: T }>(path, options);
-  // Handle both wrapped { success, data } and direct responses
-  if (response && typeof response === 'object' && 'data' in response) {
-    return (response as { data: T }).data;
-  }
-  return response as unknown as T;
-}
-
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  return fetchAdminAPI<DashboardMetrics>('/api/v1/dashboard/metrics');
+  return fetchAPI<DashboardMetrics>('/api/v1/dashboard/metrics');
 }
 
 export async function getPortfolioAtRisk(): Promise<PortfolioAtRisk> {
-  return fetchAdminAPI<PortfolioAtRisk>('/api/v1/dashboard/portfolio-at-risk');
+  return fetchAPI<PortfolioAtRisk>('/api/v1/dashboard/portfolio-at-risk');
 }
 
 export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
   days = Math.min(Math.max(days, 1), 365);
-  return fetchAdminAPI<DailyTrend[]>(`/api/v1/dashboard/daily-trends?days=${days}`);
+  return fetchAPI<DailyTrend[]>(`/api/v1/dashboard/daily-trends?days=${days}`);
 }
 
 export async function getLoansByStatus(): Promise<LoansByStatus[]> {
-  return fetchAdminAPI<LoansByStatus[]>('/api/v1/dashboard/loans-by-status');
+  return fetchAPI<LoansByStatus[]>('/api/v1/dashboard/loans-by-status');
 }
 
 export async function getRecentActivity(limit: number = 20): Promise<RecentActivity[]> {
   limit = Math.min(Math.max(limit, 1), 100);
-  return fetchAdminAPI<RecentActivity[]>(`/api/v1/dashboard/recent-activity?limit=${limit}`);
+  return fetchAPI<RecentActivity[]>(`/api/v1/dashboard/recent-activity?limit=${limit}`);
 }
 
 // --- Fineract Health ---

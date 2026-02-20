@@ -177,7 +177,7 @@ export default function AddDevicePage() {
                   className={inputClass + ' mt-1'}
                 >
                   <option value="">-- Select from catalog (optional) --</option>
-                  {deviceModels?.data?.map((m: Record<string, unknown>) => (
+                  {(deviceModels?.data ?? []).map((m: Record<string, unknown>) => (
                     <option key={m.id as string} value={m.id as string}>
                       {m.brand as string} {m.model_name as string} ({m.storage_gb as number}GB) - ${m.retail_price_usd as number}
                     </option>

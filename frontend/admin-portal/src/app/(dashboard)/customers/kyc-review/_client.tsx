@@ -228,7 +228,7 @@ export default function KYCReviewPage() {
                 <div key={i} className="h-48 animate-pulse rounded-lg bg-gray-200" />
               ))}
             </div>
-          ) : data?.data.length === 0 ? (
+          ) : !data?.data?.length ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <ShieldCheck className="h-12 w-12 text-green-300 mb-4" />
@@ -238,7 +238,7 @@ export default function KYCReviewPage() {
             </Card>
           ) : (
             <div className="space-y-4">
-              {data?.data.map((submission) => {
+              {(data?.data ?? []).map((submission) => {
                 const sla = getSLAStatus(submission.created_at);
                 return (
                   <Card key={submission.id}>
