@@ -14,6 +14,35 @@ Parameters:
     Default: lynia-finance-production-templates
 
 Resources:
+  # Security group for CodeBuild: allows HTTP (apt-get) + HTTPS egress,
+  # plus PostgreSQL to the VPC. The Lambda SG is also attached so that
+  # the RDS security group recognises the traffic source.
+  CodeBuildSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: CodeBuild migration runner - outbound HTTP/HTTPS + PostgreSQL
+      VpcId: !ImportValue
+        Fn::Sub: "${Environment}-lynia-vpc-id"
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTP for apt-get package installs"
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: "0.0.0.0/0"
+          Description: "HTTPS for AWS APIs and package repos"
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: "10.0.0.0/16"
+          Description: "PostgreSQL to RDS in VPC"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Environment}-lynia-codebuild-migrations-sg"
+
   MigrationCodeBuildRole:
     Type: AWS::IAM::Role
     Properties:
@@ -107,6 +136,7 @@ Resources:
         SecurityGroupIds:
           - !ImportValue
             Fn::Sub: "${Environment}-lynia-lambda-sg-id"
+          - !Ref CodeBuildSecurityGroup
       Tags:
         - Key: Environment
           Value: !Ref Environment
