@@ -63,6 +63,8 @@ export type Permission =
   | 'reports:export'
   | 'settings:read'
   | 'settings:write'
+  | 'admin_users:read'
+  | 'admin_users:write'
   | 'notifications:send';
 
 /**
@@ -79,6 +81,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'payments:read', 'payments:reconcile', 'payments:refund',
     'reports:read', 'reports:export',
     'settings:read', 'settings:write',
+    'admin_users:read', 'admin_users:write',
     'notifications:send',
   ],
   admin: [
