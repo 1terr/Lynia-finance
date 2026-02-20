@@ -7,9 +7,9 @@ import { getOrganization, updateOrganization, getMembers, importMembers } from '
 import { OrganizationForm } from '@/components/products/organization-form';
 import { MemberImportModal } from '@/components/products/member-import-modal';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { Pagination } from '@/components/ui/Pagination';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Pagination } from '@/components/ui/pagination';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { maskPhone, formatDate } from '@/lib/utils';
 import { ArrowLeft, Pencil, Upload } from 'lucide-react';

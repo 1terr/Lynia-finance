@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react';
 import { Modal } from '@/components/ui/modal';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { maskPhone, maskId } from '@/lib/utils';
 import { Upload, AlertCircle, CheckCircle } from 'lucide-react';
 import type { MemberImportInput, MemberImportResult } from '@/types';

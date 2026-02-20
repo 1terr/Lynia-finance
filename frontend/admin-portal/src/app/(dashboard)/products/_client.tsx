@@ -8,7 +8,7 @@ import { ProductCard } from '@/components/products/product-card';
 import { ProductForm } from '@/components/products/product-form';
 import { ProductStats } from '@/components/products/product-stats';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/Button';
+import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Plus } from 'lucide-react';
 import type { LoanProduct, CreateProductInput, ProductCategory } from '@/types';

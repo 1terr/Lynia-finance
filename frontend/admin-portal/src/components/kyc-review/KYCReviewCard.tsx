@@ -13,8 +13,8 @@ import {
   ShieldX,
   Eye,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DocumentViewer } from './DocumentViewer';
 import { SLAIndicator } from './SLAIndicator';
 import { ReviewHistory } from './ReviewHistory';
