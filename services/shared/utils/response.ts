@@ -41,7 +41,7 @@ export function getSecurityHeaders(event?: APIGatewayProxyEvent): Record<string,
   return {
     'Content-Type': 'application/json',
     'Access-Control-Allow-Origin': getCorsOrigin(event),
-    'Access-Control-Allow-Headers': 'Content-Type,Authorization',
+    'Access-Control-Allow-Headers': 'Content-Type,Authorization,X-Amz-Date,X-Api-Key',
     'Access-Control-Allow-Methods': 'GET,POST,PUT,DELETE,OPTIONS',
     'Access-Control-Allow-Credentials': 'true',
     'X-Content-Type-Options': 'nosniff',

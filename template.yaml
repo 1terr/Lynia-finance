@@ -1058,6 +1058,14 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/profile
             Method: GET
+        DistributorProfileOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/profile
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         UpdateDistributorProfile:
           Type: Api
           Properties:
@@ -1070,18 +1078,42 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/stats
             Method: GET
+        DistributorStatsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/stats
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         GetDistributorInventory:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/inventory
             Method: GET
+        DistributorInventoryOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/inventory
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         GetDistributorHandovers:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/handovers
             Method: GET
+        DistributorHandoversOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         SubmitDistributorHandover:
           Type: Api
           Properties:
@@ -1094,12 +1126,28 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/handovers/{id}/{action}
             Method: POST
+        DistributorHandoverActionOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/{id}/{action}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         GetDistributorCommissions:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/commissions
             Method: GET
+        DistributorCommissionsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/commissions
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
