@@ -111,8 +111,8 @@ export default function LockUnlockPage() {
                   <Unlock className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Active Devices</p>
-                  <p className="text-lg font-semibold text-green-600">{stats.active}</p>
+                  <p className="text-sm text-gray-500">Sold/Active Devices</p>
+                  <p className="text-lg font-semibold text-green-600">{stats.sold}</p>
                 </div>
               </div>
             </div>
@@ -122,8 +122,8 @@ export default function LockUnlockPage() {
                   <Smartphone className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Total Allocated</p>
-                  <p className="text-lg font-semibold">{stats.allocated + stats.active}</p>
+                  <p className="text-sm text-gray-500">Total Assigned</p>
+                  <p className="text-lg font-semibold">{stats.assigned + stats.sold}</p>
                 </div>
               </div>
             </div>
@@ -193,12 +193,11 @@ export default function LockUnlockPage() {
                     <tr key={device.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
                         <Link href={`/devices/${device.id}`} className="text-sm font-medium text-brand-600 hover:underline">
-                          {(device as Record<string, string>).device_brand || (device as Record<string, string>).brand}{' '}
-                          {(device as Record<string, string>).device_model || (device as Record<string, string>).model}
+                          {device.manufacturer} {device.model}
                         </Link>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500 font-mono">
-                        {(device as Record<string, string>).device_imei || (device as Record<string, string>).imei || 'N/A'}
+                        {device.imei || 'N/A'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         {customer ? (
@@ -275,7 +274,7 @@ export default function LockUnlockPage() {
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Lock device <strong>{lockModal ? `${(lockModal as Record<string, string>).device_brand || (lockModal as Record<string, string>).brand} ${(lockModal as Record<string, string>).device_model || (lockModal as Record<string, string>).model}` : ''}</strong>?
+              Lock device <strong>{lockModal ? `${lockModal.manufacturer} ${lockModal.model}` : ''}</strong>?
               The device will be remotely locked and unusable until unlocked.
             </p>
             <div>
@@ -312,7 +311,7 @@ export default function LockUnlockPage() {
         >
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              Unlock device <strong>{unlockModal ? `${(unlockModal as Record<string, string>).device_brand || (unlockModal as Record<string, string>).brand} ${(unlockModal as Record<string, string>).device_model || (unlockModal as Record<string, string>).model}` : ''}</strong>?
+              Unlock device <strong>{unlockModal ? `${unlockModal.manufacturer} ${unlockModal.model}` : ''}</strong>?
             </p>
             <div>
               <label className="block text-sm font-medium text-gray-700">Reason *</label>

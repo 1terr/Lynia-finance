@@ -8,6 +8,7 @@ import {
   useDailyTrends,
   useLoansByStatus,
   useRecentActivity,
+  useFineractHealth,
 } from '@/lib/hooks/use-dashboard-data';
 import { MetricCard } from '@/components/dashboard/metric-card';
 import { PortfolioChart } from '@/components/dashboard/portfolio-chart';
@@ -15,21 +16,17 @@ import { TrendChart } from '@/components/dashboard/trend-chart';
 import { PARChart } from '@/components/dashboard/par-chart';
 import { RecentActivityFeed } from '@/components/dashboard/recent-activity';
 import { QuickActions } from '@/components/dashboard/quick-actions';
+import { FineractHealth } from '@/components/dashboard/fineract-health';
+import { AlertsPanel } from '@/components/dashboard/alerts-panel';
 import { DateRangePicker, dateRangeToDays, type DateRange } from '@/components/dashboard/date-range-picker';
 import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
 import {
   Users,
-  FileText,
   DollarSign,
   TrendingUp,
   AlertTriangle,
-  Smartphone,
-  Lock,
-  ClipboardCheck,
-  Clock,
   Banknote,
-  UserPlus,
-  Percent,
+  FileText,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -42,6 +39,7 @@ export default function DashboardPage() {
   const { data: trends } = useDailyTrends(days);
   const { data: loansByStatus } = useLoansByStatus();
   const { data: activities } = useRecentActivity();
+  const { data: fineractHealth, isLoading: fineractLoading } = useFineractHealth();
 
   return (
     <div className="space-y-6">
@@ -56,38 +54,67 @@ export default function DashboardPage() {
         <DateRangePicker value={dateRange} onChange={setDateRange} />
       </div>
 
-      {/* KPI Grid */}
+      {/* Tier 1: Executive Summary - 6 Focused KPIs */}
       {metricsLoading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 8 }).map((_, i) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-[120px] animate-pulse rounded-lg bg-gray-200" />
           ))}
         </div>
       ) : metrics ? (
         <>
-          {/* Primary KPIs - Row 1 */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {/* Row 1: Portfolio Outstanding, Active Borrowers, PAR 30 */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <MetricCard
-              title="Total Customers"
-              value={formatNumber(metrics.total_customers)}
-              icon={Users}
+              title="Portfolio Outstanding"
+              value={formatCurrency(
+                metrics.portfolio_outstanding_fineract ?? metrics.outstanding_balance_usd
+              )}
+              subtitle={metrics.portfolio_outstanding_fineract !== null ? 'Fineract source' : 'Lynia DB'}
+              icon={DollarSign}
               iconColor="text-blue-600"
               iconBg="bg-blue-50"
-              change={metrics.new_customers_this_month > 0 ? (metrics.new_customers_this_month / Math.max(metrics.total_customers - metrics.new_customers_this_month, 1)) * 100 : 0}
-              changeLabel="this month"
             />
             <MetricCard
-              title="Active Loans"
+              title="Active Borrowers"
               value={formatNumber(metrics.active_loans)}
-              subtitle={formatCurrency(metrics.outstanding_balance_usd)}
-              icon={FileText}
+              subtitle={`Avg loan: ${formatCurrency(metrics.avg_loan_size_usd)}`}
+              icon={Users}
               iconColor="text-indigo-600"
               iconBg="bg-indigo-50"
             />
             <MetricCard
-              title="Total Disbursed"
-              value={formatCurrency(metrics.total_disbursed_usd)}
-              icon={DollarSign}
+              title="PAR 30"
+              value={formatPercent(metrics.par_30_pct ?? metrics.default_rate)}
+              subtitle="Portfolio at risk > 30 days"
+              icon={AlertTriangle}
+              iconColor={
+                (metrics.par_30_pct ?? metrics.default_rate) > 5
+                  ? 'text-red-600'
+                  : 'text-green-600'
+              }
+              iconBg={
+                (metrics.par_30_pct ?? metrics.default_rate) > 5
+                  ? 'bg-red-50'
+                  : 'bg-green-50'
+              }
+            />
+          </div>
+
+          {/* Row 2: Collection Rate, Monthly Disbursements, Monthly Revenue */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <MetricCard
+              title="Collection Rate"
+              value={formatPercent(metrics.collection_rate)}
+              icon={TrendingUp}
+              iconColor="text-teal-600"
+              iconBg="bg-teal-50"
+            />
+            <MetricCard
+              title="Disbursements"
+              value={formatCurrency(metrics.disbursements_this_month)}
+              subtitle="This month"
+              icon={FileText}
               iconColor="text-green-600"
               iconBg="bg-green-50"
             />
@@ -99,88 +126,31 @@ export default function DashboardPage() {
               iconBg="bg-emerald-50"
             />
           </div>
-
-          {/* Secondary KPIs - Row 2 */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard
-              title="Collection Rate"
-              value={formatPercent(metrics.collection_rate)}
-              icon={TrendingUp}
-              iconColor="text-teal-600"
-              iconBg="bg-teal-50"
-            />
-            <MetricCard
-              title="Default Rate"
-              value={formatPercent(metrics.default_rate)}
-              icon={Percent}
-              iconColor="text-red-600"
-              iconBg="bg-red-50"
-            />
-            <MetricCard
-              title="Overdue Payments"
-              value={formatNumber(metrics.overdue_payments)}
-              subtitle={formatCurrency(metrics.overdue_amount_usd)}
-              icon={AlertTriangle}
-              iconColor="text-orange-600"
-              iconBg="bg-orange-50"
-            />
-            <MetricCard
-              title="New Customers"
-              value={formatNumber(metrics.new_customers_this_month)}
-              changeLabel="this month"
-              icon={UserPlus}
-              iconColor="text-violet-600"
-              iconBg="bg-violet-50"
-            />
-          </div>
-
-          {/* Device & Operations KPIs - Row 3 */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <MetricCard
-              title="Devices in Stock"
-              value={formatNumber(metrics.devices_in_stock)}
-              icon={Smartphone}
-              iconColor="text-cyan-600"
-              iconBg="bg-cyan-50"
-            />
-            <MetricCard
-              title="Active Devices"
-              value={formatNumber(metrics.devices_active)}
-              icon={Smartphone}
-              iconColor="text-green-600"
-              iconBg="bg-green-50"
-            />
-            <MetricCard
-              title="Locked Devices"
-              value={formatNumber(metrics.devices_locked)}
-              icon={Lock}
-              iconColor="text-red-600"
-              iconBg="bg-red-50"
-            />
-            <MetricCard
-              title="Pending KYC"
-              value={formatNumber(metrics.pending_kyc)}
-              icon={ClipboardCheck}
-              iconColor="text-purple-600"
-              iconBg="bg-purple-50"
-            />
-          </div>
         </>
       ) : null}
 
-      {/* Charts Row */}
+      {/* Tier 2: Portfolio Trends - Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         <TrendChart data={trends || []} />
         <PortfolioChart data={loansByStatus || []} />
       </div>
 
-      {/* PAR + Quick Actions + Recent Activity */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      {/* Tier 3: Risk & Fineract Health */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <PARChart data={par || { par_0_30: 0, par_31_60: 0, par_61_90: 0, par_90_plus: 0 }} />
+        <FineractHealth data={fineractHealth} isLoading={fineractLoading} />
+      </div>
+
+      {/* Tier 4: Operations - Quick Actions, Alerts, Activity */}
+      <div className="grid gap-6 lg:grid-cols-3">
         <QuickActions
           role={user?.role || 'customer_support'}
           pendingKyc={metrics?.pending_kyc || 0}
           pendingApprovals={metrics?.pending_approvals || 0}
+        />
+        <AlertsPanel
+          metrics={metrics}
+          fineractDiscrepancies={metrics?.fineract_discrepancies}
         />
         <RecentActivityFeed activities={activities || []} />
       </div>

@@ -458,7 +458,7 @@ export class HandoverService {
         handover.distributor_id
       );
 
-      // Record distributor commission
+      // Record distributor commission (based on loan amount)
       await db
         .from('distributor_commissions')
         .insert({
@@ -467,6 +467,7 @@ export class HandoverService {
           device_id: handover.device_id,
           commission_amount_usd: commission.amount,
           commission_percentage: commission.percentage,
+          loan_amount_usd: commission.loan_amount,
           device_retail_price_usd: commission.device_price,
           calculation_date: handoverDate.toISOString(),
           payment_status: 'pending',
@@ -518,22 +519,35 @@ export class HandoverService {
   }
 
   /**
-   * Calculate distributor commission (5% of device retail price)
+   * Calculate distributor commission (5% of loan amount)
    */
   private async calculateDistributorCommission(
     loanId: string,
     deviceId: string,
-    _distributorId: string
+    distributorId: string
   ): Promise<{
     amount: number;
     percentage: number;
+    loan_amount: number;
     device_price: number;
     device_model: string;
   }> {
-    // Get device details
+    // Get loan details for commission base
+    const { data: loan } = await db
+      .from('loans')
+      .select('principal')
+      .eq('id', loanId)
+      .single()
+      .execute();
+
+    if (!loan) {
+      throw new Error('Loan not found');
+    }
+
+    // Get device details for record-keeping
     const { data: device } = await db
       .from('devices')
-      .select('retail_price_usd, model')
+      .select('retail_price, model')
       .eq('id', deviceId)
       .single()
       .execute();
@@ -542,14 +556,22 @@ export class HandoverService {
       throw new Error('Device not found');
     }
 
-    // Commission rate: 5% of device retail price
-    const COMMISSION_RATE = 0.05;
-    const commissionAmount = device.retail_price_usd * COMMISSION_RATE;
+    // Get distributor's commission rate (default 5%)
+    const { data: distributor } = await db
+      .from('distributors')
+      .select('commission_rate')
+      .eq('id', distributorId)
+      .single()
+      .execute();
+
+    const commissionRate = (distributor?.commission_rate ?? 5) / 100;
+    const commissionAmount = loan.principal * commissionRate;
 
     return {
       amount: commissionAmount,
-      percentage: COMMISSION_RATE * 100,
-      device_price: device.retail_price_usd,
+      percentage: commissionRate * 100,
+      loan_amount: loan.principal,
+      device_price: device.retail_price,
       device_model: device.model
     };
   }

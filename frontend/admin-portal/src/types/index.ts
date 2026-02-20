@@ -25,7 +25,7 @@ export type PermissionAction =
 // --- Customers ---
 
 export type CustomerStatus = 'active' | 'inactive' | 'blocked';
-export type KYCStatus = 'pending' | 'submitted' | 'verified' | 'rejected';
+export type KYCStatus = 'pending' | 'in_review' | 'approved' | 'rejected' | 'expired';
 export type EmploymentStatus = 'employed' | 'self_employed' | 'unemployed' | 'student';
 
 export interface Customer {
@@ -48,12 +48,16 @@ export interface Customer {
 // --- Loans ---
 
 export type LoanStatus =
-  | 'pending'
+  | 'draft'
+  | 'submitted'
+  | 'pending_approval'
   | 'approved'
+  | 'rejected'
+  | 'disbursed'
   | 'active'
-  | 'paid_off'
+  | 'paid'
   | 'defaulted'
-  | 'rejected';
+  | 'written_off';
 
 export interface Loan {
   id: string;
@@ -78,23 +82,35 @@ export interface Loan {
 
 // --- Devices ---
 
-export type DeviceStatus = 'in_stock' | 'allocated' | 'active' | 'locked' | 'returned' | 'damaged';
-export type LockStatus = 'unlocked' | 'locked' | 'pending';
+/** Standardized device status across all layers */
+export type DeviceStatus =
+  | 'in_stock'        // At warehouse, not assigned to any distributor
+  | 'assigned'        // Assigned to distributor, awaiting handover
+  | 'reserved'        // Held for approved loan (48h TTL)
+  | 'sold'            // Handed over to customer, loan active
+  | 'returned'        // Returned by customer (voluntary or repossession)
+  | 'repossessed'     // Recovered via repossession process
+  | 'damaged'         // Non-functional, needs assessment
+  | 'lost'            // Cannot be located
+  | 'written_off';    // Removed from inventory permanently
+
+export type LockStatus = 'unlocked' | 'locked' | 'emergency_unlocked' | 'pending';
 
 export type DeviceCondition = 'new' | 'grade_a' | 'grade_b' | 'grade_c';
 
 export interface Device {
   id: string;
-  device_imei: string;
+  imei: string;
   serial_number: string | null;
-  device_brand: string;
-  device_model: string;
+  manufacturer: string;
+  model: string;
   device_type: string;
   storage_gb: number | null;
   color: string | null;
   condition: DeviceCondition;
   purchase_price_usd: number | null;
-  device_value_usd: number;
+  retail_price_usd: number;
+  device_model_id: string | null;
   loan_id: string | null;
   customer_id: string | null;
   assigned_at: string | null;
@@ -114,7 +130,7 @@ export interface Device {
 
 // --- Payments ---
 
-export type PaymentStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'processing' | 'confirmed' | 'failed' | 'refunded';
 export type PaymentMethod = 'ecocash' | 'onemoney' | 'cash' | 'bank_transfer';
 export type PaymentType = 'deposit' | 'installment' | 'late_fee' | 'early_payoff';
 
@@ -208,23 +224,38 @@ export interface DeviceLock {
 
 // --- Distributors ---
 
-export type DistributorStatus = 'pending' | 'approved' | 'suspended' | 'rejected';
+export type DistributorStatus = 'active' | 'suspended' | 'inactive';
 
 export interface Distributor {
   id: string;
-  business_name: string;
-  contact_person: string;
+  user_id: string;
+  name: string;
   phone_number: string;
   email: string | null;
-  physical_address: string | null;
+  national_id: string | null;
+  business_name: string;
+  province: string | null;
+  city: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   bank_name: string | null;
-  bank_account_number: string | null;
+  account_number: string | null;
+  mobile_money_number: string | null;
   commission_rate: number;
+  total_commissions_earned: number;
+  total_commissions_paid: number;
+  pending_commissions: number;
+  total_loans_disbursed: number;
+  total_devices_distributed: number;
+  current_inventory_count: number;
+  average_rating: number;
   status: DistributorStatus;
+  kyc_status: KYCStatus;
+  kyc_verified_at: string | null;
+  onboarded_at: string | null;
   approved_at: string | null;
   approved_by: string | null;
-  total_devices_sold: number;
-  total_commission_earned_usd: number;
   created_at: string;
   updated_at: string;
 }
@@ -464,6 +495,13 @@ export interface DashboardMetrics {
   overdue_payments: number;
   overdue_amount_usd: number;
   new_customers_this_month: number;
+  // Fineract-enriched fields
+  portfolio_outstanding_fineract: number | null;
+  par_30_pct: number | null;
+  avg_loan_size_usd: number;
+  disbursements_this_month: number;
+  fineract_last_sync: string | null;
+  fineract_discrepancies: number;
 }
 
 export interface PortfolioAtRisk {

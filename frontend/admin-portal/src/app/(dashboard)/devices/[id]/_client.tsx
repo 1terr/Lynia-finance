@@ -175,7 +175,7 @@ export default function DeviceDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Value</p>
-              <p className="text-lg font-semibold">{formatCurrency(device.device_value_usd)}</p>
+              <p className="text-lg font-semibold">{formatCurrency(device.retail_price_usd)}</p>
             </div>
           </div>
         </Card>
@@ -186,7 +186,7 @@ export default function DeviceDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">Brand & Model</p>
-              <p className="text-lg font-semibold">{device.device_brand} {device.device_model}</p>
+              <p className="text-lg font-semibold">{device.manufacturer} {device.model}</p>
             </div>
           </div>
         </Card>
@@ -197,7 +197,7 @@ export default function DeviceDetailPage() {
             </div>
             <div>
               <p className="text-sm text-gray-500">IMEI</p>
-              <p className="text-lg font-semibold font-mono">{device.device_imei}</p>
+              <p className="text-lg font-semibold font-mono">{device.imei}</p>
             </div>
           </div>
         </Card>
@@ -332,7 +332,7 @@ export default function DeviceDetailPage() {
             </div>
           </div>
           <p className="text-sm text-gray-600">
-            Lock <strong>{device.device_brand} {device.device_model}</strong> (IMEI: {device.device_imei})?
+            Lock <strong>{device.manufacturer} {device.model}</strong> (IMEI: {device.imei})?
           </p>
           <div>
             <label className="block text-sm font-medium text-gray-700">Reason *</label>
@@ -364,7 +364,7 @@ export default function DeviceDetailPage() {
       <Modal open={unlockModal} onClose={() => setUnlockModal(false)} title="Unlock Device">
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Unlock <strong>{device.device_brand} {device.device_model}</strong> (IMEI: {device.device_imei})?
+            Unlock <strong>{device.manufacturer} {device.model}</strong> (IMEI: {device.imei})?
             The customer will regain full access to the device.
           </p>
           <div>

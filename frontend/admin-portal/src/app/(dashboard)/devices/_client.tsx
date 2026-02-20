@@ -16,11 +16,14 @@ import { Search, Smartphone, Lock, Unlock, Package } from 'lucide-react';
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
   { value: 'in_stock', label: 'In Stock' },
-  { value: 'allocated', label: 'Allocated' },
-  { value: 'active', label: 'Active' },
-  { value: 'locked', label: 'Locked' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'reserved', label: 'Reserved' },
+  { value: 'sold', label: 'Sold' },
   { value: 'returned', label: 'Returned' },
+  { value: 'repossessed', label: 'Repossessed' },
   { value: 'damaged', label: 'Damaged' },
+  { value: 'lost', label: 'Lost' },
+  { value: 'written_off', label: 'Written Off' },
 ];
 
 const LOCK_STATUS_OPTIONS = [
@@ -52,14 +55,14 @@ export default function DevicesPage() {
 
   const columns: Column<DeviceWithCustomer>[] = [
     {
-      key: 'device_brand',
+      key: 'manufacturer',
       header: 'Device',
       render: (row) => (
         <div>
           <p className="font-medium text-gray-900">
-            {row.device_brand} {row.device_model}
+            {row.manufacturer} {row.model}
           </p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei}</p>
+          <p className="font-mono text-xs text-gray-500">{row.imei}</p>
         </div>
       ),
     },
@@ -71,10 +74,10 @@ export default function DevicesPage() {
       ),
     },
     {
-      key: 'device_value_usd',
+      key: 'retail_price_usd',
       header: 'Value',
       sortable: true,
-      render: (row) => formatCurrency(row.device_value_usd),
+      render: (row) => formatCurrency(row.retail_price_usd),
     },
     {
       key: 'lock_status',
@@ -146,8 +149,8 @@ export default function DevicesPage() {
               <Smartphone className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Active</p>
-              <p className="text-lg font-semibold">{stats?.active ?? 0}</p>
+              <p className="text-sm text-gray-500">Sold/Active</p>
+              <p className="text-lg font-semibold">{stats?.sold ?? 0}</p>
             </div>
           </div>
         </Card>

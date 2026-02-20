@@ -69,11 +69,15 @@ export async function updateDeviceStatus(deviceId: string, status: DeviceStatus,
 
 export interface DeviceStats {
   in_stock: number;
-  allocated: number;
-  active: number;
+  assigned: number;
+  sold: number;
   locked: number;
   returned: number;
   damaged: number;
+  reserved: number;
+  repossessed: number;
+  lost: number;
+  written_off: number;
 }
 
 export interface DeviceInventorySummary {
@@ -92,15 +96,19 @@ export interface HandoverWithRelations {
   customer_id: string;
   device_id: string;
   distributor_id: string;
-  status: 'initiated' | 'identity_verified' | 'deposit_verified' | 'device_inspected' | 'completed' | 'cancelled';
+  status: 'initiated' | 'identity_verified' | 'deposit_verified' | 'device_inspected' | 'completed' | 'failed' | 'cancelled';
   identity_verified: boolean;
   deposit_verified: boolean;
   device_inspected: boolean;
+  app_installed: boolean;
+  app_configured: boolean;
+  lock_test_passed: boolean;
   scheduled_date: string | null;
   scheduled_time: string | null;
   completed_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  failure_reason: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -115,18 +123,22 @@ export interface DeviceHandoverRow {
   customer_id: string;
   device_id: string;
   distributor_id: string;
-  status: 'initiated' | 'identity_verified' | 'deposit_verified' | 'device_inspected' | 'completed' | 'cancelled';
+  status: 'initiated' | 'identity_verified' | 'deposit_verified' | 'device_inspected' | 'completed' | 'failed' | 'cancelled';
+  app_installed: boolean;
+  app_configured: boolean;
+  lock_test_passed: boolean;
   scheduled_date: string | null;
   scheduled_time: string | null;
   completed_at: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+  failure_reason: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
   customer?: { id: string; first_name: string; last_name: string; phone_number: string } | null;
   device?: { id: string; brand: string; model: string; imei: string | null } | null;
-  distributor?: { id: string; business_name: string; contact_person: string } | null;
+  distributor?: { id: string; business_name: string; name: string } | null;
 }
 
 export async function getDeviceHandovers(filters: { status?: string; search?: string; page?: number; limit?: number } = {}) {

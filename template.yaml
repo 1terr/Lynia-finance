@@ -964,7 +964,7 @@ Resources:
       FunctionName: !Sub ${Environment}-lynia-admin-service
       CodeUri: services/
       Handler: admin-service/src/index.handler
-      Description: Admin portal management - users, system config, audit logs
+      Description: Admin portal management - users, system config, audit logs, dashboard metrics
       MemorySize: 512
       Policies:
         - Version: "2012-10-17"
@@ -974,6 +974,7 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/database-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
             - Effect: Allow
               Action:
                 - cognito-idp:AdminCreateUser
@@ -1140,6 +1141,37 @@ Resources:
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /admin/organizations/{id}/members
+            Method: GET
+        # Dashboard routes
+        GetDashboardMetrics:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/dashboard/metrics
+            Method: GET
+        GetPortfolioAtRisk:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/dashboard/portfolio-at-risk
+            Method: GET
+        GetDailyTrends:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/dashboard/daily-trends
+            Method: GET
+        GetLoansByStatus:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/dashboard/loans-by-status
+            Method: GET
+        GetRecentActivity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/dashboard/recent-activity
             Method: GET
     Metadata:
       BuildMethod: esbuild

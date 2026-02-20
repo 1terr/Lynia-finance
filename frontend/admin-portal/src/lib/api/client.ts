@@ -1,5 +1,6 @@
 import { getSession, signOut as cognitoSignOut } from '@/lib/auth/cognito';
 import type { AdminUser, DashboardMetrics, PortfolioAtRisk, DailyTrend, LoansByStatus, RecentActivity } from '@/types';
+import type { ReconciliationResult } from '@/types/fineract';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
@@ -67,24 +68,40 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
 
 // --- Dashboard ---
 
+/** Unwrap the { success, data } envelope used by admin-service endpoints. */
+async function fetchAdminAPI<T>(path: string, options?: RequestInit): Promise<T> {
+  const response = await fetchAPI<{ success: boolean; data: T }>(path, options);
+  // Handle both wrapped { success, data } and direct responses
+  if (response && typeof response === 'object' && 'data' in response) {
+    return (response as { data: T }).data;
+  }
+  return response as unknown as T;
+}
+
 export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  return fetchAPI<DashboardMetrics>('/api/v1/dashboard/metrics');
+  return fetchAdminAPI<DashboardMetrics>('/api/v1/dashboard/metrics');
 }
 
 export async function getPortfolioAtRisk(): Promise<PortfolioAtRisk> {
-  return fetchAPI<PortfolioAtRisk>('/api/v1/dashboard/portfolio-at-risk');
+  return fetchAdminAPI<PortfolioAtRisk>('/api/v1/dashboard/portfolio-at-risk');
 }
 
 export async function getDailyTrends(days: number = 30): Promise<DailyTrend[]> {
   days = Math.min(Math.max(days, 1), 365);
-  return fetchAPI<DailyTrend[]>(`/api/v1/dashboard/daily-trends?days=${days}`);
+  return fetchAdminAPI<DailyTrend[]>(`/api/v1/dashboard/daily-trends?days=${days}`);
 }
 
 export async function getLoansByStatus(): Promise<LoansByStatus[]> {
-  return fetchAPI<LoansByStatus[]>('/api/v1/dashboard/loans-by-status');
+  return fetchAdminAPI<LoansByStatus[]>('/api/v1/dashboard/loans-by-status');
 }
 
 export async function getRecentActivity(limit: number = 20): Promise<RecentActivity[]> {
   limit = Math.min(Math.max(limit, 1), 100);
-  return fetchAPI<RecentActivity[]>(`/api/v1/dashboard/recent-activity?limit=${limit}`);
+  return fetchAdminAPI<RecentActivity[]>(`/api/v1/dashboard/recent-activity?limit=${limit}`);
+}
+
+// --- Fineract Health ---
+
+export async function getFineractReconciliation(): Promise<ReconciliationResult> {
+  return fetchAPI<ReconciliationResult>('/api/v1/fineract/reconciliation');
 }

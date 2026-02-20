@@ -7,6 +7,7 @@ import {
   getDailyTrends,
   getLoansByStatus,
   getRecentActivity,
+  getFineractReconciliation,
 } from '@/lib/api/client';
 
 export function useDashboardMetrics() {
@@ -47,5 +48,14 @@ export function useRecentActivity(limit: number = 20) {
     queryKey: ['dashboard', 'activity', limit],
     queryFn: () => getRecentActivity(limit),
     staleTime: 60 * 1000,
+  });
+}
+
+export function useFineractHealth() {
+  return useQuery({
+    queryKey: ['fineract', 'reconciliation'],
+    queryFn: getFineractReconciliation,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
   });
 }

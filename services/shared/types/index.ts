@@ -49,16 +49,44 @@ export interface Loan {
   updated_at: string;
 }
 
+/** Standardized device status across all layers */
+export type DeviceStatus =
+  | 'in_stock'        // At warehouse, not assigned to any distributor
+  | 'assigned'        // Assigned to distributor, awaiting handover
+  | 'reserved'        // Held for approved loan (48h TTL)
+  | 'sold'            // Handed over to customer, loan active
+  | 'returned'        // Returned by customer (voluntary or repossession)
+  | 'repossessed'     // Recovered via repossession process
+  | 'damaged'         // Non-functional, needs assessment
+  | 'lost'            // Cannot be located
+  | 'written_off';    // Removed from inventory permanently
+
+export type LockStatus = 'unlocked' | 'locked' | 'emergency_unlocked' | 'pending';
+
+export type DeviceCondition = 'new' | 'grade_a' | 'grade_b' | 'grade_c';
+
 export interface Device {
   id: string;
-  device_imei: string;
-  device_brand: string;
-  device_model: string;
-  device_value_usd: number;
-  lock_status: 'unlocked' | 'locked' | 'pending';
+  imei: string;
+  serial_number?: string;
+  manufacturer: string;
+  model: string;
+  device_type: string;
+  storage_gb?: number;
+  color?: string;
+  condition: DeviceCondition;
+  purchase_price_usd?: number;
+  retail_price_usd?: number;
+  device_model_id?: string;
+  loan_id?: string;
+  customer_id?: string;
+  assigned_at?: string;
+  lock_status: LockStatus;
   locked_at?: string;
   unlocked_at?: string;
   lock_reason?: string;
+  status: DeviceStatus;
+  location?: string;
   trustonic_device_id?: string;
   trustonic_enrolled: boolean;
   trustonic_enrolled_at?: string;

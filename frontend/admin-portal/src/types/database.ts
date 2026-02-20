@@ -116,7 +116,7 @@ export interface Loan {
   approved_at: string | null;
   disbursed_at: string | null;
   completed_at: string | null;
-  device_imei: string | null;
+  device_imei: string | null; // Legacy field name, DB column is imei on devices table
   application_source: 'whatsapp' | 'admin' | 'api';
   created_at: string;
   updated_at: string;
