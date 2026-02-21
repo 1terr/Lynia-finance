@@ -8,9 +8,8 @@ import { Button } from '@/components/ui/Button';
 
 const navLinks = [
   { label: 'Products', href: '/products' },
-  { label: 'About', href: '/about' },
-  { label: 'Partnerships', href: '/partnerships' },
-  { label: 'Editorial', href: '/editorial' },
+  { label: 'Thesis', href: '/thesis' },
+  { label: 'Press', href: '/press' },
 ];
 
 export function Navbar() {
@@ -45,11 +44,11 @@ export function Navbar() {
               scrolled ? 'text-primary-dark' : 'text-white'
             }`}
           >
-            Lynia Finance
+            Lynia
           </span>
         </Link>
 
-        {/* Desktop links */}
+        {/* Desktop links — centered */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => {
             const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -79,9 +78,9 @@ export function Navbar() {
           <Button
             variant={scrolled ? 'primary' : 'white'}
             size="sm"
-            href="/#apply"
+            href="/#get-started"
           >
-            Start your application
+            Get started &rarr;
           </Button>
         </div>
 
@@ -121,8 +120,8 @@ export function Navbar() {
               );
             })}
             <div className="pt-4">
-              <Button variant="primary" size="lg" href="/#apply" className="w-full">
-                Start your application
+              <Button variant="primary" size="lg" href="/#get-started" className="w-full">
+                Get started &rarr;
               </Button>
             </div>
           </div>

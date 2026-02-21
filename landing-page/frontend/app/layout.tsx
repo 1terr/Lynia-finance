@@ -7,24 +7,24 @@ import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB';
 const siteUrl = 'https://lyniafinance.com';
 
 export const metadata: Metadata = {
-  title: 'Lynia Finance — Financial tools for the underbanked',
+  title: 'Lynia — Financing for the productive majority',
   description:
-    'Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes. Serving Zimbabwe\u2019s 80% informal workforce.',
+    'Lynia is the financial infrastructure for Zimbabwe\u2019s $10B informal economy. We transform mobile money velocity into credit identities.',
   metadataBase: new URL(siteUrl),
   openGraph: {
     type: 'website',
     locale: 'en_US',
     url: siteUrl,
     siteName: 'Lynia Finance',
-    title: 'Lynia Finance — Financial tools for the underbanked',
+    title: 'Lynia — Financing for the productive majority',
     description:
-      'Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes. Serving Zimbabwe\u2019s 80% informal workforce.',
+      'Lynia is the financial infrastructure for Zimbabwe\u2019s $10B informal economy. We transform mobile money velocity into credit identities.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Lynia Finance — Financial tools for the underbanked',
+    title: 'Lynia — Financing for the productive majority',
     description:
-      'Smartphones, assets, and cash — delivered through WhatsApp with approval in under 5 minutes. Serving Zimbabwe\u2019s 80% informal workforce.',
+      'Lynia is the financial infrastructure for Zimbabwe\u2019s $10B informal economy. We transform mobile money velocity into credit identities.',
   },
 };
 

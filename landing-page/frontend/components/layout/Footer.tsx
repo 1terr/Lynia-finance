@@ -5,17 +5,17 @@ const footerColumns = [
   {
     title: 'Products',
     links: [
-      { label: 'Asset financing', href: '/products#asset-financing' },
+      { label: 'Asset-backed lending', href: '/products#asset-lending' },
       { label: 'Digital credit', href: '/products#digital-credit' },
-      { label: 'Enterprise partnerships', href: '/products#enterprise' },
+      { label: 'Embedded credit', href: '/products#embedded-credit' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { label: 'About', href: '/about' },
-      { label: 'Careers', href: '/careers' },
-      { label: 'Contact', href: '/contact' },
+      { label: 'Thesis', href: '/thesis' },
+      { label: 'Press', href: '/press' },
+      { label: 'RBZ Compliance', href: '/compliance' },
     ],
   },
   {
@@ -43,9 +43,12 @@ export function Footer() {
   return (
     <footer className="bg-navy">
       <div className="container-main pt-16 pb-8">
-        {/* Logo */}
+        {/* Logo + tagline */}
         <div className="mb-10">
           <span className="text-h4 font-medium text-white">Lynia Finance</span>
+          <p className="text-body-sm text-white/50 mt-2 italic">
+            Built for the productive majority.
+          </p>
         </div>
 
         {/* Link columns */}

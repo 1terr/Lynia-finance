@@ -2,7 +2,6 @@
 
 import { Button } from '@/components/ui/Button';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
-import { WHATSAPP_URL } from '@/lib/constants';
 
 export function BottomCTA() {
   const { ref, isVisible } = useScrollAnimation();
@@ -10,7 +9,7 @@ export function BottomCTA() {
   return (
     <section
       ref={ref}
-      id="apply"
+      id="get-started"
       className="py-16 lg:py-[120px]"
       style={{ background: 'var(--gradient-cta)' }}
     >
@@ -20,7 +19,7 @@ export function BottomCTA() {
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >
-          Apply now. Get funded today.
+          Financing for the productive majority.
         </h2>
         <p
           className={`text-body-lg text-white/70 max-w-[600px] mx-auto mt-6 transition-all duration-500 ${
@@ -28,9 +27,9 @@ export function BottomCTA() {
           }`}
           style={{ transitionDelay: '100ms' }}
         >
-          No bank account required. No paperwork. No branch visits. Just
-          WhatsApp, your national ID, and 5 minutes. Join the 500+ Zimbabweans
-          already building with Lynia.
+          Transform mobile money velocity into credit identities. Get started
+          with Lynia&apos;s financial infrastructure for Zimbabwe&apos;s informal
+          economy.
         </p>
         <div
           className={`flex flex-wrap justify-center gap-4 mt-8 transition-all duration-500 ${
@@ -38,11 +37,11 @@ export function BottomCTA() {
           }`}
           style={{ transitionDelay: '200ms' }}
         >
-          <Button variant="white" size="lg" href={WHATSAPP_URL}>
-            Start your application
+          <Button variant="white" size="lg" href="/contact">
+            Get started &rarr;
           </Button>
-          <Button variant="ghost" size="lg" href="/contact">
-            Talk to our team &rarr;
+          <Button variant="ghost" size="lg" href="/thesis">
+            Read the 2026 Thesis
           </Button>
         </div>
       </div>
