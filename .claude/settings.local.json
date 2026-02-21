@@ -20,7 +20,10 @@
       "Bash(.claude/scripts/auto-push.sh)",
       "Bash(.claude/scripts/setup-gh.sh)",
       "Bash(.claude/scripts/create-pr.sh)",
-      "Bash(.claude/scripts/ensure-gh.sh)"
+      "Bash(.claude/scripts/ensure-gh.sh)",
+      "Bash(aws cloudformation describe-stack-events:*)",
+      "Bash(python3:*)",
+      "Bash(aws cloudformation update-stack:*)"
     ],
     "deny": [],
     "ask": []
