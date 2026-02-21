@@ -39,11 +39,7 @@ export function Navbar() {
       <nav className="container-wide flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
-          <span
-            className={`text-subheading transition-colors duration-250 ease-stripe ${
-              scrolled ? 'text-primary-dark' : 'text-white'
-            }`}
-          >
+          <span className="text-subheading text-primary-dark transition-colors duration-250 ease-stripe">
             Lynia
           </span>
         </Link>
@@ -59,12 +55,8 @@ export function Navbar() {
                 aria-current={isActive ? 'page' : undefined}
                 className={`text-body-sm font-medium transition-colors duration-250 ease-stripe ${
                   isActive
-                    ? scrolled
-                      ? 'text-primary-dark border-b-2 border-primary pb-0.5'
-                      : 'text-white border-b-2 border-white pb-0.5'
-                    : scrolled
-                      ? 'text-slate hover:text-primary-dark'
-                      : 'text-white/80 hover:text-white'
+                    ? 'text-primary-dark border-b-2 border-primary pb-0.5'
+                    : 'text-slate hover:text-primary-dark'
                 }`}
               >
                 {link.label}
@@ -76,7 +68,7 @@ export function Navbar() {
         {/* Desktop CTA */}
         <div className="hidden lg:block">
           <Button
-            variant={scrolled ? 'primary' : 'white'}
+            variant="primary"
             size="sm"
             href="/#get-started"
           >
@@ -91,9 +83,9 @@ export function Navbar() {
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         >
           {mobileOpen ? (
-            <X className={`w-6 h-6 ${scrolled ? 'text-primary-dark' : 'text-white'}`} />
+            <X className="w-6 h-6 text-primary-dark" />
           ) : (
-            <Menu className={`w-6 h-6 ${scrolled ? 'text-primary-dark' : 'text-white'}`} />
+            <Menu className="w-6 h-6 text-primary-dark" />
           )}
         </button>
       </nav>

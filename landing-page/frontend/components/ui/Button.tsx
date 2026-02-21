@@ -3,7 +3,7 @@
 import { forwardRef } from 'react';
 import Link from 'next/link';
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'white';
+type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'white' | 'accent' | 'outline';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -22,6 +22,10 @@ const variantStyles: Record<ButtonVariant, string> = {
     'bg-transparent text-white border border-white/30 hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 active:translate-y-0',
   white:
     'bg-white text-primary shadow-stripe-sm hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-stripe active:translate-y-0 active:shadow-stripe-xs',
+  accent:
+    'bg-primary text-white shadow-stripe-sm hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-stripe active:translate-y-0 active:shadow-stripe-xs focus-visible:outline-none focus-visible:shadow-stripe-focus',
+  outline:
+    'bg-transparent text-primary-dark border border-border shadow-stripe-xs hover:bg-surface-secondary hover:border-border-strong hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-stripe-xs focus-visible:outline-none focus-visible:shadow-stripe-focus',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {

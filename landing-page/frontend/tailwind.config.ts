@@ -55,6 +55,11 @@ const config: Config = {
         caption: ['0.8125rem', { lineHeight: '1.4', letterSpacing: '0.02em', fontWeight: '500' }],
         overline: ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.08em', fontWeight: '600' }],
 
+        // Stripe-style large hero variants
+        'hero-lg': ['4.5rem', { lineHeight: '1.05', letterSpacing: '-0.045em', fontWeight: '700' }],
+        'hero-lg-tablet': ['4rem', { lineHeight: '1.08', letterSpacing: '-0.04em', fontWeight: '700' }],
+        'hero-lg-mobile': ['2.75rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
+
         // Mobile responsive variants
         'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
         'display-mobile': ['2.125rem', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],

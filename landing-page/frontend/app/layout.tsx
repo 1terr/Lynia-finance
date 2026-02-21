@@ -36,8 +36,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Inter font via Google Fonts CDN.
-            TODO(launch): Migrate to next/font/google when build has reliable network. */}
+        {/* Inter font via Google Fonts CDN */}
         <link
           rel="preconnect"
           href="https://fonts.googleapis.com"
