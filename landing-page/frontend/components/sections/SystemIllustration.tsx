@@ -31,25 +31,25 @@ export function SystemIllustration() {
       <div className="container-main">
         <div className="text-center mb-12">
           <span
-            className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ${
+            className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
             EMBEDDED LENDING INFRASTRUCTURE
           </span>
           <h2
-            className={`text-h1-mobile lg:text-h1 text-white font-medium mt-4 transition-all duration-500 ${
+            className={`text-display-mobile lg:text-display text-white mt-4 transition-all duration-500 ease-stripe-out ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
-            style={{ transitionDelay: '100ms' }}
+            style={{ transitionDelay: '60ms' }}
           >
             Connect to existing systems.
           </h2>
           <p
-            className={`text-body-lg text-white/70 max-w-[600px] mx-auto mt-4 transition-all duration-500 ${
+            className={`text-body-lg text-white/70 max-w-[600px] mx-auto mt-4 transition-all duration-500 ease-stripe-out ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
-            style={{ transitionDelay: '200ms' }}
+            style={{ transitionDelay: '120ms' }}
           >
             Orchestrate lending across mobile money providers, build custom
             workflows, and connect to ecosystem partners via APIs.
@@ -58,10 +58,10 @@ export function SystemIllustration() {
 
         {/* System diagram */}
         <div
-          className={`max-w-[900px] mx-auto transition-all duration-700 ${
+          className={`max-w-[900px] mx-auto transition-all duration-700 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
-          style={{ transitionDelay: '300ms' }}
+          style={{ transitionDelay: '180ms' }}
         >
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 lg:gap-0 items-center">
             {/* Left: Ecosystem Partners */}
@@ -87,8 +87,8 @@ export function SystemIllustration() {
                 <span className="text-caption">&rarr;</span>
               </div>
 
-              <div className="bg-primary rounded-xl p-6 lg:p-8 text-center shadow-lg min-w-[200px]">
-                <p className="text-h4 font-medium text-white">Lynia</p>
+              <div className="bg-primary rounded-xl p-6 lg:p-8 text-center shadow-stripe-lg min-w-[200px]">
+                <p className="text-subheading text-white">Lynia</p>
                 <p className="text-caption text-white/70 mt-1">Core Engine</p>
               </div>
 

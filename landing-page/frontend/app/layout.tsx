@@ -36,8 +36,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        {/* Inter font: preconnect eliminates DNS/TLS latency.
-            Migrate to next/font/google when build environment has network. */}
+        {/* Inter font via Google Fonts CDN.
+            TODO(launch): Migrate to next/font/google when build has reliable network. */}
         <link
           rel="preconnect"
           href="https://fonts.googleapis.com"
@@ -49,7 +49,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
           rel="stylesheet"
         />
         <script
@@ -85,8 +85,15 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-white font-sans">
+        {/* Skip to main content — accessibility */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-white focus:shadow-stripe-md"
+        >
+          Skip to main content
+        </a>
         <Navbar />
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <Footer />
         <WhatsAppFAB />
       </body>

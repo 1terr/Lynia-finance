@@ -15,7 +15,7 @@ export default function CompliancePage() {
           <span className="text-overline uppercase tracking-wider text-primary">
             REGULATORY COMPLIANCE
           </span>
-          <h1 className="text-h1-mobile lg:text-h1 text-primary-dark font-medium mt-4">
+          <h1 className="text-display-mobile lg:text-display text-primary-dark mt-4">
             RBZ Compliance
           </h1>
           <p className="text-body-lg text-slate mt-4 max-w-[600px]">
@@ -31,7 +31,7 @@ export default function CompliancePage() {
           <div className="max-w-[780px] space-y-12">
             {/* KYC */}
             <div>
-              <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading-mobile lg:text-heading text-primary-dark">
                 Know Your Customer (KYC)
               </h2>
               <p className="text-body text-slate mt-4">
@@ -44,20 +44,20 @@ export default function CompliancePage() {
 
             {/* Transaction limits */}
             <div>
-              <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading-mobile lg:text-heading text-primary-dark">
                 Transaction Limits
               </h2>
               <div className="mt-4 grid sm:grid-cols-3 gap-6">
                 <div className="p-4 bg-primary-light rounded-lg">
-                  <p className="text-h4 text-primary-dark font-medium">$5,000</p>
+                  <p className="text-subheading text-primary-dark">$5,000</p>
                   <p className="text-body-sm text-slate mt-1">Daily limit (USD equivalent)</p>
                 </div>
                 <div className="p-4 bg-primary-light rounded-lg">
-                  <p className="text-h4 text-primary-dark font-medium">$50,000</p>
+                  <p className="text-subheading text-primary-dark">$50,000</p>
                   <p className="text-body-sm text-slate mt-1">Monthly limit (USD equivalent)</p>
                 </div>
                 <div className="p-4 bg-primary-light rounded-lg">
-                  <p className="text-h4 text-primary-dark font-medium">$2,000</p>
+                  <p className="text-subheading text-primary-dark">$2,000</p>
                   <p className="text-body-sm text-slate mt-1">Single transaction limit</p>
                 </div>
               </div>
@@ -65,7 +65,7 @@ export default function CompliancePage() {
 
             {/* Record retention */}
             <div>
-              <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading-mobile lg:text-heading text-primary-dark">
                 Record Retention
               </h2>
               <p className="text-body text-slate mt-4">
@@ -95,7 +95,7 @@ export default function CompliancePage() {
 
             {/* Reporting */}
             <div>
-              <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading-mobile lg:text-heading text-primary-dark">
                 Reporting Obligations
               </h2>
               <p className="text-body text-slate mt-4">
@@ -107,7 +107,7 @@ export default function CompliancePage() {
 
             {/* Multi-currency */}
             <div>
-              <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading-mobile lg:text-heading text-primary-dark">
                 Multi-Currency Support
               </h2>
               <p className="text-body text-slate mt-4">
@@ -119,7 +119,7 @@ export default function CompliancePage() {
 
             {/* Data protection */}
             <div>
-              <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading-mobile lg:text-heading text-primary-dark">
                 Data Protection
               </h2>
               <p className="text-body text-slate mt-4">

@@ -12,7 +12,7 @@ export function ProductBento() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Asset-Backed Lending — Large Card */}
           <div
-            className={`border border-border rounded-xl p-8 lg:p-10 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 lg:row-span-2 flex flex-col justify-between ${
+            className={`border border-border rounded-xl p-8 lg:p-10 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md lg:row-span-2 flex flex-col justify-between ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -20,7 +20,7 @@ export function ProductBento() {
               <span className="text-overline uppercase tracking-wider text-primary">
                 ASSET-BACKED LENDING
               </span>
-              <h3 className="text-h2-mobile lg:text-h2 text-primary-dark font-medium mt-4">
+              <h3 className="text-title-mobile lg:text-title text-primary-dark mt-4">
                 Productive Asset Financing
               </h3>
               <p className="text-body text-slate mt-4">
@@ -39,7 +39,7 @@ export function ProductBento() {
                 </p>
               </div>
             </div>
-            <p className="text-caption text-slate-light mt-6">
+            <p className="text-caption text-muted mt-6">
               CGAP Alignment: Shifting from &ldquo;negative collateral&rdquo; to
               &ldquo;productive trust&rdquo; by funding assets that grow cash
               flow.
@@ -48,15 +48,15 @@ export function ProductBento() {
 
           {/* Digital Credit — Square Card */}
           <div
-            className={`border border-border rounded-xl p-8 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${
+            className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '100ms' }}
+            style={{ transitionDelay: '60ms' }}
           >
             <span className="text-overline uppercase tracking-wider text-primary">
               DIGITAL CREDIT
             </span>
-            <h3 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium mt-4">
+            <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
               Conversational Liquidity
             </h3>
             <p className="text-body text-slate mt-3">
@@ -75,15 +75,15 @@ export function ProductBento() {
 
           {/* Embedded Credit — Wide Card */}
           <div
-            className={`border border-border rounded-xl p-8 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200 ${
+            className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
-            style={{ transitionDelay: '200ms' }}
+            style={{ transitionDelay: '120ms' }}
           >
             <span className="text-overline uppercase tracking-wider text-primary">
               EMBEDDED CREDIT
             </span>
-            <h3 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium mt-4">
+            <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
               API for Ecosystem Resilience
             </h3>
             <p className="text-body text-slate mt-3">

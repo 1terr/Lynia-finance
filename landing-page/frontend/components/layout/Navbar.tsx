@@ -30,17 +30,17 @@ export function Navbar() {
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-sticky transition-all duration-200 ${
+      className={`fixed top-0 left-0 right-0 z-sticky transition-all duration-250 ease-stripe ${
         scrolled
-          ? 'bg-white/95 backdrop-blur-xl border-b border-border shadow-sm'
+          ? 'bg-white/80 backdrop-blur-lg border-b border-border/50 shadow-stripe-nav'
           : 'bg-transparent border-b border-transparent'
       }`}
     >
-      <nav className="container-wide flex items-center justify-between h-[72px] lg:h-[72px]">
+      <nav className="container-wide flex items-center justify-between h-16">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <span
-            className={`text-h4 font-medium transition-colors duration-200 ${
+            className={`text-subheading transition-colors duration-250 ease-stripe ${
               scrolled ? 'text-primary-dark' : 'text-white'
             }`}
           >
@@ -57,7 +57,7 @@ export function Navbar() {
                 key={link.label}
                 href={link.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`text-body-sm font-medium transition-colors duration-150 ${
+                className={`text-body-sm font-medium transition-colors duration-250 ease-stripe ${
                   isActive
                     ? scrolled
                       ? 'text-primary-dark border-b-2 border-primary pb-0.5'
@@ -86,7 +86,7 @@ export function Navbar() {
 
         {/* Mobile hamburger */}
         <button
-          className="lg:hidden p-2"
+          className="lg:hidden p-2 rounded-md transition-colors duration-250 ease-stripe hover:bg-white/10"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
         >
@@ -100,7 +100,7 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-border animate-fade-in-up">
+        <div className="lg:hidden bg-white border-t border-border animate-fade-down">
           <div className="px-6 py-6 flex flex-col gap-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -109,7 +109,7 @@ export function Navbar() {
                   key={link.label}
                   href={link.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`text-h4 py-3 transition-colors ${
+                  className={`text-subheading py-3 transition-colors duration-250 ease-stripe ${
                     isActive
                       ? 'text-primary font-semibold'
                       : 'text-primary-dark hover:text-primary'

@@ -37,10 +37,10 @@ function PressRow({ item, index, isVisible }: { item: PressItem; index: number; 
 
   return (
     <div
-      className={`border-b border-border transition-all duration-500 ${
+      className={`border-b border-border transition-all duration-500 ease-stripe-out ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       }`}
-      style={{ transitionDelay: `${200 + index * 100}ms` }}
+      style={{ transitionDelay: `${120 + index * 80}ms` }}
     >
       <button
         onClick={() => setExpanded(!expanded)}
@@ -52,35 +52,39 @@ function PressRow({ item, index, isVisible }: { item: PressItem; index: number; 
         </div>
 
         {/* Headline */}
-        <p className="flex-1 text-body text-primary-dark font-medium group-hover:text-primary transition-colors duration-150">
+        <p className="flex-1 text-body text-primary-dark font-medium group-hover:text-primary transition-colors duration-250 ease-stripe">
           {item.headline}
         </p>
 
         {/* Expand icon */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 transition-transform duration-250 ease-stripe">
           {expanded ? (
-            <Minus className="w-5 h-5 text-slate-light" />
+            <Minus className="w-5 h-5 text-muted" />
           ) : (
-            <Plus className="w-5 h-5 text-slate-light" />
+            <Plus className="w-5 h-5 text-muted" />
           )}
         </div>
       </button>
 
-      {/* Expandable content */}
-      {expanded && (
-        <div className="pb-6 pl-[56px] lg:pl-[64px] animate-fade-in-up">
+      {/* Expandable content with animation */}
+      <div
+        className={`overflow-hidden transition-all duration-350 ease-stripe-out ${
+          expanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className="pb-6 pl-[56px] lg:pl-[64px]">
           <p className="text-body text-slate max-w-[680px]">
             {item.excerpt}
           </p>
           <a
             href={item.href}
-            className="inline-flex items-center text-body-sm font-medium text-primary mt-4 hover:text-primary-hover transition-colors"
+            className="group/link inline-flex items-center text-body-sm font-semibold text-primary mt-4 hover:text-primary-hover transition-colors duration-250 ease-stripe"
           >
             Read the story
-            <span className="ml-1.5">&rarr;</span>
+            <span className="ml-1.5 transition-transform duration-250 ease-stripe-out group-hover/link:translate-x-1">&rarr;</span>
           </a>
         </div>
-      )}
+      </div>
     </div>
   );
 }
@@ -92,14 +96,14 @@ export function Press() {
     <section ref={ref} id="press" className="bg-white py-16 lg:py-[120px]">
       <div className="container-main">
         <span
-          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ${
+          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
         >
           PRESS
         </span>
         <h2
-          className={`text-h1-mobile lg:text-h1 text-primary-dark font-medium mt-4 transition-all duration-500 ${
+          className={`text-display-mobile lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >

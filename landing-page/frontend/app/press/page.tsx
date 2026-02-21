@@ -39,7 +39,7 @@ export default function PressPage() {
           <span className="text-overline uppercase tracking-wider text-primary">
             PRESS
           </span>
-          <h1 className="text-h1-mobile lg:text-h1 text-primary-dark font-medium mt-4">
+          <h1 className="text-display-mobile lg:text-display text-primary-dark mt-4">
             In the news
           </h1>
           <p className="text-body-lg text-slate mt-4 max-w-[600px]">
@@ -61,7 +61,7 @@ export default function PressPage() {
                 <p className="text-caption text-slate-light uppercase tracking-wider">
                   {item.date}
                 </p>
-                <h2 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium mt-3">
+                <h2 className="text-heading-mobile lg:text-heading text-primary-dark mt-3">
                   {item.headline}
                 </h2>
                 <p className="text-body text-slate mt-4">

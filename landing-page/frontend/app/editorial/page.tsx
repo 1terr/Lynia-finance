@@ -34,7 +34,7 @@ export default function EditorialPage() {
                 <span className="inline-block self-start text-caption font-medium text-primary bg-primary-50 px-3 py-1 rounded-full">
                   {featured.category}
                 </span>
-                <h2 className="text-h2-mobile lg:text-h2 text-primary-dark font-medium mt-4 group-hover:text-primary transition-colors">
+                <h2 className="text-title-mobile lg:text-title text-primary-dark mt-4 group-hover:text-primary transition-colors">
                   {featured.title}
                 </h2>
                 <p className="text-body text-slate mt-3">{featured.excerpt}</p>
@@ -93,7 +93,7 @@ export default function EditorialPage() {
                   <span className="inline-block text-caption font-medium text-primary bg-primary-50 px-3 py-1 rounded-full">
                     {post.category}
                   </span>
-                  <h3 className="text-h4 text-primary-dark font-medium mt-3 group-hover:text-primary transition-colors">
+                  <h3 className="text-subheading text-primary-dark mt-3 group-hover:text-primary transition-colors">
                     {post.title}
                   </h3>
                   <p className="text-body-sm text-slate mt-2 line-clamp-2">

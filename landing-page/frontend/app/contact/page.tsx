@@ -42,7 +42,7 @@ function ContactForm() {
   if (status === 'success') {
     return (
       <div className="rounded-lg border border-success/30 bg-success/5 p-8 text-center">
-        <p className="text-h4 text-primary-dark font-medium">Message sent</p>
+        <p className="text-subheading text-primary-dark">Message sent</p>
         <p className="text-body-sm text-slate mt-2">
           We&apos;ll get back to you within 24 hours.
         </p>
@@ -154,7 +154,7 @@ function PartnershipForm() {
   if (status === 'success') {
     return (
       <div className="rounded-lg border border-success/30 bg-success/5 p-8 text-center">
-        <p className="text-h4 text-primary-dark font-medium">Application received</p>
+        <p className="text-subheading text-primary-dark">Application received</p>
         <p className="text-body-sm text-slate mt-2">
           Our partnerships team will review your application and get in touch shortly.
         </p>
@@ -274,7 +274,7 @@ export default function ContactPage() {
           <span className="text-overline uppercase tracking-wider text-primary">
             CONTACT
           </span>
-          <h1 className="text-h1-mobile lg:text-h1 text-primary-dark font-medium mt-4">
+          <h1 className="text-display-mobile lg:text-display text-primary-dark mt-4">
             Get in touch
           </h1>
           <p className="text-body-lg text-slate mt-4 max-w-[600px]">
@@ -290,7 +290,7 @@ export default function ContactPage() {
           <div className="grid lg:grid-cols-5 gap-12 lg:gap-16">
             {/* Left — contact info */}
             <div className="lg:col-span-2">
-              <h2 className="text-h3 text-primary-dark font-medium">
+              <h2 className="text-heading text-primary-dark">
                 Contact methods
               </h2>
               <p className="text-body text-slate mt-3">
@@ -329,7 +329,7 @@ export default function ContactPage() {
             {/* Right — contact form */}
             <div className="lg:col-span-3">
               <div className="bg-white rounded-xl border border-border p-6 lg:p-8 shadow-sm">
-                <h3 className="text-h4 text-primary-dark font-medium mb-6">
+                <h3 className="text-subheading text-primary-dark mb-6">
                   Send us a message
                 </h3>
                 <ContactForm />
@@ -346,7 +346,7 @@ export default function ContactPage() {
             <span className="text-overline uppercase tracking-wider text-primary">
               PARTNERSHIPS
             </span>
-            <h2 className="text-h2-mobile lg:text-h2 text-primary-dark font-medium mt-4">
+            <h2 className="text-title-mobile lg:text-title text-primary-dark mt-4">
               Become a Lynia partner
             </h2>
             <p className="text-body text-slate mt-4">

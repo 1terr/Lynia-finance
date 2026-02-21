@@ -24,13 +24,14 @@ export function Hero() {
       <div className="container-main relative z-10">
         <div className="max-w-[720px] pt-20 lg:pt-0">
           <h1
-            className="text-display-mobile lg:text-display text-white opacity-0 animate-fade-in-up"
+            className="text-hero-mobile lg:text-hero text-white opacity-0 animate-fade-up"
+            style={{ animationFillMode: 'forwards' }}
           >
             Financing for the productive majority.
           </h1>
           <p
-            className="mt-6 text-body-lg text-white/70 max-w-[600px] opacity-0 animate-fade-in-up"
-            style={{ animationDelay: '100ms' }}
+            className="mt-6 text-body-lg text-white/70 max-w-[600px] opacity-0 animate-fade-up"
+            style={{ animationDelay: '60ms', animationFillMode: 'forwards' }}
           >
             Lynia is the financial infrastructure for Zimbabwe&apos;s $10B informal
             economy. We transform mobile money velocity into credit identities,
@@ -38,8 +39,8 @@ export function Hero() {
             transition from survival to growth.
           </p>
           <div
-            className="mt-8 flex flex-wrap items-center gap-4 opacity-0 animate-fade-in-up"
-            style={{ animationDelay: '200ms' }}
+            className="mt-8 flex flex-wrap items-center gap-4 opacity-0 animate-fade-up"
+            style={{ animationDelay: '120ms', animationFillMode: 'forwards' }}
           >
             <Button variant="white" size="lg" href="#get-started">
               Get started

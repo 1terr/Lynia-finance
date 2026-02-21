@@ -18,7 +18,7 @@ export default function PrivacyPage() {
       {/* Header */}
       <section className="bg-primary-light py-16 lg:py-20">
         <div className="container-main">
-          <h1 className="text-h1-mobile lg:text-h1 text-primary-dark font-medium">
+          <h1 className="text-display-mobile lg:text-display text-primary-dark">
             Privacy Policy
           </h1>
           <p className="text-body text-slate mt-3">
@@ -32,7 +32,7 @@ export default function PrivacyPage() {
         <div className="mx-auto max-w-narrow px-6 lg:px-12">
           <div className="prose-lynia space-y-10">
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 1. Introduction
               </h2>
               <p className="text-body text-slate">
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 2. Information we collect
               </h2>
               <p className="text-body text-slate mb-3">
@@ -78,7 +78,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 3. How we use your information
               </h2>
               <ul className="list-disc pl-6 space-y-2 text-body text-slate">
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 4. Data sharing
               </h2>
               <p className="text-body text-slate mb-3">
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 5. Data security
               </h2>
               <p className="text-body text-slate">
@@ -137,7 +137,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 6. Data retention
               </h2>
               <p className="text-body text-slate">
@@ -149,7 +149,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 7. Your rights
               </h2>
               <ul className="list-disc pl-6 space-y-2 text-body text-slate">
@@ -175,7 +175,7 @@ export default function PrivacyPage() {
             </div>
 
             <div>
-              <h2 className="text-h3 text-primary-dark font-medium mb-4">
+              <h2 className="text-heading text-primary-dark mb-4">
                 8. Contact us
               </h2>
               <p className="text-body text-slate">

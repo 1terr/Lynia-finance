@@ -52,7 +52,7 @@ export default async function EditorialPostPage({ params }: PageProps) {
           <span className="inline-block text-caption font-medium text-primary bg-primary-50 px-3 py-1 rounded-full">
             {post.category}
           </span>
-          <h1 className="text-h1-mobile lg:text-display text-primary-dark font-medium mt-4">
+          <h1 className="text-display-mobile lg:text-hero text-primary-dark mt-4">
             {post.title}
           </h1>
           <p className="text-body text-slate mt-4">
@@ -122,7 +122,7 @@ export default async function EditorialPostPage({ params }: PageProps) {
                   <span className="inline-block text-caption font-medium text-primary bg-primary-50 px-3 py-1 rounded-full">
                     {rel.category}
                   </span>
-                  <h3 className="text-h4 text-primary-dark font-medium mt-3 group-hover:text-primary transition-colors">
+                  <h3 className="text-subheading text-primary-dark mt-3 group-hover:text-primary transition-colors">
                     {rel.title}
                   </h3>
                   <p className="text-body-sm text-slate mt-2 line-clamp-2">

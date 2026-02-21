@@ -31,7 +31,7 @@ function CountUp({ target, suffix, isVisible }: { target: number; suffix: string
   }, [isVisible, target, isDecimal]);
 
   return (
-    <span>
+    <span className="tabular-nums">
       {isDecimal ? count.toFixed(2) : count}{suffix}
     </span>
   );
@@ -50,19 +50,19 @@ export function DataStrip() {
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`text-center transition-all duration-500 ${
+              className={`text-center transition-all duration-500 ease-stripe-out ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
-              style={{ transitionDelay: `${i * 150}ms` }}
+              style={{ transitionDelay: `${i * 80}ms` }}
             >
-              <div className="text-display-mobile lg:text-display text-white font-medium">
+              <div className="text-hero-mobile lg:text-hero text-white tabular-nums">
                 <CountUp
                   target={stat.value}
                   suffix={stat.suffix}
                   isVisible={isVisible}
                 />
               </div>
-              <p className="text-body font-medium text-white/90 mt-3">{stat.label}</p>
+              <p className="text-body-lg font-medium text-white/90 mt-3">{stat.label}</p>
               <p className="text-body-sm text-white/50 mt-1">{stat.source}</p>
             </div>
           ))}

@@ -15,29 +15,29 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-primary text-white hover:bg-primary-hover hover:shadow-md active:scale-[0.98] active:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary',
+    'bg-navy text-white shadow-stripe-sm hover:bg-navy-light hover:-translate-y-0.5 hover:shadow-stripe active:translate-y-0 active:shadow-stripe-xs focus-visible:outline-none focus-visible:shadow-stripe-focus',
   secondary:
     'bg-transparent text-primary hover:text-primary-hover px-0',
   ghost:
-    'bg-transparent text-white border border-white/30 hover:bg-white/10 hover:border-white/50',
+    'bg-transparent text-white border border-white/30 hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 active:translate-y-0',
   white:
-    'bg-white text-primary hover:bg-gray-50 hover:shadow-md active:scale-[0.98]',
+    'bg-white text-primary shadow-stripe-sm hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-stripe active:translate-y-0 active:shadow-stripe-xs',
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'h-9 px-4 text-caption',
-  md: 'h-11 px-6 text-body-sm',
-  lg: 'h-[52px] px-8 text-body-sm',
+  sm: 'h-9 px-4 text-caption rounded-md',
+  md: 'h-11 px-6 text-body-sm rounded-full',
+  lg: 'h-[52px] px-8 text-body-sm rounded-full',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ variant = 'primary', size = 'md', arrow, className = '', children, href, ...props }, ref) => {
     const base =
-      'inline-flex items-center justify-center font-medium rounded-md transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed';
+      'inline-flex items-center justify-center font-semibold transition-all duration-250 ease-stripe disabled:opacity-50 disabled:cursor-not-allowed';
     const styles = `${base} ${variant !== 'secondary' ? sizeStyles[size] : 'py-3'} ${variantStyles[variant]} ${className}`;
 
     const arrowEl = arrow ? (
-      <span className="ml-1.5 transition-transform duration-150 group-hover:translate-x-1">&rarr;</span>
+      <span className="ml-1.5 transition-transform duration-250 ease-stripe-out group-hover:translate-x-1">&rarr;</span>
     ) : null;
 
     if (href) {

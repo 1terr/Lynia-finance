@@ -10,7 +10,7 @@ export function ThesisSection() {
       <div className="container-main">
         <div className="max-w-[780px] mx-auto">
           <span
-            className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ${
+            className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             }`}
           >
@@ -20,12 +20,12 @@ export function ThesisSection() {
           <div className="mt-8 space-y-10">
             {/* The Conviction */}
             <div
-              className={`transition-all duration-600 ${
+              className={`transition-all duration-700 ease-stripe-out ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
-              style={{ transitionDelay: '100ms' }}
+              style={{ transitionDelay: '60ms' }}
             >
-              <h3 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h3 className="text-heading-mobile lg:text-heading text-primary-dark">
                 The Conviction
               </h3>
               <p className="text-body-lg text-slate mt-4">
@@ -39,12 +39,12 @@ export function ThesisSection() {
 
             {/* The Strategy */}
             <div
-              className={`transition-all duration-600 ${
+              className={`transition-all duration-700 ease-stripe-out ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
               }`}
-              style={{ transitionDelay: '250ms' }}
+              style={{ transitionDelay: '180ms' }}
             >
-              <h3 className="text-h3-mobile lg:text-h3 text-primary-dark font-medium">
+              <h3 className="text-heading-mobile lg:text-heading text-primary-dark">
                 The Strategy
               </h3>
               <p className="text-body-lg text-slate mt-4">
