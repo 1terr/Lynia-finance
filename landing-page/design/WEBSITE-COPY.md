@@ -1,142 +1,83 @@
-# Lynia Finance — Website Copy
+# Lynia Finance — Proposed Website Copy (v2)
 
-> Proposed copy for lyniafinance.com. Text only — no UI, layout, or design notes.
-> Statistics scoped to Africa and Zimbabwe specifically.
+> Rewriting lyniafinance.com copy with three changes from v1:
+>
+> 1. **Statistics scoped to Africa & Zimbabwe** — sourced from CGAP, World Bank Findex, IMF (but never attributed on-site)
+> 2. **No CGAP references** anywhere in the customer-facing copy
+> 3. **Stripe-style minimalism** — short headlines (5-7 words), one-line subheadlines (~100 chars), minimal body text, scannable sections
 
 ---
 
 ## Navigation
 
-Lynia Finance (logo) · Products · About · Partnerships · Editorial · **Start your application**
+Products | About | Partnerships | Editorial | **Start your application** →
 
 ---
 
 ## Hero
 
-**Overline:** CREDIT INFRASTRUCTURE FOR AFRICA
+**H1:** Financial infrastructure for Africa's next economy
 
-**Headline:** Financial infrastructure for Africa's next economy
+**Sub:** 55% of Sub-Saharan Africa now has a financial account. The other 45% — informal workers, platform earners, first-time borrowers — need infrastructure built for them.
 
-**Subtext:** 85% of Zimbabwe's workforce earns informally — invisible to banks, excluded from credit. We build the rails that connect them to capital.
-
-**CTAs:** Start your application | Partner with us →
+**CTAs:** Start your application | Partner with us
 
 ---
 
-## Social Proof Bar
+## Stats Bar
 
-85% informal workforce · 90%+ mobile money adoption · <5 min approval time · 500+ loans funded
+> Stripe "backbone" style — numbers only, no prose.
 
----
-
-## Why Alternative Financing
-
-**Overline:** THE OPPORTUNITY
-
-**Headline:** 350 million adults in Sub-Saharan Africa have no financial account
-
-**Stats:**
-
-- **85%** — informal workforce — Zimbabwe's workers, excluded from traditional banking
-- **<5%** — have bank credit — In the informal sector
-- **350M+** — unbanked adults — Across Sub-Saharan Africa
-- **90%+** — mobile money adoption — The infrastructure already exists in Zimbabwe
-
-**Supporting text:** The infrastructure exists. The products don't — yet. Mobile money reaches more Zimbabweans than any bank ever has. We build financial products on top of what's already there.
+| 85% | 90%+ | <5 min | 500+ |
+|-----|------|--------|------|
+| of Zimbabwe's workforce is informal | mobile money adoption in Zimbabwe | average loan approval time | loans funded to date |
 
 ---
 
-## Product Suite Overview
+## The Gap
 
-**Headline:** Three products. One mission.
+**H2:** 350 million adults in Sub-Saharan Africa have no financial account
 
-**Card 1 — Asset-Backed Financing:** Own the device that unlocks your livelihood
-
-**Card 2 — Digital Loans:** Cash before payday
-
-**Card 3 — Embedded Financing:** Turn your platform into a financial service
+**Sub:** Traditional lenders require payslips, collateral, and credit history. The informal majority has none of these — but they do have mobile money records, platform earnings, and repayment behaviour. That is the data we underwrite.
 
 ---
 
-## How It Works
+## Products
 
-**Overline:** HOW IT WORKS
+### Digital Loans
 
-**Headline:** From application to funded in minutes
+**H2:** Cash before payday
 
-**Subtitle:** Everything happens on WhatsApp — the app your customers already use every day.
-
-**Step 01 — Apply via WhatsApp:** No app download. No bank visit. Two minutes.
-
-**Step 02 — Get scored instantly:** AI underwriting from mobile money activity, payroll, or platform data.
-
-**Step 03 — Receive your device or funds:** Smartphone from a local agent, or cash directly into your mobile wallet. Same day.
-
-**Step 04 — Repay and build credit:** Flexible repayment via EcoCash or OneMoney. Every payment strengthens your financial identity.
-
----
-
-## Asset-Backed Financing
-
-**Label:** ASSET-BACKED FINANCING
-
-**Headline:** Own the device that unlocks your livelihood
-
-**Subtext:** Finance a smartphone with as little as $15 down. Repay daily through mobile money. Every on-time payment builds the credit history you never had.
+**Sub:** Short-term credit deposited directly into your mobile wallet — for civil servants, salaried workers, and informal earners who need funds now, not end of month.
 
 **Features:**
 
-- **Deposit from $15** — Start with a small deposit. The device is yours from day one.
-- **50+ agent locations** — Collect your device from a Lynia agent in your area.
-- **Approved in under 5 min** — AI-powered credit scoring. Decisions in minutes, not days.
-- **Repay via EcoCash or OneMoney** — Daily, weekly, or monthly. 3–12 month terms. No bank account needed.
+- Funds in your wallet in under 10 minutes
+- Borrow $20 – $1,000
+- No collateral. No bank account. No paperwork
+- Repay via EcoCash or OneMoney
+- Repeat borrowers unlock higher limits and lower rates
+- Transparent fees disclosed before you commit
 
-**Credit flywheel:** Phone purchase → Credit history → Digital loan → Business investment → Platform earnings → Embedded financing
-
-**CTAs:** Start your application | Find an agent near you →
-
----
-
-## Digital Loans
-
-**Label:** DIGITAL LOANS
-
-**Headline:** Cash before payday
-
-**Subtext:** Short-term credit deposited directly into your mobile wallet — for civil servants, salaried workers, and informal earners who need funds now, not end of month.
-
-**Features:**
-
-- **Funds in under 10 minutes** — From application to cash in your wallet. No paperwork, no branch visit.
-- **Borrow $20 – $1,000** — Amounts matched to your repayment capacity and mobile money history.
-- **No collateral required** — We verify income through payroll records, employer data, or mobile money activity.
-- **Transparent fees upfront** — No hidden charges. Full cost disclosed before you commit.
-
-**Who it's for:**
-
-- Civil servants between pay cycles
-- Salaried employees facing emergency expenses
-- Informal earners with verifiable mobile money activity
-
-**CTA:** Start your application
+**CTA:** Apply via WhatsApp →
 
 ---
 
-## Embedded Financing
+### Embedded Financing
 
-**Label:** EMBEDDED FINANCING
+**H2:** Turn your platform into a financial service
 
-**Headline:** Turn your platform into a financial service
+**Sub:** Integrate lending and advances directly into your platform through a single API. Your users get capital. You get retention. We handle underwriting, compliance, and collections.
 
-**Subtext:** Integrate lending, advances, and asset financing directly into your platform. Your users get capital. You get retention. We handle underwriting, compliance, and collections.
+**The opportunity:**
 
-**Stat callout:** 52% of women and 40% of men working on platforms in emerging markets cannot access capital to grow their earnings. Only 16% of platform workers have ever used a loan.
+> 52% of women and 40% of men working on platforms in emerging markets say they cannot access capital to grow their earnings.
 
 **How it works:**
 
-1. **Connect** — Integrate our API into your existing platform
+1. **Connect** — Integrate our API into your platform
 2. **Score** — We underwrite users from their platform activity and earnings
-3. **Offer** — Present financing natively within your user experience
+3. **Offer** — Present financing natively in your experience
 4. **Collect** — Automated repayment via mobile money. Full lifecycle managed
 
 **Use cases:**
@@ -148,75 +89,117 @@ Lynia Finance (logo) · Products · About · Partnerships · Editorial · **Star
 
 **Why platforms embed with Lynia:**
 
-- **New revenue** — Earn from financial services without a financial services licence
-- **Higher retention** — Workers stay on platforms that help them earn more
-- **Reduced churn** — Remove capital constraints that push users off your platform
-- **Zero regulatory burden** — We hold the licence. You own the relationship
+- New revenue stream without a financial services licence
+- Higher user retention — workers stay where capital flows
+- Reduced churn from cash-flow constraints
+- You own the relationship. We power the infrastructure
 
-**CTAs:** Partner with us | Talk to our partnerships team →
-
----
-
-## Customer Segments
-
-**Headline:** Built for how Africa actually works
-
-**For Individuals:** 40% of Zimbabwean adults lack a bank account. Get a smartphone or instant credit via WhatsApp — no bank required.
-
-**CTA:** Start your application →
-
-**For Distributors:** Sell smartphones and assets in your community. Zero inventory risk. Earn commission on every sale.
-
-**CTA:** Become a distributor →
-
-**For Platforms:** All 11 countries where mobile money exceeds bank accounts are in Sub-Saharan Africa. Embed credit directly into your platform via our APIs.
-
-**CTA:** Partner with us →
+**CTA:** Talk to partnerships →
 
 ---
 
-## Bottom CTA
+### Asset-Backed Financing
 
-**Headline:** Apply now. Get funded today.
+**H2:** Own the device that unlocks your livelihood
 
-**Subtext:** No bank account. No paperwork. No branch visit. Just WhatsApp, your national ID, and 5 minutes. Join 500+ Zimbabweans already building with Lynia.
+**Sub:** Finance a smartphone with as little as $15 down. Repay daily through mobile money. Every on-time payment builds the credit history you never had.
 
-**CTAs:** Start your application | Talk to our team →
+**Why it matters:**
+
+> In Sub-Saharan Africa, only 7% of male and 20% of female platform workers have any form of insurance or financial protection. A smartphone is often their most valuable productive asset.
+
+**How it works:**
+
+1. Visit a Lynia agent or apply via WhatsApp
+2. Choose your device. Deposit from $15
+3. Collect your smartphone. Use it immediately
+4. Repay flexibly — daily, weekly, or monthly via mobile money
+5. Build credit — your repayment history unlocks Digital Loans next
+
+**Key details:**
+
+- 50+ agent locations nationwide
+- 3–12 month repayment terms
+- Device locks on missed payment, unlocks instantly when caught up
+- Repayment data creates a portable credit identity
+- No bank account required
+
+**CTA:** Find an agent near you →
+
+---
+
+## The Flywheel
+
+**H2:** Every product opens the next one
+
+**Visual sequence:**
+
+> Phone purchase → Credit history → Digital loan → Business investment → Platform earnings → Embedded financing → Repeat
+
+**Sub:** One entry point. Compounding access. This is how financial inclusion scales.
+
+---
+
+## How It Works
+
+**H2:** From excluded to funded in four steps
+
+1. **Apply via WhatsApp** — No app. No branch. Two minutes.
+2. **Get scored instantly** — AI underwriting from mobile money activity, payroll, or platform data.
+3. **Receive funds or device** — Cash to your wallet or smartphone from a local agent. Same day.
+4. **Repay and build credit** — Every payment strengthens your financial identity.
+
+---
+
+## Why Lynia
+
+**H2:** Built for how Africa actually works
+
+| Feature | Detail |
+|---------|--------|
+| WhatsApp-native | Entire experience on the channel 90%+ of Zimbabweans already use |
+| Alternative data scoring | Mobile money transactions, platform activity, and repayment behaviour — not credit bureau history |
+| Agent network | 50+ locations for device collection, deposits, and face-to-face support |
+| Multilingual | English, Shona, and Ndebele — voice and text |
+| Regulated | Licensed and supervised by the Reserve Bank of Zimbabwe |
+
+---
+
+## Enterprise CTA
+
+**H2:** Embed financing where your users already are
+
+**Sub:** Ride-hailing. Delivery. E-commerce. Employer platforms. If your users earn on your platform, we can finance them through it.
+
+**CTA:** Talk to our partnerships team →
 
 ---
 
 ## Footer
 
-**Products:** Asset financing · Digital loans · Embedded financing
+Lynia Finance | Founded 2024 | Harare, Zimbabwe | Regulated by the Reserve Bank of Zimbabwe
 
-**Company:** About · Careers · Contact
+Products · About · Partnerships · Editorial · Privacy · Terms
 
-**Connect:** X (Twitter) · LinkedIn · WhatsApp
+X · LinkedIn · WhatsApp
 
-**Legal:** Privacy Policy · Terms
-
-**Bottom line:** © 2026 Lynia Finance. All rights reserved. Regulated by the Reserve Bank of Zimbabwe.
+© 2026 Lynia Finance. All rights reserved.
 
 ---
 
-## Statistics Reference (INTERNAL — not displayed on website)
+## Key Statistics Reference (INTERNAL — not shown on site)
 
-All statistics used in copy above, with sources for internal verification. These attributions must never appear on the customer-facing website.
+All stats used above, with sources for internal verification. These attributions must never appear on the customer-facing website.
 
-| Statistic | Where used | Source |
-|-----------|------------|--------|
-| 85% of Zimbabwe's workforce is informal | Hero, Stats Bar, Why section | World Bank; academic research on Zimbabwe informal economy |
-| 90%+ mobile money adoption in Zimbabwe | Stats Bar, Why section | GSMA Mobile Money Report; World Bank Global Findex |
-| 40% of Zimbabwean adults lack a bank account | Customer Segments (Individuals) | World Bank Global Findex; academic research |
-| <5% have bank credit (informal sector) | Why section | Reserve Bank of Zimbabwe financial inclusion reports |
-| 350M+ unbanked adults in Sub-Saharan Africa | Why section headline | World Bank Global Findex 2021 |
-| All 11 countries where mobile money > bank accounts are in SSA | Customer Segments (Platforms) | World Bank Global Findex 2021 |
-| Account ownership in SSA: 23% (2011) → 55% (2021) | Available for editorial content | World Bank Global Findex 2021 |
-| 52% of women / 40% of men on platforms lack capital access | Embedded Financing stat callout | Research on gig platforms and financial inclusion in emerging markets |
-| Only 16% of platform workers have used loans | Embedded Financing stat callout | Research on platform worker financial exclusion |
-| 75% of rural women in SSA lack formal bank account | Available for About page or editorial | World Bank Global Findex |
-| 12% gender gap in SSA account ownership (3x global average) | Available for editorial | World Bank Global Findex 2021 |
-| $4.9T global MSE credit gap | Available for partnerships page or editorial | IFC / World Bank research |
-| 500+ loans funded | Stats Bar, Bottom CTA | Lynia internal metric |
-| 50+ agent locations | Asset-Backed Financing features | Lynia internal metric |
-| <5 min average approval time | Stats Bar | Lynia internal metric |
+| Stat | Source |
+|------|--------|
+| 85% of Zimbabwe's workforce is informal | World Bank / CGAP Zimbabwe research |
+| 90%+ mobile money adoption (EcoCash) in Zimbabwe | CGAP blog, academic research on EcoCash |
+| 40% of Zimbabwean adults lack a bank account | World Bank Findex / academic research |
+| 55% account ownership in SSA (2021) | World Bank Global Findex 2021 via CGAP |
+| 350M+ unbanked adults in SSA | World Bank Global Findex |
+| 52% women / 40% men on platforms lack investment capital | CGAP Gig Platforms research |
+| 7% male / 20% female platform workers have insurance | CGAP Platform Workers research |
+| 12% gender gap in account ownership in SSA | World Bank Global Findex 2021 via CGAP |
+| $4.9T global MSE credit gap | CGAP / IFC research |
+| All 11 countries where mobile money > bank accounts are in SSA | World Bank Global Findex 2021 |

@@ -626,3 +626,707 @@ landing-page/frontend/
 3. **Layer shadows.** Two-layer `box-shadow` with blue-tinted `rgba(18, 42, 66, ...)`. Never a single heavy shadow.
 4. **Navy + Blurple.** `#0A2540` for authority. `#635BFF` for action. No separate CTA color.
 5. **Animate with purpose.** `translateY(-4px)` on hover. Fade-up on scroll. `150ms` for micro-interactions. Respect reduced motion. GPU-only properties.
+
+---
+
+## 12. The Elite Tech Stack
+
+Building a Stripe-level landing page requires more than a component library. It demands hardware-accelerated rendering (WebGL) and layout-aware animations. This is the toolkit mapped to our Next.js + Tailwind codebase.
+
+### Core Stack
+
+| Category | Primary Choice | Elite Alternative | Notes |
+|----------|---------------|-------------------|-------|
+| Framework | **Next.js 15+ (App Router)** | Remix | We use App Router for RSC + streaming |
+| Styling | **Tailwind CSS** | Vanilla Extract (zero-runtime) | Tailwind is configured with all our design tokens |
+| Animations | **Framer Motion** | GSAP (complex scroll timelines) | Framer for declarative React; GSAP if we need ScrollTrigger |
+| WebGL / Canvas | **Three.js + React Three Fiber** | PixiJS (2D high-performance) | R3F for the mesh gradient; PixiJS if we add 2D particle effects |
+| Icons | **Lucide React** (1.5px stroke) | Custom SVG set from Figma | Tree-shakeable, matches Inter's geometric style |
+| State / Data | **React Query (TanStack Query)** | SWR | For any API calls on the landing page (waitlist, analytics) |
+
+### Package Installation
+
+```bash
+# Core animation + WebGL dependencies
+pnpm add framer-motion @react-three/fiber @react-three/drei three
+
+# Types for Three.js
+pnpm add -D @types/three
+
+# Optional: GSAP for complex scroll-coupled timelines
+pnpm add gsap @gsap/react
+```
+
+### Progressive Enhancement Strategy
+
+Our audience includes low-end $50 Android phones on 2G. The elite stack must degrade gracefully:
+
+```
+Layer 0 (all devices):   Static HTML + CSS gradients + Tailwind utilities
+Layer 1 (JS enabled):    Framer Motion entrance animations + Intersection Observer
+Layer 2 (mid-range):     Framer Motion scroll-coupled transforms (useScroll/useTransform)
+Layer 3 (high-end only): WebGL mesh gradient via React Three Fiber
+```
+
+Detection logic:
+
+```typescript
+const canRunWebGL = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const canvas = document.createElement('canvas');
+  const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+  const cores = navigator.hardwareConcurrency || 2;
+  return !!gl && cores >= 4;
+};
+```
+
+---
+
+## 13. WebGL Mesh Gradient (The Stripe Background)
+
+Stripe's hero background is not a video or CSS gradient — it is a live WebGL shader called "MiniGL." We replicate this with React Three Fiber and a custom fragment shader.
+
+### Architecture
+
+```
+HeroSection.tsx
+├── HeroGradientCanvas.tsx      ← React Three Fiber <Canvas>
+│   └── MeshGradientShader.tsx  ← Custom shader material
+├── HeroContent.tsx             ← Text overlay (z-indexed above canvas)
+└── CSS fallback gradient       ← var(--gradient-hero) for non-WebGL devices
+```
+
+### Implementation: The Fragment Shader
+
+The gradient uses a fragment shader that blends 3-4 colors based on `uTime` and UV coordinates, creating organic movement.
+
+```tsx
+// components/webgl/MeshGradientShader.tsx
+'use client';
+
+import { useRef, useMemo } from 'react';
+import { useFrame } from '@react-three/fiber';
+import * as THREE from 'three';
+
+const vertexShader = `
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
+
+const fragmentShader = `
+  uniform float uTime;
+  uniform vec3 uColor0;
+  uniform vec3 uColor1;
+  uniform vec3 uColor2;
+  uniform vec3 uColor3;
+  varying vec2 vUv;
+
+  // Simplex-style noise for organic movement
+  float noise(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453);
+  }
+
+  void main() {
+    vec2 uv = vUv;
+    float t = uTime * 0.3; // Speed factor — keep slow for elegance
+
+    // Create flowing distortion
+    float n1 = sin(uv.x * 3.0 + t) * cos(uv.y * 2.0 + t * 0.7);
+    float n2 = cos(uv.x * 2.5 - t * 0.8) * sin(uv.y * 3.5 + t * 0.6);
+
+    // Blend four colors based on UV position + noise
+    vec3 color = mix(uColor0, uColor1, smoothstep(0.0, 1.0, uv.x + n1 * 0.3));
+    color = mix(color, uColor2, smoothstep(0.0, 1.0, uv.y + n2 * 0.3));
+    color = mix(color, uColor3, smoothstep(0.3, 0.7, (uv.x + uv.y) * 0.5 + n1 * 0.2));
+
+    gl_FragColor = vec4(color, 1.0);
+  }
+`;
+
+interface MeshGradientProps {
+  colors?: [string, string, string, string];
+  speed?: number;
+}
+
+export default function MeshGradientShader({
+  colors = ['#6ec3f4', '#3a3aff', '#ff61ab', '#E63946'],
+  speed = 0.3,
+}: MeshGradientProps) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  const uniforms = useMemo(() => ({
+    uTime: { value: 0 },
+    uColor0: { value: new THREE.Color(colors[0]) },
+    uColor1: { value: new THREE.Color(colors[1]) },
+    uColor2: { value: new THREE.Color(colors[2]) },
+    uColor3: { value: new THREE.Color(colors[3]) },
+  }), [colors]);
+
+  useFrame(({ clock }) => {
+    if (meshRef.current) {
+      const material = meshRef.current.material as THREE.ShaderMaterial;
+      material.uniforms.uTime.value = clock.getElapsedTime() * speed;
+    }
+  });
+
+  return (
+    <mesh ref={meshRef}>
+      <planeGeometry args={[2, 2]} />
+      <shaderMaterial
+        vertexShader={vertexShader}
+        fragmentShader={fragmentShader}
+        uniforms={uniforms}
+      />
+    </mesh>
+  );
+}
+```
+
+### The Canvas Wrapper
+
+```tsx
+// components/webgl/HeroGradientCanvas.tsx
+'use client';
+
+import { Suspense, lazy, useState, useEffect } from 'react';
+import { Canvas } from '@react-three/fiber';
+
+const MeshGradientShader = lazy(() => import('./MeshGradientShader'));
+
+export default function HeroGradientCanvas() {
+  const [canRender, setCanRender] = useState(false);
+
+  useEffect(() => {
+    // Only mount on capable devices
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+    const cores = navigator.hardwareConcurrency || 2;
+    setCanRender(!!gl && cores >= 4);
+  }, []);
+
+  if (!canRender) return null; // Falls back to CSS gradient in parent
+
+  return (
+    <Canvas
+      className="absolute inset-0 -z-10"
+      gl={{ antialias: false, alpha: true, powerPreference: 'low-power' }}
+      camera={{ position: [0, 0, 1] }}
+      dpr={[1, 1.5]} // Cap pixel ratio for performance
+    >
+      <Suspense fallback={null}>
+        <MeshGradientShader
+          colors={['#6ec3f4', '#3a3aff', '#ff61ab', '#E63946']}
+          speed={0.3}
+        />
+      </Suspense>
+    </Canvas>
+  );
+}
+```
+
+### Hero Integration
+
+```tsx
+// components/sections/Hero.tsx (simplified structure)
+import HeroGradientCanvas from '../webgl/HeroGradientCanvas';
+
+export default function Hero() {
+  return (
+    <section className="relative min-h-screen overflow-hidden">
+      {/* Layer 0: CSS fallback gradient (always rendered) */}
+      <div
+        className="absolute inset-0 -z-20"
+        style={{ background: 'var(--gradient-hero)' }}
+      />
+
+      {/* Layer 3: WebGL gradient (progressive enhancement) */}
+      <HeroGradientCanvas />
+
+      {/* Content on top */}
+      <div className="container-main relative z-10 pt-32 pb-20">
+        {/* Hero text, CTA buttons, phone mockup */}
+      </div>
+    </section>
+  );
+}
+```
+
+### Color Tuning
+
+Use Tweakpane (development only) to live-tune shader colors:
+
+```bash
+pnpm add -D tweakpane
+```
+
+```typescript
+// In development, wrap the shader component with a Tweakpane panel
+// to adjust uColor0–uColor3 in real time and export final hex values.
+// Remove Tweakpane from production builds via tree-shaking.
+```
+
+---
+
+## 14. Framer Motion — Advanced Patterns
+
+Framer Motion handles two categories of animation that CSS cannot: **layout-aware morphing** and **scroll-coupled physics**.
+
+### A. The Morphing Mega Menu
+
+Stripe's navigation dropdown moves and resizes its white background container seamlessly as you hover between links. This is NOT multiple boxes appearing/disappearing — it is a single `motion.div` with a shared `layoutId` that morphs its dimensions and position.
+
+```tsx
+// components/layout/MorphingNav.tsx
+'use client';
+
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const NAV_ITEMS = [
+  {
+    label: 'Products',
+    content: <ProductsMenu />,   // Wide panel with 3 columns
+    width: 600,
+  },
+  {
+    label: 'Solutions',
+    content: <SolutionsMenu />,  // Narrower panel
+    width: 400,
+  },
+  {
+    label: 'Developers',
+    content: <DevelopersMenu />, // Medium panel
+    width: 500,
+  },
+];
+
+export default function MorphingNav() {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  return (
+    <nav
+      className="relative"
+      onMouseLeave={() => setActiveIndex(null)}
+    >
+      <div className="flex gap-8">
+        {NAV_ITEMS.map((item, i) => (
+          <button
+            key={item.label}
+            onMouseEnter={() => setActiveIndex(i)}
+            className="text-body-sm font-medium text-slate hover:text-primary-dark
+                       transition-colors duration-150 py-2"
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence>
+        {activeIndex !== null && (
+          <motion.div
+            // THE KEY TECHNIQUE: layoutId makes one div morph between states
+            layoutId="nav-dropdown-bg"
+            className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl
+                       border border-border overflow-hidden"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              width: NAV_ITEMS[activeIndex].width,
+            }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{
+              type: 'spring',
+              stiffness: 400,
+              damping: 30,
+              opacity: { duration: 0.15 },
+            }}
+          >
+            <motion.div
+              key={activeIndex}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="p-6"
+            >
+              {NAV_ITEMS[activeIndex].content}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  );
+}
+```
+
+**How it works:** When `activeIndex` changes, the `motion.div` with `layoutId="nav-dropdown-bg"` does not unmount and remount. Framer Motion calculates the bounding-box difference and animates `transform` + `width`/`height` with a spring physics curve. The content inside cross-fades separately.
+
+### B. Scroll-Coupled Parallax & Skew
+
+Stripe uses "scroll-coupled" animations where elements respond to scroll position in real time — not just triggering on viewport entry.
+
+```tsx
+// components/ui/ScrollParallax.tsx
+'use client';
+
+import { useRef, ReactNode } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+
+interface ScrollParallaxProps {
+  children: ReactNode;
+  offset?: number;     // Parallax distance in pixels
+  skewOnScroll?: boolean;
+}
+
+export default function ScrollParallax({
+  children,
+  offset = 50,
+  skewOnScroll = false,
+}: ScrollParallaxProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ['start end', 'end start'], // Track from enter to exit
+  });
+
+  // Parallax: element moves slower than scroll
+  const y = useTransform(scrollYProgress, [0, 1], [offset, -offset]);
+
+  // Opacity: fade in from 0.2 to 1 in the first 40% of scroll range
+  const opacity = useTransform(scrollYProgress, [0, 0.4], [0.2, 1]);
+
+  // Skew: subtle tilt based on scroll velocity (Stripe signature)
+  const skewY = useTransform(scrollYProgress, [0, 0.5, 1], [2, 0, -2]);
+
+  return (
+    <motion.div
+      ref={ref}
+      style={{
+        y,
+        opacity,
+        ...(skewOnScroll ? { skewY } : {}),
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+```
+
+Usage:
+
+```tsx
+<ScrollParallax offset={40}>
+  <img src="/hero-phone.png" alt="Lynia app" />
+</ScrollParallax>
+
+<ScrollParallax offset={30} skewOnScroll>
+  <StatsSection />
+</ScrollParallax>
+```
+
+**Key detail:** Inspect Stripe's hero elements and you'll see `will-change: transform` on parallax items. Framer Motion sets this automatically via its `style` prop. The skew effect makes the page feel "fluid" — as the user scrolls faster, content subtly tilts, creating a sense of physics.
+
+### C. Staggered Card Reveals
+
+Cards enter the viewport one after another with a cascading delay:
+
+```tsx
+// components/ui/StaggeredGrid.tsx
+'use client';
+
+import { motion } from 'framer-motion';
+import { ReactNode } from 'react';
+
+const containerVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.1, // 100ms between each child
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 32 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0, 0, 0.2, 1], // Stripe's deceleration curve
+    },
+  },
+};
+
+interface StaggeredGridProps {
+  children: ReactNode[];
+  className?: string;
+}
+
+export default function StaggeredGrid({ children, className }: StaggeredGridProps) {
+  return (
+    <motion.div
+      className={className}
+      variants={containerVariants}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, margin: '-50px' }}
+    >
+      {children.map((child, i) => (
+        <motion.div key={i} variants={itemVariants}>
+          {child}
+        </motion.div>
+      ))}
+    </motion.div>
+  );
+}
+```
+
+Usage:
+
+```tsx
+<StaggeredGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+  <ProductCard title="Asset Financing" />
+  <ProductCard title="Digital Credit" />
+  <ProductCard title="Enterprise API" />
+</StaggeredGrid>
+```
+
+---
+
+## 15. Visual Asset Techniques
+
+### Typography: Geist Sans vs Inter
+
+| Font | Source | Best For | Notes |
+|------|--------|----------|-------|
+| **Inter** | Google Fonts / `next/font` | Our primary choice | Geometric, variable weight, free, excellent for fintech |
+| **Geist Sans** | Vercel | Alternative | Ships with `next/font/local`, optimized for Next.js |
+
+Both are elite free alternatives to Stripe's Soehne. We use Inter because it has broader language support (important for Shona/Ndebele content).
+
+### Glassmorphism (Frosted Glass)
+
+Used sparingly on nav scroll state, modal overlays, and floating elements:
+
+```tsx
+<div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-lg p-6">
+  {/* Content appears to float above a blurred background */}
+</div>
+```
+
+**Rules:**
+- Only use on elements that overlap rich backgrounds (hero, gradient sections)
+- `backdrop-blur-md` = `12px` blur
+- Always pair with a semi-transparent background (`bg-white/10` to `bg-white/80`)
+- Add a `1px` border at `border-white/20` for the glass edge effect
+- Performance: `backdrop-filter` is GPU-accelerated, but avoid stacking multiple blur layers
+
+### The "Stripe Shadow" — Stacked Implementation
+
+Standard Tailwind shadows feel flat. Stripe uses 5-6 layers of very low opacity to create "soft depth." Our Tailwind config pre-configures these, but here's the raw CSS for reference:
+
+```css
+/* The "hero card" shadow — maximum perceived depth */
+.shadow-stripe-hero {
+  box-shadow:
+    0 50px 100px -20px rgba(50, 50, 93, 0.25),
+    0 30px 60px -30px rgba(0, 0, 0, 0.30);
+}
+
+/* Feature card hover — elevated but controlled */
+.shadow-stripe-elevated {
+  box-shadow:
+    0 13px 27px -5px rgba(50, 50, 93, 0.25),
+    0 8px 16px -8px rgba(0, 0, 0, 0.30),
+    0 -6px 16px -6px rgba(0, 0, 0, 0.025);
+}
+```
+
+The key insight: `rgba(50, 50, 93, ...)` is a blue-tinted shadow base that aligns with the navy palette. Never use pure black `rgba(0,0,0,...)` as the primary shadow layer.
+
+---
+
+## 16. Claude Prompting Strategies
+
+To extract production-quality code from Claude, use these structured prompt templates. Each prompt is designed to produce a specific, complete, copy-paste-ready component.
+
+### Strategy 1: Layout Prompts
+
+Provide exact design-system constraints so Claude doesn't improvise:
+
+```
+Claude, build a Next.js Hero section using Tailwind. Requirements:
+- 12-column CSS Grid
+- Container max-width: 1080px (use our .container-main class)
+- Font: Inter via next/font/google
+- Heading: 64px desktop / 36px mobile, weight 500, color #0A2540
+- Subtext: 20px, weight 400, color #425466, max-width 560px
+- CTA button: bg-[#635BFF], rounded-lg (8px), px-8 py-4, hover darkens to #5651E5
+- Section divider: a full-width div with skewY(-6deg) and bg-[#F6F9FC]
+- Section padding: 120px vertical desktop, 64px mobile
+- Mobile-first responsive using Tailwind breakpoints
+```
+
+### Strategy 2: WebGL Prompts
+
+Be explicit about the shader technique and performance constraints:
+
+```
+Claude, create a React Three Fiber component for a Stripe-style animated
+mesh gradient background. Specifications:
+- Fragment shader that blends 4 colors: #6ec3f4, #3a3aff, #ff61ab, #E63946
+- Organic flowing movement using sin/cos wave distortion on UV coordinates
+- Speed uniform set to 0.3 (slow, elegant movement)
+- Must be a client component ('use client')
+- Canvas settings: antialias false, powerPreference 'low-power', dpr capped at 1.5
+- Progressive enhancement: only render if navigator.hardwareConcurrency >= 4
+- Provide the CSS fallback gradient as a sibling div with z-index below the canvas
+- Use React.lazy + Suspense so the WebGL bundle is code-split
+```
+
+### Strategy 3: Animation Prompts
+
+Reference Framer Motion APIs by name to avoid generic CSS animation output:
+
+```
+Claude, write a Framer Motion navigation menu with a morphing dropdown.
+Requirements:
+- A single motion.div with layoutId="nav-dropdown-bg" that morphs its
+  width/height/position when hovering between nav items
+- Spring physics: stiffness 400, damping 30
+- Content inside the dropdown should cross-fade with opacity 0.15s
+- The dropdown has bg-white, rounded-lg, shadow-xl, border border-[#E0E6EB]
+- AnimatePresence wraps the dropdown for enter/exit animations
+- Exit animation: opacity 0, translateY -8px
+- Use onMouseEnter on nav items and onMouseLeave on the nav container
+```
+
+### Strategy 4: Card Prompts
+
+Specify the multi-layer shadow and interaction states precisely:
+
+```
+Claude, create a feature card component with Stripe-style depth.
+- Border radius: 12px
+- Border: 1px solid #E0E6EB
+- Default shadow: 0px 1px 1px rgba(0,0,0,0.03), 0px 3px 6px rgba(18,42,66,0.02)
+- Hover shadow: 0px 4px 8px rgba(0,0,0,0.04), 0px 12px 24px rgba(18,42,66,0.06)
+- Hover transform: translateY(-4px)
+- Transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1)
+- Padding: 32px
+- Include an overline label (13px, weight 500, uppercase, tracking 0.1em, color #635BFF)
+- Title: 28px, weight 500, color #0A2540
+- Description: 18px, weight 300, color #425466
+```
+
+### Strategy 5: Scroll Animation Prompts
+
+```
+Claude, build a scroll-coupled parallax wrapper using Framer Motion.
+Requirements:
+- useScroll with target ref, offset ['start end', 'end start']
+- useTransform for: translateY (50px to -50px), opacity (0.2 to 1 in first 40%)
+- Optional skewY effect: 2deg to 0 to -2deg based on scroll progress
+- The component accepts children and an offset prop
+- whileInView with viewport once:true for one-shot reveals
+- Respect prefers-reduced-motion: skip all transforms, show content immediately
+```
+
+### General Prompting Rules
+
+| Rule | Why |
+|------|-----|
+| Specify exact pixel values | Prevents Claude from guessing. `12px` not "rounded" |
+| Name the Framer Motion API | `useScroll`, `layoutId`, `AnimatePresence` — not "animate on scroll" |
+| Include the color hex codes | Claude should use `#635BFF` not "a purple-blue" |
+| State the Tailwind class equivalents | Anchors output to our design system |
+| Mention 'use client' for interactive components | Next.js App Router requires this |
+| Ask for TypeScript with explicit prop interfaces | Prevents `any` types per our CLAUDE.md rules |
+| Specify performance constraints | `dpr`, `powerPreference`, `lazy`, code-splitting |
+| Request both the component AND its usage example | Ensures the component API is practical |
+
+---
+
+## 17. Implementation Execution Order
+
+When building the landing page, implement in this order. Each step builds on the previous:
+
+### Phase 1: Foundation (No JavaScript Required)
+
+```
+1. tailwind.config.ts — All design tokens from sections 1-6
+2. globals.css — CSS custom properties, utility classes, reduced motion media query
+3. layout.tsx — Inter font via next/font, global styles, metadata
+4. Static HTML structure — All sections with correct semantic markup
+5. CSS gradient fallback — var(--gradient-hero) renders without JS
+```
+
+Claude prompt: *"Set up the Tailwind config and globals.css with all the design tokens from our SKILL.md. Include the layered shadow system, container widths, section padding utilities, typography scale, and color tokens."*
+
+### Phase 2: Components & Layout
+
+```
+6. Navbar.tsx — Scroll-aware transparent→solid transition
+7. Footer.tsx — 4-column grid on dark navy
+8. SectionContainer.tsx — Reusable wrapper with background variants
+9. Button.tsx — Primary, secondary, ghost variants
+10. All homepage sections — Static content with correct layout
+```
+
+Claude prompt: *"Build the Navbar component with a scroll listener that transitions from transparent background + white text to white background + dark text at 80px scroll. Include backdrop-blur-md, a 1px bottom border on scroll, and a persistent blurple CTA button on the right."*
+
+### Phase 3: Animation Layer
+
+```
+11. useScrollAnimation.ts — Shared Intersection Observer hook
+12. Scroll reveal animations — Fade-up on section entry
+13. Card hover interactions — Lift + shadow transition
+14. Staggered grid reveals — Cards cascade in
+15. Nav morphing dropdown — Framer Motion layoutId
+```
+
+Claude prompt: *"Add Framer Motion scroll-triggered animations to all homepage sections. Use whileInView with viewport once:true. Sections fade up (translateY 24px to 0, opacity 0 to 1, 600ms). Cards use staggerChildren with 100ms delay."*
+
+### Phase 4: WebGL Enhancement (Progressive)
+
+```
+16. MeshGradientShader.tsx — Fragment shader component
+17. HeroGradientCanvas.tsx — R3F Canvas with capability detection
+18. Hero.tsx integration — CSS fallback + WebGL overlay
+19. Performance testing — Verify <200KB initial, 60fps on mid-range
+```
+
+Claude prompt: *"Create the WebGL mesh gradient as a progressive enhancement. The CSS gradient must render first (FCP). The R3F canvas lazy-loads only on devices with hardwareConcurrency >= 4. Cap dpr at 1.5, disable antialias, use powerPreference 'low-power'."*
+
+### Phase 5: Polish & Performance
+
+```
+20. Reduced motion support — Verify all animations respect the media query
+21. Lighthouse audit — Target >90 performance
+22. Bundle analysis — Verify code splitting of WebGL + Framer Motion
+23. Device testing — Test on low-end Android (our primary audience)
+24. Accessibility audit — Keyboard nav, screen readers, contrast ratios
+```
+
+---
+
+## Quick Reference: Stripe Elite Techniques
+
+| Technique | Tool | Key API / Property | Section |
+|-----------|------|-------------------|---------|
+| Live mesh gradient | React Three Fiber | Custom `fragmentShader` + `useFrame` | 13 |
+| Morphing mega menu | Framer Motion | `layoutId` + `AnimatePresence` | 14A |
+| Scroll parallax | Framer Motion | `useScroll` + `useTransform` | 14B |
+| Skew-on-scroll | Framer Motion | `useTransform(scrollYProgress, ..., skewY)` | 14B |
+| Staggered reveals | Framer Motion | `staggerChildren` + `whileInView` | 14C |
+| Frosted glass nav | CSS | `backdrop-blur-md` + `bg-white/80` | 15 |
+| Layered shadows | CSS | Multi-layer `box-shadow` with `rgba(18,42,66,...)` | 3, 15 |
+| GPU-only animation | CSS/FM | Only `transform` + `opacity`, never `width`/`height`/`top` | 5, 9 |
+| Progressive WebGL | JS | `hardwareConcurrency >= 4` gate + `React.lazy` | 12, 13 |
