@@ -8,7 +8,7 @@ import {
   getLoansByStatus,
   getRecentActivity,
   getFineractReconciliation,
-} from '@lynia/api-client';
+} from '@/lib/api/client';
 
 export function useDashboardMetrics() {
   return useQuery({
