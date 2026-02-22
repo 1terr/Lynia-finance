@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { DashboardStats, PendingHandover } from '@/types/distributor';
 import { fetchDashboardStats, fetchPendingHandovers } from '@/lib/api/distributor';
 import { Badge } from '@/components/ui/badge';
@@ -17,17 +17,17 @@ import {
 import Link from 'next/link';
 
 export default function DashboardHome() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [handovers, setHandovers] = useState<PendingHandover[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['distributor', 'stats'],
+    queryFn: fetchDashboardStats,
+  });
 
-  useEffect(() => {
-    Promise.all([fetchDashboardStats(), fetchPendingHandovers()]).then(([s, h]) => {
-      setStats(s);
-      setHandovers(h);
-      setLoading(false);
-    });
-  }, []);
+  const { data: handovers = [], isLoading: handoversLoading } = useQuery({
+    queryKey: ['distributor', 'handovers', 'initiated'],
+    queryFn: fetchPendingHandovers,
+  });
+
+  const loading = statsLoading || handoversLoading;
 
   if (loading || !stats) {
     return (
