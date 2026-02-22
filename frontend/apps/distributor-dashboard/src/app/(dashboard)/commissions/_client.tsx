@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { CommissionEntry, DashboardStats } from '@/types/distributor';
 import { fetchCommissions, fetchDashboardStats } from '@/lib/api/distributor';
 import { Badge } from '@/components/ui/badge';
@@ -68,21 +69,19 @@ function exportCSV(commissions: CommissionEntry[]) {
 }
 
 export default function CommissionsPage() {
-  const [commissions, setCommissions] = useState<CommissionEntry[]>([]);
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: commissions = [], isLoading: commissionsLoading } = useQuery({
+    queryKey: ['distributor', 'commissions'],
+    queryFn: fetchCommissions,
+  });
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['distributor', 'stats'],
+    queryFn: fetchDashboardStats,
+  });
+
+  const loading = commissionsLoading || statsLoading;
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
-
-  useEffect(() => {
-    Promise.all([fetchCommissions(), fetchDashboardStats()]).then(
-      ([comms, s]) => {
-        setCommissions(comms);
-        setStats(s);
-        setLoading(false);
-      }
-    );
-  }, []);
 
   const filteredCommissions = useMemo(() => {
     return commissions.filter((c) => {

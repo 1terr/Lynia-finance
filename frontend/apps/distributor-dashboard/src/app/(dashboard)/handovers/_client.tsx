@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PendingHandover } from '@/types/distributor';
 import { fetchPendingHandovers } from '@/lib/api/distributor';
 import { HandoverWizard } from '@/components/handover/handover-wizard';
@@ -19,19 +20,20 @@ import {
 type ViewMode = 'list' | 'wizard';
 
 export default function HandoversPage() {
-  const [handovers, setHandovers] = useState<PendingHandover[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: handovers = [], isLoading: loading } = useQuery({
+    queryKey: ['distributor', 'handovers', 'initiated'],
+    queryFn: fetchPendingHandovers,
+  });
+
   const [view, setView] = useState<ViewMode>('list');
 
-  const load = () => {
-    setLoading(true);
-    fetchPendingHandovers().then((h) => {
-      setHandovers(h);
-      setLoading(false);
-    });
+  const handleComplete = () => {
+    // Invalidate handovers and stats queries to refetch fresh data
+    queryClient.invalidateQueries({ queryKey: ['distributor', 'handovers'] });
+    queryClient.invalidateQueries({ queryKey: ['distributor', 'stats'] });
+    setView('list');
   };
-
-  useEffect(() => { load(); }, []);
 
   if (loading) {
     return (
@@ -44,13 +46,7 @@ export default function HandoversPage() {
   if (view === 'wizard') {
     return (
       <div className="max-w-2xl">
-        <HandoverWizard
-          handovers={handovers}
-          onComplete={() => {
-            setView('list');
-            load();
-          }}
-        />
+        <HandoverWizard handovers={handovers} onComplete={handleComplete} />
       </div>
     );
   }

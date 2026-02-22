@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import type { InventoryDevice } from '@/types/distributor';
 import { fetchInventory } from '@/lib/api/distributor';
 import { Badge } from '@/components/ui/badge';
@@ -37,17 +38,13 @@ const CONDITION_LABELS: Record<InventoryDevice['condition'], string> = {
 };
 
 export default function InventoryPage() {
-  const [devices, setDevices] = useState<InventoryDevice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: devices = [], isLoading: loading } = useQuery({
+    queryKey: ['distributor', 'inventory'],
+    queryFn: fetchInventory,
+  });
+
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
-
-  useEffect(() => {
-    fetchInventory().then((data) => {
-      setDevices(data);
-      setLoading(false);
-    });
-  }, []);
 
   const filteredDevices = devices.filter((device) => {
     const matchesStatus = statusFilter === 'all' || device.status === statusFilter;
