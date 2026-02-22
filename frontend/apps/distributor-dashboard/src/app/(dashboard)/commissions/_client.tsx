@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CommissionEntry, DashboardStats } from '@/types/distributor';
-import { fetchCommissions, fetchDashboardStats } from '@/lib/api/distributor';
+import { fetchCommissions, fetchDashboardStats } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@lynia/utils';

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PendingHandover } from '@/types/distributor';
-import { fetchPendingHandovers } from '@/lib/api/distributor';
+import { fetchPendingHandovers } from '@/lib/api';
 import { HandoverWizard } from '@/components/handover/handover-wizard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

@@ -9,8 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@lynia/auth": "workspace:*",
+    "@hookform/resolvers": "^5.2.2",
     "@lynia/api-client": "workspace:*",
+    "@lynia/auth": "workspace:*",
     "@lynia/utils": "workspace:*",
     "@tanstack/react-query": "^5.62.0",
     "amazon-cognito-identity-js": "^6.3.12",
@@ -23,8 +24,8 @@
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.0",
     "tailwind-merge": "^2.6.0",
-    "zod": "^3.24.0",
     "tailwindcss-animate": "^1.0.7",
+    "zod": "^3.24.0",
     "zustand": "^4.5.0"
   },
   "devDependencies": {

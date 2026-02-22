@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { DashboardStats, PendingHandover } from '@/types/distributor';
-import { fetchDashboardStats, fetchPendingHandovers } from '@/lib/api/distributor';
+import { fetchDashboardStats, fetchPendingHandovers } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
 import {

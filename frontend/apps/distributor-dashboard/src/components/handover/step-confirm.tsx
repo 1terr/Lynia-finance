@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { HandoverData } from '@/types/distributor';
-import { verifyDepositPayment } from '@/lib/api/distributor';
+import { verifyDepositPayment } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';

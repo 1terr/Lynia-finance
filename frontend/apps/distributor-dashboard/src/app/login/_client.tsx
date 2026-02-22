@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginDistributor, isCognitoConfigured } from '@/lib/api/distributor';
+import { loginDistributor, isCognitoConfigured } from '@/lib/api';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { Button } from '@/components/ui/button';
 import { Smartphone, Eye, EyeOff } from 'lucide-react';

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { PendingHandover, HandoverData } from '@/types/distributor';
-import { verifyImei } from '@/lib/api/distributor';
+import { verifyImei } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { cn } from '@lynia/utils';
 import { ScanLine, CheckCircle2, XCircle, Keyboard, Info } from 'lucide-react';

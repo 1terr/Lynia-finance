@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { HandoverData, PendingHandover } from '@/types/distributor';
 import { HANDOVER_STEPS, INITIAL_DEVICE_CONDITION } from '@/types/distributor';
-import { submitHandover } from '@/lib/api/distributor';
+import { submitHandover } from '@/lib/api';
 import type { HandoverResult } from '@/types/distributor';
 import { cn } from '@lynia/utils';
 import { Check, ChevronLeft } from 'lucide-react';

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { InventoryDevice } from '@/types/distributor';
-import { fetchInventory } from '@/lib/api/distributor';
+import { fetchInventory } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
 import {

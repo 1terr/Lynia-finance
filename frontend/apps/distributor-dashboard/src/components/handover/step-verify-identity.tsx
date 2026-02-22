@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { PendingHandover, HandoverData } from '@/types/distributor';
-import { verifyCustomerIdentity } from '@/lib/api/distributor';
+import { verifyCustomerIdentity } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
