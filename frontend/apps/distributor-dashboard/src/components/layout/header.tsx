@@ -1,10 +1,12 @@
 'use client';
 
 import { useAuthStore } from '@/lib/store/auth-store';
-import { Bell, Menu } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Bell, Menu, Sun, Moon } from 'lucide-react';
 
 export function Header() {
   const { distributor } = useAuthStore();
+  const { theme, setTheme } = useTheme();
 
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-card px-4 md:px-6">
@@ -21,7 +23,18 @@ export function Header() {
         </p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="p-2 rounded-lg hover:bg-muted transition-colors"
+          aria-label="Toggle theme"
+        >
+          {theme === 'dark' ? (
+            <Sun className="h-5 w-5 text-muted-foreground" />
+          ) : (
+            <Moon className="h-5 w-5 text-muted-foreground" />
+          )}
+        </button>
         <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
           <Bell className="h-5 w-5 text-muted-foreground" />
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />

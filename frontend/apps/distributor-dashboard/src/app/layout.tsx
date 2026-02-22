@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ThemeProvider } from 'next-themes';
 import { ConfigGuard } from '@/components/layout/config-guard';
 import { QueryProvider } from '@/components/layout/query-provider';
 import './globals.css';
@@ -12,9 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans">
-        <QueryProvider>
-          <ConfigGuard>{children}</ConfigGuard>
-        </QueryProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <QueryProvider>
+            <ConfigGuard>{children}</ConfigGuard>
+          </QueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
