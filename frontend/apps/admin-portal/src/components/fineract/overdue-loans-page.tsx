@@ -11,7 +11,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getOverdueLoans, getAgingSummary } from '@/lib/api/fineract';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import { getFineractStatusDisplay, type OverdueLoan } from '@/types/fineract';
 import { Pagination } from '@/components/ui/pagination';
 import {

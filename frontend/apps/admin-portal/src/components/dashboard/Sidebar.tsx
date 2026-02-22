@@ -13,7 +13,7 @@ import {
   ChevronDown,
   type LucideIcon,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { useAuth } from '@/lib/auth/context';
 import { hasPermission } from '@/lib/auth/permissions';
 import type { PermissionAction } from '@/types';

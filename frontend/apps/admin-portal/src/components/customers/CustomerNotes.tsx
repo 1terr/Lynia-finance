@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { addCustomerNote } from '@/lib/api/customers';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@lynia/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { CustomerNote } from '@/types/database';
 

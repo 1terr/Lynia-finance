@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { getOverdueCollections, type CollectionItem } from '@/lib/api/payments';
 import { CollectionsQueue } from '@/components/payments/CollectionsQueue';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { formatCurrency, maskPhone } from '@/lib/utils';
+import { formatCurrency, maskPhone } from '@lynia/utils';
 import { exportToCsv } from '@/lib/export/csv';
 import {
   CreditCard,

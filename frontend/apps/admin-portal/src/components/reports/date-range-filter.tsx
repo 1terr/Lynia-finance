@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { DatePreset, DateRange } from '@/types/reports';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 
 const presets: { value: DatePreset; label: string }[] = [
   { value: '7d', label: '7 Days' },

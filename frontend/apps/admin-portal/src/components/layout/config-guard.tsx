@@ -1,6 +1,6 @@
 'use client';
 
-import { isCognitoConfigured } from '@/lib/auth/cognito';
+import { isCognitoConfigured } from '@lynia/auth';
 
 /**
  * When Cognito is not properly configured the app runs in demo mode.

@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import type { Device, DeviceStatus, LockStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

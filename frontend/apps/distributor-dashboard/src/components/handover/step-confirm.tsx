@@ -5,7 +5,7 @@ import type { HandoverData } from '@/types/distributor';
 import { verifyDepositPayment } from '@/lib/api/distributor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import {
   CheckCircle2,
   XCircle,

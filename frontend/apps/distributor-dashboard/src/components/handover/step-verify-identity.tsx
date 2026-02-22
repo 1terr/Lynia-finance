@@ -5,7 +5,7 @@ import type { PendingHandover, HandoverData } from '@/types/distributor';
 import { verifyCustomerIdentity } from '@/lib/api/distributor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { Camera, CheckCircle2, XCircle, ShieldCheck, User } from 'lucide-react';
 
 interface Props {

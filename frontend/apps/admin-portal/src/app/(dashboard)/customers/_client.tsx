@@ -8,7 +8,7 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@lynia/utils';
 import type { Customer, CustomerStatus, KYCStatus } from '@/types';
 import { Search } from 'lucide-react';
 

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@lynia/utils';
 import type { DeviceAssignment, DeviceLockEvent } from '@/types/database';
 
 interface LockControlPanelProps {

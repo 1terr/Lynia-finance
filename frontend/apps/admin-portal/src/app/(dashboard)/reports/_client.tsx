@@ -18,7 +18,7 @@ import {
   getLoanApprovalReport,
   getCollectionReport,
 } from '@/lib/api/reports';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

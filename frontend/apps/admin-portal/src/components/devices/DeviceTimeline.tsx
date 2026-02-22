@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@lynia/utils';
 import type { DeviceLockEvent, DeviceAssignment } from '@/types/database';
 
 interface TimelineItem {

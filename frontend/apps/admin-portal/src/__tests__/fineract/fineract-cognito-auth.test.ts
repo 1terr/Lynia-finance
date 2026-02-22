@@ -5,8 +5,8 @@
  * management, token injection, and auth error responses.
  */
 
-import { fetchAPI } from '@/lib/api/client';
-import { getSession, signOut } from '@/lib/auth/cognito';
+import { fetchAPI } from '@lynia/api-client';
+import { getSession, signOut } from '@lynia/auth';
 
 jest.mock('@/lib/auth/cognito', () => ({
   getSession: jest.fn(),

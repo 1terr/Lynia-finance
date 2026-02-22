@@ -5,7 +5,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { updateDistributorProfile } from '@/lib/api/distributor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import {
   User, MapPin, Phone, Mail, Building2, CreditCard,
   Shield, Star, Save, LogOut,

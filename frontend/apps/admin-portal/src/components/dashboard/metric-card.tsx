@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { Card } from '@/components/ui/card';
 import { TrendingUp, TrendingDown, Minus, type LucideIcon } from 'lucide-react';
 

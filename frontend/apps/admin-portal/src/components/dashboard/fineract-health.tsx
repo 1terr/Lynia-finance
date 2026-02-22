@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { cn, formatRelativeTime } from '@/lib/utils';
+import { cn, formatRelativeTime } from '@lynia/utils';
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 import type { ReconciliationResult } from '@/types/fineract';
 

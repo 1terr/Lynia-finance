@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { formatCurrency, formatDate, formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDate, formatDateTime } from '@lynia/utils';
 import type { DeviceLock } from '@/types';
 import { ArrowLeft, Smartphone, Lock, Unlock, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';

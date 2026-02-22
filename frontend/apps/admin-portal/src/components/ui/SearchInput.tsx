@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 
 interface SearchInputProps {
   placeholder?: string;

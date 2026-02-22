@@ -14,7 +14,7 @@ import { getFineractLoans, type FineractLoanFilters } from '@/lib/api/fineract';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import { getFineractStatusDisplay, type FineractLoanView, type FineractLoanStatusCode } from '@/types/fineract';
 import { Search, Building2 } from 'lucide-react';
 

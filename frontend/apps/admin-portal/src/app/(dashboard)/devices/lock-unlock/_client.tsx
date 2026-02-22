@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
-import { truncateId } from '@/lib/utils';
+import { truncateId } from '@lynia/utils';
 import {
   Lock,
   Unlock,

@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { formatRelativeTime } from '@/lib/utils';
+import { formatRelativeTime } from '@lynia/utils';
 import type { RecentActivity as RecentActivityType } from '@/types';
 import {
   UserPlus,

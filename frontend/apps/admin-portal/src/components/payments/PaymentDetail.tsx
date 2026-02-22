@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatDateTime, formatCurrency, maskPhone } from '@/lib/utils';
+import { formatDate, formatDateTime, formatCurrency, maskPhone } from '@lynia/utils';
 import {
   confirmPayment,
   failPayment,

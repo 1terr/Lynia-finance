@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { isCognitoConfigured } from '@/lib/auth/cognito';
+import { isCognitoConfigured } from '@lynia/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';

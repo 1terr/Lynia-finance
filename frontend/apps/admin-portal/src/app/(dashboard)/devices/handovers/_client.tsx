@@ -7,7 +7,7 @@ import { getDeviceHandovers, type DeviceHandoverRow } from '@/lib/api/devices';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/ui/pagination';
-import { formatDate, formatDateTime, truncateId } from '@/lib/utils';
+import { formatDate, formatDateTime, truncateId } from '@lynia/utils';
 import {
   Smartphone,
   Search,

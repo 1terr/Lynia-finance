@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import { formatCurrencyDetailed, formatDate, formatDateTime } from '@/lib/utils';
+import { formatCurrencyDetailed, formatDate, formatDateTime } from '@lynia/utils';
 import {
   ArrowLeft,
   DollarSign,

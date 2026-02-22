@@ -5,7 +5,7 @@ import type { HandoverData, PendingHandover } from '@/types/distributor';
 import { HANDOVER_STEPS, INITIAL_DEVICE_CONDITION } from '@/types/distributor';
 import { submitHandover } from '@/lib/api/distributor';
 import type { HandoverResult } from '@/types/distributor';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { Check, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepSelectHandover } from './step-select-handover';

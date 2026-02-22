@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, maskPhone, maskId } from '@/lib/utils';
+import { formatDate, maskPhone, maskId } from '@lynia/utils';
 import type { CustomerWithRelations } from '@/types/database';
 
 const kycStatusMap: Record<string, { variant: 'green' | 'yellow' | 'blue' | 'red' | 'gray'; label: string }> = {

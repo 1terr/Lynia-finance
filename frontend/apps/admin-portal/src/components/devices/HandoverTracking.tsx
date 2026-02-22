@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatDateTime } from '@/lib/utils';
+import { formatDate, formatDateTime } from '@lynia/utils';
 import type { HandoverWithRelations } from '@/lib/api/devices';
 
 interface HandoverTrackingProps {

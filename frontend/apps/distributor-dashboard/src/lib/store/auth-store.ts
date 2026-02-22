@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { signOut as cognitoSignOut } from '@/lib/auth/cognito';
+import { signOut as cognitoSignOut } from '@lynia/auth';
 import type { Distributor } from '@/types/distributor';
 
 interface AuthState {

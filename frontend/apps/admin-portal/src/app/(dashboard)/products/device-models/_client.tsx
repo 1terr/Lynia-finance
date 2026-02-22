@@ -10,7 +10,7 @@ import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 import { Plus, Search, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { DeviceModel, CreateDeviceModelInput } from '@/types';

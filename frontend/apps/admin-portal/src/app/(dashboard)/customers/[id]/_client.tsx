@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { formatCurrency, formatCurrencyDetailed, formatDate, formatDateTime, formatPercent } from '@/lib/utils';
+import { formatCurrency, formatCurrencyDetailed, formatDate, formatDateTime, formatPercent } from '@lynia/utils';
 import type { Loan, Payment, CreditScore } from '@/types';
 import {
   ArrowLeft,

@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getFineractLoanDetail } from '@/lib/api/fineract';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { formatCurrency, formatDate, formatPercent } from '@/lib/utils';
+import { formatCurrency, formatDate, formatPercent } from '@lynia/utils';
 import {
   getFineractStatusDisplay,
   type FineractLoanDetail,

@@ -11,7 +11,7 @@ import {
   Cell,
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 import type { PortfolioAtRisk } from '@/types';
 
 interface PARChartProps {

@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
-import { cn, formatDateTime } from '@/lib/utils';
+import { cn, formatDateTime } from '@lynia/utils';
 import type { KYCManualReview } from '@/types';
 
 interface ReviewHistoryProps {

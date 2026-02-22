@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchPaymentSummary } from '@/lib/api/payments';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 
 interface PaymentSummaryCardsProps {
   dateFrom?: string;

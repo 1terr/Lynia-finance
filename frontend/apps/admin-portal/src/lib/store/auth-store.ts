@@ -11,8 +11,8 @@ import {
   forgotPassword as cognitoForgotPassword,
   confirmForgotPassword as cognitoConfirmForgotPassword,
   changePassword as cognitoChangePassword,
-} from '@/lib/auth/cognito';
-import type { CognitoUserSession } from '@/lib/auth/cognito';
+} from '@lynia/auth';
+import type { CognitoUserSession } from '@lynia/auth';
 
 type AuthChallenge =
   | { type: 'NEW_PASSWORD_REQUIRED'; userAttributes: Record<string, string> }

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { Camera, X, ImagePlus, Smartphone } from 'lucide-react';
 
 interface Props {

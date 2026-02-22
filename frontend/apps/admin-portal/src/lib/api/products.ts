@@ -1,5 +1,5 @@
-import { fetchAPI } from '@/lib/api/client';
-import { MAX_PAGE_SIZE } from '@/lib/utils';
+import { fetchAPI } from '@lynia/api-client';
+import { MAX_PAGE_SIZE } from '@lynia/utils';
 import type {
   LoanProduct,
   CreateProductInput,

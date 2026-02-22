@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, maskId } from '@/lib/utils';
+import { formatDate, maskId } from '@lynia/utils';
 import type { KYCSubmission } from '@/types/database';
 
 interface CustomerDocumentsProps {

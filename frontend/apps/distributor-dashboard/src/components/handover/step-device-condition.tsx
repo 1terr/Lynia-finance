@@ -2,7 +2,7 @@
 
 import type { DeviceCondition, ConditionRating } from '@/types/distributor';
 import { ACCESSORY_OPTIONS } from '@/types/distributor';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import type { HandoverData } from '@/types/distributor';
 import { CheckCircle2, XCircle, Monitor, Box, Headphones, Shield, Smartphone as SmartphoneIcon, Lock } from 'lucide-react';
 

@@ -15,7 +15,7 @@ import {
   disburseFineractLoan,
 } from '@/lib/api/fineract';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import type { FineractLoanView } from '@/types/fineract';
 import { Pagination } from '@/components/ui/pagination';
 import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';

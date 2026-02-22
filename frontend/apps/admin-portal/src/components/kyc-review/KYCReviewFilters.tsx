@@ -1,7 +1,7 @@
 'use client';
 
 import { Filter, ArrowUpDown } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import type { KYCReviewFilters as FilterType } from '@/types';
 
 interface KYCReviewFiltersProps {

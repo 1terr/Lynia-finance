@@ -13,7 +13,7 @@ import {
   triggerReconciliation,
 } from '@/lib/api/fineract';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { formatCurrency, formatDateTime } from '@/lib/utils';
+import { formatCurrency, formatDateTime } from '@lynia/utils';
 import type { ReconciliationDiscrepancy } from '@/types/fineract';
 import {
   RefreshCw,

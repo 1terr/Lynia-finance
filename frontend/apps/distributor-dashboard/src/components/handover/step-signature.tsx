@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { PenLine, RotateCcw, CheckCircle2 } from 'lucide-react';
 
 interface Props {

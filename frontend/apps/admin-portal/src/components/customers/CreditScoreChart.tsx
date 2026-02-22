@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchCreditScoreHistory } from '@/lib/api/customers';
-import { formatDate } from '@/lib/utils';
+import { formatDate } from '@lynia/utils';
 
 interface CreditScoreChartProps {
   customerId: string;

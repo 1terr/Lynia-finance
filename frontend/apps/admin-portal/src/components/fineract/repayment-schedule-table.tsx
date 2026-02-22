@@ -7,7 +7,7 @@
  * breakdown of principal, interest, fees, and status indicators.
  */
 
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import type { RepaymentSchedule, RepaymentPeriod } from '@/types/fineract';
 
 interface Props {

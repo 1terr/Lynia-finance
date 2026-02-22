@@ -2,7 +2,7 @@
 
 import type { PendingHandover } from '@/types/distributor';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { PackageCheck, Calendar, User, Smartphone } from 'lucide-react';
 
 interface Props {

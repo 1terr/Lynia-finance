@@ -9,7 +9,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { formatCurrencyDetailed, formatDate } from '@/lib/utils';
+import { formatCurrencyDetailed, formatDate } from '@lynia/utils';
 import type { PaymentStatus, PaymentMethod, PaymentType } from '@/types';
 import { Search, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
 

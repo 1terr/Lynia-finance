@@ -1,6 +1,6 @@
 'use client';
 
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 import type { CustomerWithRelations } from '@/types/database';
 
 interface CustomerOverviewProps {

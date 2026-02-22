@@ -11,74 +11,12 @@ import {
   CognitoUser,
   AuthenticationDetails,
   userPool,
-  getSession,
   isCognitoConfigured,
-  signOut,
-} from '@/lib/auth/cognito';
-import { buildDistributorFromSession } from '@/lib/auth/build-distributor';
+  buildDistributorFromSession,
+} from '@lynia/auth';
+import { fetchAPI } from '@lynia/api-client';
 
 export { isCognitoConfigured };
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || process.env.NEXT_PUBLIC_API_URL || '';
-
-// ═══════════════════════════════════════════════════════
-// Authenticated API Client
-// ═══════════════════════════════════════════════════════
-
-interface APIEnvelope<T> {
-  success: boolean;
-  data: T;
-  error?: string;
-}
-
-async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const session = await getSession();
-
-  if (!session) {
-    handleSessionExpired();
-    throw new Error('Authentication required. Please sign in.');
-  }
-
-  const token = session.getIdToken().getJwtToken();
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options?.headers,
-    },
-  });
-
-  if (res.status === 401) {
-    handleSessionExpired();
-    throw new Error('Session expired. Redirecting to login.');
-  }
-
-  if (res.status === 403) {
-    throw new Error('You do not have permission to perform this action.');
-  }
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error((body as { error?: string }).error || `API error: ${res.status}`);
-  }
-
-  const json = await res.json() as APIEnvelope<T>;
-
-  // Unwrap { success, data } envelope
-  if (json && typeof json === 'object' && 'data' in json) {
-    return json.data;
-  }
-  return json as unknown as T;
-}
-
-function handleSessionExpired(): void {
-  signOut();
-  if (typeof window !== 'undefined') {
-    window.location.href = '/login';
-  }
-}
 
 // ═══════════════════════════════════════════════════════
 // Mock Data (development fallback when Cognito not configured)

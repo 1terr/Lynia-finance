@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getSession, isCognitoConfigured } from '@/lib/auth/cognito';
-import { buildDistributorFromSession } from '@/lib/auth/build-distributor';
+import { getSession, isCognitoConfigured } from '@lynia/auth';
+import { buildDistributorFromSession } from '@lynia/auth';
 import { useAuthStore } from '@/lib/store/auth-store';
 
 const DEMO_SESSION_KEY = 'lynia-demo-distributor';

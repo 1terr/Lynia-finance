@@ -16,7 +16,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { Permission } from '@/types/auth';
 

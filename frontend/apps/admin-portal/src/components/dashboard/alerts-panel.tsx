@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import {
   AlertTriangle,
   ClipboardCheck,

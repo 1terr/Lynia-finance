@@ -9,7 +9,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getFineractLoanProducts } from '@/lib/api/fineract';
-import { formatCurrency, formatPercent } from '@/lib/utils';
+import { formatCurrency, formatPercent } from '@lynia/utils';
 import type { FineractLoanProductView } from '@/types/fineract';
 import { Package, TrendingUp, Shield, CreditCard } from 'lucide-react';
 

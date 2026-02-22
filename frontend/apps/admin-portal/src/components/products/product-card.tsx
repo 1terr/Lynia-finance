@@ -3,7 +3,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 import { Pencil, Eye, Smartphone } from 'lucide-react';
 import type { LoanProduct } from '@/types';
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import { Calendar, ChevronDown } from 'lucide-react';
 
 export type DateRange = '7d' | '30d' | '90d' | 'ytd' | 'custom';

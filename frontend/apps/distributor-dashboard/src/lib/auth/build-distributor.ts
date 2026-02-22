@@ -1,4 +1,4 @@
-import type { CognitoUserSession } from '@/lib/auth/cognito';
+import type { CognitoUserSession } from '@lynia/auth';
 import type { Distributor } from '@/types/distributor';
 
 /**

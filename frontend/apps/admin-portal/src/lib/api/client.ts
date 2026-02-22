@@ -1,4 +1,4 @@
-import { getSession, signOut as cognitoSignOut } from '@/lib/auth/cognito';
+import { getSession, signOut as cognitoSignOut } from '@lynia/auth';
 import type { AdminUser, DashboardMetrics, PortfolioAtRisk, DailyTrend, LoansByStatus, RecentActivity } from '@/types';
 import type { ReconciliationResult } from '@/types/fineract';
 

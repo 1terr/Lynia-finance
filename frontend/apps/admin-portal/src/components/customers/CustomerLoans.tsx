@@ -1,7 +1,7 @@
 'use client';
 
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatCurrency } from '@/lib/utils';
+import { formatDate, formatCurrency } from '@lynia/utils';
 import type { Loan } from '@/types/database';
 
 interface CustomerLoansProps {

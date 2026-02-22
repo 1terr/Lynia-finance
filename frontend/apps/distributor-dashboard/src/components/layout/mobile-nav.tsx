@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import {
   LayoutDashboard,
   PackageCheck,

@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/layout/sidebar';
 import { Header } from '@/components/layout/header';
 import { AuthProvider } from '@/components/layout/auth-provider';
 import { useSessionTimeout } from '@/lib/hooks/use-session-timeout';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 
 /** Inner component so useSessionTimeout runs inside AuthProvider context */
 function DashboardShell({ children }: { children: React.ReactNode }) {

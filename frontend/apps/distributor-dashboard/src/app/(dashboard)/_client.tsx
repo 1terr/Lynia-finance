@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import type { DashboardStats, PendingHandover } from '@/types/distributor';
 import { fetchDashboardStats, fetchPendingHandovers } from '@/lib/api/distributor';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import {
   PackageCheck,
   Smartphone,

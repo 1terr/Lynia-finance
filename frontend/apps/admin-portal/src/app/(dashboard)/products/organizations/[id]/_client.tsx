@@ -11,7 +11,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { maskPhone, formatDate } from '@/lib/utils';
+import { maskPhone, formatDate } from '@lynia/utils';
 import { ArrowLeft, Pencil, Upload } from 'lucide-react';
 import type { OrganizationMember, CreateOrganizationInput, MemberImportInput, MemberImportResult } from '@/types';
 

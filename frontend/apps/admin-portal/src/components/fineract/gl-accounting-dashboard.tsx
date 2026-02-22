@@ -15,7 +15,7 @@ import {
   getTrialBalance,
   type JournalEntryFilters,
 } from '@/lib/api/fineract';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate } from '@lynia/utils';
 import { BookOpen, FileText, Calculator } from 'lucide-react';
 
 type TabId = 'accounts' | 'journal' | 'trial-balance';

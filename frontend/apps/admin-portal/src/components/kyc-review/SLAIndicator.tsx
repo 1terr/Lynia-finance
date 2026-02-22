@@ -1,8 +1,8 @@
 'use client';
 
 import { Clock, AlertTriangle } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { getSLAStatus } from '@/lib/utils';
+import { cn } from '@lynia/utils';
+import { getSLAStatus } from '@lynia/utils';
 
 interface SLAIndicatorProps {
   deadline: string;

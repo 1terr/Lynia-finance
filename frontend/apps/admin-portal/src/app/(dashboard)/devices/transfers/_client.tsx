@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@lynia/utils';
 import { ArrowLeft, Plus, ArrowRightLeft, Check, X, Truck, PackageCheck } from 'lucide-react';
 
 const STATUS_OPTIONS = [

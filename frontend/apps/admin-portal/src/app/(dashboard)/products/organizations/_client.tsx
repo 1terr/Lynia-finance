@@ -9,7 +9,7 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatDate, formatNumber } from '@/lib/utils';
+import { formatDate, formatNumber } from '@lynia/utils';
 import { Plus, Search, ArrowLeft } from 'lucide-react';
 import type { Organization, CreateOrganizationInput } from '@/types';
 

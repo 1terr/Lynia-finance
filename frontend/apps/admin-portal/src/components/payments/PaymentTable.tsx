@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/shared/Pagination';
-import { formatDate, formatCurrency, truncateId, maskPhone } from '@/lib/utils';
+import { formatDate, formatCurrency, truncateId, maskPhone } from '@lynia/utils';
 import type { PaymentWithCustomer } from '@/lib/api/payments';
 
 interface PaymentTableProps {

@@ -18,7 +18,7 @@ import {
   getOverdueLoans,
   getAgingSummary,
 } from '@/lib/api/fineract';
-import { fetchAPI } from '@/lib/api/client';
+import { fetchAPI } from '@lynia/api-client';
 
 jest.mock('@/lib/api/client', () => ({
   fetchAPI: jest.fn(),

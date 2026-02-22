@@ -18,7 +18,7 @@ import { Button } from '@/components/ui/button';
 import { DocumentViewer } from './DocumentViewer';
 import { SLAIndicator } from './SLAIndicator';
 import { ReviewHistory } from './ReviewHistory';
-import { cn, formatDateTime, getConfidenceLevel, maskPhone, maskId } from '@/lib/utils';
+import { cn, formatDateTime, getConfidenceLevel, maskPhone, maskId } from '@lynia/utils';
 import { useKYCActions } from '@/lib/hooks/useKYCReview';
 import type { KYCSubmission } from '@/types';
 

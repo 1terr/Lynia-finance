@@ -5,7 +5,7 @@ import type { CommissionEntry, DashboardStats } from '@/types/distributor';
 import { fetchCommissions, fetchDashboardStats } from '@/lib/api/distributor';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 import {
   DollarSign,
   TrendingUp,

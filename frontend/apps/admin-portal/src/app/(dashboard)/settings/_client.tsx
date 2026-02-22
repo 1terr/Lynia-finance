@@ -23,11 +23,11 @@ import { DataTable, type Column } from '@/components/ui/data-table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select } from '@/components/ui/select';
 import { Pagination } from '@/components/ui/pagination';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@lynia/utils';
 import type { AdminUser, AdminRole, SystemConfig, AuditLog } from '@/types';
 import { Users, Settings, Shield, History, Lock } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { isCognitoConfigured } from '@/lib/auth/cognito';
+import { isCognitoConfigured } from '@lynia/auth';
 
 // --- Role-Permission mapping for display ---
 

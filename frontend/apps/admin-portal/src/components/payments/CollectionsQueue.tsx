@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
-import { formatCurrency, formatDate, maskPhone } from '@/lib/utils';
+import { formatCurrency, formatDate, maskPhone } from '@lynia/utils';
 import type { CollectionItem } from '@/lib/api/payments';
 
 interface CollectionsQueueProps {

@@ -11,8 +11,8 @@ import { Modal } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { DataTable, type Column } from '@/components/ui/data-table';
-import { formatDateTime, formatDate, formatRelativeTime } from '@/lib/utils';
-import { fetchAPI } from '@/lib/api/client';
+import { formatDateTime, formatDate, formatRelativeTime } from '@lynia/utils';
+import { fetchAPI } from '@lynia/api-client';
 import type { KYCSubmission, Customer } from '@/types';
 import {
   CheckCircle,

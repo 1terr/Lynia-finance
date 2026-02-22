@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { approveKYC, rejectKYC } from '@/lib/api/customers';
-import { formatDate, maskPhone } from '@/lib/utils';
+import { formatDate, maskPhone } from '@lynia/utils';
 import type { KYCSubmission, Customer } from '@/types/database';
 
 interface KYCReviewCardProps {

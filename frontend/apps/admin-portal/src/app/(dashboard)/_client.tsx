@@ -19,7 +19,7 @@ import { QuickActions } from '@/components/dashboard/quick-actions';
 import { FineractHealth } from '@/components/dashboard/fineract-health';
 import { AlertsPanel } from '@/components/dashboard/alerts-panel';
 import { DateRangePicker, dateRangeToDays, type DateRange } from '@/components/dashboard/date-range-picker';
-import { formatCurrency, formatNumber, formatPercent } from '@/lib/utils';
+import { formatCurrency, formatNumber, formatPercent } from '@lynia/utils';
 import {
   Users,
   DollarSign,

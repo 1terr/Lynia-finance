@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Menu, Bell, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/lib/auth/context';
 import { getRoleDisplayName } from '@/lib/auth/permissions';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 
 interface HeaderProps {
   onToggleSidebar: () => void;

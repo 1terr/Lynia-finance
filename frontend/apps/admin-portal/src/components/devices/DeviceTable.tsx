@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Pagination } from '@/components/shared/Pagination';
-import { formatCurrency, truncateId } from '@/lib/utils';
+import { formatCurrency, truncateId } from '@lynia/utils';
 import type { DeviceWithRelations } from '@/types/database';
 
 interface DeviceTableProps {

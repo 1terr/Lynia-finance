@@ -5,8 +5,8 @@
  * proxy requests to the Fineract core banking engine.
  */
 
-import { getSession } from '@/lib/auth/cognito';
-import { MAX_PAGE_SIZE } from '@/lib/utils';
+import { getSession } from '@lynia/auth';
+import { MAX_PAGE_SIZE } from '@lynia/utils';
 
 /**
  * Fineract API base URL.

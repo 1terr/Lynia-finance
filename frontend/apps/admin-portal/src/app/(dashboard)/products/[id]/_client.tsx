@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import type { LoanProduct, CreateProductInput } from '@/types';
 

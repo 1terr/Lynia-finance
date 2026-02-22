@@ -2,7 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
-import { formatDate, formatCurrency, truncateId, maskPhone } from '@/lib/utils';
+import { formatDate, formatCurrency, truncateId, maskPhone } from '@lynia/utils';
 import { reconcilePayment, type PaymentWithCustomer } from '@/lib/api/payments';
 
 interface ReconciliationTableProps {

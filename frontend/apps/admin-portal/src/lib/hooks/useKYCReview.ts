@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { fetchAPI } from '@/lib/api/client';
+import { fetchAPI } from '@lynia/api-client';
 import type {
   KYCSubmission,
   KYCReviewFilters,

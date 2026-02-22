@@ -9,7 +9,7 @@ import { DataTable } from './data-table';
 import { SimpleBarChart } from './bar-chart';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@lynia/utils';
 
 interface Props { filters: ReportFilters }
 

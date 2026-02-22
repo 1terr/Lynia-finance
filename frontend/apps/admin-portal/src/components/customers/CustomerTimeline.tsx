@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { fetchCustomerTimeline } from '@/lib/api/customers';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime } from '@lynia/utils';
 import type { TimelineEvent } from '@/types/database';
 
 interface CustomerTimelineProps {

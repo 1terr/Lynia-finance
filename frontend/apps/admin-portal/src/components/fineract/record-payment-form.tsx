@@ -10,7 +10,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { recordFineractRepayment } from '@/lib/api/fineract';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@lynia/utils';
 
 interface Props {
   lyniaLoanId: string;

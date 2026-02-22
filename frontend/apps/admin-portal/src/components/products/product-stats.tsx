@@ -1,7 +1,7 @@
 'use client';
 
 import { Card } from '@/components/ui/card';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber } from '@lynia/utils';
 import { Package, CreditCard, DollarSign, Percent } from 'lucide-react';
 
 interface ProductStatsProps {

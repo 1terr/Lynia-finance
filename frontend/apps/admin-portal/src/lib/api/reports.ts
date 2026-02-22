@@ -1,4 +1,4 @@
-import { fetchAPI } from '@/lib/api/client';
+import { fetchAPI } from '@lynia/api-client';
 import type {
   ReportFilters,
   LoanDisbursementSummary,
