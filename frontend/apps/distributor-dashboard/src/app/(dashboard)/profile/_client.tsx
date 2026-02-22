@@ -1,11 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { updateDistributorProfile } from '@/lib/api/distributor';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
+import { profileSchema, type ProfileFormData } from '@/lib/validation/schemas';
 import {
   User, MapPin, Phone, Mail, Building2, CreditCard,
   Shield, Star, Save, LogOut,
@@ -14,22 +17,34 @@ import {
 export default function ProfilePage() {
   const { distributor, setDistributor, logout } = useAuthStore();
   const [editing, setEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({
-    phone_number: distributor?.phone_number ?? '',
-    address: distributor?.address ?? '',
-    mobile_money_number: distributor?.mobile_money_number ?? '',
-    bank_name: distributor?.bank_name ?? '',
-    account_number: distributor?.account_number ?? '',
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting, isDirty },
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      phone_number: distributor?.phone_number ?? '',
+      address: distributor?.address ?? '',
+      mobile_money_number: distributor?.mobile_money_number ?? '',
+      bank_name: distributor?.bank_name ?? '',
+      account_number: distributor?.account_number ?? '',
+    },
   });
 
   if (!distributor) return null;
 
-  const handleSave = async () => {
-    setSaving(true);
-    const updated = await updateDistributorProfile(form);
+  const onSubmit = async (data: ProfileFormData) => {
+    const updated = await updateDistributorProfile(data);
     setDistributor(updated);
-    setSaving(false);
+    setEditing(false);
+    reset(data); // Reset form with new values to clear isDirty flag
+  };
+
+  const handleCancel = () => {
+    reset(); // Reset to default values
     setEditing(false);
   };
 
@@ -40,18 +55,30 @@ export default function ProfilePage() {
           <h1 className="text-xl font-bold md:text-2xl">Profile</h1>
           <p className="text-sm text-muted-foreground">Your distributor account details</p>
         </div>
-        <Button
-          variant={editing ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => editing ? handleSave() : setEditing(true)}
-          disabled={saving}
-        >
-          {editing ? (
-            <><Save className="h-4 w-4 mr-1.5" />{saving ? 'Saving...' : 'Save'}</>
-          ) : (
-            'Edit Profile'
+        <div className="flex items-center gap-2">
+          {editing && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCancel}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
           )}
-        </Button>
+          <Button
+            variant={editing ? 'default' : 'outline'}
+            size="sm"
+            onClick={editing ? handleSubmit(onSubmit) : () => setEditing(true)}
+            disabled={isSubmitting}
+          >
+            {editing ? (
+              <><Save className="h-4 w-4 mr-1.5" />{isSubmitting ? 'Saving...' : 'Save'}</>
+            ) : (
+              'Edit Profile'
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Status card */}
@@ -100,11 +127,19 @@ export default function ProfilePage() {
           <div>
             <label className="text-xs text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" /> Phone</label>
             {editing ? (
-              <input
-                value={form.phone_number}
-                onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
-                className="w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <div className="space-y-1">
+                <input
+                  {...register('phone_number')}
+                  placeholder="+263771234567"
+                  className={cn(
+                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    errors.phone_number && "border-red-500 focus:ring-red-500"
+                  )}
+                />
+                {errors.phone_number && (
+                  <p className="text-xs text-red-600">{errors.phone_number.message}</p>
+                )}
+              </div>
             ) : (
               <p className="text-sm font-medium">{distributor.phone_number}</p>
             )}
@@ -129,11 +164,19 @@ export default function ProfilePage() {
           <div className="sm:col-span-2">
             <label className="text-xs text-muted-foreground">Address</label>
             {editing ? (
-              <input
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                className="w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <div className="space-y-1">
+                <input
+                  {...register('address')}
+                  placeholder="123 Main Street, Harare"
+                  className={cn(
+                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    errors.address && "border-red-500 focus:ring-red-500"
+                  )}
+                />
+                {errors.address && (
+                  <p className="text-xs text-red-600">{errors.address.message}</p>
+                )}
+              </div>
             ) : (
               <p className="text-sm font-medium">{distributor.address}</p>
             )}
@@ -150,11 +193,19 @@ export default function ProfilePage() {
           <div>
             <label className="text-xs text-muted-foreground">Mobile Money (EcoCash)</label>
             {editing ? (
-              <input
-                value={form.mobile_money_number}
-                onChange={(e) => setForm({ ...form, mobile_money_number: e.target.value })}
-                className="w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <div className="space-y-1">
+                <input
+                  {...register('mobile_money_number')}
+                  placeholder="+263771234567"
+                  className={cn(
+                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    errors.mobile_money_number && "border-red-500 focus:ring-red-500"
+                  )}
+                />
+                {errors.mobile_money_number && (
+                  <p className="text-xs text-red-600">{errors.mobile_money_number.message}</p>
+                )}
+              </div>
             ) : (
               <p className="text-sm font-medium">{distributor.mobile_money_number ?? 'Not set'}</p>
             )}
@@ -166,11 +217,19 @@ export default function ProfilePage() {
           <div>
             <label className="text-xs text-muted-foreground">Bank Name</label>
             {editing ? (
-              <input
-                value={form.bank_name}
-                onChange={(e) => setForm({ ...form, bank_name: e.target.value })}
-                className="w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <div className="space-y-1">
+                <input
+                  {...register('bank_name')}
+                  placeholder="CBZ Bank"
+                  className={cn(
+                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    errors.bank_name && "border-red-500 focus:ring-red-500"
+                  )}
+                />
+                {errors.bank_name && (
+                  <p className="text-xs text-red-600">{errors.bank_name.message}</p>
+                )}
+              </div>
             ) : (
               <p className="text-sm font-medium">{distributor.bank_name ?? 'Not set'}</p>
             )}
@@ -178,11 +237,19 @@ export default function ProfilePage() {
           <div>
             <label className="text-xs text-muted-foreground">Account Number</label>
             {editing ? (
-              <input
-                value={form.account_number}
-                onChange={(e) => setForm({ ...form, account_number: e.target.value })}
-                className="w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
+              <div className="space-y-1">
+                <input
+                  {...register('account_number')}
+                  placeholder="1234567890"
+                  className={cn(
+                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    errors.account_number && "border-red-500 focus:ring-red-500"
+                  )}
+                />
+                {errors.account_number && (
+                  <p className="text-xs text-red-600">{errors.account_number.message}</p>
+                )}
+              </div>
             ) : (
               <p className="text-sm font-medium">{distributor.account_number ? `****${distributor.account_number.slice(-4)}` : 'Not set'}</p>
             )}
