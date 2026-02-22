@@ -1,0 +1,16 @@
+{
+  "name": "@lynia/auth",
+  "version": "1.0.0",
+  "description": "Shared authentication utilities for Lynia Finance dashboards",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "amazon-cognito-identity-js": "^6.3.12"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

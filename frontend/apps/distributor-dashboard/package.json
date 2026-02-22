@@ -1,5 +1,5 @@
 {
-  "name": "lynia-distributor-portal",
+  "name": "@lynia/distributor-dashboard",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,6 +9,9 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@lynia/auth": "workspace:*",
+    "@lynia/api-client": "workspace:*",
+    "@lynia/utils": "workspace:*",
     "amazon-cognito-identity-js": "^6.3.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",

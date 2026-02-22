@@ -13,6 +13,9 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
+    "@lynia/auth": "workspace:*",
+    "@lynia/api-client": "workspace:*",
+    "@lynia/utils": "workspace:*",
     "amazon-cognito-identity-js": "^6.3.12",
     "@tanstack/react-query": "^5.62.0",
     "@tanstack/react-table": "^8.20.0",
