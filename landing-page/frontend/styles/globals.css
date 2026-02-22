@@ -7,6 +7,10 @@
     --gradient-hero: linear-gradient(135deg, #0A2540 0%, #3a3aff 40%, #635BFF 70%, #6ec3f4 100%);
     --gradient-cta: linear-gradient(135deg, #0A2540 0%, #1A3550 100%);
     --gradient-stats: linear-gradient(135deg, #0A2540 0%, #635BFF 100%);
+
+    /* Custom hero typography with responsive floor */
+    --font-size-hero-custom: clamp(2.2rem, 5vw, 2.622rem);
+    --line-height-hero-custom: 48.2425px;
   }
 
   html {

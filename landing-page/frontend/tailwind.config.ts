@@ -37,6 +37,9 @@ const config: Config = {
           secondary: '#F6F9FC',
           tertiary: '#F0F3F9',
         },
+        // Custom hero text colors
+        'hero-primary': '#2D2564',
+        'hero-accent': '#000EFF',
       },
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
@@ -59,6 +62,16 @@ const config: Config = {
         'hero-lg': ['4.5rem', { lineHeight: '1.05', letterSpacing: '-0.045em', fontWeight: '700' }],
         'hero-lg-tablet': ['4rem', { lineHeight: '1.08', letterSpacing: '-0.04em', fontWeight: '700' }],
         'hero-lg-mobile': ['2.75rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
+
+        // Custom hero variant for new design (with CSS var fallback)
+        'hero-custom': [
+          'var(--font-size-hero-custom, 41.95px)',
+          {
+            lineHeight: 'var(--line-height-hero-custom, 48.2425px)',
+            fontWeight: '300',
+            letterSpacing: '-0.02em'
+          }
+        ],
 
         // Mobile responsive variants
         'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
