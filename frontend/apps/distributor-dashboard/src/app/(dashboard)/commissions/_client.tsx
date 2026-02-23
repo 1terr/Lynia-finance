@@ -7,6 +7,7 @@ import { fetchCommissions, fetchDashboardStats } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@lynia/utils';
+import { CommissionsSkeleton } from '@/components/ui/skeleton';
 import {
   DollarSign,
   TrendingUp,
@@ -121,11 +122,7 @@ export default function CommissionsPage() {
   const handoverCount = commissions.length;
 
   if (loading || !stats) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <CommissionsSkeleton />;
   }
 
   const tier = getPerformanceTier(stats.total_commissions_earned);
@@ -305,11 +302,12 @@ export default function CommissionsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-1 rounded-lg border p-1">
+        <div role="group" aria-label="Filter by payment status" className="flex items-center gap-1 rounded-lg border p-1">
           {(['all', 'paid', 'pending'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setPaymentFilter(f)}
+              aria-pressed={paymentFilter === f}
               className={cn(
                 'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                 paymentFilter === f
@@ -322,11 +320,12 @@ export default function CommissionsPage() {
           ))}
         </div>
 
-        <div className="flex items-center gap-1 rounded-lg border p-1">
+        <div role="group" aria-label="Filter by time period" className="flex items-center gap-1 rounded-lg border p-1">
           {(['all', 'this_month', 'last_month'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setPeriodFilter(f)}
+              aria-pressed={periodFilter === f}
               className={cn(
                 'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                 periodFilter === f

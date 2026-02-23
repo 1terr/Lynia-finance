@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/use-debounce';
 import type { InventoryDevice } from '@/types/distributor';
 import { fetchInventory } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
+import { InventorySkeleton } from '@/components/ui/skeleton';
 import {
   Smartphone,
   Search,
@@ -45,10 +47,11 @@ export default function InventoryPage() {
 
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
 
   const filteredDevices = devices.filter((device) => {
     const matchesStatus = statusFilter === 'all' || device.status === statusFilter;
-    const query = searchQuery.toLowerCase();
+    const query = debouncedSearch.toLowerCase();
     const matchesSearch =
       !query ||
       device.model.toLowerCase().includes(query) ||
@@ -66,11 +69,7 @@ export default function InventoryPage() {
   );
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <InventorySkeleton />;
   }
 
   return (
@@ -94,6 +93,7 @@ export default function InventoryPage() {
                 onClick={() =>
                   setStatusFilter(statusFilter === status ? 'all' : status)
                 }
+                aria-pressed={statusFilter === status}
                 className={cn(
                   'rounded-xl border bg-card p-3 shadow-sm text-left transition-colors',
                   statusFilter === status && 'ring-2 ring-primary'
@@ -121,6 +121,7 @@ export default function InventoryPage() {
             placeholder="Search by model, brand, or IMEI..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search devices"
             className="w-full rounded-lg border bg-background pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>

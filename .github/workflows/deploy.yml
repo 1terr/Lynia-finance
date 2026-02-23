@@ -25,7 +25,7 @@ concurrency:
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: '20.x'
-  PNPM_VERSION: '9'
+  PNPM_VERSION: '10'
   PYTHON_VERSION: '3.11'
 
 jobs:

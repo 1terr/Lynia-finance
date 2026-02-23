@@ -9,7 +9,7 @@ on:
 env:
   NODE_ENV: test
   NODE_VERSION: '20.x'
-  PNPM_VERSION: '9'
+  PNPM_VERSION: '10'
   PYTHON_VERSION: '3.11'
 
 jobs:

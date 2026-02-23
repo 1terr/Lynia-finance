@@ -53,14 +53,14 @@ describe('InventoryPage', () => {
   });
 
   describe('Loading State', () => {
-    it('shows loading spinner while fetching inventory', () => {
+    it('shows loading skeleton while fetching inventory', () => {
       (api.fetchInventory as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
 
       const { container } = render(<InventoryPage />);
 
-      expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
   });
 

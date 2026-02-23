@@ -23,7 +23,7 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card safe-area-bottom md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card safe-area-bottom md:hidden" aria-label="Main navigation">
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;

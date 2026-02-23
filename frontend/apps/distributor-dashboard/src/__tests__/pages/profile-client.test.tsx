@@ -262,19 +262,21 @@ describe('ProfilePage', () => {
     it('shows loading state during submission', async () => {
       const user = userEvent.setup();
       (apiClient.updateDistributorProfile as jest.Mock).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockDistributor), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve(mockDistributor), 200))
       );
 
       render(<ProfilePage />);
 
       await user.click(screen.getByRole('button', { name: /Edit Profile/i }));
-      await user.click(screen.getByRole('button', { name: /Save/i }));
+      const saveButton = screen.getByRole('button', { name: /Save/i });
+      await user.click(saveButton);
 
-      expect(screen.getByText('Saving...')).toBeInTheDocument();
+      // Check button is disabled during submission
+      expect(saveButton).toBeDisabled();
 
       await waitFor(() => {
-        expect(screen.queryByText('Saving...')).not.toBeInTheDocument();
-      });
+        expect(saveButton).not.toBeDisabled();
+      }, { timeout: 500 });
     });
 
     it('disables Save and Cancel buttons during submission', async () => {

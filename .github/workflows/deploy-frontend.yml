@@ -37,7 +37,7 @@ concurrency:
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: '20.x'
-  PNPM_VERSION: '9'
+  PNPM_VERSION: '10'
   DEPLOY_ENV: ${{ inputs.environment || 'production' }}
   DEPLOY_APP: ${{ inputs.application || 'both' }}
   # Production frontend stack uses lynia-finance-prod-frontend naming convention
@@ -79,7 +79,7 @@ jobs:
             pnpm --filter "@lynia/admin-portal" lint || echo "::warning::Admin portal lint issues found"
           fi
           if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
-            pnpm --filter lynia-distributor-portal lint || echo "::warning::Distributor dashboard lint issues found"
+            pnpm --filter "@lynia/distributor-dashboard" lint || echo "::warning::Distributor dashboard lint issues found"
           fi
 
       - name: Run frontend tests
@@ -88,7 +88,7 @@ jobs:
             pnpm --filter "@lynia/admin-portal" test || echo "::warning::Admin portal tests failed"
           fi
           if [ "${{ env.DEPLOY_APP }}" == "distributor-dashboard" ] || [ "${{ env.DEPLOY_APP }}" == "both" ] || [ "${{ env.DEPLOY_APP }}" == "all" ]; then
-            pnpm --filter lynia-distributor-portal test || echo "::warning::Distributor dashboard tests failed"
+            pnpm --filter "@lynia/distributor-dashboard" test || echo "::warning::Distributor dashboard tests failed"
           fi
 
       - name: Build admin portal
@@ -105,7 +105,7 @@ jobs:
       - name: Build distributor dashboard
         id: build-distributor
         if: env.DEPLOY_APP == 'distributor-dashboard' || env.DEPLOY_APP == 'both' || env.DEPLOY_APP == 'all'
-        run: pnpm --filter lynia-distributor-portal build
+        run: pnpm --filter "@lynia/distributor-dashboard" build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
           NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
@@ -130,7 +130,7 @@ jobs:
               COGNITO_REGION: process.env.COGNITO_REGION || 'us-east-1',
             };
             const js = 'window.__LYNIA_CONFIG__=' + JSON.stringify(config) + ';';
-            require('fs').writeFileSync('frontend/admin-portal/out/config.js', js);
+            require('fs').writeFileSync('frontend/apps/admin-portal/out/config.js', js);
           "
         env:
           COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
@@ -147,7 +147,7 @@ jobs:
               COGNITO_REGION: process.env.COGNITO_REGION || 'us-east-1',
             };
             const js = 'window.__LYNIA_CONFIG__=' + JSON.stringify(config) + ';';
-            require('fs').writeFileSync('frontend/distributor-dashboard/out/config.js', js);
+            require('fs').writeFileSync('frontend/apps/distributor-dashboard/out/config.js', js);
           "
         env:
           COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
@@ -159,7 +159,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: admin-portal-build
-          path: frontend/admin-portal/out/
+          path: frontend/apps/admin-portal/out/
           retention-days: 3
 
       - name: Upload distributor dashboard build
@@ -167,7 +167,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: distributor-dashboard-build
-          path: frontend/distributor-dashboard/out/
+          path: frontend/apps/distributor-dashboard/out/
           retention-days: 3
 
       - name: Upload landing page build

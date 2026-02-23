@@ -5,6 +5,7 @@ import type { DashboardStats, PendingHandover } from '@/types/distributor';
 import { fetchDashboardStats, fetchPendingHandovers } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
+import { DashboardSkeleton } from '@/components/ui/skeleton';
 import {
   PackageCheck,
   Smartphone,
@@ -30,11 +31,7 @@ export default function DashboardHome() {
   const loading = statsLoading || handoversLoading;
 
   if (loading || !stats) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (

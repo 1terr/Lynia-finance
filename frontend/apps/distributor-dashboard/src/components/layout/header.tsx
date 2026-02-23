@@ -35,9 +35,9 @@ export function Header() {
             <Moon className="h-5 w-5 text-muted-foreground" />
           )}
         </button>
-        <button className="relative p-2 rounded-lg hover:bg-muted transition-colors">
+        <button className="relative p-2 rounded-lg hover:bg-muted transition-colors" aria-label="Notifications">
           <Bell className="h-5 w-5 text-muted-foreground" />
-          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" />
+          <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500" aria-hidden="true" />
         </button>
         <div className="hidden md:flex h-8 w-8 rounded-full bg-primary/10 items-center justify-center">
           <span className="text-xs font-semibold text-primary">

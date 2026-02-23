@@ -8,11 +8,17 @@ import { AuthProvider } from '@/components/layout/auth-provider';
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <AuthProvider>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:shadow-lg"
+      >
+        Skip to main content
+      </a>
       <div className="flex min-h-screen">
         <Sidebar />
         <div className="flex-1 flex flex-col">
           <Header />
-          <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
+          <main id="main-content" className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
             {children}
           </main>
           <MobileNav />

@@ -76,7 +76,7 @@ export function Sidebar() {
               <p className="text-sm font-medium truncate">{distributor.name}</p>
               <p className="text-[10px] text-muted-foreground truncate">{distributor.business_name}</p>
             </div>
-            <button onClick={logout} className="text-muted-foreground hover:text-foreground">
+            <button onClick={logout} className="text-muted-foreground hover:text-foreground" aria-label="Sign out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>

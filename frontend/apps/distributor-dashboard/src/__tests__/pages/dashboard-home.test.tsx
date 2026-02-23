@@ -33,7 +33,7 @@ describe('DashboardHome', () => {
   });
 
   describe('Loading State', () => {
-    it('shows loading spinner while fetching stats', () => {
+    it('shows loading skeleton while fetching stats', () => {
       (api.fetchDashboardStats as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
@@ -41,10 +41,10 @@ describe('DashboardHome', () => {
 
       const { container } = render(<DashboardHome />);
 
-      expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
 
-    it('shows loading spinner while fetching handovers', () => {
+    it('shows loading skeleton while fetching handovers', () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
       (api.fetchPendingHandovers as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
@@ -52,7 +52,7 @@ describe('DashboardHome', () => {
 
       const { container } = render(<DashboardHome />);
 
-      expect(container.querySelector('.animate-spin')).toBeInTheDocument();
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
   });
 

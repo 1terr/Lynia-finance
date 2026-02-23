@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@lynia/utils';
 import { profileSchema, type ProfileFormData } from '@/lib/validation/schemas';
+import { useToast } from '@/hooks/use-toast';
 import {
   User, MapPin, Phone, Mail, Building2, CreditCard,
   Shield, Star, Save, LogOut,
@@ -16,6 +17,7 @@ import {
 
 export default function ProfilePage() {
   const { distributor, setDistributor, logout } = useAuthStore();
+  const { toast } = useToast();
   const [editing, setEditing] = useState(false);
 
   const {
@@ -37,10 +39,23 @@ export default function ProfilePage() {
   if (!distributor) return null;
 
   const onSubmit = async (data: ProfileFormData) => {
-    const updated = await updateDistributorProfile(data);
-    setDistributor(updated);
+    const previousDistributor = distributor;
+
+    // Optimistic update
+    setDistributor({ ...distributor!, ...data });
     setEditing(false);
-    reset(data); // Reset form with new values to clear isDirty flag
+
+    try {
+      const updated = await updateDistributorProfile(data);
+      setDistributor(updated);
+      toast({ title: 'Profile updated successfully', variant: 'success' });
+    } catch {
+      // Rollback on failure
+      setDistributor(previousDistributor!);
+      setEditing(true);
+      toast({ title: 'Failed to update profile', description: 'Please try again', variant: 'error' });
+    }
+    reset(data);
   };
 
   const handleCancel = () => {

@@ -8,6 +8,7 @@ import { HandoverWizard } from '@/components/handover/handover-wizard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@lynia/utils';
+import { HandoversSkeleton } from '@/components/ui/skeleton';
 import {
   PackageCheck,
   Plus,
@@ -36,11 +37,7 @@ export default function HandoversPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-      </div>
-    );
+    return <HandoversSkeleton />;
   }
 
   if (view === 'wizard') {
