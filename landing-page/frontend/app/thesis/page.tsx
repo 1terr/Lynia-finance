@@ -11,7 +11,7 @@ export default function ThesisPage() {
   return (
     <div className="pt-[72px]">
       {/* Hero */}
-      <section className="bg-primary-light py-16 lg:py-20">
+      <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
           <span className="text-overline uppercase tracking-wider text-primary">
             THE 2026 THESIS
@@ -55,7 +55,7 @@ export default function ThesisPage() {
       </section>
 
       {/* The Strategy */}
-      <section className="bg-primary-light py-16 lg:py-[120px]">
+      <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main">
           <div className="max-w-[780px]">
             <h2 className="text-title-mobile lg:text-title text-primary-dark">
@@ -103,20 +103,17 @@ export default function ThesisPage() {
       </section>
 
       {/* CTA */}
-      <section
-        className="py-16 lg:py-[120px]"
-        style={{ background: 'var(--gradient-cta)' }}
-      >
+      <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main text-center">
-          <h2 className="text-display-mobile lg:text-display text-white">
+          <h2 className="text-display-mobile lg:text-display text-primary-dark">
             Build with us.
           </h2>
-          <p className="text-body-lg text-white/70 max-w-[560px] mx-auto mt-6">
+          <p className="text-body-lg text-slate max-w-[560px] mx-auto mt-6">
             Whether you are an entrepreneur, a distributor, or a platform
             looking to embed credit&mdash;Lynia is built for you.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Button variant="white" size="lg" href="/contact">
+            <Button variant="accent" size="lg" href="/contact">
               Get started &rarr;
             </Button>
           </div>

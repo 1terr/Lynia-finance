@@ -269,7 +269,7 @@ export default function ContactPage() {
   return (
     <div className="pt-[72px]">
       {/* Hero */}
-      <section className="bg-primary-light py-16 lg:py-20">
+      <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
           <span className="text-overline uppercase tracking-wider text-primary">
             CONTACT
@@ -340,7 +340,7 @@ export default function ContactPage() {
       </section>
 
       {/* Partnership section */}
-      <section className="bg-primary-light py-16 lg:py-20">
+      <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
           <div className="max-w-narrow mx-auto">
             <span className="text-overline uppercase tracking-wider text-primary">
