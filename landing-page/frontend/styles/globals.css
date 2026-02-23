@@ -48,6 +48,22 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Press card — 1 card on mobile, ~3.33 on desktop (Stripe 2026 layout) */
+  .press-card {
+    width: calc(100vw - 48px);
+  }
+  @media (min-width: 640px) {
+    .press-card {
+      width: calc(50vw - 36px);
+    }
+  }
+  @media (min-width: 1024px) {
+    .press-card {
+      /* visible area = (100vw + 1080px)/2 - 48px; card = (visible - 72px) / 3.33 */
+      width: calc(((100vw + 1080px) / 2 - 120px) * 0.3);
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

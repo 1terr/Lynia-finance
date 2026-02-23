@@ -73,14 +73,14 @@ function PressCard({
   return (
     <a
       href={item.href}
-      className={`group flex-shrink-0 w-[300px] sm:w-[340px] transition-all duration-500 ease-stripe-out ${
+      className={`group flex-shrink-0 press-card transition-all duration-500 ease-stripe-out ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
       }`}
       style={{ transitionDelay: `${150 + index * 100}ms` }}
     >
       {/* Image / brand area */}
       <div
-        className={`relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br ${item.gradient} shadow-stripe-sm group-hover:shadow-stripe-md transition-shadow duration-350 ease-stripe-out`}
+        className={`relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-gradient-to-br ${item.gradient} shadow-stripe-sm group-hover:shadow-stripe-md transition-shadow duration-350 ease-stripe-out`}
       >
         {/* Grid pattern overlay */}
         <div
@@ -150,9 +150,11 @@ export function Press() {
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const cardWidth = 356; // card width + gap
+    // Measure actual card width + gap dynamically
+    const firstCard = el.querySelector('.press-card') as HTMLElement | null;
+    const step = firstCard ? firstCard.offsetWidth + 24 : 380;
     el.scrollBy({
-      left: direction === 'left' ? -cardWidth : cardWidth,
+      left: direction === 'left' ? -step : step,
       behavior: 'smooth',
     });
   };
@@ -213,7 +215,7 @@ export function Press() {
       {/* Scrollable cards — full-bleed on the right */}
       <div
         ref={scrollRef}
-        className="mt-12 flex gap-4 overflow-x-auto scroll-smooth pl-6 lg:pl-[max(calc((100vw-1080px)/2+48px),48px)] pr-6 pb-2 snap-x snap-mandatory scrollbar-hide"
+        className="mt-12 flex gap-6 overflow-x-auto scroll-smooth pl-6 lg:pl-[max(calc((100vw-1080px)/2+48px),48px)] pr-6 pb-2 snap-x snap-mandatory scrollbar-hide"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
