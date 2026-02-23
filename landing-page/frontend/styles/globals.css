@@ -40,6 +40,14 @@
   .container-wide {
     @apply mx-auto max-w-wide px-6 lg:px-12;
   }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

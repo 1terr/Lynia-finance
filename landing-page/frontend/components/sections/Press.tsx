@@ -1,120 +1,231 @@
 'use client';
 
-import { useState } from 'react';
-import { Plus, Minus } from 'lucide-react';
+import { useRef, useState, useCallback, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 
 interface PressItem {
   logo: string;
   headline: string;
-  excerpt: string;
+  description: string;
   href: string;
+  gradient: string;
+  logoSize?: string;
 }
 
 const pressItems: PressItem[] = [
   {
     logo: 'ZBC',
-    headline: 'Lynia Finance launches WhatsApp-based smartphone financing for informal traders across Zimbabwe.',
-    excerpt: 'The fintech startup is using mobile money data to underwrite loans for entrepreneurs who have never had access to formal credit. Starting with smartphones, the company plans to expand into broader productive asset financing.',
+    headline:
+      'Lynia Finance launches WhatsApp-based smartphone financing for informal traders across Zimbabwe.',
+    description:
+      'How Lynia Finance is using mobile money data to underwrite loans for entrepreneurs across Zimbabwe.',
     href: '/press',
+    gradient: 'from-[#0A2540] via-[#1A3A5C] to-[#0A2540]',
   },
   {
-    logo: 'TH',
-    headline: 'How mobile money velocity is replacing bank statements as the new credit score in Africa.',
-    excerpt: 'Lynia Finance is pioneering a new approach to credit scoring that analyzes transaction patterns across EcoCash, Innbucks, and other mobile money platforms to build credit identities for the unbanked.',
+    logo: 'TechHub',
+    headline:
+      'How mobile money velocity is replacing bank statements as the new credit score in Africa.',
+    description:
+      'Lynia Finance pioneers alternative credit scoring using EcoCash and mobile money patterns.',
     href: '/press',
+    gradient: 'from-[#0e4429] via-[#006d32] to-[#0e4429]',
   },
   {
     logo: 'BD',
-    headline: 'Zimbabwe fintech bridges the $14B credit gap with IoT-backed asset lending and embedded insurance.',
-    excerpt: 'By combining real-time asset telemetry with mobile money disbursement, Lynia Finance is creating a new category of productive credit for Zimbabwe\'s $10B informal economy.',
+    headline:
+      'Zimbabwe fintech bridges the $14B credit gap with IoT-backed asset lending and embedded insurance.',
+    description:
+      'Lynia Finance combines real-time asset telemetry with mobile money disbursement for productive credit.',
     href: '/press',
+    gradient: 'from-[#2D1B69] via-[#635BFF] to-[#2D1B69]',
+  },
+  {
+    logo: 'Reuters',
+    headline:
+      'African fintech startups are redefining credit access for the informal economy.',
+    description:
+      'Reuters explores how companies like Lynia Finance use alternative data for financial inclusion.',
+    href: '/press',
+    gradient: 'from-[#1a1a2e] via-[#16213e] to-[#0f3460]',
+  },
+  {
+    logo: 'Disrupt',
+    headline:
+      'The next wave of African fintech is built on WhatsApp and mobile money rails.',
+    description:
+      'Disrupt Africa profiles Lynia Finance among startups leveraging chat-based financial services.',
+    href: '/press',
+    gradient: 'from-[#4a0e0e] via-[#8b1a1a] to-[#4a0e0e]',
   },
 ];
 
-function PressRow({ item, index, isVisible }: { item: PressItem; index: number; isVisible: boolean }) {
-  const [expanded, setExpanded] = useState(false);
-
+function PressCard({
+  item,
+  index,
+  isVisible,
+}: {
+  item: PressItem;
+  index: number;
+  isVisible: boolean;
+}) {
   return (
-    <div
-      className={`border-b border-border transition-all duration-500 ease-stripe-out ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+    <a
+      href={item.href}
+      className={`group flex-shrink-0 w-[300px] sm:w-[340px] transition-all duration-500 ease-stripe-out ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
       }`}
-      style={{ transitionDelay: `${120 + index * 80}ms` }}
+      style={{ transitionDelay: `${150 + index * 100}ms` }}
     >
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-4 lg:gap-6 py-5 lg:py-6 text-left group"
-      >
-        {/* Logo placeholder */}
-        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary-50 flex items-center justify-center">
-          <span className="text-caption font-medium text-primary">{item.logo}</span>
-        </div>
-
-        {/* Headline */}
-        <p className="flex-1 text-body text-primary-dark font-medium group-hover:text-primary transition-colors duration-250 ease-stripe">
-          {item.headline}
-        </p>
-
-        {/* Expand icon */}
-        <div className="flex-shrink-0 transition-transform duration-250 ease-stripe">
-          {expanded ? (
-            <Minus className="w-5 h-5 text-muted" />
-          ) : (
-            <Plus className="w-5 h-5 text-muted" />
-          )}
-        </div>
-      </button>
-
-      {/* Expandable content with animation */}
+      {/* Image / brand area */}
       <div
-        className={`overflow-hidden transition-all duration-350 ease-stripe-out ${
-          expanded ? 'max-h-[300px] opacity-100' : 'max-h-0 opacity-0'
-        }`}
+        className={`relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-br ${item.gradient} shadow-stripe-sm group-hover:shadow-stripe-md transition-shadow duration-350 ease-stripe-out`}
       >
-        <div className="pb-6 pl-[56px] lg:pl-[64px]">
-          <p className="text-body text-slate max-w-[680px]">
-            {item.excerpt}
-          </p>
-          <a
-            href={item.href}
-            className="group/link inline-flex items-center text-body-sm font-semibold text-primary mt-4 hover:text-primary-hover transition-colors duration-250 ease-stripe"
-          >
-            Read the story
-            <span className="ml-1.5 transition-transform duration-250 ease-stripe-out group-hover/link:translate-x-1">&rarr;</span>
-          </a>
+        {/* Grid pattern overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.08]"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+            backgroundSize: '32px 32px',
+          }}
+        />
+
+        {/* Decorative glow */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-40 h-40 rounded-full bg-white/5 blur-3xl" />
         </div>
+
+        {/* Logo */}
+        <div className="absolute inset-0 flex items-end p-6">
+          <span className="text-white/90 text-[1.5rem] font-bold tracking-tight">
+            {item.logo}
+          </span>
+        </div>
+
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/[0.03] transition-colors duration-350 ease-stripe-out" />
       </div>
-    </div>
+
+      {/* Text content */}
+      <div className="mt-4">
+        <p className="text-body text-slate leading-relaxed line-clamp-2">
+          {item.description}
+        </p>
+        <span className="inline-flex items-center text-body-sm font-semibold text-primary mt-3 group-hover:text-primary-hover transition-colors duration-250 ease-stripe">
+          Read the story
+          <ChevronRight className="w-4 h-4 ml-0.5 transition-transform duration-250 ease-stripe-out group-hover:translate-x-1" />
+        </span>
+      </div>
+    </a>
   );
 }
 
 export function Press() {
   const { ref, isVisible } = useScrollAnimation();
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 4);
+    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener('scroll', checkScroll, { passive: true });
+    window.addEventListener('resize', checkScroll);
+    return () => {
+      el.removeEventListener('scroll', checkScroll);
+      window.removeEventListener('resize', checkScroll);
+    };
+  }, [checkScroll]);
+
+  const scroll = (direction: 'left' | 'right') => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const cardWidth = 356; // card width + gap
+    el.scrollBy({
+      left: direction === 'left' ? -cardWidth : cardWidth,
+      behavior: 'smooth',
+    });
+  };
 
   return (
     <section ref={ref} id="press" className="bg-white py-16 lg:py-[120px]">
       <div className="container-main">
-        <span
-          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          PRESS
-        </span>
-        <h2
-          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-        >
-          In the news
-        </h2>
+        {/* Header row */}
+        <div className="flex items-end justify-between">
+          <div>
+            <span
+              className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
+                isVisible
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-4'
+              }`}
+            >
+              PRESS
+            </span>
+            <h2
+              className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
+                isVisible
+                  ? 'opacity-100 translate-y-0'
+                  : 'opacity-0 translate-y-6'
+              }`}
+            >
+              In the news
+            </h2>
+          </div>
 
-        <div className="mt-12 border-t border-border">
-          {pressItems.map((item, i) => (
-            <PressRow key={i} item={item} index={i} isVisible={isVisible} />
-          ))}
+          {/* Navigation arrows */}
+          <div
+            className={`hidden sm:flex items-center gap-2 transition-all duration-500 ease-stripe-out ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            }`}
+            style={{ transitionDelay: '200ms' }}
+          >
+            <button
+              onClick={() => scroll('left')}
+              disabled={!canScrollLeft}
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-all duration-250 ease-stripe hover:border-border-strong hover:shadow-stripe-xs disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:shadow-none"
+              aria-label="Scroll left"
+            >
+              <ChevronLeft className="w-5 h-5 text-primary-dark" />
+            </button>
+            <button
+              onClick={() => scroll('right')}
+              disabled={!canScrollRight}
+              className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-all duration-250 ease-stripe hover:border-border-strong hover:shadow-stripe-xs disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:shadow-none"
+              aria-label="Scroll right"
+            >
+              <ChevronRight className="w-5 h-5 text-primary-dark" />
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Scrollable cards — full-bleed on the right */}
+      <div
+        ref={scrollRef}
+        className="mt-12 flex gap-4 overflow-x-auto scroll-smooth pl-6 lg:pl-[max(calc((100vw-1080px)/2+48px),48px)] pr-6 pb-2 snap-x snap-mandatory scrollbar-hide"
+        style={{
+          scrollbarWidth: 'none',
+          msOverflowStyle: 'none',
+        }}
+      >
+        {pressItems.map((item, i) => (
+          <div key={i} className="snap-start">
+            <PressCard item={item} index={i} isVisible={isVisible} />
+          </div>
+        ))}
+        {/* End spacer */}
+        <div className="flex-shrink-0 w-6 lg:w-12" />
       </div>
     </section>
   );
