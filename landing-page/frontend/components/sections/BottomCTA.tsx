@@ -12,7 +12,7 @@ export function BottomCTA() {
       id="get-started"
       className="bg-white py-16 lg:py-[120px]"
     >
-      <div className="container-main text-center">
+      <div className="container-main">
         <h2
           className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
@@ -21,7 +21,7 @@ export function BottomCTA() {
           Financing for the productive majority.
         </h2>
         <p
-          className={`text-body-lg text-slate max-w-[600px] mx-auto mt-6 transition-all duration-500 ease-stripe-out ${
+          className={`text-body-lg text-slate max-w-[600px] mt-6 transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '60ms' }}
@@ -31,7 +31,7 @@ export function BottomCTA() {
           economy.
         </p>
         <div
-          className={`flex flex-wrap justify-center gap-4 mt-8 transition-all duration-500 ease-stripe-out ${
+          className={`flex flex-wrap justify-start gap-4 mt-8 transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '120ms' }}

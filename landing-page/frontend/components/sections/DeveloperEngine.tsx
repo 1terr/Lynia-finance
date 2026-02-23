@@ -7,7 +7,7 @@ export function DeveloperEngine() {
 
   return (
     <section ref={ref} className="bg-white py-16 lg:py-[120px]">
-      <div className="container-main text-center">
+      <div className="container-main">
         <span
           className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -24,7 +24,7 @@ export function DeveloperEngine() {
           Programmable Resilience.
         </h2>
         <p
-          className={`text-body-lg text-slate max-w-[600px] mx-auto mt-6 transition-all duration-500 ease-stripe-out ${
+          className={`text-body-lg text-slate max-w-[600px] mt-6 transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '120ms' }}
