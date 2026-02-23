@@ -4,9 +4,10 @@ import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { useEffect, useState } from 'react';
 
 const stats = [
-  { value: 97.5, suffix: '%', label: 'Mobile Penetration', source: 'POTRAZ' },
-  { value: 9.96, suffix: 'M', label: 'Active Mobile Money Accounts', source: 'RBZ' },
-  { value: 83, suffix: '%', label: 'Formally Served but Credit-Constrained', source: 'NFIS II' },
+  { value: 16, suffix: '%', label: 'of adults access formal credit' },
+  { value: 63, suffix: '%', label: 'use mobile money' },
+  { value: 52, suffix: '%', label: 'own a smartphone' },
+  { value: 58, suffix: '%', label: 'work in the informal sector' },
 ];
 
 function CountUp({ target, suffix, isVisible }: { target: number; suffix: string; isVisible: boolean }) {
@@ -43,27 +44,48 @@ export function DataStrip() {
   return (
     <section
       ref={ref}
-      className="bg-gradient-to-br from-navy to-primary py-16 lg:py-[120px]"
+      className="bg-white py-16 lg:py-[120px]"
     >
-      <div className="container-main text-center">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-16">
+      <div className="container-main">
+        {/* Heading */}
+        <h2
+          className={`text-display-mobile lg:text-display text-navy text-center transition-all duration-500 ease-stripe-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+        >
+          The state of financial inclusion
+        </h2>
+
+        {/* Subtitle */}
+        <p
+          className={`text-body-lg text-slate text-center max-w-[640px] mx-auto mt-6 transition-all duration-500 ease-stripe-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+          style={{ transitionDelay: '60ms' }}
+        >
+          Behind every statistic is someone building a livelihood without a safety
+          net&nbsp;&mdash; a vendor, a farmer, a mother. The tools to reach them
+          already exist.
+        </p>
+
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-16 mt-12 lg:mt-16">
           {stats.map((stat, i) => (
             <div
               key={stat.label}
               className={`text-center transition-all duration-500 ease-stripe-out ${
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
               }`}
-              style={{ transitionDelay: `${i * 80}ms` }}
+              style={{ transitionDelay: `${120 + i * 80}ms` }}
             >
-              <div className="text-hero-mobile lg:text-hero text-white tabular-nums">
+              <div className="text-hero-mobile lg:text-hero text-navy tabular-nums">
                 <CountUp
                   target={stat.value}
                   suffix={stat.suffix}
                   isVisible={isVisible}
                 />
               </div>
-              <p className="text-body-lg font-medium text-white/90 mt-3">{stat.label}</p>
-              <p className="text-body-sm text-white/50 mt-1">{stat.source}</p>
+              <p className="text-body-lg font-medium text-navy/90 mt-3">{stat.label}</p>
             </div>
           ))}
         </div>
