@@ -158,7 +158,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: allure-results-shard-${{ matrix.shard_index }}
           path: |
@@ -171,7 +171,7 @@ jobs:
 
       - name: Upload Allure Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: allure-report-shard-${{ matrix.shard_index }}
           path: allure-report-shard-${{ matrix.shard_index }}
@@ -179,7 +179,7 @@ jobs:
 
       - name: Upload logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: logs-shard-${{ matrix.shard_index }}
           path: |

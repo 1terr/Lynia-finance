@@ -148,7 +148,7 @@ jobs:
 
       - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ matrix.task }}
           path: '**/build/reports/'
@@ -156,7 +156,7 @@ jobs:
 
       - name: Archive server logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: server-logs-${{ matrix.task }}
           path: '**/build/cargo/'

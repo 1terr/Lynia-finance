@@ -110,7 +110,7 @@ jobs:
         run: sam validate --lint
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sam-build
           path: .aws-sam/build/

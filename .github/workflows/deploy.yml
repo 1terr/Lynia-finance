@@ -206,7 +206,7 @@ jobs:
           cfn-lint template.yaml -i E3004 W8001
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: sam-build
           path: .aws-sam/build/

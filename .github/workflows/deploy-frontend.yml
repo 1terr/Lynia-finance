@@ -156,7 +156,7 @@ jobs:
 
       - name: Upload admin portal build
         if: steps.build-admin.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: admin-portal-build
           path: frontend/apps/admin-portal/out/
@@ -164,7 +164,7 @@ jobs:
 
       - name: Upload distributor dashboard build
         if: steps.build-distributor.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: distributor-dashboard-build
           path: frontend/apps/distributor-dashboard/out/
@@ -172,7 +172,7 @@ jobs:
 
       - name: Upload landing page build
         if: steps.build-landing.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: landing-page-build
           path: landing-page/frontend/out/
