@@ -8,17 +8,65 @@ export function ProductBento() {
   return (
     <section ref={ref} id="products" className="bg-white py-16 lg:py-[120px]">
       <div className="container-main">
-        {/* Bento Grid: large card + two smaller cards */}
+        {/* Bento Grid: two cards on top, full-width card on bottom */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Asset-Backed Lending — Large Card */}
+          {/* Digital Credit — Top Left */}
           <div
-            className={`border border-border rounded-xl p-8 lg:p-10 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md lg:row-span-2 flex flex-col justify-between ${
+            className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
+            <span className="text-overline uppercase tracking-wider text-primary">
+              DIGITAL CREDIT
+            </span>
+            <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
+              Conversational Liquidity
+            </h3>
+            <p className="text-body text-slate mt-3">
+              Instant, collateral-free credit for civil servants and partner
+              employees.
+            </p>
+            <p className="text-body-sm text-slate mt-4">
+              WhatsApp-native applications with instant disbursement to{' '}
+              <span className="font-medium text-primary-dark">Innbucks</span>,{' '}
+              <span className="font-medium text-primary-dark">EcoCash</span>,{' '}
+              <span className="font-medium text-primary-dark">OneWallet</span>,
+              or{' '}
+              <span className="font-medium text-primary-dark">OMari</span>.
+            </p>
+          </div>
+
+          {/* Embedded Credit — Top Right */}
+          <div
+            className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
+            style={{ transitionDelay: '60ms' }}
+          >
+            <span className="text-overline uppercase tracking-wider text-primary">
+              EMBEDDED CREDIT
+            </span>
+            <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
+              API for Ecosystem Resilience
+            </h3>
+            <p className="text-body text-slate mt-3">
+              Connect via API or data sharing to finance your platform&apos;s
+              ecosystem. We analyze mobile money activity to provide credit
+              bundled with health/life insurance and capacity-building
+              mechanisms.
+            </p>
+          </div>
+
+          {/* Asset-Backed Credit — Full Width Bottom */}
+          <div
+            className={`border border-border rounded-xl p-8 lg:p-10 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md lg:col-span-2 flex flex-col justify-between ${
+              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+            }`}
+            style={{ transitionDelay: '120ms' }}
+          >
             <div>
               <span className="text-overline uppercase tracking-wider text-primary">
-                ASSET-BACKED LENDING
+                ASSET-BACKED CREDIT
               </span>
               <h3 className="text-title-mobile lg:text-title text-primary-dark mt-4">
                 Productive Asset Financing
@@ -43,54 +91,6 @@ export function ProductBento() {
               CGAP Alignment: Shifting from &ldquo;negative collateral&rdquo; to
               &ldquo;productive trust&rdquo; by funding assets that grow cash
               flow.
-            </p>
-          </div>
-
-          {/* Digital Credit — Square Card */}
-          <div
-            className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-            style={{ transitionDelay: '60ms' }}
-          >
-            <span className="text-overline uppercase tracking-wider text-primary">
-              DIGITAL CREDIT
-            </span>
-            <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
-              Conversational Liquidity
-            </h3>
-            <p className="text-body text-slate mt-3">
-              Instant, collateral-free credit for civil servants and partner
-              employees.
-            </p>
-            <p className="text-body-sm text-slate mt-4">
-              WhatsApp-native applications with instant disbursement to{' '}
-              <span className="font-medium text-primary-dark">Innbucks</span>,{' '}
-              <span className="font-medium text-primary-dark">EcoCash</span>,{' '}
-              <span className="font-medium text-primary-dark">OneWallet</span>,
-              or{' '}
-              <span className="font-medium text-primary-dark">OMari</span>.
-            </p>
-          </div>
-
-          {/* Embedded Credit — Wide Card */}
-          <div
-            className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-            }`}
-            style={{ transitionDelay: '120ms' }}
-          >
-            <span className="text-overline uppercase tracking-wider text-primary">
-              EMBEDDED CREDIT
-            </span>
-            <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
-              API for Ecosystem Resilience
-            </h3>
-            <p className="text-body text-slate mt-3">
-              Connect via API or data sharing to finance your platform&apos;s
-              ecosystem. We analyze mobile money activity to provide credit
-              bundled with health/life insurance and capacity-building
-              mechanisms.
             </p>
           </div>
         </div>
