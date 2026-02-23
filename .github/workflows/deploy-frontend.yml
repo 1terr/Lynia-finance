@@ -112,7 +112,7 @@ jobs:
 
       - name: Build landing page
         id: build-landing
-        if: env.DEPLOY_APP == 'landing-page' || env.DEPLOY_APP == 'all'
+        if: env.DEPLOY_APP == 'landing-page' || env.DEPLOY_APP == 'both' || env.DEPLOY_APP == 'all'
         run: pnpm --filter "@lynia/landing-page" build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
@@ -425,7 +425,7 @@ jobs:
     name: Deploy Landing Page
     runs-on: ubuntu-latest
     needs: build-test
-    if: ${{ (inputs.application || 'both') == 'landing-page' || (inputs.application || 'both') == 'all' }}
+    if: ${{ (inputs.application || 'both') == 'landing-page' || (inputs.application || 'both') == 'both' || (inputs.application || 'both') == 'all' }}
     environment:
       name: ${{ inputs.environment || 'production' }}
       url: ${{ steps.get-url.outputs.url }}
