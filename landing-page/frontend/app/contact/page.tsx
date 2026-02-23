@@ -274,7 +274,7 @@ export default function ContactPage() {
           <span className="text-overline uppercase tracking-wider text-primary">
             CONTACT
           </span>
-          <h1 className="text-display-mobile lg:text-display text-primary-dark mt-4">
+          <h1 className="text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4">
             Get in touch
           </h1>
           <p className="text-body-lg text-slate mt-4 max-w-[600px]">
@@ -346,7 +346,7 @@ export default function ContactPage() {
             <span className="text-overline uppercase tracking-wider text-primary">
               PARTNERSHIPS
             </span>
-            <h2 className="text-title-mobile lg:text-title text-primary-dark mt-4">
+            <h2 className="text-title-mobile md:text-title-tablet lg:text-title text-primary-dark mt-4">
               Become a Lynia partner
             </h2>
             <p className="text-body text-slate mt-4">

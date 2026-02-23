@@ -68,7 +68,7 @@ export function ProductBento() {
               <span className="text-overline uppercase tracking-wider text-primary">
                 ASSET-BACKED CREDIT
               </span>
-              <h3 className="text-title-mobile lg:text-title text-primary-dark mt-4">
+              <h3 className="text-title-mobile md:text-title-tablet lg:text-title text-primary-dark mt-4">
                 Productive Asset Financing
               </h3>
               <p className="text-body text-slate mt-4">

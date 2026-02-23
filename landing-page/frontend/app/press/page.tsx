@@ -34,12 +34,12 @@ export default function PressPage() {
   return (
     <div className="pt-[72px]">
       {/* Hero */}
-      <section className="bg-primary-light py-16 lg:py-20">
+      <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
           <span className="text-overline uppercase tracking-wider text-primary">
             PRESS
           </span>
-          <h1 className="text-display-mobile lg:text-display text-primary-dark mt-4">
+          <h1 className="text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4">
             In the news
           </h1>
           <p className="text-body-lg text-slate mt-4 max-w-[600px]">

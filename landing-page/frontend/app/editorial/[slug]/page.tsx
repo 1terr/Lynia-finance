@@ -52,7 +52,7 @@ export default async function EditorialPostPage({ params }: PageProps) {
           <span className="inline-block text-caption font-medium text-primary bg-primary-50 px-3 py-1 rounded-full">
             {post.category}
           </span>
-          <h1 className="text-display-mobile lg:text-hero text-primary-dark mt-4">
+          <h1 className="text-display-mobile md:text-hero-tablet lg:text-hero text-primary-dark mt-4">
             {post.title}
           </h1>
           <p className="text-body text-slate mt-4">
@@ -104,7 +104,7 @@ export default async function EditorialPostPage({ params }: PageProps) {
       </section>
 
       {/* Related articles */}
-      <section className="bg-primary-light py-16 lg:py-20">
+      <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
           <span className="text-overline uppercase tracking-wider text-primary">
             RELATED ARTICLES

@@ -53,7 +53,7 @@ export function Navbar() {
                 key={link.label}
                 href={link.href}
                 aria-current={isActive ? 'page' : undefined}
-                className={`text-body-sm font-medium transition-colors duration-250 ease-stripe ${
+                className={`text-body font-medium transition-colors duration-250 ease-stripe ${
                   isActive
                     ? 'text-primary-dark border-b-2 border-primary pb-0.5'
                     : 'text-slate hover:text-primary-dark'

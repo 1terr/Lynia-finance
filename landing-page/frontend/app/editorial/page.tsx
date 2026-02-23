@@ -34,7 +34,7 @@ export default function EditorialPage() {
                 <span className="inline-block self-start text-caption font-medium text-primary bg-primary-50 px-3 py-1 rounded-full">
                   {featured.category}
                 </span>
-                <h2 className="text-title-mobile lg:text-title text-primary-dark mt-4 group-hover:text-primary transition-colors">
+                <h2 className="text-title-mobile md:text-title-tablet lg:text-title text-primary-dark mt-4 group-hover:text-primary transition-colors">
                   {featured.title}
                 </h2>
                 <p className="text-body text-slate mt-3">{featured.excerpt}</p>
@@ -48,7 +48,7 @@ export default function EditorialPage() {
       </section>
 
       {/* Category pills + grid */}
-      <section ref={ref} className="bg-primary-light py-16 lg:py-[120px]">
+      <section ref={ref} className="bg-white py-16 lg:py-[120px]">
         <div className="container-main">
           {/* Category filters */}
           <div className="flex flex-wrap gap-2 mb-12">

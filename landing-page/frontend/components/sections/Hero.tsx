@@ -21,10 +21,10 @@ export function Hero() {
       <div className="container-wide relative z-10">
         <div className="max-w-[640px] pt-24 lg:pt-0">
           <h1
-            className="text-hero-custom opacity-0 animate-fade-up"
+            className="text-hero-mobile md:text-hero-tablet lg:text-hero opacity-0 animate-fade-up"
             style={{ animationFillMode: 'forwards' }}
           >
-            <span className="text-hero-primary">
+            <span className="text-primary-dark">
               Financing for the productive majority.
             </span>{' '}
             <span className="text-hero-accent">

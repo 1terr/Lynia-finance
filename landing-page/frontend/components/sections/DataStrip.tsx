@@ -49,7 +49,7 @@ export function DataStrip() {
       <div className="container-main">
         {/* Heading */}
         <h2
-          className={`text-display-mobile lg:text-display text-navy text-center transition-all duration-500 ease-stripe-out ${
+          className={`text-display-mobile md:text-display-tablet lg:text-display text-navy text-center transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >
@@ -78,7 +78,7 @@ export function DataStrip() {
               }`}
               style={{ transitionDelay: `${120 + i * 80}ms` }}
             >
-              <div className="text-hero-mobile lg:text-hero text-navy tabular-nums">
+              <div className="text-hero-mobile md:text-hero-tablet lg:text-hero text-navy tabular-nums">
                 <CountUp
                   target={stat.value}
                   suffix={stat.suffix}

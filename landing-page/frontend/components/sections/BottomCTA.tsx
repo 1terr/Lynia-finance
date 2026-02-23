@@ -14,7 +14,7 @@ export function BottomCTA() {
     >
       <div className="container-main text-center">
         <h2
-          className={`text-display-mobile lg:text-display text-primary-dark transition-all duration-500 ease-stripe-out ${
+          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >

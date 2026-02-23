@@ -16,9 +16,9 @@ export default function PrivacyPage() {
   return (
     <div className="pt-[72px]">
       {/* Header */}
-      <section className="bg-primary-light py-16 lg:py-20">
+      <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
-          <h1 className="text-display-mobile lg:text-display text-primary-dark">
+          <h1 className="text-display-mobile md:text-display-tablet lg:text-display text-primary-dark">
             Privacy Policy
           </h1>
           <p className="text-body text-slate mt-3">

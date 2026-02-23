@@ -16,7 +16,7 @@ export function DeveloperEngine() {
           THE DEVELOPER ENGINE
         </span>
         <h2
-          className={`text-display-mobile lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
+          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '60ms' }}

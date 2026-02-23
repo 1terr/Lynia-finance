@@ -46,37 +46,27 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
-        // Design system semantic scale (UI-UX-SKILLS.md)
-        hero: ['3.5rem', { lineHeight: '1.1', letterSpacing: '-0.04em', fontWeight: '700' }],
-        display: ['2.75rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '700' }],
-        title: ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '600' }],
+        // Design system semantic scale — aligned to Stripe 2026
+        hero: ['3.5rem', { lineHeight: '1.08', letterSpacing: '-0.02em', fontWeight: '700' }],
+        display: ['2.375rem', { lineHeight: '1.26', letterSpacing: '-0.02em', fontWeight: '700' }],
+        title: ['2rem', { lineHeight: '1.25', letterSpacing: '-0.02em', fontWeight: '600' }],
         heading: ['1.625rem', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '600' }],
         subheading: ['1.25rem', { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '600' }],
-        'body-lg': ['1.125rem', { lineHeight: '1.6', letterSpacing: '0.01em', fontWeight: '400' }],
-        body: ['1rem', { lineHeight: '1.6', letterSpacing: '0.01em', fontWeight: '400' }],
-        'body-sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0.01em', fontWeight: '400' }],
-        caption: ['0.8125rem', { lineHeight: '1.4', letterSpacing: '0.02em', fontWeight: '500' }],
-        overline: ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.08em', fontWeight: '600' }],
+        'body-lg': ['1.125rem', { lineHeight: '1.555', letterSpacing: '0.01em', fontWeight: '400' }],
+        body: ['0.9375rem', { lineHeight: '1.6', letterSpacing: '0.012em', fontWeight: '400' }],
+        'body-sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0.012em', fontWeight: '400' }],
+        caption: ['0.8125rem', { lineHeight: '1.4', letterSpacing: '0.015em', fontWeight: '500' }],
+        overline: ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.06em', fontWeight: '600' }],
 
-        // Stripe-style large hero variants
-        'hero-lg': ['4.5rem', { lineHeight: '1.05', letterSpacing: '-0.045em', fontWeight: '700' }],
-        'hero-lg-tablet': ['4rem', { lineHeight: '1.08', letterSpacing: '-0.04em', fontWeight: '700' }],
-        'hero-lg-mobile': ['2.75rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
-
-        // Custom hero variant for new design (with CSS var fallback)
-        'hero-custom': [
-          'var(--font-size-hero-custom, 41.95px)',
-          {
-            lineHeight: 'var(--line-height-hero-custom, 48.2425px)',
-            fontWeight: '300',
-            letterSpacing: '-0.02em'
-          }
-        ],
+        // Tablet responsive variants (md: breakpoint)
+        'hero-tablet': ['3rem', { lineHeight: '1.08', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-tablet': ['2.125rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'title-tablet': ['1.875rem', { lineHeight: '1.22', letterSpacing: '-0.015em', fontWeight: '600' }],
 
         // Mobile responsive variants
-        'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '700' }],
-        'display-mobile': ['2.125rem', { lineHeight: '1.15', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'title-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.015em', fontWeight: '600' }],
+        'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'display-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.015em', fontWeight: '700' }],
+        'title-mobile': ['1.5rem', { lineHeight: '1.22', letterSpacing: '-0.01em', fontWeight: '600' }],
         'heading-mobile': ['1.375rem', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' }],
       },
       letterSpacing: {

@@ -46,7 +46,7 @@ export function WaitlistForm() {
           type="tel"
           required
           placeholder="+263 7XX XXX XXX"
-          className="h-11 px-4 rounded-md bg-white/10 border border-white/20 text-white placeholder:text-white/40 text-body-sm focus:border-primary focus:outline-none flex-1"
+          className="h-11 px-4 rounded-md bg-white border border-border text-primary-dark placeholder:text-slate-light text-body-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm flex-1"
         />
         <button
           type="submit"

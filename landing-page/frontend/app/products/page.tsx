@@ -12,7 +12,7 @@ export default function ProductsPage() {
           <span className="text-overline uppercase tracking-wider text-primary">
             PRODUCTS
           </span>
-          <h1 className="text-display-mobile lg:text-hero text-primary-dark mt-4 max-w-[720px] mx-auto">
+          <h1 className="text-display-mobile md:text-hero-tablet lg:text-hero text-primary-dark mt-4 max-w-[720px] mx-auto">
             Something big is coming.
           </h1>
           <p className="text-body-lg text-slate mt-6 max-w-[600px] mx-auto">

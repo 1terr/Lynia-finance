@@ -16,7 +16,7 @@ export default function ThesisPage() {
           <span className="text-overline uppercase tracking-wider text-primary">
             THE 2026 THESIS
           </span>
-          <h1 className="text-display-mobile lg:text-hero text-primary-dark mt-4 max-w-[780px]">
+          <h1 className="text-display-mobile md:text-hero-tablet lg:text-hero text-primary-dark mt-4 max-w-[780px]">
             Credit infrastructure for the productive majority.
           </h1>
         </div>
@@ -26,7 +26,7 @@ export default function ThesisPage() {
       <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main">
           <div className="max-w-[780px]">
-            <h2 className="text-title-mobile lg:text-title text-primary-dark">
+            <h2 className="text-title-mobile md:text-title-tablet lg:text-title text-primary-dark">
               The Conviction
             </h2>
             <p className="text-body-lg text-slate mt-6 leading-relaxed">
@@ -58,7 +58,7 @@ export default function ThesisPage() {
       <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main">
           <div className="max-w-[780px]">
-            <h2 className="text-title-mobile lg:text-title text-primary-dark">
+            <h2 className="text-title-mobile md:text-title-tablet lg:text-title text-primary-dark">
               The Strategy
             </h2>
             <p className="text-body-lg text-slate mt-6 leading-relaxed">
@@ -105,7 +105,7 @@ export default function ThesisPage() {
       {/* CTA */}
       <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main text-center">
-          <h2 className="text-display-mobile lg:text-display text-primary-dark">
+          <h2 className="text-display-mobile md:text-display-tablet lg:text-display text-primary-dark">
             Build with us.
           </h2>
           <p className="text-body-lg text-slate max-w-[560px] mx-auto mt-6">
