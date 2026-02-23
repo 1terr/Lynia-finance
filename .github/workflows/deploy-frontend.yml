@@ -37,7 +37,6 @@ concurrency:
 env:
   AWS_REGION: us-east-1
   NODE_VERSION: '20.x'
-  PNPM_VERSION: '10'
   DEPLOY_ENV: ${{ inputs.environment || 'production' }}
   DEPLOY_APP: ${{ inputs.application || 'both' }}
   # Production frontend stack uses lynia-finance-prod-frontend naming convention
@@ -61,8 +60,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
