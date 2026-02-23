@@ -39,12 +39,12 @@ function isExternal(href: string) {
 
 export function Footer() {
   return (
-    <footer className="bg-navy">
+    <footer className="bg-white border-t border-border">
       <div className="container-main pt-16 pb-8">
         {/* Logo + tagline */}
         <div className="mb-10">
-          <span className="text-subheading text-white">Lynia Finance</span>
-          <p className="text-body-sm text-white/50 mt-2 italic">
+          <span className="text-subheading text-primary-dark">Lynia Finance</span>
+          <p className="text-body-sm text-slate mt-2 italic">
             Built for the productive majority.
           </p>
         </div>
@@ -53,12 +53,12 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           {footerColumns.map((col) => (
             <div key={col.title}>
-              <h4 className="text-caption uppercase tracking-wide text-white/40 mb-4">
+              <h4 className="text-caption uppercase tracking-wide text-slate-light mb-4">
                 {col.title}
               </h4>
               <ul className="space-y-3">
                 {col.links.map((link) => {
-                  const cls = "text-body-sm text-white/70 hover:text-white transition-colors duration-150";
+                  const cls = "text-body-sm text-slate hover:text-primary-dark transition-colors duration-150";
                   return (
                     <li key={link.label}>
                       {isExternal(link.href) ? (
@@ -84,11 +84,11 @@ export function Footer() {
         </div>
 
         {/* Divider + copyright */}
-        <div className="border-t border-white/10 pt-8">
-          <p className="text-caption text-white/30">
+        <div className="border-t border-border pt-8">
+          <p className="text-caption text-muted">
             &copy; {new Date().getFullYear()} Lynia Finance. All rights reserved.
           </p>
-          <p className="text-caption text-white/30 mt-1">
+          <p className="text-caption text-muted mt-1">
             Regulated by the Reserve Bank of Zimbabwe.
           </p>
         </div>

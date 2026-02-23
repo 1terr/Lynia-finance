@@ -6,7 +6,7 @@ export function DeveloperEngine() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} className="bg-primary-light py-16 lg:py-[120px]">
+    <section ref={ref} className="bg-white py-16 lg:py-[120px]">
       <div className="container-main text-center">
         <span
           className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${

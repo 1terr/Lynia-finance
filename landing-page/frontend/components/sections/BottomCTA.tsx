@@ -10,19 +10,18 @@ export function BottomCTA() {
     <section
       ref={ref}
       id="get-started"
-      className="py-16 lg:py-[120px]"
-      style={{ background: 'var(--gradient-cta)' }}
+      className="bg-white py-16 lg:py-[120px]"
     >
       <div className="container-main text-center">
         <h2
-          className={`text-display-mobile lg:text-display text-white transition-all duration-500 ease-stripe-out ${
+          className={`text-display-mobile lg:text-display text-primary-dark transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
         >
           Financing for the productive majority.
         </h2>
         <p
-          className={`text-body-lg text-white/70 max-w-[600px] mx-auto mt-6 transition-all duration-500 ease-stripe-out ${
+          className={`text-body-lg text-slate max-w-[600px] mx-auto mt-6 transition-all duration-500 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
           }`}
           style={{ transitionDelay: '60ms' }}
@@ -37,10 +36,10 @@ export function BottomCTA() {
           }`}
           style={{ transitionDelay: '120ms' }}
         >
-          <Button variant="white" size="lg" href="/contact">
+          <Button variant="accent" size="lg" href="/contact">
             Get started &rarr;
           </Button>
-          <Button variant="ghost" size="lg" href="/thesis">
+          <Button variant="outline" size="lg" href="/thesis">
             Read the 2026 Thesis
           </Button>
         </div>
