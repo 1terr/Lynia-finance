@@ -14,6 +14,8 @@
 
 import { db } from '../../shared/clients/database';
 import axios from 'axios';
+import { logger } from '../../shared/utils/logger';
+import { t, detectLanguage, type SupportedLanguage } from './i18n';
 
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 const WHATSAPP_ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
@@ -51,6 +53,9 @@ export interface OnboardingSession {
   phone_number: string;
   current_state: OnboardingState;
   state_data: {
+    // Language preference
+    preferred_language?: SupportedLanguage;
+
     // Personal info
     full_name?: string;
     date_of_birth?: string;
@@ -197,7 +202,7 @@ export async function getOrCreateSession(phoneNumber: string): Promise<Onboardin
     .execute();
 
   if (error) {
-    console.error('Failed to create session:', error);
+    logger.error('Failed to create session', { action: 'session.create', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     throw new Error('Failed to create onboarding session');
   }
 
@@ -221,7 +226,7 @@ export async function updateSession(
     .execute();
 
   if (error) {
-    console.error('Failed to update session:', error);
+    logger.error('Failed to update session', { action: 'session.update', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     throw new Error('Failed to update session');
   }
 }
@@ -262,6 +267,10 @@ async function downloadWhatsAppMedia(mediaId: string): Promise<string> {
 export async function handleWelcome(context: MessageContext): Promise<string> {
   const session = await getOrCreateSession(context.from);
 
+  // Detect language from initial message
+  const detectedLang = detectLanguage(context.message) || 'en';
+  const lang: SupportedLanguage = session.state_data.preferred_language || detectedLang;
+
   // Validate Zimbabwe phone number
   const validation = validateZimbabwePhoneNumber(context.from);
 
@@ -274,24 +283,10 @@ export async function handleWelcome(context: MessageContext): Promise<string> {
         source: 'whatsapp_onboarding'
       }).execute();
 
-      return `❌ *Service Not Available*
-
-We currently only serve customers with Zimbabwean phone numbers (+263).
-
-We'll notify you when we expand to your country! 🌍
-
-Have a Zimbabwean number? Contact us: support@lynia.finance`;
+      return t('service_not_available', lang);
     }
 
-    return `❌ *Invalid Phone Number*
-
-Please ensure you're messaging from a valid Zimbabwean mobile number.
-
-Valid formats:
-• +263 77 123 4567
-• 0771234567
-
-Need help? Contact support@lynia.finance`;
+    return t('invalid_phone', lang);
   }
 
   // Phone is valid, move to personal info collection
@@ -299,22 +294,12 @@ Need help? Contact support@lynia.finance`;
     current_state: 'collecting_personal_info',
     state_data: {
       ...session.state_data,
+      preferred_language: lang,
       started_at: new Date().toISOString()
     }
   });
 
-  return `👋 *Welcome to Lynia Finance!*
-
-Get a smartphone today, pay over 6-8 months.
-
-✅ No credit history needed
-✅ Fast approval (<10 min)
-✅ Flexible payment plans
-✅ Device locked until paid
-
-Let's get started! First, what's your full name? (as it appears on your National ID)
-
-Example: *Tendai Mukanya Moyo*`;
+  return t('welcome', lang) + '\n\n' + t('ask_name', lang);
 }
 
 /**
@@ -325,15 +310,14 @@ export async function handlePersonalInfo(
   context: MessageContext
 ): Promise<string> {
   const message = context.message.trim();
+  const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
 
   // Collect full name
   if (!session.state_data.full_name) {
     // Validate name (2-5 words)
     const nameParts = message.split(/\s+/);
     if (nameParts.length < 2 || nameParts.length > 5) {
-      return `Please provide your full name (2-5 words).
-
-Example: *Tendai Mukanya Moyo*`;
+      return t('name_format_error', lang);
     }
 
     await updateSession(context.from, {
@@ -343,12 +327,7 @@ Example: *Tendai Mukanya Moyo*`;
       }
     });
 
-    return `Great, ${nameParts[0]}! 👍
-
-Now, what's your date of birth?
-
-Format: *DD/MM/YYYY*
-Example: *15/03/1990*`;
+    return t('ask_dob', lang);
   }
 
   // Collect date of birth
@@ -358,9 +337,7 @@ Example: *15/03/1990*`;
     const match = message.match(dobPattern);
 
     if (!match) {
-      return `Invalid date format. Please use DD/MM/YYYY
-
-Example: *15/03/1990*`;
+      return t('dob_format_error', lang);
     }
 
     const [, day, month, year] = match;
@@ -368,9 +345,7 @@ Example: *15/03/1990*`;
     const age = Math.floor((Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
 
     if (age < 18 || age > 75) {
-      return `Sorry, you must be between 18 and 75 years old to apply.
-
-Age: ${age} years`;
+      return t('dob_format_error', lang);
     }
 
     await updateSession(context.from, {
@@ -380,23 +355,14 @@ Age: ${age} years`;
       }
     });
 
-    return `Perfect! Now, what's your gender?
-
-Reply with:
-1️⃣ *Male*
-2️⃣ *Female*
-3️⃣ *Other*`;
+    return t('ask_gender', lang);
   }
 
   // Collect gender
   if (!session.state_data.gender) {
     const gender = message.toLowerCase();
     if (!['male', 'female', 'other', '1', '2', '3'].includes(gender)) {
-      return `Please select your gender:
-
-1️⃣ *Male*
-2️⃣ *Female*
-3️⃣ *Other*`;
+      return t('ask_gender', lang);
     }
 
     const genderMap: Record<string, 'male' | 'female' | 'other'> = {
@@ -415,13 +381,7 @@ Reply with:
       }
     });
 
-    return `Great! What city/town do you live in?
-
-Examples:
-• *Harare*
-• *Bulawayo*
-• *Chitungwiza*
-• *Mutare*`;
+    return t('ask_location', lang);
   }
 
   // Collect location and move to employment info
@@ -429,7 +389,7 @@ Examples:
     const location = message.trim();
 
     if (location.length < 2) {
-      return `Please enter a valid city or town name.`;
+      return t('invalid_input', lang);
     }
 
     await updateSession(context.from, {
@@ -440,21 +400,10 @@ Examples:
       }
     });
 
-    return `✅ *Personal Info Complete!*
-
-Now let's talk about your income. This helps us determine your loan amount.
-
-What type of work do you do?
-
-Examples:
-• *Formal employment*
-• *Self-employed*
-• *Informal trader*
-• *Driver (Uber/Bolt)*
-• *Other*`;
+    return t('personal_info_complete', lang) + '\n\n' + t('ask_employment', lang);
   }
 
-  return 'Something went wrong. Please contact support.';
+  return t('error_generic', lang);
 }
 
 /**
@@ -465,6 +414,7 @@ export async function handleEmployment(
   context: MessageContext
 ): Promise<string> {
   const message = context.message.trim();
+  const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
 
   // Collect employment type
   if (!session.state_data.employment_type) {
@@ -475,10 +425,7 @@ export async function handleEmployment(
       }
     });
 
-    return `Got it! What's your average monthly income (in USD)?
-
-Please enter a number:
-Example: *350*`;
+    return t('ask_income', lang);
   }
 
   // Collect monthly income
@@ -486,17 +433,11 @@ Example: *350*`;
     const income = parseFloat(message);
 
     if (isNaN(income) || income <= 0) {
-      return `Please enter a valid income amount (numbers only).
-
-Example: *350*`;
+      return t('invalid_input', lang);
     }
 
     if (income < 50) {
-      return `Minimum monthly income required: $50 USD
-
-Your income: $${income}
-
-If this is incorrect, please re-enter your monthly income.`;
+      return t('invalid_input', lang);
     }
 
     await updateSession(context.from, {
@@ -506,10 +447,7 @@ If this is incorrect, please re-enter your monthly income.`;
       }
     });
 
-    return `Do you have any existing debt obligations? (loans, rent, etc.)
-
-Enter monthly amount in USD, or type *0* if none:
-Example: *50*`;
+    return t('ask_debts', lang);
   }
 
   // Collect existing debts
@@ -517,9 +455,7 @@ Example: *50*`;
     const debts = parseFloat(message);
 
     if (isNaN(debts) || debts < 0) {
-      return `Please enter a valid amount (numbers only), or *0* if no debts.
-
-Example: *50* or *0*`;
+      return t('invalid_input', lang);
     }
 
     await updateSession(context.from, {
@@ -529,9 +465,7 @@ Example: *50* or *0*`;
       }
     });
 
-    return `How many people live in your household? (including yourself)
-
-Example: *3*`;
+    return t('ask_household', lang);
   }
 
   // Collect household size and move to product selection
@@ -539,9 +473,7 @@ Example: *3*`;
     const household = parseInt(message);
 
     if (isNaN(household) || household < 1 || household > 20) {
-      return `Please enter a valid number (1-20).
-
-Example: *3*`;
+      return t('invalid_input', lang);
     }
 
     // Assume dependents = household_size - 1 for simplicity
@@ -556,20 +488,10 @@ Example: *3*`;
       }
     });
 
-    return `✅ *Income Info Complete!*
-
-Now, what would you like to apply for?
-
-1️⃣ *Smartphone Financing* 📱
-   Get a device now, pay monthly
-
-2️⃣ *Digital Credit* 💰 (Coming Soon)
-   Cash loan for any purpose
-
-Reply with *1* or *2*`;
+    return t('income_info_complete', lang) + '\n\n' + t('product_selection', lang);
   }
 
-  return 'Something went wrong. Please contact support.';
+  return t('error_generic', lang);
 }
 
 /**
@@ -580,8 +502,9 @@ export async function handleProductSelection(
   context: MessageContext
 ): Promise<string> {
   const message = context.message.trim().toLowerCase();
+  const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
 
-  if (message === '1' || message.includes('smartphone')) {
+  if (message === '1' || message.includes('smartphone') || message.includes('yes') || message.includes('hongu') || message.includes('yebo')) {
     await updateSession(context.from, {
       current_state: 'kyc_id_upload',
       state_data: {
@@ -591,37 +514,14 @@ export async function handleProductSelection(
       }
     });
 
-    return `📱 *Smartphone Financing Selected!*
-
-Perfect! We'll assess your eligibility and show you available devices.
-
-First, we need to verify your identity.
-
-🪪 *Step 1: Enter your National ID number*
-
-Please type your National ID number:
-Format: *XX-XXXXXXX-X-XX*
-Example: *63-2345678-B-08*`;
+    return t('smartphone_selected', lang) + '\n\n' + t('kyc_id_number', lang);
   }
 
   if (message === '2' || message.includes('digital')) {
-    return `💰 *Digital Credit Coming Soon!*
-
-We're launching digital credit in Q1 2026.
-
-For now, you can apply for smartphone financing.
-
-Would you like to continue with smartphone financing?
-
-Reply *Yes* to continue`;
+    return t('digital_credit_soon', lang);
   }
 
-  return `Please select an option:
-
-1️⃣ *Smartphone Financing*
-2️⃣ *Digital Credit* (Coming Soon)
-
-Reply with *1* or *2*`;
+  return t('product_selection', lang);
 }
 
 /**
@@ -886,7 +786,7 @@ This usually takes 1-5 minutes. We'll message you as soon as it's complete.
 Please wait...`;
 
   } catch (error) {
-    console.error('KYC initiation failed:', error);
+    logger.error('KYC initiation failed', { action: 'kyc.initiate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
 
     // Revert to ID upload state for retry
     await updateSession(context.from, {
@@ -1017,30 +917,12 @@ Possible reasons:
 You can try again in 30 days or contact support: support@lynia.finance`;
 
   } catch (error) {
-    console.error('Credit scoring failed:', error);
+    logger.error('Credit scoring failed', { action: 'scoring.calculate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
 
-    // Fallback: Basic approval for testing
-    await updateSession(context.from, {
-      current_state: 'loan_offer',
-      state_data: {
-        ...session.state_data,
-        credit_score: 680,
-        credit_tier: 'Tier 1',
-        credit_limit_usd: 200,
-        decision: 'approve'
-      }
-    });
-
-    return `🎉 *Congratulations! You're Approved!*
-
-Your Loan Details:
-💰 *Loan Limit:* $200
-🏆 *Credit Tier:* Tier 1
-📊 *Credit Score:* 680/850
-
-You can now choose a smartphone up to $200.
-
-Reply *Yes* to see loan terms and continue.`;
+    // Do NOT auto-approve when scoring service is unavailable.
+    // Keep session in credit_scoring state so customer can retry.
+    const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
+    return t('scoring_unavailable', lang) + `\nReference: SCORE-${Date.now()}`;
   }
 }
 
@@ -1094,14 +976,13 @@ export async function handleTermsAcceptance(
   const message = context.message.trim().toLowerCase();
 
   if (message.includes('accept') || message.includes('i accept')) {
-    // Log consent
+    // Log consent (schema: migration 007 - customer_consents table)
     await db.from('customer_consents').insert({
       customer_id: session.customer_id,
-      phone_number: context.from,
-      consent_type: 'loan_terms',
-      consent_text: 'Customer accepted loan terms via WhatsApp',
-      version: '1.0',
-      accepted_at: new Date()
+      purpose: 'loan_terms',
+      granted: true,
+      granted_at: new Date(),
+      consent_method: 'whatsapp'
     }).execute();
 
     await updateSession(context.from, {
@@ -1343,7 +1224,7 @@ export async function routeOnboardingMessage(
   try {
     const session = await getOrCreateSession(context.from);
 
-    console.log(`Current state: ${session.current_state}`);
+    logger.debug('Routing onboarding message', { action: 'onboarding.route', meta: { state: session.current_state } });
 
     // Handle restart command
     if (context.message.toLowerCase().includes('restart')) {
@@ -1397,7 +1278,7 @@ Need help? Reply *Support*`;
         return `Something went wrong. Reply *Restart* to begin again.`;
     }
   } catch (error) {
-    console.error('Onboarding routing error:', error);
+    logger.error('Onboarding routing error', { action: 'onboarding.route', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     return `⚠️ Technical error. Please try again or contact support@lynia.finance`;
   }
 }

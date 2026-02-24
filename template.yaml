@@ -415,6 +415,59 @@ Resources:
           - whatsapp-service/src/index.ts
 
   # =====================================================
+  # 2b. WHATSAPP RETRY CONSUMER (SQS)
+  # =====================================================
+  WhatsAppRetryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-whatsapp-retry
+      CodeUri: services/
+      Handler: whatsapp-service/src/retry-consumer.handler
+      Description: SQS consumer for retrying failed WhatsApp messages
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/database-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/whatsapp-*"
+            - Effect: Allow
+              Action:
+                - sqs:ReceiveMessage
+                - sqs:DeleteMessage
+                - sqs:GetQueueAttributes
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-whatsapp-message-retry"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Environment:
+        Variables:
+          WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
+          WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
+          ENVIRONMENT: !Ref Environment
+      Events:
+        WhatsAppRetryQueue:
+          Type: SQS
+          Properties:
+            Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-whatsapp-message-retry"
+            BatchSize: 5
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - whatsapp-service/src/retry-consumer.ts
+
+  # =====================================================
   # 3. KYC SERVICE
   # =====================================================
   KYCFunction:

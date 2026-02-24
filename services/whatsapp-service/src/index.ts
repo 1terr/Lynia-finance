@@ -29,6 +29,7 @@ import {
 import { CircuitBreaker, CircuitOpenError } from './utils/circuit-breaker';
 import { getSecurityHeaders } from '../../shared/utils/response';
 import { SQSQueues } from '../../shared/utils/sqs-publisher';
+import { logger, setRequestContext } from '../../shared/utils/logger';
 
 const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
@@ -42,10 +43,10 @@ const whatsappCircuitBreaker = new CircuitBreaker({
   failureThreshold: 5,
   resetTimeout: 60000,
   onOpen: (name, count) => {
-    console.error(`[CircuitBreaker] ${name} opened after ${count} failures`);
+    logger.error(`CircuitBreaker ${name} opened after ${count} failures`, { action: 'circuit_breaker.open' });
   },
   onClose: (name) => {
-    console.log(`[CircuitBreaker] ${name} recovered`);
+    logger.info(`CircuitBreaker ${name} recovered`, { action: 'circuit_breaker.close' });
   },
 });
 
@@ -56,6 +57,10 @@ const whatsappCircuitBreaker = new CircuitBreaker({
 export const handler = async (
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> => {
+  setRequestContext(
+    event.headers['x-request-id'] || event.requestContext?.requestId
+  );
+
   try {
     const path = event.path;
     const method = event.httpMethod;
@@ -75,7 +80,7 @@ export const handler = async (
       headers: getSecurityHeaders(event)
     };
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Unhandled handler error', { action: 'handler.error', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -150,7 +155,7 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
       status: 'sent'
     });
 
-    console.log('Message sent successfully:', messageId);
+    logger.info('Message sent successfully', { action: 'message.send', meta: { messageId } });
 
     return {
       statusCode: 200,
@@ -162,9 +167,9 @@ async function sendMessage(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
       headers: getSecurityHeaders(event)
     };
   } catch (error) {
-    console.error('Error sending message:', error instanceof Error ? error.message : 'Unknown');
+    logger.error('Error sending message', { action: 'message.send', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     if (axios.isAxiosError(error)) {
-      console.error('WhatsApp API error:', error.response?.status);
+      logger.error('WhatsApp API error', { action: 'message.send', meta: { statusCode: error.response?.status } });
       return {
         statusCode: error.response?.status || 500,
         body: JSON.stringify({
@@ -185,10 +190,10 @@ function verifyWebhook(event: APIGatewayProxyEvent): APIGatewayProxyResult {
   const token = event.queryStringParameters?.['hub.verify_token'];
   const challenge = event.queryStringParameters?.['hub.challenge'];
 
-  console.log('Webhook verification request:', { mode });
+  logger.info('Webhook verification request', { action: 'webhook.verify', meta: { mode } });
 
   if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-    console.log('Webhook verified successfully');
+    logger.info('Webhook verified successfully', { action: 'webhook.verify', status: 'completed' });
     return {
       statusCode: 200,
       body: challenge!,
@@ -196,7 +201,7 @@ function verifyWebhook(event: APIGatewayProxyEvent): APIGatewayProxyResult {
     };
   }
 
-  console.warn('Webhook verification failed');
+  logger.warn('Webhook verification failed', { action: 'webhook.verify', status: 'failed' });
   return {
     statusCode: 403,
     body: 'Forbidden',
@@ -214,16 +219,16 @@ function validateWebhookSignature(event: APIGatewayProxyEvent): boolean {
   if (!META_APP_SECRET) {
     // Skip validation if META_APP_SECRET is not configured (development/test only)
     if (process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'staging') {
-      console.warn('Webhook signature validation skipped: META_APP_SECRET not configured');
+      logger.warn('Webhook signature validation skipped: META_APP_SECRET not configured', { action: 'webhook.signature' });
       return true;
     }
-    console.error('META_APP_SECRET not configured - rejecting webhook');
+    logger.error('META_APP_SECRET not configured - rejecting webhook', { action: 'webhook.signature' });
     return false;
   }
 
   const signature = event.headers['X-Hub-Signature-256'] || event.headers['x-hub-signature-256'];
   if (!signature) {
-    console.error('Missing X-Hub-Signature-256 header');
+    logger.error('Missing X-Hub-Signature-256 header', { action: 'webhook.signature' });
     return false;
   }
 
@@ -241,7 +246,7 @@ function validateWebhookSignature(event: APIGatewayProxyEvent): boolean {
   }
 
   if (mismatch !== 0) {
-    console.error('Webhook signature mismatch');
+    logger.error('Webhook signature mismatch', { action: 'webhook.signature' });
     return false;
   }
 
@@ -255,7 +260,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
   try {
     // Validate webhook signature from Meta
     if (!validateWebhookSignature(event)) {
-      console.error('Webhook signature validation failed');
+      logger.error('Webhook signature validation failed', { action: 'webhook.signature' });
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid signature' }),
@@ -264,7 +269,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     }
 
     const webhookEvent: WhatsAppWebhookEvent = JSON.parse(event.body || '{}');
-    console.log('WhatsApp webhook received:', { entryCount: webhookEvent.entry?.length });
+    logger.info('WhatsApp webhook received', { action: 'webhook.receive', meta: { entryCount: webhookEvent.entry?.length } });
 
     // Process each entry in the webhook
     for (const entry of webhookEvent.entry) {
@@ -294,7 +299,7 @@ async function handleWebhook(event: APIGatewayProxyEvent): Promise<APIGatewayPro
       headers: getSecurityHeaders(event)
     };
   } catch (error) {
-    console.error('Error handling webhook:', error);
+    logger.error('Error handling webhook', { action: 'webhook.receive', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     // Still return 200 to avoid Meta retrying
     return {
       statusCode: 200,
@@ -324,6 +329,20 @@ async function processIncomingMessage(
   const phoneNumber = message.from;
 
   try {
+    // Deduplication: check if this message ID was already processed
+    // Meta may deliver the same webhook multiple times (at-least-once delivery)
+    const { data: existingMsg } = await db
+      .from('whatsapp_messages')
+      .select('id')
+      .eq('whatsapp_message_id', message.id)
+      .single()
+      .execute();
+
+    if (existingMsg) {
+      logger.info('Duplicate webhook message, skipping', { action: 'webhook.dedup', meta: { messageId: message.id } });
+      return;
+    }
+
     let messageText = '';
     let imageUrl: string | undefined;
 
@@ -339,10 +358,10 @@ async function processIncomingMessage(
     } else if (message.type === 'image' && message.image) {
       messageText = '[Image received]';
       imageUrl = message.image.id;
-      console.log(`Image received: ${imageUrl}`);
+      logger.info('Image received', { action: 'message.receive', meta: { mediaId: imageUrl } });
     }
 
-    console.log(`Incoming message processed: type=${message.type}`);
+    logger.info('Incoming message processed', { action: 'message.receive', meta: { type: message.type } });
 
     // Store incoming message
     await storeMessage({
@@ -457,7 +476,15 @@ async function processIncomingMessage(
     }
 
     // 8. Find or create customer and route to onboarding flow
-    const _customer = await findOrCreateCustomer(phoneNumber, contactName);
+    const customer = await findOrCreateCustomer(phoneNumber, contactName);
+
+    // Store customer_id in session so downstream code can reference it
+    if (customer?.id) {
+      await db.from('whatsapp_sessions')
+        .update({ customer_id: customer.id })
+        .eq('phone_number', phoneNumber)
+        .execute();
+    }
 
     const context: MessageContext = {
       from: phoneNumber,
@@ -470,7 +497,7 @@ async function processIncomingMessage(
     await sendTextMessage(phoneNumber, responseMessage);
 
   } catch (error) {
-    console.error('Error processing incoming message:', error);
+    logger.error('Error processing incoming message', { action: 'message.process', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
 
     await trackError(phoneNumber, {
       category: 'system',
@@ -486,7 +513,7 @@ async function processIncomingMessage(
         'Something went wrong, but your progress is saved. Reply *CONTINUE* to pick up where you left off.\n\nReference: SYS-' + Date.now()
       );
     } catch (sendError) {
-      console.error('Failed to send error message:', sendError);
+      logger.error('Failed to send error message', { action: 'message.send', meta: { error: sendError instanceof Error ? sendError.message : 'Unknown' } });
     }
   }
 }
@@ -528,7 +555,7 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
     });
   } catch (error) {
     if (error instanceof CircuitOpenError) {
-      console.error(`WhatsApp API circuit open, message to ${to.substring(0, 6)}*** queued for retry`);
+      logger.error('WhatsApp API circuit open, message queued for retry', { action: 'message.send' });
       await storeMessage({
         phone_number: to,
         message_type: 'text',
@@ -543,7 +570,7 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
         messageType: 'text',
         retryCount: 0,
         originalError: 'circuit_open',
-      }).catch(sqsErr => console.error('Failed to enqueue retry:', sqsErr));
+      }).catch(sqsErr => logger.error('Failed to enqueue retry', { action: 'sqs.enqueue', meta: { error: sqsErr instanceof Error ? sqsErr.message : 'Unknown' } }));
       return;
     }
 
@@ -551,7 +578,7 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
       const errorCode = error.response?.data?.error?.code;
       if (errorCode) {
         const mapped = mapWhatsAppApiError(errorCode);
-        console.error(`WhatsApp API error ${errorCode}: action=${mapped.internalAction}`);
+        logger.error('WhatsApp API error', { action: 'message.send', meta: { errorCode, internalAction: mapped.internalAction } });
 
         if (mapped.internalAction === 'queue') {
           // Rate limited - enqueue for retry via SQS
@@ -568,13 +595,13 @@ async function sendTextMessage(to: string, message: string): Promise<void> {
             messageType: 'text',
             retryCount: 0,
             originalError: `whatsapp_api_${errorCode}`,
-          }).catch(sqsErr => console.error('Failed to enqueue retry:', sqsErr));
+          }).catch(sqsErr => logger.error('Failed to enqueue retry', { action: 'sqs.enqueue', meta: { error: sqsErr instanceof Error ? sqsErr.message : 'Unknown' } }));
           return;
         }
       }
     }
 
-    console.error('Error sending text message:', error);
+    logger.error('Error sending text message', { action: 'message.send', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
   }
 }
 
@@ -599,14 +626,17 @@ async function storeMessage(data: {
       .single()
       .execute();
 
-    if (customer) {
-      await db.from('whatsapp_messages').insert({
-        customer_id: customer.id,
-        ...data
-      }).execute();
-    }
+    // Populate both message_id (original schema) and whatsapp_message_id (new column)
+    // for backward compatibility with existing queries
+    const insertData: Record<string, unknown> = {
+      ...data,
+      customer_id: customer?.id || null,
+      message_id: data.whatsapp_message_id,
+    };
+
+    await db.from('whatsapp_messages').insert(insertData).execute();
   } catch (error) {
-    console.error('Error storing message:', error);
+    logger.error('Error storing message', { action: 'message.store', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
   }
 }
 
@@ -631,7 +661,7 @@ async function updateMessageStatus(
       updateData.read_at = timestamp ? new Date(parseInt(timestamp) * 1000).toISOString() : new Date().toISOString();
     } else if (status === 'failed') {
       updateData.failed_at = new Date().toISOString();
-      console.error(`Message delivery failed: ${messageId} to ${recipientId?.substring(0, 6)}***`);
+      logger.error('Message delivery failed', { action: 'message.status', meta: { messageId } });
     }
 
     await db
@@ -640,9 +670,9 @@ async function updateMessageStatus(
       .eq('whatsapp_message_id', messageId)
       .execute();
 
-    console.log(`Message ${messageId} status: ${status}`);
+    logger.info('Message status updated', { action: 'message.status', meta: { messageId, status } });
   } catch (error) {
-    console.error('Error updating message status:', error);
+    logger.error('Error updating message status', { action: 'message.status', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
   }
 }
 
@@ -651,7 +681,7 @@ async function updateMessageStatus(
  */
 async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise<Record<string, unknown> | null> {
   try {
-    // Try to find existing customer
+    // Try to find existing customer by whatsapp_number or phone_number
     let { data: customer } = await db
       .from('customers')
       .select('*')
@@ -660,15 +690,39 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
       .execute();
 
     if (!customer) {
-      // Create new customer record
+      // Also try phone_number for customers created before whatsapp_number column
+      const { data: phoneCustomer } = await db
+        .from('customers')
+        .select('*')
+        .eq('phone_number', phoneNumber)
+        .single()
+        .execute();
+      customer = phoneCustomer;
+
+      if (customer && !customer.whatsapp_number) {
+        // Backfill whatsapp_number for existing customer
+        await db.from('customers')
+          .update({ whatsapp_number: phoneNumber })
+          .eq('id', customer.id)
+          .execute();
+      }
+    }
+
+    if (!customer) {
+      // Create new customer record - split name into first_name/last_name
+      const nameParts = (name || 'WhatsApp User').trim().split(/\s+/);
+      const firstName = nameParts[0] || 'WhatsApp';
+      const lastName = nameParts.slice(1).join(' ') || 'User';
+
       const { data: newCustomer, error } = await db
         .from('customers')
         .insert({
           phone_number: phoneNumber,
           whatsapp_number: phoneNumber,
-          full_name: name || 'WhatsApp User',
+          first_name: firstName,
+          last_name: lastName,
           kyc_status: 'pending',
-          status: 'active'
+          onboarding_status: 'in_progress'
         })
         .select()
         .single()
@@ -676,93 +730,13 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
 
       if (error) throw error;
       customer = newCustomer;
-      console.log('Created new customer:', customer.id);
+      logger.info('Created new customer', { action: 'customer.create', meta: { customerId: customer.id } });
     }
 
     return customer;
   } catch (error) {
-    console.error('Error finding/creating customer:', error);
+    logger.error('Error finding/creating customer', { action: 'customer.lookup', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     throw error;
-  }
-}
-
-/**
- * Helper: Get conversation state
- */
-async function _getConversation(customerId: string, phoneNumber: string): Promise<Record<string, unknown> | null> {
-  try {
-    let { data: conversation } = await db
-      .from('whatsapp_conversations')
-      .select('*')
-      .eq('customer_id', customerId)
-      .eq('phone_number', phoneNumber)
-      .single()
-      .execute();
-
-    if (!conversation) {
-      // Create new conversation
-      const { data: newConv } = await db
-        .from('whatsapp_conversations')
-        .insert({
-          customer_id: customerId,
-          phone_number: phoneNumber,
-          conversation_state: 'idle'
-        })
-        .select()
-        .single()
-        .execute();
-      conversation = newConv;
-    }
-
-    return conversation;
-  } catch (error) {
-    console.error('Error getting conversation:', error);
-    return null;
-  }
-}
-
-/**
- * Helper: Update conversation state
- */
-async function _updateConversationState(
-  customerId: string,
-  phoneNumber: string,
-  state: string
-): Promise<void> {
-  try {
-    await db
-      .from('whatsapp_conversations')
-      .update({
-        conversation_state: state,
-        last_message_at: new Date().toISOString()
-      })
-      .eq('customer_id', customerId)
-      .eq('phone_number', phoneNumber)
-      .execute();
-  } catch (error) {
-    console.error('Error updating conversation state:', error);
-  }
-}
-
-/**
- * Helper: Get customer's active loan
- */
-async function _getCustomerLoan(customerId: string): Promise<Record<string, unknown> | null> {
-  try {
-    const { data: loan } = await db
-      .from('loans')
-      .select('*')
-      .eq('customer_id', customerId)
-      .in('loan_status', ['approved', 'active'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-      .execute();
-
-    return loan;
-  } catch (error) {
-    console.error('Error getting customer loan:', error);
-    return null;
   }
 }
 

@@ -36,9 +36,11 @@ export type TranslationKey =
   | 'income_info_complete'
   | 'product_selection'
   | 'kyc_id_upload'
+  | 'kyc_id_number'
   | 'kyc_selfie'
   | 'kyc_verified'
   | 'kyc_failed'
+  | 'kyc_processing'
   | 'approved'
   | 'rejected'
   | 'manual_review'
@@ -55,6 +57,13 @@ export type TranslationKey =
   | 'language_select'
   | 'language_changed'
   | 'invalid_input'
+  | 'service_not_available'
+  | 'invalid_phone'
+  | 'scoring_unavailable'
+  | 'name_format_error'
+  | 'dob_format_error'
+  | 'smartphone_selected'
+  | 'digital_credit_soon'
   | 'male'
   | 'female'
   | 'other';
@@ -79,9 +88,11 @@ const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = 
     income_info_complete: '✅ *Income Info Complete!*',
     product_selection: 'What would you like to apply for?\n\n1 - Smartphone Financing 📱\n2 - Digital Credit 💰 (Coming Soon)',
     kyc_id_upload: '📸 Upload your National ID photo.\n\nTips:\n✅ Place ID on flat surface\n✅ Good lighting\n✅ All text visible',
+    kyc_id_number: '🪪 *Step 1: Enter your National ID number*\n\nPlease type your National ID number:\nFormat: *XX-XXXXXXX-X-XX*\nExample: *63-2345678-B-08*',
     kyc_selfie: '📸 Take a selfie.\n\nTips:\n✅ Face the camera directly\n✅ Remove sunglasses/hat\n✅ Good lighting',
     kyc_verified: '✅ *Identity Verified!*',
     kyc_failed: '❌ Verification failed. Please try again.',
+    kyc_processing: '⏳ *Verifying Your Identity...*\n\nThis usually takes less than a minute.\nPlease wait while we verify your documents.',
     approved: '🎉 *Congratulations! You are Approved!*',
     rejected: '❌ Application not approved at this time.',
     manual_review: '⏸️ Manual review required (up to 24 hours).',
@@ -98,6 +109,13 @@ const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = 
     language_select: '🌐 *Choose your language:*\n\n1 - English\n2 - Shona\n3 - Ndebele',
     language_changed: 'Language changed to *{{language}}*.',
     invalid_input: 'Invalid input. Please try again.',
+    service_not_available: '❌ *Service Not Available*\n\nWe currently only serve customers with Zimbabwean phone numbers (+263).\n\nWe will notify you when we expand to your country!',
+    invalid_phone: '❌ *Invalid Phone Number*\n\nPlease ensure you are messaging from a valid Zimbabwean mobile number.\n\nValid formats:\n• +263 77 123 4567\n• 0771234567',
+    scoring_unavailable: 'We are experiencing a temporary issue assessing your application.\n\nPlease try again in a few minutes by replying with any message.\n\nIf this persists, contact support@lynia.finance',
+    name_format_error: 'Please provide your full name (2-5 words).\n\nExample: *Tendai Mukanya Moyo*',
+    dob_format_error: 'Invalid date format. Please use DD/MM/YYYY\n\nExample: *15/03/1990*',
+    smartphone_selected: '📱 *Smartphone Financing Selected!*\n\nPerfect! We will assess your eligibility and show you available devices.\n\nFirst, we need to verify your identity.',
+    digital_credit_soon: '💰 *Digital Credit Coming Soon!*\n\nWe are launching digital credit soon.\n\nFor now, you can apply for smartphone financing.\n\nReply *Yes* to continue',
     male: 'Male',
     female: 'Female',
     other: 'Other',
@@ -117,9 +135,11 @@ const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = 
     income_info_complete: '✅ *Ruzivo Rwemari Rwapera!*',
     product_selection: 'Chii chaunoda kutenga?\n\n1 - Smartphone 📱\n2 - Mari Yekubatsira 💰 (Iri kuuya)',
     kyc_id_upload: '📸 Tora pikicha yeID yako.\n\nMashoko:\n✅ Isa ID pamusoro\n✅ Chiedza chakanaka\n✅ Mashoko ese anoonekaoneka',
+    kyc_id_number: '🪪 *Chikamu 1: Nyora nhamba yeID yako*\n\nNdapota nyora nhamba yeNational ID yako:\nFormat: *XX-XXXXXXX-X-XX*\nMuenzaniso: *63-2345678-B-08*',
     kyc_selfie: '📸 Tora selfie yako.\n\nMashoko:\n✅ Tarisa kamera\n✅ Bvisa magirazi\n✅ Chiedza chakanaka',
     kyc_verified: '✅ *Waverifywa!*',
     kyc_failed: '❌ Verification harishande. Edza zvakare.',
+    kyc_processing: '⏳ *Tiri Kuverifywa...*\n\nIzvi zvinotora nguva pfupi.\nNdapota mirira patinoverifywa.',
     approved: '🎉 *Makorokoto! Wabvumirwa!*',
     rejected: '❌ Application haina kubvumirwa panguva ino.',
     manual_review: '⏸️ Iri kucheckerwa (kusvika maawa 24).',
@@ -136,6 +156,13 @@ const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = 
     language_select: '🌐 *Sarudza mutauro wako:*\n\n1 - English\n2 - Shona\n3 - Ndebele',
     language_changed: 'Mutauro wachinjwa kuita *{{language}}*.',
     invalid_input: 'Hazvina kubatana. Edza zvakare.',
+    service_not_available: '❌ *Service Haiwanikwe*\n\nPanguva ino tinobatsira vanhu vane nhamba dzeZimbabwe (+263) chete.\n\nTichakuzivisa kana tapararira kunyika yako!',
+    invalid_phone: '❌ *Nhamba Yakaipa*\n\nShandisa nhamba yefoni yeZimbabwe inoshanda.\n\nFormat:\n• +263 77 123 4567\n• 0771234567',
+    scoring_unavailable: 'Pane dambudziko rekanguva kadiki. Ndapota edza zvakare mushure menguva pfupi.\n\nKana zvichiramba, bata support@lynia.finance',
+    name_format_error: 'Ndapota ipa zita rako rizere (mashoko 2-5).\n\nMuenzaniso: *Tendai Mukanya Moyo*',
+    dob_format_error: 'Format yakaipa. Shandisa DD/MM/YYYY\n\nMuenzaniso: *15/03/1990*',
+    smartphone_selected: '📱 *Smartphone Financing Yasarudzwa!*\n\nTichakuongorora kuti unogonawo here.\n\nKutanga, tinoda kuverifywa kwako.',
+    digital_credit_soon: '💰 *Digital Credit Iri Kuuya!*\n\nTiri kutanga digital credit munguva pfupi.\n\nPanguva ino, unogona kutenga smartphone.\n\nPindura *Hongu* kuti upfuurire',
     male: 'Murume',
     female: 'Mukadzi',
     other: 'Zvimwe',
@@ -155,9 +182,11 @@ const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = 
     income_info_complete: '✅ *Ulwazi Lwemali Luphelile!*',
     product_selection: 'Ufuna ukuthengani?\n\n1 - I-Smartphone 📱\n2 - Imali Yokusiza 💰 (Iyeza)',
     kyc_id_upload: '📸 Thatha isithombe se-ID yakho.\n\nAmacebo:\n✅ Beka i-ID phansi\n✅ Ukukhanya okuhle\n✅ Wonke amagama abonakale',
+    kyc_id_number: '🪪 *Isinyathelo 1: Bhala inombolo ye-ID yakho*\n\nBhala inombolo ye-National ID yakho:\nI-format: *XX-XXXXXXX-X-XX*\nIsibonelo: *63-2345678-B-08*',
     kyc_selfie: '📸 Thatha i-selfie yakho.\n\nAmacebo:\n✅ Khangela ikhamera\n✅ Susa izibuko zelanga\n✅ Ukukhanya okuhle',
     kyc_verified: '✅ *Uqinisekisiwe!*',
     kyc_failed: '❌ Ukuqinisekisa akuphumelelanga. Zama futhi.',
+    kyc_processing: '⏳ *Siyaqinisekisa...*\n\nLokhu kuthatha isikhathi esifitshane.\nSicela ulinde siqinisekisa amaphepha akho.',
     approved: '🎉 *Halala! Uvunyelwe!*',
     rejected: '❌ Isicelo asivunyelwanga ngalesisikhathi.',
     manual_review: '⏸️ Kuyahlolwa (kuze kube ngamahora angu-24).',
@@ -174,6 +203,13 @@ const translations: Record<SupportedLanguage, Record<TranslationKey, string>> = 
     language_select: '🌐 *Khetha ulimi lwakho:*\n\n1 - English\n2 - Shona\n3 - Ndebele',
     language_changed: 'Ulimi luguqulwe lwaba yi-*{{language}}*.',
     invalid_input: 'Okufakiweyo akulunganga. Zama futhi.',
+    service_not_available: '❌ *I-Service Ayithokalali*\n\nOkwamanje sisebenzela abathengi abanezinombolo zeZimbabwe (+263) kuphela.\n\nSizakwazisa nxa sesandisa!',
+    invalid_phone: '❌ *Inombolo Engalunganga*\n\nSicela usebenzise inombolo ye-Zimbabwe efaneleyo.\n\nI-format:\n• +263 77 123 4567\n• 0771234567',
+    scoring_unavailable: 'Kulenkinga yesikhashana. Sicela uzame futhi ngemuva kwesikhathi esifitshane.\n\nNxa kuqhubeka, thinta support@lynia.finance',
+    name_format_error: 'Sicela unikeze ibizo lakho eligcweleyo (amagama angu 2-5).\n\nIsibonelo: *Tendai Mukanya Moyo*',
+    dob_format_error: 'I-format engalunganga. Sebenzisa DD/MM/YYYY\n\nIsibonelo: *15/03/1990*',
+    smartphone_selected: '📱 *I-Smartphone Financing Ikhethiwe!*\n\nSizahlola ukufaneleka kwakho.\n\nKuqala, sidinga ukuqinisekisa ubuwena.',
+    digital_credit_soon: '💰 *I-Digital Credit Iyeza!*\n\nSizaqalisa i-digital credit masinyane.\n\nOkwamanje, ungafaka isicelo se-smartphone.\n\nPhendula *Yebo* ukuqhubeka',
     male: 'Indoda',
     female: 'Umfazi',
     other: 'Okunye',

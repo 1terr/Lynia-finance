@@ -88,21 +88,27 @@ export function parseCommand(input: string): CommandName | null {
 // RATE LIMITING
 // ===================================================================
 
-const rateLimitCache = new Map<string, { count: number; resetAt: number }>();
+/**
+ * Check rate limit using database (persists across Lambda cold starts).
+ * Allows 10 commands per hour per phone number.
+ */
+export async function checkRateLimit(phoneNumber: string): Promise<boolean> {
+  try {
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data: messages } = await db
+      .from('whatsapp_messages')
+      .select('id')
+      .eq('phone_number', phoneNumber)
+      .eq('message_type', 'command')
+      .eq('direction', 'inbound')
+      .gte('sent_at', oneHourAgo)
+      .execute();
 
-export function checkRateLimit(phoneNumber: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitCache.get(phoneNumber);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitCache.set(phoneNumber, { count: 1, resetAt: now + 60 * 60 * 1000 });
+    return !messages || messages.length < 10;
+  } catch {
+    // If rate limit check fails, allow the command (fail open)
     return true;
   }
-
-  if (entry.count >= 10) return false;
-
-  entry.count++;
-  return true;
 }
 
 // ===================================================================
@@ -340,7 +346,49 @@ Last checked: ${new Date().toLocaleDateString('en-ZW', { month: 'short', day: 'n
 Reply *BALANCE* to check your account.`;
 }
 
-async function handleUpdate(_phoneNumber: string): Promise<string> {
+async function handleUpdate(phoneNumber: string, subCommand?: string): Promise<string> {
+  const { data: customer } = await db
+    .from('customers')
+    .select('id, first_name, email, address_line1, city')
+    .eq('phone_number', phoneNumber)
+    .single()
+    .execute();
+
+  if (!customer) return 'Account not found. Please contact support.';
+
+  // Check if this is a follow-up response to an update prompt
+  if (subCommand) {
+    const choice = subCommand.trim();
+
+    // Handle email update
+    if (choice.includes('@') && choice.includes('.')) {
+      await db.from('customers')
+        .update({ email: choice, updated_at: new Date() })
+        .eq('id', customer.id)
+        .execute();
+      return `✅ Email updated to: ${choice}`;
+    }
+
+    // Handle address update (any text longer than 5 chars that isn't an option number)
+    if (choice.length > 5 && !['1', '2', '3'].includes(choice)) {
+      await db.from('customers')
+        .update({ address_line1: choice, updated_at: new Date() })
+        .eq('id', customer.id)
+        .execute();
+      return `✅ Address updated.`;
+    }
+
+    if (choice === '1') {
+      return `📱 *Phone Number Change*\n\nPhone number changes require identity re-verification.\n\nPlease contact support@lynia.finance or visit your nearest distributor to update your phone number.`;
+    }
+    if (choice === '2') {
+      return `📧 *Update Email*\n\nCurrent email: ${customer.email || 'Not set'}\n\nPlease type your new email address:`;
+    }
+    if (choice === '3') {
+      return `🏠 *Update Address*\n\nCurrent address: ${customer.address_line1 || 'Not set'}${customer.city ? `, ${customer.city}` : ''}\n\nPlease type your new address:`;
+    }
+  }
+
   return `✏️ *Update Contact Details*
 
 What would you like to update?
@@ -354,7 +402,7 @@ Reply with the number of your choice.
 Note: Phone number changes require identity verification.`;
 }
 
-async function handleExtension(phoneNumber: string): Promise<string> {
+async function handleExtension(phoneNumber: string, subCommand?: string): Promise<string> {
   const { data: customer } = await db
     .from('customers')
     .select('id, first_name')
@@ -363,6 +411,45 @@ async function handleExtension(phoneNumber: string): Promise<string> {
     .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
+
+  const { data: loan } = await db
+    .from('loans')
+    .select('id, loan_reference, next_payment_date, extension_count')
+    .eq('customer_id', customer.id)
+    .in('loan_status', ['active', 'delinquent'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+    .execute();
+
+  if (!loan) return 'You do not have an active loan to extend.';
+
+  // Handle YES confirmation
+  if (subCommand && (subCommand.toLowerCase() === 'yes' || subCommand.toLowerCase() === 'confirm')) {
+    const extensionCount = loan.extension_count || 0;
+
+    if (extensionCount >= 2) {
+      return `❌ *Extension Limit Reached*\n\nYou have already used 2 extensions on this loan.\n\nPlease make your payment or contact support@lynia.finance for assistance.`;
+    }
+
+    // Calculate new due date (7 days extension)
+    const currentDue = loan.next_payment_date ? new Date(loan.next_payment_date) : new Date();
+    const newDueDate = new Date(currentDue.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Update loan with extension
+    await db.from('loans')
+      .update({
+        next_payment_date: newDueDate,
+        extension_count: extensionCount + 1,
+        updated_at: new Date()
+      })
+      .eq('id', loan.id)
+      .execute();
+
+    const formattedDate = newDueDate.toLocaleDateString('en-ZW', { weekday: 'short', month: 'short', day: 'numeric' });
+
+    return `✅ *Extension Approved*\n\nHi ${customer.first_name}!\n\nYour payment has been extended by 7 days.\n\n📅 New due date: *${formattedDate}*\n⚠️ Extensions used: ${extensionCount + 1}/2\n\nA late fee of $2 will apply.\n\nReply *BALANCE* to see your updated account.`;
+  }
 
   return `🕐 *Payment Extension Request*
 
@@ -396,8 +483,8 @@ export async function routeLoanCommand(
 
   if (!command) return null;
 
-  // Rate limit check
-  if (!checkRateLimit(phoneNumber)) {
+  // Rate limit check (database-backed, persists across cold starts)
+  if (!(await checkRateLimit(phoneNumber))) {
     return '⚠️ You\'ve sent too many commands. Please wait a few minutes before trying again.';
   }
 

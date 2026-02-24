@@ -288,6 +288,16 @@ async function handleKYCCallback(event: APIGatewayProxyEvent): Promise<APIGatewa
       };
     }
 
+    // Idempotency guard: skip if already processed to prevent race conditions
+    if (submission.status === 'verified' || submission.status === 'rejected') {
+      console.log(`KYC callback already processed for submission ${submission.id}, skipping`);
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ message: 'Already processed' }),
+        headers: { 'Content-Type': 'application/json' }
+      };
+    }
+
     // Process the KYC result
     await processKYCResult(submission.id, submission.customer_id, verificationResult);
 

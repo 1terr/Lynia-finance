@@ -16,6 +16,7 @@
  */
 
 import { db } from '../../shared/clients/database';
+import { logger } from '../../shared/utils/logger';
 
 // ===================================================================
 // ERROR TYPES
@@ -564,7 +565,7 @@ export async function trackError(
     }).execute();
   } catch (err) {
     // Never let error tracking fail the main flow
-    console.error('Failed to track error:', err);
+    logger.error('Failed to track error', { action: 'error.track', meta: { error: err instanceof Error ? err.message : 'Unknown' } });
   }
 }
 
@@ -588,7 +589,7 @@ export async function trackSecurityEvent(
       created_at: new Date().toISOString(),
     }).execute();
   } catch (err) {
-    console.error('Failed to track security event:', err);
+    logger.error('Failed to track security event', { action: 'security.track', meta: { error: err instanceof Error ? err.message : 'Unknown' } });
   }
 }
 
