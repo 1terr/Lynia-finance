@@ -497,7 +497,7 @@ async function processIncomingMessage(
     await sendTextMessage(phoneNumber, responseMessage);
 
   } catch (error) {
-    logger.error('Error processing incoming message', { action: 'message.process', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    logger.error('Error processing incoming message', { action: 'message.process', meta: { error: error instanceof Error ? error.message : 'Unknown', stack: error instanceof Error ? error.stack : undefined } });
 
     await trackError(phoneNumber, {
       category: 'system',
@@ -728,9 +728,28 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
         .single()
         .execute();
 
-      if (error) throw error;
-      customer = newCustomer;
-      logger.info('Created new customer', { action: 'customer.create', meta: { customerId: customer.id } });
+      if (error) {
+        // Fallback: retry without whatsapp_number in case column doesn't exist yet
+        logger.warn('Customer insert failed, retrying without whatsapp_number', { action: 'customer.create', meta: { error: error.message } });
+        const { data: fallbackCustomer, error: fallbackError } = await db
+          .from('customers')
+          .insert({
+            phone_number: phoneNumber,
+            first_name: firstName,
+            last_name: lastName,
+            kyc_status: 'pending',
+            onboarding_status: 'in_progress'
+          })
+          .select()
+          .single()
+          .execute();
+
+        if (fallbackError) throw fallbackError;
+        customer = fallbackCustomer;
+      } else {
+        customer = newCustomer;
+      }
+      logger.info('Created new customer', { action: 'customer.create', meta: { customerId: customer?.id } });
     }
 
     return customer;
