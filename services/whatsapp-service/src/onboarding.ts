@@ -876,15 +876,16 @@ export async function handleCreditScoring(
       dependents: session.state_data.dependents || 0,
       requested_loan_amount: session.state_data.requested_loan_amount || 250,
       kyc_result: kycSubmission ? {
+        id_verification: {
+          status: (kycSubmission.verification_decision ?? 'APPROVED') === 'APPROVED' ? 'verified' as const
+            : (kycSubmission.verification_decision === 'MANUAL_REVIEW' ? 'review' as const : 'failed' as const)
+        },
         face_match_score: kycSubmission.face_match_score ?? 96,
         liveness_passed: (kycSubmission.liveness_score ?? 0) >= 50,
-        confidence_score: kycSubmission.verification_confidence ?? 96,
-        verification_decision: kycSubmission.verification_decision ?? 'APPROVED',
       } : {
+        id_verification: { status: 'verified' as const },
         face_match_score: 96,
         liveness_passed: true,
-        confidence_score: 96,
-        verification_decision: 'APPROVED',
       }
     };
 
