@@ -3073,7 +3073,7 @@ async function handleGetKYCPending(
       ks.extracted_name,
       ks.extracted_dob,
       ks.smile_identity_response AS smile_identity_result,
-      ks.created_at,
+      ks.submitted_at AS created_at,
       ks.submitted_at AS updated_at,
       c.id AS customer__id,
       c.full_name AS customer__full_name,
@@ -3085,6 +3085,11 @@ async function handleGetKYCPending(
     LIMIT $1 OFFSET $2`,
     [limit, offset]
   );
+
+  if (result.error) {
+    console.error('KYC pending query failed:', result.error.message);
+    return errorResponse('Failed to fetch pending submissions', 500, {}, event);
+  }
 
   const data = result.data.map((row: Record<string, unknown>) => {
     const { customer__id, customer__full_name, customer__phone_number, extracted_name, extracted_dob, ...rest } = row;
@@ -3136,7 +3141,7 @@ async function handleGetKYCReviewHistory(
       ks.id,
       ks.customer_id,
       ks.status,
-      ks.created_at,
+      ks.submitted_at AS created_at,
       COALESCE(ks.verified_at, ks.rejected_at, ks.submitted_at) AS updated_at,
       c.full_name AS customer__full_name,
       c.phone_number AS customer__phone_number
@@ -3147,6 +3152,11 @@ async function handleGetKYCReviewHistory(
     LIMIT $1`,
     [limit]
   );
+
+  if (result.error) {
+    console.error('KYC review history query failed:', result.error.message);
+    return errorResponse('Failed to fetch review history', 500, {}, event);
+  }
 
   const data = result.data.map((row: Record<string, unknown>) => {
     const { customer__full_name, customer__phone_number, ...rest } = row;
