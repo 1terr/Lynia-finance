@@ -129,16 +129,16 @@ export async function downloadWhatsAppImage(
  * Zimbabwe National ID format: XX-XXXXXXAXX (e.g., 63-123456A47)
  */
 export function extractZimbabweIDNumber(text: string): string | null {
-  // Pattern: XX-XXXXXXAXX where XX is 2 digits, XXXXXX is 6 digits, A is a letter, XX is 2 digits
-  const pattern = /\b(\d{2}-\d{6}[A-Z]\d{2})\b/i;
+  // Pattern: XX-XXXXXXAXX or XX-XXXXXXXAXX (6-7 digit registration number)
+  const pattern = /\b(\d{2}-\d{6,7}[A-Z]\d{2})\b/i;
   const match = text.match(pattern);
 
   if (match) {
     return match[1].toUpperCase();
   }
 
-  // Alternative pattern without hyphen: XXXXXXXXAXX
-  const patternNoHyphen = /\b(\d{8}[A-Z]\d{2})\b/i;
+  // Alternative pattern without hyphen: XXXXXXXXAXX or XXXXXXXXXAXX
+  const patternNoHyphen = /\b(\d{8,9}[A-Z]\d{2})\b/i;
   const matchNoHyphen = text.match(patternNoHyphen);
 
   if (matchNoHyphen) {
@@ -152,28 +152,30 @@ export function extractZimbabweIDNumber(text: string): string | null {
 
 /**
  * Validate Zimbabwe ID number format
+ * Accepts various separator styles: XX-XXXXXXX-X-XX, XX-XXXXXXAXX, XXXXXXXXXXX
+ * Normalizes to canonical format: XX-XXXXXXXAXX (single hyphen after district code)
  */
 export function validateZimbabweIDNumber(idNumber: string): {
   valid: boolean;
   normalized?: string;
   error?: string;
 } {
-  // Remove whitespace
-  const cleaned = idNumber.trim();
+  // Remove all hyphens, spaces, and common separators
+  const cleaned = idNumber.trim().replace(/[\s\-\/\.]/g, '');
 
-  // Pattern: XX-XXXXXXAXX
-  const pattern = /^(\d{2})-(\d{6})([A-Z])(\d{2})$/i;
+  // Pattern: 2-digit district + 6-7 digit registration + 1 letter + 2-digit suffix
+  const pattern = /^(\d{2})(\d{6,7})([A-Z])(\d{2})$/i;
   const match = cleaned.match(pattern);
 
   if (!match) {
     return {
       valid: false,
-      error: 'Invalid ID number format. Expected format: XX-XXXXXXAXX (e.g., 63-123456A47)'
+      error: 'Invalid ID number format. Expected format: XX-XXXXXXX-X-XX (e.g., 63-2345678-B-08)'
     };
   }
 
-  // Normalize to uppercase
-  const normalized = cleaned.toUpperCase();
+  // Normalize to canonical format: XX-XXXXXXXAXX
+  const normalized = `${match[1]}-${match[2]}${match[3].toUpperCase()}${match[4]}`;
 
   return {
     valid: true,

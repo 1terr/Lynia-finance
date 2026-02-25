@@ -72,15 +72,16 @@ jest.mock('../../services/kyc-service/src/image-processor', () => ({
   bufferToBase64: jest.fn().mockReturnValue('data:image/jpeg;base64,abc123'),
   downloadWhatsAppImage: jest.fn().mockResolvedValue(Buffer.from('fake-image')),
   validateZimbabweIDNumber: jest.fn().mockImplementation((id: string) => {
-    const pattern = /^(\d{2})-(\d{6})([A-Z])(\d{2})$/i;
-    const match = id.trim().match(pattern);
+    const cleaned = id.trim().replace(/[\s\-\/\.]/g, '');
+    const pattern = /^(\d{2})(\d{6,7})([A-Z])(\d{2})$/i;
+    const match = cleaned.match(pattern);
     if (!match) {
       return {
         valid: false,
-        error: 'Invalid ID number format. Expected format: XX-XXXXXXAXX (e.g., 63-123456A47)',
+        error: 'Invalid ID number format. Expected format: XX-XXXXXXX-X-XX (e.g., 63-2345678-B-08)',
       };
     }
-    return { valid: true, normalized: id.trim().toUpperCase() };
+    return { valid: true, normalized: `${match[1]}-${match[2]}${match[3].toUpperCase()}${match[4]}` };
   }),
 }));
 
