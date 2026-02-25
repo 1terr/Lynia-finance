@@ -73,7 +73,12 @@ export class QueryBuilder<T = Record<string, unknown>> {
 
   select(columns = '*'): this {
     this.selectClause = columns;
-    this.operation = 'SELECT';
+    // Only set operation to SELECT if no prior mutation (INSERT/UPDATE/DELETE/UPSERT).
+    // In Supabase, .select() after .insert()/.update() means "return the modified rows"
+    // which is already handled by RETURNING * in those operations.
+    if (this.operation === 'SELECT') {
+      this.operation = 'SELECT';
+    }
     return this;
   }
 
