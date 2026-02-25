@@ -863,7 +863,7 @@ export async function handleCreditScoring(
       .from('kyc_submissions')
       .select('verification_confidence, face_match_score, liveness_score, verification_decision')
       .eq('customer_id', session.customer_id || `temp_${context.from}`)
-      .order('created_at', { ascending: false })
+      .order('submitted_at', { ascending: false })
       .limit(1)
       .single()
       .execute();

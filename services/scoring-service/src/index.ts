@@ -605,15 +605,17 @@ async function handleCalculateScore(event: APIGatewayProxyEvent): Promise<APIGat
       .from('credit_scores')
       .insert({
         customer_id: scoreResult.customer_id,
-        total_raw_score: scoreResult.total_raw_score,
+        total_score: scoreResult.total_raw_score,
         scaled_score: scoreResult.scaled_score,
-        components: scoreResult.components,
+        affordability_score: scoreResult.components.affordability,
+        repayment_willingness_score: scoreResult.components.repayment_willingness,
+        mobile_money_score: scoreResult.components.mobile_money,
+        external_credit_score: scoreResult.components.external_credit,
+        kyc_verification_score: scoreResult.components.kyc_verification,
+        scoring_data: scoreResult.components,
         decision: scoreResult.decision,
-        credit_limit_usd: scoreResult.credit_limit_usd,
-        tier: scoreResult.tier,
-        down_payment_percentage: scoreResult.down_payment_percentage,
-        interest_rate_apr: scoreResult.interest_rate_apr,
-        calculated_at: scoreResult.calculated_at
+        credit_tier: scoreResult.tier,
+        recommended_limit_usd: scoreResult.credit_limit_usd
       })
       .execute();
 

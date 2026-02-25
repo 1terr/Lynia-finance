@@ -317,12 +317,16 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /scoring/calculate
             Method: POST
+            Auth:
+              Authorizer: NONE
         GetScore:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /scoring/{customerId}
             Method: GET
+            Auth:
+              Authorizer: NONE
         # CreditScoringQueue:
         #   Type: SQS
         #   Properties:
