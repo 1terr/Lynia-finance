@@ -518,6 +518,8 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /kyc/initiate
             Method: POST
+            Auth:
+              Authorizer: NONE
         KYCCallback:
           Type: Api
           Properties:
@@ -532,6 +534,8 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /kyc/{customerId}
             Method: GET
+            Auth:
+              Authorizer: NONE
         # KYCProcessingQueue:
         #   Type: SQS
         #   Properties:

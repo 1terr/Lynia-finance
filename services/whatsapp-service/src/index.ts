@@ -478,8 +478,17 @@ async function processIncomingMessage(
     // 8. Find or create customer and route to onboarding flow
     const customer = await findOrCreateCustomer(phoneNumber, contactName);
 
+    if (!customer) {
+      logger.error('Failed to find or create customer', { action: 'customer.lookup', meta: { phone: phoneNumber } });
+      await sendTextMessage(
+        phoneNumber,
+        'We had trouble setting up your account. Please try again in a moment.\n\nReference: SYS-' + Date.now()
+      );
+      return;
+    }
+
     // Store customer_id in session so downstream code can reference it
-    if (customer?.id) {
+    if (customer.id) {
       await db.from('whatsapp_sessions')
         .update({ customer_id: customer.id })
         .eq('phone_number', phoneNumber)
@@ -681,7 +690,7 @@ async function updateMessageStatus(
  */
 async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise<Record<string, unknown> | null> {
   try {
-    // Try to find existing customer by whatsapp_number or phone_number
+    // Try to find existing customer by whatsapp_number first
     let { data: customer } = await db
       .from('customers')
       .select('*')
@@ -729,23 +738,30 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
         .execute();
 
       if (error) {
-        // Fallback: retry without whatsapp_number in case column doesn't exist yet
-        logger.warn('Customer insert failed, retrying without whatsapp_number', { action: 'customer.create', meta: { error: error.message } });
-        const { data: fallbackCustomer, error: fallbackError } = await db
+        // INSERT failed — likely a duplicate. Re-fetch the existing record.
+        logger.warn('Customer insert failed, re-fetching existing record', { action: 'customer.create', meta: { error: error.message } });
+        const { data: existingCustomer } = await db
           .from('customers')
-          .insert({
-            phone_number: phoneNumber,
-            first_name: firstName,
-            last_name: lastName,
-            kyc_status: 'pending',
-            onboarding_status: 'in_progress'
-          })
-          .select()
+          .select('*')
+          .or(`whatsapp_number.eq.${phoneNumber},phone_number.eq.${phoneNumber}`)
+          .limit(1)
           .single()
           .execute();
 
-        if (fallbackError) throw fallbackError;
-        customer = fallbackCustomer;
+        if (existingCustomer) {
+          customer = existingCustomer;
+          // Backfill whatsapp_number if missing
+          if (!existingCustomer.whatsapp_number) {
+            await db.from('customers')
+              .update({ whatsapp_number: phoneNumber })
+              .eq('id', existingCustomer.id)
+              .execute();
+          }
+        } else {
+          // Truly failed — no existing record found either
+          logger.error('Customer insert failed and no existing record found', { action: 'customer.create', meta: { error: error.message } });
+          return null;
+        }
       } else {
         customer = newCustomer;
       }
@@ -755,7 +771,7 @@ async function findOrCreateCustomer(phoneNumber: string, name?: string): Promise
     return customer;
   } catch (error) {
     logger.error('Error finding/creating customer', { action: 'customer.lookup', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
-    throw error;
+    return null;
   }
 }
 
