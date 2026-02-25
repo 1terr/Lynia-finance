@@ -58,6 +58,10 @@ jobs:
 
       - name: Run tests with coverage
         run: pnpm run test:coverage
+        env:
+          DIDIT_API_KEY: test-placeholder
+          DIDIT_WEBHOOK_SECRET: test-placeholder
+          KYC_PROVIDER: didit
 
       - name: Extract coverage percentage
         id: coverage
