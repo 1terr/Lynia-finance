@@ -161,7 +161,7 @@ export function validateZimbabweIDNumber(idNumber: string): {
   error?: string;
 } {
   // Remove all hyphens, spaces, and common separators
-  const cleaned = idNumber.trim().replace(/[\s\-\/\.]/g, '');
+  const cleaned = idNumber.trim().replace(/[\s./-]/g, '');
 
   // Pattern: 2-digit district + 6-7 digit registration + 1 letter + 2-digit suffix
   const pattern = /^(\d{2})(\d{6,7})([A-Z])(\d{2})$/i;

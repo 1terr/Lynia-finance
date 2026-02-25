@@ -72,7 +72,7 @@ jest.mock('../../services/kyc-service/src/image-processor', () => ({
   bufferToBase64: jest.fn().mockReturnValue('data:image/jpeg;base64,abc123'),
   downloadWhatsAppImage: jest.fn().mockResolvedValue(Buffer.from('fake-image')),
   validateZimbabweIDNumber: jest.fn().mockImplementation((id: string) => {
-    const cleaned = id.trim().replace(/[\s\-\/\.]/g, '');
+    const cleaned = id.trim().replace(/[\s./-]/g, '');
     const pattern = /^(\d{2})(\d{6,7})([A-Z])(\d{2})$/i;
     const match = cleaned.match(pattern);
     if (!match) {
