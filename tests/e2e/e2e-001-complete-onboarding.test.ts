@@ -20,41 +20,53 @@ jest.mock('../../services/shared/clients/database', () => ({
 jest.mock('axios');
 
 // Mock provider services to bypass signature verification in tests
+const mockKYCProvider = {
+  providerName: 'didit',
+  submitEnhancedKYC: jest.fn().mockResolvedValue({ job_id: 'job_001', smile_job_id: 'smile_job_001', message: 'KYC verification submitted successfully' }),
+  submitVerification: jest.fn().mockResolvedValue({ provider_job_id: 'job_001', status: 'processing' }),
+  verifyWebhookSignature: jest.fn().mockReturnValue(true),
+  parseWebhookPayload: jest.fn().mockImplementation((rawPayload: string) => {
+    const payload = JSON.parse(rawPayload);
+    const code = payload.ResultCode || (payload.result && payload.result.ResultCode) || '1012';
+    return {
+      provider: 'didit',
+      provider_job_id: payload.partner_params?.job_id || payload.SmileJobID || 'job_001',
+      status: 'completed',
+      decision: code === '1012' ? 'APPROVED' : code === '1014' ? 'REJECTED' : 'MANUAL_REVIEW',
+      confidence_score: 95,
+      face_match_score: 96,
+      liveness_score: 98,
+      liveness_passed: true,
+      document_authentic: true,
+      document_tampered: false,
+      document_expired: false,
+      match_result: code === '1012' ? 'verified' : 'not_verified',
+      id_info: { full_name: 'Test Customer', date_of_birth: '1990-01-01', gender: 'M', id_number: '63-123456A78', country: 'ZW' },
+      raw_response: payload,
+    };
+  }),
+  determineDecision: jest.fn().mockImplementation((result: Record<string, unknown>) => {
+    const decision = result.decision || 'APPROVED';
+    if (decision === 'APPROVED') return { decision: 'APPROVED', reason: 'All checks passed' };
+    if (decision === 'REJECTED') return { decision: 'REJECTED', reason: 'ID verification failed' };
+    return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
+  }),
+  determineVerificationDecision: jest.fn().mockImplementation((result: Record<string, unknown>) => {
+    const code = result.ResultCode as string;
+    if (code === '1012') return { decision: 'APPROVED', reason: 'All checks passed' };
+    if (code === '1014') return { decision: 'REJECTED', reason: 'ID verification failed' };
+    return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
+  }),
+  handleError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
+  handleSmileError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
+};
+
 jest.mock('../../services/kyc-service/src/smile-identity-service', () => ({
-  SmileIdentityService: jest.fn().mockImplementation(() => ({
-    providerName: 'smile_identity',
-    submitEnhancedKYC: jest.fn().mockResolvedValue({ job_id: 'job_001', smile_job_id: 'smile_job_001', message: 'KYC verification submitted successfully' }),
-    submitVerification: jest.fn().mockResolvedValue({ provider_job_id: 'job_001', status: 'processing' }),
-    verifyWebhookSignature: jest.fn().mockReturnValue(true),
-    parseWebhookPayload: jest.fn().mockImplementation((rawPayload: string) => {
-      const payload = JSON.parse(rawPayload);
-      const code = payload.ResultCode || (payload.result && payload.result.ResultCode) || '1012';
-      return {
-        provider: 'smile_identity',
-        provider_job_id: payload.partner_params?.job_id || payload.SmileJobID || 'job_001',
-        status: 'completed',
-        decision: code === '1012' ? 'APPROVED' : code === '1014' ? 'REJECTED' : 'MANUAL_REVIEW',
-        confidence_score: 95,
-        face_match_score: 96,
-        liveness_score: 98,
-        id_info: { full_name: 'Test Customer', date_of_birth: '1990-01-01', gender: 'M', id_number: '63-123456A78', country: 'ZW' },
-        raw_response: payload,
-      };
-    }),
-    determineDecision: jest.fn().mockImplementation((result: Record<string, unknown>) => {
-      const decision = result.decision || 'APPROVED';
-      if (decision === 'APPROVED') return { decision: 'APPROVED', reason: 'All checks passed' };
-      if (decision === 'REJECTED') return { decision: 'REJECTED', reason: 'ID verification failed' };
-      return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
-    }),
-    determineVerificationDecision: jest.fn().mockImplementation((result: Record<string, unknown>) => {
-      const code = result.ResultCode as string;
-      if (code === '1012') return { decision: 'APPROVED', reason: 'All checks passed' };
-      if (code === '1014') return { decision: 'REJECTED', reason: 'ID verification failed' };
-      return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
-    }),
-    handleSmileError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
-  })),
+  SmileIdentityService: jest.fn().mockImplementation(() => mockKYCProvider),
+}));
+
+jest.mock('../../services/kyc-service/src/didit-service', () => ({
+  DiditService: jest.fn().mockImplementation(() => mockKYCProvider),
 }));
 
 jest.mock('../../services/kyc-service/src/image-processor', () => ({
