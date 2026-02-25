@@ -235,6 +235,76 @@ Bug #2 — payment-service.ts:403
 
 ---
 
+## Phase 0: Execution Results
+
+**Status: COMPLETED**
+**Date: 2026-02-26**
+
+### Task 0A Results: Tooling Configuration
+
+| File | Change | Status |
+|------|--------|--------|
+| `.prettierrc` | Created root Prettier config (singleQuote, trailingComma: es5, printWidth: 120, semi, endOfLine: lf) | Done |
+| `.eslintrc.json` | Changed `no-explicit-any` from `"warn"` to `"error"`. Added overrides: test files keep `"warn"`, `database.ts` and `fineract-rbz-reporting.ts` keep `"warn"` (justified `any` usage). | Done |
+| `jest.config.js` | Raised `coverageThreshold.global` from 35-40% to 50% (branches, functions, lines, statements). | Done |
+
+### Task 0B Results: Shared Utility Characterization Tests
+
+| Test File | Tests Written | Tests Passing | Key Coverage |
+|-----------|--------------|---------------|--------------|
+| `tests/unit/shared/authorization.test.ts` | 40 | 40 | `getAuthContext`, `requireRole`, `requireOwnership`, `buildAccessFilter`, `isAdminStaff`, `isInvestor`, `getApiKeyAuth` |
+| `tests/unit/shared/database-query-builder.test.ts` | 28 | 28 | SELECT, INSERT, UPDATE, DELETE, UPSERT, COUNT, all WHERE operators (eq/neq/gt/gte/lt/lte/in/like/ilike/is), ORDER, LIMIT, OFFSET, range, single/maybeSingle, error handling |
+| `tests/unit/shared/response.test.ts` | 21 | 21 | `getCorsOrigin`, `getSecurityHeaders`, `successResponse`, `errorResponse`, `validationErrorResponse`, `notFoundResponse`, `unauthorizedResponse`, `parseBody` |
+| `tests/unit/shared/validation.test.ts` | 36 | 36 | `isValidEmail`, `isValidPhoneNumber`, `isValidUUID`, `isValidIMEI`, `isValidNationalID`, `validateRequired`, `sanitizePhoneNumber` |
+| `tests/unit/shared/circuit-breaker.test.ts` | 14 | 14 | CLOSED→OPEN→HALF_OPEN state transitions, reset, success recovery, onOpen/onClose callbacks |
+| `tests/unit/shared/rate-limiter.test.ts` | 17 | 17 | `getRateLimitCategory`, `RATE_LIMITS` config, `checkRateLimit` (429 responses), `getRateLimitHeaders` |
+| `tests/unit/shared/logger.test.ts` | 30 | 30 | `maskPhone`, `maskNationalId`, `maskSensitiveData` (phone, national_id, password, api_key, authorization, nested objects, arrays, null/undefined, depth limit), request context, structured JSON output, PII masking in meta, log level filtering, `startOperation` |
+
+**Total: 186 new tests, all passing.**
+
+### Task 0C Results: Payment Service Characterization Tests
+
+| Test File | Tests Written | Tests Passing | Skipped (Known Bugs) | Key Coverage |
+|-----------|--------------|---------------|---------------------|--------------|
+| `tests/unit/payment/payment-service.test.ts` | 7 | 5 | 2 | `validateTransactionLimits` (single/daily/monthly), `initiatePayment`, `getProviderHealth` |
+| `tests/unit/payment/ecocash-provider.test.ts` | 11 | 11 | 0 | `initiatePayment`, phone validation, status mapping (SUCCESS/FAILED/CANCELLED/PENDING), webhook signature verification, payment instructions, capabilities |
+| `tests/unit/payment/onemoney-provider.test.ts` | 8 | 8 | 0 | Same pattern as EcoCash for OneMoney provider |
+| `tests/unit/payment/payment-state-machine.test.ts` | 27 | 27 | 0 | All valid transitions (pending→held, held→processing, processing→completed, etc.), invalid transitions rejected, `getAllowedTransitions`, DB-backed `transition()`, `InvalidTransitionError`, `ConcurrentModificationError` |
+
+**Total: 53 new tests, 51 passing, 2 skipped (documented known bugs).**
+
+### Known Bugs Documented as Skipped Tests
+
+```
+Bug #1 — payment-service.ts:117 (it.skip in payment-service.test.ts)
+  Code:    const amountUsd = currency === 'USD' ? amount : amount;
+  Problem: ZWL and ZAR amounts are NOT converted to USD for limit checking
+  Impact:  Transaction limits applied incorrectly for non-USD currencies
+
+Bug #2 — payment-service.ts:403 (it.skip in payment-service.test.ts)
+  Code:    // TODO: Trigger next step based on payment type
+  Problem: After payment completes, the next workflow step is never triggered
+  Impact:  Manual intervention needed to advance loan workflow after payment
+```
+
+### Full Suite Verification
+
+```
+Test Suites: 52 passed, 52 total
+Tests:       2 skipped, 1384 passed, 1386 total
+Time:        36.27s
+```
+
+**All pre-existing tests continue to pass. Zero regressions.**
+
+### Coverage Impact
+
+- **Before Phase 0:** ~35-40% coverage, 0 shared utility tests, 0 payment unit tests
+- **After Phase 0:** 50% coverage threshold enforced, 239 new tests added (186 shared + 53 payment)
+- **New coverage threshold:** 50% global (was 35-40%), on track for 80% by Phase 5
+
+---
+
 ## Phase 1: Shared Lambda Router Utility
 
 ### Why This Phase Exists
