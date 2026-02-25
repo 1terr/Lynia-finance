@@ -156,17 +156,17 @@ async function initiateKYC(event: APIGatewayProxyEvent): Promise<APIGatewayProxy
     });
 
     // Save KYC submission record (provider-agnostic columns)
+    const submissionNumber = `KYC-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
     const insertData: Record<string, unknown> = {
       customer_id: customer_id,
+      submission_number: submissionNumber,
       id_document_type: 'NATIONAL_ID',
       id_number: idValidation.normalized,
       id_document_url: `stored_in_${kycProvider.providerName}`,
       selfie_url: `stored_in_${kycProvider.providerName}`,
       kyc_provider: kycProvider.providerName,
       provider_job_id: providerResult.provider_job_id,
-      status: 'pending',
-      submitted_at: new Date().toISOString(),
-      created_at: new Date().toISOString()
+      status: 'pending'
     };
 
     const { data: submission, error: submissionError } = await db
@@ -337,8 +337,7 @@ async function processKYCResult(
     verification_confidence: result.confidence_score,
     liveness_score: result.liveness_score,
     face_match_score: result.face_match_score,
-    provider_response: result.raw_response,
-    updated_at: new Date().toISOString()
+    provider_response: result.raw_response
   };
 
   if (decision === 'APPROVED') {

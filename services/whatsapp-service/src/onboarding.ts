@@ -546,9 +546,11 @@ Example: *63-2345678-B-08*`;
     }
 
     // Validate Zimbabwe national ID format (e.g., "63-2345678-B-08")
-    const normalized = idNumber.replace(/[\s-]/g, '');
-    const idPattern = /^\d{2}\d{6,7}[A-Z]\d{2}$/i;
-    if (!idPattern.test(normalized)) {
+    // Strip all Unicode dash variants (en-dash, em-dash, etc.) that mobile keyboards may insert
+    const stripped = idNumber.replace(/[\s\u002D\u2010-\u2015\u2212\uFE58\uFE63\uFF0D./]/g, '');
+    const idPattern = /^(\d{2})(\d{6,7})([A-Z])(\d{2})$/i;
+    const idMatch = stripped.match(idPattern);
+    if (!idMatch) {
       return `Invalid ID number format.
 
 Please enter your National ID number:
@@ -556,10 +558,13 @@ Format: *XX-XXXXXXX-X-XX*
 Example: *63-2345678-B-08*`;
     }
 
+    // Normalize to canonical format: XX-XXXXXXXAXX
+    const normalizedId = `${idMatch[1]}-${idMatch[2]}${idMatch[3].toUpperCase()}${idMatch[4]}`;
+
     await updateSession(context.from, {
       state_data: {
         ...session.state_data,
-        id_number: idNumber
+        id_number: normalizedId
       }
     });
 
@@ -822,6 +827,16 @@ Please wait...`;
         id_number: undefined
       }
     });
+
+    // Provide more specific error messages based on failure type
+    const httpStatus = axiosErr?.response?.status;
+    if (httpStatus === 401 || httpStatus === 403) {
+      return `⚠️ *Service Temporarily Unavailable*
+
+Our verification service is being configured. Please try again later or contact support.
+
+Reference: KYC-AUTH-${Date.now()}`;
+    }
 
     return `⚠️ *Verification Error*
 
