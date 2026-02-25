@@ -290,7 +290,7 @@ export default function KYCReviewPage() {
 
                           {/* Document thumbnails */}
                           <div className="flex gap-3">
-                            {submission.id_document_front_url && (
+                            {submission.document_front_url && (
                               <button
                                 onClick={() => setDocViewerSubmission(submission)}
                                 className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
@@ -299,7 +299,7 @@ export default function KYCReviewPage() {
                                 ID Front
                               </button>
                             )}
-                            {submission.id_document_back_url && (
+                            {submission.document_back_url && (
                               <button
                                 onClick={() => setDocViewerSubmission(submission)}
                                 className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
@@ -308,7 +308,7 @@ export default function KYCReviewPage() {
                                 ID Back
                               </button>
                             )}
-                            {submission.selfie_image_url && (
+                            {submission.selfie_url && (
                               <button
                                 onClick={() => setDocViewerSubmission(submission)}
                                 className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
@@ -317,7 +317,7 @@ export default function KYCReviewPage() {
                                 Selfie
                               </button>
                             )}
-                            {!submission.id_document_front_url && !submission.selfie_image_url && (
+                            {!submission.document_front_url && !submission.selfie_url && (
                               <span className="text-xs text-gray-400 italic">No documents uploaded</span>
                             )}
                           </div>
@@ -418,7 +418,7 @@ export default function KYCReviewPage() {
             </div>
 
             <div className="space-y-4">
-              {docViewerSubmission.id_document_front_url && (
+              {docViewerSubmission.document_front_url && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
                     <FileText className="mr-1 inline h-4 w-4" />
@@ -428,14 +428,14 @@ export default function KYCReviewPage() {
                     <div className="text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
                       <p className="mt-2 text-xs text-gray-500 font-mono break-all">
-                        {docViewerSubmission.id_document_front_url}
+                        {docViewerSubmission.document_front_url}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {docViewerSubmission.id_document_back_url && (
+              {docViewerSubmission.document_back_url && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
                     <FileText className="mr-1 inline h-4 w-4" />
@@ -445,14 +445,14 @@ export default function KYCReviewPage() {
                     <div className="text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
                       <p className="mt-2 text-xs text-gray-500 font-mono break-all">
-                        {docViewerSubmission.id_document_back_url}
+                        {docViewerSubmission.document_back_url}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {docViewerSubmission.selfie_image_url && (
+              {docViewerSubmission.selfie_url && (
                 <div>
                   <p className="text-sm font-medium text-gray-700 mb-2">
                     <Camera className="mr-1 inline h-4 w-4" />
@@ -462,16 +462,16 @@ export default function KYCReviewPage() {
                     <div className="text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
                       <p className="mt-2 text-xs text-gray-500 font-mono break-all">
-                        {docViewerSubmission.selfie_image_url}
+                        {docViewerSubmission.selfie_url}
                       </p>
                     </div>
                   </div>
                 </div>
               )}
 
-              {!docViewerSubmission.id_document_front_url &&
-                !docViewerSubmission.id_document_back_url &&
-                !docViewerSubmission.selfie_image_url && (
+              {!docViewerSubmission.document_front_url &&
+                !docViewerSubmission.document_back_url &&
+                !docViewerSubmission.selfie_url && (
                   <div className="text-center py-8">
                     <Image className="mx-auto h-12 w-12 text-gray-300" />
                     <p className="mt-2 text-sm text-gray-500">No documents uploaded for this submission.</p>

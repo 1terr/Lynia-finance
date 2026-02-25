@@ -786,7 +786,30 @@ This usually takes 1-5 minutes. We'll message you as soon as it's complete.
 Please wait...`;
 
   } catch (error) {
-    logger.error('KYC initiation failed', { action: 'kyc.initiate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    // Detailed error logging to diagnose KYC failures
+    const isAxiosError = error && typeof error === 'object' && 'isAxiosError' in error;
+    const axiosErr = isAxiosError ? (error as { response?: { status?: number; data?: unknown }; code?: string }) : null;
+
+    const errorDetails: Record<string, unknown> = {
+      action: 'kyc.initiate',
+      customer_phone: context.from,
+      error_message: error instanceof Error ? error.message : 'Unknown',
+    };
+
+    if (axiosErr?.response) {
+      errorDetails.error_type = 'kyc_api_error';
+      errorDetails.http_status = axiosErr.response.status;
+      errorDetails.response_data = axiosErr.response.data;
+    } else if (axiosErr?.code) {
+      errorDetails.error_type = 'network_error';
+      errorDetails.error_code = axiosErr.code;
+    } else if (error instanceof Error && error.message === 'Customer record not found') {
+      errorDetails.error_type = 'customer_not_found';
+    } else {
+      errorDetails.error_type = 'unexpected_error';
+    }
+
+    logger.error('KYC initiation failed', errorDetails);
 
     // Revert to ID upload state for retry
     await updateSession(context.from, {

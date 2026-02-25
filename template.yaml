@@ -129,7 +129,7 @@ Parameters:
   KYCProvider:
     Type: String
     Description: Active KYC provider (smile_identity or didit)
-    Default: smile_identity
+    Default: didit
     AllowedValues:
       - smile_identity
       - didit
@@ -1081,6 +1081,12 @@ Resources:
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/dashboard/{proxy+}
+            Method: ANY
+        KYCAdminProxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/kyc/submissions/{proxy+}
             Method: ANY
     Metadata:
       BuildMethod: esbuild
