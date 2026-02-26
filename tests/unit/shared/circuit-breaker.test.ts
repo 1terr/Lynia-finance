@@ -4,6 +4,11 @@
  * Protects against cascading failures when external APIs go down.
  */
 
+jest.mock('../../../services/shared/utils/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
+
 import { CircuitBreaker, CircuitOpenError } from '../../../services/shared/utils/circuit-breaker';
 
 describe('CircuitBreaker', () => {

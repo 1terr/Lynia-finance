@@ -107,6 +107,28 @@ jest.mock('../../../services/payment-service/src/payment-state-machine', () => (
   })),
 }));
 
+jest.mock('../../../services/payment-service/src/currency-conversion', () => ({
+  convertToUsd: jest.fn().mockImplementation(async (amount: number, currency: string) => {
+    if (currency === 'USD') return amount;
+    if (currency === 'ZWL') return amount * 0.0003;
+    if (currency === 'ZAR') return amount * 0.055;
+    return amount;
+  }),
+}));
+
+jest.mock('../../../services/shared/utils/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
+
+jest.mock('../../../services/shared/utils/sqs-publisher', () => ({
+  SQSQueues: {
+    sendNotification: jest.fn().mockResolvedValue(undefined),
+    processDeviceLock: jest.fn().mockResolvedValue(undefined),
+    syncDataWarehouse: jest.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import { PaymentService } from '../../../services/payment-service/src/payment-service';
 const { db, __mockExecute } = require('../../../services/shared/clients/database');
 
@@ -166,18 +188,13 @@ describe('PaymentService', () => {
       expect(result.reason).toContain('Monthly transaction limit exceeded');
     });
 
-    // KNOWN BUG: currency conversion is a no-op
-    // payment-service.ts:117 — ZWL amounts are not converted to USD
-    it.skip('should convert ZWL amounts to USD for limit checking (BUG: not implemented)', async () => {
-      // If we had exchange rate of 1 USD = 5000 ZWL,
-      // then 10000 ZWL = $2 USD which should be allowed
+    it('should convert ZWL amounts to USD for limit checking', async () => {
+      // With mock rate: 10000 ZWL * 0.0003 = $3 USD, which is under $2000 limit
       __mockExecute
-        .mockResolvedValueOnce({ data: [], error: null })
-        .mockResolvedValueOnce({ data: [], error: null });
+        .mockResolvedValueOnce({ data: [], error: null })   // daily
+        .mockResolvedValueOnce({ data: [], error: null });   // monthly
 
       const result = await service.validateTransactionLimits('cust-1', 10000, 'ZWL');
-      // This SHOULD pass because 10000 ZWL < $2000 USD
-      // But current code treats 10000 as 10000 USD and rejects it
       expect(result.allowed).toBe(true);
     });
   });
@@ -254,13 +271,62 @@ describe('PaymentService', () => {
     });
   });
 
-  // KNOWN BUG: processPaymentCompletion does not trigger next workflow step
-  // payment-service.ts:403 — TODO comment: Trigger next step based on payment type
   describe('processPaymentCompletion', () => {
-    it.skip('should trigger loan disbursement after successful deposit (BUG: not implemented)', async () => {
-      // After a deposit payment completes, the loan should move to 'paid_deposit'
-      // and trigger the device disbursement process.
-      // Current code has a TODO comment and does nothing.
+    it('should send deposit notification after successful deposit', async () => {
+      const { SQSQueues } = require('../../../services/shared/utils/sqs-publisher');
+
+      // Mock sequence: fetch payment, then linkPaymentToLoan (fetch loan, update loan)
+      __mockExecute.mockReset();
+      __mockExecute
+        .mockResolvedValueOnce({   // fetch payment
+          data: { id: 'pay-001', loan_id: 'loan-1', customer_id: 'cust-1', amount: 200, status: 'completed', payment_type: 'deposit' },
+          error: null,
+        })
+        .mockResolvedValueOnce({   // linkPaymentToLoan: fetch loan
+          data: { id: 'loan-1', outstanding_balance: 1000, status: 'active' },
+          error: null,
+        })
+        .mockResolvedValue({ data: null, error: null }); // any subsequent updates
+
+      await service.processPaymentCompletion('pay-001');
+
+      expect(SQSQueues.sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerId: 'cust-1',
+          channel: 'whatsapp',
+          templateName: 'deposit_confirmed',
+        })
+      );
+    });
+
+    it('should trigger device unlock when repayment pays off the loan', async () => {
+      const { SQSQueues } = require('../../../services/shared/utils/sqs-publisher');
+
+      __mockExecute.mockReset();
+      __mockExecute
+        .mockResolvedValueOnce({   // fetch payment
+          data: { id: 'pay-002', loan_id: 'loan-2', customer_id: 'cust-2', amount: 500, status: 'completed', payment_type: 'repayment' },
+          error: null,
+        })
+        .mockResolvedValueOnce({   // linkPaymentToLoan: fetch loan
+          data: { id: 'loan-2', outstanding_balance: 500, principal_amount: 1000, status: 'active' },
+          error: null,
+        })
+        .mockResolvedValueOnce({ data: null, error: null }) // linkPaymentToLoan: update loan
+        .mockResolvedValueOnce({   // fetch updated loan for paid_off check
+          data: { status: 'paid_off', device_id: 'dev-001' },
+          error: null,
+        });
+
+      await service.processPaymentCompletion('pay-002');
+
+      expect(SQSQueues.processDeviceLock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          deviceId: 'dev-001',
+          action: 'unlock',
+          reason: 'loan_paid_off',
+        })
+      );
     });
   });
 });

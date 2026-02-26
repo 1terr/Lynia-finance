@@ -5,6 +5,12 @@ import {
   isValidPhoneNumber,
   sanitizePhoneNumber,
 } from '../../shared/utils/validation';
+import {
+  getSecurityHeaders,
+  successResponse,
+  errorResponse,
+} from '../../shared/utils/response';
+import logger from '../../shared/utils/logger';
 
 const VALID_PARTNER_TYPES = ['distributor', 'b2b', 'other'] as const;
 
@@ -12,32 +18,6 @@ const VALID_PARTNER_TYPES = ['distributor', 'b2b', 'other'] as const;
 function sanitise(input: string, maxLength = 1000): string {
   // eslint-disable-next-line no-control-regex
   return input.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim().slice(0, maxLength);
-}
-
-function corsHeaders(event: APIGatewayProxyEvent): Record<string, string> {
-  const origin = event.headers?.origin || event.headers?.Origin || '';
-  const allowed = [
-    'https://lyniafinance.com',
-    'https://www.lyniafinance.com',
-    ...(process.env.NODE_ENV !== 'production'
-      ? ['http://localhost:3000', 'http://localhost:3001']
-      : []),
-  ];
-  return {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': allowed.includes(origin) ? origin : allowed[0],
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST,OPTIONS',
-    'X-Content-Type-Options': 'nosniff',
-  };
-}
-
-function ok(data: unknown, event: APIGatewayProxyEvent): APIGatewayProxyResult {
-  return { statusCode: 200, body: JSON.stringify({ success: true, data }), headers: corsHeaders(event) };
-}
-
-function err(message: string, status: number, event: APIGatewayProxyEvent): APIGatewayProxyResult {
-  return { statusCode: status, body: JSON.stringify({ success: false, error: message }), headers: corsHeaders(event) };
 }
 
 /**
@@ -52,18 +32,18 @@ export const handler = async (
   try {
     // Handle CORS preflight
     if (event.httpMethod === 'OPTIONS') {
-      return { statusCode: 204, body: '', headers: corsHeaders(event) };
+      return successResponse(null, 204, event);
     }
 
     if (event.httpMethod !== 'POST') {
-      return err('Method not allowed', 405, event);
+      return errorResponse('Method not allowed', 405, undefined, event);
     }
 
     let body: Record<string, unknown>;
     try {
       body = JSON.parse(event.body || '{}');
     } catch {
-      return err('Invalid JSON body', 400, event);
+      return errorResponse('Invalid JSON body', 400, undefined, event);
     }
 
     const type = typeof body.type === 'string' ? body.type : '';
@@ -76,11 +56,15 @@ export const handler = async (
       case 'waitlist':
         return await handleWaitlist(body, event);
       default:
-        return err('Invalid form type', 400, event);
+        return errorResponse('Invalid form type', 400, undefined, event);
     }
   } catch (error) {
-    console.error('Form submission error', { error });
-    return err('Internal server error', 500, event);
+    logger.error('Form submission error', {
+      action: 'form.submit',
+      status: 'failed',
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return errorResponse('Internal server error', 500, undefined, event);
   }
 };
 
@@ -93,12 +77,12 @@ async function handleContact(
   const email = typeof body.email === 'string' ? sanitise(body.email, 320) : '';
   const message = typeof body.message === 'string' ? sanitise(body.message) : '';
 
-  if (!name) return err('Name is required', 400, event);
+  if (!name) return errorResponse('Name is required', 400, undefined, event);
   if (!isValidPhoneNumber(phone)) {
-    return err('A valid Zimbabwe phone number is required', 400, event);
+    return errorResponse('A valid Zimbabwe phone number is required', 400, undefined, event);
   }
   if (email && !isValidEmail(email)) {
-    return err('Invalid email address', 400, event);
+    return errorResponse('Invalid email address', 400, undefined, event);
   }
 
   const { error } = await db.from('contact_submissions').insert({
@@ -109,11 +93,15 @@ async function handleContact(
   }).execute();
 
   if (error) {
-    console.error('contact insert failed', { error: error.message });
-    return err('Failed to save your message. Please try again.', 500, event);
+    logger.error('Contact insert failed', {
+      action: 'form.contact',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to save your message. Please try again.', 500, undefined, event);
   }
 
-  return ok(null, event);
+  return successResponse(null, 200, event);
 }
 
 async function handlePartnership(
@@ -126,15 +114,15 @@ async function handlePartnership(
   const partnerType = typeof body.partner_type === 'string' ? body.partner_type : '';
   const message = typeof body.message === 'string' ? sanitise(body.message) : '';
 
-  if (!name) return err('Name is required', 400, event);
+  if (!name) return errorResponse('Name is required', 400, undefined, event);
   if (!isValidPhoneNumber(phone)) {
-    return err('A valid Zimbabwe phone number is required', 400, event);
+    return errorResponse('A valid Zimbabwe phone number is required', 400, undefined, event);
   }
   if (!email || !isValidEmail(email)) {
-    return err('A valid email address is required', 400, event);
+    return errorResponse('A valid email address is required', 400, undefined, event);
   }
   if (!VALID_PARTNER_TYPES.includes(partnerType as typeof VALID_PARTNER_TYPES[number])) {
-    return err('Select a valid partnership type', 400, event);
+    return errorResponse('Select a valid partnership type', 400, undefined, event);
   }
 
   const { error } = await db.from('partnership_applications').insert({
@@ -146,11 +134,15 @@ async function handlePartnership(
   }).execute();
 
   if (error) {
-    console.error('partnership insert failed', { error: error.message });
-    return err('Failed to save your application. Please try again.', 500, event);
+    logger.error('Partnership insert failed', {
+      action: 'form.partnership',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to save your application. Please try again.', 500, undefined, event);
   }
 
-  return ok(null, event);
+  return successResponse(null, 200, event);
 }
 
 async function handleWaitlist(
@@ -160,7 +152,7 @@ async function handleWaitlist(
   const phone = typeof body.phone === 'string' ? sanitizePhoneNumber(body.phone) : '';
 
   if (!isValidPhoneNumber(phone)) {
-    return err('A valid Zimbabwe phone number is required', 400, event);
+    return errorResponse('A valid Zimbabwe phone number is required', 400, undefined, event);
   }
 
   const { error } = await db.from('waitlist').insert({ phone }).execute();
@@ -168,11 +160,15 @@ async function handleWaitlist(
   if (error) {
     // Handle duplicate phone (UNIQUE constraint)
     if (error.message?.includes('duplicate') || error.message?.includes('unique')) {
-      return ok(null, event); // Silently succeed — already on the list
+      return successResponse(null, 200, event); // Silently succeed — already on the list
     }
-    console.error('waitlist insert failed', { error: error.message });
-    return err('Failed to save. Please try again.', 500, event);
+    logger.error('Waitlist insert failed', {
+      action: 'form.waitlist',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to save. Please try again.', 500, undefined, event);
   }
 
-  return ok(null, event);
+  return successResponse(null, 200, event);
 }

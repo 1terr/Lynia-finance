@@ -8,6 +8,7 @@
  */
 
 import { db } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -102,7 +103,7 @@ export class PaymentAnalyticsService {
       }).execute();
     } catch (error) {
       // Analytics tracking should never block the payment flow
-      console.error('Failed to track payment method:', error);
+      logger.error('Failed to track payment method', { action: 'payment_analytics.track', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     }
   }
 
@@ -213,7 +214,7 @@ export class PaymentAnalyticsService {
         direct_integration_roi_estimate: annualROI,
       };
     } catch (error) {
-      console.error('Error generating payment analytics:', error);
+      logger.error('Error generating payment analytics', { action: 'payment_analytics.breakdown', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw error;
     }
   }

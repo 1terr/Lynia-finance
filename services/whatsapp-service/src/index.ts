@@ -26,7 +26,7 @@ import {
   trackSecurityEvent,
   mapWhatsAppApiError,
 } from './error-handler';
-import { CircuitBreaker, CircuitOpenError } from './utils/circuit-breaker';
+import { CircuitBreaker, CircuitOpenError } from '../../shared/utils/circuit-breaker';
 import { getSecurityHeaders } from '../../shared/utils/response';
 import { SQSQueues } from '../../shared/utils/sqs-publisher';
 import { logger, setRequestContext } from '../../shared/utils/logger';

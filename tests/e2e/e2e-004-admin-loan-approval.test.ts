@@ -433,7 +433,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
       expect(loanLimit).toBe(300);
     });
 
-    it('should validate scoring endpoint returns 404 for unrouted path', async () => {
+    it('should validate scoring endpoint returns 405 for wrong method', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'DELETE',
         path: '/scoring/calculate',
@@ -442,7 +442,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
 
       const response = await scoringHandler(event);
 
-      expect(response.statusCode).toBe(404);
+      expect(response.statusCode).toBe(405);
     });
   });
 });

@@ -10,6 +10,8 @@
  *  HALF_OPEN - Testing if service recovered, allows one request through
  */
 
+import logger from './logger';
+
 export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
 export interface CircuitBreakerOptions {
@@ -71,7 +73,10 @@ export class CircuitBreaker {
     if (this.state === 'HALF_OPEN') {
       this.state = 'CLOSED';
       this.options.onClose?.(this.options.name);
-      console.log(`Circuit breaker "${this.options.name}" CLOSED (recovered)`);
+      logger.info(`Circuit breaker "${this.options.name}" CLOSED (recovered)`, {
+        action: 'circuit_breaker.close',
+        service: this.options.name,
+      });
     }
   }
 
@@ -82,10 +87,12 @@ export class CircuitBreaker {
       this.state = 'OPEN';
       this.nextAttemptTime = Date.now() + this.options.resetTimeout;
       this.options.onOpen?.(this.options.name, this.failureCount);
-      console.error(
-        `Circuit breaker "${this.options.name}" OPEN after ${this.failureCount} failures. ` +
-        `Will retry after ${this.options.resetTimeout}ms.`
-      );
+      logger.error(`Circuit breaker "${this.options.name}" OPEN after ${this.failureCount} failures`, {
+        action: 'circuit_breaker.open',
+        service: this.options.name,
+        failureCount: this.failureCount,
+        resetTimeout: this.options.resetTimeout,
+      });
     }
   }
 

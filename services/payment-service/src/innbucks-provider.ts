@@ -10,6 +10,7 @@ import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import logger from '../../shared/utils/logger';
 import type {
   PaymentProvider,
   PaymentRequest,
@@ -144,7 +145,7 @@ export class InnBucksProvider implements PaymentProvider {
    */
   verifyWebhookSignature(receivedSignature: string, payload: string): boolean {
     if (!this.config.webhook_secret) {
-      console.warn('InnBucks webhook secret not configured — skipping signature verification');
+      logger.warn('InnBucks webhook secret not configured — skipping signature verification', { action: 'innbucks.webhook' });
       return true;
     }
 

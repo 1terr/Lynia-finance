@@ -1,4 +1,7 @@
 import { db } from '../../shared/clients/database';
+import { convertToUsd } from './currency-conversion';
+import logger from '../../shared/utils/logger';
+import { SQSQueues } from '../../shared/utils/sqs-publisher';
 import type { PaymentProvider, PaymentRequest, PaymentResponse, PaymentStatusResponse, ProviderHealthResult } from './payment-provider.interface';
 import { EcoCashProvider } from './ecocash-provider';
 import { OneMoneyProvider } from './onemoney-provider';
@@ -114,7 +117,7 @@ export class PaymentService {
     currency: string
   ): Promise<{ allowed: boolean; reason?: string }> {
     // Convert to USD equivalent for limit checking
-    const amountUsd = currency === 'USD' ? amount : amount; // TODO: Add exchange rate conversion for ZWL/ZAR
+    const amountUsd = await convertToUsd(amount, currency);
 
     // 1. Single transaction limit
     if (amountUsd > TRANSACTION_LIMITS.SINGLE_TRANSACTION_USD) {
@@ -198,7 +201,7 @@ export class PaymentService {
       // Select payment gateway
       const gateway = request.gateway || await this.selectGateway(request.customer_id);
 
-      console.log(`Initiating payment via ${gateway} for loan ${request.loan_id}`);
+      logger.info(`Initiating payment via ${gateway} for loan ${request.loan_id}`, { action: 'payment.initiate' });
 
       // Generate payment reference
       const paymentReference = this.generatePaymentReference();
@@ -224,7 +227,7 @@ export class PaymentService {
         .execute();
 
       if (paymentError || !payment) {
-        console.error('Error creating payment record:', paymentError);
+        logger.error('Error creating payment record', { action: 'payment.initiate', meta: { error: paymentError instanceof Error ? paymentError.message : String(paymentError) } });
         throw new Error('Failed to create payment record');
       }
 
@@ -246,7 +249,7 @@ export class PaymentService {
           customer_id: request.customer_id,
         });
       } catch (err) {
-        console.error(`Failed to transition payment ${payment.id} to held:`, err);
+        logger.error(`Failed to transition payment ${payment.id} to held`, { action: 'payment.initiate', meta: { error: err instanceof Error ? err.message : String(err) } });
         // Fall through — provider call will still work with pending status
       }
 
@@ -309,7 +312,7 @@ export class PaymentService {
         .eq('id', payment.id)
         .execute();
 
-      console.log(`Payment ${payment.id} initiated via ${gateway}: ${response.transaction_id}`);
+      logger.info(`Payment ${payment.id} initiated via ${gateway}: ${response.transaction_id}`, { action: 'payment.initiate' });
 
       return {
         payment_id: payment.id,
@@ -321,7 +324,7 @@ export class PaymentService {
       };
 
     } catch (error) {
-      console.error('Error initiating payment:', error);
+      logger.error('Error initiating payment', { action: 'payment.initiate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw new Error(`Payment initiation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -368,7 +371,7 @@ export class PaymentService {
       return payment;
 
     } catch (error) {
-      console.error('Error checking payment status:', error);
+      logger.error('Error checking payment status', { action: 'payment.status', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw new Error(`Failed to check payment status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -378,7 +381,7 @@ export class PaymentService {
    */
   async processPaymentCompletion(paymentId: string): Promise<void> {
     try {
-      console.log(`Processing payment completion for ${paymentId}`);
+      logger.info(`Processing payment completion for ${paymentId}`, { action: 'payment.completion' });
 
       // Fetch payment
       const { data: payment, error } = await db
@@ -393,22 +396,59 @@ export class PaymentService {
       }
 
       if (payment.status !== 'completed') {
-        console.log(`Payment ${paymentId} is not completed (status: ${payment.status})`);
+        logger.info(`Payment ${paymentId} is not completed (status: ${payment.status})`, { action: 'payment.completion' });
         return;
       }
 
       // Update loan with payment
       await this.linkPaymentToLoan(payment);
 
-      // TODO: Trigger next step based on payment type
-      // - If deposit: Move loan to 'paid_deposit' status
-      // - If repayment: Update loan balance, check if fully paid
-      // - If penalty: Update penalty records
+      // Trigger next step based on payment type
+      if (payment.payment_type === 'deposit') {
+        // Notify customer that deposit was received
+        SQSQueues.sendNotification({
+          customerId: payment.customer_id,
+          channel: 'whatsapp',
+          templateName: 'deposit_confirmed',
+          templateParams: {
+            amount: String(payment.amount),
+            loan_id: payment.loan_id,
+          },
+        }).catch(err => logger.warn('Failed to send deposit notification', {
+          action: 'payment.notify',
+          meta: { paymentId, error: err instanceof Error ? err.message : 'Unknown' },
+        }));
+      } else if (payment.payment_type === 'repayment') {
+        // Check if loan is fully paid off — trigger device unlock
+        const { data: updatedLoan } = await db
+          .from('loans')
+          .select('status, device_id')
+          .eq('id', payment.loan_id)
+          .single()
+          .execute();
 
-      console.log(`Payment ${paymentId} processed successfully`);
+        if (updatedLoan?.status === 'paid_off' && updatedLoan?.device_id) {
+          SQSQueues.processDeviceLock({
+            deviceId: updatedLoan.device_id,
+            action: 'unlock',
+            reason: 'loan_paid_off',
+            loanId: payment.loan_id,
+          }).catch(err => logger.warn('Failed to queue device unlock', {
+            action: 'payment.unlock',
+            meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
+          }));
+        }
+      } else if (payment.payment_type === 'penalty') {
+        logger.info('Penalty payment completed', {
+          action: 'payment.penalty_paid',
+          meta: { paymentId, loanId: payment.loan_id, amount: payment.amount },
+        });
+      }
+
+      logger.info(`Payment ${paymentId} processed successfully`, { action: 'payment.completed' });
 
     } catch (error) {
-      console.error('Error processing payment completion:', error);
+      logger.error('Error processing payment completion', { action: 'payment.completion', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw error;
     }
   }
@@ -425,7 +465,7 @@ export class PaymentService {
       .execute();
 
     if (loanError || !loan) {
-      console.error('Loan not found:', payment.loan_id);
+      logger.error('Loan not found', { action: 'payment.link_loan', meta: { loanId: payment.loan_id } });
       return;
     }
 
@@ -443,7 +483,7 @@ export class PaymentService {
         .eq('id', payment.loan_id)
         .execute();
 
-      console.log(`Loan ${payment.loan_id} deposit paid: $${payment.amount}`);
+      logger.info(`Loan ${payment.loan_id} deposit paid: $${payment.amount}`, { action: 'payment.link_loan' });
 
     } else if (payment.payment_type === 'repayment') {
       // Update loan balance
@@ -461,7 +501,7 @@ export class PaymentService {
         .eq('id', payment.loan_id)
         .execute();
 
-      console.log(`Loan ${payment.loan_id} repayment: $${payment.amount}, new balance: $${newBalance}`);
+      logger.info(`Loan ${payment.loan_id} repayment: $${payment.amount}, new balance: $${newBalance}`, { action: 'payment.link_loan' });
     }
   }
 
@@ -492,7 +532,7 @@ export class PaymentService {
       .eq('id', paymentId)
       .execute();
 
-    console.log(`Payment ${paymentId} status updated to ${statusResponse.status}`);
+    logger.info(`Payment ${paymentId} status updated to ${statusResponse.status}`, { action: 'payment.status_update' });
   }
 
   /**
@@ -557,7 +597,7 @@ export class PaymentService {
       });
     } catch (error) {
       // Never let analytics tracking block the payment flow
-      console.error('Failed to track payment analytics:', error);
+      logger.error('Failed to track payment analytics', { action: 'payment.track_analytics', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
     }
   }
 
@@ -581,7 +621,7 @@ export class PaymentService {
     released: number;
   }> {
     try {
-      console.log(`Starting payment reconciliation (max age: ${maxAge} hours)`);
+      logger.info(`Starting payment reconciliation (max age: ${maxAge} hours)`, { action: 'payment.reconcile' });
 
       const cutoffTime = new Date(Date.now() - maxAge * 60 * 60 * 1000);
 
@@ -616,7 +656,7 @@ export class PaymentService {
           });
           released++;
         } catch (err) {
-          console.error(`Error releasing expired hold for payment ${held.id}:`, err);
+          logger.error(`Error releasing expired hold for payment ${held.id}`, { action: 'payment.reconcile', meta: { error: err instanceof Error ? err.message : String(err) } });
         }
       }
 
@@ -652,16 +692,16 @@ export class PaymentService {
             }
           }
         } catch (error) {
-          console.error(`Error reconciling payment ${payment.id}:`, error);
+          logger.error(`Error reconciling payment ${payment.id}`, { action: 'payment.reconcile', meta: { error: error instanceof Error ? error.message : String(error) } });
         }
       }
 
-      console.log(`Reconciliation complete: ${checked} checked, ${updated} updated, ${completed} completed, ${failed} failed, ${released} released`);
+      logger.info(`Reconciliation complete: ${checked} checked, ${updated} updated, ${completed} completed, ${failed} failed, ${released} released`, { action: 'payment.reconcile' });
 
       return { checked, updated, completed, failed, released };
 
     } catch (error) {
-      console.error('Error during payment reconciliation:', error);
+      logger.error('Error during payment reconciliation', { action: 'payment.reconcile', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw error;
     }
   }

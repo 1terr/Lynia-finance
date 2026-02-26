@@ -12,6 +12,7 @@
  */
 
 import { db, query } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -736,7 +737,7 @@ async function logAudit(
     }).execute();
   } catch {
     // Never let audit logging failure break the main flow
-    console.error('Failed to write audit log', { action, entityType, entityId });
+    logger.error('Failed to write audit log', { action: 'penalty.audit', meta: { auditAction: action, entityType, entityId } });
   }
 }
 

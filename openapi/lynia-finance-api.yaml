@@ -45,6 +45,14 @@ tags:
     description: Device catalog and inventory management
   - name: Admin
     description: Administrative operations
+  - name: Fineract
+    description: Fineract core banking proxy endpoints
+  - name: Investor Reporting
+    description: Investor and portfolio reporting
+  - name: Distributor
+    description: Distributor portal operations
+  - name: Public
+    description: Public form submissions (no auth required)
 
 security:
   - BearerAuth: []
@@ -352,6 +360,1018 @@ paths:
       responses:
         '200':
           description: List of loans
+
+  # ==================== Fineract Proxy ====================
+  /api/v1/fineract/loans:
+    get:
+      tags:
+        - Fineract
+      summary: List loans (paginated)
+      description: Retrieve paginated list of loans from Fineract
+      operationId: fineractListLoans
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Paginated loan list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/pending:
+    get:
+      tags:
+        - Fineract
+      summary: List loans pending approval
+      description: Retrieve loans awaiting approval
+      operationId: fineractPendingLoans
+      security: []
+      responses:
+        '200':
+          description: List of pending loans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/overdue:
+    get:
+      tags:
+        - Fineract
+      summary: List overdue loans
+      description: Retrieve loans that are past due
+      operationId: fineractOverdueLoans
+      security: []
+      responses:
+        '200':
+          description: List of overdue loans
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/aging-summary:
+    get:
+      tags:
+        - Fineract
+      summary: Get aging bucket summary
+      description: Retrieve loan aging analysis by bucket
+      operationId: fineractAgingSummary
+      security: []
+      responses:
+        '200':
+          description: Aging bucket summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/{loanId}:
+    get:
+      tags:
+        - Fineract
+      summary: Get loan detail
+      description: Retrieve loan detail with schedule and transactions
+      operationId: fineractGetLoan
+      security: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Loan detail with schedule and transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/{loanId}/approve:
+    post:
+      tags:
+        - Fineract
+      summary: Approve a loan
+      description: Approve a pending loan application
+      operationId: fineractApproveLoan
+      security: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                approvedOnDate:
+                  type: string
+                  format: date
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Loan approved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/{loanId}/disburse:
+    post:
+      tags:
+        - Fineract
+      summary: Disburse a loan
+      description: Disburse an approved loan
+      operationId: fineractDisburseLoan
+      security: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actualDisbursementDate:
+                  type: string
+                  format: date
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Loan disbursed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loans/{loanId}/repayment:
+    post:
+      tags:
+        - Fineract
+      summary: Record a repayment
+      description: Record a loan repayment transaction
+      operationId: fineractRecordRepayment
+      security: []
+      parameters:
+        - name: loanId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transactionAmount
+                - transactionDate
+              properties:
+                transactionAmount:
+                  type: number
+                transactionDate:
+                  type: string
+                  format: date
+                paymentTypeId:
+                  type: integer
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Repayment recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loan-products:
+    get:
+      tags:
+        - Fineract
+      summary: List loan products
+      description: Retrieve available loan product definitions
+      operationId: fineractListLoanProducts
+      security: []
+      responses:
+        '200':
+          description: List of loan products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/loan-products/{id}:
+    get:
+      tags:
+        - Fineract
+      summary: Get single loan product
+      description: Retrieve a specific loan product by ID
+      operationId: fineractGetLoanProduct
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Loan product detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/gl-accounts:
+    get:
+      tags:
+        - Fineract
+      summary: List GL accounts
+      description: Retrieve general ledger accounts
+      operationId: fineractListGLAccounts
+      security: []
+      responses:
+        '200':
+          description: List of GL accounts
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/journal-entries:
+    get:
+      tags:
+        - Fineract
+      summary: List journal entries
+      description: Retrieve journal entries for accounting
+      operationId: fineractListJournalEntries
+      security: []
+      responses:
+        '200':
+          description: List of journal entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/trial-balance:
+    get:
+      tags:
+        - Fineract
+      summary: Get trial balance
+      description: Retrieve the current trial balance
+      operationId: fineractTrialBalance
+      security: []
+      responses:
+        '200':
+          description: Trial balance data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/reconciliation:
+    get:
+      tags:
+        - Fineract
+      summary: Get reconciliation results
+      description: Retrieve latest reconciliation results
+      operationId: fineractGetReconciliation
+      security: []
+      responses:
+        '200':
+          description: Reconciliation results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/reconciliation/run:
+    post:
+      tags:
+        - Fineract
+      summary: Trigger reconciliation
+      description: Start a new reconciliation run
+      operationId: fineractRunReconciliation
+      security: []
+      responses:
+        '200':
+          description: Reconciliation triggered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/reports:
+    get:
+      tags:
+        - Fineract
+      summary: List available reports
+      description: Retrieve list of available Fineract reports
+      operationId: fineractListReports
+      security: []
+      responses:
+        '200':
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/fineract/reports/{name}:
+    get:
+      tags:
+        - Fineract
+      summary: Run a named report
+      description: Execute a specific report by name
+      operationId: fineractRunReport
+      security: []
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Report results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ==================== Investor Reporting ====================
+  /api/v1/investor/portfolio:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Portfolio summary
+      description: Get portfolio summary including PAR, NPL, and outstanding
+      operationId: investorPortfolio
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Portfolio summary data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/investor/vintages:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Vintage cohort analysis
+      description: Retrieve vintage cohort analysis data
+      operationId: investorVintages
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Vintage cohort data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/investor/loan-tape:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Loan-level export
+      description: Export loan-level tape for investor review
+      operationId: investorLoanTape
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Loan tape data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/investor/borrowing-base:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Borrowing base calculation
+      description: Retrieve borrowing base calculation results
+      operationId: investorBorrowingBase
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Borrowing base data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/investor/collections:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Period collections detail
+      description: Retrieve collections detail for a given period
+      operationId: investorCollections
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Collections detail
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/investor/financials:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Revenue, NIM, ROA summary
+      description: Retrieve financial performance summary
+      operationId: investorFinancials
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Financial summary data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/investor/covenant-compliance:
+    get:
+      tags:
+        - Investor Reporting
+      summary: Covenant test results
+      description: Retrieve covenant compliance test results
+      operationId: investorCovenantCompliance
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Covenant compliance data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ==================== Distributor ====================
+  /api/v1/distributor/profile:
+    get:
+      tags:
+        - Distributor
+      summary: Get distributor profile
+      description: Retrieve the authenticated distributor's profile
+      operationId: getDistributorProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Distributor profile
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    patch:
+      tags:
+        - Distributor
+      summary: Update distributor profile
+      description: Update the authenticated distributor's profile
+      operationId: updateDistributorProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                business_name:
+                  type: string
+                contact_phone:
+                  type: string
+                address:
+                  type: string
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/distributor/stats:
+    get:
+      tags:
+        - Distributor
+      summary: Dashboard stats
+      description: Retrieve distributor dashboard statistics
+      operationId: getDistributorStats
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/distributor/inventory:
+    get:
+      tags:
+        - Distributor
+      summary: Device inventory
+      description: Retrieve the distributor's device inventory
+      operationId: getDistributorInventory
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Device inventory list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /api/v1/distributor/handovers:
+    get:
+      tags:
+        - Distributor
+      summary: List handovers
+      description: Retrieve the distributor's device handover records
+      operationId: listDistributorHandovers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: List of handovers
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+    post:
+      tags:
+        - Distributor
+      summary: Submit handover
+      description: Submit a new device handover record
+      operationId: submitDistributorHandover
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - device_id
+                - customer_id
+              properties:
+                device_id:
+                  type: string
+                  format: uuid
+                customer_id:
+                  type: string
+                  format: uuid
+                notes:
+                  type: string
+      responses:
+        '201':
+          description: Handover submitted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/distributor/handovers/{id}/{action}:
+    post:
+      tags:
+        - Distributor
+      summary: Handover step action
+      description: Perform a step action on a handover (e.g. confirm, cancel)
+      operationId: handoverStepAction
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: action
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [confirm, cancel, complete]
+      responses:
+        '200':
+          description: Handover action completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/distributor/commissions:
+    get:
+      tags:
+        - Distributor
+      summary: Commission history
+      description: Retrieve the distributor's commission history
+      operationId: getDistributorCommissions
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Commission history
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  # ==================== Form Submission ====================
+  /forms/submit:
+    post:
+      tags:
+        - Public
+      summary: Submit a form
+      description: Submit a public form (contact, partnership, or waitlist)
+      operationId: submitForm
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - data
+              properties:
+                type:
+                  type: string
+                  enum: [contact, partnership, waitlist]
+                  description: Form type discriminator
+                data:
+                  type: object
+                  description: Form payload (varies by type)
+      responses:
+        '200':
+          description: Form submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '500':
+          $ref: '#/components/responses/ServerError'
 
 components:
   securitySchemes:
@@ -731,3 +1751,15 @@ components:
                 field: phone_number
                 value: "0771234567"
                 expected: "+263771234567"
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            success: false
+            error:
+              code: INTERNAL_ERROR
+              message: An unexpected error occurred

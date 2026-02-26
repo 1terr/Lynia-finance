@@ -13,6 +13,7 @@ import {
   isValidNationalID,
   validateRequired,
   sanitizePhoneNumber,
+  validateZimbabwePhoneNumber,
 } from '../../../services/shared/utils/validation';
 
 describe('validation utilities', () => {
@@ -75,6 +76,78 @@ describe('validation utilities', () => {
 
     it('should reject alphabetic characters', () => {
       expect(isValidPhoneNumber('+263abcdefgh')).toBe(false);
+    });
+
+    it('should reject non-mobile Zimbabwe number (landline prefix 24)', () => {
+      expect(isValidPhoneNumber('+263241234567')).toBe(false);
+    });
+
+    it('should reject Zimbabwe number with invalid mobile prefix (79)', () => {
+      expect(isValidPhoneNumber('+263791234567')).toBe(false);
+    });
+
+    it('should accept number with dashes (stripped internally)', () => {
+      expect(isValidPhoneNumber('+263-77-123-4567')).toBe(true);
+    });
+
+    it('should accept number with parentheses (stripped internally)', () => {
+      expect(isValidPhoneNumber('+263(77)1234567')).toBe(true);
+    });
+
+    it('should accept all valid mobile prefixes (71-78)', () => {
+      expect(isValidPhoneNumber('+263711234567')).toBe(true);
+      expect(isValidPhoneNumber('+263721234567')).toBe(true);
+      expect(isValidPhoneNumber('+263731234567')).toBe(true);
+      expect(isValidPhoneNumber('+263741234567')).toBe(true);
+      expect(isValidPhoneNumber('+263751234567')).toBe(true);
+      expect(isValidPhoneNumber('+263761234567')).toBe(true);
+      expect(isValidPhoneNumber('+263771234567')).toBe(true);
+      expect(isValidPhoneNumber('+263781234567')).toBe(true);
+    });
+  });
+
+  // ─── validateZimbabwePhoneNumber ────────────────────────────────
+  describe('validateZimbabwePhoneNumber', () => {
+    it('should return valid with normalized +263 format for +263 number', () => {
+      const result = validateZimbabwePhoneNumber('+263771234567');
+      expect(result.valid).toBe(true);
+      expect(result.normalized).toBe('+263771234567');
+    });
+
+    it('should normalize 0-prefixed number to +263', () => {
+      const result = validateZimbabwePhoneNumber('0771234567');
+      expect(result.valid).toBe(true);
+      expect(result.normalized).toBe('+263771234567');
+    });
+
+    it('should normalize 263 without + prefix', () => {
+      const result = validateZimbabwePhoneNumber('263771234567');
+      expect(result.valid).toBe(true);
+      expect(result.normalized).toBe('+263771234567');
+    });
+
+    it('should reject non-Zimbabwean number with message', () => {
+      const result = validateZimbabwePhoneNumber('+1234567890');
+      expect(result.valid).toBe(false);
+      expect(result.message).toBe('non_zimbabwean_number');
+    });
+
+    it('should reject invalid Zimbabwe mobile with message', () => {
+      const result = validateZimbabwePhoneNumber('026377123');
+      expect(result.valid).toBe(false);
+      expect(result.message).toBe('invalid_zimbabwe_mobile');
+    });
+
+    it('should strip spaces and dashes before validation', () => {
+      const result = validateZimbabwePhoneNumber('+263 77 123 4567');
+      expect(result.valid).toBe(true);
+      expect(result.normalized).toBe('+263771234567');
+    });
+
+    it('should strip parentheses before validation', () => {
+      const result = validateZimbabwePhoneNumber('+263(77)1234567');
+      expect(result.valid).toBe(true);
+      expect(result.normalized).toBe('+263771234567');
     });
   });
 
@@ -202,6 +275,14 @@ describe('validation utilities', () => {
 
     it('should strip spaces', () => {
       expect(sanitizePhoneNumber('077 123 4567')).toBe('+263771234567');
+    });
+
+    it('should strip dashes', () => {
+      expect(sanitizePhoneNumber('077-123-4567')).toBe('+263771234567');
+    });
+
+    it('should strip parentheses', () => {
+      expect(sanitizePhoneNumber('0(77)1234567')).toBe('+263771234567');
     });
   });
 });

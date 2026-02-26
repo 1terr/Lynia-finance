@@ -1,6 +1,7 @@
 import type { KYCProvider, KYCProviderName } from '../../shared/types/kyc-provider';
 import { SmileIdentityService } from './smile-identity-service';
 import { DiditService } from './didit-service';
+import logger from '../../shared/utils/logger';
 
 /**
  * Create a KYC provider instance based on the KYC_PROVIDER environment variable.
@@ -14,15 +15,15 @@ export function createKYCProvider(): KYCProvider {
 
   switch (providerName) {
     case 'didit':
-      console.log('KYC provider: DIDIT');
+      logger.info('KYC provider initialized', { action: 'kyc.provider.init', provider: 'didit' });
       return new DiditService();
 
     case 'smile_identity':
-      console.log('KYC provider: Smile Identity');
+      logger.info('KYC provider initialized', { action: 'kyc.provider.init', provider: 'smile_identity' });
       return new SmileIdentityService();
 
     default:
-      console.warn(`Unknown KYC_PROVIDER "${providerName}", falling back to Didit`);
+      logger.warn('Unknown KYC provider, falling back to Didit', { action: 'kyc.provider.init', provider: providerName });
       return new DiditService();
   }
 }

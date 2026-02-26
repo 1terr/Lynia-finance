@@ -27,13 +27,13 @@ importers:
         specifier: ^29.5.0
         version: 29.5.14
       '@types/node':
-        specifier: ^20.0.0
+        specifier: ^20.11.5
         version: 20.19.25
       '@typescript-eslint/eslint-plugin':
-        specifier: ^6.0.0
+        specifier: ^6.19.1
         version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.9.3))(eslint@8.57.1)(typescript@5.9.3)
       '@typescript-eslint/parser':
-        specifier: ^6.0.0
+        specifier: ^6.19.1
         version: 6.21.0(eslint@8.57.1)(typescript@5.9.3)
       aws-xray-sdk-core:
         specifier: ^3.12.0
@@ -48,7 +48,7 @@ importers:
         specifier: ^0.20.0
         version: 0.20.2
       eslint:
-        specifier: ^8.50.0
+        specifier: ^8.56.0
         version: 8.57.1
       eslint-config-prettier:
         specifier: ^9.0.0
@@ -69,7 +69,7 @@ importers:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.25)(typescript@5.9.3)
       typescript:
-        specifier: ^5.2.0
+        specifier: ^5.3.3
         version: 5.9.3
 
   frontend/apps/admin-portal:
@@ -297,7 +297,7 @@ importers:
         version: link:../auth
     devDependencies:
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.3.3
         version: 5.9.3
 
   frontend/packages/auth:
@@ -307,7 +307,7 @@ importers:
         version: 6.3.16
     devDependencies:
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.3.3
         version: 5.9.3
 
   frontend/packages/utils:
@@ -320,7 +320,7 @@ importers:
         version: 2.6.1
     devDependencies:
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.3.3
         version: 5.9.3
 
   landing-page/frontend:
@@ -387,7 +387,7 @@ importers:
   services/kyc-service:
     dependencies:
       axios:
-        specifier: ^1.6.5
+        specifier: ^1.13.4
         version: 1.13.4
       form-data:
         specifier: ^4.0.5
@@ -418,7 +418,7 @@ importers:
   services/lock-service:
     dependencies:
       axios:
-        specifier: ^1.6.5
+        specifier: ^1.13.4
         version: 1.13.4
     devDependencies:
       '@types/aws-lambda':
@@ -446,7 +446,7 @@ importers:
   services/notification-service:
     dependencies:
       axios:
-        specifier: ^1.6.5
+        specifier: ^1.13.4
         version: 1.13.4
     devDependencies:
       '@types/aws-lambda':
@@ -474,7 +474,7 @@ importers:
   services/payment-service:
     dependencies:
       axios:
-        specifier: ^1.6.5
+        specifier: ^1.13.4
         version: 1.13.4
     devDependencies:
       '@types/aws-lambda':
@@ -545,7 +545,7 @@ importers:
   services/whatsapp-service:
     dependencies:
       axios:
-        specifier: ^1.6.5
+        specifier: ^1.13.4
         version: 1.13.4
     devDependencies:
       '@types/aws-lambda':

@@ -29,7 +29,10 @@ export interface AuthContext {
 
 /**
  * Extract auth context from Cognito-validated API Gateway event.
- * Replaces auth.uid() from Supabase.
+ *
+ * @param event - API Gateway event with Cognito authorizer claims
+ * @returns Parsed user identity and roles
+ * @throws AUTH_TOKEN_001 if authorizer claims are missing
  */
 export function getAuthContext(event: APIGatewayProxyEvent): AuthContext {
   const claims = event.requestContext.authorizer?.claims;
@@ -52,7 +55,10 @@ export function isAdminOrManager(auth: AuthContext): boolean {
 }
 
 /**
- * Replaces: is_admin_staff() SQL function
+ * Check whether the user holds any internal staff role.
+ *
+ * @param auth - Current user's auth context
+ * @returns True if the user is any kind of admin, support, or back-office staff
  */
 export function isAdminStaff(auth: AuthContext): boolean {
   return auth.roles.some(r =>
@@ -61,8 +67,11 @@ export function isAdminStaff(auth: AuthContext): boolean {
 }
 
 /**
- * Enforce role requirement. Throws 403 if not authorized.
- * Replaces RLS USING clauses.
+ * Enforce role requirement. Throws 403 if the user lacks all listed roles.
+ *
+ * @param auth - Current user's auth context
+ * @param allowedRoles - Roles that grant access (any one suffices)
+ * @throws AUTH_ROLE_001 if the user holds none of the allowed roles
  */
 export function requireRole(auth: AuthContext, ...allowedRoles: Role[]): void {
   const hasRole = auth.roles.some(r => allowedRoles.includes(r));
@@ -75,7 +84,12 @@ export function requireRole(auth: AuthContext, ...allowedRoles: Role[]): void {
 }
 
 /**
- * Enforce resource ownership. Replaces RLS "customer_id = auth.uid()".
+ * Enforce resource ownership, with optional admin override.
+ *
+ * @param auth - Current user's auth context
+ * @param resourceOwnerId - UUID of the resource owner
+ * @param allowAdminOverride - Allow admins/managers to bypass (default true)
+ * @throws AUTH_OWNER_001 if the user is not the owner and not an admin
  */
 export function requireOwnership(
   auth: AuthContext,
@@ -92,13 +106,11 @@ export function requireOwnership(
 }
 
 /**
- * Build a WHERE clause for data filtering.
- * Replaces RLS row-level filtering.
+ * Build a SQL WHERE clause that scopes query results to the user's access level.
  *
- * Admin/manager: no filter (see all rows)
- * Support/reports: no filter (read access)
- * Distributor: filter by distributor_id
- * Customer: filter by customer_id
+ * @param auth - Current user's auth context
+ * @param ownerColumn - Column name to filter on (e.g. 'customer_id')
+ * @returns Object with a `clause` string and parameterized `params` array
  */
 export function buildAccessFilter(
   auth: AuthContext,

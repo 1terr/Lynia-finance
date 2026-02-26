@@ -13,6 +13,7 @@
  */
 
 import { db, query } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -689,7 +690,7 @@ async function logAudit(
       created_at: new Date().toISOString(),
     }).execute();
   } catch {
-    console.error('Failed to write audit log', { action, entityType, entityId });
+    logger.error('Failed to write audit log', { action: 'reschedule.audit', meta: { auditAction: action, entityType, entityId } });
   }
 }
 

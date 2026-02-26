@@ -11,6 +11,7 @@
  */
 
 import { db } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 import { EcoCashProvider } from './ecocash-provider';
 import { OneMoneyProvider } from './onemoney-provider';
 import { OmariProvider } from './omari-provider';
@@ -73,7 +74,7 @@ export class CompensationHandler {
    * Process a compensation message from SQS.
    */
   async handleCompensation(message: CompensationMessage): Promise<CompensationOutcome> {
-    console.log(`[compensation] Processing ${message.action} for payment ${message.paymentId} (retry ${message.retryCount})`);
+    logger.info(`[compensation] Processing ${message.action} for payment ${message.paymentId} (retry ${message.retryCount})`, { action: 'compensation.process' });
 
     let result: CompensationOutcome;
 
@@ -310,7 +311,7 @@ export class CompensationHandler {
    * Escalate an unresolvable compensation to admin.
    */
   private async escalate(message: CompensationMessage, reason: string): Promise<void> {
-    console.error(`[compensation] ESCALATION: payment ${message.paymentId}, action ${message.action}, reason: ${reason}`);
+    logger.error(`[compensation] ESCALATION: payment ${message.paymentId}, action ${message.action}, reason: ${reason}`, { action: 'compensation.escalate' });
 
     // Log escalation event
     this.eventLogger.logEvent({
@@ -338,7 +339,7 @@ export class CompensationHandler {
         },
       });
     } catch (err) {
-      console.error('[compensation] Failed to send escalation notification:', err);
+      logger.error('[compensation] Failed to send escalation notification', { action: 'compensation.escalate', meta: { error: err instanceof Error ? err.message : String(err) } });
     }
   }
 }

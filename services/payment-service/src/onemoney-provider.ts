@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import logger from '../../shared/utils/logger';
 import type {
   PaymentProvider,
   PaymentRequest,
@@ -66,7 +67,7 @@ export class OneMoneyProvider implements PaymentProvider {
       }
     });
 
-    console.log(`OneMoneyProvider initialized in ${this.config.environment} mode`);
+    logger.info(`OneMoneyProvider initialized in ${this.config.environment} mode`, { action: 'onemoney.init' });
   }
 
   /**
@@ -74,7 +75,7 @@ export class OneMoneyProvider implements PaymentProvider {
    */
   async initiatePayment(request: PaymentRequest): Promise<PaymentResponse> {
     try {
-      console.log(`Initiating OneMoney payment, reference: ${request.reference}`);
+      logger.info(`Initiating OneMoney payment, reference: ${request.reference}`, { action: 'onemoney.initiate' });
 
       // Validate phone number format (Zimbabwe)
       if (!this.validatePhoneNumber(request.customer_phone)) {
@@ -95,7 +96,7 @@ export class OneMoneyProvider implements PaymentProvider {
       // Make API request
       const response = await onemoneyCircuitBreaker.execute(() => this.client.post('/payments/initiate', payload));
 
-      console.log(`OneMoney payment initiated: ${response.data.transaction_id}`);
+      logger.info(`OneMoney payment initiated: ${response.data.transaction_id}`, { action: 'onemoney.initiate' });
 
       return {
         success: true,
@@ -107,7 +108,7 @@ export class OneMoneyProvider implements PaymentProvider {
       };
 
     } catch (error) {
-      console.error('Error initiating OneMoney payment:', error);
+      logger.error('Error initiating OneMoney payment', { action: 'onemoney.initiate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
 
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
@@ -123,7 +124,7 @@ export class OneMoneyProvider implements PaymentProvider {
    */
   async checkPaymentStatus(transactionId: string): Promise<PaymentStatusResponse> {
     try {
-      console.log(`Checking OneMoney payment status: ${transactionId}`);
+      logger.info(`Checking OneMoney payment status: ${transactionId}`, { action: 'onemoney.status' });
 
       const response = await onemoneyCircuitBreaker.execute(() => this.client.get(`/payments/${transactionId}/status`));
 
@@ -139,7 +140,7 @@ export class OneMoneyProvider implements PaymentProvider {
       };
 
     } catch (error) {
-      console.error('Error checking OneMoney payment status:', error);
+      logger.error('Error checking OneMoney payment status', { action: 'onemoney.status', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw new Error(`Failed to check payment status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

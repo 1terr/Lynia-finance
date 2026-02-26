@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import logger from '../../shared/utils/logger';
 import type {
   PaymentProvider,
   PaymentRequest,
@@ -69,7 +70,7 @@ export class EcoCashProvider implements PaymentProvider {
       }
     });
 
-    console.log(`EcoCashProvider initialized in ${this.config.environment} mode`);
+    logger.info(`EcoCashProvider initialized in ${this.config.environment} mode`, { action: 'ecocash.init' });
   }
 
   /**
@@ -77,7 +78,7 @@ export class EcoCashProvider implements PaymentProvider {
    */
   async initiatePayment(request: PaymentRequest): Promise<PaymentResponse> {
     try {
-      console.log(`Initiating EcoCash payment, reference: ${request.reference}`);
+      logger.info(`Initiating EcoCash payment, reference: ${request.reference}`, { action: 'ecocash.initiate' });
 
       // Validate phone number format (Zimbabwe)
       if (!this.validatePhoneNumber(request.customer_phone)) {
@@ -98,7 +99,7 @@ export class EcoCashProvider implements PaymentProvider {
       // Make API request
       const response = await ecocashCircuitBreaker.execute(() => this.client.post('/payments/initiate', payload));
 
-      console.log(`EcoCash payment initiated: ${response.data.transaction_id}`);
+      logger.info(`EcoCash payment initiated: ${response.data.transaction_id}`, { action: 'ecocash.initiate' });
 
       return {
         success: true,
@@ -110,7 +111,7 @@ export class EcoCashProvider implements PaymentProvider {
       };
 
     } catch (error) {
-      console.error('Error initiating EcoCash payment:', error);
+      logger.error('Error initiating EcoCash payment', { action: 'ecocash.initiate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
 
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
@@ -126,7 +127,7 @@ export class EcoCashProvider implements PaymentProvider {
    */
   async checkPaymentStatus(transactionId: string): Promise<PaymentStatusResponse> {
     try {
-      console.log(`Checking EcoCash payment status: ${transactionId}`);
+      logger.info(`Checking EcoCash payment status: ${transactionId}`, { action: 'ecocash.status' });
 
       const response = await ecocashCircuitBreaker.execute(() => this.client.get(`/payments/${transactionId}/status`));
 
@@ -142,7 +143,7 @@ export class EcoCashProvider implements PaymentProvider {
       };
 
     } catch (error) {
-      console.error('Error checking EcoCash payment status:', error);
+      logger.error('Error checking EcoCash payment status', { action: 'ecocash.status', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
       throw new Error(`Failed to check payment status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

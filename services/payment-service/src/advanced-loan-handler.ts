@@ -12,6 +12,7 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
+import logger from '../../shared/utils/logger';
 import {
   successResponse,
   errorResponse,
@@ -611,7 +612,7 @@ function handleError(error: unknown, event: APIGatewayProxyEvent): APIGatewayPro
     return errorResponse(error.message, 403, undefined, event);
   }
 
-  console.error('Unhandled error in advanced-loan-handler:', error);
+  logger.error('Unhandled error in advanced-loan-handler', { action: 'advanced_loan.handler', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
   return errorResponse(
     'An unexpected error occurred. Please try again later.',
     500,

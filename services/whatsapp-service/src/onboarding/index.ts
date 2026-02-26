@@ -1,0 +1,115 @@
+/**
+ * WhatsApp Onboarding - State Machine Router
+ *
+ * 8-Step Onboarding Process:
+ * 1. Welcome & Language Selection
+ * 2. Zimbabwe Phone Validation
+ * 3. Personal Information Collection
+ * 4. Employment & Income Collection
+ * 5. Product Selection
+ * 6. KYC Document Upload
+ * 7. Credit Scoring
+ * 8. Loan Terms Acceptance
+ *
+ * Decomposed from the original onboarding monolith into modular state handlers.
+ */
+
+import { logger } from '../../../shared/utils/logger';
+import { getOrCreateSession, updateSession } from './session';
+import { handleWelcome } from './states/welcome';
+import { handlePersonalInfo } from './states/personal-info';
+import { handleEmployment } from './states/employment-info';
+import { handleProductSelection } from './states/product-selection';
+import { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
+import { handleCreditScoring } from './states/credit-scoring';
+import { handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
+import handleKYCProcessing from './states/kyc-processing';
+import type { MessageContext } from './types';
+
+// ===================================================================
+// MAIN ONBOARDING ROUTER
+// ===================================================================
+
+/**
+ * Route incoming message to appropriate state handler
+ */
+export async function routeOnboardingMessage(
+  context: MessageContext,
+  imageUrl?: string
+): Promise<string> {
+  try {
+    const session = await getOrCreateSession(context.from);
+
+    logger.debug('Routing onboarding message', { action: 'onboarding.route', meta: { state: session.current_state } });
+
+    // Handle restart command
+    if (context.message.toLowerCase().includes('restart')) {
+      await updateSession(context.from, {
+        current_state: 'welcome',
+        state_data: {}
+      });
+      return handleWelcome(context);
+    }
+
+    // Route based on current state
+    switch (session.current_state) {
+      case 'welcome':
+        return handleWelcome(context);
+
+      case 'collecting_personal_info':
+        return handlePersonalInfo(session, context);
+
+      case 'collecting_employment':
+        return handleEmployment(session, context);
+
+      case 'product_selection':
+        return handleProductSelection(session, context);
+
+      case 'kyc_id_upload':
+        return handleKYCIdUpload(session, context, imageUrl);
+
+      case 'kyc_selfie_upload':
+        return handleKYCSelfieUpload(session, context, imageUrl);
+
+      case 'kyc_processing':
+        return handleKYCProcessing(session, context);
+
+      case 'credit_scoring':
+        return handleCreditScoring(session, context);
+
+      case 'loan_offer':
+        return handleLoanOffer(session, context);
+
+      case 'terms_acceptance':
+        return handleTermsAcceptance(session, context);
+
+      case 'completed':
+        return `You've already completed onboarding!
+
+Your application is approved. Visit your nearest distributor to collect your device.
+
+Need help? Reply *Support*`;
+
+      default:
+        return `Something went wrong. Reply *Restart* to begin again.`;
+    }
+  } catch (error) {
+    logger.error('Onboarding routing error', { action: 'onboarding.route', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    return `\u26A0\uFE0F Technical error. Please try again or contact support@lynia.finance`;
+  }
+}
+
+// ===================================================================
+// RE-EXPORTS for backward compatibility
+// ===================================================================
+
+export type { OnboardingState, OnboardingSession, MessageContext } from './types';
+export { getOrCreateSession, updateSession } from './session';
+export { handleWelcome } from './states/welcome';
+export { handlePersonalInfo } from './states/personal-info';
+export { handleEmployment } from './states/employment-info';
+export { handleProductSelection } from './states/product-selection';
+export { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
+export { handleCreditScoring } from './states/credit-scoring';
+export { handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
+export { resumeOnboardingAfterKYC } from './states/kyc-processing';

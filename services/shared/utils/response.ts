@@ -52,6 +52,14 @@ export function getSecurityHeaders(event?: APIGatewayProxyEvent): Record<string,
   };
 }
 
+/**
+ * Build a JSON success response with security headers.
+ *
+ * @param data - Payload to include under the `data` key
+ * @param statusCode - HTTP status code (default 200)
+ * @param event - Incoming event used to resolve CORS origin
+ * @returns Formatted API Gateway response
+ */
 export function successResponse(
   data: unknown,
   statusCode: number = 200,
@@ -67,6 +75,15 @@ export function successResponse(
   };
 }
 
+/**
+ * Build a JSON error response with security headers.
+ *
+ * @param error - Human-readable error message (no sensitive data)
+ * @param statusCode - HTTP status code (default 500)
+ * @param details - Optional context for debugging
+ * @param event - Incoming event used to resolve CORS origin
+ * @returns Formatted API Gateway error response
+ */
 export function errorResponse(
   error: string,
   statusCode: number = 500,
@@ -84,6 +101,14 @@ export function errorResponse(
   };
 }
 
+/**
+ * Build a 400 validation error response with per-field error details.
+ *
+ * @param message - Summary of the validation failure
+ * @param errors - Map of field names to error descriptions
+ * @param event - Incoming event used to resolve CORS origin
+ * @returns Formatted 400 API Gateway response
+ */
 export function validationErrorResponse(
   message: string,
   errors?: Record<string, string>,
@@ -101,6 +126,13 @@ export function validationErrorResponse(
   };
 }
 
+/**
+ * Build a 404 not-found response for a named resource.
+ *
+ * @param resource - Name of the missing resource (e.g. 'Loan', 'Customer')
+ * @param event - Incoming event used to resolve CORS origin
+ * @returns Formatted 404 API Gateway response
+ */
 export function notFoundResponse(resource: string = 'Resource', event?: APIGatewayProxyEvent): APIGatewayProxyResult {
   return {
     statusCode: 404,
@@ -113,6 +145,13 @@ export function notFoundResponse(resource: string = 'Resource', event?: APIGatew
   };
 }
 
+/**
+ * Build a 401 unauthorized response.
+ *
+ * @param message - Reason for denial (default 'Unauthorized')
+ * @param event - Incoming event used to resolve CORS origin
+ * @returns Formatted 401 API Gateway response
+ */
 export function unauthorizedResponse(message: string = 'Unauthorized', event?: APIGatewayProxyEvent): APIGatewayProxyResult {
   return {
     statusCode: 401,

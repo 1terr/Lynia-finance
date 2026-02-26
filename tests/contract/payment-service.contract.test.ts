@@ -504,20 +504,17 @@ describe('Payment Service Contract Tests', () => {
       expect(body).toHaveProperty('failed_at');
     });
 
-    it('should return 400 when paymentId is not provided', async () => {
+    it('should return 404 when paymentId path segment is missing', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
-        path: '/payments/undefined',
-        pathParameters: { paymentId: undefined as unknown as string },
+        path: '/payments/',
+        pathParameters: {},
       });
 
-      // The handler calls getPaymentStatus(paymentId!) where paymentId is undefined
-      // which should result in 400
+      // With lambda-router, GET /payments/ doesn't match GET /payments/:paymentId → 404
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(400);
-      const parsed = parseResponseBody(response);
-      expect(parsed).toHaveProperty('error');
+      expect(response.statusCode).toBe(404);
     });
 
     it('should return 500 when payment lookup throws', async () => {
@@ -628,7 +625,7 @@ describe('Payment Service Contract Tests', () => {
       expect(parsed).toHaveProperty('error', 'Not Found');
     });
 
-    it('should return 404 for wrong HTTP method on known path', async () => {
+    it('should return 405 for wrong HTTP method on known path', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'DELETE',
         path: '/payments/initiate',
@@ -636,7 +633,8 @@ describe('Payment Service Contract Tests', () => {
 
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(404);
+      // lambda-router returns 405 when path matches but method doesn't
+      expect(response.statusCode).toBe(405);
     });
 
     it('should include proper headers on 404 responses', async () => {

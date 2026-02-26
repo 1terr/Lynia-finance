@@ -9,6 +9,7 @@
  */
 
 import { queryOne } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 import { PaymentEventLogger, type PaymentEventType, type ActorType } from './payment-event-logger';
 
 // ===================================================================
@@ -161,7 +162,7 @@ export class PaymentStateMachine {
       customer_id: metadata.customer_id,
       request_id: metadata.request_id,
     }).catch((err) => {
-      console.error('[state-machine] Failed to log transition event:', err);
+      logger.error('[state-machine] Failed to log transition event', { action: 'payment_state.transition', meta: { error: err instanceof Error ? err.message : String(err) } });
     });
 
     return true;

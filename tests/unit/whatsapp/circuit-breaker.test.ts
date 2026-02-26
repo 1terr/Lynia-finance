@@ -12,10 +12,15 @@
  *   - onOpen / onClose callback invocations
  */
 
+jest.mock('../../../services/shared/utils/logger', () => ({
+  __esModule: true,
+  default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
+}));
+
 import {
   CircuitBreaker,
   CircuitOpenError,
-} from '../../../services/whatsapp-service/src/utils/circuit-breaker';
+} from '../../../services/shared/utils/circuit-breaker';
 
 // ===================================================================
 // TESTS

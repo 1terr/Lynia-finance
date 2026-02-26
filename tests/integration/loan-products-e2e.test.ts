@@ -523,14 +523,14 @@ describe('Loan Products E2E Integration', () => {
       expect([200, 404]).toContain(response.statusCode);
     });
 
-    it('returns 404 for completely unmatched routes', async () => {
+    it('returns 405 for method not allowed on existing route', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'PUT',
         path: '/scoring/calculate',
       });
 
       const response = await handler(event);
-      expect(response.statusCode).toBe(404);
+      expect(response.statusCode).toBe(405);
     });
   });
 
@@ -619,7 +619,7 @@ describe('Loan Products E2E Integration', () => {
       expect(response.statusCode).toBe(200);
     });
 
-    it('GET /scoring/ without customerId returns 400', async () => {
+    it('GET /scoring/ without customerId returns 404', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
         path: '/scoring/',
@@ -627,7 +627,7 @@ describe('Loan Products E2E Integration', () => {
       });
 
       const response = await handler(event);
-      expect(response.statusCode).toBe(400);
+      expect(response.statusCode).toBe(404);
     });
   });
 });

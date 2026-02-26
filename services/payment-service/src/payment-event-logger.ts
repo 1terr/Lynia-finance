@@ -8,6 +8,7 @@
  */
 
 import { query, queryOne } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // TYPES
@@ -81,9 +82,10 @@ export class PaymentEventLogger {
       if (event.from_status !== undefined) {
         const allowed = VALID_TRANSITIONS[event.from_status || ''] || [];
         if (allowed.length > 0 && !allowed.includes(event.to_status)) {
-          console.warn(
+          logger.warn(
             `[payment-events] Invalid transition: ${event.from_status || '(none)'} -> ${event.to_status} ` +
-            `for payment ${event.payment_id}. Logging anyway for audit.`
+            `for payment ${event.payment_id}. Logging anyway for audit.`,
+            { action: 'payment_event.validate' }
           );
         }
       }
@@ -129,7 +131,7 @@ export class PaymentEventLogger {
       ]);
     } catch (error) {
       // Never propagate — audit logging must not break payment flow
-      console.error('[payment-events] Failed to log event:', error, event);
+      logger.error('[payment-events] Failed to log event', { action: 'payment_event.log', meta: { error: error instanceof Error ? error.message : String(error), paymentId: event.payment_id } });
     }
   }
 
@@ -142,7 +144,7 @@ export class PaymentEventLogger {
       [paymentId]
     );
     if (error) {
-      console.error('[payment-events] Failed to get payment history:', error);
+      logger.error('[payment-events] Failed to get payment history', { action: 'payment_event.history', meta: { error: error instanceof Error ? error.message : String(error) } });
       return [];
     }
     return data;
@@ -170,7 +172,7 @@ export class PaymentEventLogger {
 
     const { data, error } = await query<{ payment_id: string; to_status: string; gateway: string; created_at: string }>(sql, [cutoff]);
     if (error) {
-      console.error('[payment-events] Failed to get stuck payments:', error);
+      logger.error('[payment-events] Failed to get stuck payments', { action: 'payment_event.stuck', meta: { error: error instanceof Error ? error.message : String(error) } });
       return [];
     }
     return data;
@@ -193,7 +195,7 @@ export class PaymentEventLogger {
 
     const { data, error } = await query<{ event_type: string; count: number }>(sql, [startDate, endDate]);
     if (error) {
-      console.error('[payment-events] Failed to get transition stats:', error);
+      logger.error('[payment-events] Failed to get transition stats', { action: 'payment_event.stats', meta: { error: error instanceof Error ? error.message : String(error) } });
       return [];
     }
     return data;
