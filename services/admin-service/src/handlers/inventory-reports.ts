@@ -1,15 +1,10 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { query, queryOne } from '../../../shared/clients/database';
-import { successResponse, errorResponse } from '../../../shared/utils/response';
-import logger from '../../../shared/utils/logger';
+import { successResponse } from '../../../shared/utils/response';
 
 /**
  * GET /admin/reports/inventory
  * Stock summary by device model — counts by status, total value, aging
- *
- * NOTE: This handler uses `.rows` on the return value of `query()`, but
- * `query()` returns `{ data, error }` — `.rows` is undefined. This is a
- * known existing bug preserved as-is during extraction.
  */
 export const handleInventoryReport: RouteHandler = async (event, _params, _auth) => {
   // Stock by model
@@ -76,9 +71,9 @@ export const handleInventoryReport: RouteHandler = async (event, _params, _auth)
   `);
 
   return successResponse({
-    by_model: (byModel as any).rows,
+    by_model: byModel.data,
     totals: totals || {},
-    aging: (aging as any).rows,
+    aging: aging.data,
     generated_at: new Date().toISOString(),
   }, 200, event);
 };
@@ -144,9 +139,9 @@ export const handleMovementsReport: RouteHandler = async (event, _params, _auth)
 
   return successResponse({
     period_days: days,
-    by_type: (byType as any).rows,
-    daily: (daily as any).rows,
-    recent: (recent as any).rows,
+    by_type: byType.data,
+    daily: daily.data,
+    recent: recent.data,
     generated_at: new Date().toISOString(),
   }, 200, event);
 };
@@ -191,10 +186,10 @@ export const handleLowStockReport: RouteHandler = async (event, _params, _auth) 
   `);
 
   return successResponse({
-    low_stock_models: (lowStock as any).rows,
-    out_of_stock_models: (outOfStock as any).rows,
-    total_low_stock: (lowStock as any).rows.length,
-    total_out_of_stock: (outOfStock as any).rows.length,
+    low_stock_models: lowStock.data,
+    out_of_stock_models: outOfStock.data,
+    total_low_stock: lowStock.data.length,
+    total_out_of_stock: outOfStock.data.length,
     generated_at: new Date().toISOString(),
   }, 200, event);
 };

@@ -3,7 +3,6 @@
  * Handle O'mari webhook (direct integration, replacing Paynow aggregator)
  */
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { PaymentService } from '../payment-service';
 import { OmariProvider, OmariWebhook } from '../omari-provider';

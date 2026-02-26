@@ -3,7 +3,6 @@
  */
 
 import { query } from '../../clients/database';
-import { logger } from '../../utils/logger';
 import {
   filterSum,
   INSTITUTION_NAME,

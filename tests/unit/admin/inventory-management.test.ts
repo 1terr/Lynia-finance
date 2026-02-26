@@ -950,9 +950,9 @@ describe('PATCH /admin/inventory/transfers/:id', () => {
 // =====================================================================
 
 describe('GET /admin/reports/inventory', () => {
-  it('should return inventory report (KNOWN BUG: .rows is undefined since query returns {data, error})', async () => {
-    mockQuery.mockResolvedValue({ data: [], error: null });
-    mockQueryOne.mockResolvedValue({ data: {}, error: null });
+  it('should return inventory report with by_model, totals, and aging', async () => {
+    mockQuery.mockResolvedValue({ data: [{ device_model_id: 1, manufacturer: 'Samsung' }], error: null });
+    mockQueryOne.mockResolvedValue({ data: { total_devices: 10 }, error: null });
 
     const event = createAPIGatewayEvent({
       httpMethod: 'GET',
@@ -961,11 +961,10 @@ describe('GET /admin/reports/inventory', () => {
     const result = await handler(event);
     expect(result.statusCode).toBe(200);
 
-    const body = parseResponseBody<{ success: boolean; data: { by_model: unknown; aging: unknown } }>(result);
-    // KNOWN BUG: by_model and aging are undefined because handler
-    // accesses .rows but query() returns { data, error }
-    expect(body.data.by_model).toBeUndefined();
-    expect(body.data.aging).toBeUndefined();
+    const body = parseResponseBody<{ success: boolean; data: { by_model: unknown[]; aging: unknown[]; generated_at: string } }>(result);
+    expect(body.data.by_model).toEqual([{ device_model_id: 1, manufacturer: 'Samsung' }]);
+    expect(body.data.aging).toEqual([{ device_model_id: 1, manufacturer: 'Samsung' }]);
+    expect(body.data.generated_at).toBeDefined();
   });
 });
 
@@ -974,8 +973,8 @@ describe('GET /admin/reports/inventory', () => {
 // =====================================================================
 
 describe('GET /admin/reports/inventory/movements', () => {
-  it('should return movements report (KNOWN BUG: uses .rows)', async () => {
-    mockQuery.mockResolvedValue({ data: [], error: null });
+  it('should return movements report with by_type, daily, and recent', async () => {
+    mockQuery.mockResolvedValue({ data: [{ movement_type: 'transfer', count: 5 }], error: null });
 
     const event = createAPIGatewayEvent({
       httpMethod: 'GET',
@@ -984,11 +983,11 @@ describe('GET /admin/reports/inventory/movements', () => {
     const result = await handler(event);
     expect(result.statusCode).toBe(200);
 
-    const body = parseResponseBody<{ success: boolean; data: { by_type: unknown; daily: unknown; recent: unknown } }>(result);
-    // KNOWN BUG: .rows is undefined
-    expect(body.data.by_type).toBeUndefined();
-    expect(body.data.daily).toBeUndefined();
-    expect(body.data.recent).toBeUndefined();
+    const body = parseResponseBody<{ success: boolean; data: { by_type: unknown[]; daily: unknown[]; recent: unknown[]; period_days: number } }>(result);
+    expect(body.data.by_type).toEqual([{ movement_type: 'transfer', count: 5 }]);
+    expect(body.data.daily).toEqual([{ movement_type: 'transfer', count: 5 }]);
+    expect(body.data.recent).toEqual([{ movement_type: 'transfer', count: 5 }]);
+    expect(body.data.period_days).toBe(30);
   });
 });
 
@@ -997,16 +996,20 @@ describe('GET /admin/reports/inventory/movements', () => {
 // =====================================================================
 
 describe('GET /admin/reports/inventory/low-stock', () => {
-  it('should return 500 for low stock report (KNOWN BUG: .rows is undefined)', async () => {
-    // KNOWN BUG: query() returns { data, error } but handler accesses .rows
-    // which is undefined, causing TypeError → caught → 500
-    mockQuery.mockResolvedValue({ data: [], error: null });
+  it('should return low stock and out of stock models', async () => {
+    mockQuery.mockResolvedValue({ data: [{ id: 1, manufacturer: 'Samsung', available_stock: 2 }], error: null });
 
     const event = createAPIGatewayEvent({
       httpMethod: 'GET',
       path: '/admin/reports/inventory/low-stock',
     });
     const result = await handler(event);
-    expect(result.statusCode).toBe(500);
+    expect(result.statusCode).toBe(200);
+
+    const body = parseResponseBody<{ success: boolean; data: { low_stock_models: unknown[]; out_of_stock_models: unknown[]; total_low_stock: number; total_out_of_stock: number } }>(result);
+    expect(body.data.low_stock_models).toHaveLength(1);
+    expect(body.data.out_of_stock_models).toHaveLength(1);
+    expect(body.data.total_low_stock).toBe(1);
+    expect(body.data.total_out_of_stock).toBe(1);
   });
 });

@@ -6,7 +6,6 @@ import {
   sanitizePhoneNumber,
 } from '../../shared/utils/validation';
 import {
-  getSecurityHeaders,
   successResponse,
   errorResponse,
 } from '../../shared/utils/response';

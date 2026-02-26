@@ -4,7 +4,6 @@
 
 import { query } from '../../clients/database';
 import { getFineractClient } from '../../clients/fineract';
-import { logger } from '../../utils/logger';
 import { RBZ_RATE_CEILING } from '../helpers';
 import type { RBZReportConfig, InterestRateSchedule } from '../../types/rbz-reports';
 

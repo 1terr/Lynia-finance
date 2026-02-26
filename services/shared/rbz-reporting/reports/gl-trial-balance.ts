@@ -4,7 +4,6 @@
 
 import { db } from '../../clients/database';
 import { getFineractClient } from '../../clients/fineract';
-import { logger } from '../../utils/logger';
 import { formatDateForFineract, mapGLAccountType } from '../helpers';
 import type { RBZReportConfig, GLTrialBalance } from '../../types/rbz-reports';
 

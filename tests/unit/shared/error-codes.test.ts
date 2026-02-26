@@ -1,8 +1,6 @@
 import {
   ERROR_CODES,
   createErrorResponse,
-  ErrorCode,
-  ErrorResponse,
 } from '../../../services/shared/utils/error-codes';
 
 describe('Error Codes', () => {

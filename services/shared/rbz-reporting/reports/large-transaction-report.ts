@@ -3,7 +3,6 @@
  */
 
 import { db, query } from '../../clients/database';
-import { logger } from '../../utils/logger';
 import { LARGE_TRANSACTION_THRESHOLD_USD } from '../helpers';
 import type { RBZReportConfig, LargeTransactionReport, Currency } from '../../types/rbz-reports';
 

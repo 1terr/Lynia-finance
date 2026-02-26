@@ -3,7 +3,6 @@
  */
 
 import { query } from '../../clients/database';
-import { logger } from '../../utils/logger';
 import { round2 } from '../helpers';
 import type { RBZReportConfig, ForeignCurrencyExposure, Currency } from '../../types/rbz-reports';
 

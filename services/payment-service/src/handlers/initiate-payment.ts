@@ -3,7 +3,6 @@
  * Initiate a payment
  */
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { getSecurityHeaders } from '../../../shared/utils/response';
 import { PaymentService, InitiatePaymentRequest } from '../payment-service';

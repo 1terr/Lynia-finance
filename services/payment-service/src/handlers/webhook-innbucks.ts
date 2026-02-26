@@ -3,7 +3,6 @@
  * Handle InnBucks webhook
  */
 
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { PaymentService } from '../payment-service';
 import { InnBucksProvider, InnBucksWebhook } from '../innbucks-provider';

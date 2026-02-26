@@ -3,7 +3,6 @@
  */
 
 import { query } from '../../clients/database';
-import { logger } from '../../utils/logger';
 import { calculateProvisions, round2 } from '../helpers';
 import type { RBZReportConfig, CapitalAdequacyReport } from '../../types/rbz-reports';
 

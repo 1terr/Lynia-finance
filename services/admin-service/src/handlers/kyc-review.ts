@@ -1,9 +1,8 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db, query, queryOne } from '../../../shared/clients/database';
+import { query, queryOne } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
 import logger from '../../../shared/utils/logger';
-import { auditLog } from './helpers';
 
 // ─── GET /api/v1/kyc/submissions/pending ───
 

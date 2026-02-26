@@ -4,7 +4,6 @@
 
 import { query } from '../../clients/database';
 import { getFineractClient } from '../../clients/fineract';
-import { logger } from '../../utils/logger';
 import { round2 } from '../helpers';
 import type { RBZReportConfig, LoanPortfolioFineractReport } from '../../types/rbz-reports';
 

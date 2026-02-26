@@ -1,6 +1,6 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query, queryOne } from '../../../shared/clients/database';
-import { successResponse, errorResponse } from '../../../shared/utils/response';
+import { successResponse } from '../../../shared/utils/response';
 import { getFineractClient } from '../../../shared/clients/fineract';
 import logger from '../../../shared/utils/logger';
 import { mapActionToEventType } from './helpers';

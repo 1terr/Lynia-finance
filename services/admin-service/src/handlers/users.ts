@@ -1,8 +1,7 @@
-import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
-import { isAdminOrManager, AuthContext } from '../../../shared/middleware/authorization';
+import { isAdminOrManager } from '../../../shared/middleware/authorization';
 import logger from '../../../shared/utils/logger';
 import { mapAdminUser, auditLog, COGNITO_ADMIN_ROLES } from './helpers';
 
