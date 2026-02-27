@@ -39,7 +39,7 @@ const config: Config = {
         },
         // Custom hero text colors
         'hero-primary': '#2D2564',
-        'hero-accent': '#000EFF',
+        'hero-accent': '#475569',
       },
       fontFamily: {
         sans: ['Inter', ...defaultTheme.fontFamily.sans],
