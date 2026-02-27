@@ -35,10 +35,10 @@ export function Hero() {
             className="mt-10 flex flex-wrap items-center gap-4 opacity-0 animate-fade-up"
             style={{ animationDelay: '60ms', animationFillMode: 'forwards' }}
           >
-            <Button variant="accent" size="lg" href="#get-started" arrow>
+            <Button variant="accent" href="#get-started" arrow>
               Get started
             </Button>
-            <Button variant="outline" size="lg" href="/thesis" arrow>
+            <Button variant="outline" href="/thesis" arrow>
               Read the 2026 Thesis
             </Button>
           </div>

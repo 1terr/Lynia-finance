@@ -36,10 +36,10 @@ export function BottomCTA() {
           }`}
           style={{ transitionDelay: '120ms' }}
         >
-          <Button variant="accent" size="lg" href="/contact">
+          <Button variant="accent" href="/contact">
             Get started &rarr;
           </Button>
-          <Button variant="outline" size="lg" href="/thesis">
+          <Button variant="outline" href="/thesis">
             Read the 2026 Thesis
           </Button>
         </div>
