@@ -8,6 +8,7 @@ import {
 } from '../../../shared/utils/response';
 import { requireRole } from '../../../shared/middleware/authorization';
 import { HandoverService } from '../../../lock-service/src/handover-service';
+import { resolveDistributor } from '../helpers/resolve-distributor';
 
 const handoverService = new HandoverService();
 
@@ -15,14 +16,9 @@ const handoverService = new HandoverService();
  * GET /api/v1/distributor/handovers
  */
 export const handleGetHandovers: RouteHandler = async (event, _params, auth) => {
-  requireRole(auth, 'distributor');
+  requireRole(auth, 'distributor', 'super_admin', 'admin', 'operations_manager');
 
-  const { data: dist } = await db
-    .from('distributors')
-    .select('id')
-    .eq('user_id', auth.userId)
-    .single()
-    .execute();
+  const dist = await resolveDistributor(auth, event);
 
   if (!dist) {
     return notFoundResponse('Distributor', event);

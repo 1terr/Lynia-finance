@@ -1,20 +1,16 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db, query } from '../../../shared/clients/database';
+import { query } from '../../../shared/clients/database';
 import { successResponse, notFoundResponse } from '../../../shared/utils/response';
 import { requireRole } from '../../../shared/middleware/authorization';
+import { resolveDistributor } from '../helpers/resolve-distributor';
 
 /**
  * GET /api/v1/distributor/commissions
  */
 export const handleGetCommissions: RouteHandler = async (event, _params, auth) => {
-  requireRole(auth, 'distributor');
+  requireRole(auth, 'distributor', 'super_admin', 'admin', 'operations_manager');
 
-  const { data: dist } = await db
-    .from('distributors')
-    .select('id')
-    .eq('user_id', auth.userId)
-    .single()
-    .execute();
+  const dist = await resolveDistributor(auth, event);
 
   if (!dist) {
     return notFoundResponse('Distributor', event);

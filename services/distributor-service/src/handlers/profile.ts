@@ -7,21 +7,17 @@ import {
   parseBody,
 } from '../../../shared/utils/response';
 import { requireRole } from '../../../shared/middleware/authorization';
+import { resolveDistributor } from '../helpers/resolve-distributor';
 
 /**
  * GET /api/v1/distributor/profile
  */
 export const handleGetProfile: RouteHandler = async (event, _params, auth) => {
-  requireRole(auth, 'distributor');
+  requireRole(auth, 'distributor', 'super_admin', 'admin', 'operations_manager');
 
-  const { data: distributor, error } = await db
-    .from('distributors')
-    .select('*')
-    .eq('user_id', auth.userId)
-    .single()
-    .execute();
+  const distributor = await resolveDistributor(auth, event, '*');
 
-  if (error || !distributor) {
+  if (!distributor) {
     return notFoundResponse('Distributor profile', event);
   }
 
