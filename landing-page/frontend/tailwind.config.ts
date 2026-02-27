@@ -102,6 +102,7 @@ const config: Config = {
         'stripe-nav': '0 30px 60px -50px rgba(0,0,0,0.10), 0 30px 60px -10px rgba(50,50,93,0.25)',
         'stripe-menu': '0 18px 36px -18px rgba(0,0,0,0.10), 0 30px 45px -30px rgba(50,50,93,0.25)',
         input: '0px 3px 10px rgba(50,50,93,0.08)',
+        btn: '0 1px 2px rgba(0,0,0,0.1)',
         fab: '0 4px 12px rgba(37, 211, 102, 0.4)',
       },
       maxWidth: {
