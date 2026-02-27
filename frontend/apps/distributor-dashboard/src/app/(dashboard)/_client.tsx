@@ -18,20 +18,41 @@ import {
 import Link from 'next/link';
 
 export default function DashboardHome() {
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['distributor', 'stats'],
     queryFn: fetchDashboardStats,
   });
 
-  const { data: handovers = [], isLoading: handoversLoading } = useQuery({
+  const { data: handovers = [], isLoading: handoversLoading, isError: handoversError, refetch: refetchHandovers } = useQuery({
     queryKey: ['distributor', 'handovers', 'initiated'],
     queryFn: fetchPendingHandovers,
   });
 
   const loading = statsLoading || handoversLoading;
+  const hasError = statsError || handoversError;
 
-  if (loading || !stats) {
+  if (loading) {
     return <DashboardSkeleton />;
+  }
+
+  if (hasError || !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+          <PackageCheck className="h-6 w-6 text-red-600" />
+        </div>
+        <h2 className="text-lg font-semibold mb-1">Failed to load dashboard</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Could not fetch your dashboard data. Please try again.
+        </p>
+        <button
+          onClick={() => { refetchStats(); refetchHandovers(); }}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (

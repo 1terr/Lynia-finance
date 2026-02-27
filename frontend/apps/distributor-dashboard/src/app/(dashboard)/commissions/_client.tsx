@@ -70,17 +70,18 @@ function exportCSV(commissions: CommissionEntry[]) {
 }
 
 export default function CommissionsPage() {
-  const { data: commissions = [], isLoading: commissionsLoading } = useQuery({
+  const { data: commissions = [], isLoading: commissionsLoading, isError: commissionsError, refetch: refetchCommissions } = useQuery({
     queryKey: ['distributor', 'commissions'],
     queryFn: fetchCommissions,
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['distributor', 'stats'],
     queryFn: fetchDashboardStats,
   });
 
   const loading = commissionsLoading || statsLoading;
+  const hasError = commissionsError || statsError;
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
 
@@ -121,8 +122,28 @@ export default function CommissionsPage() {
 
   const handoverCount = commissions.length;
 
-  if (loading || !stats) {
+  if (loading) {
     return <CommissionsSkeleton />;
+  }
+
+  if (hasError || !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+          <DollarSign className="h-6 w-6 text-red-600" />
+        </div>
+        <h2 className="text-lg font-semibold mb-1">Failed to load commissions</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Could not fetch your commission data. Please try again.
+        </p>
+        <button
+          onClick={() => { refetchCommissions(); refetchStats(); }}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const tier = getPerformanceTier(stats.total_commissions_earned);
