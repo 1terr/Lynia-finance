@@ -9,7 +9,6 @@ import { db } from '../clients/database';
 import type {
   DeletionRequest,
   CustomerDataExport,
-  ConsentRecord,
 } from './consent-management';
 import { getCustomerConsents, logPrivacyAction } from './consent-management';
 
