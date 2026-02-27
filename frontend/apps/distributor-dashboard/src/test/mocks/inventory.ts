@@ -9,6 +9,8 @@ export const mockInventory: InventoryDevice[] = [
     retail_price: 200,
     status: 'available',
     condition: 'new',
+    storage_gb: 64,
+    color: 'Black',
     received_at: '2026-01-20T00:00:00Z',
   },
   {
@@ -18,7 +20,9 @@ export const mockInventory: InventoryDevice[] = [
     imei: '351000000000002',
     retail_price: 200,
     status: 'available',
-    condition: 'new',
+    condition: 'grade_a',
+    storage_gb: 64,
+    color: 'Blue',
     received_at: '2026-01-20T00:00:00Z',
   },
   {
@@ -29,6 +33,8 @@ export const mockInventory: InventoryDevice[] = [
     retail_price: 200,
     status: 'reserved',
     condition: 'new',
+    storage_gb: 32,
+    color: 'White',
     received_at: '2026-01-25T00:00:00Z',
   },
   {
@@ -38,7 +44,9 @@ export const mockInventory: InventoryDevice[] = [
     imei: '351000000000004',
     retail_price: 350,
     status: 'available',
-    condition: 'new',
+    condition: 'grade_b',
+    storage_gb: 128,
+    color: 'Black',
     received_at: '2026-02-01T00:00:00Z',
   },
   {
@@ -48,7 +56,9 @@ export const mockInventory: InventoryDevice[] = [
     imei: '351000000000005',
     retail_price: 350,
     status: 'reserved',
-    condition: 'new',
+    condition: 'grade_a',
+    storage_gb: 128,
+    color: 'Green',
     received_at: '2026-02-01T00:00:00Z',
   },
   {
@@ -59,6 +69,8 @@ export const mockInventory: InventoryDevice[] = [
     retail_price: 500,
     status: 'available',
     condition: 'new',
+    storage_gb: 128,
+    color: 'Black',
     received_at: '2026-02-03T00:00:00Z',
   },
   {
@@ -68,7 +80,9 @@ export const mockInventory: InventoryDevice[] = [
     imei: '351000000000007',
     retail_price: 200,
     status: 'available',
-    condition: 'new',
+    condition: 'grade_c',
+    storage_gb: 64,
+    color: null,
     received_at: '2026-02-03T00:00:00Z',
   },
   {
@@ -78,7 +92,9 @@ export const mockInventory: InventoryDevice[] = [
     imei: '351000000000008',
     retail_price: 350,
     status: 'damaged',
-    condition: 'new',
+    condition: 'grade_a',
+    storage_gb: null,
+    color: 'Blue',
     received_at: '2026-01-15T00:00:00Z',
   },
 ];

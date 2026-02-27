@@ -134,6 +134,8 @@ export function createInventoryDevice(
     retail_price: 300.0,
     status: 'available',
     condition: 'new',
+    storage_gb: 64,
+    color: 'Black',
     received_at: new Date(
       Date.now() - 7 * 24 * 60 * 60 * 1000
     ).toISOString(),

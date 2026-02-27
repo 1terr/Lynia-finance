@@ -53,8 +53,10 @@ export interface InventoryDevice {
   model: string;
   imei: string;
   retail_price: number;
-  status: 'available' | 'reserved' | 'assigned' | 'sold' | 'damaged';
-  condition: 'new' | 'refurbished' | 'used';
+  status: 'available' | 'reserved' | 'damaged';
+  condition: 'new' | 'grade_a' | 'grade_b' | 'grade_c';
+  storage_gb: number | null;
+  color: string | null;
   received_at: string;
 }
 

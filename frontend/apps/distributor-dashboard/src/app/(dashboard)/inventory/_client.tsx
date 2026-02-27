@@ -11,11 +11,9 @@ import { InventorySkeleton } from '@/components/ui/skeleton';
 import {
   Smartphone,
   Search,
-  Package,
   AlertTriangle,
   CheckCircle,
   Clock,
-  ShoppingCart,
   Filter,
 } from 'lucide-react';
 
@@ -28,15 +26,14 @@ const STATUS_CONFIG: Record<InventoryDevice['status'], {
 }> = {
   available: { label: 'Available', variant: 'success', icon: CheckCircle },
   reserved: { label: 'Reserved', variant: 'warning', icon: Clock },
-  assigned: { label: 'Assigned', variant: 'info', icon: ShoppingCart },
-  sold: { label: 'Sold', variant: 'default', icon: Package },
   damaged: { label: 'Damaged', variant: 'destructive', icon: AlertTriangle },
 };
 
 const CONDITION_LABELS: Record<InventoryDevice['condition'], string> = {
   new: 'New',
-  refurbished: 'Refurbished',
-  used: 'Used',
+  grade_a: 'Grade A',
+  grade_b: 'Grade B',
+  grade_c: 'Grade C',
 };
 
 export default function InventoryPage() {
@@ -82,8 +79,8 @@ export default function InventoryPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        {(['available', 'reserved', 'assigned', 'sold', 'damaged'] as const).map(
+      <div className="grid grid-cols-3 gap-3">
+        {(['available', 'reserved', 'damaged'] as const).map(
           (status) => {
             const config = STATUS_CONFIG[status];
             const Icon = config.icon;
@@ -182,6 +179,12 @@ export default function InventoryPage() {
                     <span className="text-muted-foreground">
                       {CONDITION_LABELS[device.condition]}
                     </span>
+                    {device.storage_gb && (
+                      <span className="text-muted-foreground">{device.storage_gb}GB</span>
+                    )}
+                    {device.color && (
+                      <span className="text-muted-foreground">{device.color}</span>
+                    )}
                   </div>
                   <span>
                     Received{' '}

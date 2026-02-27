@@ -42,5 +42,5 @@ export const handleGetCommissions: RouteHandler = async (event, _params, auth) =
     [dist.id]
   );
 
-  return successResponse(result.rows, 200, event);
+  return successResponse(result.data, 200, event);
 };

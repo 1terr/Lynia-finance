@@ -31,7 +31,7 @@ describe('InventoryPage', () => {
       model: 'iPhone 12',
       imei: '987654321098765',
       status: 'reserved',
-      condition: 'refurbished',
+      condition: 'grade_a',
       retail_price: 450,
       received_at: '2026-02-10T10:00:00Z',
     }),
@@ -40,8 +40,8 @@ describe('InventoryPage', () => {
       brand: 'Samsung',
       model: 'Galaxy S21',
       imei: '555666777888999',
-      status: 'assigned',
-      condition: 'new',
+      status: 'available',
+      condition: 'grade_b',
       retail_price: 600,
       received_at: '2026-02-15T10:00:00Z',
     }),
@@ -95,14 +95,11 @@ describe('InventoryPage', () => {
       render(<InventoryPage />);
 
       await waitFor(() => {
-        // available: 1, reserved: 1, assigned: 1, sold: 0, damaged: 0
+        // available: 2, reserved: 1, damaged: 0
         const availableLabels = screen.getAllByText('Available');
         expect(availableLabels.length).toBeGreaterThan(0);
         const reservedLabels = screen.getAllByText('Reserved');
         expect(reservedLabels.length).toBeGreaterThan(0);
-        const assignedLabels = screen.getAllByText('Assigned');
-        expect(assignedLabels.length).toBeGreaterThan(0);
-        expect(screen.getByText('Sold')).toBeInTheDocument();
         expect(screen.getByText('Damaged')).toBeInTheDocument();
       });
     });
@@ -111,7 +108,7 @@ describe('InventoryPage', () => {
       render(<InventoryPage />);
 
       await waitFor(() => {
-        const allText = screen.getByText(/Sold/i).closest('button')?.textContent;
+        const allText = screen.getByText(/Damaged/i).closest('button')?.textContent;
         expect(allText).toContain('0');
       });
     });
@@ -234,8 +231,8 @@ describe('InventoryPage', () => {
 
       await waitFor(() => {
         expect(screen.getByText(/Samsung Galaxy A15/i)).toBeInTheDocument();
+        expect(screen.getByText(/Samsung Galaxy S21/i)).toBeInTheDocument();
         expect(screen.queryByText(/Apple iPhone 12/i)).not.toBeInTheDocument();
-        expect(screen.queryByText(/Samsung Galaxy S21/i)).not.toBeInTheDocument();
       });
     });
 
@@ -367,7 +364,17 @@ describe('InventoryPage', () => {
       await waitFor(() => {
         const newLabels = screen.getAllByText('New');
         expect(newLabels.length).toBeGreaterThan(0);
-        expect(screen.getByText('Refurbished')).toBeInTheDocument();
+        expect(screen.getByText('Grade A')).toBeInTheDocument();
+        expect(screen.getByText('Grade B')).toBeInTheDocument();
+      });
+    });
+
+    it('displays device storage and color when available', async () => {
+      render(<InventoryPage />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText('64GB').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Black').length).toBeGreaterThan(0);
       });
     });
 
@@ -425,8 +432,8 @@ describe('InventoryPage', () => {
 
     it('shows filtered empty state when status filter has no results', async () => {
       const user = userEvent.setup();
-      const devicesWithoutSold = createInventoryDevices(2).map((d) => ({ ...d, status: 'available' as const }));
-      (api.fetchInventory as jest.Mock).mockResolvedValue(devicesWithoutSold);
+      const devicesWithoutDamaged = createInventoryDevices(2).map((d) => ({ ...d, status: 'available' as const }));
+      (api.fetchInventory as jest.Mock).mockResolvedValue(devicesWithoutDamaged);
 
       render(<InventoryPage />);
 
@@ -435,8 +442,8 @@ describe('InventoryPage', () => {
         expect(screen.queryByText(/No devices match/i)).not.toBeInTheDocument();
       });
 
-      const soldButton = screen.getByText('Sold').closest('button');
-      await user.click(soldButton!);
+      const damagedButton = screen.getByText('Damaged').closest('button');
+      await user.click(damagedButton!);
 
       await waitFor(() => {
         expect(screen.getByText(/No devices match your search criteria/i)).toBeInTheDocument();

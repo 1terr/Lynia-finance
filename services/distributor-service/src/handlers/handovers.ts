@@ -64,7 +64,7 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
   sql += ' ORDER BY dh.created_at DESC';
 
   const result = await query(sql, params);
-  return successResponse(result.rows, 200, event);
+  return successResponse(result.data, 200, event);
 };
 
 /**

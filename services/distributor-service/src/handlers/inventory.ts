@@ -27,16 +27,23 @@ export const handleGetInventory: RouteHandler = async (event, _params, auth) => 
        d.model,
        d.imei,
        d.retail_price_usd AS retail_price,
-       d.status,
+       CASE
+         WHEN d.status IN ('in_stock', 'assigned') THEN 'available'
+         WHEN d.status = 'reserved' THEN 'reserved'
+         WHEN d.status = 'damaged' THEN 'damaged'
+         ELSE 'available'
+       END AS status,
        d.condition,
-       ai.received_at
+       d.storage_gb,
+       d.color,
+       ai.assigned_date AS received_at
      FROM devices d
      JOIN agent_inventory ai ON ai.device_id = d.id
      WHERE ai.distributor_id = $1
        AND ai.status != 'sold'
-     ORDER BY ai.received_at DESC`,
+     ORDER BY ai.assigned_date DESC`,
     [dist.id]
   );
 
-  return successResponse(result.rows, 200, event);
+  return successResponse(result.data, 200, event);
 };
