@@ -304,7 +304,7 @@ describe('GET /api/v1/distributor/inventory', () => {
     const devices = [
       { id: 'd1', brand: 'Samsung', model: 'A14', imei: '123456789012345' },
     ];
-    (query as jest.Mock).mockResolvedValueOnce({ rows: devices });
+    (query as jest.Mock).mockResolvedValueOnce({ data: devices });
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/inventory' });
     const response = await handler(event);
@@ -335,7 +335,7 @@ describe('GET /api/v1/distributor/handovers', () => {
     const handovers = [
       { id: 'h1', status: 'initiated', customer_name: 'John' },
     ];
-    (query as jest.Mock).mockResolvedValueOnce({ rows: handovers });
+    (query as jest.Mock).mockResolvedValueOnce({ data: handovers });
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/handovers' });
     const response = await handler(event);
@@ -347,7 +347,7 @@ describe('GET /api/v1/distributor/handovers', () => {
 
   it('should support ?status=X filter', async () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1' }, error: null });
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [] });
 
     const event = createEvent({
       httpMethod: 'GET',
@@ -604,7 +604,7 @@ describe('GET /api/v1/distributor/commissions', () => {
     const commissions = [
       { id: 'c1', commission_amount: 50, payment_status: 'paid' },
     ];
-    (query as jest.Mock).mockResolvedValueOnce({ rows: commissions });
+    (query as jest.Mock).mockResolvedValueOnce({ data: commissions });
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/commissions' });
     const response = await handler(event);
