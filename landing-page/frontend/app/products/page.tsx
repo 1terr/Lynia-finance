@@ -4,7 +4,7 @@ import { WaitlistForm } from '@/components/ui/WaitlistForm';
 
 export default function ProductsPage() {
   return (
-    <div className="pt-16">
+    <div className="pt-[72px]">
       <section
         className="min-h-[60vh] flex items-center bg-white py-16 lg:py-[120px]"
       >

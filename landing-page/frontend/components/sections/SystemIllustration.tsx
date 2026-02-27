@@ -29,7 +29,7 @@ export function SystemIllustration() {
   return (
     <section ref={ref} className="bg-white py-16 lg:py-[120px]">
       <div className="container-main">
-        <div className="mb-12">
+        <div>
           <span
             className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
@@ -46,7 +46,7 @@ export function SystemIllustration() {
             Connect to existing systems.
           </h2>
           <p
-            className={`text-body-lg text-slate max-w-[600px] mt-4 transition-all duration-500 ease-stripe-out ${
+            className={`text-body-lg text-slate max-w-[640px] mt-6 transition-all duration-500 ease-stripe-out ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
             }`}
             style={{ transitionDelay: '120ms' }}
@@ -58,7 +58,7 @@ export function SystemIllustration() {
 
         {/* System diagram */}
         <div
-          className={`max-w-[900px] mx-auto transition-all duration-700 ease-stripe-out ${
+          className={`mt-12 max-w-[900px] mx-auto transition-all duration-700 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
           style={{ transitionDelay: '180ms' }}

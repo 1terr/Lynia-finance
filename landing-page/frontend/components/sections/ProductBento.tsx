@@ -8,8 +8,24 @@ export function ProductBento() {
   return (
     <section ref={ref} id="products" className="bg-white py-16 lg:py-[120px]">
       <div className="container-main">
+        <span
+          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+          }`}
+        >
+          OUR PRODUCTS
+        </span>
+        <h2
+          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          }`}
+          style={{ transitionDelay: '60ms' }}
+        >
+          Three products, one mission.
+        </h2>
+
         {/* Bento Grid: two cards on top, full-width card on bottom */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
           {/* Digital Credit — Top Left */}
           <div
             className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${
@@ -71,7 +87,7 @@ export function ProductBento() {
               <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
                 Productive Asset Financing
               </h3>
-              <p className="text-body text-slate mt-4">
+              <p className="text-body text-slate mt-3">
                 We finance the income-generating tools of the informal
                 sector&mdash;starting with smartphones and scaling to gig-economy
                 assets.
