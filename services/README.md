@@ -4,12 +4,18 @@ Microservices for the Lynia Finance platform.
 
 ## Services
 
+- **admin-service**: Admin portal API (users, config, audit, products, devices, orgs, inventory)
+- **distributor-service**: Distributor portal API (profile, stats, inventory, handovers, commissions)
+- **dw-sync-service**: Data warehouse real-time sync
+- **fineract-proxy-service**: Fineract core banking proxy (loans, products, GL, reports)
+- **form-submission-service**: Public form capture (no auth)
+- **investor-reporting-service**: Investor portfolio & covenant reporting
+- **kyc-service**: KYC verification with Smile Identity / Didit
+- **lock-service**: Device lock/unlock management via Trustonic
+- **notification-service**: Multi-channel notifications + reminder scheduling
+- **payment-service**: Mobile money payment processing (InnBucks, EcoCash, OneWallet, OMari)
 - **scoring-service**: Credit scoring algorithm (5-component affordability model)
 - **whatsapp-service**: WhatsApp bot conversation flow
-- **kyc-service**: KYC verification with Smile Identity
-- **payment-service**: Mobile money payment processing
-- **lock-service**: Device lock/unlock management
-- **notification-service**: Multi-channel notifications
 
 ## Development
 

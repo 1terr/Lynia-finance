@@ -1,6 +1,6 @@
 # Lynia Finance - AWS Architecture
 
-**Last Updated**: 2026-02-13
+**Last Updated**: 2026-02-27
 
 This document provides comprehensive architecture diagrams and infrastructure reference
 for the Lynia Finance AWS-native platform.
@@ -37,23 +37,39 @@ graph TB
     end
 
     subgraph VPC["VPC 10.0.0.0/16 — Private Subnets"]
-        Scoring[Scoring Service<br/>1024MB / 30s]
-        WhatsAppSvc[WhatsApp Service<br/>512MB / 30s]
-        KYCSvc[KYC Service<br/>512MB / 30s]
-        PaymentSvc[Payment Service<br/>1024MB / 60s]
-        LockSvc[Lock Service<br/>512MB / 30s]
-        NotifSvc[Notification Service<br/>512MB / 30s]
+        subgraph Core["Core Business Services"]
+            Scoring[Scoring<br/>1024MB / 30s]
+            WhatsAppSvc[WhatsApp<br/>512MB / 30s]
+            KYCSvc[KYC<br/>512MB / 30s]
+            PaymentSvc[Payment<br/>1024MB / 60s]
+            LockSvc[Lock<br/>512MB / 30s]
+        end
+
+        subgraph Platform["Platform Services"]
+            AdminSvc[Admin<br/>512MB / 30s]
+            DistribSvc[Distributor<br/>512MB / 30s]
+            NotifSvc[Notification<br/>512MB / 30s]
+            FormSvc[Form Submission<br/>256MB / 15s]
+            InvestorSvc[Investor Reporting<br/>512MB / 60s]
+        end
+
+        subgraph Integration["Integration Services"]
+            FineractProxy[Fineract Proxy<br/>512MB / 60s]
+            FineractRecon[Fineract Reconciliation<br/>512MB / 300s]
+            DWSync[DW Sync<br/>512MB / 120s]
+            WARetry[WhatsApp Retry<br/>512MB / 30s]
+        end
     end
 
     subgraph Data["Data Layer"]
         RDS[(RDS PostgreSQL 16<br/>Encrypted, Private VPC)]
         S3Store[S3 Storage<br/>4 buckets]
-        SQS[SQS Queues<br/>5 queues + 5 DLQs]
+        SQS[SQS Queues<br/>9 queues + 9 DLQs]
         SM[Secrets Manager<br/>7 secrets]
     end
 
-    subgraph Planned["Planned — Core Banking"]
-        Fineract[Apache Fineract v1.13.0<br/>EC2 t3.micro]
+    subgraph CoreBanking["Core Banking — ECS Fargate"]
+        Fineract[Apache Fineract v1.13.0<br/>ECS Fargate + ALB]
     end
 
     subgraph Observe["Observability"]
@@ -64,7 +80,7 @@ graph TB
     subgraph External["External APIs"]
         WhatsAppAPI[WhatsApp Cloud API]
         SmileID[Smile Identity KYC]
-        EcoCash[EcoCash / OneMoney]
+        MobileMoney[InnBucks / EcoCash /<br/>OneWallet / OMari]
         Trustonic[Trustonic Device Lock]
     end
 
@@ -74,23 +90,22 @@ graph TB
     CF --> S3Admin & S3Distrib
     CF --> WAFSvc --> APIGW
     APIGW --> Cognito
-    APIGW --> Scoring & WhatsAppSvc & KYCSvc & PaymentSvc & LockSvc & NotifSvc
 
-    Scoring & WhatsAppSvc & KYCSvc & PaymentSvc & LockSvc & NotifSvc --> RDS
-    Scoring & WhatsAppSvc & KYCSvc & PaymentSvc & LockSvc & NotifSvc --> S3Store
-    Scoring & WhatsAppSvc & KYCSvc & PaymentSvc & LockSvc & NotifSvc --> SQS
-    Scoring & WhatsAppSvc & KYCSvc & PaymentSvc & LockSvc & NotifSvc --> SM
+    APIGW --> Core & Platform & Integration
+
+    Core --> RDS & S3Store & SQS & SM
+    Platform --> RDS & S3Store & SQS & SM
+    Integration --> RDS & S3Store & SQS & SM
 
     WhatsAppSvc --> WhatsAppAPI
     KYCSvc --> SmileID
-    PaymentSvc --> EcoCash
+    PaymentSvc --> MobileMoney
     LockSvc --> Trustonic
+    FineractProxy --> Fineract
 
-    Scoring & WhatsAppSvc & KYCSvc & PaymentSvc & LockSvc & NotifSvc --> CW & XRay
+    Fineract --> RDS
 
-    Fineract -.-> RDS
-
-    style Planned stroke-dasharray: 5 5
+    Core & Platform & Integration --> CW & XRay
 ```
 
 ---
@@ -135,7 +150,7 @@ graph TB
     end
 
     subgraph ExternalAPIs["External APIs — Via NAT Gateway"]
-        ExtAPIs[WhatsApp / Smile ID /<br/>EcoCash / Trustonic]
+        ExtAPIs[WhatsApp / Smile ID /<br/>InnBucks / EcoCash / Trustonic]
     end
 
     IGW --> PS1 & PS2
@@ -175,7 +190,7 @@ graph LR
 
     subgraph Stage1["Stage 1: Quality"]
         Lint[ESLint]
-        Test[Jest Tests<br/>80% coverage]
+        Test[Jest Tests<br/>85%+ coverage]
         Coverage[Codecov Upload]
     end
 
@@ -277,11 +292,11 @@ sequenceDiagram
 
     Note over C,S3: Payment Flow
 
-    C->>WC: Pay via EcoCash
+    C->>WC: Pay via mobile money
     WC->>AG: Payment webhook
     AG->>PS: Process payment
     PS->>DB: Record transaction
-    PS->>Q: Queue payment callback
+    PS->>Q: Queue loan status update
 
     alt Payment overdue
         PS->>Q: Queue device lock
@@ -296,6 +311,42 @@ sequenceDiagram
 
 ---
 
+## 5. Architecture Patterns
+
+### Lambda Router
+
+All 14 Lambda functions use the shared `createRouter()` utility (`services/shared/utils/lambda-router.ts`) for declarative request routing. This replaced ad-hoc if/else chains across all services during the Feb 2026 refactoring.
+
+Key features: automatic OPTIONS/CORS handling, parameterized path extraction (`/users/:id`), auth context injection, structured error responses (404/405/500), and request logging.
+
+See [services/README.md](../../services/README.md) for full documentation and migration examples.
+
+### Barrel Re-export for Backwards Compatibility
+
+When large files were decomposed during refactoring, the original file became a thin re-export barrel. This prevents breaking any existing imports:
+
+```typescript
+// services/shared/fineract-rbz-reporting.ts (was 1,772 lines, now 7)
+export * from './rbz-reporting/index';
+```
+
+Eight monolithic files (up to 3,306 lines) were decomposed into 74 focused handler files using this pattern.
+
+### Structured Logging with PII Masking
+
+All 14 services use the shared logger (`services/shared/utils/logger.ts`). Zero `console.*` calls exist in service source code. The logger automatically masks phone numbers, national IDs, passwords, and other PII before writing to CloudWatch.
+
+```typescript
+// PII is masked automatically
+logger.info({
+  action: 'kyc.verify',
+  phone: '+263****567',     // auto-masked from full number
+  nationalId: '12******90', // auto-masked from full ID
+});
+```
+
+---
+
 ## Infrastructure Reference
 
 ### CloudFormation Templates
@@ -306,30 +357,39 @@ sequenceDiagram
 | 2 | `rds.yaml` | RDS PostgreSQL 16, encryption, auto-scaling | Foundation |
 | 3 | `cognito.yaml` | User Pool, 2 app clients, 5 groups | Foundation |
 | 4 | `secrets-manager.yaml` | 7 secrets with least-privilege IAM | Foundation |
-| 5 | `sqs-queues.yaml` | 5 queues + 5 DLQs, long polling | Foundation |
+| 5 | `sqs-queues.yaml` | 9 queues + 9 DLQs, long polling | Foundation |
 | 6 | `storage-buckets.yaml` | 4 S3 buckets (KYC, commissions, reconciliation, ML) | Foundation |
 | 7 | `iam-roles.yaml` | Lambda execution roles, CI/CD roles | Foundation |
 | 8 | `dns-ssl.yaml` | Route 53 records, ACM certificates | Configuration |
 | 9 | `waf.yaml` | WAFv2 with 8 rules | Configuration |
 | 10 | `api-gateway/throttling-usage-plans.yaml` | 3-tier throttling, 5 API keys | Configuration |
 | 11 | `xray-tracing.yaml` | Sampling rules, trace groups | Configuration |
-| 12 | `template.yaml` (SAM) | 6 Lambda functions + API Gateway | Application |
+| 12 | `template.yaml` (SAM) | 14 Lambda functions + API Gateway | Application |
 | 13 | `frontend-hosting.yaml` | S3 + CloudFront (admin + distributor) | Application |
-| 14 | `cloudwatch-alarms.yaml` | 12 alarms, 3 dashboards, SNS topics | Operations |
-| 15 | `canary-deployments.yaml` | CodeDeploy canary config | Operations |
-| 16 | `lambda-autoscaling.yaml` | Reserved concurrency + auto-scaling | Operations |
-| 17 | `production-master.yaml` | Orchestration template | Orchestration |
+| 14 | `fineract-ecs.yaml` | Fineract ECS Fargate service + ALB | Application |
+| 15 | `cloudwatch-alarms.yaml` | 12 alarms, 3 dashboards, SNS topics | Operations |
+| 16 | `canary-deployments.yaml` | CodeDeploy canary config | Operations |
+| 17 | `lambda-autoscaling.yaml` | Reserved concurrency + auto-scaling | Operations |
+| 18 | `production-master.yaml` | Orchestration template | Orchestration |
 
 ### Lambda Functions
 
-| Service | Memory | Timeout | Reserved Concurrency | Auto-Scale Range |
-|---------|--------|---------|---------------------|-----------------|
-| Scoring | 1024 MB | 30s | 25 | 3-30 |
-| Payment | 1024 MB | 60s | 50 | 5-50 |
-| WhatsApp | 512 MB | 30s | 100 | 3-30 |
-| KYC | 512 MB | 30s | 50 | On-demand |
-| Lock | 512 MB | 30s | 25 | On-demand |
-| Notification | 512 MB | 30s | 25 | On-demand |
+| Service | Function Name | Memory | Timeout | Purpose |
+|---------|---------------|--------|---------|---------|
+| Scoring | scoring-service | 1024 MB | 30s | Credit scoring (5-component model) |
+| WhatsApp | whatsapp-service | 512 MB | 30s | WhatsApp bot conversation flow |
+| WhatsApp Retry | whatsapp-retry | 512 MB | 30s | Failed message retry (SQS consumer) |
+| KYC | kyc-service | 512 MB | 30s | Identity verification |
+| Payment | payment-service | 1024 MB | 60s | Payment processing |
+| Lock | lock-service | 512 MB | 30s | Device lock/unlock |
+| Notification | notification-service | 512 MB | 30s | Multi-channel notifications |
+| Form Submission | form-submission | 256 MB | 15s | Public form capture |
+| Fineract Reconciliation | fineract-reconciliation | 512 MB | 300s | Fineract data reconciliation |
+| Fineract Proxy | fineract-proxy | 512 MB | 60s | Core banking API proxy |
+| Admin | admin-service | 512 MB | 30s | Admin portal API |
+| Distributor | distributor-service | 512 MB | 30s | Distributor portal API |
+| Investor Reporting | investor-reporting | 512 MB | 60s | Investor portfolio reports |
+| DW Sync | dw-sync | 512 MB | 120s | Data warehouse sync |
 
 - **Runtime**: Node.js 20.x on ARM64 (Graviton2)
 - **X-Ray**: Active on all functions
@@ -343,7 +403,11 @@ sequenceDiagram
 | payment-callbacks | 120s | 4 days | 5 | 14 days |
 | kyc-processing | 120s | 4 days | 3 | 14 days |
 | device-locks | 90s | 4 days | 3 | 14 days |
+| whatsapp-message-retry | 60s | 4 days | 5 | 14 days |
 | credit-scoring | 90s | 4 days | 3 | 14 days |
+| fineract-sync-retry | 120s | 7 days | 5 | 14 days |
+| dw-sync | 120s | 4 days | 5 | 14 days |
+| payment-compensation | 300s | 7 days | 3 | 14 days |
 
 - Long polling: 20s wait time
 - DLQ alarm: Alert when any DLQ receives messages
@@ -391,13 +455,14 @@ Stacks must be deployed in this sequence:
 7. **IAM Roles** (`iam-roles.yaml`)
 8. **DNS/SSL** (`dns-ssl.yaml`) — 10-30 min for certificate validation
 9. **Application** (`template.yaml`) — Lambda + API Gateway
-10. **WAF** (`waf.yaml`)
-11. **API Gateway Throttling** (`throttling-usage-plans.yaml`)
-12. **X-Ray** (`xray-tracing.yaml`)
-13. **Monitoring** (`cloudwatch-alarms.yaml`)
-14. **Canary Deployments** (`canary-deployments.yaml`)
-15. **Frontend Hosting** (`frontend-hosting.yaml`)
-16. **Lambda Auto-Scaling** (`lambda-autoscaling.yaml`)
+10. **Fineract ECS** (`fineract-ecs.yaml`) — Core banking service
+11. **WAF** (`waf.yaml`)
+12. **API Gateway Throttling** (`throttling-usage-plans.yaml`)
+13. **X-Ray** (`xray-tracing.yaml`)
+14. **Monitoring** (`cloudwatch-alarms.yaml`)
+15. **Canary Deployments** (`canary-deployments.yaml`)
+16. **Frontend Hosting** (`frontend-hosting.yaml`)
+17. **Lambda Auto-Scaling** (`lambda-autoscaling.yaml`)
 
 Orchestrated by `production-master.yaml` or `infrastructure/aws/scripts/deploy-infrastructure.sh`.
 
@@ -407,41 +472,41 @@ Orchestrated by `production-master.yaml` or `infrastructure/aws/scripts/deploy-i
 
 | Service | Monthly Cost |
 |---------|-------------|
-| Lambda (6 functions, ARM64) | $15-50 |
+| Lambda (14 functions, ARM64) | $15-50 |
 | API Gateway | $10-30 |
 | NAT Gateway (2x HA for prod) | $64 |
 | VPC Endpoints (4x) | $28 |
 | RDS PostgreSQL (db.t3.micro) | $15-30 |
+| ECS Fargate (Fineract) | $20-40 |
 | CloudFront (2 distributions) | $10-30 |
 | S3 (frontend + storage) | $1-5 |
 | Secrets Manager (7 secrets) | $3 |
-| SQS (5 queues) | $1-5 |
+| SQS (9 queues) | $1-5 |
 | CloudWatch (dashboards + alarms) | $10-20 |
 | WAF | $5-15 |
 | Route 53 | $2 |
 | X-Ray | $5-10 |
-| **Total (Production)** | **$154-262/month** |
-| **Total (Staging)** | **$90-160/month** |
+| **Total (Production)** | **$174-302/month** |
+| **Total (Staging)** | **$110-190/month** |
 
 ---
 
-## Apache Fineract — Planned Deployment
+## Apache Fineract — Core Banking (ECS Fargate)
 
-Apache Fineract v1.13.0 is the planned core banking engine for loan lifecycle
+Apache Fineract v1.13.0 serves as the core banking engine for loan lifecycle
 management, repayment scheduling, and accounting.
 
-**Current Status**: Research complete, Docker configs tested, EC2 deployment planned.
+**Current Status**: Deployed on ECS Fargate (`production-lynia-fineract-ecs` stack).
 
-**Target Architecture**: EC2 t3.micro (free tier year 1, ~$5.50/month after) running
-Fineract Docker image, connected to the same RDS PostgreSQL instance.
+**Architecture**:
+- ECS Fargate service with Application Load Balancer
+- Connected to RDS PostgreSQL (fineract_tenants + fineract_default schemas)
+- Monitoring via `production-lynia-fineract-monitoring` stack (dashboard + 6 alarms)
+- Accessed by Lambda services through the Fineract Proxy service
 
-**What's Needed for Deployment**:
-- CloudFormation template for EC2 instance + security group
-- Fineract PostgreSQL schema initialization (fineract_tenants + fineract_default)
-- Fineract API client library for Lambda services
-- Secrets Manager entry for Fineract admin credentials
-- Health check monitoring + CloudWatch alarms
-- Integration tests between Lambda services and Fineract REST API
+**Related Lambda Functions**:
+- `fineract-proxy` (512MB / 60s): Routes API requests to Fineract — loans, products, GL accounts, reports, reconciliation
+- `fineract-reconciliation` (512MB / 300s): Periodic reconciliation between Lynia and Fineract data
 
 **Fineract Resources**:
 - Source code: `fineract/`
@@ -456,4 +521,5 @@ Fineract Docker image, connected to the same RDS PostgreSQL instance.
 - [Production Network Architecture](../infrastructure/PRODUCTION-NETWORK-ARCHITECTURE.md) — Detailed VPC topology
 - [AWS Setup Guide](../deployment/AWS-SETUP-GUIDE.md) — RDS, Cognito, S3 deployment steps
 - [Supabase to AWS Migration Report](../SUPABASE-TO-AWS-MIGRATION-REPORT.md) — Migration details
-- [Production Readiness Checklist](../../infrastructure/PRODUCTION-READINESS-CHECKLIST.md) — 70+ deployment checkpoints
+- [Refactoring Strategy](../../Refactoring/REFACTORING-STRATEGY.md) — 8-phase codebase modernization
+- [OpenAPI Specification](../../openapi/lynia-finance-api.yaml) — 51 API endpoints

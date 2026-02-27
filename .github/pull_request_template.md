@@ -1,18 +1,53 @@
 ## Description
 
-Describe the changes made and why they were made.
+<!-- What does this PR do and why? -->
 
-Ignore if these details are present on the associated [Apache Fineract JIRA ticket](https://github.com/apache/fineract/pull/1284).
+## Type of Change
+
+- [ ] Feature (new functionality)
+- [ ] Bug fix (non-breaking fix)
+- [ ] Refactor (no functional change)
+- [ ] Documentation
+- [ ] Infrastructure / CI/CD
+- [ ] Security fix
+
+## Services Affected
+
+<!-- Check all services this PR modifies -->
+- [ ] admin-service
+- [ ] distributor-service
+- [ ] dw-sync-service
+- [ ] fineract-proxy-service
+- [ ] form-submission-service
+- [ ] investor-reporting-service
+- [ ] kyc-service
+- [ ] lock-service
+- [ ] notification-service
+- [ ] payment-service
+- [ ] scoring-service
+- [ ] whatsapp-service
+- [ ] shared/
+- [ ] frontend (admin-portal / distributor-dashboard)
+- [ ] infrastructure
 
 ## Checklist
 
-Please make sure these boxes are checked before submitting your pull request - thanks!
+- [ ] Code follows existing patterns (Lambda Router, structured logging, barrel re-exports)
+- [ ] No hardcoded secrets or API keys
+- [ ] All inputs validated and sanitized
+- [ ] TypeScript strict mode — no `any` types without justification
+- [ ] Tests added/updated (85%+ coverage maintained)
+- [ ] `pnpm test` passes locally
+- [ ] `pnpm lint` passes locally
+- [ ] Error messages do not leak system information
+- [ ] No PII logged (phone numbers, national IDs, passwords masked)
+- [ ] Database migrations are backwards compatible (if applicable)
+- [ ] Service README updated (if endpoints changed)
 
-- [ ] Write the commit message as per https://github.com/apache/fineract/#pull-requests
-- [ ] Acknowledge that we will not review PRs that are not passing the build _("green")_ - it is your responsibility to get a proposed PR to pass the build, not primarily the project's maintainers.
-- [ ] Create/update unit or integration tests for verifying the changes made.
-- [ ] Follow coding conventions at https://cwiki.apache.org/confluence/display/FINERACT/Coding+Conventions.
-- [ ] Add required Swagger annotation and update API documentation at fineract-provider/src/main/resources/static/legacy-docs/apiLive.htm with details of any API changes
-- [ ] Submission is not a "code dump".  (Large changes can be made "in repository" via a branch.  Ask on the developer mailing list for guidance, if required.)
+## Test Plan
 
-FYI our guidelines for code reviews are at https://cwiki.apache.org/confluence/display/FINERACT/Code+Review+Guide.
+<!-- How was this tested? -->
+
+## Screenshots
+
+<!-- If UI changes, include before/after screenshots -->
