@@ -42,6 +42,8 @@ const mockRequireRole = jest.fn();
 jest.mock('../../../services/shared/middleware/authorization', () => ({
   getAuthContext: (...args: unknown[]) => mockGetAuthContext(...args),
   requireRole: (...args: unknown[]) => mockRequireRole(...args),
+  isAdminOrManager: (auth: { roles?: string[] }) =>
+    auth?.roles?.some((r: string) => ['super_admin', 'admin', 'operations_manager'].includes(r)) ?? false,
 }));
 
 // Use REAL response implementations

@@ -153,7 +153,7 @@ describe('Distributor Service Integration Tests', () => {
       expect(body.success).toBe(false);
     });
 
-    it('should return 403 for non-distributor user', async () => {
+    it('should return 404 for admin user without distributor_id param', async () => {
       const event = createEvent({
         httpMethod: 'GET',
         path: '/api/v1/distributor/profile',
@@ -180,8 +180,8 @@ describe('Distributor Service Integration Tests', () => {
       });
       const response = await handler(event);
 
-      // requireRole throws a 403 error caught by the router
-      expect(response.statusCode).toBe(403);
+      // Admin users pass requireRole but resolveDistributor returns null without distributor_id
+      expect(response.statusCode).toBe(404);
     });
   });
 
