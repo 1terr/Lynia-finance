@@ -113,7 +113,7 @@ export default function ThesisPage() {
             looking to embed credit&mdash;Lynia is built for you.
           </p>
           <div className="flex flex-wrap justify-center gap-4 mt-8">
-            <Button variant="accent" size="lg" href="/contact">
+            <Button variant="accent" href="/contact">
               Get started &rarr;
             </Button>
           </div>

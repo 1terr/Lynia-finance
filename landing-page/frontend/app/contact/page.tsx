@@ -105,7 +105,7 @@ function ContactForm() {
       {status === 'error' && (
         <p className="text-body-sm text-error">{errorMsg}</p>
       )}
-      <Button type="submit" variant="primary" size="lg" disabled={status === 'submitting'}>
+      <Button type="submit" variant="primary" disabled={status === 'submitting'}>
         {status === 'submitting' ? 'Sending\u2026' : 'Send message'}
       </Button>
     </form>
@@ -237,7 +237,7 @@ function PartnershipForm() {
       {status === 'error' && (
         <p className="text-body-sm text-error">{errorMsg}</p>
       )}
-      <Button type="submit" variant="primary" size="lg" disabled={status === 'submitting'}>
+      <Button type="submit" variant="primary" disabled={status === 'submitting'}>
         {status === 'submitting' ? 'Submitting\u2026' : 'Submit partnership application'}
       </Button>
     </form>

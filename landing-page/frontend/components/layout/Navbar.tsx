@@ -111,7 +111,7 @@ export function Navbar() {
               );
             })}
             <div className="pt-4">
-              <Button variant="primary" size="lg" href="/#get-started" className="w-full">
+              <Button variant="primary" href="/#get-started" className="w-full">
                 Get started &rarr;
               </Button>
             </div>

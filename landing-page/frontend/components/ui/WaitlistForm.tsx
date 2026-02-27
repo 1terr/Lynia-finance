@@ -51,7 +51,7 @@ export function WaitlistForm() {
         <button
           type="submit"
           disabled={status === 'submitting'}
-          className="h-11 px-6 rounded-md bg-primary text-white text-body-sm font-medium hover:bg-primary-hover transition-colors whitespace-nowrap disabled:opacity-50"
+          className="h-8 px-3 rounded-sm bg-primary text-white text-[13px] font-medium tracking-[-0.01em] shadow-btn hover:bg-primary-hover transition-all duration-250 ease-stripe whitespace-nowrap disabled:opacity-50"
         >
           {status === 'submitting' ? 'Joining\u2026' : 'Get notified when we launch \u2192'}
         </button>
