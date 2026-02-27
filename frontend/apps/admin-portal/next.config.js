@@ -7,8 +7,7 @@ const nextConfig = {
   },
   // Security headers are handled by CloudFront ResponseHeadersPolicy
   typescript: {
-    // Pre-existing type inconsistencies - TODO: fix in dedicated PR
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
     ignoreDuringBuilds: true,

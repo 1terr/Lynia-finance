@@ -30,6 +30,7 @@ export const QUEUE_NAMES = {
   FINERACT_SYNC_RETRY: `${ENV}-lynia-fineract-sync-retry`,
   DW_SYNC: `${ENV}-lynia-dw-sync`,
   PAYMENT_COMPENSATION: `${ENV}-lynia-payment-compensation`,
+  LOAN_STATUS_UPDATES: `${ENV}-lynia-loan-status-updates`,
 } as const;
 
 /**
@@ -248,6 +249,19 @@ export const SQSQueues = {
         timestamp: new Date().toISOString(),
       },
       delaySeconds: payload.delaySeconds,
+      attributes: { action: payload.action },
+    }),
+
+  /** Queue a loan status update (e.g., deposit received → advance loan workflow) */
+  processLoanUpdate: (payload: {
+    loanId: string;
+    action: 'deposit_received' | 'payment_received' | 'status_change';
+    paymentId?: string;
+    metadata?: Record<string, unknown>;
+  }) =>
+    publishMessage({
+      queueName: QUEUE_NAMES.LOAN_STATUS_UPDATES,
+      message: { ...payload, timestamp: new Date().toISOString() },
       attributes: { action: payload.action },
     }),
 };

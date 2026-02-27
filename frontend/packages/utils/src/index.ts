@@ -11,6 +11,8 @@ export {
   formatPercent,
   formatNumber,
   truncateId,
+  getConfidenceLevel,
+  getSLAStatus,
 } from './formatting';
 
 // Masking utilities

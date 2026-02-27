@@ -8,7 +8,8 @@ interface PaginationProps {
   page: number;
   totalPages: number;
   total: number;
-  limit: number;
+  limit?: number;
+  pageSize?: number;
   onPageChange: (page: number) => void;
   className?: string;
 }
@@ -17,10 +18,12 @@ export function Pagination({
   page,
   totalPages,
   total,
-  limit,
+  limit: limitProp,
+  pageSize,
   onPageChange,
   className,
 }: PaginationProps) {
+  const limit = limitProp ?? pageSize ?? 25;
   const from = (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);
 

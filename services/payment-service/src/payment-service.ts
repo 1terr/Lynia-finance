@@ -139,9 +139,16 @@ export class PaymentService {
       .gte('initiated_at', today.toISOString())
       .execute();
 
-    const dailyTotal = (dailyPayments || []).reduce(
-      (sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0
-    );
+    // Group by currency and convert each group to USD to avoid N individual DB lookups
+    const dailyByCurrency: Record<string, number> = {};
+    for (const p of (dailyPayments || []) as Array<{ amount?: number; currency?: string }>) {
+      const cur = p.currency || 'USD';
+      dailyByCurrency[cur] = (dailyByCurrency[cur] || 0) + (p.amount || 0);
+    }
+    let dailyTotal = 0;
+    for (const [cur, sum] of Object.entries(dailyByCurrency)) {
+      dailyTotal += await convertToUsd(sum, cur);
+    }
 
     if (dailyTotal + amountUsd > TRANSACTION_LIMITS.DAILY_LIMIT_USD) {
       return {
@@ -161,9 +168,16 @@ export class PaymentService {
       .gte('initiated_at', monthStart.toISOString())
       .execute();
 
-    const monthlyTotal = (monthlyPayments || []).reduce(
-      (sum: number, p: { amount?: number }) => sum + (p.amount || 0), 0
-    );
+    // Group by currency and convert each group to USD
+    const monthlyByCurrency: Record<string, number> = {};
+    for (const p of (monthlyPayments || []) as Array<{ amount?: number; currency?: string }>) {
+      const cur = p.currency || 'USD';
+      monthlyByCurrency[cur] = (monthlyByCurrency[cur] || 0) + (p.amount || 0);
+    }
+    let monthlyTotal = 0;
+    for (const [cur, sum] of Object.entries(monthlyByCurrency)) {
+      monthlyTotal += await convertToUsd(sum, cur);
+    }
 
     if (monthlyTotal + amountUsd > TRANSACTION_LIMITS.MONTHLY_LIMIT_USD) {
       return {
@@ -418,6 +432,16 @@ export class PaymentService {
           action: 'payment.notify',
           meta: { paymentId, error: err instanceof Error ? err.message : 'Unknown' },
         }));
+
+        // Advance loan workflow: deposit received → ready for handover
+        SQSQueues.processLoanUpdate({
+          loanId: payment.loan_id,
+          action: 'deposit_received',
+          paymentId: payment.id,
+        }).catch(err => logger.warn('Failed to queue loan status update', {
+          action: 'payment.loanUpdate',
+          meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
+        }));
       } else if (payment.payment_type === 'repayment') {
         // Check if loan is fully paid off — trigger device unlock
         const { data: updatedLoan } = await db
@@ -442,6 +466,11 @@ export class PaymentService {
         logger.info('Penalty payment completed', {
           action: 'payment.penalty_paid',
           meta: { paymentId, loanId: payment.loan_id, amount: payment.amount },
+        });
+      } else {
+        logger.warn('Unhandled payment type in processPaymentCompletion', {
+          action: 'payment.completion.unhandled',
+          meta: { paymentType: payment.payment_type, paymentId, loanId: payment.loan_id },
         });
       }
 

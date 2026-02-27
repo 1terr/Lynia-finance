@@ -6,11 +6,14 @@ const mockSuperAdmin: AdminUser = {
   email: 'admin@lynia.co.zw',
   first_name: 'Tatenda',
   last_name: 'Moyo',
+  full_name: 'Tatenda Moyo',
   role: 'super_admin',
   is_active: true,
   department: 'Executive',
   last_login_at: '2026-02-06T08:30:00Z',
+  login_count: 42,
   created_at: '2025-10-01T00:00:00Z',
+  updated_at: '2026-02-06T08:30:00Z',
 };
 
 const mockKycReviewer: AdminUser = {
@@ -18,11 +21,14 @@ const mockKycReviewer: AdminUser = {
   email: 'kyc@lynia.co.zw',
   first_name: 'Blessing',
   last_name: 'Sithole',
+  full_name: 'Blessing Sithole',
   role: 'kyc_reviewer',
   is_active: true,
   department: 'Compliance',
   last_login_at: null,
+  login_count: 0,
   created_at: '2025-12-01T00:00:00Z',
+  updated_at: '2025-12-01T00:00:00Z',
 };
 
 describe('useAuthStore', () => {

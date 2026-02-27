@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import FormData from 'form-data';
+import logger from '../../shared/utils/logger';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
 import type {
@@ -195,7 +196,7 @@ export class DiditService implements KYCProvider {
       timeout: 60000,
     });
 
-    console.log('DiditService initialized');
+    logger.info('DiditService initialized', { action: 'kyc.didit.init' });
   }
 
   /**
@@ -209,7 +210,7 @@ export class DiditService implements KYCProvider {
 
     const internal_job_id = `didit_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-    console.log(`Submitting DIDIT verification for customer ${customer_id}, job ${internal_job_id}`);
+    logger.info('Submitting DIDIT verification', { action: 'kyc.didit.submit', customerId: customer_id, jobId: internal_job_id });
 
     try {
       const idImageBuffer = this.base64ToBuffer(id_image_base64);
@@ -232,7 +233,7 @@ export class DiditService implements KYCProvider {
 
       const provider_job_id = idResult.request_id;
 
-      console.log(`DIDIT verification completed: ${provider_job_id}`);
+      logger.info('DIDIT verification completed', { action: 'kyc.didit.submit', providerJobId: provider_job_id });
 
       // Parse combined result into a normalized KYCVerificationResult
       const normalizedResult = this.parseCombinedResult(combinedResult, customer_id, internal_job_id);
@@ -245,7 +246,7 @@ export class DiditService implements KYCProvider {
         synchronous_result: normalizedResult,
       };
     } catch (error) {
-      console.error('DIDIT API error:', error);
+      logger.error('DIDIT API error', { action: 'kyc.didit.submit', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
       throw error;
     }
   }
@@ -342,7 +343,7 @@ export class DiditService implements KYCProvider {
       const ts = parseInt(timestamp, 10);
       const now = Math.floor(Date.now() / 1000);
       if (Math.abs(now - ts) > 300) {
-        console.warn('DIDIT webhook rejected: stale timestamp');
+        logger.warn('DIDIT webhook rejected: stale timestamp', { action: 'kyc.didit.webhook' });
         return false;
       }
     }

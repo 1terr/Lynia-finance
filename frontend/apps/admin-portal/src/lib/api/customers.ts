@@ -1,6 +1,7 @@
 import { fetchAPI } from '@lynia/api-client';
 import { MAX_PAGE_SIZE } from '@lynia/utils';
 import type { Customer, CustomerStatus, KYCStatus, Loan, Payment, CreditScore, KYCSubmission } from '@/types';
+import type { CreditScoreHistory } from '@/types/database';
 
 export interface CustomerFilters {
   status?: CustomerStatus;
@@ -8,6 +9,10 @@ export interface CustomerFilters {
   search?: string;
   page?: number;
   limit?: number;
+}
+
+export interface CustomerListParams extends CustomerFilters {
+  credit_tier?: number;
 }
 
 export async function getCustomers(filters: CustomerFilters = {}) {
@@ -133,4 +138,12 @@ export async function addCustomerNote(
       body: JSON.stringify({ note_type: noteType, note_text: noteText, admin_id: adminId }),
     }
   );
+}
+
+// --- Aliases ---
+
+export const fetchCustomerTimeline = getCustomerTimeline;
+
+export async function fetchCreditScoreHistory(customerId: string): Promise<CreditScoreHistory[]> {
+  return fetchAPI<CreditScoreHistory[]>(`/api/v1/customers/${customerId}/credit-score/history`);
 }

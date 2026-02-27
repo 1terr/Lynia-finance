@@ -26,7 +26,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       href: '/customers/kyc-review',
       icon: ClipboardCheck,
       badge: pendingKyc,
-      permission: 'kyc:review' as const,
+      permission: 'kyc:read' as const,
       color: 'text-purple-600',
       bg: 'bg-purple-50 hover:bg-purple-100',
     },

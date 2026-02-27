@@ -15,8 +15,8 @@ describe('ROLE_PERMISSIONS', () => {
     });
   });
 
-  it('super_admin has all 24 permissions', () => {
-    expect(ROLE_PERMISSIONS.super_admin).toHaveLength(24);
+  it('super_admin has all 26 permissions', () => {
+    expect(ROLE_PERMISSIONS.super_admin).toHaveLength(26);
   });
 
   it('all roles have dashboard:view', () => {

@@ -2,7 +2,7 @@ import type { CognitoUserSession } from './cognito';
 
 // Distributor types - these will be re-exported from the distributor app
 export type DistributorStatus = 'active' | 'inactive' | 'suspended';
-export type KYCStatus = 'pending' | 'verified' | 'rejected';
+export type KYCStatus = 'pending' | 'verified' | 'approved' | 'rejected';
 
 export interface Distributor {
   id: string;

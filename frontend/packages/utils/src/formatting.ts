@@ -68,3 +68,45 @@ export function formatNumber(value: number): string {
 export function truncateId(id: string, length = 8): string {
   return id.length > length ? `${id.slice(0, length)}...` : id;
 }
+
+/**
+ * KYC confidence level helper.
+ * Maps a numerical confidence score to a label and color for Badge display.
+ */
+export function getConfidenceLevel(score: number | null | undefined): {
+  label: string;
+  color: 'green' | 'yellow' | 'red' | 'gray';
+} {
+  if (score == null) return { label: 'N/A', color: 'gray' };
+  if (score >= 85) return { label: 'High', color: 'green' };
+  if (score >= 50) return { label: 'Medium', color: 'yellow' };
+  return { label: 'Low', color: 'red' };
+}
+
+/**
+ * SLA status helper for KYC review deadlines.
+ * Calculates time remaining until the SLA deadline and returns display info.
+ */
+export function getSLAStatus(deadline: string): {
+  label: string;
+  color: 'green' | 'yellow' | 'red' | 'gray';
+  hoursRemaining: number;
+  isExpired: boolean;
+} {
+  const now = new Date();
+  const deadlineDate = new Date(deadline);
+  const diffMs = deadlineDate.getTime() - now.getTime();
+  const hoursRemaining = diffMs / (1000 * 60 * 60);
+
+  if (hoursRemaining <= 0) {
+    const hoursOverdue = Math.abs(Math.round(hoursRemaining));
+    return { label: `${hoursOverdue}h overdue`, color: 'red', hoursRemaining: 0, isExpired: true };
+  }
+  if (hoursRemaining <= 4) {
+    return { label: `${Math.round(hoursRemaining)}h left`, color: 'red', hoursRemaining, isExpired: false };
+  }
+  if (hoursRemaining <= 12) {
+    return { label: `${Math.round(hoursRemaining)}h left`, color: 'yellow', hoursRemaining, isExpired: false };
+  }
+  return { label: `${Math.round(hoursRemaining)}h left`, color: 'green', hoursRemaining, isExpired: false };
+}

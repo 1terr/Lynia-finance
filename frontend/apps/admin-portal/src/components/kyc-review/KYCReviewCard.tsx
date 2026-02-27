@@ -47,7 +47,7 @@ export function KYCReviewCard({
 
   // Calculate SLA deadline (24 hours from submission)
   const slaDeadline = new Date(
-    new Date(submission.submitted_at).getTime() + 24 * 60 * 60 * 1000
+    new Date(submission.submitted_at ?? submission.created_at).getTime() + 24 * 60 * 60 * 1000
   ).toISOString();
 
   const handleApprove = useCallback(async () => {
@@ -134,8 +134,8 @@ export function KYCReviewCard({
             {/* Left Column: Documents */}
             <div className="lg:col-span-1">
               <DocumentViewer
-                idDocumentUrl={submission.id_document_url}
-                selfieUrl={submission.selfie_url}
+                idDocumentUrl={submission.id_document_url ?? ''}
+                selfieUrl={submission.selfie_url ?? ''}
                 idDocumentType={submission.id_document_type || 'National ID'}
               />
             </div>
@@ -152,7 +152,7 @@ export function KYCReviewCard({
                   <InfoRow icon={Phone} label="Phone" value={customer?.phone_number ? maskPhone(customer.phone_number) : 'N/A'} />
                   <InfoRow icon={Mail} label="Email" value={customer?.email || 'N/A'} />
                   <InfoRow icon={CreditCard} label="ID Number" value={submission.id_number ? maskId(submission.id_number) : 'N/A'} />
-                  <InfoRow icon={Calendar} label="Submitted" value={formatDateTime(submission.submitted_at)} />
+                  <InfoRow icon={Calendar} label="Submitted" value={formatDateTime(submission.submitted_at ?? submission.created_at)} />
                   {customer?.city && (
                     <InfoRow icon={MapPin} label="Location" value={`${customer.city}${customer.province ? ', ' + customer.province : ''}`} />
                   )}
@@ -208,15 +208,15 @@ export function KYCReviewCard({
                   <div className="space-y-2">
                     <VerificationCheck
                       label="Face Match"
-                      passed={submission.face_match_score != null ? submission.face_match_score >= 85 : providerResult?.face_match}
+                      passed={submission.face_match_score != null ? submission.face_match_score >= 85 : !!(providerResult?.face_match)}
                     />
                     <VerificationCheck
                       label="Liveness Check"
-                      passed={submission.liveness_score != null ? submission.liveness_score >= 50 : providerResult?.liveness_check}
+                      passed={submission.liveness_score != null ? submission.liveness_score >= 50 : !!(providerResult?.liveness_check)}
                     />
                     <VerificationCheck
                       label="ID Validation"
-                      passed={providerResult?.id_validation ?? submission.verification_decision === 'APPROVED'}
+                      passed={!!(providerResult?.id_validation) || submission.verification_decision === 'APPROVED'}
                     />
                     <div className="pt-2 border-t border-gray-100">
                       <div className="flex justify-between items-center">
@@ -226,14 +226,14 @@ export function KYCReviewCard({
                         <span
                           className={cn(
                             'text-lg font-bold',
-                            (submission.verification_confidence ?? providerResult?.confidence ?? 0) >= 85
+                            (submission.verification_confidence ?? (providerResult?.confidence as number) ?? 0) >= 85
                               ? 'text-green-600'
-                              : (submission.verification_confidence ?? providerResult?.confidence ?? 0) >= 50
+                              : (submission.verification_confidence ?? (providerResult?.confidence as number) ?? 0) >= 50
                               ? 'text-yellow-600'
                               : 'text-red-600'
                           )}
                         >
-                          {submission.verification_confidence ?? providerResult?.confidence ?? 0}%
+                          {submission.verification_confidence ?? (providerResult?.confidence as number) ?? 0}%
                         </span>
                       </div>
                     </div>

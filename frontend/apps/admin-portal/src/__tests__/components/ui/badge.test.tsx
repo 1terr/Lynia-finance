@@ -11,25 +11,25 @@ describe('Badge', () => {
   it('applies default variant', () => {
     const { container } = render(<Badge>Default</Badge>);
     const badge = container.firstChild as HTMLElement;
-    expect(badge.className).toContain('bg-primary');
+    expect(badge.className).toContain('bg-gray-100');
   });
 
   it('applies success variant', () => {
     const { container } = render(<Badge variant="success">Success</Badge>);
     const badge = container.firstChild as HTMLElement;
-    expect(badge.className).toContain('bg-green');
+    expect(badge.className).toContain('bg-green-100');
   });
 
   it('applies destructive variant', () => {
     const { container } = render(<Badge variant="destructive">Error</Badge>);
     const badge = container.firstChild as HTMLElement;
-    expect(badge.className).toContain('destructive');
+    expect(badge.className).toContain('bg-red-100');
   });
 
   it('applies warning variant', () => {
     const { container } = render(<Badge variant="warning">Warning</Badge>);
     const badge = container.firstChild as HTMLElement;
-    expect(badge.className).toContain('bg-yellow');
+    expect(badge.className).toContain('bg-yellow-100');
   });
 
   it('applies custom className', () => {

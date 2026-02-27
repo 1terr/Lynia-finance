@@ -21,15 +21,15 @@ describe('Button', () => {
   });
 
   it('applies variant classes', () => {
-    const { container } = render(<Button variant="destructive">Delete</Button>);
+    const { container } = render(<Button variant="danger">Delete</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('destructive');
+    expect(button?.className).toContain('bg-red');
   });
 
   it('applies size classes', () => {
     const { container } = render(<Button size="sm">Small</Button>);
     const button = container.querySelector('button');
-    expect(button?.className).toContain('h-9');
+    expect(button?.className).toContain('text-sm');
   });
 
   it('applies custom className', () => {

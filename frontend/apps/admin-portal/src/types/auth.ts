@@ -30,6 +30,7 @@ export interface AdminUser {
   email: string;
   first_name: string;
   last_name: string;
+  full_name: string;
   role: AdminRole;
   is_active: boolean;
   department: string | null;

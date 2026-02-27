@@ -1,5 +1,5 @@
 export type DistributorStatus = 'active' | 'suspended' | 'inactive';
-export type KycStatus = 'pending' | 'approved' | 'rejected';
+export type KYCStatus = 'pending' | 'verified' | 'approved' | 'rejected';
 
 export interface Distributor {
   id: string;
@@ -26,7 +26,7 @@ export interface Distributor {
   current_inventory_count: number;
   average_rating: number;
   status: DistributorStatus;
-  kyc_status: KycStatus;
+  kyc_status: KYCStatus;
   kyc_verified_at: string | null;
   onboarded_at: string;
   created_at: string;

@@ -11,6 +11,7 @@
  */
 
 import { db } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -202,7 +203,7 @@ export async function batchHealthCheck(): Promise<{
       else if (report.alerts.some(a => a.severity === 'critical')) stats.critical++;
       else stats.warnings++;
     } catch (error) {
-      console.error(`Health check failed for device ${device.id}:`, error);
+      logger.error('Health check failed', { action: 'lock.monitoring.healthCheck', deviceId: device.id, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 

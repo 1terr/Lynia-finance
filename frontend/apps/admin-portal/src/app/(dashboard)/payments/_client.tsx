@@ -275,7 +275,7 @@ export default function PaymentsPage() {
           page={data.page}
           totalPages={data.total_pages}
           total={data.total}
-          pageSize={data.limit}
+          limit={data.limit}
           onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
         />
       )}

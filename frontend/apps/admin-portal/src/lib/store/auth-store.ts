@@ -48,11 +48,14 @@ function buildAdminUserFromSession(session: CognitoUserSession): AdminUser | nul
 
   if (!role) return null;
 
+  const firstName = (payload.given_name as string) || '';
+  const lastName = (payload.family_name as string) || '';
   return {
     id: payload.sub as string,
     email: (payload.email as string) || '',
-    first_name: (payload.given_name as string) || '',
-    last_name: (payload.family_name as string) || '',
+    first_name: firstName,
+    last_name: lastName,
+    full_name: `${firstName} ${lastName}`.trim() || 'Admin',
     role,
     is_active: true,
     department: (payload['custom:department'] as string) || null,
@@ -70,6 +73,7 @@ const DEMO_ADMIN: AdminUser = {
   email: 'admin@lynia.co.zw',
   first_name: 'Demo',
   last_name: 'Admin',
+  full_name: 'Demo Admin',
   role: 'super_admin',
   is_active: true,
   department: 'Operations',

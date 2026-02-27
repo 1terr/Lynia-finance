@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createDevice, bulkImportDevices, type CreateDeviceRequest, type BulkImportResult } from '@/lib/api/devices';
 import { getDeviceModels } from '@/lib/api/products';
+import type { DeviceModel } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,7 +42,7 @@ export default function AddDevicePage() {
 
   const { data: deviceModels } = useQuery({
     queryKey: ['device-models-select'],
-    queryFn: () => getDeviceModels({ is_active: 'true', limit: 100 }),
+    queryFn: () => getDeviceModels({ is_active: true, limit: 100 }),
   });
 
   const createMutation = useMutation({
@@ -100,9 +101,9 @@ export default function AddDevicePage() {
   }
 
   function handleModelSelect(modelId: string) {
-    const selected = deviceModels?.data?.find((m: Record<string, unknown>) => m.id === modelId);
+    const selected = deviceModels?.data?.find((m: DeviceModel) => m.id === modelId);
     if (selected) {
-      const model = selected as Record<string, unknown>;
+      const model = selected;
       setForm((f) => ({
         ...f,
         device_model_id: modelId,
@@ -177,9 +178,9 @@ export default function AddDevicePage() {
                   className={inputClass + ' mt-1'}
                 >
                   <option value="">-- Select from catalog (optional) --</option>
-                  {(deviceModels?.data ?? []).map((m: Record<string, unknown>) => (
-                    <option key={m.id as string} value={m.id as string}>
-                      {m.brand as string} {m.model_name as string} ({m.storage_gb as number}GB) - ${m.retail_price_usd as number}
+                  {(deviceModels?.data ?? []).map((m: DeviceModel) => (
+                    <option key={m.id} value={m.id}>
+                      {m.brand} {m.model_name} ({m.storage_gb}GB) - ${m.retail_price_usd}
                     </option>
                   ))}
                 </select>

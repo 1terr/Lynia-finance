@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { HandoverService, InitiateHandoverRequest } from './handover-service';
 import { LockManagementService } from './lock-management-service';
 import { getSecurityHeaders } from '../../shared/utils/response';
+import logger from '../../shared/utils/logger';
 
 const handoverService = new HandoverService();
 const lockService = new LockManagementService();
@@ -53,7 +54,7 @@ export const handler = async (
       headers: getSecurityHeaders(event)
     };
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Lock service handler error', { action: 'lock.handler', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -102,7 +103,7 @@ async function lockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProxyR
     };
 
   } catch (error) {
-    console.error('Error locking device:', error);
+    logger.error('Error locking device', { action: 'lock.lockDevice', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -151,7 +152,7 @@ async function unlockDevice(event: APIGatewayProxyEvent): Promise<APIGatewayProx
     };
 
   } catch (error) {
-    console.error('Error unlocking device:', error);
+    logger.error('Error unlocking device', { action: 'lock.unlockDevice', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -182,7 +183,7 @@ async function getLockStatus(deviceId: string, event: APIGatewayProxyEvent): Pro
     };
 
   } catch (error) {
-    console.error('Error getting lock status:', error);
+    logger.error('Error getting lock status', { action: 'lock.getLockStatus', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -196,11 +197,11 @@ async function getLockStatus(deviceId: string, event: APIGatewayProxyEvent): Pro
 
 async function processAutomatedLocksApi(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
   try {
-    console.log('Processing automated device locks...');
+    logger.info('Processing automated device locks', { action: 'lock.processAutomated' });
 
     const result = await lockService.processAutomatedLocks();
 
-    console.log('Automated lock processing complete:', result);
+    logger.info('Automated lock processing complete', { action: 'lock.processAutomated', ...result });
 
     return {
       statusCode: 200,
@@ -208,7 +209,7 @@ async function processAutomatedLocksApi(event: APIGatewayProxyEvent): Promise<AP
       headers: getSecurityHeaders(event)
     };
   } catch (error) {
-    console.error('Error during automated lock processing:', error);
+    logger.error('Error during automated lock processing', { action: 'lock.processAutomated', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -246,7 +247,7 @@ async function checkHandoverReadiness(event: APIGatewayProxyEvent): Promise<APIG
     };
 
   } catch (error) {
-    console.error('Error checking handover readiness:', error);
+    logger.error('Error checking handover readiness', { action: 'lock.handover.checkReadiness', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -295,7 +296,7 @@ async function initiateHandover(event: APIGatewayProxyEvent): Promise<APIGateway
     };
 
   } catch (error) {
-    console.error('Error initiating handover:', error);
+    logger.error('Error initiating handover', { action: 'lock.handover.initiate', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -336,7 +337,7 @@ async function verifyIdentity(event: APIGatewayProxyEvent): Promise<APIGatewayPr
     };
 
   } catch (error) {
-    console.error('Error verifying identity:', error);
+    logger.error('Error verifying identity', { action: 'lock.handover.verifyIdentity', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -374,7 +375,7 @@ async function verifyDeposit(event: APIGatewayProxyEvent): Promise<APIGatewayPro
     };
 
   } catch (error) {
-    console.error('Error verifying deposit:', error);
+    logger.error('Error verifying deposit', { action: 'lock.handover.verifyDeposit', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -418,7 +419,7 @@ async function recordDeviceCondition(event: APIGatewayProxyEvent): Promise<APIGa
     };
 
   } catch (error) {
-    console.error('Error recording device condition:', error);
+    logger.error('Error recording device condition', { action: 'lock.handover.recordDeviceCondition', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -456,7 +457,7 @@ async function completeHandover(event: APIGatewayProxyEvent): Promise<APIGateway
     };
 
   } catch (error) {
-    console.error('Error completing handover:', error);
+    logger.error('Error completing handover', { action: 'lock.handover.complete', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -491,7 +492,7 @@ async function getHandoverStatus(handoverId: string, event: APIGatewayProxyEvent
     };
 
   } catch (error) {
-    console.error('Error getting handover status:', error);
+    logger.error('Error getting handover status', { action: 'lock.handover.getStatus', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({

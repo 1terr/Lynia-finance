@@ -51,7 +51,7 @@ export default function PaymentDetailPage() {
   });
 
   const refundMutation = useMutation({
-    mutationFn: () => refundPayment(id, user!.id, refundReason),
+    mutationFn: () => refundPayment(id, refundReason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payment', id] });
       setRefundModal(false);
@@ -68,12 +68,12 @@ export default function PaymentDetailPage() {
 
   const canRetry =
     user &&
-    hasPermission(user.role, 'payments:write') &&
+    hasPermission(user.role, 'payments:reconcile') &&
     payment?.payment_status === 'failed';
 
   const canRefund =
     user &&
-    hasPermission(user.role, 'payments:write') &&
+    hasPermission(user.role, 'payments:refund') &&
     payment?.payment_status === 'completed';
 
   if (isLoading) {

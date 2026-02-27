@@ -14,6 +14,7 @@
 
 import { db } from '../../shared/clients/database';
 import axios from 'axios';
+import logger from '../../shared/utils/logger';
 
 const WHATSAPP_API_URL = process.env.WHATSAPP_API_URL!;
 
@@ -216,7 +217,7 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
     .execute();
 
   if (error || !loans) {
-    console.error('Error fetching loans for reminders:', error);
+    logger.error('Error fetching loans for reminders', { action: 'notification.reminder.fetch', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return [];
   }
 
@@ -315,7 +316,7 @@ async function sendReminder(
     record.sent_at = new Date();
     record.whatsapp_message_id = response.data.messageId;
   } catch (error) {
-    console.error(`Failed to send reminder for loan ${payment.loan_id}:`, error instanceof Error ? error.message : 'Unknown error');
+    logger.error('Failed to send reminder', { action: 'notification.reminder.send', loanId: payment.loan_id, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     record.status = 'failed';
   }
 
@@ -353,13 +354,13 @@ export async function processPaymentReminders(): Promise<{
 
   // Check sending window
   if (!isWithinSendingWindow()) {
-    console.log('Outside sending window (7am-9pm CAT). Skipping.');
+    logger.info('Outside sending window (7am-9pm CAT). Skipping.', { action: 'notification.reminder.process' });
     return stats;
   }
 
   // Get all payments needing reminders
   const payments = await findPaymentsDueForReminders();
-  console.log(`Found ${payments.length} active loan payments to check`);
+  logger.info('Found active loan payments to check', { action: 'notification.reminder.process', count: payments.length });
 
   for (const payment of payments) {
     stats.processed++;
@@ -386,15 +387,15 @@ export async function processPaymentReminders(): Promise<{
 
       if (result.status === 'sent') {
         stats.sent++;
-        console.log(`Sent ${schedule.type} reminder for loan ${payment.loan_id}`);
+        logger.info('Sent reminder', { action: 'notification.reminder.send', reminderType: schedule.type, loanId: payment.loan_id });
       } else {
         stats.failed++;
-        console.error(`Failed ${schedule.type} reminder for loan ${payment.loan_id}`);
+        logger.error('Failed reminder', { action: 'notification.reminder.send', reminderType: schedule.type, loanId: payment.loan_id });
       }
     }
   }
 
-  console.log(`Reminder processing complete:`, stats);
+  logger.info('Reminder processing complete', { action: 'notification.reminder.process', ...stats });
   return stats;
 }
 
@@ -415,7 +416,7 @@ export async function handleReminderOptOut(customerId: string): Promise<void> {
     })
     .execute();
 
-  console.log(`Customer ${customerId} opted out of reminders`);
+  logger.info('Customer opted out of reminders', { action: 'notification.reminder.opt-out', customerId });
 }
 
 /**
@@ -431,7 +432,7 @@ export async function handleReminderOptIn(customerId: string): Promise<void> {
     })
     .execute();
 
-  console.log(`Customer ${customerId} opted in to reminders`);
+  logger.info('Customer opted in to reminders', { action: 'notification.reminder.opt-in', customerId });
 }
 
 // ===================================================================

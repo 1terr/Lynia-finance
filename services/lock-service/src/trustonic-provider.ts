@@ -2,6 +2,7 @@ import { createHmac } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
+import logger from '../../shared/utils/logger';
 
 const trustonicCircuitBreaker = new CircuitBreaker({ name: 'trustonic-api', failureThreshold: 5, resetTimeout: 60000 });
 
@@ -86,7 +87,7 @@ export class TrustonicProvider {
       }
     });
 
-    console.log(`TrustonicProvider initialized in ${this.config.environment} mode`);
+    logger.info('TrustonicProvider initialized', { action: 'lock.trustonic.init', environment: this.config.environment });
   }
 
   /**
@@ -98,7 +99,7 @@ export class TrustonicProvider {
     customerReference: string
   ): Promise<TrustonicEnrollment> {
     try {
-      console.log(`Enrolling device ${deviceId} (IMEI: ${imei}) with Trustonic`);
+      logger.info('Enrolling device with Trustonic', { action: 'lock.trustonic.enroll', deviceId, imei: imei.slice(-4) });
 
       // In sandbox mode, simulate enrollment
       if (this.config.environment === 'sandbox') {
@@ -124,7 +125,7 @@ export class TrustonicProvider {
         })
       );
 
-      console.log(`Device ${deviceId} enrolled with Trustonic: ${response.data.device_id}`);
+      logger.info('Device enrolled with Trustonic', { action: 'lock.trustonic.enroll', deviceId, trustonicDeviceId: response.data.device_id });
 
       return {
         device_id: deviceId,
@@ -136,7 +137,7 @@ export class TrustonicProvider {
       };
 
     } catch (error) {
-      console.error('Error enrolling device with Trustonic:', error);
+      logger.error('Error enrolling device with Trustonic', { action: 'lock.trustonic.enroll', deviceId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
@@ -152,7 +153,7 @@ export class TrustonicProvider {
    */
   async lockDevice(request: TrustonicLockRequest): Promise<void> {
     try {
-      console.log(`Locking device ${request.device_id} via Trustonic`);
+      logger.info('Locking device via Trustonic', { action: 'lock.trustonic.lock', deviceId: request.device_id });
 
       // In sandbox mode, simulate lock
       if (this.config.environment === 'sandbox') {
@@ -176,10 +177,10 @@ export class TrustonicProvider {
         })
       );
 
-      console.log(`Device ${request.device_id} locked successfully via Trustonic`);
+      logger.info('Device locked successfully via Trustonic', { action: 'lock.trustonic.lock', deviceId: request.device_id });
 
     } catch (error) {
-      console.error('Error locking device via Trustonic:', error);
+      logger.error('Error locking device via Trustonic', { action: 'lock.trustonic.lock', deviceId: request.device_id, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
@@ -195,7 +196,7 @@ export class TrustonicProvider {
    */
   async unlockDevice(request: TrustonicUnlockRequest): Promise<void> {
     try {
-      console.log(`Unlocking device ${request.device_id} via Trustonic`);
+      logger.info('Unlocking device via Trustonic', { action: 'lock.trustonic.unlock', deviceId: request.device_id });
 
       // In sandbox mode, simulate unlock
       if (this.config.environment === 'sandbox') {
@@ -216,10 +217,10 @@ export class TrustonicProvider {
         })
       );
 
-      console.log(`Device ${request.device_id} unlocked successfully via Trustonic`);
+      logger.info('Device unlocked successfully via Trustonic', { action: 'lock.trustonic.unlock', deviceId: request.device_id });
 
     } catch (error) {
-      console.error('Error unlocking device via Trustonic:', error);
+      logger.error('Error unlocking device via Trustonic', { action: 'lock.trustonic.unlock', deviceId: request.device_id, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
       if (axios.isAxiosError(error)) {
         const errorMessage = error.response?.data?.message || error.message;
@@ -255,7 +256,7 @@ export class TrustonicProvider {
       };
 
     } catch (error) {
-      console.error('Error getting lock status from Trustonic:', error);
+      logger.error('Error getting lock status from Trustonic', { action: 'lock.trustonic.getStatus', deviceId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
       throw new Error(`Failed to get lock status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -278,7 +279,7 @@ export class TrustonicProvider {
     imei: string,
     customerReference: string
   ): TrustonicEnrollment {
-    console.log(`[MOCK] Enrolling device ${deviceId} with Trustonic`);
+    logger.debug('Enrolling device with Trustonic', { action: 'lock.trustonic.enroll', mode: 'sandbox', deviceId, imei: imei.slice(-4) });
 
     return {
       device_id: deviceId,
@@ -294,10 +295,7 @@ export class TrustonicProvider {
    * Mock device lock (sandbox mode)
    */
   private async mockLockDevice(request: TrustonicLockRequest): Promise<void> {
-    console.log(`[MOCK] Locking device ${request.device_id}`);
-    console.log(`[MOCK] Lock message: ${request.lock_message}`);
-    console.log(`[MOCK] Lock reason: ${request.lock_reason}`);
-    console.log(`[MOCK] Emergency calls allowed: ${request.allow_emergency_calls}`);
+    logger.debug('Locking device', { action: 'lock.trustonic.lock', mode: 'sandbox', deviceId: request.device_id, lockReason: request.lock_reason, emergencyCallsAllowed: request.allow_emergency_calls });
 
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -307,8 +305,7 @@ export class TrustonicProvider {
    * Mock device unlock (sandbox mode)
    */
   private async mockUnlockDevice(request: TrustonicUnlockRequest): Promise<void> {
-    console.log(`[MOCK] Unlocking device ${request.device_id}`);
-    console.log(`[MOCK] Unlock reason: ${request.unlock_reason}`);
+    logger.debug('Unlocking device', { action: 'lock.trustonic.unlock', mode: 'sandbox', deviceId: request.device_id, unlockReason: request.unlock_reason });
 
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 500));
@@ -318,7 +315,7 @@ export class TrustonicProvider {
    * Mock get lock status (sandbox mode)
    */
   private mockGetLockStatus(deviceId: string): TrustonicLockStatus {
-    console.log(`[MOCK] Getting lock status for device ${deviceId}`);
+    logger.debug('Getting lock status', { action: 'lock.trustonic.getStatus', mode: 'sandbox', deviceId });
 
     return {
       device_id: deviceId,

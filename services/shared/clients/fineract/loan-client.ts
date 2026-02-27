@@ -1,0 +1,195 @@
+/**
+ * Fineract Loan Operations
+ *
+ * Loan CRUD, approval, disbursement, repayment, and related operations.
+ */
+
+import type {
+  FineractCommandResponse,
+  FineractLoanCreateRequest,
+  FineractLoan,
+  FineractLoanTransactionRequest,
+  FineractLoanTransaction,
+  FineractLoanProduct,
+  FineractLoanProductCreateRequest,
+} from '../../types/fineract';
+
+const DATE_FORMAT = 'dd MMMM yyyy';
+const LOCALE = 'en';
+
+type RequestFn = <T>(method: 'GET' | 'POST' | 'PUT' | 'DELETE', path: string, body?: unknown) => Promise<T>;
+
+/**
+ * Create loan-related operations bound to a request function
+ */
+export function createLoanOperations(request: RequestFn, formatDate: (d: Date) => string) {
+  return {
+    // ----------------------------------------------------------
+    // LOAN PRODUCTS
+    // ----------------------------------------------------------
+
+    /** List all loan products */
+    async listLoanProducts(): Promise<FineractLoanProduct[]> {
+      return request<FineractLoanProduct[]>('GET', '/loanproducts');
+    },
+
+    /** Get a specific loan product */
+    async getLoanProduct(productId: number): Promise<FineractLoanProduct> {
+      return request<FineractLoanProduct>('GET', `/loanproducts/${productId}`);
+    },
+
+    /** Create a new loan product */
+    async createLoanProduct(
+      product: FineractLoanProductCreateRequest
+    ): Promise<FineractCommandResponse> {
+      return request<FineractCommandResponse>('POST', '/loanproducts', product);
+    },
+
+    // ----------------------------------------------------------
+    // LOANS
+    // ----------------------------------------------------------
+
+    /**
+     * Create a loan application in Fineract.
+     * The loan starts in "submitted and pending approval" state.
+     */
+    async createLoan(params: {
+      clientId: number;
+      productId: number;
+      principal: number;
+      numberOfRepayments: number;
+      repaymentEveryMonths: number;
+      interestRatePerMonth: number;
+      expectedDisbursementDate: Date;
+      externalId?: string;
+    }): Promise<FineractCommandResponse> {
+      const body: FineractLoanCreateRequest = {
+        clientId: params.clientId,
+        productId: params.productId,
+        principal: params.principal,
+        loanTermFrequency: params.numberOfRepayments * params.repaymentEveryMonths,
+        loanTermFrequencyType: 2,
+        numberOfRepayments: params.numberOfRepayments,
+        repaymentEvery: params.repaymentEveryMonths,
+        repaymentFrequencyType: 2,
+        interestRatePerPeriod: params.interestRatePerMonth,
+        amortizationType: 0,
+        interestType: 0,
+        interestCalculationPeriodType: 1,
+        transactionProcessingStrategyCode: 'mifos-standard-strategy',
+        expectedDisbursementDate: formatDate(params.expectedDisbursementDate),
+        submittedOnDate: formatDate(new Date()),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+        loanType: 'individual',
+        externalId: params.externalId,
+      };
+
+      return request<FineractCommandResponse>('POST', '/loans', body);
+    },
+
+    /** Get a loan by Fineract ID */
+    async getLoan(loanId: number, associations?: string[]): Promise<FineractLoan> {
+      const assoc = associations?.length
+        ? `?associations=${associations.join(',')}`
+        : '';
+      return request<FineractLoan>('GET', `/loans/${loanId}${assoc}`);
+    },
+
+    /** Get a loan by external ID (Lynia loan UUID) */
+    async getLoanByExternalId(externalId: string): Promise<FineractLoan> {
+      return request<FineractLoan>('GET', `/loans/external-id/${externalId}`);
+    },
+
+    /** Get loan with full repayment schedule */
+    async getLoanWithSchedule(loanId: number): Promise<FineractLoan> {
+      const assoc = '?associations=repaymentSchedule';
+      return request<FineractLoan>('GET', `/loans/${loanId}${assoc}`);
+    },
+
+    /** Get loan with transactions */
+    async getLoanWithTransactions(loanId: number): Promise<FineractLoan> {
+      const assoc = '?associations=repaymentSchedule,transactions';
+      return request<FineractLoan>('GET', `/loans/${loanId}${assoc}`);
+    },
+
+    /**
+     * Approve a loan application.
+     * Transitions: submittedAndPendingApproval -> approved
+     */
+    async approveLoan(loanId: number, approvedOnDate?: Date): Promise<FineractCommandResponse> {
+      const body = {
+        approvedOnDate: formatDate(approvedOnDate || new Date()),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=approve`, body);
+    },
+
+    /**
+     * Disburse a loan.
+     * Transitions: approved -> active
+     * Creates GL journal entries (debit loan portfolio, credit fund source).
+     */
+    async disburseLoan(
+      loanId: number,
+      actualDisbursementDate?: Date,
+      paymentTypeId?: number
+    ): Promise<FineractCommandResponse> {
+      const body: Record<string, unknown> = {
+        actualDisbursementDate: formatDate(actualDisbursementDate || new Date()),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      if (paymentTypeId) {
+        body.paymentTypeId = paymentTypeId;
+      }
+
+      return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=disburse`, body);
+    },
+
+    /**
+     * Post a repayment against a loan.
+     * Reduces outstanding balance and creates GL journal entries.
+     */
+    async postRepayment(params: {
+      loanId: number;
+      amount: number;
+      transactionDate: Date;
+      paymentTypeId?: number;
+      note?: string;
+      externalId?: string;
+    }): Promise<FineractCommandResponse> {
+      const body: FineractLoanTransactionRequest = {
+        transactionDate: formatDate(params.transactionDate),
+        transactionAmount: params.amount,
+        paymentTypeId: params.paymentTypeId,
+        note: params.note,
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+        externalId: params.externalId,
+      };
+
+      return request<FineractCommandResponse>(
+        'POST',
+        `/loans/${params.loanId}/transactions?command=repayment`,
+        body
+      );
+    },
+
+    /**
+     * Get a specific loan transaction
+     */
+    async getLoanTransaction(
+      loanId: number,
+      transactionId: number
+    ): Promise<FineractLoanTransaction> {
+      return request<FineractLoanTransaction>(
+        'GET',
+        `/loans/${loanId}/transactions/${transactionId}`
+      );
+    },
+  };
+}

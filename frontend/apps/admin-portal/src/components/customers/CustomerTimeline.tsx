@@ -3,7 +3,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCustomerTimeline } from '@/lib/api/customers';
 import { formatDateTime } from '@lynia/utils';
-import type { TimelineEvent } from '@/types/database';
+
+interface TimelineEntry {
+  id: string;
+  action: string;
+  entity_type: string;
+  entity_id: string;
+  details: Record<string, unknown> | null;
+  created_at: string;
+  admin_id: string | null;
+}
 
 interface CustomerTimelineProps {
   customerId: string;
@@ -150,12 +159,12 @@ function TimelineItem({
   event,
   isLast,
 }: {
-  event: TimelineEvent;
+  event: TimelineEntry;
   isLast: boolean;
 }) {
-  const config = eventConfigs[event.event_type] || {
+  const config = eventConfigs[event.action] || {
     ...defaultConfig,
-    title: event.event_type.replace(/_/g, ' '),
+    title: event.action.replace(/_/g, ' '),
   };
 
   return (
@@ -180,7 +189,7 @@ function TimelineItem({
                 {config.title}
               </p>
               <p className="text-sm text-gray-500">
-                {config.description(event.event_data || {})}
+                {config.description(event.details || {})}
               </p>
             </div>
             <time className="text-xs text-gray-400">
@@ -188,9 +197,9 @@ function TimelineItem({
             </time>
           </div>
 
-          {event.created_by && (
+          {event.admin_id && (
             <p className="mt-1 text-xs text-gray-400">
-              by {event.created_by}
+              by {event.admin_id}
             </p>
           )}
         </div>

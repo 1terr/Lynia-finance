@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, ScheduledEvent } from 'aws
 import { db } from '../../shared/clients/database';
 import { processPaymentReminders, getReminderAnalytics, handleReminderOptOut, handleReminderOptIn } from './reminder-scheduler';
 import { getSecurityHeaders } from '../../shared/utils/response';
+import logger from '../../shared/utils/logger';
 
 /**
  * Notification Service Lambda Handler
@@ -14,9 +15,9 @@ export const handler = async (
   try {
     // Handle scheduled event (EventBridge cron for reminders)
     if ('source' in event && event.source === 'aws.events') {
-      console.log('Scheduled reminder processing triggered');
+      logger.info('Scheduled reminder processing triggered', { action: 'notification.reminder.scheduled' });
       const stats = await processPaymentReminders();
-      console.log('Reminder processing complete:', stats);
+      logger.info('Reminder processing complete', { action: 'notification.reminder.scheduled', ...stats });
       return;
     }
 
@@ -64,7 +65,7 @@ export const handler = async (
       headers: getSecurityHeaders(apiEvent)
     };
   } catch (error) {
-    console.error('Error:', error);
+    logger.error('Notification handler error', { action: 'notification.handler', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({
@@ -120,7 +121,7 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
     .execute();
 
   if (insertError) {
-    console.error('Failed to store notification:', insertError);
+    logger.error('Failed to store notification', { action: 'notification.send.store', errorMessage: insertError instanceof Error ? insertError.message : 'Unknown error' });
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Failed to create notification' }),

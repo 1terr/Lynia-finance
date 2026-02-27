@@ -126,6 +126,7 @@ jest.mock('../../../services/shared/utils/sqs-publisher', () => ({
     sendNotification: jest.fn().mockResolvedValue(undefined),
     processDeviceLock: jest.fn().mockResolvedValue(undefined),
     syncDataWarehouse: jest.fn().mockResolvedValue(undefined),
+    processLoanUpdate: jest.fn().mockResolvedValue(undefined),
   },
 }));
 

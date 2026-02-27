@@ -109,7 +109,7 @@ export default function ProfilePage() {
               <Badge variant={distributor.status === 'active' ? 'success' : 'destructive'}>
                 {distributor.status}
               </Badge>
-              <Badge variant={distributor.kyc_status === 'approved' ? 'success' : 'warning'}>
+              <Badge variant={distributor.kyc_status === 'approved' || distributor.kyc_status === 'verified' ? 'success' : 'warning'}>
                 KYC {distributor.kyc_status}
               </Badge>
               <div className="flex items-center gap-0.5">

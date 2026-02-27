@@ -4,8 +4,9 @@
 
 // --- Admin Users & Auth ---
 
-// Re-export canonical auth types from types/auth.ts to avoid divergent definitions (HIGH-02)
-export type { AdminRole, Permission, AdminUser } from './auth';
+// Import for local use + re-export canonical auth types (HIGH-02)
+import type { AdminRole, Permission, AdminUser } from './auth';
+export type { AdminRole, Permission, AdminUser };
 export { ROLE_PERMISSIONS, ADMIN_ROLES, isValidAdminRole } from './auth';
 
 export type PermissionAction =
@@ -33,9 +34,20 @@ export interface Customer {
   phone_number: string;
   email: string | null;
   full_name: string;
+  first_name?: string;
+  last_name?: string;
+  whatsapp_number?: string | null;
+  national_id?: string;
   date_of_birth: string | null;
+  gender?: string | null;
   physical_address: string | null;
+  province?: string | null;
+  city?: string | null;
+  address_line_1?: string | null;
+  address_line_2?: string | null;
+  postal_code?: string | null;
   employment_status: EmploymentStatus | null;
+  employment_type?: string | null;
   monthly_income_usd: number | null;
   kyc_status: KYCStatus;
   credit_score: number | null;
@@ -130,7 +142,7 @@ export interface Device {
 
 // --- Payments ---
 
-export type PaymentStatus = 'pending' | 'processing' | 'confirmed' | 'failed' | 'refunded';
+export type PaymentStatus = 'pending' | 'processing' | 'confirmed' | 'completed' | 'failed' | 'refunded';
 export type PaymentMethod = 'ecocash' | 'onemoney' | 'cash' | 'bank_transfer';
 export type PaymentType = 'deposit' | 'installment' | 'late_fee' | 'early_payoff';
 
@@ -179,6 +191,20 @@ export interface KYCSubmission {
   liveness_score: number | null;
   created_at: string;
   customer?: Customer;
+  customers?: Customer;
+  confidence_score?: number | null;
+  smile_identity_response?: Record<string, unknown> | null;
+  submitted_at?: string;
+  submission_number?: string;
+  id_document_url?: string;
+  selfie_url?: string;
+  id_document_type?: string;
+  id_number?: string;
+  extracted_name?: string;
+  extracted_id_number?: string;
+  extracted_dob?: string;
+  attempt_number?: number;
+  kyc_manual_reviews?: KYCManualReview[];
 }
 
 // --- Credit Scores ---
@@ -462,6 +488,32 @@ export interface MemberImportResult {
   inserted: number;
   skipped: number;
   errors: number;
+}
+
+// --- KYC Review ---
+
+export interface KYCReviewFilters {
+  page: number;
+  limit: number;
+  status?: 'pending' | 'in_review' | 'approved' | 'rejected';
+  sortBy?: 'submitted_at' | 'confidence_score';
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+  confidenceRange?: 'high' | 'medium' | 'low';
+}
+
+export interface KYCManualReview {
+  id: string;
+  submission_id: string;
+  action: 'approved' | 'rejected';
+  reason: string | null;
+  notes: string | null;
+  reviewed_at: string;
+  reviewed_by: string;
+  reviewer?: {
+    full_name: string;
+    email: string;
+  };
 }
 
 // --- Notifications ---

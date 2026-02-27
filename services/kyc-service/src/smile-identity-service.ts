@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto';
 import axios, { AxiosInstance } from 'axios';
+import logger from '../../shared/utils/logger';
 import { requireEnv } from '../../shared/utils/require-env';
 import { CircuitBreaker } from '../../shared/utils/circuit-breaker';
 import type {
@@ -149,7 +150,7 @@ export class SmileIdentityService implements KYCProvider {
       }
     });
 
-    console.log(`SmileIdentityService initialized in ${this.config.environment} mode`);
+    logger.info('SmileIdentityService initialized', { action: 'kyc.smile.init', environment: this.config.environment });
   }
 
   /**
@@ -179,7 +180,7 @@ export class SmileIdentityService implements KYCProvider {
     // Generate unique job ID
     const job_id = `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-    console.log(`Submitting Enhanced KYC for customer ${customer_id}, job ${job_id}`);
+    logger.info('Submitting Enhanced KYC', { action: 'kyc.smile.submit', customerId: customer_id, jobId: job_id });
 
     // Construct request payload
     const payload: SmileEnhancedKYCRequest = {
@@ -236,7 +237,7 @@ export class SmileIdentityService implements KYCProvider {
         )
       );
 
-      console.log(`Smile Identity job submitted successfully: ${response.data.smile_job_id}`);
+      logger.info('Smile Identity job submitted successfully', { action: 'kyc.smile.submit', smileJobId: response.data.smile_job_id });
 
       return {
         success: true,
@@ -246,13 +247,13 @@ export class SmileIdentityService implements KYCProvider {
       };
 
     } catch (error) {
-      console.error('Smile Identity API error:', error);
+      logger.error('Smile Identity API error', { action: 'kyc.smile.submit', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
       if (axios.isAxiosError(error)) {
         const errorCode = error.response?.data?.code;
         const errorMessage = error.response?.data?.message;
 
-        console.error(`Smile API Error: ${errorCode} - ${errorMessage}`);
+        logger.error('Smile API error details', { action: 'kyc.smile.submit', errorCode, errorMessage });
 
         throw new Error(`KYC verification failed: ${errorMessage || error.message}`);
       }
@@ -310,7 +311,7 @@ export class SmileIdentityService implements KYCProvider {
       case '2201':
       case '2202':
         // Authentication errors
-        console.error('Smile Identity authentication error', error);
+        logger.error('Smile Identity authentication error', { action: 'kyc.smile.handleError', errorCode });
         return {
           retriable: false,
           user_message: 'Verification service error. Please try again later.',
@@ -369,7 +370,7 @@ export class SmileIdentityService implements KYCProvider {
 
       default:
         // Unknown error
-        console.error('Unknown Smile Identity error', { code: errorCode, message: errorMessage });
+        logger.error('Unknown Smile Identity error', { action: 'kyc.smile.handleError', errorCode, errorMessage });
         return {
           retriable: true,
           user_message: 'Verification failed. Please try again.',

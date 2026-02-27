@@ -5,6 +5,12 @@
  * Uses circuit breaker pattern for resilience and AWS Secrets Manager for
  * credential retrieval. All methods are idempotent-safe where possible.
  *
+ * Domain-specific operations have been decomposed into:
+ *  - fineract/client-client.ts  -- customer/client and office operations
+ *  - fineract/loan-client.ts    -- loan CRUD, approval, disbursement, repayment
+ *  - fineract/charge-client.ts  -- GL accounts, journal entries, interop, health, reports
+ *  - fineract/savings-client.ts -- savings account operations (future)
+ *
  * Usage:
  *   import { getFineractClient } from '../shared/clients/fineract';
  *   const fineract = await getFineractClient();
@@ -16,26 +22,11 @@ import { CircuitBreaker } from '../utils/circuit-breaker';
 import { getSecret } from '../utils/secrets';
 import type {
   FineractClientConfig,
-  FineractClientCreateRequest,
-  FineractClient as FineractClientData,
-  FineractCommandResponse,
   FineractErrorResponse,
-  FineractLoanCreateRequest,
-  FineractLoan,
-  FineractLoanTransactionRequest,
-  FineractLoanTransaction,
-  FineractLoanProduct,
-  FineractLoanProductCreateRequest,
-  FineractGLAccount,
-  FineractGLAccountCreateRequest,
-  FineractJournalEntry,
-  FineractOffice,
-  InteropIdentifierType,
-  FineractInteropPartyResponse,
-  FineractInteropTransferRequest,
-  FineractInteropTransferResponse,
-  FineractInteropHealthResponse,
 } from '../types/fineract';
+import { createClientOperations } from './fineract/client-client';
+import { createLoanOperations } from './fineract/loan-client';
+import { createChargeOperations } from './fineract/charge-client';
 
 // ============================================================
 // CONFIGURATION
@@ -43,8 +34,6 @@ import type {
 
 const FINERACT_SECRET_NAME = process.env.FINERACT_SECRET_NAME || '';
 const DEFAULT_TIMEOUT_MS = 30000;
-const DATE_FORMAT = 'dd MMMM yyyy';
-const LOCALE = 'en';
 
 let cachedConfig: FineractClientConfig | null = null;
 
@@ -208,477 +197,9 @@ async function request<T>(
 // FINERACT CLIENT CLASS
 // ============================================================
 
-export class FineractClient {
-  // ----------------------------------------------------------
-  // OFFICES
-  // ----------------------------------------------------------
-
-  /** List all offices */
-  async listOffices(): Promise<FineractOffice[]> {
-    return request<FineractOffice[]>('GET', '/offices');
-  }
-
-  /** Get the head office (ID 1) */
-  async getHeadOffice(): Promise<FineractOffice> {
-    return request<FineractOffice>('GET', '/offices/1');
-  }
-
-  // ----------------------------------------------------------
-  // CLIENTS
-  // ----------------------------------------------------------
-
-  /**
-   * Create a new client in Fineract.
-   * Called when a Lynia customer is approved after KYC.
-   */
-  async createClient(params: {
-    firstName: string;
-    lastName: string;
-    mobileNo?: string;
-    externalId: string; // Lynia customer UUID
-    dateOfBirth?: string; // "dd MMMM yyyy"
-    officeId?: number;
-  }): Promise<FineractCommandResponse> {
-    const today = formatFineractDate(new Date());
-
-    const body: FineractClientCreateRequest = {
-      officeId: params.officeId || 1,
-      firstname: params.firstName,
-      lastname: params.lastName,
-      externalId: params.externalId,
-      mobileNo: params.mobileNo,
-      dateOfBirth: params.dateOfBirth,
-      locale: LOCALE,
-      dateFormat: DATE_FORMAT,
-      active: true,
-      activationDate: today,
-      submittedOnDate: today,
-    };
-
-    return request<FineractCommandResponse>('POST', '/clients', body);
-  }
-
-  /** Get a client by Fineract ID */
-  async getClient(clientId: number): Promise<FineractClientData> {
-    return request<FineractClientData>('GET', `/clients/${clientId}`);
-  }
-
-  /** Get a client by external ID (Lynia customer UUID) */
-  async getClientByExternalId(externalId: string): Promise<FineractClientData> {
-    return request<FineractClientData>('GET', `/clients/external-id/${externalId}`);
-  }
-
-  // ----------------------------------------------------------
-  // LOAN PRODUCTS
-  // ----------------------------------------------------------
-
-  /** List all loan products */
-  async listLoanProducts(): Promise<FineractLoanProduct[]> {
-    return request<FineractLoanProduct[]>('GET', '/loanproducts');
-  }
-
-  /** Get a specific loan product */
-  async getLoanProduct(productId: number): Promise<FineractLoanProduct> {
-    return request<FineractLoanProduct>('GET', `/loanproducts/${productId}`);
-  }
-
-  /** Create a new loan product */
-  async createLoanProduct(
-    product: FineractLoanProductCreateRequest
-  ): Promise<FineractCommandResponse> {
-    return request<FineractCommandResponse>('POST', '/loanproducts', product);
-  }
-
-  // ----------------------------------------------------------
-  // LOANS
-  // ----------------------------------------------------------
-
-  /**
-   * Create a loan application in Fineract.
-   * The loan starts in "submitted and pending approval" state.
-   */
-  async createLoan(params: {
-    clientId: number;
-    productId: number;
-    principal: number;
-    numberOfRepayments: number;
-    repaymentEveryMonths: number;
-    interestRatePerMonth: number;
-    expectedDisbursementDate: Date;
-    externalId?: string; // Lynia loan UUID
-  }): Promise<FineractCommandResponse> {
-    const body: FineractLoanCreateRequest = {
-      clientId: params.clientId,
-      productId: params.productId,
-      principal: params.principal,
-      loanTermFrequency: params.numberOfRepayments * params.repaymentEveryMonths,
-      loanTermFrequencyType: 2, // months
-      numberOfRepayments: params.numberOfRepayments,
-      repaymentEvery: params.repaymentEveryMonths,
-      repaymentFrequencyType: 2, // months
-      interestRatePerPeriod: params.interestRatePerMonth,
-      amortizationType: 0, // equal installments
-      interestType: 0, // declining balance
-      interestCalculationPeriodType: 1, // same as repayment period
-      transactionProcessingStrategyCode: 'mifos-standard-strategy',
-      expectedDisbursementDate: formatFineractDate(params.expectedDisbursementDate),
-      submittedOnDate: formatFineractDate(new Date()),
-      locale: LOCALE,
-      dateFormat: DATE_FORMAT,
-      loanType: 'individual',
-      externalId: params.externalId,
-    };
-
-    return request<FineractCommandResponse>('POST', '/loans', body);
-  }
-
-  /** Get a loan by Fineract ID */
-  async getLoan(loanId: number, associations?: string[]): Promise<FineractLoan> {
-    const assoc = associations?.length
-      ? `?associations=${associations.join(',')}`
-      : '';
-    return request<FineractLoan>('GET', `/loans/${loanId}${assoc}`);
-  }
-
-  /** Get a loan by external ID (Lynia loan UUID) */
-  async getLoanByExternalId(externalId: string): Promise<FineractLoan> {
-    return request<FineractLoan>('GET', `/loans/external-id/${externalId}`);
-  }
-
-  /** Get loan with full repayment schedule */
-  async getLoanWithSchedule(loanId: number): Promise<FineractLoan> {
-    return this.getLoan(loanId, ['repaymentSchedule']);
-  }
-
-  /** Get loan with transactions */
-  async getLoanWithTransactions(loanId: number): Promise<FineractLoan> {
-    return this.getLoan(loanId, ['repaymentSchedule', 'transactions']);
-  }
-
-  /**
-   * Approve a loan application.
-   * Transitions: submittedAndPendingApproval → approved
-   */
-  async approveLoan(loanId: number, approvedOnDate?: Date): Promise<FineractCommandResponse> {
-    const body = {
-      approvedOnDate: formatFineractDate(approvedOnDate || new Date()),
-      locale: LOCALE,
-      dateFormat: DATE_FORMAT,
-    };
-
-    return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=approve`, body);
-  }
-
-  /**
-   * Disburse a loan.
-   * Transitions: approved → active
-   * Creates GL journal entries (debit loan portfolio, credit fund source).
-   */
-  async disburseLoan(
-    loanId: number,
-    actualDisbursementDate?: Date,
-    paymentTypeId?: number
-  ): Promise<FineractCommandResponse> {
-    const body: Record<string, unknown> = {
-      actualDisbursementDate: formatFineractDate(actualDisbursementDate || new Date()),
-      locale: LOCALE,
-      dateFormat: DATE_FORMAT,
-    };
-
-    if (paymentTypeId) {
-      body.paymentTypeId = paymentTypeId;
-    }
-
-    return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=disburse`, body);
-  }
-
-  /**
-   * Post a repayment against a loan.
-   * Reduces outstanding balance and creates GL journal entries.
-   */
-  async postRepayment(params: {
-    loanId: number;
-    amount: number;
-    transactionDate: Date;
-    paymentTypeId?: number;
-    note?: string;
-    externalId?: string; // Lynia payment UUID
-  }): Promise<FineractCommandResponse> {
-    const body: FineractLoanTransactionRequest = {
-      transactionDate: formatFineractDate(params.transactionDate),
-      transactionAmount: params.amount,
-      paymentTypeId: params.paymentTypeId,
-      note: params.note,
-      locale: LOCALE,
-      dateFormat: DATE_FORMAT,
-      externalId: params.externalId,
-    };
-
-    return request<FineractCommandResponse>(
-      'POST',
-      `/loans/${params.loanId}/transactions?command=repayment`,
-      body
-    );
-  }
-
-  /**
-   * Get a specific loan transaction
-   */
-  async getLoanTransaction(
-    loanId: number,
-    transactionId: number
-  ): Promise<FineractLoanTransaction> {
-    return request<FineractLoanTransaction>(
-      'GET',
-      `/loans/${loanId}/transactions/${transactionId}`
-    );
-  }
-
-  // ----------------------------------------------------------
-  // GL ACCOUNTS
-  // ----------------------------------------------------------
-
-  /** List all GL accounts */
-  async listGLAccounts(): Promise<FineractGLAccount[]> {
-    return request<FineractGLAccount[]>('GET', '/glaccounts');
-  }
-
-  /** Create a GL account */
-  async createGLAccount(
-    account: FineractGLAccountCreateRequest
-  ): Promise<FineractCommandResponse> {
-    return request<FineractCommandResponse>('POST', '/glaccounts', account);
-  }
-
-  // ----------------------------------------------------------
-  // JOURNAL ENTRIES
-  // ----------------------------------------------------------
-
-  /** Search journal entries */
-  async listJournalEntries(params?: {
-    officeId?: number;
-    glAccountId?: number;
-    manualEntriesOnly?: boolean;
-    fromDate?: string;
-    toDate?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<{ totalFilteredRecords: number; pageItems: FineractJournalEntry[] }> {
-    const queryParts: string[] = [];
-    if (params?.officeId) queryParts.push(`officeId=${params.officeId}`);
-    if (params?.glAccountId) queryParts.push(`glAccountId=${params.glAccountId}`);
-    if (params?.manualEntriesOnly) queryParts.push(`manualEntriesOnly=${params.manualEntriesOnly}`);
-    if (params?.fromDate) queryParts.push(`fromDate=${params.fromDate}`);
-    if (params?.toDate) queryParts.push(`toDate=${params.toDate}`);
-    if (params?.limit) queryParts.push(`limit=${params.limit}`);
-    if (params?.offset) queryParts.push(`offset=${params.offset}`);
-
-    const query = queryParts.length ? `?${queryParts.join('&')}` : '';
-
-    return request<{ totalFilteredRecords: number; pageItems: FineractJournalEntry[] }>(
-      'GET',
-      `/journalentries${query}`
-    );
-  }
-
-  // ----------------------------------------------------------
-  // INTEROPERATION MODULE (Mojaloop-compatible)
-  // ----------------------------------------------------------
-  // Fineract 1.13.0 ships with interop endpoints disabled by default.
-  // Enable by setting enable-payment-hub-integration=true in c_configuration.
-  // These methods are gated by FINERACT_USE_INTEROP env var in fineract-sync.ts.
-
-  /**
-   * Register a party identifier (e.g., MSISDN) for a Fineract account.
-   * Maps a customer's phone number to their Fineract savings/loan account
-   * so that Mojaloop-compatible systems can route payments by MSISDN.
-   */
-  async registerInteropParty(params: {
-    idType: InteropIdentifierType;
-    idValue: string;
-    accountId: string; // Fineract account external ID
-    subIdOrType?: string;
-  }): Promise<FineractCommandResponse> {
-    const path = params.subIdOrType
-      ? `/interoperation/parties/${params.idType}/${params.idValue}/${params.subIdOrType}`
-      : `/interoperation/parties/${params.idType}/${params.idValue}`;
-
-    return request<FineractCommandResponse>('POST', path, {
-      accountId: params.accountId,
-    });
-  }
-
-  /**
-   * Look up a party by identifier (e.g., MSISDN).
-   * Returns party information if the identifier is registered.
-   */
-  async lookupInteropParty(params: {
-    idType: InteropIdentifierType;
-    idValue: string;
-    subIdOrType?: string;
-  }): Promise<FineractInteropPartyResponse> {
-    const path = params.subIdOrType
-      ? `/interoperation/parties/${params.idType}/${params.idValue}/${params.subIdOrType}`
-      : `/interoperation/parties/${params.idType}/${params.idValue}`;
-
-    return request<FineractInteropPartyResponse>('GET', path);
-  }
-
-  /**
-   * Delete a party identifier registration.
-   */
-  async deleteInteropParty(params: {
-    idType: InteropIdentifierType;
-    idValue: string;
-    subIdOrType?: string;
-  }): Promise<void> {
-    const path = params.subIdOrType
-      ? `/interoperation/parties/${params.idType}/${params.idValue}/${params.subIdOrType}`
-      : `/interoperation/parties/${params.idType}/${params.idValue}`;
-
-    await request<void>('DELETE', path);
-  }
-
-  /**
-   * Prepare an interop transfer (Phase 1 of two-phase commit).
-   * Reserves funds on the payer side without completing the transfer.
-   */
-  async prepareInteropTransfer(
-    transfer: FineractInteropTransferRequest
-  ): Promise<FineractInteropTransferResponse> {
-    return request<FineractInteropTransferResponse>(
-      'POST',
-      '/interoperation/transfers',
-      { ...transfer, action: 'PREPARE' }
-    );
-  }
-
-  /**
-   * Commit a previously prepared interop transfer (Phase 2).
-   * Completes the fund movement that was reserved during prepare.
-   */
-  async commitInteropTransfer(
-    transferId: string
-  ): Promise<FineractInteropTransferResponse> {
-    return request<FineractInteropTransferResponse>(
-      'PUT',
-      `/interoperation/transfers/${transferId}`,
-      { transferState: 'COMMITTED' }
-    );
-  }
-
-  /**
-   * Release (abort) a previously prepared interop transfer.
-   * Releases the reserved funds back to the payer.
-   */
-  async releaseInteropTransfer(
-    transferId: string
-  ): Promise<FineractInteropTransferResponse> {
-    return request<FineractInteropTransferResponse>(
-      'PUT',
-      `/interoperation/transfers/${transferId}`,
-      { transferState: 'ABORTED' }
-    );
-  }
-
-  /**
-   * Get the status of an interop transfer.
-   */
-  async getInteropTransfer(
-    transferId: string
-  ): Promise<FineractInteropTransferResponse> {
-    return request<FineractInteropTransferResponse>(
-      'GET',
-      `/interoperation/transfers/${transferId}`
-    );
-  }
-
-  /**
-   * Check if the interop module is healthy and enabled.
-   */
-  async interopHealthCheck(): Promise<FineractInteropHealthResponse | null> {
-    try {
-      return await request<FineractInteropHealthResponse>(
-        'GET',
-        '/interoperation/health'
-      );
-    } catch {
-      return null;
-    }
-  }
-
-  // ----------------------------------------------------------
-  // HEALTH CHECK
-  // ----------------------------------------------------------
-
-  /** Check if Fineract is healthy */
-  async healthCheck(): Promise<boolean> {
-    try {
-      const config = await getConfig();
-      const url = config.baseUrl.replace('/api/v1', '/actuator/health');
-      const auth = Buffer.from(`${config.username}:${config.password}`).toString('base64');
-      const parsedUrl = new URL(url);
-
-      return new Promise<boolean>((resolve) => {
-        const req = https.request(
-          {
-            hostname: parsedUrl.hostname,
-            port: parsedUrl.port || 8443,
-            path: parsedUrl.pathname,
-            method: 'GET',
-            headers: {
-              'Authorization': `Basic ${auth}`,
-              'Fineract-Platform-TenantId': 'default',
-            },
-            timeout: 5000,
-            rejectUnauthorized: config.rejectUnauthorized,
-          },
-          (res) => {
-            resolve(res.statusCode === 200);
-          }
-        );
-        req.on('error', () => resolve(false));
-        req.on('timeout', () => {
-          req.destroy();
-          resolve(false);
-        });
-        req.end();
-      });
-    } catch {
-      return false;
-    }
-  }
-
-  // ----------------------------------------------------------
-  // REPORTS
-  // ----------------------------------------------------------
-
-  /** List available Fineract report definitions */
-  async listReports(): Promise<Array<{ id: number; reportName: string; reportType: string; reportSubType: string; reportCategory: string; description: string }>> {
-    return request<Array<{ id: number; reportName: string; reportType: string; reportSubType: string; reportCategory: string; description: string }>>('GET', '/reports');
-  }
-
-  /** Run a named Fineract report with query parameters */
-  async runReport(reportName: string, params?: Record<string, string>): Promise<unknown> {
-    const query = params
-      ? '?' + Object.entries(params).map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')
-      : '';
-    return request<unknown>('GET', `/runreports/${encodeURIComponent(reportName)}${query}`);
-  }
-
-  /** Get circuit breaker state */
-  getCircuitState(): string {
-    return fineractBreaker.getState();
-  }
-}
-
-// ============================================================
-// HELPERS
-// ============================================================
-
 /**
  * Format a JS Date to Fineract date string: "dd MMMM yyyy"
- * Example: new Date('2026-02-14') → "14 February 2026"
+ * Example: new Date('2026-02-14') -> "14 February 2026"
  */
 function formatFineractDate(date: Date): string {
   const months = [
@@ -690,6 +211,60 @@ function formatFineractDate(date: Date): string {
   const year = date.getFullYear();
   return `${day} ${month} ${year}`;
 }
+
+export class FineractClient {
+  private _clientOps = createClientOperations(request, formatFineractDate);
+  private _loanOps = createLoanOperations(request, formatFineractDate);
+  private _chargeOps = createChargeOperations(request, getConfig, () => fineractBreaker.getState());
+
+  // -- Client/Office operations --
+  listOffices = this._clientOps.listOffices;
+  getHeadOffice = this._clientOps.getHeadOffice;
+  createClient = this._clientOps.createClient;
+  getClient = this._clientOps.getClient;
+  getClientByExternalId = this._clientOps.getClientByExternalId;
+
+  // -- Loan Product operations --
+  listLoanProducts = this._loanOps.listLoanProducts;
+  getLoanProduct = this._loanOps.getLoanProduct;
+  createLoanProduct = this._loanOps.createLoanProduct;
+
+  // -- Loan operations --
+  createLoan = this._loanOps.createLoan;
+  getLoan = this._loanOps.getLoan;
+  getLoanByExternalId = this._loanOps.getLoanByExternalId;
+  getLoanWithSchedule = this._loanOps.getLoanWithSchedule;
+  getLoanWithTransactions = this._loanOps.getLoanWithTransactions;
+  approveLoan = this._loanOps.approveLoan;
+  disburseLoan = this._loanOps.disburseLoan;
+  postRepayment = this._loanOps.postRepayment;
+  getLoanTransaction = this._loanOps.getLoanTransaction;
+
+  // -- GL/Accounting operations --
+  listGLAccounts = this._chargeOps.listGLAccounts;
+  createGLAccount = this._chargeOps.createGLAccount;
+  listJournalEntries = this._chargeOps.listJournalEntries;
+
+  // -- Interop operations --
+  registerInteropParty = this._chargeOps.registerInteropParty;
+  lookupInteropParty = this._chargeOps.lookupInteropParty;
+  deleteInteropParty = this._chargeOps.deleteInteropParty;
+  prepareInteropTransfer = this._chargeOps.prepareInteropTransfer;
+  commitInteropTransfer = this._chargeOps.commitInteropTransfer;
+  releaseInteropTransfer = this._chargeOps.releaseInteropTransfer;
+  getInteropTransfer = this._chargeOps.getInteropTransfer;
+  interopHealthCheck = this._chargeOps.interopHealthCheck;
+
+  // -- Health/Reports --
+  healthCheck = this._chargeOps.healthCheck;
+  listReports = this._chargeOps.listReports;
+  runReport = this._chargeOps.runReport;
+  getCircuitState = this._chargeOps.getCircuitState;
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
 
 /**
  * Parse a Fineract date array [year, month, day] to a JS Date

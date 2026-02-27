@@ -445,3 +445,41 @@ export interface LowStockReport {
 export async function getLowStockReport() {
   return fetchAPI<LowStockReport>('/admin/reports/inventory/low-stock');
 }
+
+// ─── CSV Export ───
+
+interface CSVExportableDevice {
+  id: string;
+  brand?: string;
+  model?: string;
+  sku?: string;
+  imei?: string | null;
+  status?: string;
+  retail_price?: number;
+  financing_price?: number;
+  deposit_amount?: number;
+  lock_enabled?: boolean;
+  distributors?: { business_name?: string } | null;
+  warehouse_location?: string | null;
+}
+
+export function exportDevicesToCSV(devices: CSVExportableDevice[]): string {
+  const header = 'Device ID,Brand,Model,SKU,IMEI,Status,Retail Price,Financing Price,Deposit,Lock Enabled,Distributor,Warehouse';
+  const rows = devices.map((d) =>
+    [
+      d.id,
+      d.brand ?? '',
+      d.model ?? '',
+      d.sku ?? '',
+      d.imei ?? '',
+      d.status ?? '',
+      (d.retail_price ?? 0).toFixed(2),
+      (d.financing_price ?? 0).toFixed(2),
+      (d.deposit_amount ?? 0).toFixed(2),
+      d.lock_enabled ? 'Yes' : 'No',
+      d.distributors?.business_name ?? '',
+      d.warehouse_location ?? '',
+    ].join(',')
+  );
+  return [header, ...rows].join('\n');
+}

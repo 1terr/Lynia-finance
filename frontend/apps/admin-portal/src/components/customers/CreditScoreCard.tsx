@@ -1,7 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { fetchCreditScoreHistory } from '@/lib/api/customers';
 import { formatCurrency } from '@lynia/utils';
 import type { CustomerWithRelations } from '@/types/database';
 

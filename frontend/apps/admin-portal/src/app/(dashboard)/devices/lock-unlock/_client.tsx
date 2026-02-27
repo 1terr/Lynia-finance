@@ -75,7 +75,7 @@ export default function LockUnlockPage() {
   const devices = data?.data || [];
 
   return (
-    <ProtectedRoute requiredPermission={{ resource: 'devices', action: 'update' }}>
+    <ProtectedRoute requiredPermission={{ resource: 'devices', action: 'lock' }}>
       <div className="space-y-6">
         <div>
           <div className="flex items-center gap-3">
@@ -188,7 +188,7 @@ export default function LockUnlockPage() {
               <tbody className="divide-y divide-gray-200 bg-white">
                 {devices.map((device: DeviceWithCustomer) => {
                   const customer = Array.isArray(device.customer) ? device.customer[0] : device.customer;
-                  const isLocked = (device as Record<string, unknown>).lock_status === 'locked';
+                  const isLocked = device.lock_status === 'locked';
                   return (
                     <tr key={device.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
@@ -202,16 +202,16 @@ export default function LockUnlockPage() {
                       <td className="whitespace-nowrap px-6 py-4">
                         {customer ? (
                           <div>
-                            <p className="text-sm text-gray-900">{(customer as Record<string, string>).full_name}</p>
-                            <p className="text-xs text-gray-500">{(customer as Record<string, string>).phone_number}</p>
+                            <p className="text-sm text-gray-900">{customer.full_name}</p>
+                            <p className="text-xs text-gray-500">{customer.phone_number}</p>
                           </div>
                         ) : (
                           <span className="text-sm text-gray-400">Unassigned</span>
                         )}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
-                        <Badge variant={(device as Record<string, string>).status === 'active' ? 'green' : 'gray'}>
-                          {(device as Record<string, string>).status}
+                        <Badge variant={device.status === 'sold' ? 'green' : 'gray'}>
+                          {device.status}
                         </Badge>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">

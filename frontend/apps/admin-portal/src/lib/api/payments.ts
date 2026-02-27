@@ -14,6 +14,18 @@ export interface PaymentFilters {
   limit?: number;
 }
 
+export interface PaymentListParams {
+  status?: PaymentStatus;
+  payment_method?: PaymentMethod;
+  payment_type?: PaymentType;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+  reconciled?: boolean;
+  page?: number;
+  limit?: number;
+}
+
 export type PaymentWithRelations = Omit<Payment, 'customer' | 'loan'> & {
   customer?: Pick<Customer, 'id' | 'full_name' | 'phone_number'>;
   loan?: Pick<Loan, 'id' | 'loan_amount_usd' | 'loan_status'>;
@@ -51,7 +63,7 @@ export async function getPaymentById(id: string): Promise<Payment | null> {
   }
 }
 
-export async function reconcilePayment(paymentId: string, adminId: string) {
+export async function reconcilePayment(paymentId: string, adminId?: string) {
   return fetchAPI<void>(`/api/v1/payments/${paymentId}/reconcile`, {
     method: 'POST',
     body: JSON.stringify({ admin_id: adminId }),
@@ -65,10 +77,24 @@ export async function retryPayment(paymentId: string, adminId: string) {
   });
 }
 
-export async function refundPayment(paymentId: string, adminId: string, reason: string) {
+export async function confirmPayment(paymentId: string, notes: string) {
+  return fetchAPI<Payment>(`/api/v1/payments/${paymentId}/confirm`, {
+    method: 'POST',
+    body: JSON.stringify({ notes }),
+  });
+}
+
+export async function failPayment(paymentId: string, notes: string) {
+  return fetchAPI<Payment>(`/api/v1/payments/${paymentId}/fail`, {
+    method: 'POST',
+    body: JSON.stringify({ notes }),
+  });
+}
+
+export async function refundPayment(paymentId: string, notes: string) {
   return fetchAPI<void>(`/api/v1/payments/${paymentId}/refund`, {
     method: 'POST',
-    body: JSON.stringify({ admin_id: adminId, reason }),
+    body: JSON.stringify({ notes }),
   });
 }
 
@@ -156,4 +182,55 @@ export async function getOverdueCollections(): Promise<CollectionItem[]> {
 
 export async function getPaymentStats(): Promise<PaymentStats> {
   return fetchAPI<PaymentStats>('/api/v1/payments/stats');
+}
+
+export async function fetchPaymentSummary(dateFrom?: string, dateTo?: string): Promise<PaymentSummary> {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set('date_from', dateFrom);
+  if (dateTo) params.set('date_to', dateTo);
+  const query = params.toString();
+  return fetchAPI<PaymentSummary>(`/api/v1/payments/summary${query ? `?${query}` : ''}`);
+}
+
+export interface RecordManualPaymentInput {
+  loan_id: string;
+  customer_id: string;
+  amount_usd: number;
+  payment_method: string;
+  payment_type: string;
+  reference_number: string;
+  payment_date: string;
+  notes: string;
+}
+
+export async function recordManualPayment(data: RecordManualPaymentInput) {
+  return fetchAPI<PaymentWithCustomer>('/api/v1/payments/manual', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+// ─── CSV Export ───
+
+export function exportPaymentsToCSV(payments: PaymentWithCustomer[]): string {
+  const header = 'Payment ID,Date,Customer,Phone,Amount (USD),Method,Type,Status,Reference,Reconciled';
+  const rows = payments.map((p) => {
+    const customerName = p.customers
+      ? `${p.customers.first_name} ${p.customers.last_name}`
+      : p.payer_name ?? '';
+    const phone = p.customers?.phone_number ?? p.phone_number ?? '';
+    return [
+      p.id,
+      p.payment_date,
+      customerName,
+      phone,
+      p.amount_usd.toFixed(2),
+      p.payment_method ?? '',
+      p.payment_type ?? '',
+      p.status,
+      p.reference_number ?? '',
+      p.reconciled ? 'Yes' : 'No',
+    ].join(',');
+  });
+  return [header, ...rows].join('\n');
 }

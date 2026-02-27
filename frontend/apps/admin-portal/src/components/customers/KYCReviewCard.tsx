@@ -16,14 +16,14 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
   const queryClient = useQueryClient();
 
   const approveMutation = useMutation({
-    mutationFn: () => approveKYC(submission.id),
+    mutationFn: () => approveKYC(submission.id, submission.customer_id, 'current-admin'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kyc-pending-review'] });
     },
   });
 
   const rejectMutation = useMutation({
-    mutationFn: () => rejectKYC(submission.id, rejectionReason),
+    mutationFn: () => rejectKYC(submission.id, submission.customer_id, 'current-admin', rejectionReason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kyc-pending-review'] });
     },

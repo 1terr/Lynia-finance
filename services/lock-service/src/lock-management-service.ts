@@ -1,5 +1,6 @@
 import { db } from '../../shared/clients/database';
 import { TrustonicProvider } from './trustonic-provider';
+import logger from '../../shared/utils/logger';
 
 /**
  * Lock Trigger
@@ -43,7 +44,7 @@ export class LockManagementService {
   constructor() {
     this.trustonic = new TrustonicProvider();
 
-    console.log('LockManagementService initialized');
+    logger.info('LockManagementService initialized', { action: 'lock.management.init' });
   }
 
   /**
@@ -56,7 +57,7 @@ export class LockManagementService {
     adminUserId?: string
   ): Promise<void> {
     try {
-      console.log(`Locking device ${deviceId}: ${reason}`);
+      logger.info('Locking device', { action: 'lock.management.lockDevice', deviceId, reason });
 
       // Get device details
       const { data: device, error: deviceError } = await db
@@ -72,7 +73,7 @@ export class LockManagementService {
 
       // Check if already locked
       if (device.lock_status === 'locked') {
-        console.log(`Device ${deviceId} already locked`);
+        logger.info('Device already locked', { action: 'lock.management.lockDevice', deviceId });
         return;
       }
 
@@ -119,10 +120,10 @@ export class LockManagementService {
         })
         .execute();
 
-      console.log(`Device ${deviceId} locked successfully`);
+      logger.info('Device locked successfully', { action: 'lock.management.lockDevice', deviceId });
 
     } catch (error) {
-      console.error('Error locking device:', error);
+      logger.error('Error locking device', { action: 'lock.management.lockDevice', deviceId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
       // Create failed lock event
       await db
@@ -154,7 +155,7 @@ export class LockManagementService {
     adminUserId?: string
   ): Promise<void> {
     try {
-      console.log(`Unlocking device ${deviceId}: ${reason}`);
+      logger.info('Unlocking device', { action: 'lock.management.unlockDevice', deviceId, reason });
 
       // Get device details
       const { data: device, error: deviceError } = await db
@@ -170,7 +171,7 @@ export class LockManagementService {
 
       // Check if already unlocked
       if (device.lock_status === 'unlocked') {
-        console.log(`Device ${deviceId} already unlocked`);
+        logger.info('Device already unlocked', { action: 'lock.management.unlockDevice', deviceId });
         return;
       }
 
@@ -212,10 +213,10 @@ export class LockManagementService {
         })
         .execute();
 
-      console.log(`Device ${deviceId} unlocked successfully`);
+      logger.info('Device unlocked successfully', { action: 'lock.management.unlockDevice', deviceId });
 
     } catch (error) {
-      console.error('Error unlocking device:', error);
+      logger.error('Error unlocking device', { action: 'lock.management.unlockDevice', deviceId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
       // Create failed unlock event
       await db
@@ -268,7 +269,7 @@ export class LockManagementService {
       };
 
     } catch (error) {
-      console.error('Error getting lock status:', error);
+      logger.error('Error getting lock status', { action: 'lock.management.getLockStatus', deviceId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
       throw error;
     }
   }
@@ -284,7 +285,7 @@ export class LockManagementService {
     failed: number;
   }> {
     try {
-      console.log('Starting automated device lock processing...');
+      logger.info('Starting automated device lock processing', { action: 'lock.management.processAutomated' });
 
       let checked = 0;
       let triggered = 0;
@@ -301,7 +302,7 @@ export class LockManagementService {
         .execute();
 
       if (overdueError) {
-        console.error('Error fetching overdue loans:', overdueError);
+        logger.error('Error fetching overdue loans', { action: 'lock.management.processAutomated', errorMessage: overdueError instanceof Error ? overdueError.message : 'Unknown error' });
       } else if (overdueLoans) {
         checked += overdueLoans.length;
 
@@ -339,7 +340,7 @@ export class LockManagementService {
             .execute();
 
           triggered++;
-          console.log(`Lock trigger created for loan ${loan.id} (grace period until ${gracePeriodUntil})`);
+          logger.info('Lock trigger created', { action: 'lock.management.processAutomated', loanId: loan.id, gracePeriodUntil: gracePeriodUntil.toISOString() });
         }
       }
 
@@ -352,7 +353,7 @@ export class LockManagementService {
         .execute();
 
       if (scheduledError) {
-        console.error('Error fetching scheduled locks:', scheduledError);
+        logger.error('Error fetching scheduled locks', { action: 'lock.management.processAutomated', errorMessage: scheduledError instanceof Error ? scheduledError.message : 'Unknown error' });
       } else if (scheduledLocks) {
         for (const trigger of scheduledLocks) {
           // Check if payment received during grace period
@@ -376,7 +377,7 @@ export class LockManagementService {
               .execute();
 
             cancelled++;
-            console.log(`Lock cancelled for device ${trigger.device_id} - payment received`);
+            logger.info('Lock cancelled - payment received', { action: 'lock.management.processAutomated', deviceId: trigger.device_id });
             continue;
           }
 
@@ -400,10 +401,10 @@ export class LockManagementService {
               .execute();
 
             locked++;
-            console.log(`Device ${trigger.device_id} locked successfully`);
+            logger.info('Device locked successfully', { action: 'lock.management.processAutomated', deviceId: trigger.device_id });
 
           } catch (error) {
-            console.error(`Failed to lock device ${trigger.device_id}:`, error);
+            logger.error('Failed to lock device', { action: 'lock.management.processAutomated', deviceId: trigger.device_id, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
             // Mark as failed
             await db
@@ -421,12 +422,12 @@ export class LockManagementService {
         }
       }
 
-      console.log(`Automated lock processing complete: ${checked} checked, ${triggered} triggered, ${locked} locked, ${cancelled} cancelled, ${failed} failed`);
+      logger.info('Automated lock processing complete', { action: 'lock.management.processAutomated', checked, triggered, locked, cancelled, failed });
 
       return { checked, triggered, locked, cancelled, failed };
 
     } catch (error) {
-      console.error('Error during automated lock processing:', error);
+      logger.error('Error during automated lock processing', { action: 'lock.management.processAutomated', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
       throw error;
     }
   }
@@ -436,7 +437,7 @@ export class LockManagementService {
    */
   async handlePaymentReceived(paymentId: string): Promise<void> {
     try {
-      console.log(`Handling payment received: ${paymentId}`);
+      logger.info('Handling payment received', { action: 'lock.management.handlePayment', paymentId });
 
       // Get payment details
       const { data: payment, error: paymentError } = await db
@@ -447,13 +448,13 @@ export class LockManagementService {
         .execute();
 
       if (paymentError || !payment) {
-        console.error('Payment not found:', paymentError);
+        logger.error('Payment not found', { action: 'lock.management.handlePayment', paymentId, errorMessage: paymentError instanceof Error ? paymentError.message : 'Unknown error' });
         return;
       }
 
       // Check if device is locked
       if (payment.loans?.devices?.lock_status !== 'locked') {
-        console.log('Device not locked, no unlock needed');
+        logger.info('Device not locked, no unlock needed', { action: 'lock.management.handlePayment', paymentId });
         return;
       }
 
@@ -466,13 +467,13 @@ export class LockManagementService {
         .execute();
 
       if (!loan) {
-        console.error('Loan not found');
+        logger.error('Loan not found', { action: 'lock.management.handlePayment', paymentId });
         return;
       }
 
       // CRITICAL: Only unlock if outstanding balance is zero
       if (loan.outstanding_balance === 0) {
-        console.log(`Loan ${payment.loan_id} fully repaid - unlocking device`);
+        logger.info('Loan fully repaid - unlocking device', { action: 'lock.management.handlePayment', loanId: payment.loan_id });
 
         await this.unlockDevice(
           payment.loans.device_id,
@@ -480,11 +481,11 @@ export class LockManagementService {
           'customer_payment'
         );
       } else {
-        console.log(`Loan ${payment.loan_id} still has outstanding balance: $${loan.outstanding_balance}`);
+        logger.info('Loan still has outstanding balance', { action: 'lock.management.handlePayment', loanId: payment.loan_id });
       }
 
     } catch (error) {
-      console.error('Error handling payment received:', error);
+      logger.error('Error handling payment received', { action: 'lock.management.handlePayment', paymentId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     }
   }
 
@@ -506,7 +507,7 @@ export class LockManagementService {
       .execute();
 
     if (error) {
-      console.error('Error checking payments during grace period:', error);
+      logger.error('Error checking payments during grace period', { action: 'lock.management.checkGracePeriod', loanId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
       return false;
     }
 

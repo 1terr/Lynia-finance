@@ -1,3 +1,5 @@
+import logger from '../../shared/utils/logger';
+
 /**
  * Image Processor
  * Handles image validation and preprocessing for KYC submissions
@@ -119,7 +121,7 @@ export async function downloadWhatsAppImage(
 
     return Buffer.from(imageResponse.data);
   } catch (error) {
-    console.error('Error downloading WhatsApp image:', error);
+    logger.error('Error downloading WhatsApp image', { action: 'kyc.image.download', errorMessage: error instanceof Error ? error.message : 'Unknown error' });
     throw new Error(`Failed to download image: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
