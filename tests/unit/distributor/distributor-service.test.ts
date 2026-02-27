@@ -188,7 +188,7 @@ describe('GET /api/v1/distributor/profile', () => {
 
     expect(mockRequireRole).toHaveBeenCalledWith(
       expect.objectContaining({ userId: 'user-1' }),
-      'distributor'
+      'distributor', 'super_admin', 'admin', 'operations_manager'
     );
   });
 });
