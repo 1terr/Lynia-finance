@@ -46,28 +46,38 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
-        // Design system semantic scale — aligned to Stripe 2026
-        hero: ['3.5rem', { lineHeight: '1.08', letterSpacing: '-0.02em', fontWeight: '700' }],
-        display: ['2.375rem', { lineHeight: '1.26', letterSpacing: '-0.02em', fontWeight: '700' }],
-        title: ['2rem', { lineHeight: '1.25', letterSpacing: '-0.02em', fontWeight: '600' }],
-        heading: ['1.625rem', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '600' }],
-        subheading: ['1.25rem', { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '600' }],
-        'body-lg': ['1.125rem', { lineHeight: '1.555', letterSpacing: '0.01em', fontWeight: '400' }],
-        body: ['0.9375rem', { lineHeight: '1.6', letterSpacing: '0.012em', fontWeight: '400' }],
-        'body-sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0.012em', fontWeight: '400' }],
+        // Hero H1 — custom, high-impact (reserved for short-text heroes)
+        hero: ['6rem', { lineHeight: '1.05', letterSpacing: '-0.05em', fontWeight: '600' }],
+        'hero-tablet': ['4rem', { lineHeight: '1.05', letterSpacing: '-0.05em', fontWeight: '600' }],
+        'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '600' }],
+
+        // Section H2 — major feature shifts
+        display: ['3.5rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
+        'display-tablet': ['3rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
+        'display-mobile': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
+
+        // Title — intermediate (thesis page, sub-sections)
+        title: ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
+        'title-tablet': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
+        'title-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
+
+        // Feature H3 — card titles, small benefits
+        heading: ['1.5rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '500' }],
+        'heading-mobile': ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '500' }],
+
+        // Subheading — UI labels (navbar logo, footer logo)
+        subheading: ['1.25rem', { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '500' }],
+
+        // Subtext/Lead — high-readability summary text
+        'body-lg': ['1.375rem', { lineHeight: '1.5', letterSpacing: '-0.01em', fontWeight: '400' }],
+
+        // Body — general descriptive text
+        body: ['1rem', { lineHeight: '1.6', letterSpacing: '0em', fontWeight: '400' }],
+        'body-sm': ['0.875rem', { lineHeight: '1.5', letterSpacing: '0em', fontWeight: '400' }],
+
+        // Small UI text
         caption: ['0.8125rem', { lineHeight: '1.4', letterSpacing: '0.015em', fontWeight: '500' }],
         overline: ['0.75rem', { lineHeight: '1.3', letterSpacing: '0.06em', fontWeight: '600' }],
-
-        // Tablet responsive variants (md: breakpoint)
-        'hero-tablet': ['3rem', { lineHeight: '1.08', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'display-tablet': ['2.125rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'title-tablet': ['1.875rem', { lineHeight: '1.22', letterSpacing: '-0.015em', fontWeight: '600' }],
-
-        // Mobile responsive variants
-        'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'display-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.015em', fontWeight: '700' }],
-        'title-mobile': ['1.5rem', { lineHeight: '1.22', letterSpacing: '-0.01em', fontWeight: '600' }],
-        'heading-mobile': ['1.375rem', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' }],
       },
       letterSpacing: {
         wide: '0.05em',

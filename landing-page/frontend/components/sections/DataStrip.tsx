@@ -87,7 +87,7 @@ export function DataStrip() {
               }`}
               style={{ transitionDelay: `${120 + i * 80}ms` }}
             >
-              <div className="text-hero-mobile md:text-hero-tablet lg:text-hero text-navy tabular-nums">
+              <div className="text-display-mobile md:text-display-tablet lg:text-display text-navy tabular-nums">
                 <CountUp
                   target={stat.value}
                   suffix={stat.suffix}
