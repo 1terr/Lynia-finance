@@ -321,6 +321,17 @@ export default function CommissionsPage() {
         </div>
       </div>
 
+      {/* Filters & Commission history - only show when there are commissions */}
+      {commissions.length === 0 ? (
+        <div className="rounded-xl border bg-card p-8 shadow-sm text-center">
+          <DollarSign className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+          <h3 className="text-sm font-semibold mb-1">No commissions yet</h3>
+          <p className="text-sm text-muted-foreground">
+            Commissions are earned when you complete device handovers. They will appear here automatically.
+          </p>
+        </div>
+      ) : (
+      <>
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
         <div role="group" aria-label="Filter by payment status" className="flex items-center gap-1 rounded-lg border p-1">
@@ -446,6 +457,8 @@ export default function CommissionsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

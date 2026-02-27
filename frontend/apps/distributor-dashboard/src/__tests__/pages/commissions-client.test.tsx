@@ -480,7 +480,7 @@ describe('CommissionsPage', () => {
       render(<CommissionsPage />);
 
       await waitFor(() => {
-        expect(screen.getByText(/No commission entries match your filters/i)).toBeInTheDocument();
+        expect(screen.getByText(/No commissions yet/i)).toBeInTheDocument();
       });
     });
 

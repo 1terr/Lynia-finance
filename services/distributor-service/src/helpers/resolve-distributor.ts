@@ -5,19 +5,23 @@ import { db } from '../../../shared/clients/database';
 /**
  * Resolve the distributor record based on the authenticated user's role.
  *
- * - Distributors: looked up by auth.userId (self-access).
- * - Admins: looked up by optional `distributor_id` query parameter.
+ * - Users with 'distributor' role: looked up by auth.userId (self-access).
+ * - Pure admins (no distributor role): looked up by `distributor_id` query param.
  *   Returns null when no distributor_id is provided (handler returns 404).
+ *
+ * Dual-role users (e.g. super_admin + distributor) use self-lookup unless
+ * they explicitly pass a distributor_id to view another distributor's data.
  */
 export async function resolveDistributor(
   auth: AuthContext,
   event: APIGatewayProxyEvent,
   selectColumns = 'id'
 ): Promise<{ id: string; [key: string]: unknown } | null> {
-  if (isAdminOrManager(auth)) {
-    const distributorId = event.queryStringParameters?.distributor_id;
-    if (!distributorId) return null;
+  const hasDistributorRole = auth.roles.includes('distributor');
+  const distributorId = event.queryStringParameters?.distributor_id;
 
+  // Admin explicitly requesting a specific distributor's data
+  if (distributorId && isAdminOrManager(auth)) {
     const { data } = await db
       .from('distributors')
       .select(selectColumns)
@@ -27,11 +31,17 @@ export async function resolveDistributor(
     return data;
   }
 
-  const { data } = await db
-    .from('distributors')
-    .select(selectColumns)
-    .eq('user_id', auth.userId)
-    .single()
-    .execute();
-  return data;
+  // User has distributor role — look up their own record
+  if (hasDistributorRole) {
+    const { data } = await db
+      .from('distributors')
+      .select(selectColumns)
+      .eq('user_id', auth.userId)
+      .single()
+      .execute();
+    return data;
+  }
+
+  // Pure admin without distributor role and no distributor_id param
+  return null;
 }

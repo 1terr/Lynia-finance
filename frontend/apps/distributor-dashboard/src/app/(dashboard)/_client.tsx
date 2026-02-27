@@ -55,12 +55,27 @@ export default function DashboardHome() {
     );
   }
 
+  const isNewDistributor =
+    stats.total_devices_distributed === 0 &&
+    stats.total_commissions_earned === 0 &&
+    stats.current_inventory === 0;
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold md:text-2xl">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Overview of your distribution activity</p>
       </div>
+
+      {/* Getting started banner for new distributors */}
+      {isNewDistributor && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-5">
+          <h2 className="text-sm font-semibold text-blue-900 dark:text-blue-100 mb-1">Welcome to Lynia</h2>
+          <p className="text-sm text-blue-700 dark:text-blue-300">
+            Your distributor account is set up. Once inventory is assigned and handovers begin, your stats will appear here.
+          </p>
+        </div>
+      )}
 
       {/* Stats grid - mobile 2 cols, desktop 4 cols */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
