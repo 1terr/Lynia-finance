@@ -99,7 +99,7 @@ function PressCard({
 
         {/* Logo */}
         <div className="absolute inset-0 flex items-end p-6">
-          <span className="text-white/90 text-[1.5rem] font-bold tracking-tight">
+          <span className="text-white/90 text-heading font-bold tracking-tight">
             {item.logo}
           </span>
         </div>
