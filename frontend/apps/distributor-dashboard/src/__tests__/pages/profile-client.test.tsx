@@ -30,7 +30,8 @@ describe('ProfilePage', () => {
   });
 
   const mockSetDistributor = jest.fn();
-  const mockLogout = jest.fn();
+  const mockSignOutUser = jest.fn();
+  const mockChangePassword = jest.fn().mockResolvedValue({});
 
   beforeEach(() => {
     resetFactoryCounters();
@@ -39,7 +40,8 @@ describe('ProfilePage', () => {
     (useAuthStore as unknown as jest.Mock).mockReturnValue({
       distributor: mockDistributor,
       setDistributor: mockSetDistributor,
-      logout: mockLogout,
+      signOutUser: mockSignOutUser,
+      changePassword: mockChangePassword,
     });
   });
 
@@ -80,7 +82,8 @@ describe('ProfilePage', () => {
       (useAuthStore as unknown as jest.Mock).mockReturnValue({
         distributor: null,
         setDistributor: mockSetDistributor,
-        logout: mockLogout,
+        signOutUser: mockSignOutUser,
+        changePassword: mockChangePassword,
       });
 
       const { container } = render(<ProfilePage />);

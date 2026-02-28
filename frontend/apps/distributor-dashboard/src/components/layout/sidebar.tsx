@@ -23,7 +23,7 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { distributor, logout } = useAuthStore();
+  const { distributor, signOutUser } = useAuthStore();
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:border-r bg-card h-screen sticky top-0">
@@ -76,7 +76,7 @@ export function Sidebar() {
               <p className="text-sm font-medium truncate">{distributor.name}</p>
               <p className="text-[10px] text-muted-foreground truncate">{distributor.business_name}</p>
             </div>
-            <button onClick={logout} className="text-muted-foreground hover:text-foreground" aria-label="Sign out">
+            <button onClick={() => { signOutUser(); window.location.href = '/login'; }} className="text-muted-foreground hover:text-foreground" aria-label="Sign out">
               <LogOut className="h-4 w-4" />
             </button>
           </div>

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { isCognitoConfigured } from '@lynia/auth';
 import { updateDistributorProfile } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,19 +13,28 @@ import { profileSchema, type ProfileFormData } from '@/lib/validation/schemas';
 import { useToast } from '@/hooks/use-toast';
 import {
   User, MapPin, Phone, Mail, Building2, CreditCard,
-  Shield, Star, Save, LogOut,
+  Shield, Star, Save, LogOut, Lock,
 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { distributor, setDistributor, logout } = useAuthStore();
+  const { distributor, setDistributor, signOutUser, changePassword } = useAuthStore();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  // Change password state
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const {
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting, isDirty },
+    formState: { errors, isSubmitting },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -61,6 +71,44 @@ export default function ProfilePage() {
   const handleCancel = () => {
     reset(); // Reset to default values
     setEditing(false);
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('Passwords do not match');
+      return;
+    }
+
+    if (newPassword.length < 12) {
+      setPasswordError('Password must be at least 12 characters');
+      return;
+    }
+
+    setPasswordLoading(true);
+    try {
+      const result = await changePassword(oldPassword, newPassword);
+      if (result.error) {
+        setPasswordError(result.error);
+      } else {
+        toast({ title: 'Password changed successfully', variant: 'success' });
+        setChangingPassword(false);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+      }
+    } catch {
+      setPasswordError('An unexpected error occurred');
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    signOutUser();
+    window.location.href = '/login';
   };
 
   return (
@@ -297,10 +345,119 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Logout */}
-      <Button variant="outline" className="w-full text-red-600 hover:text-red-700 hover:bg-red-50" onClick={logout}>
-        <LogOut className="h-4 w-4 mr-1.5" /> Sign Out
-      </Button>
+      {/* Change Password */}
+      {isCognitoConfigured() && (
+        <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Lock className="h-4 w-4" /> Security
+            </h3>
+            {!changingPassword && (
+              <Button variant="outline" size="sm" onClick={() => setChangingPassword(true)}>
+                Change Password
+              </Button>
+            )}
+          </div>
+
+          {changingPassword && (
+            <form onSubmit={handleChangePassword} className="space-y-3">
+              {passwordError && (
+                <div className="rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
+                  {passwordError}
+                </div>
+              )}
+              <div>
+                <label className="text-xs text-muted-foreground">Current Password</label>
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="At least 12 characters"
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground">Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Re-enter your new password"
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" disabled={passwordLoading}>
+                  {passwordLoading ? 'Changing...' : 'Update Password'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setChangingPassword(false);
+                    setOldPassword('');
+                    setNewPassword('');
+                    setConfirmNewPassword('');
+                    setPasswordError('');
+                  }}
+                  disabled={passwordLoading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {/* Logout with confirmation */}
+      {showLogoutConfirm ? (
+        <div className="rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10 p-5 shadow-sm space-y-3">
+          <p className="text-sm font-medium text-red-700 dark:text-red-300">
+            Are you sure you want to sign out?
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleLogout}
+            >
+              <LogOut className="h-4 w-4 mr-1.5" /> Yes, Sign Out
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowLogoutConfirm(false)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          variant="outline"
+          className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+          onClick={() => setShowLogoutConfirm(true)}
+        >
+          <LogOut className="h-4 w-4 mr-1.5" /> Sign Out
+        </Button>
+      )}
     </div>
   );
 }
