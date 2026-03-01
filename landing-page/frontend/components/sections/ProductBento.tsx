@@ -4,6 +4,7 @@ import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { MessageSquare, Link2, Smartphone } from 'lucide-react';
 import { WhatsAppChatDemo } from '@/components/ui/WhatsAppChatDemo';
+import { EmbeddedCreditDiagram } from '@/components/ui/EmbeddedCreditDiagram';
 
 
 export function ProductBento() {
@@ -18,10 +19,10 @@ export function ProductBento() {
           isVisible={isVisible}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10 items-stretch">
           {/* Digital Credit — Top Left */}
           <div
-            className={`border border-border border-t-4 border-t-primary rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 ${
+            className={`border border-border border-t-4 border-t-primary rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 flex flex-col ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -39,14 +40,14 @@ export function ProductBento() {
               employees.
             </p>
             {/* WhatsApp Chat Flow Demo */}
-            <div className="mt-6">
+            <div className="mt-6 flex-1 flex flex-col">
               <WhatsAppChatDemo isVisible={isVisible} />
             </div>
           </div>
 
           {/* Embedded Credit — Top Right */}
           <div
-            className={`border border-border border-t-4 border-t-info rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 ${
+            className={`border border-border border-t-4 border-t-info rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 flex flex-col ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '60ms' }}
@@ -66,6 +67,10 @@ export function ProductBento() {
               bundled with health/life insurance and capacity-building
               mechanisms.
             </p>
+            {/* Architecture Diagram */}
+            <div className="mt-6 flex-1 flex flex-col">
+              <EmbeddedCreditDiagram isVisible={isVisible} />
+            </div>
           </div>
 
           {/* Asset-Backed Credit — Full Width Bottom (Dark Treatment) */}
