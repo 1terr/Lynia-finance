@@ -1,166 +1,18 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionLabel } from '@/components/ui/SectionLabel';
+import { posts } from '@/lib/editorial-data';
 
-interface PressItem {
-  logo: string;
-  headline: string;
-  description: string;
-  href: string;
-  gradient: string;
-  logoSize?: string;
-}
-
-const pressItems: PressItem[] = [
-  {
-    logo: 'ZBC',
-    headline:
-      'Lynia Finance launches WhatsApp-based smartphone financing for informal traders across Zimbabwe.',
-    description:
-      'How Lynia Finance is using mobile money data to underwrite loans for entrepreneurs across Zimbabwe.',
-    href: '/insights',
-    gradient: 'from-[#0A2540] via-[#1A3A5C] to-[#0A2540]',
-  },
-  {
-    logo: 'TechHub',
-    headline:
-      'How mobile money velocity is replacing bank statements as the new credit score in Africa.',
-    description:
-      'Lynia Finance pioneers alternative credit scoring using EcoCash and mobile money patterns.',
-    href: '/insights',
-    gradient: 'from-[#0e4429] via-[#006d32] to-[#0e4429]',
-  },
-  {
-    logo: 'BD',
-    headline:
-      'Zimbabwe fintech bridges the $14B credit gap with IoT-backed asset lending and embedded insurance.',
-    description:
-      'Lynia Finance combines real-time asset telemetry with mobile money disbursement for productive credit.',
-    href: '/insights',
-    gradient: 'from-[#2D1B69] via-[#635BFF] to-[#2D1B69]',
-  },
-  {
-    logo: 'Reuters',
-    headline:
-      'African fintech startups are redefining credit access for the informal economy.',
-    description:
-      'Reuters explores how companies like Lynia Finance use alternative data for financial inclusion.',
-    href: '/insights',
-    gradient: 'from-[#1a1a2e] via-[#16213e] to-[#0f3460]',
-  },
-  {
-    logo: 'Disrupt',
-    headline:
-      'The next wave of African fintech is built on WhatsApp and mobile money rails.',
-    description:
-      'Disrupt Africa profiles Lynia Finance among startups leveraging chat-based financial services.',
-    href: '/insights',
-    gradient: 'from-[#4a0e0e] via-[#8b1a1a] to-[#4a0e0e]',
-  },
-];
-
-function PressCard({
-  item,
-  index,
-  isVisible,
-}: {
-  item: PressItem;
-  index: number;
-  isVisible: boolean;
-}) {
-  return (
-    <a
-      href={item.href}
-      className={`group flex-shrink-0 press-card fade-in ${
-        isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
-      }`}
-      style={{ transitionDelay: `${150 + index * 100}ms` }}
-    >
-      {/* Image / brand area */}
-      <div
-        className={`relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-gradient-to-br ${item.gradient} shadow-stripe-sm group-hover:shadow-stripe-md transition-shadow duration-350 ease-stripe-out`}
-      >
-        {/* Grid pattern overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.08]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-
-        {/* Decorative glow */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-40 h-40 rounded-full bg-white/5 blur-3xl" />
-        </div>
-
-        {/* Logo */}
-        <div className="absolute inset-0 flex items-end p-6">
-          <span className="text-white/90 text-heading font-bold tracking-tight">
-            {item.logo}
-          </span>
-        </div>
-
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-white/0 group-hover:bg-white/[0.03] transition-colors duration-350 ease-stripe-out" />
-      </div>
-
-      {/* Text content */}
-      <div className="mt-4">
-        <p className="text-body text-slate leading-relaxed line-clamp-2">
-          {item.description}
-        </p>
-        <span className="inline-flex items-center text-body-sm font-semibold text-primary mt-3 group-hover:text-primary-hover transition-colors duration-250 ease-stripe">
-          Read the story
-          <ChevronRight className="w-4 h-4 ml-0.5 transition-transform duration-250 ease-stripe-out group-hover:translate-x-1" />
-        </span>
-      </div>
-    </a>
-  );
-}
+const featured = posts[0];
+const sideArticles = [posts[1], posts[2]];
 
 export function Insights() {
   const { ref, isVisible } = useScrollAnimation();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(true);
-
-  const checkScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setCanScrollLeft(el.scrollLeft > 4);
-    setCanScrollRight(el.scrollLeft < el.scrollWidth - el.clientWidth - 4);
-  }, []);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    checkScroll();
-    el.addEventListener('scroll', checkScroll, { passive: true });
-    window.addEventListener('resize', checkScroll);
-    return () => {
-      el.removeEventListener('scroll', checkScroll);
-      window.removeEventListener('resize', checkScroll);
-    };
-  }, [checkScroll]);
-
-  const scroll = (direction: 'left' | 'right') => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const firstCard = el.querySelector('.press-card') as HTMLElement | null;
-    const step = firstCard ? firstCard.offsetWidth + 24 : 380;
-    el.scrollBy({
-      left: direction === 'left' ? -step : step,
-      behavior: 'smooth',
-    });
-  };
 
   return (
-    <section ref={ref} id="insights" className="bg-white py-16 lg:py-24">
+    <section ref={ref} id="insights" className="bg-surface-secondary py-16 lg:py-24">
       <div className="container-main">
         {/* Header row */}
         <div className="flex items-end justify-between">
@@ -171,53 +23,116 @@ export function Insights() {
                 isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
               }`}
             >
-              In the news
+              Latest thinking
             </h2>
           </div>
 
-          {/* Navigation arrows */}
-          <div
-            className={`hidden sm:flex items-center gap-2 fade-in ${
+          <a
+            href="/editorial"
+            className={`hidden sm:inline-flex items-center text-body-sm font-semibold text-primary hover:text-primary-hover transition-colors duration-250 ease-stripe fade-in ${
               isVisible ? 'fade-in-visible' : 'fade-in-hidden-sm'
             }`}
             style={{ transitionDelay: '200ms' }}
           >
-            <button
-              onClick={() => scroll('left')}
-              disabled={!canScrollLeft}
-              className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-all duration-250 ease-stripe hover:border-border-strong hover:shadow-stripe-xs disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:shadow-none"
-              aria-label="Scroll left"
-            >
-              <ChevronLeft className="w-5 h-5 text-primary-dark" />
-            </button>
-            <button
-              onClick={() => scroll('right')}
-              disabled={!canScrollRight}
-              className="w-10 h-10 rounded-full border border-border flex items-center justify-center transition-all duration-250 ease-stripe hover:border-border-strong hover:shadow-stripe-xs disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:border-border disabled:hover:shadow-none"
-              aria-label="Scroll right"
-            >
-              <ChevronRight className="w-5 h-5 text-primary-dark" />
-            </button>
-          </div>
+            VIEW ALL
+            <ChevronRight className="w-4 h-4 ml-0.5" />
+          </a>
         </div>
-      </div>
 
-      {/* Scrollable cards — full-bleed on the right */}
-      <div
-        ref={scrollRef}
-        className="mt-10 flex gap-6 overflow-x-auto scroll-smooth pl-6 lg:pl-[max(calc((100vw-1080px)/2+48px),48px)] pr-6 pb-2 snap-x snap-mandatory scrollbar-hide"
-        style={{
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}
-      >
-        {pressItems.map((item, i) => (
-          <div key={i} className="snap-start flex-shrink-0">
-            <PressCard item={item} index={i} isVisible={isVisible} />
-          </div>
-        ))}
-        {/* End spacer */}
-        <div className="flex-shrink-0 w-6 lg:w-12" />
+        {/* Bento grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-10">
+          {/* Featured card — left, spans 3 columns and 2 rows */}
+          <a
+            href={`/editorial/${featured.slug}`}
+            className={`group lg:col-span-3 lg:row-span-2 transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md fade-in ${
+              isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
+            }`}
+          >
+            <div className="relative h-full rounded-xl overflow-hidden bg-gradient-to-br from-navy-dark via-navy to-navy-light p-8 lg:p-10 flex flex-col justify-between shadow-stripe-sm min-h-[360px] lg:min-h-0">
+              {/* Grid pattern overlay */}
+              <div
+                className="absolute inset-0 opacity-[0.06]"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                  backgroundSize: '40px 40px',
+                }}
+              />
+
+              {/* Content */}
+              <div className="relative z-10">
+                <div className="flex items-center gap-3">
+                  <span className="text-overline uppercase tracking-wider text-primary">
+                    FEATURED
+                  </span>
+                  <span className="w-6 h-px bg-white/30" />
+                  <span className="text-overline uppercase tracking-wider text-white/60">
+                    {featured.category.toUpperCase()}
+                  </span>
+                </div>
+
+                <h3 className="text-title-mobile lg:text-title text-white mt-6 lg:mt-8">
+                  {featured.title}
+                </h3>
+
+                <p className="text-body-lg text-white/70 mt-4 max-w-[540px]">
+                  {featured.excerpt}
+                </p>
+              </div>
+
+              <div className="relative z-10 mt-8">
+                <span className="text-caption text-white/50">
+                  {featured.readTime}
+                </span>
+              </div>
+
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/[0.03] transition-colors duration-350 ease-stripe-out" />
+            </div>
+          </a>
+
+          {/* Side cards — right, each spans 2 columns */}
+          {sideArticles.map((article, i) => (
+            <a
+              key={article.slug}
+              href={`/editorial/${article.slug}`}
+              className={`group lg:col-span-2 transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md fade-in ${
+                isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
+              }`}
+              style={{ transitionDelay: `${60 + i * 60}ms` }}
+            >
+              <div className="h-full bg-white border-t-2 border-primary rounded-xl p-6 lg:p-8 shadow-stripe-sm flex flex-col">
+                <div className="flex items-center gap-3">
+                  <span className="text-overline uppercase tracking-wider text-primary">
+                    {article.category.toUpperCase()}
+                  </span>
+                  <span className="text-caption text-muted">
+                    {article.readTime}
+                  </span>
+                </div>
+
+                <h3 className="text-heading-mobile lg:text-heading text-primary-dark mt-4">
+                  {article.title}
+                </h3>
+
+                <p className="text-body-sm text-slate mt-3 line-clamp-3">
+                  {article.excerpt}
+                </p>
+              </div>
+            </a>
+          ))}
+        </div>
+
+        {/* Mobile "View all" link */}
+        <div className="mt-8 sm:hidden">
+          <a
+            href="/editorial"
+            className="inline-flex items-center text-body-sm font-semibold text-primary hover:text-primary-hover transition-colors duration-250 ease-stripe"
+          >
+            VIEW ALL
+            <ChevronRight className="w-4 h-4 ml-0.5" />
+          </a>
+        </div>
       </div>
     </section>
   );

@@ -62,22 +62,6 @@
     display: none;
   }
 
-  /* Press card — 1 full-width card on mobile, 3 + half peek on desktop */
-  .press-card {
-    width: calc(100vw - 48px);
-  }
-  @media (min-width: 640px) {
-    .press-card {
-      width: calc(50vw - 36px);
-    }
-  }
-  @media (min-width: 1024px) {
-    .press-card {
-      /* 3 full cards + half card peeking from the right edge */
-      /* visible = (100vw + 1080px)/2 - 48px; card = (visible - 3 gaps) / 3.5 */
-      width: calc(((100vw + 1080px) / 2 - 120px) / 3.5);
-    }
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,6 +1,6 @@
 // TODO(launch): Replace static editorial content with real articles or connect Sanity CMS
 
-export type Category = 'Company' | 'Market' | 'Products' | 'Engineering';
+export type Category = 'Company' | 'Market' | 'Products' | 'Engineering' | 'Investment Thesis' | 'Technology';
 
 export interface Author {
   name: string;
@@ -24,9 +24,65 @@ const team = {
   engineering: { name: 'Lynia Finance Team', role: 'Engineering' },
 };
 
-export const categories: Category[] = ['Company', 'Market', 'Products', 'Engineering'];
+export const categories: Category[] = ['Company', 'Market', 'Products', 'Engineering', 'Investment Thesis', 'Technology'];
 
 export const posts: Post[] = [
+  {
+    slug: 'payment-infrastructure-margin-expansion',
+    category: 'Investment Thesis',
+    title: 'Payment Infrastructure: Margin Expansion Through Rails Substitution',
+    excerpt: '$100B in direct fees. $50B addressable. A one-time infrastructure upgrade with permanent margin improvement.',
+    date: '28 Feb 2026',
+    readTime: '20 min read',
+    author: team.founders,
+    body: [
+      'Africa\u2019s payment infrastructure was built for a different era. The rails that move money between mobile wallets, banks, and merchants were designed when transaction volumes were a fraction of what they are today. The result is a system where fees consume 2\u20134% of every transaction \u2014 a tax on economic activity that falls hardest on those who can least afford it.',
+      'The numbers are staggering. Sub-Saharan Africa processes over $100 billion in digital payment fees annually. Of that, roughly $50 billion is addressable through infrastructure modernisation \u2014 replacing legacy switching layers, reducing settlement times, and eliminating redundant intermediaries.',
+      'This is not a technology problem. The protocols exist. Real-time gross settlement systems, ISO 20022 messaging, and blockchain-based clearing are all production-ready. The barrier is distribution: who has the customer relationships, the regulatory licences, and the local trust to swap out the rails without disrupting the flow?',
+      'Lynia\u2019s thesis is that the companies best positioned to execute this substitution are those already embedded in the transaction flow. Asset financiers, credit providers, and mobile money agents who process thousands of transactions daily have a natural insertion point. Every loan disbursement, every repayment, every device payment is an opportunity to route through lower-cost infrastructure.',
+      'The margin improvement is permanent. Unlike revenue growth that requires continuous customer acquisition, infrastructure substitution is a one-time upgrade that reduces cost-per-transaction for the life of the system. A lender processing $10M in monthly disbursements who reduces payment costs from 3% to 0.8% adds $264K in annual margin \u2014 without acquiring a single new customer.',
+      'We are building this infrastructure layer into Lynia\u2019s core platform. Every mobile money integration, every agent settlement, every customer repayment is designed to operate on the lowest-cost rail available. As we scale across Zimbabwe and beyond, the compounding effect of basis-point savings becomes a structural advantage.',
+      'The opportunity window is narrow. As mobile money volumes grow 30%+ annually across the continent, the incumbents who control the current rails are investing in their own modernisation. The next three years will determine whether the margin improvement accrues to fintechs who build their own infrastructure or to the existing players who upgrade theirs.',
+      'We believe the advantage goes to the builders. Not because the technology is hard, but because the distribution is. And distribution is what we do.',
+    ],
+  },
+  {
+    slug: 'infrastructure-repricing',
+    category: 'Technology',
+    title: 'The Infrastructure Repricing',
+    excerpt: 'AI is forcing SaaS to evolve. The companies that modernize their payment infrastructure will re-rate. The rest won\u2019t survive the transition.',
+    date: '20 Feb 2026',
+    readTime: '15 min read',
+    author: team.engineering,
+    body: [
+      'Every decade, a technological shift forces a repricing of infrastructure. The move from on-premise to cloud repriced compute. The move from batch to real-time repriced data. Now, the integration of AI into financial services is repricing the entire credit and payments stack.',
+      'The repricing is not about AI replacing humans. It\u2019s about AI making previously uneconomical customer segments profitable. When the cost of underwriting a $50 loan drops from $15 to $0.30, the unit economics of serving the informal economy flip from impossible to attractive.',
+      'Traditional SaaS platforms in African fintech were built for a world where the cost of serving each customer was high enough to justify $5\u201310 monthly subscriptions or 1\u20132% transaction fees. AI-driven automation is collapsing these costs. The platforms that don\u2019t adapt will find their margins competed away by leaner infrastructure.',
+      'At Lynia, we\u2019re seeing this repricing in real-time. Our AI-powered credit scoring processes applications in under 5 minutes \u2014 a task that would take a human analyst 2\u20133 hours. Our WhatsApp automation handles 80% of customer interactions without human intervention. Each automation compounds: lower cost per customer means we can profitably serve smaller loan sizes, which expands our addressable market.',
+      'The companies that will re-rate \u2014 that will see their valuations increase as the market recognises their structural advantages \u2014 are those modernising their infrastructure now. This means replacing batch processing with real-time decisioning, replacing manual review with AI-assisted workflows, and replacing high-cost payment rails with direct integrations.',
+      'The rest face a slow compression. Their margins shrink as competitors automate. Their customer acquisition costs rise as the market fragments. Their infrastructure becomes a liability rather than an asset.',
+      'We are building Lynia\u2019s infrastructure for the post-repricing world. Every system we deploy is designed to operate at 10x the volume and one-tenth the cost of traditional alternatives. That\u2019s not an aspiration \u2014 it\u2019s a requirement for serving the market we\u2019re targeting.',
+    ],
+  },
+  {
+    slug: 'onchain-credit-flywheel',
+    category: 'Investment Thesis',
+    title: 'The Onchain Credit Flywheel',
+    excerpt: 'How originators can grow both supply and demand for quality loans. $19B+ originated, 93% cost reduction, ~200bps investor yield advantage.',
+    date: '14 Feb 2026',
+    readTime: '14 min read',
+    author: team.founders,
+    body: [
+      'Credit markets in Africa are structurally broken. On one side, hundreds of millions of creditworthy borrowers cannot access affordable loans. On the other, institutional investors seeking yield cannot find quality origination at scale. The gap between supply and demand is not a market failure \u2014 it\u2019s an infrastructure failure.',
+      'The onchain credit flywheel solves both sides simultaneously. By recording loan origination, performance, and repayment data on transparent, auditable infrastructure, originators create a feedback loop that attracts capital, improves underwriting, and expands access.',
+      'The mechanics are straightforward. An originator like Lynia issues loans and records performance data. This data \u2014 default rates, recovery rates, portfolio seasoning \u2014 becomes verifiable by any investor. As the data proves quality, more capital flows in. More capital means more loans. More loans mean more data. The flywheel accelerates.',
+      'The numbers from early adopters are compelling. Over $19 billion has been originated through onchain credit protocols globally. Originators report 93% cost reduction in capital raising compared to traditional securitisation. Investors see approximately 200 basis points of yield advantage over comparable traditional credit products.',
+      'For Lynia, this model transforms our capital structure. Instead of relying on a single bank facility or development finance institution, we can access a global pool of credit investors who evaluate our portfolio on performance, not relationships. Our mobile money repayment data \u2014 timestamped, immutable, and auditable \u2014 is exactly the kind of transparent collateral that onchain capital markets are designed for.',
+      'The flywheel also disciplines origination. When every loan is visible, originators cannot hide poor underwriting behind opaque reporting. The market rewards quality and punishes recklessness in real-time. This alignment of incentives is what makes the model sustainable.',
+      'We are building toward this architecture. Our scoring models, repayment tracking, and portfolio analytics are designed to produce the data transparency that institutional capital requires. When we connect to onchain capital markets, the integration will be seamless because the infrastructure was built for it from day one.',
+      'The onchain credit flywheel is not a future possibility. It\u2019s happening now. The originators who build for it today will have a structural advantage in accessing the lowest-cost capital for the next decade.',
+    ],
+  },
   {
     slug: 'why-we-built-lynia-finance',
     category: 'Company',
