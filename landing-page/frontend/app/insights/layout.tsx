@@ -1,18 +1,18 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Editorial — Lynia Finance',
+  title: 'Insights — Lynia Finance',
   description:
     'Articles on financial inclusion, credit infrastructure, and building for Zimbabwe\u2019s underbanked majority.',
   openGraph: {
-    title: 'Editorial — Lynia Finance',
+    title: 'Insights — Lynia Finance',
     description:
       'Articles on financial inclusion, credit infrastructure, and building for Zimbabwe\u2019s underbanked majority.',
-    url: '/editorial',
+    url: '/insights',
   },
 };
 
-export default function EditorialLayout({
+export default function InsightsLayout({
   children,
 }: {
   children: React.ReactNode;

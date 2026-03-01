@@ -1,40 +1,59 @@
-// TODO(launch): Replace static editorial content with real articles or connect Sanity CMS
+/**
+ * Migration script: Seed Sanity with existing editorial content.
+ *
+ * Usage:
+ *   cd landing-page/sanity-studio
+ *   SANITY_STUDIO_PROJECT_ID=<your-id> npx tsx migrations/seed-content.ts
+ *
+ * Prerequisites:
+ *   - Sanity project created (npx sanity@latest init)
+ *   - SANITY_STUDIO_PROJECT_ID env var set
+ *   - npm install (sanity deps)
+ */
 
-export type Category = 'Company' | 'Market' | 'Products' | 'Engineering' | 'Investment Thesis' | 'Technology';
+import { createClient } from '@sanity/client';
 
-export interface Author {
-  name: string;
-  role: string;
+const projectId = process.env.SANITY_STUDIO_PROJECT_ID;
+if (!projectId) {
+  console.error('Set SANITY_STUDIO_PROJECT_ID env var before running.');
+  process.exit(1);
 }
 
-export interface Post {
-  slug: string;
-  category: Category;
-  title: string;
-  excerpt: string;
-  date: string;
-  readTime: string;
-  author: Author;
-  body: string[];
-}
+const client = createClient({
+  projectId,
+  dataset: 'production',
+  apiVersion: '2024-01-01',
+  token: process.env.SANITY_AUTH_TOKEN, // Needs write access
+  useCdn: false,
+});
 
-const team = {
-  founders: { name: 'Lynia Finance Team', role: 'Founding Team' },
-  product: { name: 'Lynia Finance Team', role: 'Product' },
-  engineering: { name: 'Lynia Finance Team', role: 'Engineering' },
-};
+// ---------- Categories ----------
+const categories = [
+  { title: 'Company', slug: 'company', description: 'Company news and updates' },
+  { title: 'Market', slug: 'market', description: 'Market analysis and insights' },
+  { title: 'Products', slug: 'products', description: 'Product features and guides' },
+  { title: 'Engineering', slug: 'engineering', description: 'Engineering deep dives' },
+  { title: 'Investment Thesis', slug: 'investment-thesis', description: 'Investment insights and analysis' },
+  { title: 'Technology', slug: 'technology', description: 'Technology and infrastructure' },
+];
 
-export const categories: Category[] = ['Company', 'Market', 'Products', 'Engineering', 'Investment Thesis', 'Technology'];
+// ---------- Authors ----------
+const authors = [
+  { name: 'Lynia Finance Team', role: 'Founding Team' },
+  { name: 'Lynia Finance Team', role: 'Product' },
+  { name: 'Lynia Finance Team', role: 'Engineering' },
+];
 
-export const posts: Post[] = [
+// ---------- Posts ----------
+const posts = [
   {
     slug: 'payment-infrastructure-margin-expansion',
     category: 'Investment Thesis',
     title: 'Payment Infrastructure: Margin Expansion Through Rails Substitution',
     excerpt: '$100B in direct fees. $50B addressable. A one-time infrastructure upgrade with permanent margin improvement.',
-    date: '28 Feb 2026',
+    date: '2026-02-28',
     readTime: '20 min read',
-    author: team.founders,
+    authorRole: 'Founding Team',
     body: [
       'Africa\u2019s payment infrastructure was built for a different era. The rails that move money between mobile wallets, banks, and merchants were designed when transaction volumes were a fraction of what they are today. The result is a system where fees consume 2\u20134% of every transaction \u2014 a tax on economic activity that falls hardest on those who can least afford it.',
       'The numbers are staggering. Sub-Saharan Africa processes over $100 billion in digital payment fees annually. Of that, roughly $50 billion is addressable through infrastructure modernisation \u2014 replacing legacy switching layers, reducing settlement times, and eliminating redundant intermediaries.',
@@ -51,9 +70,9 @@ export const posts: Post[] = [
     category: 'Technology',
     title: 'The Infrastructure Repricing',
     excerpt: 'AI is forcing SaaS to evolve. The companies that modernize their payment infrastructure will re-rate. The rest won\u2019t survive the transition.',
-    date: '20 Feb 2026',
+    date: '2026-02-20',
     readTime: '15 min read',
-    author: team.engineering,
+    authorRole: 'Engineering',
     body: [
       'Every decade, a technological shift forces a repricing of infrastructure. The move from on-premise to cloud repriced compute. The move from batch to real-time repriced data. Now, the integration of AI into financial services is repricing the entire credit and payments stack.',
       'The repricing is not about AI replacing humans. It\u2019s about AI making previously uneconomical customer segments profitable. When the cost of underwriting a $50 loan drops from $15 to $0.30, the unit economics of serving the informal economy flip from impossible to attractive.',
@@ -69,9 +88,9 @@ export const posts: Post[] = [
     category: 'Investment Thesis',
     title: 'The Onchain Credit Flywheel',
     excerpt: 'How originators can grow both supply and demand for quality loans. $19B+ originated, 93% cost reduction, ~200bps investor yield advantage.',
-    date: '14 Feb 2026',
+    date: '2026-02-14',
     readTime: '14 min read',
-    author: team.founders,
+    authorRole: 'Founding Team',
     body: [
       'Credit markets in Africa are structurally broken. On one side, hundreds of millions of creditworthy borrowers cannot access affordable loans. On the other, institutional investors seeking yield cannot find quality origination at scale. The gap between supply and demand is not a market failure \u2014 it\u2019s an infrastructure failure.',
       'The onchain credit flywheel solves both sides simultaneously. By recording loan origination, performance, and repayment data on transparent, auditable infrastructure, originators create a feedback loop that attracts capital, improves underwriting, and expands access.',
@@ -88,9 +107,9 @@ export const posts: Post[] = [
     category: 'Company',
     title: 'Why we built Lynia Finance',
     excerpt: 'The story behind our mission to serve Zimbabwe\u2019s underbanked majority.',
-    date: '10 Feb 2026',
+    date: '2026-02-10',
     readTime: '5 min read',
-    author: team.founders,
+    authorRole: 'Founding Team',
     body: [
       'In Zimbabwe, 80% of the working population operates in the informal economy. They earn a living, support families, and run small businesses. But when they need credit \u2014 to buy a smartphone for their trade, to cover an emergency, to invest in stock \u2014 the answer from traditional banks is almost always no.',
       'We started Lynia Finance because we believe access to credit should not depend on having a bank account, a formal employer, or a credit history that only 5% of the population can build.',
@@ -107,9 +126,9 @@ export const posts: Post[] = [
     category: 'Market',
     title: 'Zimbabwe\u2019s $14B credit gap',
     excerpt: '80% of the workforce is informal. Less than 5% have bank credit. Here\u2019s how we\u2019re closing the gap.',
-    date: '8 Feb 2026',
+    date: '2026-02-08',
     readTime: '6 min read',
-    author: team.founders,
+    authorRole: 'Founding Team',
     body: [
       'Zimbabwe\u2019s economy runs on informal work. Market traders, cross-border merchants, small-scale farmers, and independent service providers make up roughly 80% of the workforce. They contribute significantly to GDP, yet less than 5% of informal workers have access to bank credit.',
       'The numbers tell a stark story. Zimbabwe has an estimated $14 billion in unserved credit demand. Traditional financial institutions serve a narrow slice of the population \u2014 salaried employees with bank accounts, formal employment records, and collateral. Everyone else is left out.',
@@ -126,9 +145,9 @@ export const posts: Post[] = [
     category: 'Products',
     title: 'How asset financing works',
     excerpt: 'From deposit to device in under 24 hours. A step-by-step walkthrough.',
-    date: '5 Feb 2026',
+    date: '2026-02-05',
     readTime: '4 min read',
-    author: team.product,
+    authorRole: 'Product',
     body: [
       'Asset financing is Lynia\u2019s flagship product. It lets customers finance smartphones and productive assets with a small deposit, collect from a local agent, and repay via mobile money. Here\u2019s exactly how it works.',
       'Step 1: Apply via WhatsApp. Send a message to our WhatsApp number. Tell us what device you need. The entire application takes under 2 minutes \u2014 no forms to fill, no branch to visit, no app to download.',
@@ -145,9 +164,9 @@ export const posts: Post[] = [
     category: 'Engineering',
     title: 'Building credit scoring for the informal economy',
     excerpt: 'No payslips. No bank statements. How we assess creditworthiness using mobile money data.',
-    date: '1 Feb 2026',
+    date: '2026-02-01',
     readTime: '7 min read',
-    author: team.engineering,
+    authorRole: 'Engineering',
     body: [
       'Traditional credit scoring doesn\u2019t work for 80% of Zimbabwe\u2019s workforce. No bank statements. No payslips. No formal employment records. So how do you assess whether someone is creditworthy?',
       'At Lynia, we built a scoring system designed for the informal economy. Instead of relying on data that most people don\u2019t have, we use data they do: mobile money transactions.',
@@ -165,9 +184,9 @@ export const posts: Post[] = [
     category: 'Company',
     title: 'Our distributor network',
     excerpt: 'How local agents across Zimbabwe are helping communities access financing.',
-    date: '28 Jan 2026',
+    date: '2026-01-28',
     readTime: '4 min read',
-    author: team.founders,
+    authorRole: 'Founding Team',
     body: [
       'Lynia Finance doesn\u2019t operate from bank branches. We operate through a growing network of local agents \u2014 phone shops, general dealers, and community leaders who serve as the physical layer of our digital platform.',
       'Our distributor network is central to how asset financing works. When a customer is approved for a device, they don\u2019t wait for delivery. They walk to a nearby agent, verify their identity, and walk out with their smartphone the same day.',
@@ -183,9 +202,9 @@ export const posts: Post[] = [
     category: 'Products',
     title: 'Mobile money repayments explained',
     excerpt: 'A simple guide to repaying your loan through EcoCash, OneMoney, or Innbucks.',
-    date: '25 Jan 2026',
+    date: '2026-01-25',
     readTime: '3 min read',
-    author: team.product,
+    authorRole: 'Product',
     body: [
       'Repaying your Lynia Finance loan is designed to be as simple as sending money to a friend. Everything happens through the mobile money wallet you already use.',
       'We support three mobile money providers: EcoCash (Econet), OneMoney (NetOne), and Innbucks. You choose which wallet to use when you set up your repayment schedule. You can switch providers at any time.',
@@ -199,20 +218,83 @@ export const posts: Post[] = [
   },
 ];
 
-export function getPostBySlug(slug: string): Post | undefined {
-  return posts.find((p) => p.slug === slug);
+// ---------- Helpers ----------
+function makeKey(): string {
+  return Math.random().toString(36).substring(2, 10);
 }
 
-export function getRelatedPosts(currentSlug: string, limit = 3): Post[] {
-  const current = getPostBySlug(currentSlug);
-  if (!current) return posts.slice(0, limit);
-
-  const sameCategory = posts.filter(
-    (p) => p.slug !== currentSlug && p.category === current.category
-  );
-  const others = posts.filter(
-    (p) => p.slug !== currentSlug && p.category !== current.category
-  );
-
-  return [...sameCategory, ...others].slice(0, limit);
+function textToPortableText(paragraphs: string[]) {
+  return paragraphs.map((text) => ({
+    _type: 'block' as const,
+    _key: makeKey(),
+    style: 'normal' as const,
+    markDefs: [],
+    children: [{ _type: 'span' as const, _key: makeKey(), text, marks: [] }],
+  }));
 }
+
+// ---------- Main ----------
+async function seed() {
+  console.log('Creating categories...');
+  const categoryDocs: Record<string, string> = {};
+  for (const cat of categories) {
+    const doc = await client.create({
+      _type: 'category',
+      title: cat.title,
+      slug: { _type: 'slug', current: cat.slug },
+      description: cat.description,
+    });
+    categoryDocs[cat.title] = doc._id;
+    console.log(`  + ${cat.title} (${doc._id})`);
+  }
+
+  console.log('\nCreating authors...');
+  const authorDocs: Record<string, string> = {};
+  for (const author of authors) {
+    const doc = await client.create({
+      _type: 'author',
+      name: author.name,
+      role: author.role,
+    });
+    authorDocs[author.role] = doc._id;
+    console.log(`  + ${author.name} [${author.role}] (${doc._id})`);
+  }
+
+  console.log('\nCreating posts...');
+  for (const post of posts) {
+    const categoryRef = categoryDocs[post.category];
+    const authorRef = authorDocs[post.authorRole];
+
+    if (!categoryRef) {
+      console.error(`  ! Category not found: ${post.category}`);
+      continue;
+    }
+    if (!authorRef) {
+      console.error(`  ! Author role not found: ${post.authorRole}`);
+      continue;
+    }
+
+    await client.create({
+      _type: 'post',
+      title: post.title,
+      slug: { _type: 'slug', current: post.slug },
+      excerpt: post.excerpt,
+      category: { _type: 'reference', _ref: categoryRef },
+      author: { _type: 'reference', _ref: authorRef },
+      publishedAt: new Date(post.date).toISOString(),
+      readTime: post.readTime,
+      body: textToPortableText(post.body),
+    });
+    console.log(`  + ${post.title}`);
+  }
+
+  console.log('\nMigration complete!');
+  console.log(`  ${Object.keys(categoryDocs).length} categories`);
+  console.log(`  ${Object.keys(authorDocs).length} authors`);
+  console.log(`  ${posts.length} posts`);
+}
+
+seed().catch((err) => {
+  console.error('Migration failed:', err);
+  process.exit(1);
+});

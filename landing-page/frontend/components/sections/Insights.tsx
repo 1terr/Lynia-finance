@@ -3,13 +3,19 @@
 import { ChevronRight } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionLabel } from '@/components/ui/SectionLabel';
-import { posts } from '@/lib/editorial-data';
+import type { SanityPost } from '@/lib/sanity-types';
 
-const featured = posts[0];
-const sideArticles = [posts[1], posts[2]];
+interface InsightsProps {
+  posts: SanityPost[];
+}
 
-export function Insights() {
+export function Insights({ posts }: InsightsProps) {
   const { ref, isVisible } = useScrollAnimation();
+
+  if (posts.length === 0) return null;
+
+  const featured = posts[0];
+  const sideArticles = posts.slice(1, 3);
 
   return (
     <section ref={ref} id="insights" className="bg-surface-secondary py-16 lg:py-24">
@@ -28,7 +34,7 @@ export function Insights() {
           </div>
 
           <a
-            href="/editorial"
+            href="/insights"
             className={`hidden sm:inline-flex items-center text-body-sm font-semibold text-primary hover:text-primary-hover transition-colors duration-250 ease-stripe fade-in ${
               isVisible ? 'fade-in-visible' : 'fade-in-hidden-sm'
             }`}
@@ -43,7 +49,7 @@ export function Insights() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-10">
           {/* Featured card — left, spans 3 columns and 2 rows */}
           <a
-            href={`/editorial/${featured.slug}`}
+            href={`/insights/${featured.slug}`}
             className={`group lg:col-span-3 lg:row-span-2 transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md fade-in ${
               isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
             }`}
@@ -67,7 +73,7 @@ export function Insights() {
                   </span>
                   <span className="w-6 h-px bg-white/30" />
                   <span className="text-overline uppercase tracking-wider text-white/60">
-                    {featured.category.toUpperCase()}
+                    {featured.category.title.toUpperCase()}
                   </span>
                 </div>
 
@@ -94,8 +100,8 @@ export function Insights() {
           {/* Side cards — right, each spans 2 columns */}
           {sideArticles.map((article, i) => (
             <a
-              key={article.slug}
-              href={`/editorial/${article.slug}`}
+              key={article._id}
+              href={`/insights/${article.slug}`}
               className={`group lg:col-span-2 transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md fade-in ${
                 isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
               }`}
@@ -104,7 +110,7 @@ export function Insights() {
               <div className="h-full bg-white border-t-2 border-primary rounded-xl p-6 lg:p-8 shadow-stripe-sm flex flex-col">
                 <div className="flex items-center gap-3">
                   <span className="text-overline uppercase tracking-wider text-primary">
-                    {article.category.toUpperCase()}
+                    {article.category.title.toUpperCase()}
                   </span>
                   <span className="text-caption text-muted">
                     {article.readTime}
@@ -126,7 +132,7 @@ export function Insights() {
         {/* Mobile "View all" link */}
         <div className="mt-8 sm:hidden">
           <a
-            href="/editorial"
+            href="/insights"
             className="inline-flex items-center text-body-sm font-semibold text-primary hover:text-primary-hover transition-colors duration-250 ease-stripe"
           >
             VIEW ALL

@@ -116,6 +116,8 @@ jobs:
         run: pnpm --filter "@lynia/landing-page" build
         env:
           NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: production
 
       - name: Generate runtime config for admin portal
         if: steps.build-admin.outcome == 'success'

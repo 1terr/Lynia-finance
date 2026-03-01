@@ -1,0 +1,22 @@
+{
+  "name": "@lynia/sanity-studio",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "sanity dev",
+    "build": "sanity build",
+    "deploy": "sanity deploy",
+    "start": "sanity start"
+  },
+  "dependencies": {
+    "sanity": "^3.71.0",
+    "@sanity/vision": "^3.71.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "styled-components": "^6.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "typescript": "^5.4.0"
+  }
+}

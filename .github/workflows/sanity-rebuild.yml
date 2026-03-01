@@ -1,0 +1,151 @@
+name: Rebuild Landing Page (Sanity Content)
+
+on:
+  repository_dispatch:
+    types: [sanity-content-publish]
+  workflow_dispatch:
+
+concurrency:
+  group: sanity-rebuild-landing-page
+  cancel-in-progress: true
+
+env:
+  AWS_REGION: us-east-1
+  NODE_VERSION: '20.x'
+  FRONTEND_STACK: lynia-finance-prod-frontend
+
+jobs:
+  rebuild-and-deploy:
+    name: Rebuild & Deploy Landing Page
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build landing page
+        run: pnpm --filter "@lynia/landing-page" build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.API_URL }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.SANITY_PROJECT_ID }}
+          NEXT_PUBLIC_SANITY_DATASET: production
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Blue-Green deployment
+        id: blue-green
+        run: |
+          DEPLOY_VERSION="v$(date +%Y%m%d-%H%M%S)-sanity"
+          BUCKET="production-lynia-landing-page"
+
+          echo "deploy_version=$DEPLOY_VERSION" >> $GITHUB_OUTPUT
+          echo "bucket=$BUCKET" >> $GITHUB_OUTPUT
+
+          # Upload versioned deployment
+          aws s3 sync ./landing-page/frontend/out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "*.xml" \
+            --exclude "*.txt" \
+            --exclude "sw.js" \
+            --exclude "manifest.json"
+
+          aws s3 sync ./landing-page/frontend/out/ "s3://${BUCKET}/deployments/${DEPLOY_VERSION}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "*.xml" \
+            --include "*.txt" \
+            --include "sw.js" \
+            --include "manifest.json"
+
+      - name: Switch traffic
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+
+          aws s3 sync ./landing-page/frontend/out/ "s3://${BUCKET}/" \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "*.html" \
+            --exclude "*.xml" \
+            --exclude "*.txt" \
+            --exclude "sw.js" \
+            --exclude "manifest.json" \
+            --exclude "deployments/*"
+
+          aws s3 sync ./landing-page/frontend/out/ "s3://${BUCKET}/" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --include "*.html" \
+            --include "*.xml" \
+            --include "*.txt" \
+            --include "sw.js" \
+            --include "manifest.json" \
+            --exclude "deployments/*"
+
+      - name: Record deployment version
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          DEPLOY_VERSION="${{ steps.blue-green.outputs.deploy_version }}"
+          echo "$DEPLOY_VERSION" | aws s3 cp - "s3://${BUCKET}/deployments/CURRENT_VERSION"
+
+      - name: Clean old deployments (keep last 5)
+        run: |
+          BUCKET="${{ steps.blue-green.outputs.bucket }}"
+          VERSIONS=$(aws s3 ls "s3://${BUCKET}/deployments/" --recursive \
+            | grep "CURRENT_VERSION\|index.html" \
+            | awk '{print $4}' \
+            | grep -oP 'deployments/v[^/]+' \
+            | sort -u | head -n -5) || true
+
+          for version in $VERSIONS; do
+            aws s3 rm "s3://${BUCKET}/${version}/" --recursive 2>/dev/null || true
+          done
+
+      - name: Invalidate CloudFront cache
+        run: |
+          DISTRIBUTION_ID=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.FRONTEND_STACK }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`LandingPageDistributionId`].OutputValue' \
+            --output text 2>/dev/null || echo "")
+
+          if [ -n "$DISTRIBUTION_ID" ] && [ "$DISTRIBUTION_ID" != "None" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id "$DISTRIBUTION_ID" \
+              --paths "/*" \
+              --query 'Invalidation.Id' \
+              --output text
+            echo "CloudFront invalidation started"
+          else
+            echo "::warning::CloudFront distribution not found"
+          fi
+
+      - name: Health check
+        run: |
+          URL=$(aws cloudformation describe-stacks \
+            --stack-name ${{ env.FRONTEND_STACK }} \
+            --query 'Stacks[0].Outputs[?OutputKey==`LandingPageUrl`].OutputValue' \
+            --output text 2>/dev/null || echo "https://lyniafinance.com")
+          echo "Checking $URL..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "$URL" || echo "000")
+          if [[ "$HTTP_CODE" =~ ^(200|301|302)$ ]]; then
+            echo "Landing page responding: $HTTP_CODE"
+          else
+            echo "::warning::Landing page returned HTTP $HTTP_CODE"
+          fi
