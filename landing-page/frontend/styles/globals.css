@@ -62,7 +62,7 @@
     display: none;
   }
 
-  /* Press card — 1 card on mobile, ~3.33 on desktop (Stripe 2026 layout) */
+  /* Press card — 1 full-width card on mobile, 3 + half peek on desktop */
   .press-card {
     width: calc(100vw - 48px);
   }
@@ -73,8 +73,9 @@
   }
   @media (min-width: 1024px) {
     .press-card {
-      /* visible area = (100vw + 1080px)/2 - 48px; card = (visible - 72px) / 3.33 */
-      width: calc(((100vw + 1080px) / 2 - 120px) * 0.3);
+      /* 3 full cards + half card peeking from the right edge */
+      /* visible = (100vw + 1080px)/2 - 48px; card = (visible - 3 gaps) / 3.5 */
+      width: calc(((100vw + 1080px) / 2 - 120px) / 3.5);
     }
   }
 }
