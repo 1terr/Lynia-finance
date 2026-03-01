@@ -8,10 +8,16 @@ export function Hero() {
       <div className="container-main relative z-10">
         <div className="max-w-[680px] md:max-w-[780px] lg:max-w-[900px] pt-24 lg:pt-0">
           <p
-            className="text-sm text-slate tracking-wide opacity-0 animate-fade-up mb-5"
-            style={{ animationFillMode: 'forwards' }}
+            className="text-slate opacity-0 animate-fade-up mb-5"
+            style={{
+              fontSize: '12px',
+              fontWeight: 500,
+              letterSpacing: '0.02em',
+              lineHeight: '20px',
+              animationFillMode: 'forwards',
+            }}
           >
-            Zimbabwean informal MSMEs: &nbsp;<span className="font-medium">86%</span>
+            Zimbabwean informal MSMEs: &nbsp;86%
           </p>
           <h1
             className="text-hero-mobile md:text-hero-tablet lg:text-hero opacity-0 animate-fade-up"
