@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { SectionLabel } from '@/components/ui/SectionLabel';
 
 interface PressItem {
   logo: string;
@@ -73,8 +74,8 @@ function PressCard({
   return (
     <a
       href={item.href}
-      className={`group flex-shrink-0 press-card transition-all duration-500 ease-stripe-out ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+      className={`group flex-shrink-0 press-card fade-in ${
+        isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
       }`}
       style={{ transitionDelay: `${150 + index * 100}ms` }}
     >
@@ -150,7 +151,6 @@ export function Press() {
   const scroll = (direction: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    // Measure actual card width + gap dynamically
     const firstCard = el.querySelector('.press-card') as HTMLElement | null;
     const step = firstCard ? firstCard.offsetWidth + 24 : 380;
     el.scrollBy({
@@ -165,20 +165,10 @@ export function Press() {
         {/* Header row */}
         <div className="flex items-end justify-between">
           <div>
-            <span
-              className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-                isVisible
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-4'
-              }`}
-            >
-              PRESS
-            </span>
+            <SectionLabel isVisible={isVisible}>PRESS</SectionLabel>
             <h2
-              className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
-                isVisible
-                  ? 'opacity-100 translate-y-0'
-                  : 'opacity-0 translate-y-6'
+              className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 fade-in ${
+                isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
               }`}
             >
               In the news
@@ -187,8 +177,8 @@ export function Press() {
 
           {/* Navigation arrows */}
           <div
-            className={`hidden sm:flex items-center gap-2 transition-all duration-500 ease-stripe-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+            className={`hidden sm:flex items-center gap-2 fade-in ${
+              isVisible ? 'fade-in-visible' : 'fade-in-hidden-sm'
             }`}
             style={{ transitionDelay: '200ms' }}
           >

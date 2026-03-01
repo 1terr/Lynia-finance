@@ -1,42 +1,24 @@
 'use client';
 
-import { useState } from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { FormInput, FormTextarea, FormSelect } from '@/components/ui/FormInput';
 import { WHATSAPP_URL, CONTACT_EMAIL } from '@/lib/constants';
-import { submitForm } from '@/lib/api';
-
-type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
+import { useFormSubmit } from '@/lib/useFormSubmit';
 
 function ContactForm() {
-  const [status, setStatus] = useState<FormStatus>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+  const { status, errorMsg, handleSubmit } = useFormSubmit();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus('submitting');
-    setErrorMsg('');
-
     const form = e.currentTarget;
-    const data = {
+    await handleSubmit({
+      type: 'contact',
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
       phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
       message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
-    };
-
-    try {
-      const result = await submitForm({ type: 'contact', ...data });
-      if (!result.success) {
-        setErrorMsg(result.error || 'Something went wrong. Please try again.');
-        setStatus('error');
-        return;
-      }
-      setStatus('success');
-    } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
-      setStatus('error');
-    }
+    });
   };
 
   if (status === 'success') {
@@ -51,57 +33,11 @@ function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div>
-        <label htmlFor="name" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Name <span className="text-error">*</span>
-        </label>
-        <input
-          id="name"
-          name="name"
-          type="text"
-          required
-          className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-          placeholder="Your full name"
-        />
-      </div>
-      <div>
-        <label htmlFor="phone" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Phone number <span className="text-error">*</span>
-        </label>
-        <input
-          id="phone"
-          name="phone"
-          type="tel"
-          required
-          className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-          placeholder="+263 7X XXX XXXX"
-        />
-      </div>
-      <div>
-        <label htmlFor="email" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Email <span className="text-slate-light text-caption">(optional)</span>
-        </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-          placeholder="you@example.com"
-        />
-      </div>
-      <div>
-        <label htmlFor="message" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Message <span className="text-slate-light text-caption">(optional)</span>
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          rows={4}
-          className="w-full px-4 py-3 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow resize-y"
-          placeholder="How can we help?"
-        />
-      </div>
+    <form onSubmit={onSubmit} className="space-y-5">
+      <FormInput id="name" name="name" type="text" required label="Name" placeholder="Your full name" />
+      <FormInput id="phone" name="phone" type="tel" required label="Phone number" placeholder="+263 7X XXX XXXX" />
+      <FormInput id="email" name="email" type="email" label="Email" optional placeholder="you@example.com" />
+      <FormTextarea id="message" name="message" rows={4} label="Message" optional placeholder="How can we help?" />
       {status === 'error' && (
         <p className="text-body-sm text-error">{errorMsg}</p>
       )}
@@ -113,42 +49,19 @@ function ContactForm() {
 }
 
 function PartnershipForm() {
-  const [status, setStatus] = useState<FormStatus>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+  const { status, errorMsg, handleSubmit } = useFormSubmit();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus('submitting');
-    setErrorMsg('');
-
     const form = e.currentTarget;
-    const data = {
+    await handleSubmit({
+      type: 'partnership',
       name: (form.elements.namedItem('name') as HTMLInputElement).value,
       phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
-      partnerType: (form.elements.namedItem('partnerType') as HTMLSelectElement).value,
+      partner_type: (form.elements.namedItem('partnerType') as HTMLSelectElement).value,
       message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
-    };
-
-    try {
-      const result = await submitForm({
-        type: 'partnership',
-        name: data.name,
-        phone: data.phone,
-        email: data.email,
-        partner_type: data.partnerType,
-        message: data.message,
-      });
-      if (!result.success) {
-        setErrorMsg(result.error || 'Something went wrong. Please try again.');
-        setStatus('error');
-        return;
-      }
-      setStatus('success');
-    } catch {
-      setErrorMsg('Network error. Please check your connection and try again.');
-      setStatus('error');
-    }
+    });
   };
 
   if (status === 'success') {
@@ -163,77 +76,19 @@ function PartnershipForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={onSubmit} className="space-y-5">
       <div className="grid sm:grid-cols-2 gap-5">
-        <div>
-          <label htmlFor="partner-name" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-            Name <span className="text-error">*</span>
-          </label>
-          <input
-            id="partner-name"
-            name="name"
-            type="text"
-            required
-            className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-            placeholder="Your full name"
-          />
-        </div>
-        <div>
-          <label htmlFor="partner-phone" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-            Phone number <span className="text-error">*</span>
-          </label>
-          <input
-            id="partner-phone"
-            name="phone"
-            type="tel"
-            required
-            className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-            placeholder="+263 7X XXX XXXX"
-          />
-        </div>
+        <FormInput id="partner-name" name="name" type="text" required label="Name" placeholder="Your full name" />
+        <FormInput id="partner-phone" name="phone" type="tel" required label="Phone number" placeholder="+263 7X XXX XXXX" />
       </div>
-      <div>
-        <label htmlFor="partner-email" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Email <span className="text-error">*</span>
-        </label>
-        <input
-          id="partner-email"
-          name="email"
-          type="email"
-          required
-          className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-          placeholder="you@example.com"
-        />
-      </div>
-      <div>
-        <label htmlFor="partner-type" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Type of partnership <span className="text-error">*</span>
-        </label>
-        <select
-          id="partner-type"
-          name="partnerType"
-          required
-          className="w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow"
-          defaultValue=""
-        >
-          <option value="" disabled>Select partnership type</option>
-          <option value="distributor">Distributor</option>
-          <option value="b2b">B2B Partnership</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div>
-        <label htmlFor="partner-message" className="block text-body-sm font-medium text-primary-dark mb-1.5">
-          Message <span className="text-slate-light text-caption">(optional)</span>
-        </label>
-        <textarea
-          id="partner-message"
-          name="message"
-          rows={3}
-          className="w-full px-4 py-3 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow resize-y"
-          placeholder="Tell us about your business and partnership goals"
-        />
-      </div>
+      <FormInput id="partner-email" name="email" type="email" required label="Email" placeholder="you@example.com" />
+      <FormSelect id="partner-type" name="partnerType" required label="Type of partnership" defaultValue="">
+        <option value="" disabled>Select partnership type</option>
+        <option value="distributor">Distributor</option>
+        <option value="b2b">B2B Partnership</option>
+        <option value="other">Other</option>
+      </FormSelect>
+      <FormTextarea id="partner-message" name="message" rows={3} label="Message" optional placeholder="Tell us about your business and partnership goals" />
       {status === 'error' && (
         <p className="text-body-sm text-error">{errorMsg}</p>
       )}

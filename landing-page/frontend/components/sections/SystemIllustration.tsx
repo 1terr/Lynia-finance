@@ -1,6 +1,7 @@
 'use client';
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { SectionHeading } from '@/components/ui/SectionHeading';
 
 const mobileMoneyProviders = [
   { name: 'EcoCash', color: '#00A651' },
@@ -30,36 +31,18 @@ export function SystemIllustration() {
     <section ref={ref} className="bg-white py-16 lg:py-24">
       <div className="container-main">
         <div>
-          <span
-            className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-            }`}
-          >
-            EMBEDDED LENDING INFRASTRUCTURE
-          </span>
-          <h2
-            className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
-            style={{ transitionDelay: '60ms' }}
-          >
-            Connect to existing systems.
-          </h2>
-          <p
-            className={`text-body-lg text-slate max-w-[640px] mt-6 transition-all duration-500 ease-stripe-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-            }`}
-            style={{ transitionDelay: '120ms' }}
-          >
-            Orchestrate lending across mobile money providers, build custom
-            workflows, and connect to ecosystem partners via APIs.
-          </p>
+          <SectionHeading
+            overline="EMBEDDED LENDING INFRASTRUCTURE"
+            title="Connect to existing systems."
+            subtitle="Orchestrate lending across mobile money providers, build custom workflows, and connect to ecosystem partners via APIs."
+            isVisible={isVisible}
+          />
         </div>
 
         {/* System diagram */}
         <div
-          className={`mt-10 max-w-[900px] mx-auto transition-all duration-700 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          className={`mt-10 max-w-[900px] mx-auto fade-in-slow ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-lg'
           }`}
           style={{ transitionDelay: '180ms' }}
         >
@@ -81,7 +64,6 @@ export function SystemIllustration() {
 
             {/* Center: Lynia Core */}
             <div className="flex flex-col items-center gap-4 lg:px-8">
-              {/* Connection lines (visual) */}
               <div className="hidden lg:flex items-center gap-2 text-border">
                 <div className="w-8 h-[2px] bg-border" />
                 <span className="text-caption">&rarr;</span>
@@ -92,7 +74,6 @@ export function SystemIllustration() {
                 <p className="text-caption text-white/70 mt-1">Core Engine</p>
               </div>
 
-              {/* API Services */}
               <div className="grid grid-cols-2 gap-2 mt-2">
                 {apiServices.map((service) => (
                   <div

@@ -1,6 +1,7 @@
 'use client';
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { SectionHeading } from '@/components/ui/SectionHeading';
 
 export function ProductBento() {
   const { ref, isVisible } = useScrollAnimation();
@@ -8,23 +9,12 @@ export function ProductBento() {
   return (
     <section ref={ref} id="products" className="bg-white py-16 lg:py-24">
       <div className="container-main">
-        <span
-          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          OUR PRODUCTS
-        </span>
-        <h2
-          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-          style={{ transitionDelay: '60ms' }}
-        >
-          Three products, one mission.
-        </h2>
+        <SectionHeading
+          overline="OUR PRODUCTS"
+          title="Three products, one mission."
+          isVisible={isVisible}
+        />
 
-        {/* Bento Grid: two cards on top, full-width card on bottom */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
           {/* Digital Credit — Top Left */}
           <div

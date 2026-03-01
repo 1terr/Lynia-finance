@@ -1,6 +1,7 @@
 'use client';
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { SectionLabel } from '@/components/ui/SectionLabel';
 
 export function ThesisSection() {
   const { ref, isVisible } = useScrollAnimation();
@@ -8,19 +9,13 @@ export function ThesisSection() {
   return (
     <section ref={ref} id="thesis" className="bg-white py-16 lg:py-24">
       <div className="container-main">
-        <span
-          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          THE THESIS
-        </span>
+        <SectionLabel isVisible={isVisible}>THE THESIS</SectionLabel>
 
         <div className="mt-6 space-y-8">
           {/* The Conviction */}
           <div
-            className={`transition-all duration-700 ease-stripe-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            className={`fade-in-slow ${
+              isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
             }`}
             style={{ transitionDelay: '60ms' }}
           >
@@ -38,8 +33,8 @@ export function ThesisSection() {
 
           {/* The Strategy */}
           <div
-            className={`transition-all duration-700 ease-stripe-out ${
-              isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+            className={`fade-in-slow ${
+              isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
             }`}
             style={{ transitionDelay: '180ms' }}
           >

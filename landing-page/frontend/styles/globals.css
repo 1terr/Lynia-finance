@@ -41,6 +41,19 @@
     @apply mx-auto max-w-wide px-6 lg:px-12;
   }
 
+  /* Scroll-triggered fade-in animations */
+  .fade-in { @apply transition-all duration-500 ease-stripe-out; }
+  .fade-in-slow { @apply transition-all duration-700 ease-stripe-out; }
+  .fade-in-visible { @apply opacity-100 translate-y-0; }
+  .fade-in-hidden-sm { @apply opacity-0 translate-y-4; }
+  .fade-in-hidden-md { @apply opacity-0 translate-y-6; }
+  .fade-in-hidden-lg { @apply opacity-0 translate-y-8; }
+
+  /* Form input base styles */
+  .form-input {
+    @apply w-full h-11 px-4 rounded-md border border-border bg-white text-body-sm text-primary-dark shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-shadow;
+  }
+
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;

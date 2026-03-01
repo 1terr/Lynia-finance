@@ -7,22 +7,18 @@ export function BottomCTA() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section
-      ref={ref}
-      id="get-started"
-      className="bg-white py-16 lg:py-24"
-    >
+    <section ref={ref} id="get-started" className="bg-white py-16 lg:py-24">
       <div className="container-main">
         <h2
-          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark fade-in ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
         >
           Financing for the productive majority.
         </h2>
         <p
-          className={`text-body-lg text-slate max-w-[640px] mt-6 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          className={`text-body-lg text-slate max-w-[640px] mt-6 fade-in ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
           style={{ transitionDelay: '60ms' }}
         >
@@ -31,8 +27,8 @@ export function BottomCTA() {
           economy.
         </p>
         <div
-          className={`flex flex-wrap justify-start gap-4 mt-10 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          className={`flex flex-wrap justify-start gap-4 mt-10 fade-in ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
           style={{ transitionDelay: '120ms' }}
         >

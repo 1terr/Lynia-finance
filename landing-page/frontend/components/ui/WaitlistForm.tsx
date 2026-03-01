@@ -1,33 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { submitForm } from '@/lib/api';
-
-type Status = 'idle' | 'submitting' | 'success' | 'error';
+import { useFormSubmit } from '@/lib/useFormSubmit';
 
 export function WaitlistForm() {
-  const [status, setStatus] = useState<Status>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
+  const { status, errorMsg, handleSubmit } = useFormSubmit();
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setStatus('submitting');
-    setErrorMsg('');
-
     const phone = (e.currentTarget.elements.namedItem('phone') as HTMLInputElement).value;
-
-    try {
-      const result = await submitForm({ type: 'waitlist', phone });
-      if (!result.success) {
-        setErrorMsg(result.error || 'Something went wrong. Please try again.');
-        setStatus('error');
-        return;
-      }
-      setStatus('success');
-    } catch {
-      setErrorMsg('Network error. Please try again.');
-      setStatus('error');
-    }
+    await handleSubmit({ type: 'waitlist', phone });
   };
 
   if (status === 'success') {
@@ -40,13 +21,13 @@ export function WaitlistForm() {
 
   return (
     <div>
-      <form className="flex flex-col sm:flex-row gap-3" onSubmit={handleSubmit}>
+      <form className="flex flex-col sm:flex-row gap-3" onSubmit={onSubmit}>
         <input
           name="phone"
           type="tel"
           required
           placeholder="+263 7XX XXX XXX"
-          className="h-11 px-4 rounded-md bg-white border border-border text-primary-dark placeholder:text-slate-light text-body-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 shadow-sm flex-1"
+          className="form-input flex-1"
         />
         <button
           type="submit"

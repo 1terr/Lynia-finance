@@ -2,6 +2,7 @@
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { useEffect, useState } from 'react';
+import { SectionLabel } from '@/components/ui/SectionLabel';
 
 const stats = [
   { value: 16, suffix: '%', label: 'of adults access formal credit' },
@@ -42,33 +43,21 @@ export function DataStrip() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section
-      ref={ref}
-      className="bg-white py-12 lg:py-16"
-    >
+    <section ref={ref} className="bg-white py-12 lg:py-16">
       <div className="container-main">
-        {/* Overline */}
-        <span
-          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          THE OPPORTUNITY
-        </span>
+        <SectionLabel isVisible={isVisible}>THE OPPORTUNITY</SectionLabel>
 
-        {/* Heading */}
         <h2
-          className={`text-display-mobile md:text-display-tablet lg:text-display text-navy mt-4 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          className={`text-display-mobile md:text-display-tablet lg:text-display text-navy mt-4 fade-in ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
         >
           The state of financial inclusion
         </h2>
 
-        {/* Subtitle */}
         <p
-          className={`text-body-lg text-slate max-w-[640px] mt-6 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+          className={`text-body-lg text-slate max-w-[640px] mt-6 fade-in ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
           style={{ transitionDelay: '60ms' }}
         >
@@ -77,13 +66,12 @@ export function DataStrip() {
           already exist.
         </p>
 
-        {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-16 mt-10 lg:mt-12">
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`text-center transition-all duration-500 ease-stripe-out ${
-                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+              className={`text-center fade-in ${
+                isVisible ? 'fade-in-visible' : 'fade-in-hidden-lg'
               }`}
               style={{ transitionDelay: `${120 + i * 80}ms` }}
             >

@@ -1,6 +1,7 @@
 'use client';
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
+import { SectionHeading } from '@/components/ui/SectionHeading';
 
 export function DeveloperEngine() {
   const { ref, isVisible } = useScrollAnimation();
@@ -8,35 +9,17 @@ export function DeveloperEngine() {
   return (
     <section ref={ref} className="bg-white py-16 lg:py-24">
       <div className="container-main">
-        <span
-          className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}
-        >
-          THE DEVELOPER ENGINE
-        </span>
-        <h2
-          className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-          style={{ transitionDelay: '60ms' }}
-        >
-          Programmable Resilience.
-        </h2>
-        <p
-          className={`text-body-lg text-slate max-w-[640px] mt-6 transition-all duration-500 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-          }`}
-          style={{ transitionDelay: '120ms' }}
-        >
-          One integration to manage KYC, scoring, and disbursement across
-          Zimbabwe&apos;s mobile money landscape.
-        </p>
+        <SectionHeading
+          overline="THE DEVELOPER ENGINE"
+          title="Programmable Resilience."
+          subtitle="One integration to manage KYC, scoring, and disbursement across Zimbabwe's mobile money landscape."
+          isVisible={isVisible}
+        />
 
         {/* Code-style illustration */}
         <div
-          className={`mt-10 max-w-[680px] mx-auto text-left bg-navy rounded-xl p-6 lg:p-8 shadow-stripe-lg transition-all duration-700 ease-stripe-out ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          className={`mt-10 max-w-[680px] mx-auto text-left bg-navy rounded-xl p-6 lg:p-8 shadow-stripe-lg fade-in-slow ${
+            isVisible ? 'fade-in-visible' : 'fade-in-hidden-lg'
           }`}
           style={{ transitionDelay: '180ms' }}
         >
