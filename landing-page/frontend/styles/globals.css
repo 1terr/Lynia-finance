@@ -26,7 +26,7 @@
 
 @layer utilities {
   .section-padding {
-    @apply py-16 lg:py-[120px];
+    @apply py-16 lg:py-24;
   }
 
   .section-padding-compact {

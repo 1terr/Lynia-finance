@@ -6,7 +6,7 @@ export function DeveloperEngine() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} className="bg-white py-16 lg:py-[120px]">
+    <section ref={ref} className="bg-white py-16 lg:py-24">
       <div className="container-main">
         <span
           className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
@@ -35,7 +35,7 @@ export function DeveloperEngine() {
 
         {/* Code-style illustration */}
         <div
-          className={`mt-12 max-w-[680px] mx-auto text-left bg-navy rounded-xl p-6 lg:p-8 shadow-stripe-lg transition-all duration-700 ease-stripe-out ${
+          className={`mt-10 max-w-[680px] mx-auto text-left bg-navy rounded-xl p-6 lg:p-8 shadow-stripe-lg transition-all duration-700 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
           style={{ transitionDelay: '180ms' }}

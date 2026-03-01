@@ -10,7 +10,7 @@ export function BottomCTA() {
     <section
       ref={ref}
       id="get-started"
-      className="bg-white py-16 lg:py-[120px]"
+      className="bg-white py-16 lg:py-24"
     >
       <div className="container-main">
         <h2

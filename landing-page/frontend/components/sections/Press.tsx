@@ -160,7 +160,7 @@ export function Press() {
   };
 
   return (
-    <section ref={ref} id="press" className="bg-white py-16 lg:py-[120px]">
+    <section ref={ref} id="press" className="bg-white py-16 lg:py-24">
       <div className="container-main">
         {/* Header row */}
         <div className="flex items-end justify-between">
@@ -215,7 +215,7 @@ export function Press() {
       {/* Scrollable cards — full-bleed on the right */}
       <div
         ref={scrollRef}
-        className="mt-12 flex gap-6 overflow-x-auto scroll-smooth pl-6 lg:pl-[max(calc((100vw-1080px)/2+48px),48px)] pr-6 pb-2 snap-x snap-mandatory scrollbar-hide"
+        className="mt-10 flex gap-6 overflow-x-auto scroll-smooth pl-6 lg:pl-[max(calc((100vw-1080px)/2+48px),48px)] pr-6 pb-2 snap-x snap-mandatory scrollbar-hide"
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',

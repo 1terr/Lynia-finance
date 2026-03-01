@@ -6,7 +6,7 @@ export function ThesisSection() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} id="thesis" className="bg-white py-16 lg:py-[120px]">
+    <section ref={ref} id="thesis" className="bg-white py-16 lg:py-24">
       <div className="container-main">
         <span
           className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
@@ -16,7 +16,7 @@ export function ThesisSection() {
           THE THESIS
         </span>
 
-        <div className="mt-8 space-y-10">
+        <div className="mt-6 space-y-8">
           {/* The Conviction */}
           <div
             className={`transition-all duration-700 ease-stripe-out ${

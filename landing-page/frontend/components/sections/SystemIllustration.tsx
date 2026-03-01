@@ -27,7 +27,7 @@ export function SystemIllustration() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} className="bg-white py-16 lg:py-[120px]">
+    <section ref={ref} className="bg-white py-16 lg:py-24">
       <div className="container-main">
         <div>
           <span
@@ -58,7 +58,7 @@ export function SystemIllustration() {
 
         {/* System diagram */}
         <div
-          className={`mt-12 max-w-[900px] mx-auto transition-all duration-700 ease-stripe-out ${
+          className={`mt-10 max-w-[900px] mx-auto transition-all duration-700 ease-stripe-out ${
             isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
           style={{ transitionDelay: '180ms' }}

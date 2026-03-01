@@ -6,7 +6,7 @@ export function ProductBento() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} id="products" className="bg-white py-16 lg:py-[120px]">
+    <section ref={ref} id="products" className="bg-white py-16 lg:py-24">
       <div className="container-main">
         <span
           className={`text-overline uppercase tracking-wider text-primary transition-all duration-500 ease-stripe-out ${
@@ -25,7 +25,7 @@ export function ProductBento() {
         </h2>
 
         {/* Bento Grid: two cards on top, full-width card on bottom */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-10">
           {/* Digital Credit — Top Left */}
           <div
             className={`border border-border rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md ${

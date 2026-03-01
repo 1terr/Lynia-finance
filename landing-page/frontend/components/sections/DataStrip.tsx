@@ -44,7 +44,7 @@ export function DataStrip() {
   return (
     <section
       ref={ref}
-      className="bg-white py-16 lg:py-[120px]"
+      className="bg-white py-12 lg:py-16"
     >
       <div className="container-main">
         {/* Overline */}
@@ -78,7 +78,7 @@ export function DataStrip() {
         </p>
 
         {/* Stats grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-16 mt-12 lg:mt-16">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-16 mt-10 lg:mt-12">
           {stats.map((stat, i) => (
             <div
               key={stat.label}
