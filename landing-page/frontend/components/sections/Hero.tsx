@@ -7,6 +7,12 @@ export function Hero() {
     <section className="relative min-h-screen flex items-center overflow-hidden bg-white">
       <div className="container-main relative z-10">
         <div className="max-w-[680px] md:max-w-[780px] lg:max-w-[900px] pt-24 lg:pt-0">
+          <p
+            className="text-sm text-slate tracking-wide opacity-0 animate-fade-up mb-5"
+            style={{ animationFillMode: 'forwards' }}
+          >
+            Zimbabwean informal MSMEs: &nbsp;<span className="font-medium">86%</span>
+          </p>
           <h1
             className="text-hero-mobile md:text-hero-tablet lg:text-hero opacity-0 animate-fade-up"
             style={{ animationFillMode: 'forwards' }}
