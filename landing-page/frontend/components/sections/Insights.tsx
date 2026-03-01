@@ -212,7 +212,7 @@ export function Insights() {
         }}
       >
         {pressItems.map((item, i) => (
-          <div key={i} className="snap-start">
+          <div key={i} className="snap-start flex-shrink-0">
             <PressCard item={item} index={i} isVisible={isVisible} />
           </div>
         ))}
