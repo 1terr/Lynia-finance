@@ -4,9 +4,11 @@ import { forwardRef } from 'react';
 import Link from 'next/link';
 
 type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'white' | 'accent' | 'outline';
+type ButtonSize = 'default' | 'sm';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   href?: string;
   arrow?: boolean;
 }
@@ -23,17 +25,22 @@ const variantStyles: Record<ButtonVariant, string> = {
   accent:
     'bg-primary text-white shadow-btn hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
   outline:
-    'bg-white text-[#08090A] border border-border shadow-btn hover:bg-surface-secondary hover:border-border-strong hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+    'bg-white text-[#08090A] border border-[#e6e6e6] shadow-btn hover:bg-surface-secondary hover:border-border-strong hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+};
+
+const sizeStyles: Record<ButtonSize, string> = {
+  default: 'h-11 px-5 text-base font-semibold rounded-md',
+  sm: 'h-8 px-3 text-[13px] font-medium tracking-[-0.01em] rounded-sm',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', arrow, className = '', children, href, ...props }, ref) => {
+  ({ variant = 'primary', size = 'default', arrow, className = '', children, href, ...props }, ref) => {
     const base =
-      'inline-flex items-center justify-center h-8 px-3 text-[13px] font-medium tracking-[-0.01em] rounded-sm transition-all duration-250 ease-stripe disabled:opacity-50 disabled:cursor-not-allowed';
-    const styles = `${base} ${variantStyles[variant]} ${className}`;
+      'inline-flex items-center justify-center transition-all duration-250 ease-stripe disabled:opacity-50 disabled:cursor-not-allowed';
+    const styles = `${base} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`;
 
     const arrowEl = arrow ? (
-      <span className="ml-1.5 transition-transform duration-250 ease-stripe-out group-hover:translate-x-1">&rarr;</span>
+      <span className={`${size === 'sm' ? 'ml-1.5' : 'ml-2'} transition-transform duration-250 ease-stripe-out group-hover:translate-x-1`}>&rarr;</span>
     ) : null;
 
     if (href) {

@@ -69,6 +69,7 @@ export function Navbar() {
         <div className="hidden lg:block">
           <Button
             variant="primary"
+            size="sm"
             href="/#get-started"
           >
             Get started &rarr;
@@ -111,7 +112,7 @@ export function Navbar() {
               );
             })}
             <div className="pt-4">
-              <Button variant="primary" href="/#get-started" className="w-full">
+              <Button variant="primary" size="sm" href="/#get-started" className="w-full">
                 Get started &rarr;
               </Button>
             </div>

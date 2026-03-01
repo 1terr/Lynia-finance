@@ -54,10 +54,10 @@ export default function EditorialPage() {
           <div className="flex flex-wrap gap-2 mb-12">
             <button
               onClick={() => setActiveCategory('All')}
-              className={`h-8 px-3 rounded-sm text-[13px] font-medium tracking-[-0.01em] shadow-btn transition-all duration-250 ease-stripe ${
+              className={`h-11 px-5 rounded-md text-base font-semibold shadow-btn transition-all duration-250 ease-stripe ${
                 activeCategory === 'All'
                   ? 'bg-primary text-white'
-                  : 'bg-white text-[#08090A] hover:bg-gray-50 border border-border'
+                  : 'bg-white text-[#08090A] hover:bg-gray-50 border border-[#e6e6e6]'
               }`}
             >
               All
@@ -66,10 +66,10 @@ export default function EditorialPage() {
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`h-8 px-3 rounded-sm text-[13px] font-medium tracking-[-0.01em] shadow-btn transition-all duration-250 ease-stripe ${
+                className={`h-11 px-5 rounded-md text-base font-semibold shadow-btn transition-all duration-250 ease-stripe ${
                   activeCategory === cat
                     ? 'bg-primary text-white'
-                    : 'bg-white text-[#08090A] hover:bg-gray-50 border border-border'
+                    : 'bg-white text-[#08090A] hover:bg-gray-50 border border-[#e6e6e6]'
                 }`}
               >
                 {cat}
