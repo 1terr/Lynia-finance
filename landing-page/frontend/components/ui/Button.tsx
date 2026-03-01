@@ -19,11 +19,11 @@ const variantStyles: Record<ButtonVariant, string> = {
   secondary:
     'bg-transparent text-primary hover:text-primary-hover px-0 shadow-none',
   ghost:
-    'bg-transparent text-white border border-white/30 shadow-btn hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 active:translate-y-0',
+    'bg-transparent text-white border border-white/30 shadow-btn hover:bg-white/10 hover:border-white/50 hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(255,255,255,0.08)] active:translate-y-0',
   white:
     'bg-white text-[#08090A] shadow-btn hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-btn',
   accent:
-    'bg-primary text-white shadow-btn hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
+    'bg-primary text-white shadow-btn hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-[0_4px_15px_rgba(99,91,255,0.35)] active:translate-y-0 active:shadow-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
   outline:
     'bg-white text-[#08090A] border border-[#e6e6e6] shadow-btn hover:bg-surface-secondary hover:border-border-strong hover:-translate-y-0.5 hover:shadow-stripe-sm active:translate-y-0 active:shadow-btn focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20',
 };

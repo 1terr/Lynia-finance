@@ -1,5 +1,6 @@
 import { Hero } from '@/components/sections/Hero';
 import { DataStrip } from '@/components/sections/DataStrip';
+import { TrustStrip } from '@/components/sections/TrustStrip';
 import { ProductBento } from '@/components/sections/ProductBento';
 import { DeveloperEngine } from '@/components/sections/DeveloperEngine';
 import { Insights } from '@/components/sections/Insights';
@@ -12,17 +13,19 @@ export default async function HomePage() {
 
   return (
     <>
-      {/* 1. Hero */}
+      {/* 1. Hero (dark gradient) */}
       <Hero />
-      {/* 2. Data Strip (ZimStats & POTRAZ 2024-2026) */}
+      {/* 2. Data Strip (light gray bg) */}
       <DataStrip />
-      {/* 3. Product Bento Grid */}
+      {/* 3. Trust / Partner Logos Strip */}
+      <TrustStrip />
+      {/* 4. Product Bento Grid (white bg) */}
       <ProductBento />
-      {/* 4. The Developer Engine */}
+      {/* 5. The Developer Engine (dark navy bg) */}
       <DeveloperEngine />
-      {/* 5. Insights */}
+      {/* 6. Insights (white bg) */}
       <Insights posts={insightsPosts} />
-      {/* 6. Bottom CTA */}
+      {/* 7. Bottom CTA (dark gradient) */}
       <BottomCTA />
     </>
   );

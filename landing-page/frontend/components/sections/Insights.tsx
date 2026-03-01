@@ -3,6 +3,7 @@
 import { ChevronRight } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionLabel } from '@/components/ui/SectionLabel';
+import { Button } from '@/components/ui/Button';
 import type { SanityPost } from '@/lib/sanity-types';
 
 interface InsightsProps {
@@ -12,13 +13,46 @@ interface InsightsProps {
 export function Insights({ posts }: InsightsProps) {
   const { ref, isVisible } = useScrollAnimation();
 
-  if (posts.length === 0) return null;
+  // Fallback when no Sanity content is configured
+  if (posts.length === 0) {
+    return (
+      <section ref={ref} className="bg-white py-16 lg:py-24">
+        <div className="container-main text-center">
+          <SectionLabel isVisible={isVisible}>INSIGHTS</SectionLabel>
+          <h2
+            className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 fade-in ${
+              isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
+            }`}
+          >
+            Research-driven approach
+          </h2>
+          <p
+            className={`text-body-lg text-slate max-w-[540px] mx-auto mt-6 fade-in ${
+              isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
+            }`}
+            style={{ transitionDelay: '60ms' }}
+          >
+            We publish our thinking on financial inclusion, credit innovation,
+            and the dynamics of Zimbabwe&apos;s informal economy.
+          </p>
+          <div
+            className={`mt-8 fade-in ${isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'}`}
+            style={{ transitionDelay: '120ms' }}
+          >
+            <Button variant="outline" href="/thesis" arrow>
+              Read the 2026 Thesis
+            </Button>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   const featured = posts[0];
   const sideArticles = posts.slice(1, 3);
 
   return (
-    <section ref={ref} id="insights" className="bg-surface-secondary py-16 lg:py-24">
+    <section ref={ref} id="insights" className="bg-white py-16 lg:py-24">
       <div className="container-main">
         {/* Header row */}
         <div className="flex items-end justify-between">

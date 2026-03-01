@@ -1,7 +1,7 @@
 'use client';
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 
 const stats = [
@@ -14,9 +14,12 @@ const stats = [
 function CountUp({ target, suffix, isVisible }: { target: number; suffix: string; isVisible: boolean }) {
   const [count, setCount] = useState(0);
   const isDecimal = target % 1 !== 0;
+  const hasAnimated = useRef(false);
 
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible || hasAnimated.current) return;
+    hasAnimated.current = true;
+
     const duration = 1200;
     const start = performance.now();
 
@@ -41,15 +44,31 @@ function CountUp({ target, suffix, isVisible }: { target: number; suffix: string
 
 export function DataStrip() {
   const { ref, isVisible } = useScrollAnimation();
+  const [forceVisible, setForceVisible] = useState(false);
+
+  // Fallback: if section is already in viewport on mount, trigger immediately
+  useEffect(() => {
+    if (ref.current) {
+      const rect = ref.current.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) {
+        setForceVisible(true);
+      }
+    }
+  }, [ref]);
+
+  const visible = isVisible || forceVisible;
 
   return (
-    <section ref={ref} className="bg-white py-12 lg:py-16">
+    <section
+      ref={ref}
+      className="bg-surface-secondary py-16 lg:py-24"
+    >
       <div className="container-main">
-        <SectionLabel isVisible={isVisible}>THE OPPORTUNITY</SectionLabel>
+        <SectionLabel isVisible={visible}>THE OPPORTUNITY</SectionLabel>
 
         <h2
           className={`text-display-mobile md:text-display-tablet lg:text-display text-navy mt-4 fade-in ${
-            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
+            visible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
         >
           The state of financial inclusion
@@ -57,7 +76,7 @@ export function DataStrip() {
 
         <p
           className={`text-body-lg text-slate max-w-[640px] mt-6 fade-in ${
-            isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'
+            visible ? 'fade-in-visible' : 'fade-in-hidden-md'
           }`}
           style={{ transitionDelay: '60ms' }}
         >
@@ -66,23 +85,24 @@ export function DataStrip() {
           already exist.
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-16 mt-10 lg:mt-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 lg:gap-6 mt-10 lg:mt-12">
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`text-center fade-in ${
-                isVisible ? 'fade-in-visible' : 'fade-in-hidden-lg'
+              className={`bg-white rounded-xl p-5 lg:p-6 shadow-stripe-xs text-center fade-in ${
+                visible ? 'fade-in-visible' : 'fade-in-hidden-lg'
               }`}
               style={{ transitionDelay: `${120 + i * 80}ms` }}
             >
+              <div className="w-8 h-0.5 bg-primary mx-auto mb-4 rounded-full" />
               <div className="text-stat-mobile md:text-stat-tablet lg:text-stat text-navy tabular-nums">
                 <CountUp
                   target={stat.value}
                   suffix={stat.suffix}
-                  isVisible={isVisible}
+                  isVisible={visible}
                 />
               </div>
-              <p className="text-sm font-medium text-navy/90 mt-3">{stat.label}</p>
+              <p className="text-body-sm font-semibold text-navy/80 mt-3">{stat.label}</p>
             </div>
           ))}
         </div>

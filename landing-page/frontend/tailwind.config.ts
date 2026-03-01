@@ -20,6 +20,7 @@ const config: Config = {
           DEFAULT: '#0A2540',
           light: '#1A3A5C',
           dark: '#061B31',
+          darker: '#061525',
         },
         slate: {
           DEFAULT: '#425466',
@@ -186,6 +187,10 @@ const config: Config = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0' },
         },
+        'slow-spin': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease-out',
@@ -199,6 +204,7 @@ const config: Config = {
         'count-up': 'count-up 0.6s cubic-bezier(0.215,0.61,0.355,1)',
         float: 'float 4s ease-in-out infinite',
         blink: 'blink 1s step-end infinite',
+        'slow-spin': 'slow-spin 20s linear infinite',
       },
     },
   },
