@@ -182,6 +182,10 @@ const config: Config = {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-8px)' },
         },
+        blink: {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease-out',
@@ -194,6 +198,7 @@ const config: Config = {
         'gradient-shift': 'gradient-shift 6s ease infinite',
         'count-up': 'count-up 0.6s cubic-bezier(0.215,0.61,0.355,1)',
         float: 'float 4s ease-in-out infinite',
+        blink: 'blink 1s step-end infinite',
       },
     },
   },

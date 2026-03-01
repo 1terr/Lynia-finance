@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Button } from '@/components/ui/Button';
+import { SystemIllustration } from '@/components/sections/SystemIllustration';
 
 export const metadata: Metadata = {
   title: 'The 2026 Thesis — Lynia Finance',
@@ -101,6 +102,9 @@ export default function ThesisPage() {
           </div>
         </div>
       </section>
+
+      {/* Embedded Lending Infrastructure */}
+      <SystemIllustration />
 
       {/* CTA */}
       <section className="bg-white py-16 lg:py-[120px]">
