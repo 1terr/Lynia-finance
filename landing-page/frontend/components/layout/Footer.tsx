@@ -46,8 +46,8 @@ export function Footer() {
         {/* Logo + tagline */}
         <div className="mb-10">
           <span className="text-subheading text-primary-dark">Lynia Finance</span>
-          <p className="text-body-sm text-slate mt-2 italic">
-            Built for the productive majority.
+          <p className="text-body-sm text-slate mt-2">
+            Built for the overlooked majority.
           </p>
         </div>
 
