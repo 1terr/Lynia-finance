@@ -27,14 +27,14 @@ const ecosystemPartners = [
 function ConnectionArrow({ direction }: { direction: 'right' | 'down' }) {
   if (direction === 'down') {
     return (
-      <div className="flex lg:hidden flex-col items-center gap-1 py-3 text-border">
-        <div className="w-[2px] h-6 bg-border" />
+      <div className="flex lg:hidden flex-col items-center gap-1 py-3">
+        <div className="w-[2px] h-6 bg-white/20" />
         <svg
           width="12"
           height="8"
           viewBox="0 0 12 8"
           fill="none"
-          className="text-slate-light"
+          className="text-white/30"
         >
           <path
             d="M1 1L6 6L11 1"
@@ -50,14 +50,14 @@ function ConnectionArrow({ direction }: { direction: 'right' | 'down' }) {
 
   return (
     <div className="hidden lg:flex items-center gap-1">
-      <div className="w-2 h-2 rounded-full bg-border" />
-      <div className="w-10 h-[2px] bg-border" />
+      <div className="w-2 h-2 rounded-full bg-white/20" />
+      <div className="w-10 h-[2px] bg-white/20" />
       <svg
         width="8"
         height="12"
         viewBox="0 0 8 12"
         fill="none"
-        className="text-slate-light"
+        className="text-white/30"
       >
         <path
           d="M1 1L6 6L1 11"
@@ -75,14 +75,18 @@ export function SystemIllustration() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} className="bg-surface-secondary py-16 lg:py-24">
-      <div className="container-main">
+    <section ref={ref} className="relative overflow-hidden bg-navy py-16 lg:py-24">
+      {/* Dot grid texture */}
+      <div className="absolute inset-0 dot-grid opacity-[0.03]" />
+
+      <div className="container-main relative z-10">
         <div>
           <SectionHeading
             overline="EMBEDDED LENDING INFRASTRUCTURE"
             title="Connect to existing systems."
             subtitle="Orchestrate lending across mobile money providers, build custom workflows, and connect to ecosystem partners via APIs."
             isVisible={isVisible}
+            dark
           />
         </div>
 
@@ -96,13 +100,13 @@ export function SystemIllustration() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-0 items-center">
             {/* Left: Ecosystem Partners */}
             <div className="flex flex-col gap-3">
-              <p className="text-caption uppercase tracking-wider text-slate-light mb-2">
+              <p className="text-caption uppercase tracking-wider text-white/40 mb-2">
                 Ecosystem Partners
               </p>
               {ecosystemPartners.map((partner) => (
                 <div
                   key={partner.name}
-                  className="bg-white border border-border rounded-lg px-4 py-3 text-body-sm text-slate hover:-translate-y-0.5 hover:shadow-stripe-sm transition-all duration-250 ease-stripe cursor-default"
+                  className="bg-white/[0.06] border border-white/[0.08] rounded-lg px-4 py-3 text-body-sm text-white/80 hover:-translate-y-0.5 hover:bg-white/[0.10] transition-all duration-250 ease-stripe cursor-default"
                 >
                   {partner.name}
                 </div>
@@ -125,7 +129,7 @@ export function SystemIllustration() {
                 {apiServices.map((service) => (
                   <div
                     key={service.name}
-                    className="bg-primary/10 border border-primary/20 rounded-md px-3 py-2 text-caption text-primary-dark text-center"
+                    className="bg-white/[0.08] border border-white/[0.12] rounded-md px-3 py-2 text-caption text-white/80 text-center"
                   >
                     {service.name}
                   </div>
@@ -140,19 +144,19 @@ export function SystemIllustration() {
 
             {/* Right: Mobile Money Providers */}
             <div className="flex flex-col gap-3">
-              <p className="text-caption uppercase tracking-wider text-slate-light mb-2">
+              <p className="text-caption uppercase tracking-wider text-white/40 mb-2">
                 Mobile Money
               </p>
               {mobileMoneyProviders.map((provider) => (
                 <div
                   key={provider.name}
-                  className="bg-white border border-border rounded-lg px-4 py-3 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-stripe-sm transition-all duration-250 ease-stripe cursor-default"
+                  className="bg-white/[0.06] border border-white/[0.08] rounded-lg px-4 py-3 flex items-center gap-3 hover:-translate-y-0.5 hover:bg-white/[0.10] transition-all duration-250 ease-stripe cursor-default"
                 >
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0"
                     style={{ backgroundColor: provider.color }}
                   />
-                  <span className="text-body-sm text-slate">
+                  <span className="text-body-sm text-white/80">
                     {provider.name}
                   </span>
                 </div>

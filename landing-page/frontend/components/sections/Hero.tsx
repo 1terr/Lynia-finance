@@ -23,8 +23,8 @@ export function Hero() {
         }}
       />
 
-      {/* Dot grid pattern overlay */}
-      <div className="absolute inset-0 dot-grid opacity-[0.04]" />
+      {/* Line grid pattern overlay */}
+      <div className="absolute inset-0 line-grid opacity-[0.07]" />
 
       {/* Gradient orbs — hidden on mobile for performance */}
       <div
