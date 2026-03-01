@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 const navLinks = [
-  { label: 'Products', href: '/products' },
+  { label: 'Products', href: '/#products' },
   { label: 'Thesis', href: '/thesis' },
   { label: 'Insights', href: '/insights' },
 ];
@@ -22,6 +22,20 @@ export function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  const handleHashClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+      const hash = href.split('#')[1];
+      if (!hash || pathname !== '/') return;
+      const el = document.getElementById(hash);
+      if (el) {
+        e.preventDefault();
+        setMobileOpen(false);
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+    [pathname],
+  );
 
   /* Close mobile menu on route change */
   useEffect(() => {
@@ -47,11 +61,15 @@ export function Navbar() {
         {/* Desktop links — centered */}
         <div className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+            const isHash = link.href.includes('#');
+            const isActive = isHash
+              ? false
+              : pathname === link.href || pathname.startsWith(`${link.href}/`);
             return (
               <Link
                 key={link.label}
                 href={link.href}
+                onClick={isHash ? (e: React.MouseEvent<HTMLAnchorElement>) => handleHashClick(e, link.href) : undefined}
                 aria-current={isActive ? 'page' : undefined}
                 className={`text-body font-medium transition-colors duration-250 ease-stripe ${
                   isActive
@@ -95,11 +113,15 @@ export function Navbar() {
         <div className="lg:hidden bg-white border-t border-border animate-fade-down">
           <div className="px-6 py-6 flex flex-col gap-1">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
+              const isHash = link.href.includes('#');
+              const isActive = isHash
+                ? false
+                : pathname === link.href || pathname.startsWith(`${link.href}/`);
               return (
                 <Link
                   key={link.label}
                   href={link.href}
+                  onClick={isHash ? (e: React.MouseEvent<HTMLAnchorElement>) => handleHashClick(e, link.href) : undefined}
                   aria-current={isActive ? 'page' : undefined}
                   className={`text-subheading py-3 transition-colors duration-250 ease-stripe ${
                     isActive
