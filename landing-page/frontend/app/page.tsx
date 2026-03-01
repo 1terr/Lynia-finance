@@ -1,6 +1,5 @@
 import { Hero } from '@/components/sections/Hero';
 import { DataStrip } from '@/components/sections/DataStrip';
-import { TrustStrip } from '@/components/sections/TrustStrip';
 import { ProductBento } from '@/components/sections/ProductBento';
 import { DeveloperEngine } from '@/components/sections/DeveloperEngine';
 import { Insights } from '@/components/sections/Insights';
@@ -17,9 +16,7 @@ export default async function HomePage() {
       <Hero />
       {/* 2. Data Strip (light gray bg) */}
       <DataStrip />
-      {/* 3. Trust / Partner Logos Strip */}
-      <TrustStrip />
-      {/* 4. Product Bento Grid (white bg) */}
+      {/* 3. Product Bento Grid (white bg) */}
       <ProductBento />
       {/* 5. The Developer Engine (dark navy bg) */}
       <DeveloperEngine />

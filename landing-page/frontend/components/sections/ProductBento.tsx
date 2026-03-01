@@ -122,11 +122,6 @@ export function ProductBento() {
                 </p>
               </div>
             </div>
-            <p className="relative z-10 text-caption text-white/40 mt-6">
-              CGAP Alignment: Shifting from &ldquo;negative collateral&rdquo; to
-              &ldquo;productive trust&rdquo; by funding assets that grow cash
-              flow.
-            </p>
           </div>
         </div>
       </div>

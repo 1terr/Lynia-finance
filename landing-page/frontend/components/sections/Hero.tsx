@@ -2,8 +2,6 @@
 
 import { Button } from '@/components/ui/Button';
 
-const partners = ['EcoCash', 'Innbucks', 'OneWallet', 'OMari'];
-
 export function Hero() {
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-navy">
@@ -63,22 +61,9 @@ export function Hero() {
 
       <div className="container-main relative z-10">
         <div className="max-w-[680px] md:max-w-[780px] lg:max-w-[900px] pt-24 lg:pt-0">
-          {/* Badge */}
-          <div
-            className="opacity-0 animate-fade-up"
-            style={{ animationFillMode: 'forwards' }}
-          >
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.12] backdrop-blur-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              <span className="text-white/70" style={{ fontSize: '12px', fontWeight: 500, letterSpacing: '0.02em' }}>
-                Zimbabwean informal MSMEs: &nbsp;86%
-              </span>
-            </span>
-          </div>
-
           {/* Headline */}
           <h1
-            className="text-hero-mobile md:text-hero-tablet lg:text-hero mt-6 opacity-0 animate-fade-up"
+            className="text-hero-mobile md:text-hero-tablet lg:text-hero opacity-0 animate-fade-up"
             style={{ animationFillMode: 'forwards', animationDelay: '80ms' }}
           >
             <span className="text-white">
@@ -102,25 +87,6 @@ export function Hero() {
             </Button>
           </div>
 
-          {/* Social proof strip */}
-          <div
-            className="mt-16 opacity-0 animate-fade-up"
-            style={{ animationDelay: '240ms', animationFillMode: 'forwards' }}
-          >
-            <p className="text-overline uppercase tracking-wider text-white/30 mb-3">
-              Integrated with
-            </p>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              {partners.map((name) => (
-                <span
-                  key={name}
-                  className="text-body-sm font-medium text-white/40 transition-colors duration-250 hover:text-white/70"
-                >
-                  {name}
-                </span>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </section>
