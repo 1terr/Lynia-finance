@@ -46,15 +46,20 @@ const config: Config = {
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
-        // Hero H1 — custom, high-impact (reserved for short-text heroes)
-        hero: ['6rem', { lineHeight: '1.05', letterSpacing: '-0.05em', fontWeight: '600' }],
-        'hero-tablet': ['4rem', { lineHeight: '1.05', letterSpacing: '-0.05em', fontWeight: '600' }],
-        'hero-mobile': ['2.5rem', { lineHeight: '1.1', letterSpacing: '-0.03em', fontWeight: '600' }],
+        // Hero H1 — page entry, full-screen impact
+        hero: ['3rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
+        'hero-tablet': ['2.5rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
+        'hero-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
 
         // Section H2 — major feature shifts
-        display: ['3.5rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
-        'display-tablet': ['3rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
-        'display-mobile': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
+        display: ['2.5rem', { lineHeight: '1.2', letterSpacing: '-0.025em', fontWeight: '500' }],
+        'display-tablet': ['2rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
+        'display-mobile': ['1.5rem', { lineHeight: '1.25', letterSpacing: '-0.02em', fontWeight: '500' }],
+
+        // Stat numbers — data emphasis (DataStrip)
+        stat: ['3rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
+        'stat-tablet': ['2.5rem', { lineHeight: '1.15', letterSpacing: '-0.03em', fontWeight: '500' }],
+        'stat-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
 
         // Title — intermediate (thesis page, sub-sections)
         title: ['2.25rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
@@ -62,14 +67,14 @@ const config: Config = {
         'title-mobile': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '500' }],
 
         // Feature H3 — card titles, small benefits
-        heading: ['1.5rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '500' }],
-        'heading-mobile': ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.02em', fontWeight: '500' }],
+        heading: ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '500' }],
+        'heading-mobile': ['1.125rem', { lineHeight: '1.3', letterSpacing: '-0.015em', fontWeight: '500' }],
 
         // Subheading — UI labels (navbar logo, footer logo)
-        subheading: ['1.25rem', { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '500' }],
+        subheading: ['1.125rem', { lineHeight: '1.4', letterSpacing: '-0.01em', fontWeight: '500' }],
 
         // Subtext/Lead — high-readability summary text
-        'body-lg': ['1.375rem', { lineHeight: '1.5', letterSpacing: '-0.01em', fontWeight: '400' }],
+        'body-lg': ['1.125rem', { lineHeight: '1.55', letterSpacing: '-0.01em', fontWeight: '400' }],
 
         // Body — general descriptive text
         body: ['1rem', { lineHeight: '1.6', letterSpacing: '0em', fontWeight: '400' }],
