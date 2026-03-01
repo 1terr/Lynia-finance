@@ -24,11 +24,58 @@ const ecosystemPartners = [
   { name: 'Platforms' },
 ];
 
+function ConnectionArrow({ direction }: { direction: 'right' | 'down' }) {
+  if (direction === 'down') {
+    return (
+      <div className="flex lg:hidden flex-col items-center gap-1 py-3 text-border">
+        <div className="w-[2px] h-6 bg-border" />
+        <svg
+          width="12"
+          height="8"
+          viewBox="0 0 12 8"
+          fill="none"
+          className="text-slate-light"
+        >
+          <path
+            d="M1 1L6 6L11 1"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+    );
+  }
+
+  return (
+    <div className="hidden lg:flex items-center gap-1">
+      <div className="w-2 h-2 rounded-full bg-border" />
+      <div className="w-10 h-[2px] bg-border" />
+      <svg
+        width="8"
+        height="12"
+        viewBox="0 0 8 12"
+        fill="none"
+        className="text-slate-light"
+      >
+        <path
+          d="M1 1L6 6L1 11"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
 export function SystemIllustration() {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section ref={ref} className="bg-white py-16 lg:py-24">
+    <section ref={ref} className="bg-surface-secondary py-16 lg:py-24">
       <div className="container-main">
         <div>
           <SectionHeading
@@ -46,7 +93,7 @@ export function SystemIllustration() {
           }`}
           style={{ transitionDelay: '180ms' }}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 lg:gap-0 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-0 items-center">
             {/* Left: Ecosystem Partners */}
             <div className="flex flex-col gap-3">
               <p className="text-caption uppercase tracking-wider text-slate-light mb-2">
@@ -55,19 +102,19 @@ export function SystemIllustration() {
               {ecosystemPartners.map((partner) => (
                 <div
                   key={partner.name}
-                  className="bg-surface-secondary border border-border rounded-lg px-4 py-3 text-body-sm text-slate"
+                  className="bg-white border border-border rounded-lg px-4 py-3 text-body-sm text-slate hover:-translate-y-0.5 hover:shadow-stripe-sm transition-all duration-250 ease-stripe cursor-default"
                 >
                   {partner.name}
                 </div>
               ))}
             </div>
 
+            {/* Connection: Left → Center */}
+            <ConnectionArrow direction="down" />
+
             {/* Center: Lynia Core */}
-            <div className="flex flex-col items-center gap-4 lg:px-8">
-              <div className="hidden lg:flex items-center gap-2 text-border">
-                <div className="w-8 h-[2px] bg-border" />
-                <span className="text-caption">&rarr;</span>
-              </div>
+            <div className="flex flex-col items-center gap-4 lg:px-6">
+              <ConnectionArrow direction="right" />
 
               <div className="bg-primary rounded-xl p-6 lg:p-8 text-center shadow-stripe-lg min-w-[200px]">
                 <p className="text-subheading text-white">Lynia</p>
@@ -85,11 +132,11 @@ export function SystemIllustration() {
                 ))}
               </div>
 
-              <div className="hidden lg:flex items-center gap-2 text-border">
-                <span className="text-caption">&rarr;</span>
-                <div className="w-8 h-[2px] bg-border" />
-              </div>
+              <ConnectionArrow direction="right" />
             </div>
+
+            {/* Connection: Center → Right */}
+            <ConnectionArrow direction="down" />
 
             {/* Right: Mobile Money Providers */}
             <div className="flex flex-col gap-3">
@@ -99,7 +146,7 @@ export function SystemIllustration() {
               {mobileMoneyProviders.map((provider) => (
                 <div
                   key={provider.name}
-                  className="bg-surface-secondary border border-border rounded-lg px-4 py-3 flex items-center gap-3"
+                  className="bg-white border border-border rounded-lg px-4 py-3 flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-stripe-sm transition-all duration-250 ease-stripe cursor-default"
                 >
                   <div
                     className="w-3 h-3 rounded-full flex-shrink-0"
