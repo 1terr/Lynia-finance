@@ -5,12 +5,6 @@ import { SectionHeading } from '@/components/ui/SectionHeading';
 import { MessageSquare, Link2, Smartphone } from 'lucide-react';
 import { WhatsAppChatDemo } from '@/components/ui/WhatsAppChatDemo';
 
-const providers = [
-  { name: 'Innbucks', color: '#FF6B00' },
-  { name: 'EcoCash', color: '#00A651' },
-  { name: 'OneWallet', color: '#0072CE' },
-  { name: 'OMari', color: '#8B5CF6' },
-];
 
 export function ProductBento() {
   const { ref, isVisible } = useScrollAnimation();
@@ -44,24 +38,6 @@ export function ProductBento() {
               Instant, collateral-free credit for civil servants and partner
               employees.
             </p>
-            <p className="text-body-sm text-slate mt-4">
-              WhatsApp-native applications with instant disbursement to:
-            </p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {providers.map((p) => (
-                <span
-                  key={p.name}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-surface-secondary text-body-sm font-medium text-primary-dark"
-                >
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ backgroundColor: p.color }}
-                  />
-                  {p.name}
-                </span>
-              ))}
-            </div>
-
             {/* WhatsApp Chat Flow Demo */}
             <div className="mt-6">
               <WhatsAppChatDemo isVisible={isVisible} />
