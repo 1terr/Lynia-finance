@@ -14,7 +14,7 @@ const footerColumns = [
     title: 'Company',
     links: [
       { label: 'Thesis', href: '/thesis' },
-      { label: 'Press', href: '/press' },
+      { label: 'Insights', href: '/insights' },
       { label: 'RBZ Compliance', href: '/compliance' },
     ],
   },

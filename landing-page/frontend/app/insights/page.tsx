@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Press — Lynia Finance',
+  title: 'Insights — Lynia Finance',
   description:
     'News, coverage, and updates about Lynia Finance and financial inclusion in Zimbabwe.',
 };
@@ -30,14 +30,14 @@ const pressReleases = [
   },
 ];
 
-export default function PressPage() {
+export default function InsightsPage() {
   return (
     <div className="pt-[72px]">
       {/* Hero */}
       <section className="bg-white py-16 lg:py-20">
         <div className="container-main">
           <span className="text-overline uppercase tracking-wider text-primary">
-            PRESS
+            INSIGHTS
           </span>
           <h1 className="text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4">
             In the news
@@ -49,7 +49,7 @@ export default function PressPage() {
         </div>
       </section>
 
-      {/* Press list */}
+      {/* Insights list */}
       <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main">
           <div className="max-w-[780px]">

@@ -23,7 +23,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
-      url: `${siteUrl}/press`,
+      url: `${siteUrl}/insights`,
       lastModified: new Date(),
       changeFrequency: 'weekly',
       priority: 0.8,

@@ -21,7 +21,7 @@ const pressItems: PressItem[] = [
       'Lynia Finance launches WhatsApp-based smartphone financing for informal traders across Zimbabwe.',
     description:
       'How Lynia Finance is using mobile money data to underwrite loans for entrepreneurs across Zimbabwe.',
-    href: '/press',
+    href: '/insights',
     gradient: 'from-[#0A2540] via-[#1A3A5C] to-[#0A2540]',
   },
   {
@@ -30,7 +30,7 @@ const pressItems: PressItem[] = [
       'How mobile money velocity is replacing bank statements as the new credit score in Africa.',
     description:
       'Lynia Finance pioneers alternative credit scoring using EcoCash and mobile money patterns.',
-    href: '/press',
+    href: '/insights',
     gradient: 'from-[#0e4429] via-[#006d32] to-[#0e4429]',
   },
   {
@@ -39,7 +39,7 @@ const pressItems: PressItem[] = [
       'Zimbabwe fintech bridges the $14B credit gap with IoT-backed asset lending and embedded insurance.',
     description:
       'Lynia Finance combines real-time asset telemetry with mobile money disbursement for productive credit.',
-    href: '/press',
+    href: '/insights',
     gradient: 'from-[#2D1B69] via-[#635BFF] to-[#2D1B69]',
   },
   {
@@ -48,7 +48,7 @@ const pressItems: PressItem[] = [
       'African fintech startups are redefining credit access for the informal economy.',
     description:
       'Reuters explores how companies like Lynia Finance use alternative data for financial inclusion.',
-    href: '/press',
+    href: '/insights',
     gradient: 'from-[#1a1a2e] via-[#16213e] to-[#0f3460]',
   },
   {
@@ -57,7 +57,7 @@ const pressItems: PressItem[] = [
       'The next wave of African fintech is built on WhatsApp and mobile money rails.',
     description:
       'Disrupt Africa profiles Lynia Finance among startups leveraging chat-based financial services.',
-    href: '/press',
+    href: '/insights',
     gradient: 'from-[#4a0e0e] via-[#8b1a1a] to-[#4a0e0e]',
   },
 ];
@@ -123,7 +123,7 @@ function PressCard({
   );
 }
 
-export function Press() {
+export function Insights() {
   const { ref, isVisible } = useScrollAnimation();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -160,12 +160,12 @@ export function Press() {
   };
 
   return (
-    <section ref={ref} id="press" className="bg-white py-16 lg:py-24">
+    <section ref={ref} id="insights" className="bg-white py-16 lg:py-24">
       <div className="container-main">
         {/* Header row */}
         <div className="flex items-end justify-between">
           <div>
-            <SectionLabel isVisible={isVisible}>PRESS</SectionLabel>
+            <SectionLabel isVisible={isVisible}>INSIGHTS</SectionLabel>
             <h2
               className={`text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4 fade-in ${
                 isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'

@@ -2,7 +2,7 @@ import { Hero } from '@/components/sections/Hero';
 import { DataStrip } from '@/components/sections/DataStrip';
 import { ProductBento } from '@/components/sections/ProductBento';
 import { DeveloperEngine } from '@/components/sections/DeveloperEngine';
-import { Press } from '@/components/sections/Press';
+import { Insights } from '@/components/sections/Insights';
 import { BottomCTA } from '@/components/sections/BottomCTA';
 
 export default function HomePage() {
@@ -16,8 +16,8 @@ export default function HomePage() {
       <ProductBento />
       {/* 4. The Developer Engine */}
       <DeveloperEngine />
-      {/* 5. Press */}
-      <Press />
+      {/* 5. Insights */}
+      <Insights />
       {/* 6. Bottom CTA */}
       <BottomCTA />
     </>
