@@ -94,7 +94,7 @@ export function DataStrip() {
                   isVisible={isVisible}
                 />
               </div>
-              <p className="text-body-lg font-medium text-navy/90 mt-3">{stat.label}</p>
+              <p className="text-sm font-medium text-navy/90 mt-3">{stat.label}</p>
             </div>
           ))}
         </div>
