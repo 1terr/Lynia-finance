@@ -1,4 +1,4 @@
-import { client } from './sanity';
+import { client, isSanityConfigured } from './sanity';
 import type { SanityPost, SanityCategory } from './sanity-types';
 
 // Re-export types for convenience
@@ -46,18 +46,22 @@ const categoriesQuery = `
 `;
 
 export async function getPosts(): Promise<SanityPost[]> {
+  if (!isSanityConfigured) return [];
   return client.fetch<SanityPost[]>(postsQuery);
 }
 
 export async function getPostBySlug(slug: string): Promise<SanityPost | null> {
+  if (!isSanityConfigured) return null;
   return client.fetch<SanityPost | null>(postBySlugQuery, { slug });
 }
 
 export async function getPostSlugs(): Promise<string[]> {
+  if (!isSanityConfigured) return [];
   return client.fetch<string[]>(`*[_type == "post"].slug.current`);
 }
 
 export async function getCategories(): Promise<SanityCategory[]> {
+  if (!isSanityConfigured) return [];
   return client.fetch<SanityCategory[]>(categoriesQuery);
 }
 
@@ -65,6 +69,7 @@ export async function getRelatedPosts(
   currentSlug: string,
   limit = 3
 ): Promise<SanityPost[]> {
+  if (!isSanityConfigured) return [];
   const query = `
     *[_type == "post" && slug.current != $currentSlug] | order(publishedAt desc) {
       _id,
