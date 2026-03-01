@@ -1,16 +1,33 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getPostBySlug, getPostSlugs, getRelatedPosts } from '@/lib/insights-data';
-import { PortableText } from '@/components/PortableText';
-import { urlFor } from '@/lib/sanity';
+import { isSanityConfigured } from '@/lib/sanity';
+
+// Lazy-load Sanity-dependent components to avoid build failures when Sanity isn't configured
+const PortableText = isSanityConfigured
+  ? require('@/components/PortableText').PortableText
+  : ({ value }: { value: unknown[] }) => null;
+const urlFor = isSanityConfigured
+  ? require('@/lib/sanity').urlFor
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  : (_: any) => ({ width: () => ({ height: () => ({ format: () => ({ url: () => '' }), url: () => '' }) }) });
+
+export const dynamicParams = false;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  const slugs = await getPostSlugs();
-  return slugs.map((slug: string) => ({ slug }));
+  try {
+    const slugs = await getPostSlugs();
+    // Next.js 14 with output:'export' requires at least one param for dynamic routes.
+    // Return a placeholder when no posts exist (e.g. Sanity not configured).
+    if (slugs.length === 0) return [{ slug: '_' }];
+    return slugs.map((slug: string) => ({ slug }));
+  } catch {
+    return [{ slug: '_' }];
+  }
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
