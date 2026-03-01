@@ -3,6 +3,7 @@
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionHeading } from '@/components/ui/SectionHeading';
 import { MessageSquare, Link2, Smartphone } from 'lucide-react';
+import { WhatsAppChatDemo } from '@/components/ui/WhatsAppChatDemo';
 
 const providers = [
   { name: 'Innbucks', color: '#FF6B00' },
@@ -23,7 +24,7 @@ export function ProductBento() {
           isVisible={isVisible}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10 items-start">
           {/* Digital Credit — Top Left */}
           <div
             className={`border border-border border-t-4 border-t-primary rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 ${
@@ -59,6 +60,11 @@ export function ProductBento() {
                   {p.name}
                 </span>
               ))}
+            </div>
+
+            {/* WhatsApp Chat Flow Demo */}
+            <div className="mt-6">
+              <WhatsAppChatDemo isVisible={isVisible} />
             </div>
           </div>
 

@@ -191,6 +191,10 @@ const config: Config = {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' },
         },
+        'typing-bounce': {
+          '0%, 60%, 100%': { transform: 'translateY(0)' },
+          '30%': { transform: 'translateY(-4px)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.4s ease-out',
@@ -205,6 +209,7 @@ const config: Config = {
         float: 'float 4s ease-in-out infinite',
         blink: 'blink 1s step-end infinite',
         'slow-spin': 'slow-spin 20s linear infinite',
+        'typing-bounce': 'typing-bounce 1.4s ease-in-out infinite',
       },
     },
   },
