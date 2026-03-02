@@ -76,7 +76,7 @@ export function Hero() {
 
           {/* CTAs */}
           <div
-            className="mt-10 flex flex-wrap items-center gap-4 opacity-0 animate-fade-up"
+            className="mt-16 flex flex-wrap items-center gap-4 opacity-0 animate-fade-up"
             style={{ animationDelay: '160ms', animationFillMode: 'forwards' }}
           >
             <Button variant="accent" href="/contact" arrow>
