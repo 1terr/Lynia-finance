@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { ShieldCheck } from 'lucide-react';
 import { SOCIAL_LINKS } from '@/lib/constants';
 
 const footerColumns = [
@@ -16,7 +15,6 @@ const footerColumns = [
     links: [
       { label: 'Thesis', href: '/thesis' },
       { label: 'Insights', href: '/insights' },
-      { label: 'RBZ Compliance', href: '/compliance' },
     ],
   },
   {
@@ -90,10 +88,6 @@ export function Footer() {
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <p className="text-caption text-white/30">
             &copy; {new Date().getFullYear()} Lynia Finance. All rights reserved.
-          </p>
-          <p className="text-caption text-white/30 inline-flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-white/40" />
-            Regulated by the Reserve Bank of Zimbabwe.
           </p>
         </div>
       </div>
