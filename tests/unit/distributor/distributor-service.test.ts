@@ -367,7 +367,7 @@ describe('GET /api/v1/distributor/handovers', () => {
   it('should return handovers list', async () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1' }, error: null });
     const handovers = [
-      { id: 'h1', status: 'initiated', customer_name: 'John' },
+      { id: 'h1', status: 'initiated', customer_name: 'John', loan_amount: '200.00', commission_earned: '10.00' },
     ];
     (query as jest.Mock).mockResolvedValueOnce({ data: handovers });
 
@@ -376,7 +376,10 @@ describe('GET /api/v1/distributor/handovers', () => {
 
     expect(response.statusCode).toBe(200);
     const body = parseBody(response);
-    expect(body.data).toEqual(handovers);
+    // DECIMAL columns are converted from strings to numbers
+    expect(body.data).toEqual([
+      { id: 'h1', status: 'initiated', customer_name: 'John', loan_amount: 200, commission_earned: 10 },
+    ]);
   });
 
   it('should support ?status=X filter', async () => {
@@ -643,7 +646,7 @@ describe('GET /api/v1/distributor/commissions', () => {
   it('should return commissions list', async () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1' }, error: null });
     const commissions = [
-      { id: 'c1', commission_amount: 50, payment_status: 'paid' },
+      { id: 'c1', commission_amount: '50.00', commission_percentage: '5.00', device_retail_price: '199.00', payment_status: 'paid' },
     ];
     (query as jest.Mock).mockResolvedValueOnce({ data: commissions });
 
@@ -652,7 +655,10 @@ describe('GET /api/v1/distributor/commissions', () => {
 
     expect(response.statusCode).toBe(200);
     const body = parseBody(response);
-    expect(body.data).toEqual(commissions);
+    // DECIMAL columns are converted from strings to numbers
+    expect(body.data).toEqual([
+      { id: 'c1', commission_amount: 50, commission_percentage: 5, device_retail_price: 199, payment_status: 'paid' },
+    ]);
   });
 
   it('should return 404 when distributor not found', async () => {

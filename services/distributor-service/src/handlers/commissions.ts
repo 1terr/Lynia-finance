@@ -38,5 +38,14 @@ export const handleGetCommissions: RouteHandler = async (event, _params, auth) =
     [dist.id]
   );
 
-  return successResponse(result.data, 200, event);
+  // PostgreSQL DECIMAL columns return strings via the pg driver.
+  // Convert to numbers so the frontend can call .toFixed() safely.
+  const commissions = result.data.map((row: Record<string, unknown>) => ({
+    ...row,
+    commission_amount: Number(row.commission_amount) || 0,
+    commission_percentage: Number(row.commission_percentage) || 0,
+    device_retail_price: Number(row.device_retail_price) || 0,
+  }));
+
+  return successResponse(commissions, 200, event);
 };

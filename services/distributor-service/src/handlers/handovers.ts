@@ -57,7 +57,16 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
   sql += ' ORDER BY dh.created_at DESC';
 
   const result = await query(sql, params);
-  return successResponse(result.data, 200, event);
+
+  // PostgreSQL DECIMAL columns return strings via the pg driver.
+  // Convert to numbers so the frontend can call .toFixed() safely.
+  const handovers = result.data.map((row: Record<string, unknown>) => ({
+    ...row,
+    loan_amount: Number(row.loan_amount) || 0,
+    commission_earned: Number(row.commission_earned) || 0,
+  }));
+
+  return successResponse(handovers, 200, event);
 };
 
 /**

@@ -46,14 +46,16 @@ export const handleGetStats: RouteHandler = async (event, _params, auth) => {
   );
   const lastMonthHandovers = parseInt(lastMonthResult.data[0]?.count || '0', 10);
 
+  // PostgreSQL DECIMAL columns return strings via the pg driver.
+  // Convert to numbers so the frontend can call .toFixed() safely.
   return successResponse({
-    total_devices_distributed: dist.total_devices_distributed,
-    current_inventory: dist.current_inventory_count,
+    total_devices_distributed: Number(dist.total_devices_distributed) || 0,
+    current_inventory: Number(dist.current_inventory_count) || 0,
     pending_handovers: pendingHandovers,
-    total_commissions_earned: dist.total_commissions_earned,
-    total_commissions_paid: dist.total_commissions_paid,
-    pending_commissions: dist.pending_commissions,
-    average_rating: dist.average_rating,
+    total_commissions_earned: Number(dist.total_commissions_earned) || 0,
+    total_commissions_paid: Number(dist.total_commissions_paid) || 0,
+    pending_commissions: Number(dist.pending_commissions) || 0,
+    average_rating: Number(dist.average_rating) || 0,
     monthly_handovers: monthlyHandovers,
     last_month_handovers: lastMonthHandovers,
   }, 200, event);
