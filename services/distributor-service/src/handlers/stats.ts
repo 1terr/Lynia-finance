@@ -25,7 +25,7 @@ export const handleGetStats: RouteHandler = async (event, _params, auth) => {
      WHERE distributor_id = $1 AND status NOT IN ('completed', 'failed', 'cancelled')`,
     [dist.id]
   );
-  const pendingHandovers = parseInt(pendingResult.rows[0]?.count || '0', 10);
+  const pendingHandovers = parseInt(pendingResult.data[0]?.count || '0', 10);
 
   const monthlyResult = await query(
     `SELECT COUNT(*) as count FROM device_handovers
@@ -34,7 +34,17 @@ export const handleGetStats: RouteHandler = async (event, _params, auth) => {
        AND completed_at >= date_trunc('month', CURRENT_DATE)`,
     [dist.id]
   );
-  const monthlyHandovers = parseInt(monthlyResult.rows[0]?.count || '0', 10);
+  const monthlyHandovers = parseInt(monthlyResult.data[0]?.count || '0', 10);
+
+  const lastMonthResult = await query(
+    `SELECT COUNT(*) as count FROM device_handovers
+     WHERE distributor_id = $1
+       AND status = 'completed'
+       AND completed_at >= date_trunc('month', CURRENT_DATE) - INTERVAL '1 month'
+       AND completed_at < date_trunc('month', CURRENT_DATE)`,
+    [dist.id]
+  );
+  const lastMonthHandovers = parseInt(lastMonthResult.data[0]?.count || '0', 10);
 
   return successResponse({
     total_devices_distributed: dist.total_devices_distributed,
@@ -45,5 +55,6 @@ export const handleGetStats: RouteHandler = async (event, _params, auth) => {
     pending_commissions: dist.pending_commissions,
     average_rating: dist.average_rating,
     monthly_handovers: monthlyHandovers,
+    last_month_handovers: lastMonthHandovers,
   }, 200, event);
 };

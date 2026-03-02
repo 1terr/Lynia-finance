@@ -32,7 +32,7 @@ jest.mock('../../../services/shared/clients/database', () => {
     db: {
       from: jest.fn().mockImplementation(() => createChain()),
     },
-    query: jest.fn().mockResolvedValue({ rows: [] }),
+    query: jest.fn().mockResolvedValue({ data: [] }),
   };
 });
 
@@ -161,7 +161,7 @@ beforeEach(() => {
   });
   mockRequireRole.mockReturnValue(undefined); // passes by default
   mockExecute.mockResolvedValue({ data: null, error: null });
-  (query as jest.Mock).mockResolvedValue({ rows: [] });
+  (query as jest.Mock).mockResolvedValue({ data: [] });
 });
 
 // =====================================================================
@@ -301,8 +301,9 @@ describe('GET /api/v1/distributor/stats', () => {
     };
     mockExecute.mockResolvedValueOnce({ data: dist, error: null });
     (query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ count: '3' }] }) // pending handovers
-      .mockResolvedValueOnce({ rows: [{ count: '7' }] }); // monthly handovers
+      .mockResolvedValueOnce({ data: [{ count: '3' }] }) // pending handovers
+      .mockResolvedValueOnce({ data: [{ count: '7' }] }) // monthly handovers
+      .mockResolvedValueOnce({ data: [{ count: '2' }] }); // last month handovers
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/stats' });
     const response = await handler(event);
@@ -312,6 +313,7 @@ describe('GET /api/v1/distributor/stats', () => {
     expect(body.success).toBe(true);
     expect(body.data.pending_handovers).toBe(3);
     expect(body.data.monthly_handovers).toBe(7);
+    expect(body.data.last_month_handovers).toBe(2);
     expect(body.data.total_devices_distributed).toBe(10);
     expect(body.data.current_inventory).toBe(5);
   });
@@ -429,9 +431,9 @@ describe('POST /api/v1/distributor/handovers', () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1', user_id: 'user-1' }, error: null });
     // loan check query
     (query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 'loan-1', status: 'approved', loan_amount_usd: 200 }] })
+      .mockResolvedValueOnce({ data: [{ id: 'loan-1', status: 'approved', loan_amount_usd: 200 }] })
       // existing handover check
-      .mockResolvedValueOnce({ rows: [] });
+      .mockResolvedValueOnce({ data: [] });
     // db.insert (create handover record)
     mockExecute.mockResolvedValueOnce({ data: { id: 'h-new' }, error: null });
 
@@ -472,9 +474,9 @@ describe('POST /api/v1/distributor/handovers', () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1', user_id: 'user-1' }, error: null });
     // loan check
     (query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 'loan-1', status: 'approved', loan_amount_usd: 200 }] })
+      .mockResolvedValueOnce({ data: [{ id: 'loan-1', status: 'approved', loan_amount_usd: 200 }] })
       // existing handover check — already exists
-      .mockResolvedValueOnce({ rows: [{ id: 'h-existing' }] });
+      .mockResolvedValueOnce({ data: [{ id: 'h-existing' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -496,7 +498,7 @@ describe('POST /api/v1/distributor/handovers', () => {
 describe('POST /api/v1/distributor/handovers/:id/verify-identity', () => {
   it('should require national_id in body', async () => {
     // Owner check passes
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -511,7 +513,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-identity', () => {
   });
 
   it('should verify identity and return result', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -526,7 +528,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-identity', () => {
   });
 
   it('should return 404 when handover not owned by distributor', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -545,7 +547,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-identity', () => {
 
 describe('POST /api/v1/distributor/handovers/:id/verify-imei', () => {
   it('should require imei and expected_imei', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -560,7 +562,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-imei', () => {
   });
 
   it('should validate 15-digit IMEI format', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -576,7 +578,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-imei', () => {
   });
 
   it('should return verified true when IMEI matches and is 15 digits', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -592,7 +594,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-imei', () => {
   });
 
   it('should return verified false when IMEI does not match', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -614,7 +616,7 @@ describe('POST /api/v1/distributor/handovers/:id/verify-imei', () => {
 
 describe('POST /api/v1/distributor/handovers/:id/complete', () => {
   it('should delegate to completeHandover from workflow', async () => {
-    (query as jest.Mock).mockResolvedValueOnce({ rows: [{ id: 'h-1' }] });
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ id: 'h-1' }] });
     mockCompleteHandover.mockResolvedValueOnce({
       success: true,
       loan_id: 'loan-1',

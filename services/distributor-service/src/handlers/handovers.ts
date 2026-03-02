@@ -145,11 +145,11 @@ export const handleVerifyIdentity: RouteHandler = async (event, _params, auth) =
     [loan_id]
   );
 
-  if (result.rows.length === 0) {
+  if (result.data.length === 0) {
     return notFoundResponse('Approved loan', event);
   }
 
-  const storedId = result.rows[0].national_id;
+  const storedId = result.data[0].national_id;
   const verified = storedId === national_id;
 
   return successResponse({
@@ -194,7 +194,7 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
   }
 
   // Check device exists in this distributor's inventory and is available
-  const deviceResult = await query(
+  const deviceResult = await query<{ id: string; imei: string; retail_price_usd: number; status: string }>(
     `SELECT d.id, d.imei, d.retail_price_usd, d.status
      FROM devices d
      JOIN agent_inventory ai ON ai.device_id = d.id
@@ -204,14 +204,14 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
     [device_id, dist.id]
   );
 
-  if (deviceResult.rows.length === 0) {
+  if (deviceResult.data.length === 0) {
     return successResponse({
       verified: false,
       message: 'Device not found in your available inventory',
     }, 200, event);
   }
 
-  const device = deviceResult.rows[0];
+  const device = deviceResult.data[0];
 
   // Verify IMEI matches
   if (device.imei !== imei) {
@@ -222,16 +222,16 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
   }
 
   // Check price is within approved loan budget
-  const loanResult = await query(
+  const loanResult = await query<{ loan_amount_usd: number }>(
     `SELECT l.loan_amount_usd FROM loans l WHERE l.id = $1 AND l.status = 'approved'`,
     [loan_id]
   );
 
-  if (loanResult.rows.length === 0) {
+  if (loanResult.data.length === 0) {
     return notFoundResponse('Approved loan', event);
   }
 
-  const loanAmount = loanResult.rows[0].loan_amount_usd;
+  const loanAmount = loanResult.data[0].loan_amount_usd;
   if (device.retail_price_usd > loanAmount) {
     return successResponse({
       verified: false,
@@ -275,7 +275,7 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
   }
 
   // Check if deposit already confirmed
-  const depositResult = await query(
+  const depositResult = await query<{ amount_usd: number; payment_status: string }>(
     `SELECT p.amount_usd, p.payment_status
      FROM payments p
      WHERE p.loan_id = $1 AND p.payment_type = 'deposit'
@@ -284,16 +284,16 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
     [loan_id]
   );
 
-  if (depositResult.rows.length > 0 && depositResult.rows[0].payment_status === 'confirmed') {
+  if (depositResult.data.length > 0 && depositResult.data[0].payment_status === 'confirmed') {
     return successResponse({
       verified: true,
-      amount: depositResult.rows[0].amount_usd,
-      message: `Deposit of $${depositResult.rows[0].amount_usd.toFixed(2)} already confirmed`,
+      amount: depositResult.data[0].amount_usd,
+      message: `Deposit of $${depositResult.data[0].amount_usd.toFixed(2)} already confirmed`,
     }, 200, event);
   }
 
   // Look up the expected deposit amount
-  const loanResult = await query(
+  const loanResult = await query<{ loan_amount_usd: number; deposit_percentage: number }>(
     `SELECT l.loan_amount_usd, lp.deposit_percentage
      FROM loans l
      JOIN loan_products lp ON lp.id = l.product_id
@@ -301,11 +301,11 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
     [loan_id]
   );
 
-  if (loanResult.rows.length === 0) {
+  if (loanResult.data.length === 0) {
     return notFoundResponse('Loan', event);
   }
 
-  const expectedDeposit = loanResult.rows[0].loan_amount_usd * (loanResult.rows[0].deposit_percentage / 100);
+  const expectedDeposit = loanResult.data[0].loan_amount_usd * (loanResult.data[0].deposit_percentage / 100);
 
   // Record the deposit payment for later verification by payment service
   await db
@@ -390,15 +390,15 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
     [loan_id]
   );
 
-  if (loanCheck.rows.length === 0) {
+  if (loanCheck.data.length === 0) {
     return notFoundResponse('Loan', event);
   }
 
-  if (loanCheck.rows[0].status !== 'approved') {
+  if (loanCheck.data[0].status !== 'approved') {
     return errorResponse(
       'Loan is no longer available for handover',
       409,
-      { current_status: loanCheck.rows[0].status },
+      { current_status: loanCheck.data[0].status },
       event,
     );
   }
@@ -409,7 +409,7 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
     [loan_id]
   );
 
-  if (existingHandover.rows.length > 0) {
+  if (existingHandover.data.length > 0) {
     return errorResponse(
       'A handover has already been completed for this loan',
       409,
@@ -491,7 +491,7 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
     `SELECT l.next_payment_date FROM loans l WHERE l.id = $1`,
     [loan_id]
   );
-  const nextPaymentDate = updatedLoan.rows[0]?.next_payment_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+  const nextPaymentDate = updatedLoan.data[0]?.next_payment_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   return successResponse({
     success: true,
@@ -522,7 +522,7 @@ export const handleHandoverAction: RouteHandler = async (event, params, auth) =>
      WHERE dh.id = $1 AND dist.user_id = $2`,
     [handoverId, auth.userId]
   );
-  if (ownerResult.rows.length === 0) {
+  if (ownerResult.data.length === 0) {
     return notFoundResponse('Handover', event);
   }
 

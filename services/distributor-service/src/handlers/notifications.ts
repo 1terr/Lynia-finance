@@ -55,7 +55,7 @@ export const handleGetNotifications: RouteHandler = async (event, _params, auth)
 
   // Combine and format
   const notifications = [
-    ...commissionEvents.rows.map((row: Record<string, unknown>) => ({
+    ...commissionEvents.data.map((row: Record<string, unknown>) => ({
       id: `comm_${row.id}`,
       type: 'commission_paid',
       title: 'Commission Paid',
@@ -63,7 +63,7 @@ export const handleGetNotifications: RouteHandler = async (event, _params, auth)
       created_at: row.created_at,
       read: true,
     })),
-    ...inventoryEvents.rows.map((row: Record<string, unknown>) => ({
+    ...inventoryEvents.data.map((row: Record<string, unknown>) => ({
       id: `inv_${row.id}`,
       type: 'inventory_assigned',
       title: 'New Inventory',
@@ -75,5 +75,5 @@ export const handleGetNotifications: RouteHandler = async (event, _params, auth)
     .sort((a, b) => new Date(b.created_at as string).getTime() - new Date(a.created_at as string).getTime())
     .slice(0, 20);
 
-  return successResponse({ notifications, total: notifications.length }, event);
+  return successResponse({ notifications, total: notifications.length }, 200, event);
 };

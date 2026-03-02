@@ -245,9 +245,11 @@ describe('Distributor Service Integration Tests', () => {
 
       // Then: pending handovers count
       mockQuery
-        .mockResolvedValueOnce({ data: [], error: null, rows: [{ count: '3' }] })
+        .mockResolvedValueOnce({ data: [{ count: '3' }], error: null })
         // monthly handovers count
-        .mockResolvedValueOnce({ data: [], error: null, rows: [{ count: '12' }] });
+        .mockResolvedValueOnce({ data: [{ count: '12' }], error: null })
+        // last month handovers count
+        .mockResolvedValueOnce({ data: [{ count: '8' }], error: null });
 
       const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/stats' });
       const response = await handler(event);
@@ -258,6 +260,7 @@ describe('Distributor Service Integration Tests', () => {
       expect(body.data.total_devices_distributed).toBe(150);
       expect(body.data.pending_handovers).toBe(3);
       expect(body.data.monthly_handovers).toBe(12);
+      expect(body.data.last_month_handovers).toBe(8);
     });
 
     it('should return 404 if distributor not found', async () => {
@@ -279,12 +282,11 @@ describe('Distributor Service Integration Tests', () => {
       mockExecute.mockResolvedValueOnce({ data: { id: 'dist-001' }, error: null });
       // Get inventory
       mockQuery.mockResolvedValueOnce({
-        data: [],
-        error: null,
-        rows: [
+        data: [
           { id: 'dev-1', brand: 'Samsung', model: 'A14', imei: '123456789012345', retail_price: 199, status: 'in_stock', condition: 'new', received_at: '2024-01-01' },
           { id: 'dev-2', brand: 'Tecno', model: 'Spark 10', imei: '543210987654321', retail_price: 149, status: 'in_stock', condition: 'new', received_at: '2024-01-02' },
         ],
+        error: null,
       });
 
       const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/inventory' });
@@ -312,11 +314,10 @@ describe('Distributor Service Integration Tests', () => {
     it('should return commission records', async () => {
       mockExecute.mockResolvedValueOnce({ data: { id: 'dist-001' }, error: null });
       mockQuery.mockResolvedValueOnce({
-        data: [],
-        error: null,
-        rows: [
+        data: [
           { id: 'comm-1', loan_id: 'loan-1', device_model: 'Samsung A14', customer_name: 'Alice', commission_amount: 25, payment_status: 'paid', calculation_date: '2024-01-15' },
         ],
+        error: null,
       });
 
       const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/commissions' });
@@ -335,11 +336,10 @@ describe('Distributor Service Integration Tests', () => {
     it('should return handover list', async () => {
       mockExecute.mockResolvedValueOnce({ data: { id: 'dist-001' }, error: null });
       mockQuery.mockResolvedValueOnce({
-        data: [],
-        error: null,
-        rows: [
+        data: [
           { id: 'ho-1', loan_id: 'loan-1', customer_name: 'Alice', device_model: 'Samsung A14', status: 'pending', created_at: '2024-01-10' },
         ],
+        error: null,
       });
 
       const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/handovers' });
