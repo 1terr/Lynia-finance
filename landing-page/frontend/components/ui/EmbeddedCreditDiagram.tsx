@@ -19,8 +19,31 @@ const ecosystemPartners = [
 
 function AnimatedConnectorBlue() {
   return (
-    <div className="flex items-center justify-center">
+    <div className="flex items-center justify-center py-3 sm:py-0">
+      {/* Mobile: vertical down arrow with bounce (blue theme) */}
+      <div className="flex sm:hidden flex-col items-center gap-1">
+        <div className="w-[2px] h-6 bg-gradient-to-b from-white/10 to-info/30" />
+        <svg
+          width="12"
+          height="8"
+          viewBox="0 0 12 8"
+          fill="none"
+          className="text-info/50"
+          style={{ animation: 'bounce-subtle 2s ease-in-out infinite' }}
+        >
+          <path
+            d="M1 1L6 6L11 1"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </div>
+
+      {/* Desktop: horizontal flowing SVG connector */}
       <svg
+        className="hidden sm:block"
         width="60"
         height="40"
         viewBox="0 0 60 40"
@@ -99,7 +122,7 @@ interface EmbeddedCreditDiagramProps {
 
 export function EmbeddedCreditDiagram({ isVisible }: EmbeddedCreditDiagramProps) {
   return (
-    <div className="relative rounded-xl overflow-hidden bg-navy min-h-[340px] lg:min-h-[400px] w-full flex items-center justify-center">
+    <div className="relative rounded-xl overflow-hidden bg-navy min-h-[460px] sm:min-h-[340px] lg:min-h-[400px] w-full flex items-center justify-center">
       {/* Dot grid texture */}
       <div className="absolute inset-0 dot-grid opacity-[0.03]" />
 
@@ -113,17 +136,17 @@ export function EmbeddedCreditDiagram({ isVisible }: EmbeddedCreditDiagramProps)
       />
 
       {/* Centered compact diagram */}
-      <div className="relative z-10 w-full py-6 px-4 flex items-center justify-center">
-        <div className="w-full max-w-[420px] grid grid-cols-[1fr_60px_auto_60px_1fr] gap-0 items-center">
-          {/* Left: Ecosystem Partners */}
-          <div className="flex flex-col gap-2">
-            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
+      <div className="relative z-10 w-full py-6 px-2 sm:px-4 flex items-center justify-center">
+        <div className="w-full max-w-[280px] sm:max-w-[420px] mx-auto grid grid-cols-1 sm:grid-cols-[1fr_60px_auto_60px_1fr] gap-0 items-center">
+          {/* Left/Top: Ecosystem Partners */}
+          <div className="flex flex-col gap-2 items-center sm:items-start">
+            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-1 text-center sm:text-left">
               Partners
             </p>
             {ecosystemPartners.map((partner, index) => (
               <div
                 key={partner.name}
-                className="bg-white/[0.06] border border-white/[0.08] rounded-md px-2.5 py-1.5 text-[11px] text-white/80"
+                className="bg-white/[0.06] border border-white/[0.08] rounded-md px-2.5 py-1.5 text-[11px] text-white/80 w-full text-center sm:text-left"
                 style={{
                   animation: `float-subtle ${5 + index * 0.5}s ease-in-out infinite`,
                   animationDelay: `${index * 0.4}s`,
@@ -140,14 +163,14 @@ export function EmbeddedCreditDiagram({ isVisible }: EmbeddedCreditDiagramProps)
           {/* Center: Lynia Core */}
           <div className="flex flex-col items-center gap-2">
             <div
-              className="bg-info rounded-lg p-4 text-center min-w-[120px]"
+              className="bg-info rounded-lg p-4 text-center w-full sm:w-auto sm:min-w-[120px]"
               style={{ animation: 'pulse-glow-blue 4s ease-in-out infinite' }}
             >
               <p className="text-body-sm text-white font-medium">Lynia</p>
               <p className="text-[10px] text-white/70 mt-0.5">Core Engine</p>
             </div>
 
-            <div className="grid grid-cols-2 gap-1.5 mt-1">
+            <div className="grid grid-cols-2 gap-1.5 mt-1 w-full sm:w-auto">
               {apiServices.map((service, index) => (
                 <div
                   key={service.name}
@@ -166,15 +189,15 @@ export function EmbeddedCreditDiagram({ isVisible }: EmbeddedCreditDiagramProps)
           {/* Center → Right Connector */}
           <AnimatedConnectorBlue />
 
-          {/* Right: Mobile Money Providers */}
-          <div className="flex flex-col gap-2">
-            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-1">
+          {/* Right/Bottom: Mobile Money Providers */}
+          <div className="flex flex-col gap-2 items-center sm:items-start">
+            <p className="text-[10px] uppercase tracking-wider text-white/40 mb-1 text-center sm:text-left">
               Mobile $
             </p>
             {mobileMoneyProviders.map((provider, index) => (
               <div
                 key={provider.name}
-                className="bg-white/[0.06] border border-white/[0.08] rounded-md px-2.5 py-1.5 flex items-center gap-2"
+                className="bg-white/[0.06] border border-white/[0.08] rounded-md px-2.5 py-1.5 flex items-center justify-center sm:justify-start gap-2 w-full"
                 style={{
                   animation: `float-subtle ${5 + index * 0.5}s ease-in-out infinite`,
                   animationDelay: `${index * 0.4}s`,
