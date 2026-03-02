@@ -24,7 +24,7 @@ export function Hero() {
       />
 
       {/* Line grid pattern overlay */}
-      <div className="absolute inset-0 line-grid opacity-[0.15]" />
+      <div className="absolute inset-0 line-grid opacity-[0.35]" />
 
       {/* Gradient orbs — hidden on mobile for performance */}
       <div
