@@ -22,9 +22,10 @@ export { fetchCommissions } from './commissions';
 
 // Handovers
 export {
-  fetchPendingHandovers,
+  searchApprovedLoans,
+  fetchCompletedHandovers,
   verifyCustomerIdentity,
-  verifyImei,
+  verifyDeviceSelection,
   verifyDepositPayment,
   submitHandover,
 } from './handovers';

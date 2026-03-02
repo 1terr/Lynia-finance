@@ -3,14 +3,14 @@ import userEvent from '@testing-library/user-event';
 import HandoversPage from '@/app/(dashboard)/handovers/_client';
 import * as api from '@/lib/api';
 import {
-  createPendingHandovers,
-  createPendingHandover,
+  createCompletedHandover,
+  createCompletedHandovers,
   resetFactoryCounters,
 } from '@/__tests__/fixtures/factories';
 
 // Mock the API functions
 jest.mock('@/lib/api', () => ({
-  fetchPendingHandovers: jest.fn(),
+  fetchCompletedHandovers: jest.fn(),
 }));
 
 // Mock the HandoverWizard component
@@ -24,44 +24,35 @@ jest.mock('@/components/handover/handover-wizard', () => ({
 }));
 
 describe('HandoversPage', () => {
-  const mockPendingHandovers = [
-    createPendingHandover({
+  const mockCompletedHandovers = [
+    createCompletedHandover({
       id: 'handover_1',
       customer_name: 'John Doe',
       device_model: 'Samsung Galaxy A15',
       loan_id: 'LOAN-001',
       loan_amount: 500,
-      deposit_amount: 50,
-      deposit_paid: true,
-      status: 'pending',
-      scheduled_date: '2026-02-25T10:00:00Z',
+      commission_earned: 25.0,
+      completed_at: '2026-02-25T10:00:00Z',
     }),
-    createPendingHandover({
+    createCompletedHandover({
       id: 'handover_2',
       customer_name: 'Jane Smith',
       device_model: 'iPhone 12',
       loan_id: 'LOAN-002',
       loan_amount: 750,
-      deposit_amount: 100,
-      deposit_paid: false,
-      status: 'pending',
-      scheduled_date: '2026-02-26T14:00:00Z',
+      commission_earned: 37.5,
+      completed_at: '2026-02-20T14:00:00Z',
     }),
-  ];
-
-  const mockCompletedHandovers = [
-    createPendingHandover({
+    createCompletedHandover({
       id: 'handover_3',
       customer_name: 'Bob Johnson',
       device_model: 'Samsung Galaxy S21',
       loan_id: 'LOAN-003',
       loan_amount: 600,
-      status: 'completed',
-      scheduled_date: '2026-02-20T10:00:00Z',
+      commission_earned: 30.0,
+      completed_at: '2026-02-15T10:00:00Z',
     }),
   ];
-
-  const mockMixedHandovers = [...mockPendingHandovers, ...mockCompletedHandovers];
 
   beforeEach(() => {
     resetFactoryCounters();
@@ -70,7 +61,7 @@ describe('HandoversPage', () => {
 
   describe('Loading State', () => {
     it('shows loading skeleton while fetching handovers', () => {
-      (api.fetchPendingHandovers as jest.Mock).mockImplementation(
+      (api.fetchCompletedHandovers as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
 
@@ -82,7 +73,7 @@ describe('HandoversPage', () => {
 
   describe('Page Header', () => {
     beforeEach(() => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockMixedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
     });
 
     it('renders page title and description', async () => {
@@ -90,7 +81,7 @@ describe('HandoversPage', () => {
 
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: /Device Handovers/i })).toBeInTheDocument();
-        expect(screen.getByText(/Manage device deliveries to customers/i)).toBeInTheDocument();
+        expect(screen.getByText(/Hand over devices to approved customers/i)).toBeInTheDocument();
       });
     });
 
@@ -105,63 +96,71 @@ describe('HandoversPage', () => {
 
   describe('Stats Cards', () => {
     beforeEach(() => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockMixedHandovers);
-    });
-
-    it('displays pending handovers count', async () => {
-      render(<HandoversPage />);
-
-      await waitFor(() => {
-        const pendingLabels = screen.getAllByText('Pending');
-        expect(pendingLabels.length).toBeGreaterThan(0);
-        // Should show count of 2 (mockPendingHandovers.length)
-        const statCards = screen.getAllByText('2');
-        expect(statCards.length).toBeGreaterThan(0);
-      });
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
     });
 
     it('displays completed handovers count', async () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        const completedLabels = screen.getAllByText('Completed');
-        expect(completedLabels.length).toBeGreaterThan(0);
-        // Should show count of 1 (mockCompletedHandovers.length)
-        expect(screen.getByText('1')).toBeInTheDocument();
+        expect(screen.getByText('Completed')).toBeInTheDocument();
+        // 3 completed handovers, but the count also appears in Devices stat
+        const threes = screen.getAllByText('3');
+        expect(threes.length).toBeGreaterThan(0);
       });
     });
 
-    it('displays total handovers count', async () => {
+    it('displays total earned commission', async () => {
+      render(<HandoversPage />);
+
+      // Total commission: 25 + 37.5 + 30 = 92.50
+      await waitFor(() => {
+        expect(screen.getByText('Earned')).toBeInTheDocument();
+        expect(screen.getByText('$92.50')).toBeInTheDocument();
+      });
+    });
+
+    it('displays devices count', async () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('Total')).toBeInTheDocument();
-        // Should show count of 3 (mockMixedHandovers.length)
-        const totalCounts = screen.getAllByText('3');
-        expect(totalCounts.length).toBeGreaterThan(0);
+        expect(screen.getByText('Devices')).toBeInTheDocument();
+      });
+    });
+
+    it('displays zero counts and $0.00 commission when no handovers', async () => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+
+      render(<HandoversPage />);
+
+      await waitFor(() => {
+        const zeroCounts = screen.getAllByText('0');
+        expect(zeroCounts.length).toBeGreaterThanOrEqual(2); // Completed and Devices
+        expect(screen.getByText('$0.00')).toBeInTheDocument();
       });
     });
   });
 
-  describe('Pending Handovers Section', () => {
+  describe('Completed Handovers List', () => {
     beforeEach(() => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockMixedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
     });
 
-    it('renders section header with pending count', async () => {
+    it('renders section header with completed count', async () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Pending Handovers \(2\)/i)).toBeInTheDocument();
+        expect(screen.getByText('Completed Handovers (3)')).toBeInTheDocument();
       });
     });
 
-    it('displays pending handover customer names', async () => {
+    it('displays customer names', async () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
         expect(screen.getByText('John Doe')).toBeInTheDocument();
         expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+        expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
       });
     });
 
@@ -169,10 +168,12 @@ describe('HandoversPage', () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Samsung Galaxy A15/i)).toBeInTheDocument();
-        expect(screen.getByText(/iPhone 12/i)).toBeInTheDocument();
-        expect(screen.getByText(/LOAN-001/i)).toBeInTheDocument();
-        expect(screen.getByText(/LOAN-002/i)).toBeInTheDocument();
+        expect(screen.getByText(/Samsung Galaxy A15/)).toBeInTheDocument();
+        expect(screen.getByText(/iPhone 12/)).toBeInTheDocument();
+        expect(screen.getByText(/Samsung Galaxy S21/)).toBeInTheDocument();
+        expect(screen.getByText(/LOAN-001/)).toBeInTheDocument();
+        expect(screen.getByText(/LOAN-002/)).toBeInTheDocument();
+        expect(screen.getByText(/LOAN-003/)).toBeInTheDocument();
       });
     });
 
@@ -180,59 +181,84 @@ describe('HandoversPage', () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        const amounts = screen.getAllByText('$500');
-        expect(amounts.length).toBeGreaterThan(0);
-        const amounts2 = screen.getAllByText('$750');
-        expect(amounts2.length).toBeGreaterThan(0);
+        expect(screen.getByText('$500')).toBeInTheDocument();
+        expect(screen.getByText('$750')).toBeInTheDocument();
+        expect(screen.getByText('$600')).toBeInTheDocument();
       });
     });
 
-    it('shows "Deposit Paid" badge when deposit is paid', async () => {
+    it('displays commission earned per handover', async () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('Deposit Paid')).toBeInTheDocument();
+        expect(screen.getByText('+$25.00')).toBeInTheDocument();
+        expect(screen.getByText('+$37.50')).toBeInTheDocument();
+        expect(screen.getByText('+$30.00')).toBeInTheDocument();
       });
     });
 
-    it('shows deposit amount due badge when deposit is not paid', async () => {
+    it('displays completion dates', async () => {
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('$100 due')).toBeInTheDocument();
-      });
-    });
-
-    it('displays scheduled dates', async () => {
-      render(<HandoversPage />);
-
-      await waitFor(() => {
-        // Dates should be formatted like "Tue, Feb 25"
+        // Dates formatted as "Feb 25, 2026" etc. via toLocaleDateString('en-ZW')
         const dateElements = screen.getAllByText(/Feb/i);
-        expect(dateElements.length).toBeGreaterThan(0);
+        expect(dateElements.length).toBeGreaterThanOrEqual(3);
       });
     });
 
-    it('shows empty state when no pending handovers', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+    it('does not show completed section when there are no completed handovers', async () => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
 
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('No pending handovers')).toBeInTheDocument();
+        expect(screen.getByText(/No handovers yet/i)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText(/Completed Handovers \(\d+\)/)).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Empty State', () => {
+    beforeEach(() => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+    });
+
+    it('shows empty state when no completed handovers exist', async () => {
+      render(<HandoversPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('No handovers yet')).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            /Start a handover when a customer with an approved loan comes to collect their device/i
+          )
+        ).toBeInTheDocument();
       });
     });
 
-    it('clicking pending handover opens wizard', async () => {
+    it('shows a "Start Handover" button in the empty state', async () => {
+      render(<HandoversPage />);
+
+      await waitFor(() => {
+        // There should be two Start Handover buttons: one in header, one in empty CTA
+        const startButtons = screen.getAllByRole('button', { name: /Start Handover/i });
+        expect(startButtons.length).toBe(2);
+      });
+    });
+
+    it('clicking "Start Handover" in empty state opens wizard', async () => {
       const user = userEvent.setup();
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
+        expect(screen.getByText('No handovers yet')).toBeInTheDocument();
       });
 
-      const handoverButton = screen.getByText('John Doe').closest('button');
-      await user.click(handoverButton!);
+      // Click the second Start Handover button (the one in the empty state CTA)
+      const startButtons = screen.getAllByRole('button', { name: /Start Handover/i });
+      await user.click(startButtons[1]);
 
       await waitFor(() => {
         expect(screen.getByTestId('handover-wizard')).toBeInTheDocument();
@@ -240,49 +266,9 @@ describe('HandoversPage', () => {
     });
   });
 
-  describe('Completed Handovers Section', () => {
-    beforeEach(() => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockMixedHandovers);
-    });
-
-    it('renders completed section when there are completed handovers', async () => {
-      render(<HandoversPage />);
-
-      await waitFor(() => {
-        const completedHeaders = screen.getAllByText(/Completed/i);
-        // Should have at least 2: one in stats, one in section header
-        expect(completedHeaders.length).toBeGreaterThan(1);
-      });
-    });
-
-    it('displays completed handover details', async () => {
-      render(<HandoversPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Bob Johnson')).toBeInTheDocument();
-        expect(screen.getByText(/Samsung Galaxy S21/i)).toBeInTheDocument();
-        expect(screen.getByText(/LOAN-003/i)).toBeInTheDocument();
-      });
-    });
-
-    it('does not render completed section when no completed handovers', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockPendingHandovers);
-
-      render(<HandoversPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-      });
-
-      // Should not have a "Completed (X)" header in the list
-      const completedTexts = screen.queryAllByText(/Completed \(\d+\)/i);
-      expect(completedTexts.length).toBe(0);
-    });
-  });
-
   describe('Wizard View', () => {
     beforeEach(() => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockMixedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
     });
 
     it('switches to wizard view when "Start Handover" is clicked', async () => {
@@ -298,6 +284,23 @@ describe('HandoversPage', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('handover-wizard')).toBeInTheDocument();
+      });
+    });
+
+    it('hides the list view when wizard is active', async () => {
+      const user = userEvent.setup();
+      render(<HandoversPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('Completed Handovers (3)')).toBeInTheDocument();
+      });
+
+      const startButton = screen.getByRole('button', { name: /Start Handover/i });
+      await user.click(startButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('handover-wizard')).toBeInTheDocument();
+        expect(screen.queryByText('Completed Handovers (3)')).not.toBeInTheDocument();
       });
     });
 
@@ -328,37 +331,76 @@ describe('HandoversPage', () => {
     });
   });
 
-  describe('Empty State', () => {
-    it('shows empty pending section when no handovers exist', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue([]);
+  describe('Data Fetching', () => {
+    it('calls fetchCompletedHandovers on mount', async () => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
 
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(screen.getByText('No pending handovers')).toBeInTheDocument();
+        expect(api.fetchCompletedHandovers).toHaveBeenCalledTimes(1);
       });
     });
 
-    it('displays zero counts in stats when no handovers', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue([]);
+    it('refetches data when wizard completes', async () => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
 
+      const user = userEvent.setup();
       render(<HandoversPage />);
 
       await waitFor(() => {
-        const zeroCounts = screen.getAllByText('0');
-        expect(zeroCounts.length).toBeGreaterThanOrEqual(3); // All three stat cards
+        expect(screen.getByRole('button', { name: /Start Handover/i })).toBeInTheDocument();
+      });
+
+      // Open wizard
+      const startButton = screen.getByRole('button', { name: /Start Handover/i });
+      await user.click(startButton);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('handover-wizard')).toBeInTheDocument();
+      });
+
+      // Clear the mock to track new calls
+      (api.fetchCompletedHandovers as jest.Mock).mockClear();
+
+      // Complete the wizard
+      const completeButton = screen.getByRole('button', { name: /Complete Handover/i });
+      await user.click(completeButton);
+
+      // After wizard completes, queries should be invalidated triggering a refetch
+      await waitFor(() => {
+        expect(api.fetchCompletedHandovers).toHaveBeenCalled();
       });
     });
   });
 
-  describe('Data Fetching', () => {
-    it('calls fetchPendingHandovers on mount', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockMixedHandovers);
+  describe('With Factory-Generated Data', () => {
+    it('renders a list of factory-generated handovers', async () => {
+      const handovers = createCompletedHandovers(5);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handovers);
 
       render(<HandoversPage />);
 
       await waitFor(() => {
-        expect(api.fetchPendingHandovers).toHaveBeenCalledTimes(1);
+        expect(screen.getByText('Completed Handovers (5)')).toBeInTheDocument();
+      });
+
+      // Each handover should show its customer name
+      for (const handover of handovers) {
+        expect(screen.getByText(handover.customer_name)).toBeInTheDocument();
+      }
+    });
+
+    it('correctly sums commission from factory-generated handovers', async () => {
+      const handovers = createCompletedHandovers(3);
+      // Default commission_earned from factory is 15.00 each
+      const expectedTotal = handovers.reduce((sum, h) => sum + h.commission_earned, 0);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handovers);
+
+      render(<HandoversPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText(`$${expectedTotal.toFixed(2)}`)).toBeInTheDocument();
       });
     });
   });

@@ -32,19 +32,34 @@ export interface Distributor {
   created_at: string;
 }
 
-export interface PendingHandover {
-  id: string;
+// ── Approved Loan (search result for handover Step 1) ──
+
+export interface ApprovedLoan {
   loan_id: string;
+  customer_id: string;
   customer_name: string;
-  customer_phone: string;
-  device_model: string;
-  device_imei: string;
   loan_amount: number;
   deposit_amount: number;
   deposit_paid: boolean;
-  scheduled_date: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
-  created_at: string;
+  approved_date: string;
+  device_category: string;
+  loan_term_months: number;
+  monthly_payment: number;
+  interest_rate: number;
+  first_payment_date: string;
+}
+
+// ── Completed Handover (history item) ──
+
+export interface CompletedHandover {
+  id: string;
+  loan_id: string;
+  customer_name: string;
+  device_model: string;
+  device_imei: string;
+  loan_amount: number;
+  commission_earned: number;
+  completed_at: string;
 }
 
 export interface InventoryDevice {
@@ -76,12 +91,12 @@ export interface CommissionEntry {
 export interface DashboardStats {
   total_devices_distributed: number;
   current_inventory: number;
-  pending_handovers: number;
   total_commissions_earned: number;
   total_commissions_paid: number;
   pending_commissions: number;
   average_rating: number;
   monthly_handovers: number;
+  last_month_handovers: number;
 }
 
 // ── Handover Workflow Types ──
@@ -112,16 +127,15 @@ export interface DeviceCondition {
 }
 
 export interface HandoverData {
-  handover_id: string;
-  // Step 1: Selected handover
-  selected_handover: PendingHandover | null;
+  // Step 1: Found approved loan via search
+  selected_loan: ApprovedLoan | null;
   // Step 2: Identity verification
   customer_national_id: string;
   identity_verified: boolean;
   identity_photo_url: string | null;
-  // Step 3: IMEI verification
-  scanned_imei: string;
-  imei_verified: boolean;
+  // Step 3: Device selection from inventory
+  selected_device: InventoryDevice | null;
+  device_imei_confirmed: boolean;
   // Step 4: Device condition + app/lock setup
   device_condition: DeviceCondition;
   app_installed: boolean;
@@ -131,7 +145,7 @@ export interface HandoverData {
   device_photos: string[];
   // Step 6: Signature
   signature_data_url: string | null;
-  // Step 7: Confirmation
+  // Step 7: Confirmation & Deposit
   deposit_payment_method: string;
   deposit_transaction_ref: string;
   deposit_verified: boolean;
@@ -147,13 +161,13 @@ export interface HandoverResult {
 }
 
 export const HANDOVER_STEPS = [
-  { id: 1, title: 'Select Handover', shortTitle: 'Select' },
+  { id: 1, title: 'Find Customer', shortTitle: 'Customer' },
   { id: 2, title: 'Verify Identity', shortTitle: 'Identity' },
-  { id: 3, title: 'Scan IMEI', shortTitle: 'IMEI' },
+  { id: 3, title: 'Select Device', shortTitle: 'Device' },
   { id: 4, title: 'Device Check', shortTitle: 'Check' },
   { id: 5, title: 'Device Photos', shortTitle: 'Photos' },
   { id: 6, title: 'Signature', shortTitle: 'Sign' },
-  { id: 7, title: 'Confirm', shortTitle: 'Done' },
+  { id: 7, title: 'Confirm & Deposit', shortTitle: 'Done' },
 ] as const;
 
 export const INITIAL_DEVICE_CONDITION: DeviceCondition = {

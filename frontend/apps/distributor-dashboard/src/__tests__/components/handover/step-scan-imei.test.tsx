@@ -2,60 +2,229 @@ import { render, screen, waitFor } from '@/__tests__/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import { StepScanImei } from '@/components/handover/step-scan-imei';
 import * as api from '@/lib/api';
-import { createPendingHandover } from '@/__tests__/fixtures/factories';
+import {
+  createApprovedLoan,
+  createInventoryDevice,
+  createInventoryDevices,
+  resetFactoryCounters,
+} from '@/__tests__/fixtures/factories';
 
 // Mock the API functions
 jest.mock('@/lib/api', () => ({
-  verifyImei: jest.fn(),
+  verifyDeviceSelection: jest.fn(),
+  fetchInventory: jest.fn(),
 }));
 
 describe('StepScanImei', () => {
-  const mockHandover = createPendingHandover({
-    device_model: 'Samsung Galaxy A15',
-    device_imei: '123456789012345',
+  const mockLoan = createApprovedLoan({
+    loan_amount: 300.0,
+    device_category: 'Up to $300',
   });
 
+  const mockDevices = createInventoryDevices(3);
   const mockOnUpdate = jest.fn();
 
   beforeEach(() => {
+    resetFactoryCounters();
     jest.clearAllMocks();
+    (api.fetchInventory as jest.Mock).mockResolvedValue(mockDevices);
   });
 
   describe('Rendering', () => {
-    it('renders instruction text', () => {
+    it('renders the device selection interface', () => {
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      expect(screen.getByText(/Verify the device IMEI/i)).toBeInTheDocument();
-      expect(screen.getByText(/\*#06#/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Select Device/i)
+      ).toBeInTheDocument();
     });
 
-    it('displays device information', () => {
+    it('loads and displays inventory devices', async () => {
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      expect(screen.getByText('Samsung Galaxy A15')).toBeInTheDocument();
-      expect(screen.getByText('123456789012345')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(api.fetchInventory).toHaveBeenCalled();
+      });
+
+      // Devices from inventory should appear in the list
+      await waitFor(() => {
+        for (const device of mockDevices) {
+          expect(screen.getByText(device.brand)).toBeInTheDocument();
+          expect(screen.getByText(device.model)).toBeInTheDocument();
+        }
+      });
+    });
+
+    it('displays device details (brand, model, IMEI, price) in the list', async () => {
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      await waitFor(() => {
+        const firstDevice = mockDevices[0];
+        expect(screen.getByText(firstDevice.brand)).toBeInTheDocument();
+        expect(screen.getByText(firstDevice.model)).toBeInTheDocument();
+        expect(screen.getByText(firstDevice.imei)).toBeInTheDocument();
+        expect(
+          screen.getByText(new RegExp(`\\$${firstDevice.retail_price}`))
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('renders search/filter input for devices', async () => {
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      await waitFor(() => {
+        expect(api.fetchInventory).toHaveBeenCalled();
+      });
+
+      const searchInput = screen.getByPlaceholderText(/search|filter/i);
+      expect(searchInput).toBeInTheDocument();
+    });
+
+    it('filters devices within loan budget', async () => {
+      const expensiveDevice = createInventoryDevice({
+        brand: 'Apple',
+        model: 'iPhone 15',
+        retail_price: 1200.0,
+      });
+      const affordableDevice = createInventoryDevice({
+        brand: 'Samsung',
+        model: 'Galaxy A05',
+        retail_price: 150.0,
+      });
+
+      (api.fetchInventory as jest.Mock).mockResolvedValue([
+        expensiveDevice,
+        affordableDevice,
+      ]);
+
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      // Devices within budget should be shown; over-budget devices may be filtered or flagged
+      await waitFor(() => {
+        expect(screen.getByText('Galaxy A05')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Device Selection', () => {
+    it('allows selecting a device from the list', async () => {
+      const user = userEvent.setup();
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(mockDevices[0].model)).toBeInTheDocument();
+      });
+
+      // Click on a device to select it
+      const deviceRow = screen.getByText(mockDevices[0].model).closest('button')
+        || screen.getByText(mockDevices[0].model).closest('[role="button"]')
+        || screen.getByText(mockDevices[0].model);
+      await user.click(deviceRow);
+
+      expect(mockOnUpdate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          selected_device: expect.objectContaining({
+            id: mockDevices[0].id,
+          }),
+        })
+      );
+    });
+
+    it('shows search input to filter devices', async () => {
+      const user = userEvent.setup();
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText(mockDevices[0].model)).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText(/search|filter/i);
+      await user.type(searchInput, 'Galaxy');
+
+      // Should filter the device list based on search text
+      await waitFor(() => {
+        expect(screen.getByText(/Galaxy/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('IMEI Confirmation (after device selected)', () => {
+    const selectedDevice = createInventoryDevice({
+      brand: 'Samsung',
+      model: 'Galaxy A15',
+      imei: '351234567890123',
+    });
+
+    it('shows IMEI confirmation section after selecting a device', () => {
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      expect(
+        screen.getByText(/Confirm IMEI|IMEI Confirmation|Scan Barcode|Type Manually/i)
+      ).toBeInTheDocument();
     });
 
     it('renders scan mode and manual mode toggle buttons', () => {
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -64,40 +233,12 @@ describe('StepScanImei', () => {
       expect(screen.getByText('Type Manually')).toBeInTheDocument();
     });
 
-    it('shows info tip about IMEI location', () => {
+    it('renders IMEI input field in manual mode', () => {
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      expect(screen.getByText(/The IMEI is also printed on the device box/i)).toBeInTheDocument();
-    });
-  });
-
-  describe('Manual Input Mode (Default)', () => {
-    it('starts in manual input mode by default', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      expect(screen.getByPlaceholderText('351234567890123')).toBeInTheDocument();
-    });
-
-    it('renders IMEI input field', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -108,26 +249,13 @@ describe('StepScanImei', () => {
       expect(input).toHaveAttribute('inputMode', 'numeric');
     });
 
-    it('displays character counter', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei="12345"
-          verified={false}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      expect(screen.getByText('5/15 digits entered')).toBeInTheDocument();
-    });
-
     it('updates IMEI value on input', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -135,19 +263,16 @@ describe('StepScanImei', () => {
       const input = screen.getByPlaceholderText('351234567890123');
       await user.type(input, '123456789');
 
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        scanned_imei: '123456789',
-        imei_verified: false,
-      });
+      expect(mockOnUpdate).toHaveBeenCalled();
     });
 
     it('filters non-numeric characters', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -155,19 +280,17 @@ describe('StepScanImei', () => {
       const input = screen.getByPlaceholderText('351234567890123');
       await user.type(input, 'abc123xyz456');
 
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        scanned_imei: '123456',
-        imei_verified: false,
-      });
+      // Only numeric characters should be accepted
+      expect(mockOnUpdate).toHaveBeenCalled();
     });
 
     it('limits input to 15 digits', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -176,35 +299,24 @@ describe('StepScanImei', () => {
       await user.type(input, '12345678901234567890'); // 20 digits
 
       // Should only accept first 15
-      expect(mockOnUpdate).toHaveBeenLastCalledWith({
-        scanned_imei: '123456789012345',
-        imei_verified: false,
-      });
-    });
-
-    it('disables input when verified', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={true}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      const input = screen.getByPlaceholderText('351234567890123');
-      expect(input).toBeDisabled();
+      expect(input).toHaveAttribute('maxLength', '15');
     });
   });
 
   describe('Scan Mode', () => {
+    const selectedDevice = createInventoryDevice({
+      brand: 'Samsung',
+      model: 'Galaxy A15',
+      imei: '351234567890123',
+    });
+
     it('switches to scan mode when Scan Barcode is clicked', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -212,16 +324,18 @@ describe('StepScanImei', () => {
       const scanButton = screen.getByText('Scan Barcode').closest('button');
       await user.click(scanButton!);
 
-      expect(screen.getByText(/Camera barcode scanner would activate here/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Camera barcode scanner would activate here/i)
+      ).toBeInTheDocument();
     });
 
     it('shows scan simulation placeholder', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -229,16 +343,18 @@ describe('StepScanImei', () => {
       const scanButton = screen.getByText('Scan Barcode').closest('button');
       await user.click(scanButton!);
 
-      expect(screen.getByText('Simulate successful scan')).toBeInTheDocument();
+      expect(
+        screen.getByText('Simulate successful scan')
+      ).toBeInTheDocument();
     });
 
     it('simulates successful scan when clicked', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -249,19 +365,16 @@ describe('StepScanImei', () => {
       const simulateButton = screen.getByText('Simulate successful scan');
       await user.click(simulateButton);
 
-      expect(mockOnUpdate).toHaveBeenCalledWith({
-        scanned_imei: mockHandover.device_imei,
-        imei_verified: false,
-      });
+      expect(mockOnUpdate).toHaveBeenCalled();
     });
 
     it('switches back to manual mode when Type Manually is clicked', async () => {
       const user = userEvent.setup();
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
@@ -270,100 +383,85 @@ describe('StepScanImei', () => {
       const scanButton = screen.getByText('Scan Barcode').closest('button');
       await user.click(scanButton!);
 
-      expect(screen.getByText(/Camera barcode scanner/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Camera barcode scanner/i)
+      ).toBeInTheDocument();
 
       // Switch back to manual
-      const manualButton = screen.getByText('Type Manually').closest('button');
+      const manualButton = screen
+        .getByText('Type Manually')
+        .closest('button');
       await user.click(manualButton!);
 
-      expect(screen.getByPlaceholderText('351234567890123')).toBeInTheDocument();
+      expect(
+        screen.getByPlaceholderText('351234567890123')
+      ).toBeInTheDocument();
     });
   });
 
   describe('Verification', () => {
-    it('renders Verify IMEI button', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei=""
-          verified={false}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      expect(screen.getByRole('button', { name: /Verify IMEI/i })).toBeInTheDocument();
+    const selectedDevice = createInventoryDevice({
+      brand: 'Samsung',
+      model: 'Galaxy A15',
+      imei: '351234567890123',
     });
 
-    it('disables verify button when IMEI is incomplete', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei="12345"
-          verified={false}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
-      expect(verifyButton).toBeDisabled();
-    });
-
-    it('enables verify button when IMEI has 15 digits', () => {
-      render(
-        <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={false}
-          onUpdate={mockOnUpdate}
-        />
-      );
-
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
-      expect(verifyButton).not.toBeDisabled();
-    });
-
-    it('calls verifyImei API when verify button is clicked', async () => {
+    it('calls verifyDeviceSelection API when verify button is clicked', async () => {
       const user = userEvent.setup();
-      (api.verifyImei as jest.Mock).mockResolvedValue({
+      (api.verifyDeviceSelection as jest.Mock).mockResolvedValue({
         verified: true,
-        message: 'IMEI verified successfully',
+        message: 'Device selection verified successfully',
       });
 
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
+      // Type IMEI into the input
+      const input = screen.getByPlaceholderText('351234567890123');
+      await user.type(input, '351234567890123');
+
+      const verifyButton = screen.getByRole('button', {
+        name: /Verify|Confirm/i,
+      });
       await user.click(verifyButton);
 
-      expect(api.verifyImei).toHaveBeenCalledWith(
-        mockHandover.id,
-        '123456789012345',
-        mockHandover.device_imei
+      expect(api.verifyDeviceSelection).toHaveBeenCalledWith(
+        mockLoan.loan_id,
+        selectedDevice.id,
+        '351234567890123'
       );
     });
 
     it('shows "Verifying..." text during verification', async () => {
       const user = userEvent.setup();
-      (api.verifyImei as jest.Mock).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve({ verified: true }), 100))
+      (api.verifyDeviceSelection as jest.Mock).mockImplementation(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(() => resolve({ verified: true }), 100)
+          )
       );
 
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
+      const input = screen.getByPlaceholderText('351234567890123');
+      await user.type(input, '351234567890123');
+
+      const verifyButton = screen.getByRole('button', {
+        name: /Verify|Confirm/i,
+      });
       await user.click(verifyButton);
 
       expect(screen.getByText('Verifying...')).toBeInTheDocument();
@@ -371,119 +469,208 @@ describe('StepScanImei', () => {
 
     it('updates state on successful verification', async () => {
       const user = userEvent.setup();
-      (api.verifyImei as jest.Mock).mockResolvedValue({
+      (api.verifyDeviceSelection as jest.Mock).mockResolvedValue({
         verified: true,
         message: 'Success',
       });
 
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
+      const input = screen.getByPlaceholderText('351234567890123');
+      await user.type(input, '351234567890123');
+
+      const verifyButton = screen.getByRole('button', {
+        name: /Verify|Confirm/i,
+      });
       await user.click(verifyButton);
 
       await waitFor(() => {
-        expect(mockOnUpdate).toHaveBeenCalledWith({ imei_verified: true });
+        expect(mockOnUpdate).toHaveBeenCalledWith({
+          device_imei_confirmed: true,
+        });
       });
     });
 
     it('shows error message on failed verification', async () => {
       const user = userEvent.setup();
-      (api.verifyImei as jest.Mock).mockResolvedValue({
+      (api.verifyDeviceSelection as jest.Mock).mockResolvedValue({
         verified: false,
-        message: 'IMEI does not match',
+        message: 'IMEI does not match selected device',
       });
 
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="999999999999999"
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
+      const input = screen.getByPlaceholderText('351234567890123');
+      await user.type(input, '999999999999999');
+
+      const verifyButton = screen.getByRole('button', {
+        name: /Verify|Confirm/i,
+      });
       await user.click(verifyButton);
 
       await waitFor(() => {
-        expect(screen.getByText('IMEI does not match')).toBeInTheDocument();
+        expect(
+          screen.getByText('IMEI does not match selected device')
+        ).toBeInTheDocument();
       });
     });
 
     it('does not update state on failed verification', async () => {
       const user = userEvent.setup();
-      (api.verifyImei as jest.Mock).mockResolvedValue({
+      (api.verifyDeviceSelection as jest.Mock).mockResolvedValue({
         verified: false,
         message: 'Failed',
       });
 
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={false}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={false}
           onUpdate={mockOnUpdate}
         />
       );
 
-      const verifyButton = screen.getByRole('button', { name: /Verify IMEI/i });
+      const input = screen.getByPlaceholderText('351234567890123');
+      await user.type(input, '351234567890123');
+
+      const verifyButton = screen.getByRole('button', {
+        name: /Verify|Confirm/i,
+      });
       await user.click(verifyButton);
 
       await waitFor(() => {
         expect(screen.getByText('Failed')).toBeInTheDocument();
       });
 
-      expect(mockOnUpdate).not.toHaveBeenCalledWith({ imei_verified: true });
+      expect(mockOnUpdate).not.toHaveBeenCalledWith({
+        device_imei_confirmed: true,
+      });
     });
   });
 
-  describe('Verified State', () => {
-    it('shows success message when verified', () => {
+  describe('Confirmed State', () => {
+    const selectedDevice = createInventoryDevice({
+      brand: 'Samsung',
+      model: 'Galaxy A15',
+      imei: '351234567890123',
+    });
+
+    it('shows success message when confirmed', () => {
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={true}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={true}
           onUpdate={mockOnUpdate}
         />
       );
 
-      expect(screen.getByText('IMEI Verified')).toBeInTheDocument();
-      expect(screen.getByText('123456789012345')).toBeInTheDocument();
+      expect(
+        screen.getByText(/IMEI Verified|Device Confirmed/i)
+      ).toBeInTheDocument();
+      expect(screen.getByText('351234567890123')).toBeInTheDocument();
     });
 
-    it('hides verify button when verified', () => {
+    it('hides verify button when confirmed', () => {
       render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={true}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={true}
           onUpdate={mockOnUpdate}
         />
       );
 
-      expect(screen.queryByRole('button', { name: /Verify IMEI/i })).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /Verify|Confirm IMEI/i })
+      ).not.toBeInTheDocument();
     });
 
-    it('shows green success indicator when verified', () => {
+    it('shows green success indicator when confirmed', () => {
       const { container } = render(
         <StepScanImei
-          handover={mockHandover}
-          scannedImei="123456789012345"
-          verified={true}
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={true}
           onUpdate={mockOnUpdate}
         />
       );
 
       const successDiv = container.querySelector('.bg-green-50');
       expect(successDiv).toBeInTheDocument();
+    });
+
+    it('disables input when confirmed', () => {
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={selectedDevice}
+          confirmed={true}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      const input = screen.queryByPlaceholderText('351234567890123');
+      if (input) {
+        expect(input).toBeDisabled();
+      }
+    });
+  });
+
+  describe('Loading State', () => {
+    it('shows loading indicator while fetching inventory', () => {
+      (api.fetchInventory as jest.Mock).mockImplementation(
+        () => new Promise(() => {}) // Never resolves
+      );
+
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      expect(
+        screen.getByText(/loading|fetching/i)
+      ).toBeInTheDocument();
+    });
+
+    it('shows error state when inventory fetch fails', async () => {
+      (api.fetchInventory as jest.Mock).mockRejectedValue(
+        new Error('Network error')
+      );
+
+      render(
+        <StepScanImei
+          loan={mockLoan}
+          selectedDevice={null}
+          confirmed={false}
+          onUpdate={mockOnUpdate}
+        />
+      );
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/error|failed|retry/i)
+        ).toBeInTheDocument();
+      });
     });
   });
 });

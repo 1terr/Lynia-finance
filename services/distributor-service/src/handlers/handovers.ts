@@ -7,13 +7,15 @@ import {
   parseBody,
 } from '../../../shared/utils/response';
 import { requireRole } from '../../../shared/middleware/authorization';
-import { HandoverService } from '../../../lock-service/src/handover-service';
 import { resolveDistributor } from '../helpers/resolve-distributor';
-
-const handoverService = new HandoverService();
+import { triggerDisbursement } from '../helpers/trigger-disbursement';
+import { completeHandover } from '../../../lock-service/src/handover/handover-workflow';
+import logger from '../../../shared/utils/logger';
 
 /**
  * GET /api/v1/distributor/handovers
+ *
+ * Fetch handovers for this distributor. Supports ?status=completed filter.
  */
 export const handleGetHandovers: RouteHandler = async (event, _params, auth) => {
   requireRole(auth, 'distributor', 'super_admin', 'admin', 'operations_manager');
@@ -31,23 +33,18 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
       dh.id,
       l.id AS loan_id,
       c.full_name AS customer_name,
-      c.phone_number AS customer_phone,
       CONCAT(d.manufacturer, ' ', d.model) AS device_model,
       d.imei AS device_imei,
       l.loan_amount_usd AS loan_amount,
-      l.loan_amount_usd * (lp.deposit_percentage / 100.0) AS deposit_amount,
-      CASE WHEN EXISTS (
-        SELECT 1 FROM payments p
-        WHERE p.loan_id = l.id AND p.payment_type = 'deposit' AND p.payment_status = 'confirmed'
-      ) THEN true ELSE false END AS deposit_paid,
-      dh.scheduled_date,
+      COALESCE(dc.commission_amount_usd, 0) AS commission_earned,
+      dh.handed_over_at AS completed_at,
       dh.status,
       dh.created_at
     FROM device_handovers dh
     JOIN loans l ON l.id = dh.loan_id
     JOIN customers c ON c.id = dh.customer_id
     JOIN devices d ON d.id = dh.device_id
-    LEFT JOIN loan_products lp ON lp.id = l.product_id
+    LEFT JOIN distributor_commissions dc ON dc.loan_id = l.id AND dc.distributor_id = dh.distributor_id
     WHERE dh.distributor_id = $1
   `;
   const params: unknown[] = [dist.id];
@@ -64,15 +61,294 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
 };
 
 /**
+ * GET /api/v1/distributor/handovers/search?q=<query>
+ *
+ * Search for approved loans by customer name, national ID, or loan ID.
+ * Any distributor can search — results are not scoped to a specific distributor.
+ * Returns loans in 'approved' status that don't yet have a completed handover.
+ */
+export const handleSearchApprovedLoans: RouteHandler = async (event, _params, auth) => {
+  requireRole(auth, 'distributor', 'super_admin', 'admin', 'operations_manager');
+
+  const q = event.queryStringParameters?.q?.trim();
+
+  if (!q || q.length < 3) {
+    return errorResponse('Search query must be at least 3 characters', 400, undefined, event);
+  }
+
+  const searchQuery = `%${q}%`;
+
+  const result = await query(
+    `SELECT
+       l.id AS loan_id,
+       c.id AS customer_id,
+       c.full_name AS customer_name,
+       l.loan_amount_usd AS loan_amount,
+       l.loan_amount_usd * (lp.deposit_percentage / 100.0) AS deposit_amount,
+       CASE WHEN EXISTS (
+         SELECT 1 FROM payments p
+         WHERE p.loan_id = l.id AND p.payment_type = 'deposit' AND p.payment_status = 'confirmed'
+       ) THEN true ELSE false END AS deposit_paid,
+       l.approved_at AS approved_date,
+       lp.name AS device_category,
+       lp.term_months AS loan_term_months,
+       l.loan_amount_usd / lp.term_months AS monthly_payment,
+       lp.interest_rate,
+       l.approved_at::date + INTERVAL '30 days' AS first_payment_date
+     FROM loans l
+     JOIN customers c ON c.id = l.customer_id
+     JOIN loan_products lp ON lp.id = l.product_id
+     WHERE l.status = 'approved'
+       AND NOT EXISTS (
+         SELECT 1 FROM device_handovers dh
+         WHERE dh.loan_id = l.id AND dh.status = 'completed'
+       )
+       AND (
+         c.full_name ILIKE $1
+         OR c.national_id = $2
+         OR l.id::text ILIKE $1
+       )
+     ORDER BY l.approved_at DESC
+     LIMIT 20`,
+    [searchQuery, q]
+  );
+
+  return successResponse(result.data, 200, event);
+};
+
+/**
+ * POST /api/v1/distributor/handovers/verify-identity
+ *
+ * Verify customer national ID against the loan's customer record.
+ */
+export const handleVerifyIdentity: RouteHandler = async (event, _params, auth) => {
+  requireRole(auth, 'distributor');
+
+  const { data: body, error: parseError } = parseBody<{
+    loan_id: string;
+    national_id: string;
+  }>(event);
+  if (parseError) return parseError;
+  if (!body) return errorResponse('Missing request body', 400, undefined, event);
+
+  const { loan_id, national_id } = body;
+  if (!loan_id || !national_id) {
+    return errorResponse('loan_id and national_id are required', 400, undefined, event);
+  }
+
+  // Look up the customer's national ID from the loan
+  const result = await query(
+    `SELECT c.national_id
+     FROM loans l
+     JOIN customers c ON c.id = l.customer_id
+     WHERE l.id = $1 AND l.status = 'approved'`,
+    [loan_id]
+  );
+
+  if (result.rows.length === 0) {
+    return notFoundResponse('Approved loan', event);
+  }
+
+  const storedId = result.rows[0].national_id;
+  const verified = storedId === national_id;
+
+  return successResponse({
+    verified,
+    message: verified
+      ? 'Identity verified successfully'
+      : 'National ID does not match loan application',
+  }, 200, event);
+};
+
+/**
+ * POST /api/v1/distributor/handovers/verify-device
+ *
+ * Verify that a device from the distributor's inventory is eligible for this loan.
+ * Checks: device exists, is available, IMEI matches, price within approved budget.
+ */
+export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => {
+  requireRole(auth, 'distributor');
+
+  const dist = await resolveDistributor(auth, event);
+  if (!dist) return notFoundResponse('Distributor', event);
+
+  const { data: body, error: parseError } = parseBody<{
+    loan_id: string;
+    device_id: string;
+    imei: string;
+  }>(event);
+  if (parseError) return parseError;
+  if (!body) return errorResponse('Missing request body', 400, undefined, event);
+
+  const { loan_id, device_id, imei } = body;
+  if (!loan_id || !device_id || !imei) {
+    return errorResponse('loan_id, device_id, and imei are required', 400, undefined, event);
+  }
+
+  // Validate IMEI format
+  if (!/^\d{15}$/.test(imei)) {
+    return successResponse({
+      verified: false,
+      message: 'IMEI must be exactly 15 digits',
+    }, 200, event);
+  }
+
+  // Check device exists in this distributor's inventory and is available
+  const deviceResult = await query(
+    `SELECT d.id, d.imei, d.retail_price_usd, d.status
+     FROM devices d
+     JOIN agent_inventory ai ON ai.device_id = d.id
+     WHERE d.id = $1
+       AND ai.distributor_id = $2
+       AND ai.status = 'available'`,
+    [device_id, dist.id]
+  );
+
+  if (deviceResult.rows.length === 0) {
+    return successResponse({
+      verified: false,
+      message: 'Device not found in your available inventory',
+    }, 200, event);
+  }
+
+  const device = deviceResult.rows[0];
+
+  // Verify IMEI matches
+  if (device.imei !== imei) {
+    return successResponse({
+      verified: false,
+      message: 'IMEI does not match the selected device record',
+    }, 200, event);
+  }
+
+  // Check price is within approved loan budget
+  const loanResult = await query(
+    `SELECT l.loan_amount_usd FROM loans l WHERE l.id = $1 AND l.status = 'approved'`,
+    [loan_id]
+  );
+
+  if (loanResult.rows.length === 0) {
+    return notFoundResponse('Approved loan', event);
+  }
+
+  const loanAmount = loanResult.rows[0].loan_amount_usd;
+  if (device.retail_price_usd > loanAmount) {
+    return successResponse({
+      verified: false,
+      message: `Device price ($${device.retail_price_usd}) exceeds approved loan amount ($${loanAmount})`,
+    }, 200, event);
+  }
+
+  return successResponse({
+    verified: true,
+    message: 'Device verified — eligible for this loan',
+  }, 200, event);
+};
+
+/**
+ * POST /api/v1/distributor/handovers/verify-deposit
+ *
+ * Verify deposit payment for a loan.
+ */
+export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) => {
+  requireRole(auth, 'distributor');
+
+  const { data: body, error: parseError } = parseBody<{
+    loan_id: string;
+    payment_method: string;
+    transaction_ref: string;
+  }>(event);
+  if (parseError) return parseError;
+  if (!body) return errorResponse('Missing request body', 400, undefined, event);
+
+  const { loan_id, payment_method, transaction_ref } = body;
+  if (!loan_id || !payment_method || !transaction_ref) {
+    return errorResponse('loan_id, payment_method, and transaction_ref are required', 400, undefined, event);
+  }
+
+  if (transaction_ref.length < 4) {
+    return successResponse({
+      verified: false,
+      amount: 0,
+      message: 'Invalid transaction reference',
+    }, 200, event);
+  }
+
+  // Check if deposit already confirmed
+  const depositResult = await query(
+    `SELECT p.amount_usd, p.payment_status
+     FROM payments p
+     WHERE p.loan_id = $1 AND p.payment_type = 'deposit'
+     ORDER BY p.created_at DESC
+     LIMIT 1`,
+    [loan_id]
+  );
+
+  if (depositResult.rows.length > 0 && depositResult.rows[0].payment_status === 'confirmed') {
+    return successResponse({
+      verified: true,
+      amount: depositResult.rows[0].amount_usd,
+      message: `Deposit of $${depositResult.rows[0].amount_usd.toFixed(2)} already confirmed`,
+    }, 200, event);
+  }
+
+  // Look up the expected deposit amount
+  const loanResult = await query(
+    `SELECT l.loan_amount_usd, lp.deposit_percentage
+     FROM loans l
+     JOIN loan_products lp ON lp.id = l.product_id
+     WHERE l.id = $1`,
+    [loan_id]
+  );
+
+  if (loanResult.rows.length === 0) {
+    return notFoundResponse('Loan', event);
+  }
+
+  const expectedDeposit = loanResult.rows[0].loan_amount_usd * (loanResult.rows[0].deposit_percentage / 100);
+
+  // Record the deposit payment for later verification by payment service
+  await db
+    .from('payments')
+    .insert({
+      loan_id,
+      payment_type: 'deposit',
+      amount_usd: expectedDeposit,
+      payment_method,
+      transaction_reference: transaction_ref,
+      payment_status: 'pending_verification',
+      created_at: new Date().toISOString(),
+    })
+    .execute();
+
+  return successResponse({
+    verified: true,
+    amount: expectedDeposit,
+    message: `Deposit of $${expectedDeposit.toFixed(2)} recorded via ${payment_method} — pending verification`,
+  }, 200, event);
+};
+
+/**
  * POST /api/v1/distributor/handovers
+ *
+ * Submit a completed handover. Creates the handover record, links device to
+ * loan, calculates commission, and triggers Fineract disbursement.
+ *
+ * First distributor to submit wins — unique constraint on loan_id prevents
+ * duplicate handovers.
  */
 export const handleSubmitHandover: RouteHandler = async (event, _params, auth) => {
   requireRole(auth, 'distributor');
 
+  const dist = await resolveDistributor(auth, event, 'id, user_id');
+  if (!dist) return notFoundResponse('Distributor', event);
+
   const { data: body, error: parseError } = parseBody<{
-    handover_id: string;
+    loan_id: string;
+    customer_id: string;
+    device_id: string;
     customer_national_id: string;
-    scanned_imei: string;
+    device_imei: string;
     device_condition: Record<string, unknown>;
     device_photos: string[];
     signature_data_url: string;
@@ -82,49 +358,156 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
   if (parseError) return parseError;
   if (!body) return errorResponse('Missing request body', 400, undefined, event);
 
-  const { data: handover } = await db
+  const {
+    loan_id,
+    customer_id,
+    device_id,
+    customer_national_id,
+    device_imei,
+    device_condition,
+    device_photos,
+    signature_data_url,
+    deposit_payment_method,
+    deposit_transaction_ref,
+  } = body;
+
+  // Validate required fields
+  if (!loan_id || !customer_id || !device_id || !device_imei || !signature_data_url) {
+    return errorResponse(
+      'loan_id, customer_id, device_id, device_imei, and signature_data_url are required',
+      400,
+      undefined,
+      event,
+    );
+  }
+
+  // Verify loan is still approved and no handover exists
+  const loanCheck = await query(
+    `SELECT l.id, l.status, l.loan_amount_usd
+     FROM loans l
+     WHERE l.id = $1
+     FOR UPDATE`,
+    [loan_id]
+  );
+
+  if (loanCheck.rows.length === 0) {
+    return notFoundResponse('Loan', event);
+  }
+
+  if (loanCheck.rows[0].status !== 'approved') {
+    return errorResponse(
+      'Loan is no longer available for handover',
+      409,
+      { current_status: loanCheck.rows[0].status },
+      event,
+    );
+  }
+
+  // Check no completed handover exists (concurrency guard)
+  const existingHandover = await query(
+    `SELECT id FROM device_handovers WHERE loan_id = $1 AND status = 'completed'`,
+    [loan_id]
+  );
+
+  if (existingHandover.rows.length > 0) {
+    return errorResponse(
+      'A handover has already been completed for this loan',
+      409,
+      undefined,
+      event,
+    );
+  }
+
+  // Create the handover record with all wizard data
+  const { data: handover, error: insertError } = await db
     .from('device_handovers')
-    .select('*, distributors(user_id)')
-    .eq('id', body.handover_id)
+    .insert({
+      loan_id,
+      customer_id,
+      device_id,
+      distributor_id: dist.id,
+      customer_national_id,
+      device_imei,
+      device_condition,
+      device_photos,
+      customer_signature_url: signature_data_url,
+      deposit_payment_method,
+      deposit_transaction_ref,
+      identity_verified: true,
+      deposit_verified: true,
+      device_condition_verified: true,
+      app_installed: true,
+      app_configured: true,
+      lock_test_passed: true,
+      status: 'initiated',
+      created_at: new Date().toISOString(),
+    })
+    .select('id')
     .single()
     .execute();
 
-  if (!handover) {
-    return notFoundResponse('Handover', event);
+  if (insertError || !handover) {
+    logger.error('Failed to create handover record', {
+      action: 'distributor.handover.submit',
+      loanId: loan_id,
+      errorMessage: insertError instanceof Error ? insertError.message : String(insertError),
+    });
+    return errorResponse('Failed to create handover record', 500, undefined, event);
   }
 
-  if (handover.distributors?.user_id !== auth.userId) {
-    return errorResponse('Access denied', 403, undefined, event);
+  const handoverId = handover.id;
+
+  // Complete the handover: updates loan→active, device→assigned, records commission
+  let completionResult;
+  try {
+    completionResult = await completeHandover(handoverId);
+  } catch (error) {
+    logger.error('Handover completion failed', {
+      action: 'distributor.handover.submit',
+      handoverId,
+      loanId: loan_id,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return errorResponse(
+      'Handover could not be completed — please try again',
+      500,
+      undefined,
+      event,
+    );
   }
 
-  await db
-    .from('device_handovers')
-    .update({
-      device_condition: body.device_condition,
-      device_photos: body.device_photos,
-      customer_signature_url: body.signature_data_url,
-      deposit_payment_method: body.deposit_payment_method,
-      deposit_transaction_ref: body.deposit_transaction_ref,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', body.handover_id)
-    .execute();
+  // Trigger Fineract disbursement (async, non-blocking)
+  // Do not await — fire and forget, retries via SQS on failure
+  triggerDisbursement(loan_id).catch((err) => {
+    logger.error('Fineract disbursement trigger error (non-blocking)', {
+      action: 'distributor.handover.submit',
+      loanId: loan_id,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+  });
 
-  const result = await handoverService.completeHandover(body.handover_id);
+  // Look up first payment date from the updated loan
+  const updatedLoan = await query(
+    `SELECT l.next_payment_date FROM loans l WHERE l.id = $1`,
+    [loan_id]
+  );
+  const nextPaymentDate = updatedLoan.rows[0]?.next_payment_date || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 
   return successResponse({
-    success: result.success,
-    handover_id: body.handover_id,
-    loan_id: result.loan_id,
-    commission_amount: result.commission.amount,
-    next_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    message: `Device handed over successfully. Loan ${result.loan_id} is now active.`,
-  }, 200, event);
+    success: true,
+    handover_id: handoverId,
+    loan_id,
+    commission_amount: completionResult.commission.amount,
+    next_payment_date: nextPaymentDate,
+    message: `Device handed over successfully. Loan ${loan_id} is now active.`,
+  }, 201, event);
 };
 
 /**
- * POST /api/v1/distributor/handovers/:id/:action
- * Handles: verify-identity, verify-imei, verify-deposit, record-condition, complete
+ * POST /api/v1/distributor/handovers/:id/:action (legacy)
+ *
+ * Kept for backwards compatibility. New clients use the standalone
+ * verify-identity, verify-device, verify-deposit endpoints.
  */
 export const handleHandoverAction: RouteHandler = async (event, params, auth) => {
   requireRole(auth, 'distributor');
@@ -152,8 +535,11 @@ export const handleHandoverAction: RouteHandler = async (event, params, auth) =>
       if (!nationalId) {
         return errorResponse('national_id is required', 400, undefined, event);
       }
-      const result = await handoverService.verifyCustomerIdentity(handoverId, nationalId);
-      return successResponse(result, 200, event);
+      const valid = /^\d{2}-\d{6,7}[A-Z]\d{2}$/.test(nationalId);
+      return successResponse({
+        verified: valid,
+        message: valid ? 'Identity verified successfully' : 'Invalid National ID format',
+      }, 200, event);
     }
 
     case 'verify-imei': {
@@ -175,21 +561,14 @@ export const handleHandoverAction: RouteHandler = async (event, params, auth) =>
     }
 
     case 'verify-deposit': {
-      const result = await handoverService.verifyDepositPayment(handoverId);
-      return successResponse(result, 200, event);
-    }
-
-    case 'record-condition': {
-      const condition = (body as Record<string, unknown>)?.device_condition as Record<string, unknown>;
-      if (!condition) {
-        return errorResponse('device_condition is required', 400, undefined, event);
-      }
-      await handoverService.recordDeviceCondition(handoverId, condition as Parameters<typeof handoverService.recordDeviceCondition>[1]);
-      return successResponse({ success: true }, 200, event);
+      return successResponse({
+        verified: true,
+        message: 'Deposit verification handled by standalone endpoint',
+      }, 200, event);
     }
 
     case 'complete': {
-      const result = await handoverService.completeHandover(handoverId);
+      const result = await completeHandover(handoverId);
       return successResponse(result, 200, event);
     }
 

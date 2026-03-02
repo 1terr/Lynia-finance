@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CommissionEntry, DashboardStats } from '@/types/distributor';
-import { fetchCommissions, fetchDashboardStats } from '@/lib/api';
+import { fetchCommissions, fetchDashboardStats, fetchDistributorProfile } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@lynia/utils';
@@ -20,6 +20,7 @@ import {
   Award,
   Target,
   BarChart3,
+  Info,
 } from 'lucide-react';
 
 type PaymentFilter = 'all' | 'paid' | 'pending';
@@ -51,16 +52,40 @@ function getPerformanceTier(totalEarned: number): {
   };
 }
 
+/** Build monthly earnings for bar chart (last 6 months) */
+function getMonthlyEarnings(commissions: CommissionEntry[]): { month: string; amount: number }[] {
+  const now = new Date();
+  const months: { month: string; amount: number }[] = [];
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const label = d.toLocaleDateString('en-US', { month: 'short' });
+    const amount = commissions
+      .filter((c) => {
+        const cd = new Date(c.calculation_date);
+        return cd.getMonth() === d.getMonth() && cd.getFullYear() === d.getFullYear();
+      })
+      .reduce((sum, c) => sum + c.commission_amount, 0);
+    months.push({ month: label, amount });
+  }
+  return months;
+}
+
 function exportCSV(commissions: CommissionEntry[]) {
-  const header = 'Date,Loan ID,Device,Customer,Price,Rate,Commission,Status,Paid At\n';
+  const header = 'Date,Loan ID,Device,Customer,IMEI,Device Price,Rate,Commission,Status,Paid At\n';
   const rows = commissions
     .map(
       (c) =>
-        `${c.calculation_date},${c.loan_id},${c.device_model},${c.customer_name},${c.device_retail_price},${c.commission_percentage}%,$${c.commission_amount.toFixed(2)},${c.payment_status},${c.paid_at || '-'}`
+        `${new Date(c.calculation_date).toLocaleDateString('en-ZW')},${c.loan_id},${c.device_model},${c.customer_name},-,$${c.device_retail_price.toFixed(2)},${c.commission_percentage}%,$${c.commission_amount.toFixed(2)},${c.payment_status},${c.paid_at ? new Date(c.paid_at).toLocaleDateString('en-ZW') : '-'}`,
     )
     .join('\n');
 
-  const blob = new Blob([header + rows], { type: 'text/csv' });
+  // Summary row
+  const totalAmount = commissions.reduce((s, c) => s + c.commission_amount, 0);
+  const paidAmount = commissions.filter((c) => c.payment_status === 'paid').reduce((s, c) => s + c.commission_amount, 0);
+  const summary = `\n\nSummary,,,,,,,$${totalAmount.toFixed(2)} total ($${paidAmount.toFixed(2)} paid),,`;
+
+  const blob = new Blob([header + rows + summary], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
@@ -79,6 +104,13 @@ export default function CommissionsPage() {
     queryKey: ['distributor', 'stats'],
     queryFn: fetchDashboardStats,
   });
+
+  const { data: profile } = useQuery({
+    queryKey: ['distributor', 'profile'],
+    queryFn: fetchDistributorProfile,
+  });
+
+  const commissionRate = profile?.commission_rate ?? 5;
 
   const loading = commissionsLoading || statsLoading;
   const hasError = commissionsError || statsError;
@@ -119,6 +151,9 @@ export default function CommissionsPage() {
       })
       .reduce((sum, c) => sum + c.commission_amount, 0);
   }, [commissions]);
+
+  const monthlyEarnings = useMemo(() => getMonthlyEarnings(commissions), [commissions]);
+  const maxMonthly = Math.max(...monthlyEarnings.map((m) => m.amount), 1);
 
   const handoverCount = commissions.length;
 
@@ -229,63 +264,121 @@ export default function CommissionsPage() {
         </div>
       </div>
 
-      {/* Performance tier */}
+      {/* Monthly earnings chart */}
       <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Award className={cn('h-5 w-5', tier.color)} />
-            <h2 className="text-sm font-semibold">Performance Tier</h2>
-          </div>
-          <span className={cn('text-sm font-bold', tier.color)}>
-            {tier.tier}
-          </span>
+        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          Monthly Earnings (Last 6 Months)
+        </h2>
+        <div className="flex items-end gap-2 h-32">
+          {monthlyEarnings.map((m) => (
+            <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
+              <span className="text-[10px] font-medium text-muted-foreground">
+                {m.amount > 0 ? `$${m.amount.toFixed(0)}` : ''}
+              </span>
+              <div
+                className={cn(
+                  'w-full rounded-t transition-all',
+                  m.amount > 0 ? 'bg-primary' : 'bg-muted',
+                )}
+                style={{
+                  height: `${Math.max((m.amount / maxMonthly) * 100, m.amount > 0 ? 8 : 4)}%`,
+                  minHeight: 4,
+                }}
+              />
+              <span className="text-[10px] text-muted-foreground">{m.month}</span>
+            </div>
+          ))}
         </div>
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Progress</span>
-            <span>{tier.next}</span>
+      </div>
+
+      {/* Performance tier + Commission calculation */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Award className={cn('h-5 w-5', tier.color)} />
+              <h2 className="text-sm font-semibold">Performance Tier</h2>
+            </div>
+            <span className={cn('text-sm font-bold', tier.color)}>
+              {tier.tier}
+            </span>
           </div>
-          <div className="h-2 rounded-full bg-secondary">
-            <div
-              className={cn(
-                'h-2 rounded-full transition-all',
-                tier.tier === 'Gold'
-                  ? 'bg-yellow-500'
-                  : tier.tier === 'Silver'
-                    ? 'bg-gray-400'
-                    : 'bg-orange-500'
-              )}
-              style={{ width: `${tier.progress}%` }}
-            />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Progress</span>
+              <span>{tier.next}</span>
+            </div>
+            <div className="h-2 rounded-full bg-secondary">
+              <div
+                className={cn(
+                  'h-2 rounded-full transition-all',
+                  tier.tier === 'Gold'
+                    ? 'bg-yellow-500'
+                    : tier.tier === 'Silver'
+                      ? 'bg-gray-400'
+                      : 'bg-orange-500',
+                )}
+                style={{ width: `${tier.progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Performance metrics */}
+          <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <Target className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-bold">{handoverCount}</p>
+              <p className="text-[10px] text-muted-foreground">Total Handovers</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-bold">{commissionRate}%</p>
+              <p className="text-[10px] text-muted-foreground">Commission Rate</p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-1 mb-1">
+                <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+              </div>
+              <p className="text-lg font-bold">
+                ${handoverCount > 0
+                  ? (stats.total_commissions_earned / handoverCount).toFixed(2)
+                  : '0.00'}
+              </p>
+              <p className="text-[10px] text-muted-foreground">Avg per Handover</p>
+            </div>
           </div>
         </div>
 
-        {/* Performance metrics */}
-        <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <Target className="h-3.5 w-3.5 text-muted-foreground" />
+        {/* How commission is calculated */}
+        <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
+          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
+            <Info className="h-4 w-4 text-muted-foreground" />
+            How It Works
+          </h2>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <div className="flex items-start gap-2">
+              <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
+              <p>You earn <strong className="text-foreground">{commissionRate}%</strong> of the loan amount for each device handover you complete.</p>
             </div>
-            <p className="text-lg font-bold">{handoverCount}</p>
-            <p className="text-[10px] text-muted-foreground">Total Handovers</p>
+            <div className="flex items-start gap-2">
+              <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
+              <p>Commission is calculated instantly when the handover is submitted and confirmed.</p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+              <p>Payouts are processed monthly on the 1st. Pending commissions are paid to your registered account.</p>
+            </div>
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-            <p className="text-lg font-bold">5%</p>
-            <p className="text-[10px] text-muted-foreground">Commission Rate</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-1 mb-1">
-              <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-            </div>
-            <p className="text-lg font-bold">
-              ${handoverCount > 0
-                ? (stats.total_commissions_earned / handoverCount).toFixed(2)
-                : '0.00'}
+          <div className="mt-4 pt-3 border-t">
+            <p className="text-xs text-muted-foreground">Example: $200 loan amount</p>
+            <p className="text-sm font-semibold">
+              $200 &times; {commissionRate}% = <span className="text-green-600">${(200 * commissionRate / 100).toFixed(2)}</span> commission
             </p>
-            <p className="text-[10px] text-muted-foreground">Avg per Handover</p>
           </div>
         </div>
       </div>
@@ -303,7 +396,7 @@ export default function CommissionsPage() {
               {new Date(
                 new Date().getFullYear(),
                 new Date().getMonth() + 1,
-                1
+                1,
               ).toLocaleDateString('en-ZW', {
                 weekday: 'short',
                 month: 'long',
@@ -344,7 +437,7 @@ export default function CommissionsPage() {
                 'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                 paymentFilter === f
                   ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent'
+                  : 'hover:bg-accent',
               )}
             >
               {f === 'all' ? 'All' : f === 'paid' ? 'Paid' : 'Pending'}
@@ -362,7 +455,7 @@ export default function CommissionsPage() {
                 'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
                 periodFilter === f
                   ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent'
+                  : 'hover:bg-accent',
               )}
             >
               {f === 'all'
@@ -408,7 +501,7 @@ export default function CommissionsPage() {
                     'h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0',
                     commission.payment_status === 'paid'
                       ? 'bg-green-100 dark:bg-green-900/30'
-                      : 'bg-yellow-100 dark:bg-yellow-900/30'
+                      : 'bg-yellow-100 dark:bg-yellow-900/30',
                   )}
                 >
                   {commission.payment_status === 'paid' ? (
@@ -448,7 +541,7 @@ export default function CommissionsPage() {
                   <p className="text-[10px] text-muted-foreground">
                     {new Date(commission.calculation_date).toLocaleDateString(
                       'en-ZW',
-                      { month: 'short', day: 'numeric' }
+                      { month: 'short', day: 'numeric' },
                     )}
                   </p>
                 </div>

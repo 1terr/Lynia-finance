@@ -1,12 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import type { HandoverData, PendingHandover } from '@/types/distributor';
+import { useState, useEffect, useCallback } from 'react';
+import type { HandoverData, HandoverResult } from '@/types/distributor';
 import { HANDOVER_STEPS, INITIAL_DEVICE_CONDITION } from '@/types/distributor';
 import { submitHandover } from '@/lib/api';
-import type { HandoverResult } from '@/types/distributor';
+import { useOfflineQueue } from '@/lib/hooks/use-offline-queue';
 import { cn } from '@lynia/utils';
-import { Check, ChevronLeft } from 'lucide-react';
+import { Check, ChevronLeft, WifiOff, RotateCcw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { StepSelectHandover } from './step-select-handover';
 import { StepVerifyIdentity } from './step-verify-identity';
@@ -17,14 +17,15 @@ import { StepSignature } from './step-signature';
 import { StepConfirm } from './step-confirm';
 import { HandoverSuccess } from './handover-success';
 
+const SESSION_KEY = 'lynia-handover-draft';
+
 const initialData: HandoverData = {
-  handover_id: '',
-  selected_handover: null,
+  selected_loan: null,
   customer_national_id: '',
   identity_verified: false,
   identity_photo_url: null,
-  scanned_imei: '',
-  imei_verified: false,
+  selected_device: null,
+  device_imei_confirmed: false,
   device_condition: { ...INITIAL_DEVICE_CONDITION },
   app_installed: false,
   app_configured: false,
@@ -37,52 +38,161 @@ const initialData: HandoverData = {
 };
 
 interface Props {
-  handovers: PendingHandover[];
   onComplete: () => void;
 }
 
-export function HandoverWizard({ handovers, onComplete }: Props) {
+export function HandoverWizard({ onComplete }: Props) {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<HandoverData>({ ...initialData });
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [result, setResult] = useState<HandoverResult | null>(null);
+  const [showResume, setShowResume] = useState(false);
+  const [resumeName, setResumeName] = useState('');
+
+  // Offline queue for failed submissions
+  const offlineQueue = useOfflineQueue(
+    useCallback(async (payload: Record<string, unknown>) => {
+      await submitHandover(payload as Parameters<typeof submitHandover>[0]);
+    }, []),
+  );
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { step: number; data: HandoverData };
+        if (parsed.data?.selected_loan) {
+          setResumeName(parsed.data.selected_loan.customer_name);
+          setShowResume(true);
+        }
+      }
+    } catch {
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+  }, []);
+
+  // Save draft to sessionStorage on step/data changes (skip step 1 and result)
+  useEffect(() => {
+    if (result || step === 1 || !data.selected_loan) return;
+    try {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({ step, data }));
+    } catch {
+      // storage full or unavailable
+    }
+  }, [step, data, result]);
+
+  const clearDraft = () => {
+    sessionStorage.removeItem(SESSION_KEY);
+  };
+
+  const handleResume = () => {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as { step: number; data: HandoverData };
+        setStep(parsed.step);
+        setData(parsed.data);
+      }
+    } catch {
+      // ignore
+    }
+    setShowResume(false);
+  };
+
+  const handleDiscardDraft = () => {
+    clearDraft();
+    setShowResume(false);
+  };
 
   const update = (partial: Partial<HandoverData>) =>
     setData((prev) => ({ ...prev, ...partial }));
 
   const canProceed = (): boolean => {
     switch (step) {
-      case 1: return data.selected_handover !== null;
+      case 1: return data.selected_loan !== null;
       case 2: return data.identity_verified;
-      case 3: return data.imei_verified;
+      case 3: return data.device_imei_confirmed;
       case 4: return data.device_condition.powers_on && data.app_installed && data.lock_test_passed;
       case 5: return data.device_photos.length >= 2;
       case 6: return data.signature_data_url !== null;
-      case 7: return data.deposit_verified;
+      case 7: return data.deposit_verified || data.selected_loan?.deposit_paid === true;
       default: return false;
     }
   };
 
   const handleSubmit = async () => {
+    if (!data.selected_loan || !data.selected_device) return;
     setSubmitting(true);
+    setSubmitError('');
+
+    const payload = {
+      loan_id: data.selected_loan.loan_id,
+      customer_id: data.selected_loan.customer_id,
+      device_id: data.selected_device.id,
+      customer_national_id: data.customer_national_id,
+      device_imei: data.selected_device.imei,
+      device_condition: data.device_condition,
+      device_photos: data.device_photos,
+      signature_data_url: data.signature_data_url!,
+      deposit_payment_method: data.deposit_payment_method,
+      deposit_transaction_ref: data.deposit_transaction_ref,
+    };
+
     try {
-      const res = await submitHandover({
-        handover_id: data.handover_id,
-        customer_national_id: data.customer_national_id,
-        scanned_imei: data.scanned_imei,
-        device_condition: data.device_condition,
-        device_photos: data.device_photos,
-        signature_data_url: data.signature_data_url!,
-        deposit_payment_method: data.deposit_payment_method,
-        deposit_transaction_ref: data.deposit_transaction_ref,
-      });
+      const res = await submitHandover(payload);
+      clearDraft();
       setResult(res);
-    } catch {
-      // handled inline
+    } catch (err) {
+      // If offline, queue for later
+      if (!navigator.onLine) {
+        offlineQueue.enqueue(payload as unknown as Record<string, unknown>);
+        clearDraft();
+        setResult({
+          success: true,
+          handover_id: 'pending',
+          loan_id: data.selected_loan.loan_id,
+          commission_amount: 0,
+          next_payment_date: '',
+          message: 'Handover saved offline — will be submitted when you reconnect.',
+        });
+      } else {
+        setSubmitError(
+          err instanceof Error ? err.message : 'Submission failed — please try again',
+        );
+      }
     } finally {
       setSubmitting(false);
     }
   };
+
+  // Resume prompt
+  if (showResume) {
+    return (
+      <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <RotateCcw className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-bold">Resume Handover?</h3>
+            <p className="text-sm text-muted-foreground">
+              You have an unfinished handover for <strong>{resumeName}</strong>
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Button className="flex-1" onClick={handleResume}>
+            Resume
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={handleDiscardDraft}>
+            Start Fresh
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (result) {
     return <HandoverSuccess result={result} onDone={onComplete} />;
@@ -90,6 +200,19 @@ export function HandoverWizard({ handovers, onComplete }: Props) {
 
   return (
     <div className="space-y-4">
+      {/* Offline queue badge */}
+      {offlineQueue.pendingCount > 0 && (
+        <div className="flex items-center gap-2 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-900 p-2.5">
+          <WifiOff className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+          <p className="text-xs text-yellow-700 dark:text-yellow-400 flex-1">
+            {offlineQueue.pendingCount} pending upload{offlineQueue.pendingCount > 1 ? 's' : ''} — will auto-submit when online
+          </p>
+          {offlineQueue.processing && (
+            <span className="text-xs text-yellow-600 animate-pulse">Syncing...</span>
+          )}
+        </div>
+      )}
+
       {/* Step indicator */}
       <div className="flex items-center gap-1 overflow-x-auto pb-2">
         {HANDOVER_STEPS.map((s) => (
@@ -136,25 +259,35 @@ export function HandoverWizard({ handovers, onComplete }: Props) {
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
-        <h2 className="text-lg font-bold">
+        <h2 className="text-lg font-bold flex-1">
           Step {step}: {HANDOVER_STEPS[step - 1].title}
         </h2>
+        {step > 1 && (
+          <button
+            onClick={() => {
+              clearDraft();
+              setStep(1);
+              setData({ ...initialData });
+            }}
+            className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+            title="Cancel handover"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Step content */}
       <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
         {step === 1 && (
           <StepSelectHandover
-            handovers={handovers}
-            selected={data.selected_handover}
-            onSelect={(h) =>
-              update({ selected_handover: h, handover_id: h.id })
-            }
+            selected={data.selected_loan}
+            onSelect={(loan) => update({ selected_loan: loan })}
           />
         )}
         {step === 2 && (
           <StepVerifyIdentity
-            handover={data.selected_handover!}
+            loan={data.selected_loan!}
             nationalId={data.customer_national_id}
             verified={data.identity_verified}
             onUpdate={update}
@@ -162,9 +295,9 @@ export function HandoverWizard({ handovers, onComplete }: Props) {
         )}
         {step === 3 && (
           <StepScanImei
-            handover={data.selected_handover!}
-            scannedImei={data.scanned_imei}
-            verified={data.imei_verified}
+            loan={data.selected_loan!}
+            selectedDevice={data.selected_device}
+            confirmed={data.device_imei_confirmed}
             onUpdate={update}
           />
         )}
@@ -197,6 +330,14 @@ export function HandoverWizard({ handovers, onComplete }: Props) {
           />
         )}
       </div>
+
+      {/* Submit error */}
+      {submitError && (
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 p-3">
+          <X className="h-4 w-4 text-red-600 flex-shrink-0" />
+          <p className="text-sm text-red-700 dark:text-red-400">{submitError}</p>
+        </div>
+      )}
 
       {/* Navigation */}
       <div className="flex gap-3">

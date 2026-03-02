@@ -12,6 +12,7 @@ const PHOTO_SLOTS = [
   { label: 'Front View', description: 'Screen facing camera' },
   { label: 'Back View', description: 'Back panel visible' },
   { label: 'Screen On', description: 'Device powered on, home screen visible' },
+  { label: 'Serial Label', description: 'IMEI/serial sticker visible' },
 ] as const;
 
 // Generate a placeholder photo URL for demo purposes
@@ -42,11 +43,12 @@ export function StepCapturePhotos({ photos, onUpdate }: Props) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Take photos of the device from multiple angles. At least 2 photos are required.
+        Take photos of the device from multiple angles. At least 2 photos are required:
+        front, back, screen-on, and serial label.
       </p>
 
       {/* Photo grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {PHOTO_SLOTS.map((slot, i) => (
           <div key={slot.label} className="space-y-1.5">
             <span className="text-xs font-medium">{slot.label}</span>

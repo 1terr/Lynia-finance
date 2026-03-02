@@ -3,29 +3,30 @@ import DashboardHome from '@/app/(dashboard)/_client';
 import * as api from '@/lib/api';
 import {
   createDashboardStats,
-  createPendingHandovers,
+  createCompletedHandover,
+  createCompletedHandovers,
   resetFactoryCounters,
 } from '@/__tests__/fixtures/factories';
 
 // Mock the API functions
 jest.mock('@/lib/api', () => ({
   fetchDashboardStats: jest.fn(),
-  fetchPendingHandovers: jest.fn(),
+  fetchCompletedHandovers: jest.fn(),
 }));
 
 describe('DashboardHome', () => {
   const mockStats = createDashboardStats({
     total_devices_distributed: 42,
     current_inventory: 15,
-    pending_handovers: 8,
-    average_rating: 4.7,
-    monthly_handovers: 12,
     total_commissions_earned: 1250.0,
     total_commissions_paid: 800.0,
     pending_commissions: 450.0,
+    average_rating: 4.7,
+    monthly_handovers: 12,
+    last_month_handovers: 9,
   });
 
-  const mockHandovers = createPendingHandovers(3);
+  const mockHandovers = createCompletedHandovers(3);
 
   beforeEach(() => {
     resetFactoryCounters();
@@ -37,7 +38,7 @@ describe('DashboardHome', () => {
       (api.fetchDashboardStats as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
 
       const { container } = render(<DashboardHome />);
 
@@ -46,7 +47,7 @@ describe('DashboardHome', () => {
 
     it('shows loading skeleton while fetching handovers', () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockImplementation(
+      (api.fetchCompletedHandovers as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
 
@@ -56,10 +57,51 @@ describe('DashboardHome', () => {
     });
   });
 
+  describe('Error State', () => {
+    it('shows error message when stats fetch fails', async () => {
+      (api.fetchDashboardStats as jest.Mock).mockRejectedValue(
+        new Error('Network error')
+      );
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to load dashboard/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows error message when handovers fetch fails', async () => {
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
+      (api.fetchCompletedHandovers as jest.Mock).mockRejectedValue(
+        new Error('Network error')
+      );
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to load dashboard/i)).toBeInTheDocument();
+      });
+    });
+
+    it('shows retry button on error', async () => {
+      (api.fetchDashboardStats as jest.Mock).mockRejectedValue(
+        new Error('Network error')
+      );
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Retry/i })).toBeInTheDocument();
+      });
+    });
+  });
+
   describe('Dashboard Header', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
     });
 
     it('renders dashboard title', async () => {
@@ -79,10 +121,34 @@ describe('DashboardHome', () => {
     });
   });
 
+  describe('Start New Handover CTA', () => {
+    beforeEach(() => {
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+    });
+
+    it('renders Start New Handover link', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Start New Handover/i)).toBeInTheDocument();
+      });
+    });
+
+    it('links to /handovers', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        const link = screen.getByText(/Start New Handover/i).closest('a');
+        expect(link).toHaveAttribute('href', '/handovers');
+      });
+    });
+  });
+
   describe('Stats Display', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
     });
 
     it('displays total devices distributed', async () => {
@@ -91,8 +157,55 @@ describe('DashboardHome', () => {
       await waitFor(() => {
         expect(screen.getByText('42')).toBeInTheDocument();
         expect(screen.getByText(/Devices Distributed/i)).toBeInTheDocument();
+      });
+    });
+
+    it('displays monthly handovers count with "this month" label', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
         expect(screen.getByText('12 this month')).toBeInTheDocument();
       });
+    });
+
+    it('displays positive monthly diff when current month exceeds last month', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        // 12 - 9 = +3
+        expect(screen.getByText('+3 vs last')).toBeInTheDocument();
+      });
+    });
+
+    it('displays negative monthly diff when current month is lower', async () => {
+      const statsDown = createDashboardStats({
+        monthly_handovers: 5,
+        last_month_handovers: 8,
+      });
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(statsDown);
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        // 5 - 8 = -3
+        expect(screen.getByText('-3 vs last')).toBeInTheDocument();
+      });
+    });
+
+    it('does not display monthly diff when months are equal', async () => {
+      const statsEqual = createDashboardStats({
+        monthly_handovers: 10,
+        last_month_handovers: 10,
+      });
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(statsEqual);
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText('10 this month')).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText(/vs last/i)).not.toBeInTheDocument();
     });
 
     it('displays current inventory count', async () => {
@@ -105,13 +218,12 @@ describe('DashboardHome', () => {
       });
     });
 
-    it('displays pending handovers count', async () => {
+    it('displays total earned in green with dollar formatting', async () => {
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('8')).toBeInTheDocument();
-        expect(screen.getByText(/Pending Handovers/i)).toBeInTheDocument();
-        expect(screen.getByText(/need action/i)).toBeInTheDocument();
+        expect(screen.getByText('$1250.00')).toBeInTheDocument();
+        expect(screen.getByText(/Total Earned/i)).toBeInTheDocument();
       });
     });
 
@@ -126,10 +238,44 @@ describe('DashboardHome', () => {
     });
   });
 
+  describe('Quick Actions', () => {
+    beforeEach(() => {
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+    });
+
+    it('renders Start Handover quick action linking to /handovers', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        const link = screen.getByText('Start Handover').closest('a');
+        expect(link).toHaveAttribute('href', '/handovers');
+      });
+    });
+
+    it('renders Check Inventory quick action linking to /inventory', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        const link = screen.getByText('Check Inventory').closest('a');
+        expect(link).toHaveAttribute('href', '/inventory');
+      });
+    });
+
+    it('renders View Earnings quick action linking to /commissions', async () => {
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        const link = screen.getByText('View Earnings').closest('a');
+        expect(link).toHaveAttribute('href', '/commissions');
+      });
+    });
+  });
+
   describe('Commission Summary', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
     });
 
     it('renders commission summary heading', async () => {
@@ -144,8 +290,10 @@ describe('DashboardHome', () => {
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('$1250.00')).toBeInTheDocument();
-        expect(screen.getByText(/Total Earned/i)).toBeInTheDocument();
+        // Total Earned appears in both stats card and commission summary
+        const earnedValues = screen.getAllByText('$1250.00');
+        expect(earnedValues.length).toBeGreaterThanOrEqual(1);
+        expect(screen.getAllByText(/Total Earned/i).length).toBeGreaterThanOrEqual(1);
       });
     });
 
@@ -173,29 +321,32 @@ describe('DashboardHome', () => {
       render(<DashboardHome />);
 
       await waitFor(() => {
-        const link = screen.getAllByRole('link', { name: /View all/i })[0];
-        expect(link).toHaveAttribute('href', '/commissions');
+        const links = screen.getAllByRole('link', { name: /View all/i });
+        const commissionsLink = links.find(
+          (link) => link.getAttribute('href') === '/commissions'
+        );
+        expect(commissionsLink).toBeDefined();
       });
     });
   });
 
-  describe('Pending Handovers List', () => {
+  describe('Recent Handovers List', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     });
 
-    it('renders upcoming handovers heading', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+    it('renders recent handovers heading', async () => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
 
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Upcoming Handovers/i)).toBeInTheDocument();
+        expect(screen.getByText(/Recent Handovers/i)).toBeInTheDocument();
       });
     });
 
     it('displays handover customer names', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
 
       render(<DashboardHome />);
 
@@ -207,7 +358,7 @@ describe('DashboardHome', () => {
     });
 
     it('displays handover device models and loan IDs', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
 
       render(<DashboardHome />);
 
@@ -222,11 +373,11 @@ describe('DashboardHome', () => {
     });
 
     it('displays handover loan amounts', async () => {
-      const handoversWithAmounts = createPendingHandovers(2).map((h, i) => ({
-        ...h,
-        loan_amount: i === 0 ? 500 : 750,
-      }));
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(handoversWithAmounts);
+      const handoversWithAmounts = [
+        createCompletedHandover({ loan_amount: 500 }),
+        createCompletedHandover({ loan_amount: 750 }),
+      ];
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handoversWithAmounts);
 
       render(<DashboardHome />);
 
@@ -236,61 +387,103 @@ describe('DashboardHome', () => {
       });
     });
 
-    it('shows deposit paid badge when deposit is paid', async () => {
-      const handoversPaid = createPendingHandovers(1).map((h) => ({
-        ...h,
-        deposit_paid: true,
-      }));
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(handoversPaid);
+    it('displays commission earned for each handover', async () => {
+      const handoversWithCommission = [
+        createCompletedHandover({ commission_earned: 25.0 }),
+        createCompletedHandover({ commission_earned: 37.5 }),
+      ];
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handoversWithCommission);
 
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Deposit Paid/i)).toBeInTheDocument();
+        expect(screen.getByText('+$25.00')).toBeInTheDocument();
+        expect(screen.getByText('+$37.50')).toBeInTheDocument();
       });
     });
 
-    it('shows deposit pending badge when deposit is not paid', async () => {
-      const handoversPending = createPendingHandovers(1).map((h) => ({
-        ...h,
-        deposit_paid: false,
-      }));
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(handoversPending);
+    it('shows only the last 5 completed handovers', async () => {
+      const manyHandovers = createCompletedHandovers(8);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(manyHandovers);
 
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText(/Deposit Pending/i)).toBeInTheDocument();
+        // First 5 should be displayed
+        for (let i = 0; i < 5; i++) {
+          expect(screen.getByText(manyHandovers[i].customer_name)).toBeInTheDocument();
+        }
+        // 6th, 7th, 8th should not be displayed
+        for (let i = 5; i < 8; i++) {
+          expect(screen.queryByText(manyHandovers[i].customer_name)).not.toBeInTheDocument();
+        }
       });
     });
 
-    it('shows empty state when no handovers', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue([]);
+    it('shows empty state when no completed handovers', async () => {
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
 
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText(/No pending handovers/i)).toBeInTheDocument();
+        expect(screen.getByText(/No completed handovers yet/i)).toBeInTheDocument();
       });
     });
 
     it('shows link to handovers page', async () => {
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
 
       render(<DashboardHome />);
 
       await waitFor(() => {
         const links = screen.getAllByRole('link', { name: /View all/i });
-        const handoversLink = links.find((link) => link.getAttribute('href') === '/handovers');
-        expect(handoversLink).toBeInTheDocument();
+        const handoversLink = links.find(
+          (link) => link.getAttribute('href') === '/handovers'
+        );
+        expect(handoversLink).toBeDefined();
       });
+    });
+  });
+
+  describe('New Distributor Welcome Banner', () => {
+    it('shows welcome banner when distributor has no activity', async () => {
+      const emptyStats = createDashboardStats({
+        total_devices_distributed: 0,
+        current_inventory: 0,
+        total_commissions_earned: 0,
+        total_commissions_paid: 0,
+        pending_commissions: 0,
+        monthly_handovers: 0,
+        last_month_handovers: 0,
+      });
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Welcome to Lynia/i)).toBeInTheDocument();
+      });
+    });
+
+    it('does not show welcome banner for active distributor', async () => {
+      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+
+      render(<DashboardHome />);
+
+      await waitFor(() => {
+        expect(screen.getByText(/Dashboard/i)).toBeInTheDocument();
+      });
+
+      expect(screen.queryByText(/Welcome to Lynia/i)).not.toBeInTheDocument();
     });
   });
 
   describe('Data Fetching', () => {
     it('calls fetchDashboardStats on mount', async () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
 
       render(<DashboardHome />);
 
@@ -299,33 +492,14 @@ describe('DashboardHome', () => {
       });
     });
 
-    it('calls fetchPendingHandovers on mount', async () => {
+    it('calls fetchCompletedHandovers on mount', async () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
 
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(api.fetchPendingHandovers).toHaveBeenCalledTimes(1);
-      });
-    });
-  });
-
-  describe('Date Formatting', () => {
-    it('formats handover scheduled dates correctly', async () => {
-      const handoverWithDate = createPendingHandovers(1).map((h) => ({
-        ...h,
-        scheduled_date: '2026-03-15T10:00:00Z',
-      }));
-      (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchPendingHandovers as jest.Mock).mockResolvedValue(handoverWithDate);
-
-      render(<DashboardHome />);
-
-      await waitFor(() => {
-        // Date should be formatted as "Mar 15" (may appear multiple times)
-        const dates = screen.getAllByText(/15 Mar/i);
-        expect(dates.length).toBeGreaterThan(0);
+        expect(api.fetchCompletedHandovers).toHaveBeenCalledTimes(1);
       });
     });
   });

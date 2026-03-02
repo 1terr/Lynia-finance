@@ -1,18 +1,20 @@
 import {
   fetchDashboardStats,
-  fetchPendingHandovers,
+  fetchCompletedHandovers,
+  searchApprovedLoans,
   fetchInventory,
   fetchCommissions,
   updateDistributorProfile,
   verifyCustomerIdentity,
-  verifyImei,
+  verifyDeviceSelection,
   verifyDepositPayment,
   submitHandover,
 } from '@/lib/api';
 import { fetchAPI } from '@lynia/api-client';
 import {
   createDashboardStats,
-  createPendingHandovers,
+  createCompletedHandovers,
+  createApprovedLoans,
   createInventoryDevices,
   createCommissions,
   createDistributor,
@@ -27,7 +29,6 @@ jest.mock('@lynia/api-client', () => ({
 // Mock environment check for useMock()
 jest.mock('@/test/mocks/utils', () => ({
   useMock: () => false, // Always use real API calls in tests
-  delay: jest.fn(() => Promise.resolve()),
 }));
 
 describe('API Client', () => {
@@ -66,22 +67,22 @@ describe('API Client', () => {
     });
   });
 
-  describe('fetchPendingHandovers', () => {
+  describe('fetchCompletedHandovers', () => {
     it('calls fetchAPI with correct endpoint and status filter', async () => {
-      const mockHandovers = createPendingHandovers(3);
+      const mockHandovers = createCompletedHandovers(3);
       (fetchAPI as jest.Mock).mockResolvedValue(mockHandovers);
 
-      const result = await fetchPendingHandovers();
+      const result = await fetchCompletedHandovers();
 
-      expect(fetchAPI).toHaveBeenCalledWith('/api/v1/distributor/handovers?status=initiated');
+      expect(fetchAPI).toHaveBeenCalledWith('/api/v1/distributor/handovers?status=completed');
       expect(result).toEqual(mockHandovers);
     });
 
-    it('returns pending handovers array', async () => {
-      const mockHandovers = createPendingHandovers(2);
+    it('returns completed handovers array', async () => {
+      const mockHandovers = createCompletedHandovers(2);
       (fetchAPI as jest.Mock).mockResolvedValue(mockHandovers);
 
-      const result = await fetchPendingHandovers();
+      const result = await fetchCompletedHandovers();
 
       expect(Array.isArray(result)).toBe(true);
       expect(result.length).toBe(2);
@@ -90,7 +91,44 @@ describe('API Client', () => {
     it('propagates errors from fetchAPI', async () => {
       (fetchAPI as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(fetchPendingHandovers()).rejects.toThrow('Network error');
+      await expect(fetchCompletedHandovers()).rejects.toThrow('Network error');
+    });
+  });
+
+  describe('searchApprovedLoans', () => {
+    it('calls fetchAPI with correct endpoint and query parameter', async () => {
+      const mockLoans = createApprovedLoans(3);
+      (fetchAPI as jest.Mock).mockResolvedValue(mockLoans);
+
+      const result = await searchApprovedLoans('John');
+
+      expect(fetchAPI).toHaveBeenCalledWith('/api/v1/distributor/handovers/search?q=John');
+      expect(result).toEqual(mockLoans);
+    });
+
+    it('encodes the query parameter', async () => {
+      const mockLoans = createApprovedLoans(1);
+      (fetchAPI as jest.Mock).mockResolvedValue(mockLoans);
+
+      await searchApprovedLoans('John Doe');
+
+      expect(fetchAPI).toHaveBeenCalledWith('/api/v1/distributor/handovers/search?q=John%20Doe');
+    });
+
+    it('returns approved loans array', async () => {
+      const mockLoans = createApprovedLoans(2);
+      (fetchAPI as jest.Mock).mockResolvedValue(mockLoans);
+
+      const result = await searchApprovedLoans('test');
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(result.length).toBe(2);
+    });
+
+    it('propagates errors from fetchAPI', async () => {
+      (fetchAPI as jest.Mock).mockRejectedValue(new Error('Search failed'));
+
+      await expect(searchApprovedLoans('query')).rejects.toThrow('Search failed');
     });
   });
 
@@ -195,13 +233,13 @@ describe('API Client', () => {
       const mockResponse = { verified: true, message: 'Identity verified' };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyCustomerIdentity('handover_1', '63-123456A78');
+      const result = await verifyCustomerIdentity('loan_1', '63-123456A78');
 
       expect(fetchAPI).toHaveBeenCalledWith(
-        '/api/v1/distributor/handovers/handover_1/verify-identity',
+        '/api/v1/distributor/handovers/verify-identity',
         {
           method: 'POST',
-          body: JSON.stringify({ national_id: '63-123456A78' }),
+          body: JSON.stringify({ loan_id: 'loan_1', national_id: '63-123456A78' }),
         }
       );
       expect(result).toEqual(mockResponse);
@@ -211,7 +249,7 @@ describe('API Client', () => {
       const mockResponse = { verified: true, message: 'Valid ID' };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyCustomerIdentity('handover_1', '63-123456A78');
+      const result = await verifyCustomerIdentity('loan_1', '63-123456A78');
 
       expect(result.verified).toBe(true);
       expect(result.message).toBe('Valid ID');
@@ -221,7 +259,7 @@ describe('API Client', () => {
       const mockResponse = { verified: false, message: 'Invalid ID format' };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyCustomerIdentity('handover_1', 'invalid');
+      const result = await verifyCustomerIdentity('loan_1', 'invalid');
 
       expect(result.verified).toBe(false);
       expect(result.message).toContain('Invalid');
@@ -231,52 +269,53 @@ describe('API Client', () => {
       (fetchAPI as jest.Mock).mockRejectedValue(new Error('Service unavailable'));
 
       await expect(
-        verifyCustomerIdentity('handover_1', '63-123456A78')
+        verifyCustomerIdentity('loan_1', '63-123456A78')
       ).rejects.toThrow('Service unavailable');
     });
   });
 
-  describe('verifyImei', () => {
+  describe('verifyDeviceSelection', () => {
     it('calls fetchAPI with correct endpoint and data', async () => {
-      const mockResponse = { verified: true, message: 'IMEI verified' };
+      const mockResponse = { verified: true, message: 'Device verified' };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyImei('handover_1', '123456789012345', '123456789012345');
+      const result = await verifyDeviceSelection('loan_1', 'device_1', '123456789012345');
 
       expect(fetchAPI).toHaveBeenCalledWith(
-        '/api/v1/distributor/handovers/handover_1/verify-imei',
+        '/api/v1/distributor/handovers/verify-device',
         {
           method: 'POST',
           body: JSON.stringify({
+            loan_id: 'loan_1',
+            device_id: 'device_1',
             imei: '123456789012345',
-            expected_imei: '123456789012345',
           }),
         }
       );
       expect(result).toEqual(mockResponse);
     });
 
-    it('returns verification result for matching IMEI', async () => {
+    it('returns verification result for valid device', async () => {
       const mockResponse = {
         verified: true,
-        message: 'IMEI verified — matches device record',
+        message: 'Device verified — eligible for this loan',
       };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyImei('handover_1', '123456789012345', '123456789012345');
+      const result = await verifyDeviceSelection('loan_1', 'device_1', '123456789012345');
 
       expect(result.verified).toBe(true);
-      expect(result.message).toContain('matches');
+      expect(result.message).toContain('eligible');
     });
 
-    it('returns verification failure for mismatched IMEI', async () => {
+    it('returns verification failure for invalid IMEI', async () => {
       const mockResponse = {
         verified: false,
         message: 'IMEI does not match the assigned device',
       };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyImei('handover_1', '999999999999999', '123456789012345');
+      const result = await verifyDeviceSelection('loan_1', 'device_1', '999999999999999');
 
       expect(result.verified).toBe(false);
       expect(result.message).toContain('does not match');
@@ -286,7 +325,7 @@ describe('API Client', () => {
       (fetchAPI as jest.Mock).mockRejectedValue(new Error('Timeout'));
 
       await expect(
-        verifyImei('handover_1', '123456789012345', '123456789012345')
+        verifyDeviceSelection('loan_1', 'device_1', '123456789012345')
       ).rejects.toThrow('Timeout');
     });
   });
@@ -300,13 +339,14 @@ describe('API Client', () => {
       };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyDepositPayment('handover_1', 'ecocash', 'TXN123456');
+      const result = await verifyDepositPayment('loan_1', 'ecocash', 'TXN123456');
 
       expect(fetchAPI).toHaveBeenCalledWith(
-        '/api/v1/distributor/handovers/handover_1/verify-deposit',
+        '/api/v1/distributor/handovers/verify-deposit',
         {
           method: 'POST',
           body: JSON.stringify({
+            loan_id: 'loan_1',
             payment_method: 'ecocash',
             transaction_ref: 'TXN123456',
           }),
@@ -323,7 +363,7 @@ describe('API Client', () => {
       };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      const result = await verifyDepositPayment('handover_1', 'ecocash', 'TXN123456');
+      const result = await verifyDepositPayment('loan_1', 'ecocash', 'TXN123456');
 
       expect(result.verified).toBe(true);
       expect(result.amount).toBe(40);
@@ -338,7 +378,7 @@ describe('API Client', () => {
       };
       (fetchAPI as jest.Mock).mockResolvedValue(mockResponse);
 
-      await verifyDepositPayment('handover_1', 'onemoney', 'TXN789');
+      await verifyDepositPayment('loan_1', 'onemoney', 'TXN789');
 
       const callArgs = (fetchAPI as jest.Mock).mock.calls[0];
       const requestBody = JSON.parse(callArgs[1].body);
@@ -349,7 +389,7 @@ describe('API Client', () => {
       (fetchAPI as jest.Mock).mockRejectedValue(new Error('Payment service down'));
 
       await expect(
-        verifyDepositPayment('handover_1', 'ecocash', 'TXN123')
+        verifyDepositPayment('loan_1', 'ecocash', 'TXN123')
       ).rejects.toThrow('Payment service down');
     });
   });
@@ -357,9 +397,11 @@ describe('API Client', () => {
   describe('submitHandover', () => {
     it('calls fetchAPI with correct endpoint and complete handover data', async () => {
       const handoverData = {
-        handover_id: 'handover_1',
+        loan_id: 'loan_1',
+        customer_id: 'cust_1',
+        device_id: 'device_1',
         customer_national_id: '63-123456A78',
-        scanned_imei: '123456789012345',
+        device_imei: '123456789012345',
         device_condition: createDeviceCondition(),
         device_photos: ['photo1.jpg', 'photo2.jpg'],
         signature_data_url: 'data:image/png;base64,abc123',
@@ -369,7 +411,7 @@ describe('API Client', () => {
 
       const mockResult = {
         success: true,
-        handover_id: 'handover_1',
+        handover_id: 'ho_1',
         loan_id: 'loan_1',
         commission_amount: 15.0,
         next_payment_date: '2026-03-23T00:00:00Z',
@@ -388,9 +430,11 @@ describe('API Client', () => {
 
     it('returns handover result with commission details', async () => {
       const handoverData = {
-        handover_id: 'handover_1',
+        loan_id: 'loan_1',
+        customer_id: 'cust_1',
+        device_id: 'device_1',
         customer_national_id: '63-123456A78',
-        scanned_imei: '123456789012345',
+        device_imei: '123456789012345',
         device_condition: createDeviceCondition(),
         device_photos: ['photo1.jpg'],
         signature_data_url: 'data:image/png;base64,xyz',
@@ -400,7 +444,7 @@ describe('API Client', () => {
 
       const mockResult = {
         success: true,
-        handover_id: 'handover_1',
+        handover_id: 'ho_1',
         loan_id: 'loan_1',
         commission_amount: 25.5,
         next_payment_date: '2026-04-01T00:00:00Z',
@@ -425,9 +469,11 @@ describe('API Client', () => {
       });
 
       const handoverData = {
-        handover_id: 'handover_1',
+        loan_id: 'loan_1',
+        customer_id: 'cust_1',
+        device_id: 'device_1',
         customer_national_id: '63-123456A78',
-        scanned_imei: '123456789012345',
+        device_imei: '123456789012345',
         device_condition: deviceCondition,
         device_photos: ['photo1.jpg'],
         signature_data_url: 'data:image/png;base64,xyz',
@@ -447,9 +493,11 @@ describe('API Client', () => {
 
     it('propagates errors from fetchAPI', async () => {
       const handoverData = {
-        handover_id: 'handover_1',
+        loan_id: 'loan_1',
+        customer_id: 'cust_1',
+        device_id: 'device_1',
         customer_national_id: '63-123456A78',
-        scanned_imei: '123456789012345',
+        device_imei: '123456789012345',
         device_condition: createDeviceCondition(),
         device_photos: ['photo1.jpg'],
         signature_data_url: 'data:image/png;base64,xyz',

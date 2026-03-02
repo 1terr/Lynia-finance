@@ -13,14 +13,40 @@ import { profileSchema, type ProfileFormData } from '@/lib/validation/schemas';
 import { useToast } from '@/hooks/use-toast';
 import {
   User, MapPin, Phone, Mail, Building2, CreditCard,
-  Shield, Star, Save, LogOut, Lock,
+  Shield, Star, Save, LogOut, Lock, TrendingUp,
+  HelpCircle, ChevronDown, MessageCircle, PhoneCall,
+  Calendar, Activity,
 } from 'lucide-react';
+
+const FAQ_ITEMS = [
+  {
+    q: 'How are my commissions calculated?',
+    a: 'You earn a percentage of each loan amount when you complete a device handover. Your rate is shown in your Payment Details section. Commissions are calculated automatically at handover completion.',
+  },
+  {
+    q: 'When do I get paid?',
+    a: 'Commissions are paid out monthly via EcoCash or bank transfer to the payment method on your profile. You can check your payout history on the Commissions tab.',
+  },
+  {
+    q: 'What do I do if a customer hasn\u2019t paid their deposit?',
+    a: 'The deposit must be paid before you can complete the handover. The customer can pay via EcoCash, cash, or bank transfer. You verify the deposit payment in the handover wizard.',
+  },
+  {
+    q: 'How do I report a faulty device?',
+    a: 'Contact the support team via WhatsApp or phone. Provide the IMEI number and describe the issue. Do not hand over devices with known faults.',
+  },
+  {
+    q: 'Can I see customer loan repayment details?',
+    a: 'No. Loan repayment data is confidential between Lynia and the customer. You can see your commission status and handover history on your dashboard.',
+  },
+];
 
 export default function ProfilePage() {
   const { distributor, setDistributor, signOutUser, changePassword } = useAuthStore();
   const { toast } = useToast();
   const [editing, setEditing] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
 
   // Change password state
   const [changingPassword, setChangingPassword] = useState(false);
@@ -47,6 +73,22 @@ export default function ProfilePage() {
   });
 
   if (!distributor) return null;
+
+  // Activity calculations
+  const onboardedDate = new Date(distributor.onboarded_at);
+  const now = new Date();
+  const monthsActive = Math.max(1,
+    (now.getFullYear() - onboardedDate.getFullYear()) * 12 +
+    (now.getMonth() - onboardedDate.getMonth())
+  );
+  const avgPerMonth = monthsActive > 0
+    ? (distributor.total_devices_distributed / monthsActive).toFixed(1)
+    : '0';
+
+  // Mask payment details for display
+  const maskedMomo = distributor.mobile_money_number
+    ? distributor.mobile_money_number.replace(/(\+\d{3})\d{4}(\d{3})/, '$1****$2')
+    : null;
 
   const onSubmit = async (data: ProfileFormData) => {
     const previousDistributor = distributor;
@@ -169,6 +211,60 @@ export default function ProfilePage() {
         </div>
       </div>
 
+      {/* Activity summary */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <Activity className="h-4 w-4" /> Activity Summary
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div>
+            <p className="text-xs text-muted-foreground">Months Active</p>
+            <p className="text-lg font-bold">{monthsActive}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Avg / Month</p>
+            <p className="text-lg font-bold">{avgPerMonth}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Total Handovers</p>
+            <p className="text-lg font-bold">{distributor.total_devices_distributed}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Rating</p>
+            <div className="flex items-center gap-1">
+              <p className="text-lg font-bold">{distributor.average_rating.toFixed(1)}</p>
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+            </div>
+          </div>
+        </div>
+        {/* Tier progress */}
+        <div className="pt-2 border-t">
+          <div className="flex items-center justify-between text-xs mb-1.5">
+            <span className="text-muted-foreground">
+              Tier progress
+            </span>
+            <span className="font-medium">
+              {distributor.total_devices_distributed} / {distributor.total_devices_distributed < 50 ? 50 : distributor.total_devices_distributed < 100 ? 100 : 200} handovers
+            </span>
+          </div>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{
+                width: `${Math.min(100, (distributor.total_devices_distributed / (distributor.total_devices_distributed < 50 ? 50 : distributor.total_devices_distributed < 100 ? 100 : 200)) * 100)}%`,
+              }}
+            />
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {distributor.total_devices_distributed < 50
+              ? 'Bronze tier \u2014 reach 50 handovers for Silver'
+              : distributor.total_devices_distributed < 100
+                ? 'Silver tier \u2014 reach 100 handovers for Gold'
+                : 'Gold tier'}
+          </p>
+        </div>
+      </div>
+
       {/* Personal info */}
       <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
         <h3 className="text-sm font-semibold flex items-center gap-2">
@@ -247,11 +343,21 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Payment info */}
+      {/* Payment info with clarity */}
       <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
         <h3 className="text-sm font-semibold flex items-center gap-2">
           <CreditCard className="h-4 w-4" /> Payment Details
         </h3>
+
+        {/* Payout destination summary */}
+        {maskedMomo && (
+          <div className="rounded-lg bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-800 px-4 py-3">
+            <p className="text-xs text-green-700 dark:text-green-300 font-medium">
+              Commissions paid to: EcoCash {maskedMomo}
+            </p>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-xs text-muted-foreground">Mobile Money (EcoCash)</label>
@@ -323,26 +429,77 @@ export default function ProfilePage() {
       {/* Performance */}
       <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
         <h3 className="text-sm font-semibold flex items-center gap-2">
-          <Shield className="h-4 w-4" /> Performance
+          <TrendingUp className="h-4 w-4" /> Earnings
         </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground">Devices Distributed</p>
-            <p className="text-lg font-bold">{distributor.total_devices_distributed}</p>
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Loans Disbursed</p>
-            <p className="text-lg font-bold">{distributor.total_loans_disbursed}</p>
-          </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Total Earned</p>
             <p className="text-lg font-bold text-green-600">${distributor.total_commissions_earned.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Member Since</p>
-            <p className="text-lg font-bold">{new Date(distributor.onboarded_at).toLocaleDateString('en-ZW', { month: 'short', year: 'numeric' })}</p>
+            <p className="text-xs text-muted-foreground">Total Paid</p>
+            <p className="text-lg font-bold">${distributor.total_commissions_paid.toFixed(2)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">Pending</p>
+            <p className="text-lg font-bold text-yellow-600">${distributor.pending_commissions.toFixed(2)}</p>
           </div>
         </div>
+      </div>
+
+      {/* Help & Support */}
+      <div className="rounded-xl border bg-card p-5 shadow-sm space-y-4">
+        <h3 className="text-sm font-semibold flex items-center gap-2">
+          <HelpCircle className="h-4 w-4" /> Help & Support
+        </h3>
+
+        {/* FAQ accordion */}
+        <div className="space-y-1">
+          {FAQ_ITEMS.map((item, i) => (
+            <div key={i} className="border rounded-lg overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-4 py-3 text-left text-sm font-medium hover:bg-muted/50 transition-colors"
+                onClick={() => setExpandedFaq(expandedFaq === i ? null : i)}
+              >
+                {item.q}
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 flex-shrink-0 text-muted-foreground transition-transform',
+                    expandedFaq === i && 'rotate-180',
+                  )}
+                />
+              </button>
+              {expandedFaq === i && (
+                <div className="px-4 pb-3 text-sm text-muted-foreground">
+                  {item.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Contact options */}
+        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
+          <a
+            href="https://wa.me/263771234567?text=Hi%20Lynia%20Support%2C%20I%20need%20help%20with..."
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <MessageCircle className="h-4 w-4 text-green-600" />
+            WhatsApp Support
+          </a>
+          <a
+            href="tel:+263771234567"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+          >
+            <PhoneCall className="h-4 w-4 text-blue-600" />
+            Call Support
+          </a>
+        </div>
+        <p className="text-[10px] text-muted-foreground text-center">
+          Support hours: Mon-Fri 8am-5pm, Sat 8am-1pm (CAT)
+        </p>
       </div>
 
       {/* Change Password */}

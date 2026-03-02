@@ -1,6 +1,6 @@
 import {
   createDistributor,
-  createPendingHandovers,
+  createCompletedHandovers,
   createInventoryDevices,
   createCommissions,
   createDashboardStats,
@@ -58,15 +58,15 @@ export const mockApiResponses = {
   updateProfile: () => createApiSuccess({ message: 'Profile updated successfully' }),
 
   // Handovers
-  getPendingHandovers: () => createApiSuccess(createPendingHandovers(3)),
+  getCompletedHandovers: () => createApiSuccess(createCompletedHandovers(3)),
 
   submitHandover: () => createApiSuccess(createHandoverResult(true)),
 
   verifyCustomerIdentity: () =>
     createApiSuccess({ verified: true, message: 'Identity verified' }),
 
-  verifyImei: () =>
-    createApiSuccess({ verified: true, message: 'IMEI verified' }),
+  verifyDeviceSelection: () =>
+    createApiSuccess({ verified: true, message: 'Device verified' }),
 
   verifyDepositPayment: () =>
     createApiSuccess({ verified: true, message: 'Payment verified' }),

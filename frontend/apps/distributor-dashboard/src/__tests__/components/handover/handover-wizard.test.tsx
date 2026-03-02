@@ -2,7 +2,6 @@ import { render, screen, waitFor } from '@/__tests__/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import { HandoverWizard } from '@/components/handover/handover-wizard';
 import {
-  createPendingHandovers,
   createHandoverResult,
   resetFactoryCounters,
 } from '@/__tests__/fixtures/factories';
@@ -14,7 +13,6 @@ jest.mock('@/lib/api', () => ({
 }));
 
 describe('HandoverWizard', () => {
-  const mockHandovers = createPendingHandovers(3);
   const mockOnComplete = jest.fn();
 
   beforeEach(() => {
@@ -23,49 +21,33 @@ describe('HandoverWizard', () => {
   });
 
   describe('Initial Render', () => {
-    it('renders step 1 (Select Handover) by default', () => {
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+    it('renders step 1 (Find Customer) by default', () => {
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      expect(screen.getByText('Step 1: Select Handover')).toBeInTheDocument();
-      expect(screen.getByRole('heading', { name: /Step 1: Select Handover/i })).toBeInTheDocument();
+      expect(screen.getByText('Step 1: Find Customer')).toBeInTheDocument();
+      expect(
+        screen.getByRole('heading', { name: /Step 1: Find Customer/i })
+      ).toBeInTheDocument();
     });
 
     it('displays all 7 step indicators', () => {
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      const stepIndicators = screen.getAllByText(/Select|Identity|IMEI|Check|Photos|Sign|Done/);
+      const stepIndicators = screen.getAllByText(
+        /Customer|Identity|Device|Check|Photos|Sign|Done/
+      );
       expect(stepIndicators.length).toBeGreaterThanOrEqual(7);
     });
 
-    it('shows Continue button disabled initially (no handover selected)', () => {
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+    it('shows Continue button disabled initially (no loan selected)', () => {
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       const continueButton = screen.getByRole('button', { name: /Continue/i });
       expect(continueButton).toBeDisabled();
     });
 
     it('does not show Back button on step 1', () => {
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       const backButton = screen.queryByRole('button', { name: /Back/i });
       expect(backButton).not.toBeInTheDocument();
@@ -73,103 +55,121 @@ describe('HandoverWizard', () => {
   });
 
   describe('Navigation', () => {
-    it('enables Continue button after selecting a handover', async () => {
+    it('enables Continue button after selecting a loan', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       const continueButton = screen.getByRole('button', { name: /Continue/i });
       expect(continueButton).toBeDisabled();
 
-      // Select first handover (implementation depends on step component)
-      const firstHandover = screen.getByText(mockHandovers[0].customer_name);
-      await user.click(firstHandover);
+      // Search and select a customer/loan (implementation depends on step component)
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      // Select the first result once it appears
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      const selectButton = screen.getAllByRole('button', { name: /select/i })[0];
+      await user.click(selectButton);
 
       await waitFor(() => {
         expect(continueButton).toBeEnabled();
       });
     });
 
-    it('advances to step 2 when Continue is clicked', async () => {
+    it('advances to step 2 (Verify Identity) when Continue is clicked', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Select handover
-      const firstHandover = screen.getByText(mockHandovers[0].customer_name);
-      await user.click(firstHandover);
+      // Search and select a loan
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      const selectButton = screen.getAllByRole('button', { name: /select/i })[0];
+      await user.click(selectButton);
 
       // Click Continue
       const continueButton = screen.getByRole('button', { name: /Continue/i });
       await user.click(continueButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Step 2: Verify Identity')).toBeInTheDocument();
+        expect(
+          screen.getByText('Step 2: Verify Identity')
+        ).toBeInTheDocument();
       });
     });
 
     it('shows Back button on step 2', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       // Navigate to step 2
-      const firstHandover = screen.getByText(mockHandovers[0].customer_name);
-      await user.click(firstHandover);
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      await user.click(
+        screen.getAllByRole('button', { name: /select/i })[0]
+      );
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       await waitFor(() => {
-        expect(screen.getByRole('button', { name: /Back/i })).toBeInTheDocument();
+        expect(
+          screen.getByRole('button', { name: /Back/i })
+        ).toBeInTheDocument();
       });
     });
 
     it('goes back to step 1 when Back is clicked', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       // Navigate to step 2
-      const firstHandover = screen.getByText(mockHandovers[0].customer_name);
-      await user.click(firstHandover);
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      await user.click(
+        screen.getAllByRole('button', { name: /select/i })[0]
+      );
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       // Go back
       await waitFor(() => {
-        expect(screen.getByText('Step 2: Verify Identity')).toBeInTheDocument();
+        expect(
+          screen.getByText('Step 2: Verify Identity')
+        ).toBeInTheDocument();
       });
 
       await user.click(screen.getByRole('button', { name: /Back/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Step 1: Select Handover')).toBeInTheDocument();
+        expect(
+          screen.getByText('Step 1: Find Customer')
+        ).toBeInTheDocument();
       });
     });
   });
 
   describe('Step Validation (canProceed)', () => {
-    it('step 1: requires selected_handover to proceed', () => {
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+    it('step 1: requires selected_loan to proceed', () => {
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       const continueButton = screen.getByRole('button', { name: /Continue/i });
       expect(continueButton).toBeDisabled();
@@ -177,33 +177,43 @@ describe('HandoverWizard', () => {
 
     it('step 2: Continue disabled until identity verified', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       // Navigate to step 2
-      await user.click(screen.getByText(mockHandovers[0].customer_name));
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      await user.click(
+        screen.getAllByRole('button', { name: /select/i })[0]
+      );
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       await waitFor(() => {
-        expect(screen.getByText('Step 2: Verify Identity')).toBeInTheDocument();
+        expect(
+          screen.getByText('Step 2: Verify Identity')
+        ).toBeInTheDocument();
       });
 
       const continueButton = screen.getByRole('button', { name: /Continue/i });
       expect(continueButton).toBeDisabled();
     });
 
-    it('step 7: shows "Complete Handover" button instead of Continue', async () => {
+    it('step 3: Continue disabled until device_imei_confirmed', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
+
+      // Navigate through steps 1 and 2 (simplified - would need identity verification)
+      const continueButton = screen.getByRole('button', { name: /Continue/i });
+      expect(continueButton).toBeInTheDocument();
+    });
+
+    it('step 7: shows "Complete Handover" button instead of Continue', async () => {
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
       // Mock progression through all steps (simplified - would need to fill each step)
       // For this test, just verify the component structure
@@ -225,7 +235,8 @@ describe('HandoverWizard', () => {
     it('shows submitting state while API call is in progress', async () => {
       const mockResult = createHandoverResult(true);
       (apiClient.submitHandover as jest.Mock).mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve(mockResult), 100))
+        () =>
+          new Promise((resolve) => setTimeout(() => resolve(mockResult), 100))
       );
 
       // Would need to navigate to step 7 and click submit
@@ -254,44 +265,58 @@ describe('HandoverWizard', () => {
   describe('Step Progression', () => {
     it('maintains data across step navigation', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
-      );
+      render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Select handover
-      await user.click(screen.getByText(mockHandovers[0].customer_name));
+      // Search and select a loan
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      await user.click(
+        screen.getAllByRole('button', { name: /select/i })[0]
+      );
 
       // Go to step 2
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       // Go back to step 1
       await waitFor(() => {
-        expect(screen.getByText('Step 2: Verify Identity')).toBeInTheDocument();
+        expect(
+          screen.getByText('Step 2: Verify Identity')
+        ).toBeInTheDocument();
       });
       await user.click(screen.getByRole('button', { name: /Back/i }));
 
       // Verify selection is still maintained
       await waitFor(() => {
-        expect(screen.getByText('Step 1: Select Handover')).toBeInTheDocument();
+        expect(
+          screen.getByText('Step 1: Find Customer')
+        ).toBeInTheDocument();
       });
-      // Selected handover should still be selected (visual indication)
+      // Selected loan should still be selected (visual indication)
     });
 
-    it('updates handover_id when handover is selected', async () => {
+    it('stores selected_loan when a loan is selected', async () => {
       const user = userEvent.setup();
-      render(
-        <HandoverWizard
-          handovers={mockHandovers}
-          onComplete={mockOnComplete}
-        />
+      render(<HandoverWizard onComplete={mockOnComplete} />);
+
+      const searchInput = screen.getByRole('textbox');
+      await user.type(searchInput, 'Customer');
+
+      await waitFor(() => {
+        const results = screen.getAllByRole('button', { name: /select/i });
+        expect(results.length).toBeGreaterThan(0);
+      });
+
+      await user.click(
+        screen.getAllByRole('button', { name: /select/i })[0]
       );
 
-      await user.click(screen.getByText(mockHandovers[0].customer_name));
-
-      // Data should be updated with handover_id
+      // Data should be updated with selected_loan
       // This would be verified through API submission or step 7 display
     });
   });

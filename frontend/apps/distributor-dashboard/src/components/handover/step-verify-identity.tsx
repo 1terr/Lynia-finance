@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { PendingHandover, HandoverData } from '@/types/distributor';
+import type { ApprovedLoan, HandoverData } from '@/types/distributor';
 import { verifyCustomerIdentity } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,13 +9,13 @@ import { cn } from '@lynia/utils';
 import { Camera, CheckCircle2, XCircle, ShieldCheck, User } from 'lucide-react';
 
 interface Props {
-  handover: PendingHandover;
+  loan: ApprovedLoan;
   nationalId: string;
   verified: boolean;
   onUpdate: (partial: Partial<HandoverData>) => void;
 }
 
-export function StepVerifyIdentity({ handover, nationalId, verified, onUpdate }: Props) {
+export function StepVerifyIdentity({ loan, nationalId, verified, onUpdate }: Props) {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [cameraActive, setCameraActive] = useState(false);
@@ -23,7 +23,7 @@ export function StepVerifyIdentity({ handover, nationalId, verified, onUpdate }:
   const handleVerify = async () => {
     setError('');
     setVerifying(true);
-    const res = await verifyCustomerIdentity(handover.id, nationalId);
+    const res = await verifyCustomerIdentity(loan.loan_id, nationalId);
     setVerifying(false);
     if (res.verified) {
       onUpdate({ identity_verified: true });
@@ -47,19 +47,19 @@ export function StepVerifyIdentity({ handover, nationalId, verified, onUpdate }:
         <div className="grid grid-cols-2 gap-2 text-sm">
           <div>
             <p className="text-xs text-muted-foreground">Name</p>
-            <p className="font-medium">{handover.customer_name}</p>
+            <p className="font-medium">{loan.customer_name}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Phone</p>
-            <p className="font-medium">{handover.customer_phone}</p>
+            <p className="text-xs text-muted-foreground">Loan ID</p>
+            <p className="font-medium">{loan.loan_id}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Loan</p>
-            <p className="font-medium">{handover.loan_id}</p>
+            <p className="text-xs text-muted-foreground">Loan Amount</p>
+            <p className="font-medium">${loan.loan_amount}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Device</p>
-            <p className="font-medium">{handover.device_model}</p>
+            <p className="text-xs text-muted-foreground">Device Budget</p>
+            <p className="font-medium">{loan.device_category}</p>
           </div>
         </div>
       </div>

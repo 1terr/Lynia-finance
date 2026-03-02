@@ -1,6 +1,7 @@
 import type {
   Distributor,
-  PendingHandover,
+  ApprovedLoan,
+  CompletedHandover,
   InventoryDevice,
   CommissionEntry,
   DashboardStats,
@@ -69,54 +70,57 @@ export function createDistributor(
   };
 }
 
-// ── Handover Factories ──
+// ── Approved Loan Factories ──
 
-export function createPendingHandover(
-  overrides?: Partial<PendingHandover>
-): PendingHandover {
-  const id = handoverCounter++;
-  const loanId = loanCounter++;
+export function createApprovedLoan(
+  overrides?: Partial<ApprovedLoan>
+): ApprovedLoan {
+  const id = loanCounter++;
 
   return {
-    id: `handover_${id}`,
-    loan_id: `loan_${loanId}`,
+    loan_id: `LYN-2026-${String(id).padStart(3, '0')}`,
+    customer_id: `cust_${id}`,
     customer_name: `Customer ${id}`,
-    customer_phone: `+26377${String(id).padStart(7, '0')}`,
-    device_model: 'Samsung Galaxy A15',
-    device_imei: `35${String(id).padStart(13, '0')}`,
     loan_amount: 300.0,
     deposit_amount: 30.0,
     deposit_paid: false,
-    scheduled_date: new Date(
-      Date.now() + 24 * 60 * 60 * 1000
-    ).toISOString(),
-    status: 'pending',
-    created_at: new Date().toISOString(),
+    approved_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    device_category: 'Up to $300',
+    loan_term_months: 12,
+    monthly_payment: 28.5,
+    interest_rate: 14,
+    first_payment_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     ...overrides,
   };
 }
 
-export function createPendingHandovers(count: number): PendingHandover[] {
-  return Array.from({ length: count }, () => createPendingHandover());
+export function createApprovedLoans(count: number): ApprovedLoan[] {
+  return Array.from({ length: count }, () => createApprovedLoan());
 }
+
+// ── Completed Handover Factories ──
 
 export function createCompletedHandover(
-  overrides?: Partial<PendingHandover>
-): PendingHandover {
-  return createPendingHandover({
-    deposit_paid: true,
-    status: 'completed',
+  overrides?: Partial<CompletedHandover>
+): CompletedHandover {
+  const id = handoverCounter++;
+  const loanId = loanCounter++;
+
+  return {
+    id: `ho_${id}`,
+    loan_id: `LYN-2026-${String(loanId).padStart(3, '0')}`,
+    customer_name: `Customer ${id}`,
+    device_model: 'Samsung Galaxy A15',
+    device_imei: `35${String(id).padStart(13, '0')}`,
+    loan_amount: 300.0,
+    commission_earned: 15.0,
+    completed_at: new Date(Date.now() - id * 24 * 60 * 60 * 1000).toISOString(),
     ...overrides,
-  });
+  };
 }
 
-export function createInProgressHandover(
-  overrides?: Partial<PendingHandover>
-): PendingHandover {
-  return createPendingHandover({
-    status: 'in_progress',
-    ...overrides,
-  });
+export function createCompletedHandovers(count: number): CompletedHandover[] {
+  return Array.from({ length: count }, () => createCompletedHandover());
 }
 
 // ── Device Factories ──
@@ -173,16 +177,13 @@ export function createDeviceCondition(
 export function createHandoverData(
   overrides?: Partial<HandoverData>
 ): HandoverData {
-  const handover = createPendingHandover();
-
   return {
-    handover_id: handover.id,
-    selected_handover: handover,
+    selected_loan: null,
     customer_national_id: '',
     identity_verified: false,
     identity_photo_url: null,
-    scanned_imei: '',
-    imei_verified: false,
+    selected_device: null,
+    device_imei_confirmed: false,
     device_condition: createDeviceCondition(),
     app_installed: false,
     app_configured: false,
@@ -199,15 +200,16 @@ export function createHandoverData(
 export function createCompletedHandoverData(
   overrides?: Partial<HandoverData>
 ): HandoverData {
-  const handover = createPendingHandover();
+  const loan = createApprovedLoan();
+  const device = createInventoryDevice();
 
   return createHandoverData({
-    selected_handover: handover,
+    selected_loan: loan,
     customer_national_id: '63-123456A78',
     identity_verified: true,
     identity_photo_url: 'data:image/png;base64,mock-identity-photo',
-    scanned_imei: handover.device_imei,
-    imei_verified: true,
+    selected_device: device,
+    device_imei_confirmed: true,
     device_condition: createDeviceCondition('excellent'),
     app_installed: true,
     app_configured: true,
@@ -217,7 +219,7 @@ export function createCompletedHandoverData(
       'data:image/png;base64,mock-photo-2',
     ],
     signature_data_url: 'data:image/png;base64,mock-signature',
-    deposit_payment_method: 'EcoCash',
+    deposit_payment_method: 'ecocash',
     deposit_transaction_ref: 'EC12345678',
     deposit_verified: true,
     ...overrides,
@@ -227,10 +229,11 @@ export function createCompletedHandoverData(
 // Helper: Create handover data at a specific step completion
 export function createHandoverAtStep(step: number): HandoverData {
   const base = createHandoverData();
-  const handover = createPendingHandover();
+  const loan = createApprovedLoan();
+  const device = createInventoryDevice();
 
   if (step >= 1) {
-    base.selected_handover = handover;
+    base.selected_loan = loan;
   }
   if (step >= 2) {
     base.customer_national_id = '63-123456A78';
@@ -238,8 +241,8 @@ export function createHandoverAtStep(step: number): HandoverData {
     base.identity_photo_url = 'data:image/png;base64,mock-identity-photo';
   }
   if (step >= 3) {
-    base.scanned_imei = handover.device_imei;
-    base.imei_verified = true;
+    base.selected_device = device;
+    base.device_imei_confirmed = true;
   }
   if (step >= 4) {
     base.device_condition = createDeviceCondition('excellent');
@@ -257,7 +260,7 @@ export function createHandoverAtStep(step: number): HandoverData {
     base.signature_data_url = 'data:image/png;base64,mock-signature';
   }
   if (step >= 7) {
-    base.deposit_payment_method = 'EcoCash';
+    base.deposit_payment_method = 'ecocash';
     base.deposit_transaction_ref = 'EC12345678';
     base.deposit_verified = true;
   }
@@ -276,8 +279,8 @@ export function createHandoverResult(
 
   return {
     success,
-    handover_id: `handover_${handoverId}`,
-    loan_id: `loan_${loanId}`,
+    handover_id: `ho_${handoverId}`,
+    loan_id: `LYN-2026-${String(loanId).padStart(3, '0')}`,
     commission_amount: 15.0,
     next_payment_date: new Date(
       Date.now() + 30 * 24 * 60 * 60 * 1000
@@ -299,7 +302,7 @@ export function createCommission(
 
   return {
     id: `commission_${id}`,
-    loan_id: `loan_${loanId}`,
+    loan_id: `LYN-2026-${String(loanId).padStart(3, '0')}`,
     device_model: 'Samsung Galaxy A15',
     customer_name: `Customer ${id}`,
     device_retail_price: 300.0,
@@ -334,12 +337,12 @@ export function createDashboardStats(
   return {
     total_devices_distributed: 42,
     current_inventory: 15,
-    pending_handovers: 8,
     total_commissions_earned: 1250.0,
     total_commissions_paid: 850.0,
     pending_commissions: 400.0,
     average_rating: 4.5,
     monthly_handovers: 12,
+    last_month_handovers: 9,
     ...overrides,
   };
 }

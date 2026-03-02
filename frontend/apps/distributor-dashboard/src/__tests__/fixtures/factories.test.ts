@@ -1,9 +1,9 @@
 import {
   createDistributor,
-  createPendingHandover,
-  createPendingHandovers,
+  createApprovedLoan,
+  createApprovedLoans,
   createCompletedHandover,
-  createInProgressHandover,
+  createCompletedHandovers,
   createInventoryDevice,
   createInventoryDevices,
   createDeviceCondition,
@@ -54,66 +54,70 @@ describe('Factory Functions', () => {
     });
   });
 
-  describe('createPendingHandover', () => {
-    it('generates default pending handover', () => {
-      const handover = createPendingHandover();
+  describe('createApprovedLoan', () => {
+    it('generates default approved loan', () => {
+      const loan = createApprovedLoan();
 
-      expect(handover.id).toBe('handover_1');
-      expect(handover.status).toBe('pending');
-      expect(handover.deposit_paid).toBe(false);
+      expect(loan.loan_id).toMatch(/^LYN-2026-/);
+      expect(loan.deposit_paid).toBe(false);
+      expect(loan.loan_amount).toBeGreaterThan(0);
     });
 
     it('supports overrides', () => {
-      const handover = createPendingHandover({
+      const loan = createApprovedLoan({
         customer_name: 'Jane Smith',
-        device_model: 'iPhone 13',
         loan_amount: 500,
+        deposit_paid: true,
       });
 
-      expect(handover.customer_name).toBe('Jane Smith');
-      expect(handover.device_model).toBe('iPhone 13');
-      expect(handover.loan_amount).toBe(500);
+      expect(loan.customer_name).toBe('Jane Smith');
+      expect(loan.loan_amount).toBe(500);
+      expect(loan.deposit_paid).toBe(true);
     });
 
-    it('auto-increments IDs', () => {
-      const h1 = createPendingHandover();
-      const h2 = createPendingHandover();
-      const h3 = createPendingHandover();
+    it('auto-increments loan IDs', () => {
+      const l1 = createApprovedLoan();
+      const l2 = createApprovedLoan();
+      const l3 = createApprovedLoan();
 
-      expect(h1.id).toBe('handover_1');
-      expect(h2.id).toBe('handover_2');
-      expect(h3.id).toBe('handover_3');
+      expect(l1.loan_id).toBe('LYN-2026-001');
+      expect(l2.loan_id).toBe('LYN-2026-002');
+      expect(l3.loan_id).toBe('LYN-2026-003');
     });
   });
 
-  describe('createPendingHandovers', () => {
-    it('creates multiple handovers', () => {
-      const handovers = createPendingHandovers(5);
+  describe('createApprovedLoans', () => {
+    it('creates multiple loans', () => {
+      const loans = createApprovedLoans(5);
 
-      expect(handovers).toHaveLength(5);
-      expect(handovers[0].id).toBe('handover_1');
-      expect(handovers[4].id).toBe('handover_5');
+      expect(loans).toHaveLength(5);
+      expect(loans[0].loan_id).toBe('LYN-2026-001');
+      expect(loans[4].loan_id).toBe('LYN-2026-005');
     });
 
     it('creates empty array for count=0', () => {
-      const handovers = createPendingHandovers(0);
-      expect(handovers).toHaveLength(0);
+      const loans = createApprovedLoans(0);
+      expect(loans).toHaveLength(0);
     });
   });
 
   describe('createCompletedHandover', () => {
-    it('creates handover with completed status', () => {
+    it('creates a completed handover record', () => {
       const handover = createCompletedHandover();
 
-      expect(handover.status).toBe('completed');
-      expect(handover.deposit_paid).toBe(true);
+      expect(handover.id).toMatch(/^ho_/);
+      expect(handover.commission_earned).toBeGreaterThan(0);
+      expect(handover.completed_at).toBeTruthy();
     });
   });
 
-  describe('createInProgressHandover', () => {
-    it('creates handover with in_progress status', () => {
-      const handover = createInProgressHandover();
-      expect(handover.status).toBe('in_progress');
+  describe('createCompletedHandovers', () => {
+    it('creates multiple completed handovers', () => {
+      const handovers = createCompletedHandovers(3);
+
+      expect(handovers).toHaveLength(3);
+      expect(handovers[0].id).toBe('ho_1');
+      expect(handovers[2].id).toBe('ho_3');
     });
   });
 
@@ -182,10 +186,10 @@ describe('Factory Functions', () => {
     it('generates initial handover data', () => {
       const data = createHandoverData();
 
-      expect(data.handover_id).toBeTruthy();
-      expect(data.selected_handover).toBeTruthy();
+      expect(data.selected_loan).toBeNull();
+      expect(data.selected_device).toBeNull();
       expect(data.identity_verified).toBe(false);
-      expect(data.imei_verified).toBe(false);
+      expect(data.device_imei_confirmed).toBe(false);
       expect(data.deposit_verified).toBe(false);
     });
 
@@ -204,8 +208,10 @@ describe('Factory Functions', () => {
     it('generates fully completed handover data', () => {
       const data = createCompletedHandoverData();
 
+      expect(data.selected_loan).toBeTruthy();
+      expect(data.selected_device).toBeTruthy();
       expect(data.identity_verified).toBe(true);
-      expect(data.imei_verified).toBe(true);
+      expect(data.device_imei_confirmed).toBe(true);
       expect(data.deposit_verified).toBe(true);
       expect(data.device_photos).toHaveLength(2);
       expect(data.signature_data_url).toBeTruthy();
@@ -213,31 +219,31 @@ describe('Factory Functions', () => {
   });
 
   describe('createHandoverAtStep', () => {
-    it('creates handover data at step 1 (handover selected)', () => {
+    it('creates handover data at step 1 (loan selected)', () => {
       const data = createHandoverAtStep(1);
-      expect(data.selected_handover).toBeTruthy();
+      expect(data.selected_loan).toBeTruthy();
       expect(data.identity_verified).toBe(false);
     });
 
     it('creates handover data at step 2 (identity verified)', () => {
       const data = createHandoverAtStep(2);
-      expect(data.selected_handover).toBeTruthy();
+      expect(data.selected_loan).toBeTruthy();
       expect(data.identity_verified).toBe(true);
       expect(data.customer_national_id).toBeTruthy();
-      expect(data.imei_verified).toBe(false);
+      expect(data.device_imei_confirmed).toBe(false);
     });
 
-    it('creates handover data at step 3 (IMEI verified)', () => {
+    it('creates handover data at step 3 (device confirmed)', () => {
       const data = createHandoverAtStep(3);
-      expect(data.imei_verified).toBe(true);
-      expect(data.scanned_imei).toBeTruthy();
+      expect(data.selected_device).toBeTruthy();
+      expect(data.device_imei_confirmed).toBe(true);
       expect(data.app_installed).toBe(false);
     });
 
     it('creates handover data at step 7 (fully complete)', () => {
       const data = createHandoverAtStep(7);
       expect(data.identity_verified).toBe(true);
-      expect(data.imei_verified).toBe(true);
+      expect(data.device_imei_confirmed).toBe(true);
       expect(data.deposit_verified).toBe(true);
     });
   });
@@ -313,35 +319,36 @@ describe('Factory Functions', () => {
       expect(stats.total_devices_distributed).toBeGreaterThan(0);
       expect(stats.current_inventory).toBeGreaterThan(0);
       expect(stats.average_rating).toBeGreaterThan(0);
+      expect(stats.last_month_handovers).toBeDefined();
     });
 
     it('supports overrides', () => {
       const stats = createDashboardStats({
         total_devices_distributed: 100,
-        pending_handovers: 20,
+        monthly_handovers: 20,
       });
 
       expect(stats.total_devices_distributed).toBe(100);
-      expect(stats.pending_handovers).toBe(20);
+      expect(stats.monthly_handovers).toBe(20);
     });
   });
 
   describe('resetFactoryCounters', () => {
     it('resets all counters to 1', () => {
       createDistributor();
-      createPendingHandover();
+      createApprovedLoan();
       createInventoryDevice();
       createCommission();
 
       resetFactoryCounters();
 
       const dist = createDistributor();
-      const handover = createPendingHandover();
+      const loan = createApprovedLoan();
       const device = createInventoryDevice();
       const commission = createCommission();
 
       expect(dist.id).toBe('dist_1');
-      expect(handover.id).toBe('handover_1');
+      expect(loan.loan_id).toBe('LYN-2026-001');
       expect(device.id).toBe('device_1');
       expect(commission.id).toBe('commission_1');
     });

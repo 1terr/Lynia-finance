@@ -1127,10 +1127,16 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/database-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
             - Effect: Allow
               Action:
                 - cloudwatch:PutMetricData
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-fineract-sync-retry"
       Events:
         GetDistributorProfile:
           Type: Api
@@ -1194,12 +1200,68 @@ Resources:
             Method: OPTIONS
             Auth:
               Authorizer: NONE
+        SearchApprovedLoans:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/search
+            Method: GET
+        SearchApprovedLoansOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/search
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         SubmitDistributorHandover:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/handovers
             Method: POST
+        VerifyIdentity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/verify-identity
+            Method: POST
+        VerifyIdentityOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/verify-identity
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        VerifyDevice:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/verify-device
+            Method: POST
+        VerifyDeviceOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/verify-device
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        VerifyDeposit:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/verify-deposit
+            Method: POST
+        VerifyDepositOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/verify-deposit
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
         DistributorHandoverAction:
           Type: Api
           Properties:
@@ -1225,6 +1287,20 @@ Resources:
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/commissions
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        GetDistributorNotifications:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/notifications
+            Method: GET
+        DistributorNotificationsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/notifications
             Method: OPTIONS
             Auth:
               Authorizer: NONE

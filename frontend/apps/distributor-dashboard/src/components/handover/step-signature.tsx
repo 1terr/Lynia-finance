@@ -147,12 +147,11 @@ export function StepSignature({ signatureUrl, onUpdate }: Props) {
         </div>
       ) : (
         <>
-          {/* Canvas */}
-          <div className="rounded-lg border overflow-hidden bg-white">
+          {/* Canvas — taller on tablets (md: 280px) for comfortable signing */}
+          <div className="rounded-lg border overflow-hidden bg-white relative">
             <canvas
               ref={canvasRef}
-              className="w-full touch-none cursor-crosshair"
-              style={{ height: 200 }}
+              className="w-full touch-none cursor-crosshair h-[200px] md:h-[280px]"
               onMouseDown={startDraw}
               onMouseMove={draw}
               onMouseUp={stopDraw}
@@ -161,11 +160,18 @@ export function StepSignature({ signatureUrl, onUpdate }: Props) {
               onTouchMove={draw}
               onTouchEnd={stopDraw}
             />
+            {!hasStrokes && (
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-muted-foreground/30 text-lg font-medium select-none">
+                  Sign here
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <PenLine className="h-3.5 w-3.5" />
-            <span>Draw signature using finger or mouse</span>
+            <span>Draw signature using finger or stylus</span>
           </div>
 
           <div className="flex gap-2">
