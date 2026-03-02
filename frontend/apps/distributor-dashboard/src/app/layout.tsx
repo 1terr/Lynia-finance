@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   description: 'Device distribution management for Lynia Finance distributors',
   manifest: '/manifest.json',
   other: {
-    'apple-mobile-web-app-capable': 'yes',
+    'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
     'apple-mobile-web-app-title': 'Lynia Agent',
   },
