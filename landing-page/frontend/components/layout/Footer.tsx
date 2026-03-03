@@ -4,9 +4,9 @@ const footerColumns = [
   {
     title: 'Products',
     links: [
-      { label: 'Digital Credit', href: '/#products' },
-      { label: 'Embedded Credit', href: '/#products' },
-      { label: 'Asset-Backed Credit', href: '/#products' },
+      { label: 'Digital Credit', href: '/#digital-credit' },
+      { label: 'Embedded Credit', href: '/#embedded-credit' },
+      { label: 'Asset-Backed Credit', href: '/#asset-backed-credit' },
     ],
   },
   {

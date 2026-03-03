@@ -22,7 +22,8 @@ export function ProductBento() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10 items-stretch">
           {/* Digital Credit — Top Left */}
           <div
-            className={`border border-border border-t-4 border-t-primary rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 flex flex-col ${
+            id="digital-credit"
+            className={`scroll-mt-[88px] border border-border border-t-4 border-t-primary rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 flex flex-col ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
@@ -44,7 +45,8 @@ export function ProductBento() {
 
           {/* Embedded Credit — Top Right */}
           <div
-            className={`border border-border border-t-4 border-t-info rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 flex flex-col ${
+            id="embedded-credit"
+            className={`scroll-mt-[88px] border border-border border-t-4 border-t-info rounded-xl p-8 shadow-stripe-sm transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-md hover:bg-primary-50/50 flex flex-col ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '60ms' }}
@@ -67,7 +69,8 @@ export function ProductBento() {
 
           {/* Asset-Backed Credit — Full Width Bottom (Dark Treatment) */}
           <div
-            className={`rounded-xl p-8 lg:p-10 shadow-stripe-md transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-lg lg:col-span-2 flex flex-col justify-between bg-navy relative overflow-hidden ${
+            id="asset-backed-credit"
+            className={`scroll-mt-[88px] rounded-xl p-8 lg:p-10 shadow-stripe-md transition-all duration-300 ease-stripe-out hover:-translate-y-1 hover:shadow-stripe-lg lg:col-span-2 flex flex-col justify-between bg-navy relative overflow-hidden ${
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
             style={{ transitionDelay: '120ms' }}
