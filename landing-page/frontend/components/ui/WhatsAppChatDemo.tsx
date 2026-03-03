@@ -93,7 +93,7 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
   const { visibleMessages, isTyping, phase } = useWhatsAppChat(isVisible);
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-surface-secondary h-[340px] lg:h-[400px]">
+    <div className="relative rounded-xl overflow-hidden bg-surface-secondary min-h-[340px] lg:min-h-[400px]">
       {/* Decorative background */}
       <div className="absolute inset-0 dot-grid opacity-[0.35]" />
       <div
@@ -112,7 +112,7 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
         >
           <ChatHeader />
 
-          <div className="whatsapp-wallpaper p-2.5 overflow-hidden flex-1 flex flex-col justify-end">
+          <div className="whatsapp-wallpaper p-2.5 min-h-[290px] lg:min-h-[340px] flex flex-col justify-end">
             <div className="space-y-1">
               {visibleMessages.map((msg, i) => (
                 <ChatBubble
