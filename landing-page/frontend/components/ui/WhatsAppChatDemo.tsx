@@ -93,7 +93,7 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
   const { visibleMessages, isTyping, phase } = useWhatsAppChat(isVisible);
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-surface-secondary min-h-[340px] lg:min-h-[400px]">
+    <div className="relative rounded-xl overflow-hidden bg-surface-secondary h-[340px] lg:h-[400px]">
       {/* Decorative background */}
       <div className="absolute inset-0 dot-grid opacity-[0.35]" />
       <div
@@ -107,12 +107,12 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
       {/* Narrowed chat screen */}
       <div className="relative z-10 flex items-center justify-center h-full py-4 px-3">
         <div
-          className="w-full max-w-[280px] rounded-2xl overflow-hidden transition-opacity duration-700"
+          className="w-full max-w-[280px] h-[310px] lg:h-[370px] rounded-2xl overflow-hidden transition-opacity duration-700 flex flex-col"
           style={{ opacity: phase === 'fading' ? 0 : 1 }}
         >
           <ChatHeader />
 
-          <div className="whatsapp-wallpaper p-2.5 min-h-[290px] lg:min-h-[340px] flex flex-col justify-end">
+          <div className="whatsapp-wallpaper p-2.5 flex-1 overflow-hidden flex flex-col justify-end">
             <div className="space-y-1">
               {visibleMessages.map((msg, i) => (
                 <ChatBubble
