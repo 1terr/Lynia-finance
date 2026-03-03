@@ -63,9 +63,7 @@ export function ProductBento() {
             </h3>
             <p className="text-body text-slate mt-3">
               Connect via API or data sharing to finance your platform&apos;s
-              ecosystem. We analyze mobile money activity to provide credit
-              bundled with health/life insurance and capacity-building
-              mechanisms.
+              ecosystem.
             </p>
             {/* Architecture Diagram */}
             <div className="mt-6 flex-1 flex flex-col">
