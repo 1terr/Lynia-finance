@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { SOCIAL_LINKS } from '@/lib/constants';
 
 const footerColumns = [
   {
@@ -20,9 +19,9 @@ const footerColumns = [
   {
     title: 'Connect',
     links: [
-      { label: 'X (Twitter)', href: SOCIAL_LINKS.twitter },
-      { label: 'LinkedIn', href: SOCIAL_LINKS.linkedin },
-      { label: 'WhatsApp', href: SOCIAL_LINKS.whatsapp },
+      { label: 'X (Twitter)', href: '/contact' },
+      { label: 'LinkedIn', href: '/contact' },
+      { label: 'WhatsApp', href: '/contact' },
     ],
   },
   {

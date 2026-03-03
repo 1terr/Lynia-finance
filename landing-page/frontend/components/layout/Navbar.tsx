@@ -116,9 +116,9 @@ export function Navbar() {
           <Button
             variant={isDarkHero ? 'ghost' : 'primary'}
             size="sm"
-            href="/#get-started"
+            href="/contact"
           >
-            Get started &rarr;
+            Talk to our team &rarr;
           </Button>
         </div>
 
@@ -164,8 +164,8 @@ export function Navbar() {
               );
             })}
             <div className="pt-4">
-              <Button variant="primary" size="sm" href="/#get-started" className="w-full">
-                Get started &rarr;
+              <Button variant="primary" size="sm" href="/contact" className="w-full">
+                Talk to our team &rarr;
               </Button>
             </div>
           </div>
