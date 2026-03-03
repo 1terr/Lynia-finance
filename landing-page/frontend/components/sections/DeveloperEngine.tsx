@@ -7,7 +7,9 @@ import { ShieldCheck, BarChart3, Banknote, Lock } from 'lucide-react';
 
 const CODE_SAMPLE = `import { Lynia } from '@lynia/sdk';
 
-const client = new Lynia({ apiKey: 'sk_live_...' });
+const client = new Lynia({
+  apiKey: 'sk_live_...',
+});
 
 // Verify identity
 const kyc = await client.kyc.verify({
@@ -18,9 +20,9 @@ const kyc = await client.kyc.verify({
 // Score & disburse
 const loan = await client.credit.disburse({
   customerId: kyc.customerId,
-  amount: 150_00,      // $150 in cents
+  amount: 150_00,
   currency: 'USD',
-  wallet: 'ecocash',   // or innbucks, onewallet, omari
+  wallet: 'ecocash',
 });`;
 
 const features = [
@@ -150,7 +152,7 @@ export function DeveloperEngine() {
               <div className="w-3 h-3 rounded-full bg-warning/60" />
               <div className="w-3 h-3 rounded-full bg-success/60" />
             </div>
-            <pre className="text-body-sm overflow-x-auto font-mono min-h-[320px]">
+            <pre className="text-body-sm overflow-hidden font-mono h-[420px]">
               <code>
                 {highlightCode(displayedText)}
                 {showCursor && (
