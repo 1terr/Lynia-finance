@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { CommissionEntry, DashboardStats } from '@/types/distributor';
 import { fetchCommissions, fetchDashboardStats, fetchDistributorProfile } from '@/lib/api';
@@ -117,6 +117,17 @@ export default function CommissionsPage() {
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
 
+  const [slowLoading, setSlowLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setSlowLoading(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowLoading(true), 8000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   const filteredCommissions = useMemo(() => {
     return commissions.filter((c) => {
       const matchesPayment =
@@ -158,7 +169,27 @@ export default function CommissionsPage() {
   const handoverCount = commissions.length;
 
   if (loading) {
-    return <CommissionsSkeleton />;
+    return (
+      <div className="relative">
+        <CommissionsSkeleton />
+        {slowLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-xl">
+            <div className="text-center p-6">
+              <p className="text-sm font-medium mb-2">Taking longer than usual...</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                This could be a connection issue.
+              </p>
+              <button
+                onClick={() => { refetchCommissions(); refetchStats(); }}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (hasError || !stats) {

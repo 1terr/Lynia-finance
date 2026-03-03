@@ -1,11 +1,15 @@
 import { getSession } from '@lynia/auth';
 
+const DEFAULT_TIMEOUT_MS = 15_000;
+
 /**
  * Authenticated API client using Cognito JWT tokens.
  *
  * Extracts the ID token from the current Cognito session and attaches it
  * as a Bearer token to every request. On 401 responses (expired/invalid
  * token), clears the local Cognito session and redirects to login.
+ *
+ * Requests are aborted after 15 seconds to prevent indefinite loading states.
  */
 export async function fetchAPI<T>(
   path: string,
@@ -21,14 +25,28 @@ export async function fetchAPI<T>(
   const token = session.getIdToken().getJwtToken();
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
-  const res = await fetch(`${apiBase}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options?.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+  let res: Response;
+  try {
+    res = await fetch(`${apiBase}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...options?.headers,
+      },
+    });
+  } catch (err: unknown) {
+    if (err instanceof DOMException && err.name === 'AbortError') {
+      throw new Error('Request timed out. Please check your connection and try again.');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   // Handle Cognito token rejection from backend
   if (res.status === 401) {
@@ -43,7 +61,7 @@ export async function fetchAPI<T>(
   if (!res.ok) {
     // Try to extract error message from response body
     const body = await res.json().catch(() => ({}));
-    const message = body?.error || `API error: ${res.status}`;
+    const message = body?.message || body?.error || `API error: ${res.status}`;
     throw new Error(message);
   }
 

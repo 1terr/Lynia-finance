@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { DashboardStats } from '@/types/distributor';
 import { fetchDashboardStats, fetchCompletedHandovers } from '@/lib/api';
@@ -30,8 +31,39 @@ export default function DashboardHome() {
   const loading = statsLoading || handoversLoading;
   const hasError = statsError || handoversError;
 
+  const [slowLoading, setSlowLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loading) {
+      setSlowLoading(false);
+      return;
+    }
+    const timer = setTimeout(() => setSlowLoading(true), 8000);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   if (loading) {
-    return <DashboardSkeleton />;
+    return (
+      <div className="relative">
+        <DashboardSkeleton />
+        {slowLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-xl">
+            <div className="text-center p-6">
+              <p className="text-sm font-medium mb-2">Taking longer than usual...</p>
+              <p className="text-xs text-muted-foreground mb-3">
+                This could be a connection issue.
+              </p>
+              <button
+                onClick={() => { refetchStats(); refetchHandovers(); }}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
   }
 
   if (hasError || !stats) {
