@@ -69,7 +69,7 @@ export function BottomCTA() {
           <Button variant="accent" href="/contact" arrow>
             Talk to our team
           </Button>
-          <Button variant="ghost" href="/products">
+          <Button variant="ghost" href="/#products">
             View our products
           </Button>
         </div>
