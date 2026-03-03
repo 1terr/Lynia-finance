@@ -2,7 +2,7 @@
 
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionHeading } from '@/components/ui/SectionHeading';
-import { MessageSquare, Link2, Smartphone } from 'lucide-react';
+
 import { WhatsAppChatDemo } from '@/components/ui/WhatsAppChatDemo';
 import { EmbeddedCreditDiagram } from '@/components/ui/EmbeddedCreditDiagram';
 
@@ -26,9 +26,6 @@ export function ProductBento() {
               isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
-              <MessageSquare className="w-5 h-5 text-primary" />
-            </div>
             <span className="text-overline uppercase tracking-wider text-primary">
               DIGITAL CREDIT
             </span>
@@ -52,9 +49,6 @@ export function ProductBento() {
             }`}
             style={{ transitionDelay: '60ms' }}
           >
-            <div className="w-10 h-10 rounded-lg bg-info/10 flex items-center justify-center mb-4">
-              <Link2 className="w-5 h-5 text-info" />
-            </div>
             <span className="text-overline uppercase tracking-wider text-info">
               EMBEDDED CREDIT
             </span>
@@ -82,9 +76,6 @@ export function ProductBento() {
             <div className="absolute inset-0 line-grid opacity-50" />
 
             <div className="relative z-10">
-              <div className="w-10 h-10 rounded-lg bg-success/15 flex items-center justify-center mb-4">
-                <Smartphone className="w-5 h-5 text-success" />
-              </div>
               <span className="text-overline uppercase tracking-wider text-success">
                 ASSET-BACKED CREDIT
               </span>
