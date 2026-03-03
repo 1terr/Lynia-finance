@@ -143,7 +143,7 @@ describe('Distributor Service Integration Tests', () => {
     });
 
     it('should return 404 if distributor not found', async () => {
-      mockExecute.mockResolvedValueOnce({ data: null, error: new Error('not found') });
+      mockExecute.mockResolvedValueOnce({ data: null, error: null });
 
       const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/profile' });
       const response = await handler(event);
@@ -151,6 +151,15 @@ describe('Distributor Service Integration Tests', () => {
       expect(response.statusCode).toBe(404);
       const body = JSON.parse(response.body);
       expect(body.success).toBe(false);
+    });
+
+    it('should return 500 on database error', async () => {
+      mockExecute.mockResolvedValueOnce({ data: null, error: new Error('connection timeout') });
+
+      const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/profile' });
+      const response = await handler(event);
+
+      expect(response.statusCode).toBe(500);
     });
 
     it('should return 404 for admin user without distributor_id param', async () => {

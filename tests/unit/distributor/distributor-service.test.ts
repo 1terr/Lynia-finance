@@ -199,7 +199,7 @@ describe('GET /api/v1/distributor/profile', () => {
   });
 
   it('should return 404 when profile not found', async () => {
-    mockExecute.mockResolvedValueOnce({ data: null, error: { message: 'Not found' } });
+    mockExecute.mockResolvedValueOnce({ data: null, error: null });
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/profile' });
     const response = await handler(event);
@@ -207,7 +207,15 @@ describe('GET /api/v1/distributor/profile', () => {
     expect(response.statusCode).toBe(404);
     const body = parseBody(response);
     expect(body.success).toBe(false);
-    expect(body.message).toContain('not found');
+  });
+
+  it('should return 500 on database error', async () => {
+    mockExecute.mockResolvedValueOnce({ data: null, error: new Error('connection timeout') });
+
+    const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/profile' });
+    const response = await handler(event);
+
+    expect(response.statusCode).toBe(500);
   });
 
   it('should call requireRole with distributor', async () => {
@@ -460,7 +468,7 @@ describe('POST /api/v1/distributor/handovers', () => {
   });
 
   it('should return 404 when distributor not found', async () => {
-    mockExecute.mockResolvedValueOnce({ data: null, error: { message: 'Not found' } });
+    mockExecute.mockResolvedValueOnce({ data: null, error: null });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -470,6 +478,19 @@ describe('POST /api/v1/distributor/handovers', () => {
     const response = await handler(event);
 
     expect(response.statusCode).toBe(404);
+  });
+
+  it('should return 500 on database error resolving distributor', async () => {
+    mockExecute.mockResolvedValueOnce({ data: null, error: new Error('connection timeout') });
+
+    const event = createEvent({
+      httpMethod: 'POST',
+      path: '/api/v1/distributor/handovers',
+      body: JSON.stringify(validBody),
+    });
+    const response = await handler(event);
+
+    expect(response.statusCode).toBe(500);
   });
 
   it('should return 409 when loan already has a completed handover', async () => {
