@@ -28,7 +28,7 @@ echo ""
 
 # Step 1: Pre-migration (auth stub + extensions)
 echo "[1/3] Running pre-migration setup..."
-psql "$RDS_URL" -f "$SCRIPT_DIR/migrations/aws/000_pre_migration.sql"
+psql "$RDS_URL" --set ON_ERROR_STOP=on -f "$SCRIPT_DIR/migrations/aws/000_pre_migration.sql"
 echo "  Done."
 
 # Step 2: Standard migrations (001-017)
@@ -36,13 +36,13 @@ echo "[2/3] Running standard migrations..."
 for migration in "$SCRIPT_DIR"/migrations/0*.sql; do
   filename=$(basename "$migration")
   echo "  Applying $filename..."
-  psql "$RDS_URL" -f "$migration"
+  psql "$RDS_URL" --set ON_ERROR_STOP=on -f "$migration"
 done
 echo "  Done."
 
 # Step 3: Post-migration (remove RLS + auth schema)
 echo "[3/3] Running post-migration cleanup..."
-psql "$RDS_URL" -f "$SCRIPT_DIR/migrations/aws/018_remove_rls_for_aws.sql"
+psql "$RDS_URL" --set ON_ERROR_STOP=on -f "$SCRIPT_DIR/migrations/aws/018_remove_rls_for_aws.sql"
 echo "  Done."
 
 echo ""
