@@ -22,23 +22,29 @@ export async function resolveDistributor(
 
   // Admin explicitly requesting a specific distributor's data
   if (distributorId && isAdminOrManager(auth)) {
-    const { data } = await db
+    const { data, error } = await db
       .from('distributors')
       .select(selectColumns)
       .eq('id', distributorId)
       .single()
       .execute();
+    if (error) {
+      throw new Error(`Database error resolving distributor: ${error.message}`);
+    }
     return data;
   }
 
   // User has distributor role — look up their own record
   if (hasDistributorRole) {
-    const { data } = await db
+    const { data, error } = await db
       .from('distributors')
       .select(selectColumns)
       .eq('user_id', auth.userId)
       .single()
       .execute();
+    if (error) {
+      throw new Error(`Database error resolving distributor: ${error.message}`);
+    }
     return data;
   }
 

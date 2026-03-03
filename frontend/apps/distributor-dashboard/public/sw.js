@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lynia-distributor-v1';
+const CACHE_NAME = 'lynia-distributor-v2';
 
 const STATIC_ASSETS = [
   '/',
@@ -31,28 +31,15 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: network-first for API, cache-first for static assets
+// Fetch: cache-first for static assets only, skip API calls
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Network-first for API calls
-  if (request.url.includes('/api/')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          }
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
+  // Don't intercept API calls — React Query handles caching/retry
+  if (request.url.includes('/api/')) return;
 
   // Cache-first for static assets
   event.respondWith(
