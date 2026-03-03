@@ -95,7 +95,7 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
   return (
     <div className="relative rounded-xl overflow-hidden bg-surface-secondary h-[520px]">
       {/* Decorative background */}
-      <div className="absolute inset-0 dot-grid opacity-[0.35]" />
+      <div className="absolute inset-0 dot-grid-dark opacity-[0.35]" />
       <div
         className="absolute inset-0 opacity-30"
         style={{

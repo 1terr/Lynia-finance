@@ -68,6 +68,12 @@
     background-size: 32px 32px;
   }
 
+  /* Decorative dot-grid pattern for light sections */
+  .dot-grid-dark {
+    background-image: radial-gradient(circle, rgba(10, 37, 64, 0.12) 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
   /* Gradient orb — absolute positioned, blurred radial glow */
   .gradient-orb {
     position: absolute;
