@@ -37,7 +37,7 @@ export function ProductBento() {
               employees.
             </p>
             {/* WhatsApp Chat Flow Demo */}
-            <div className="mt-6 flex-1 flex flex-col">
+            <div className="mt-6 flex-1 flex flex-col min-h-0">
               <WhatsAppChatDemo isVisible={isVisible} />
             </div>
           </div>
@@ -60,7 +60,7 @@ export function ProductBento() {
               ecosystem.
             </p>
             {/* Architecture Diagram */}
-            <div className="mt-6 flex-1 flex flex-col">
+            <div className="mt-6 flex-1 flex flex-col min-h-0">
               <EmbeddedCreditDiagram isVisible={isVisible} />
             </div>
           </div>
