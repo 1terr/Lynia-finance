@@ -53,7 +53,7 @@ interface EmbeddedCreditDiagramProps {
 
 export function EmbeddedCreditDiagram({ isVisible }: EmbeddedCreditDiagramProps) {
   return (
-    <div className="relative rounded-xl overflow-hidden bg-navy h-full w-full flex items-center justify-center">
+    <div className="relative rounded-xl overflow-hidden bg-navy h-[520px] w-full flex items-center justify-center">
       {/* Dot grid texture */}
       <div className="absolute inset-0 dot-grid opacity-[0.03]" />
 

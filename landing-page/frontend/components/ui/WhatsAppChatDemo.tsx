@@ -93,7 +93,7 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
   const { visibleMessages, isTyping, phase } = useWhatsAppChat(isVisible);
 
   return (
-    <div className="relative rounded-xl overflow-hidden bg-surface-secondary h-full">
+    <div className="relative rounded-xl overflow-hidden bg-surface-secondary h-[520px]">
       {/* Decorative background */}
       <div className="absolute inset-0 dot-grid opacity-[0.35]" />
       <div
@@ -107,7 +107,7 @@ export function WhatsAppChatDemo({ isVisible }: WhatsAppChatDemoProps) {
       {/* Narrowed chat screen */}
       <div className="relative z-10 flex items-center justify-center h-full py-4 px-3">
         <div
-          className="w-full max-w-[280px] flex-1 rounded-2xl overflow-hidden transition-opacity duration-700 flex flex-col"
+          className="w-full max-w-[280px] h-[488px] rounded-2xl overflow-hidden transition-opacity duration-700 flex flex-col"
           style={{ opacity: phase === 'fading' ? 0 : 1 }}
         >
           <ChatHeader />
