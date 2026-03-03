@@ -114,7 +114,7 @@ export function Navbar() {
         {/* Desktop CTA */}
         <div className="hidden lg:block">
           <Button
-            variant={isDarkHero ? 'ghost' : 'primary'}
+            variant={isDarkHero ? 'ghost' : 'accent'}
             size="sm"
             href="/contact"
           >
@@ -164,7 +164,7 @@ export function Navbar() {
               );
             })}
             <div className="pt-4">
-              <Button variant="primary" size="sm" href="/contact" className="w-full">
+              <Button variant="accent" size="sm" href="/contact" className="w-full">
                 Talk to our team &rarr;
               </Button>
             </div>

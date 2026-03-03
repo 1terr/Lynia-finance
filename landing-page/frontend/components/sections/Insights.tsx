@@ -39,7 +39,7 @@ export function Insights({ posts }: InsightsProps) {
             className={`mt-8 fade-in ${isVisible ? 'fade-in-visible' : 'fade-in-hidden-md'}`}
             style={{ transitionDelay: '120ms' }}
           >
-            <Button variant="outline" href="/thesis" arrow>
+            <Button variant="accent" href="/thesis" arrow>
               Read the 2026 Thesis
             </Button>
           </div>
