@@ -6,9 +6,9 @@ import { SectionLabel } from '@/components/ui/SectionLabel';
 
 const stats = [
   { value: 16, suffix: '%', label: 'of adults access formal credit' },
-  { value: 63, suffix: '%', label: 'use mobile money' },
   { value: 52, suffix: '%', label: 'own a smartphone' },
   { value: 58, suffix: '%', label: 'work in the informal sector' },
+  { value: 63, suffix: '%', label: 'use mobile money' },
 ];
 
 function CountUp({ target, suffix, isVisible }: { target: number; suffix: string; isVisible: boolean }) {
@@ -89,20 +89,20 @@ export function DataStrip() {
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`bg-white rounded-xl p-5 lg:p-6 shadow-stripe-xs text-center fade-in ${
+              className={`bg-primary rounded-xl p-5 lg:p-6 text-center fade-in ${
                 visible ? 'fade-in-visible' : 'fade-in-hidden-lg'
               }`}
               style={{ transitionDelay: `${120 + i * 80}ms` }}
             >
-              <div className="w-8 h-0.5 bg-primary mx-auto mb-4 rounded-full" />
-              <div className="text-stat-mobile md:text-stat-tablet lg:text-stat text-navy tabular-nums">
+              <div className="w-8 h-0.5 bg-white mx-auto mb-4 rounded-full" />
+              <div className="text-stat-mobile md:text-stat-tablet lg:text-stat text-white tabular-nums">
                 <CountUp
                   target={stat.value}
                   suffix={stat.suffix}
                   isVisible={visible}
                 />
               </div>
-              <p className="text-body-sm font-semibold text-navy/80 mt-3">{stat.label}</p>
+              <p className="text-body-sm font-semibold text-white/80 mt-3">{stat.label}</p>
             </div>
           ))}
         </div>
