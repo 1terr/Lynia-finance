@@ -1,9 +1,8 @@
 # WhatsApp Bot Flow Specifications - Lynia Finance
 
-**Project**: Lynia Finance - Phase 2
-**Task**: P2-T006: WhatsApp Bot - Customer Onboarding Flow
-**Version**: 1.0
-**Last Updated**: 2025-12-05
+**Project**: Lynia Finance
+**Version**: 2.0
+**Last Updated**: 2026-03-04
 
 ## Overview
 
@@ -11,17 +10,56 @@ This document specifies the conversation flows, message templates, and bot logic
 
 ## Conversation States
 
-The bot maintains conversation state to provide contextual responses:
+The bot uses a 23-state machine stored in `whatsapp_sessions.current_state`:
 
 ```typescript
-type ConversationState =
-  | 'idle'                  // Initial state, no active conversation
-  | 'loan_application'      // Customer applying for loan
-  | 'kyc_verification'      // Customer providing KYC documents
-  | 'payment'               // Customer making payment
-  | 'support'               // Customer needs support
-  | 'device_selection'      // Customer selecting device model
-  | 'loan_review';          // Customer reviewing loan terms
+type OnboardingState =
+  | 'welcome'                  // Initial greeting, language selection
+  | 'phone_validation'         // Validate +263 Zimbabwe number
+  | 'collecting_personal_info' // Entry to personal info collection
+  | 'personal_info_name'       // First name, last name
+  | 'personal_info_dob'        // Date of birth
+  | 'personal_info_gender'     // Gender selection
+  | 'personal_info_location'   // City/province
+  | 'collecting_employment'    // Entry to employment collection
+  | 'employment_type'          // Formal/informal/self-employed
+  | 'employment_income'        // Monthly income in USD
+  | 'employment_debts'         // Existing debt obligations
+  | 'employment_household'     // Household size & dependents
+  | 'product_selection'        // Smartphone vs digital credit
+  | 'kyc_id_upload'            // National ID photo upload
+  | 'kyc_selfie_upload'        // Selfie photo upload
+  | 'kyc_processing'           // DIDIT verification in progress
+  | 'credit_scoring'           // Score calculation + device fetch
+  | 'device_selection'         // Choose device (Back → credit_scoring)
+  | 'term_selection'           // Choose loan term (Back → device_selection)
+  | 'loan_summary'             // Review loan details
+  | 'loan_offer'               // Final offer (Back → term_selection)
+  | 'terms_acceptance'         // Accept T&C
+  | 'completed'                // Onboarding done, awaiting deposit
+  | 'rejected';                // KYC verification failed
+
+// Session state is stored in whatsapp_sessions table with JSONB state_data
+// Session timeout: 24 hours (resumes where customer left off)
+```
+
+### State Transition Diagram
+
+```
+welcome → phone_validation → personal_info_name → personal_info_dob
+→ personal_info_gender → personal_info_location → employment_type
+→ employment_income → employment_debts → employment_household
+→ product_selection → kyc_id_upload → kyc_selfie_upload
+→ kyc_processing → credit_scoring → device_selection → term_selection
+→ loan_offer → terms_acceptance → completed
+
+Back navigation (post-scoring):
+  device_selection ← "back" → credit_scoring (re-fetch devices)
+  term_selection   ← "back" → device_selection (re-show device list)
+  loan_offer       ← "back" → term_selection (re-show term options)
+
+KYC failure:
+  kyc_processing → rejected (customer can restart with "Hi")
 ```
 
 ## Message Templates
@@ -661,12 +699,12 @@ The bot should recognize these common phrases:
 
 ### Loan Eligibility
 
-1. Customer must be 18+ years old
-2. National ID must be valid (not expired)
-3. No existing defaulted loans
-4. Monthly income ≥ 2× monthly installment
-5. First-time customers: Max loan $250
-6. Repeat customers: Max loan $500
+1. Customer must have a Zimbabwe phone number (+263)
+2. National ID must be valid Zimbabwe format (XX-XXXXXXXAXX)
+3. KYC verification via DIDIT must pass
+4. All customers are auto-approved (no manual review, no rejection based on score)
+5. Credit limit based on tier: Tier 1 ($200), Tier 2 ($500), Tier 3 ($2,000)
+6. Deposit required before device handover (10-30% depending on tier)
 
 ### KYC Requirements
 
@@ -777,22 +815,20 @@ Before launching the WhatsApp bot:
 
 ---
 
-## Next Steps (P2-T006)
+## Implementation Status
 
-1. Implement state machine for conversation flows
-2. Add device selection with product catalog integration
-3. Implement KYC photo upload handling
-4. Integrate DIDIT verification API
-5. Add payment webhook handlers (EcoCash, OneMoney)
-6. Implement scheduled task for payment reminders
-7. Add natural language processing for intent recognition
-8. Create admin dashboard for conversation monitoring
-9. Set up CloudWatch alarms for error rates
-10. Conduct end-to-end testing
+All conversation flows are implemented and deployed to production:
+
+- 23-state onboarding machine with session persistence (24h timeout)
+- DIDIT KYC verification with webhook callback handling
+- Credit scoring with 3-tier auto-approval (no manual review)
+- Device selection filtered by credit limit with real-time stock check
+- Declining balance loan calculation with term selection
+- Back navigation at device, term, and loan offer stages
+- Fineract sync at 5 lifecycle points (non-blocking, SQS retry)
+- Mobile money deposit matching via ID number reference
 
 ---
 
-**Document Version**: 1.0
-**Author**: Claude Code Assistant
-**Date**: 2025-12-05
-**Related Tasks**: P2-T005, P2-T006, P2-T007, P2-T008
+**Document Version**: 2.0
+**Last Updated**: 2026-03-04

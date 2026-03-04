@@ -2,6 +2,9 @@
 
 **Complete technical documentation of all system flows**
 
+**Last Updated**: 2026-03-04
+**Version**: 2.0
+
 ---
 
 ## Table of Contents
@@ -47,8 +50,8 @@
                             │
                             ▼
                 ┌──────────────────────┐
-                │   Supabase Layer     │
-                │   (PostgreSQL)       │
+                │  RDS PostgreSQL 16   │
+                │  (Private VPC)       │
                 └──────────┬───────────┘
                            │
                            ▼
@@ -61,28 +64,28 @@
 ### Technology Stack
 
 **Backend**:
-- AWS Lambda (Node.js 20.x, Python 3.11)
+- AWS Lambda (Node.js 20.x, TypeScript)
 - AWS API Gateway (REST API)
-- AWS CloudWatch (Monitoring & Logs)
-- AWS Systems Manager (Secrets)
+- AWS CloudWatch (Monitoring, Alarms & Dashboards)
+- AWS Secrets Manager (API keys, credentials)
+- Amazon SQS (9 queues + 9 DLQs for async processing)
 
 **Database**:
-- Supabase PostgreSQL (primary data store)
-- Apache Fineract (loan management)
-- Real-time subscriptions
+- AWS RDS PostgreSQL 16 (primary data store, private VPC)
+- Apache Fineract v1.13.0 (core banking, ECS Fargate)
+- One-way sync: Lynia DB → Fineract (non-blocking, SQS retry)
 
 **Integrations**:
-- WhatsApp Cloud API (messaging)
-- DIDIT (KYC verification)
-- EcoCash/OneMoney (payments)
-- Trustonic (device locks)
-- Twilio (SMS backup)
+- WhatsApp Cloud API (customer messaging, onboarding)
+- DIDIT (KYC identity verification)
+- EcoCash / OneMoney / InnBucks / OMari (mobile money payments)
+- Trustonic (device lock/unlock)
 
 **Frontend**:
-- Next.js 14 (Admin Dashboard)
-- React + TypeScript
-- TailwindCSS
-- Vercel deployment
+- Next.js 14 (Admin Portal + Distributor Dashboard)
+- React + TypeScript + TailwindCSS
+- S3 + CloudFront + WAF (hosting & security)
+- Amazon Cognito (authentication)
 
 ---
 
@@ -91,7 +94,7 @@
 ### Complete Customer Journey
 
 ```
-Customer          WhatsApp          Lambda           Supabase         External
+Customer          WhatsApp          Lambda           RDS DB           External
    │                 │                 │                 │                │
    │─────"Hi"───────▶│                 │                 │                │
    │                 │──────request────▶│                 │                │
@@ -148,25 +151,38 @@ Customer          WhatsApp          Lambda           Supabase         External
 
 ### Onboarding States
 
-**Database Schema: `customers` table**
+**WhatsApp Session State Machine** (`whatsapp_sessions.current_state`):
 
-```sql
-onboarding_step ENUM(
-  'phone_verification',   -- Initial contact
-  'name_collection',      -- Collecting first/last name
-  'id_collection',        -- National ID
-  'dob_collection',       -- Date of birth
-  'address_collection',   -- Physical address
-  'kyc_selfie',          -- Selfie upload
-  'kyc_id_front',        -- ID front upload
-  'kyc_id_back',         -- ID back upload
-  'kyc_verification',    -- DIDIT processing
-  'credit_assessment',   -- ML scoring
-  'manual_review',       -- Human review if needed
-  'completed',           -- Onboarding done
-  'rejected'            -- Application rejected
-)
+```typescript
+type OnboardingState =
+  | 'welcome'                  // Initial greeting, language selection
+  | 'phone_validation'         // Validate +263 Zimbabwe number
+  | 'collecting_personal_info' // Entry to personal info collection
+  | 'personal_info_name'       // First name, last name
+  | 'personal_info_dob'        // Date of birth
+  | 'personal_info_gender'     // Gender selection
+  | 'personal_info_location'   // City/province
+  | 'collecting_employment'    // Entry to employment collection
+  | 'employment_type'          // Formal/informal/self-employed
+  | 'employment_income'        // Monthly income in USD
+  | 'employment_debts'         // Existing debt obligations
+  | 'employment_household'     // Household size & dependents
+  | 'product_selection'        // Smartphone vs digital credit
+  | 'kyc_id_upload'            // National ID photo upload
+  | 'kyc_selfie_upload'        // Selfie photo upload
+  | 'kyc_processing'           // DIDIT verification in progress
+  | 'credit_scoring'           // Score calculation + device fetch
+  | 'device_selection'         // Choose device (Back → credit_scoring)
+  | 'term_selection'           // Choose loan term (Back → device_selection)
+  | 'loan_summary'             // Review loan details
+  | 'loan_offer'               // Final offer (Back → term_selection)
+  | 'terms_acceptance'         // Accept T&C
+  | 'completed'                // Onboarding done, awaiting deposit
+  | 'rejected';                // KYC verification failed
 ```
+
+**Session timeout**: 24 hours of inactivity (session resumes where left off).
+**Back navigation**: Available at device_selection, term_selection, and loan_offer.
 
 ### Decision Points
 
@@ -183,28 +199,25 @@ if (phoneNumber.startsWith('+263')) {
 ```
 
 **2. Credit Scoring Decision**
-```typescript
-const score = await calculateCreditScore(customer);
 
-if (score >= 700) {
-  // Auto-approve Tier 2
-  customer.credit_tier = 'tier_2';
-  customer.credit_limit = 350;
-  customer.onboarding_step = 'completed';
-} else if (score >= 650 && score < 700) {
-  // Auto-approve Tier 1
-  customer.credit_tier = 'tier_1';
-  customer.credit_limit = 250;
-  customer.onboarding_step = 'completed';
-} else if (score >= 600 && score < 650) {
-  // Manual review
-  customer.onboarding_step = 'manual_review';
-  createManualReview(customer);
+All customers are auto-approved. There is no manual review or rejection based on
+credit score. Only KYC verification failure blocks progression.
+
+```typescript
+// scaled_score = 300 + (raw_score / 1000) * 550  (always >= 300)
+// Decision is ALWAYS 'approve' — only KYC failure blocks progression
+
+const decision = 'approve' as const;
+
+if (scaled_score >= 650) {
+  tier = 'Tier 3';  credit_limit = 2000;  down_payment = 10%;  apr = 3%;
+} else if (scaled_score >= 500) {
+  tier = 'Tier 2';  credit_limit = 500;   down_payment = 20%;  apr = 4%;
 } else {
-  // Reject
-  customer.onboarding_step = 'rejected';
-  sendRejectionMessage();
+  tier = 'Tier 1';  credit_limit = 200;   down_payment = 30%;  apr = 5%;
 }
+
+// After scoring → fetch available devices within credit limit → device_selection
 ```
 
 **3. KYC Verification**
@@ -232,140 +245,67 @@ if (kycResult.confidence > 0.95) {
 
 ## Credit Scoring Flow
 
-### Hybrid ML + Rule-Based System
+> Full architecture details: [CREDIT-SCORING-ARCHITECTURE.md](../architecture/CREDIT-SCORING-ARCHITECTURE.md)
+
+### Rule-Based 6-Component Model
+
+The scoring engine is a pure rule-based system (no ML). It sums 5 or 6 weighted components
+to produce a raw score (0-1000), scaled to 300-850 (FICO-like).
 
 ```
-Input Data        Feature Eng.      ML Model         Rules          Output
-    │                  │               │               │               │
-    │                  │               │               │               │
-┌───┴──────┐      ┌────┴─────┐    ┌───┴────┐     ┌───┴────┐     ┌───┴────┐
-│Customer  │─────▶│ Extract  │───▶│Random  │────▶│Business│────▶│Credit  │
-│Data      │      │ Features │    │Forest  │     │Rules   │     │Score   │
-│          │      │          │    │Model   │     │        │     │Tier    │
-└──────────┘      └──────────┘    └────────┘     └────────┘     │Limit   │
-                                                                 └────────┘
+WhatsApp Onboarding Data
+        │
+        ▼
+┌──────────────┐     ┌─────────────────────┐     ┌──────────────┐
+│ credit-      │────▶│ POST /scoring/      │────▶│ scoring-     │
+│ scoring.ts   │     │ calculate           │     │ engine.ts    │
+│ (payload     │     │ (API handler)       │     │ (pure fns)   │
+│  assembly)   │     └─────────────────────┘     └──────┬───────┘
+└──────────────┘                                        │
+                                                        ▼
+                                                ┌──────────────┐
+                                                │ Score Result  │
+                                                │ + Tier + Limit│
+                                                └──────────────┘
 ```
 
-### Feature Engineering
+### Scoring Components (Smartphone Loans)
 
-**Extracted Features** (35 total):
+| # | Component | Weight | Max Pts | Data Source |
+|---|-----------|--------|---------|-------------|
+| 1 | Affordability | 30% | 300 | Income, expenses, household (WhatsApp) |
+| 2 | Repayment Willingness | 25% | 250 | Loan/payment history (DB query) |
+| 3 | Mobile Money Activity | 20% | 200 | *Neutral — no API integration yet* |
+| 4 | External Credit | 15% | 150 | *Neutral — no API integration yet* |
+| 5 | KYC Verification | 10% | 100 | DIDIT KYC provider |
 
-**1. Phone Number Features** (8):
-- Phone number age (months since registration)
-- Number of operators changed
-- Phone activity pattern (calls/SMS frequency)
-- Data usage consistency
-- Mobile money transaction count
-- Mobile money transaction volume
-- Airtime purchase consistency
-- International roaming history
+For **digital loans**, Component 6 (Org Verification, 200 pts) is added by redistributing
+weight from Mobile Money (200→100) and External Credit (150→50).
 
-**2. Identity Features** (5):
-- National ID validation status
-- Age (derived from DOB)
-- Address stability (months at current address)
-- Reference quality score
-- KYC confidence score
+### Safety Mechanisms
 
-**3. Financial Behavior** (10):
-- Declared monthly income
-- Income verification score
-- Employment type (formal/informal)
-- Income consistency (variance)
-- Savings account age
-- Average account balance
-- Mobile money balance trend
-- Bill payment history
-- Loan repayment history (if any)
-- Debt-to-income ratio
+- **No dangerous defaults**: Missing required fields (income, loan amount, household size)
+  trigger a fail-fast error — the customer is asked to restart.
+- **KYC rejection**: If no KYC submission exists, scoring is blocked entirely.
+- **National ID deduplication**: Returning customers are matched by national ID (not just phone),
+  ensuring loan history follows the person across phone number changes.
 
-**4. Social Network** (7):
-- Number of references provided
-- Reference phone age
-- Reference credit scores
-- Social media presence
-- Community group membership
-- Distributor referral quality
-- WhatsApp profile completeness
+### Credit Tiers (Source of Truth: Fineract Product Config)
 
-**5. Location Features** (5):
-- Geographic risk score
-- Urban vs rural
-- Distance to distributor
-- Cell tower stability
-- GPS consistency
+| Tier | Score Range | Credit Limit | Down Payment | APR | Allowed Terms |
+|------|------------|-------------|-------------|-----|---------------|
+| **Tier 1** | 300 - 499 | $200 | 30% | 5% | 3, 6 months |
+| **Tier 2** | 500 - 649 | $500 | 20% | 4% | 3, 6, 9 months |
+| **Tier 3** | 650 - 850 | $2,000 | 10% | 3% | 3, 6, 9, 12 months |
 
-### ML Model
-
-**Algorithm**: Random Forest Classifier
-**Training Data**: 10,000+ loan applications
-**Features**: 35 engineered features
-**Target**: Probability of default (0-1)
-
-**Model Performance**:
-- Accuracy: 87%
-- Precision: 82%
-- Recall: 84%
-- AUC-ROC: 0.91
-- F1 Score: 0.83
-
-**Score Calculation**:
-```python
-def calculate_credit_score(features):
-    # ML prediction (0-1000 scale)
-    ml_score = model.predict_proba(features)[1] * 1000
-
-    # Rule-based adjustments
-    if features['phone_age_months'] < 6:
-        ml_score -= 50  # Penalty for new phone
-
-    if features['references_count'] >= 3:
-        ml_score += 20  # Bonus for strong references
-
-    if features['kyc_confidence'] > 0.95:
-        ml_score += 30  # Bonus for high KYC confidence
-
-    # Clamp to 300-900 range
-    final_score = max(300, min(900, ml_score))
-
-    return final_score
+**Repayment calculation**: Declining balance (amortized)
+```
+M = P x [r(1+r)^n] / [(1+r)^n - 1]
+where P = principal (amount - deposit), r = APR/100/12, n = term in months
 ```
 
-### Credit Tiers
-
-```typescript
-interface CreditTier {
-  name: string;
-  scoreRange: [number, number];
-  maxLoanAmount: number;
-  interestRate: number;
-  termMonths: number;
-}
-
-const CREDIT_TIERS: CreditTier[] = [
-  {
-    name: 'tier_1',
-    scoreRange: [650, 699],
-    maxLoanAmount: 250,
-    interestRate: 30,
-    termMonths: 6
-  },
-  {
-    name: 'tier_2',
-    scoreRange: [700, 799],
-    maxLoanAmount: 350,
-    interestRate: 30,
-    termMonths: 8
-  },
-  {
-    name: 'tier_3',
-    scoreRange: [800, 900],
-    maxLoanAmount: 500,
-    interestRate: 25,
-    termMonths: 12
-  }
-];
-```
+**No reject tier**: `scaled_score = 300 + (raw/1000)*550` guarantees minimum 300.
+All customers get at least Tier 1.
 
 ---
 
@@ -374,7 +314,7 @@ const CREDIT_TIERS: CreditTier[] = [
 ### EcoCash Integration
 
 ```
-Customer          EcoCash          Payment Service    Supabase          Lock Service
+Customer          EcoCash          Payment Service    RDS DB            Lock Service
    │                 │                    │                │                  │
    │──Pay via USSD───▶│                    │                │                  │
    │   *151*2*1*...   │                    │                │                  │
@@ -410,7 +350,7 @@ async function verifyPayment(webhookData: EcoCashWebhook) {
   if (!isValid) throw new Error('Invalid webhook signature');
 
   // 2. Check for duplicate processing
-  const existingPayment = await supabase
+  const existingPayment = await db
     .from('payments')
     .select('id')
     .eq('external_reference', webhookData.transaction_id)
@@ -469,7 +409,7 @@ async function verifyPayment(webhookData: EcoCashWebhook) {
 ```typescript
 async function reconcilePayments() {
   // 1. Get all payments from last 24 hours
-  const recentPayments = await supabase
+  const recentPayments = await db
     .from('payments')
     .select('*')
     .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000));
@@ -520,7 +460,7 @@ async function reconcilePayments() {
 ```typescript
 // Run daily job to check for overdue payments
 async function checkOverdueLoans() {
-  const overdueLoans = await supabase
+  const overdueLoans = await db
     .from('loans')
     .select('*, customer:customers(*)')
     .eq('status', 'active')
@@ -586,7 +526,7 @@ async function lockDevice(loan: Loan) {
     const result = await response.json();
 
     // 4. Record lock in database
-    await supabase.from('device_locks').insert({
+    await db.from('device_locks').insert({
       device_id: loan.device_id,
       loan_id: loan.id,
       customer_id: loan.customer_id,
@@ -598,7 +538,7 @@ async function lockDevice(loan: Loan) {
     });
 
     // 5. Update loan
-    await supabase
+    await db
       .from('loans')
       .update({ device_locked: true, locked_at: new Date() })
       .eq('id', loan.id);
@@ -634,7 +574,7 @@ async function lockDevice(loan: Loan) {
 ```typescript
 async function unlockDevice(deviceId: string, reason: string) {
   // 1. Get lock record
-  const lock = await supabase
+  const lock = await db
     .from('device_locks')
     .select('*, loan:loans(*, customer:customers(*))')
     .eq('device_id', deviceId)
@@ -664,7 +604,7 @@ async function unlockDevice(deviceId: string, reason: string) {
   }
 
   // 3. Update database
-  await supabase
+  await db
     .from('device_locks')
     .update({
       lock_status: 'unlocked',
@@ -673,7 +613,7 @@ async function unlockDevice(deviceId: string, reason: string) {
     })
     .eq('id', lock.id);
 
-  await supabase
+  await db
     .from('loans')
     .update({ device_locked: false })
     .eq('id', lock.loan_id);
@@ -745,7 +685,7 @@ const NOTIFICATION_CONFIGS: Record<string, NotificationConfig> = {
 async function scheduleReminders() {
   // Run daily to schedule upcoming reminders
 
-  const upcomingPayments = await supabase
+  const upcomingPayments = await db
     .from('loans')
     .select('*, customer:customers(*)')
     .eq('status', 'active')
@@ -774,11 +714,10 @@ async function scheduleReminders() {
 ### Dashboard Features
 
 **1. Loan Management**:
-- View all loans (active, pending, completed, defaulted)
-- Manual approval/rejection
-- Adjust loan terms
+- View all loans (approved, paid_deposit, active, completed, defaulted)
 - Force device lock/unlock
 - Record manual payments
+- Fineract sync status per loan
 
 **2. Customer Management**:
 - View customer profiles
@@ -794,9 +733,8 @@ async function scheduleReminders() {
 - Device lock effectiveness
 - Revenue projections
 
-**4. Manual Review Queue**:
-- Borderline credit applications
-- KYC verification issues
+**4. Operations Queue**:
+- KYC verification issues (DIDIT manual review cases)
 - Payment discrepancies
 - Device lock failures
 - Customer disputes
@@ -920,5 +858,5 @@ class CircuitBreaker {
 
 ---
 
-**Last Updated**: 2025-12-09
-**Version**: 1.0
+**Last Updated**: 2026-03-04
+**Version**: 2.0
