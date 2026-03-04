@@ -48,25 +48,43 @@ export async function processKYCResult(
     updateData.manual_review_required = true;
   }
 
-  await db
+  const { error: updateError } = await db
     .from('kyc_submissions')
     .update(updateData)
     .eq('id', submissionId)
     .execute();
 
+  if (updateError) {
+    logger.error('Failed to update KYC submission', {
+      action: 'kyc.decision',
+      status: 'failed',
+      customerId,
+      submissionId,
+      errorMessage: updateError.message,
+    });
+  }
+
   // Update customer KYC status
   if (decision === 'APPROVED') {
-    await db
+    const { error: customerError } = await db
       .from('customers')
       .update({
         kyc_status: 'verified',
         kyc_verified_at: new Date().toISOString(),
-        full_name: result.id_info.full_name,
         date_of_birth: result.id_info.date_of_birth,
         gender: result.id_info.gender === 'M' ? 'male' : 'female'
       })
       .eq('id', customerId)
       .execute();
+
+    if (customerError) {
+      logger.error('Failed to update customer KYC status', {
+        action: 'kyc.customer-update',
+        status: 'failed',
+        customerId,
+        errorMessage: customerError.message,
+      });
+    }
 
     logger.info(`Customer ${customerId} KYC approved via ${result.provider}`, {
       action: 'kyc.approved',

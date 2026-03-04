@@ -62,7 +62,7 @@ export const handleInitiateKYC: RouteHandler = async (event, _params, _auth) => 
       .select('*')
       .eq('customer_id', customer_id)
       .in('status', ['pending', 'verified'])
-      .order('created_at', { ascending: false })
+      .order('submitted_at', { ascending: false })
       .limit(1)
       .single()
       .execute();

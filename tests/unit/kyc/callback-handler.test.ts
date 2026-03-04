@@ -415,7 +415,6 @@ describe('KYC Callback Handler - processKYCResult + sendKYCResultNotification', 
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           kyc_status: 'verified',
-          full_name: 'John Moyo',
           date_of_birth: '1990-05-15',
           gender: 'male',
         })

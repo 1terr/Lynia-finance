@@ -24,7 +24,7 @@ export const handleGetKYCStatus: RouteHandler = async (event, params, _auth) => 
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customerId)
-      .order('created_at', { ascending: false })
+      .order('submitted_at', { ascending: false })
       .limit(1)
       .single()
       .execute();

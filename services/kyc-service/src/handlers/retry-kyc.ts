@@ -25,7 +25,7 @@ export const handleRetryKYC: RouteHandler = async (event, _params, _auth) => {
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customer_id)
-      .order('created_at', { ascending: false })
+      .order('submitted_at', { ascending: false })
       .execute();
 
     if (!submissions || submissions.length === 0) {

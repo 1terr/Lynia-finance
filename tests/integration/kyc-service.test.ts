@@ -714,7 +714,6 @@ describe('KYC Service Integration Tests', () => {
       expect(mockQueryBuilder.update).toHaveBeenCalledWith(
         expect.objectContaining({
           kyc_status: 'verified',
-          full_name: 'John Moyo',
           date_of_birth: '1990-05-15',
           gender: 'male',
         }),
@@ -945,7 +944,7 @@ describe('KYC Service Integration Tests', () => {
       expect(body).toHaveProperty('manual_review_required', true);
     });
 
-    it('should query kyc_submissions ordered by created_at descending', async () => {
+    it('should query kyc_submissions ordered by submitted_at descending', async () => {
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
         error: { code: 'PGRST116', message: 'No rows found' },
@@ -960,7 +959,7 @@ describe('KYC Service Integration Tests', () => {
 
       expect(mockDb.from).toHaveBeenCalledWith('kyc_submissions');
       expect(mockQueryBuilder.eq).toHaveBeenCalledWith('customer_id', 'cust_001');
-      expect(mockQueryBuilder.order).toHaveBeenCalledWith('created_at', { ascending: false });
+      expect(mockQueryBuilder.order).toHaveBeenCalledWith('submitted_at', { ascending: false });
     });
   });
 
