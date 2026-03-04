@@ -2,14 +2,49 @@
  * WhatsApp Onboarding - Credit Scoring State Handler
  *
  * Calls the scoring service and presents results to the customer.
+ * On approval, fetches available devices from DB and transitions to device_selection.
  */
 
-import { db } from '../../../../shared/clients/database';
+import { db, query } from '../../../../shared/clients/database';
 import axios from 'axios';
 import { logger } from '../../../../shared/utils/logger';
 import { t, type SupportedLanguage } from '../../i18n';
 import { updateSession } from '../session';
 import type { OnboardingSession, MessageContext } from '../types';
+
+interface DeviceRow {
+  id: string;
+  brand: string;
+  model_name: string;
+  retail_price_usd: number;
+}
+
+/**
+ * Fetch active devices with stock, within the customer's credit limit.
+ */
+async function fetchAvailableDevices(creditLimitUsd: number): Promise<DeviceRow[]> {
+  const { data, error } = await query<DeviceRow>(
+    `SELECT id, brand, model_name, retail_price_usd
+     FROM device_models
+     WHERE retail_price_usd <= $1
+       AND is_active = true
+       AND deleted_at IS NULL
+       AND available_stock > 0
+     ORDER BY retail_price_usd ASC`,
+    [creditLimitUsd]
+  );
+
+  if (error) {
+    logger.error('Failed to fetch device models', {
+      action: 'devices.fetch',
+      status: 'failed',
+      meta: { error: error.message },
+    });
+    return [];
+  }
+
+  return data;
+}
 
 /**
  * Handle CREDIT_SCORING state
@@ -18,7 +53,6 @@ export async function handleCreditScoring(
   session: OnboardingSession,
   context: MessageContext
 ): Promise<string> {
-  // Call credit scoring service
   try {
     // Fetch real KYC data from the latest submission
     const { data: kycSubmission } = await db
@@ -51,71 +85,106 @@ export async function handleCreditScoring(
       }
     };
 
-    // Call scoring service (when deployed)
+    // Call scoring service
     const SCORING_API_URL = process.env.SCORING_API_URL!;
     const response = await axios.post(SCORING_API_URL, scoringPayload);
     const scoreResult = response.data;
 
+    if (scoreResult.decision === 'approve') {
+      // Fetch available devices within credit limit
+      const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd);
+
+      if (devices.length === 0) {
+        // Store scoring result but keep in credit_scoring state
+        await updateSession(context.from, {
+          state_data: {
+            ...session.state_data,
+            credit_score: scoreResult.scaled_score,
+            credit_tier: scoreResult.tier,
+            credit_limit_usd: scoreResult.credit_limit_usd,
+            down_payment_percentage: scoreResult.down_payment_percentage,
+            interest_rate_apr: scoreResult.interest_rate_apr,
+            decision: scoreResult.decision,
+          }
+        });
+
+        return `*Congratulations! You're Approved!*
+
+Credit Limit: $${scoreResult.credit_limit_usd}
+Credit Score: ${scoreResult.scaled_score}/850
+
+However, there are no devices currently available in your price range. We will notify you when new stock arrives.
+
+Contact support@lynia.finance for more information.`;
+      }
+
+      // Store scoring result + devices, transition to device_selection
+      await updateSession(context.from, {
+        current_state: 'device_selection',
+        state_data: {
+          ...session.state_data,
+          credit_score: scoreResult.scaled_score,
+          credit_tier: scoreResult.tier,
+          credit_limit_usd: scoreResult.credit_limit_usd,
+          down_payment_percentage: scoreResult.down_payment_percentage,
+          interest_rate_apr: scoreResult.interest_rate_apr,
+          decision: scoreResult.decision,
+          available_devices: devices,
+        }
+      });
+
+      const deviceList = devices
+        .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
+        .join('\n');
+
+      return `*Congratulations! You're Approved!*
+
+Your Credit Details:
+Loan Limit: $${scoreResult.credit_limit_usd}
+Credit Tier: ${scoreResult.tier}
+Credit Score: ${scoreResult.scaled_score}/850
+
+Choose your smartphone:
+
+${deviceList}
+
+Reply with the number of your choice (e.g. *1*)`;
+    }
+
+    // Store result for non-approval decisions
     await updateSession(context.from, {
-      current_state: 'loan_offer',
       state_data: {
         ...session.state_data,
         credit_score: scoreResult.scaled_score,
         credit_tier: scoreResult.tier,
         credit_limit_usd: scoreResult.credit_limit_usd,
-        down_payment_percentage: scoreResult.down_payment_percentage,
-        interest_rate_apr: scoreResult.interest_rate_apr,
-        decision: scoreResult.decision
+        decision: scoreResult.decision,
       }
     });
 
-    if (scoreResult.decision === 'approve') {
-      return `\uD83C\uDF89 *Congratulations! You're Approved!*
-
-Your Loan Details:
-\uD83D\uDCB0 *Loan Limit:* $${scoreResult.credit_limit_usd}
-\uD83C\uDFC6 *Credit Tier:* ${scoreResult.tier}
-\uD83D\uDCCA *Credit Score:* ${scoreResult.scaled_score}/850
-
-You can now choose a smartphone up to $${scoreResult.credit_limit_usd}.
-
-\uD83D\uDCF1 *Available Devices:*
-\u2022 Samsung A15 - $180
-\u2022 Tecno Spark 20 - $150
-\u2022 Infinix Note 30 - $195
-
-*Payment Plan:*
-\u2022 6 months installments
-\u2022 ${scoreResult.down_payment_percentage}% down payment
-\u2022 ${scoreResult.interest_rate_apr}% APR
-
-Ready to continue?
-Reply *Yes* to see loan terms`;
-    }
-
     if (scoreResult.decision === 'review') {
-      return `\u23F8\uFE0F *Manual Review Required*
+      return `*Manual Review Required*
 
 We need to manually review your application. This takes up to 24 hours.
 
 You'll receive a WhatsApp message when ready.
 
 Our team will review:
-\u2022 Income information
-\u2022 Identity verification
-\u2022 Eligibility criteria
+- Income information
+- Identity verification
+- Eligibility criteria
 
 Usually takes 2-12 hours.`;
     }
 
-    return `\u274C *Application Not Approved*
+    return `*Application Not Approved*
 
 Unfortunately, we cannot approve your application at this time.
 
 Possible reasons:
-\u2022 Income below minimum threshold
-\u2022 Debt-to-income ratio too high
-\u2022 Incomplete information
+- Income below minimum threshold
+- Debt-to-income ratio too high
+- Incomplete information
 
 You can try again in 30 days or contact support: support@lynia.finance`;
 

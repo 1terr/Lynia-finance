@@ -9,9 +9,9 @@ import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db } from '../../../shared/clients/database';
 import { getSecurityHeaders } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
-import { syncCustomerToFineract, syncLoanToFineract, approveLoanInFineract } from '../../../shared/clients/fineract-sync';
+import { syncCustomerToFineract } from '../../../shared/clients/fineract-sync';
 import { calculateRuleBasedScore } from '../scoring/scoring-engine';
-import { CreditScoreInput, CreditScoreResult } from '../scoring/types';
+import { CreditScoreInput } from '../scoring/types';
 
 export const handleCalculateScore: RouteHandler = async (event, _params, _auth) => {
   const body = JSON.parse(event.body || '{}');
@@ -75,17 +75,11 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
     // Continue even if database storage fails
   }
 
-  // Non-blocking: Sync approved customer and loan to Fineract core banking
+  // Non-blocking: Sync approved customer to Fineract core banking.
+  // Loan sync is deferred to post-terms-acceptance (when device + term are selected).
   if (scoreResult.decision === 'approve' && process.env.FINERACT_SECRET_NAME) {
     syncApprovedCustomerToFineract(scoreResult.customer_id).catch((err) => {
       logger.error('Fineract customer sync failed', {
-        action: 'scoring.fineract-sync',
-        status: 'failed',
-        errorMessage: err instanceof Error ? err.message : String(err),
-      });
-    });
-    syncApprovedLoanToFineract(scoreResult.customer_id, scoreResult).catch((err) => {
-      logger.error('Fineract loan sync failed', {
         action: 'scoring.fineract-sync',
         status: 'failed',
         errorMessage: err instanceof Error ? err.message : String(err),
@@ -136,89 +130,7 @@ async function syncApprovedCustomerToFineract(customerId: string): Promise<void>
   }
 }
 
-/**
- * Sync an approved loan to Fineract core banking.
- * Non-blocking: errors are logged but never propagate to the caller.
- * If Fineract is down or the loan doesn't exist yet, the reconciliation job will retry.
- */
-async function syncApprovedLoanToFineract(customerId: string, scoreResult: CreditScoreResult): Promise<void> {
-  try {
-    const { data: customer } = await db
-      .from('customers')
-      .select('id, fineract_client_id')
-      .eq('id', customerId)
-      .single()
-      .execute();
-
-    if (!customer?.fineract_client_id) return;
-
-    const { data: loan } = await db
-      .from('loans')
-      .select('id, fineract_loan_id, loan_amount_usd, term_months, product_id')
-      .eq('customer_id', customerId)
-      .is('fineract_loan_id', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
-      .execute();
-
-    if (!loan) return;
-
-    // Database-driven Fineract product mapping
-    // Look up fineract_product_id from loan_products table when product_id is available
-    let fineractProductId: number;
-    if (loan.product_id) {
-      try {
-        const { data: loanProduct } = await db
-          .from('loan_products')
-          .select('fineract_product_id, product_category')
-          .eq('id', loan.product_id)
-          .single()
-          .execute();
-
-        if (loanProduct?.fineract_product_id) {
-          fineractProductId = loanProduct.fineract_product_id;
-        } else {
-          // Fallback to tier mapping when fineract_product_id is not set
-          const tierToProductId: Record<string, number> = { 'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3 };
-          fineractProductId = tierToProductId[scoreResult.tier] || 1;
-        }
-      } catch {
-        // Database query failed — fall back to tier mapping for resilience
-        const tierToProductId: Record<string, number> = { 'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3 };
-        fineractProductId = tierToProductId[scoreResult.tier] || 1;
-      }
-    } else {
-      // Backward-compatible fallback for existing loans without product_id
-      // Tier 1 Entry (LT1E) = 1, Tier 2 Standard (LT2S) = 2, Tier 3 Premium (LT3P) = 3
-      const tierToProductId: Record<string, number> = { 'Tier 1': 1, 'Tier 2': 2, 'Tier 3': 3 };
-      fineractProductId = tierToProductId[scoreResult.tier] || 1;
-    }
-
-    const fineractLoanId = await syncLoanToFineract({
-      loanId: loan.id,
-      customerId,
-      fineractClientId: customer.fineract_client_id,
-      fineractProductId,
-      principal: loan.loan_amount_usd || scoreResult.credit_limit_usd,
-      numberOfRepayments: loan.term_months || 6,
-      repaymentEveryMonths: 1,
-      interestRatePerMonth: scoreResult.interest_rate_apr / 12,
-      expectedDisbursementDate: new Date(),
-    });
-
-    if (fineractLoanId) {
-      await approveLoanInFineract({
-        loanId: loan.id,
-        fineractLoanId,
-      });
-    }
-  } catch (error) {
-    logger.error('Fineract loan sync failed', {
-      action: 'scoring.fineract-sync',
-      status: 'failed',
-      errorMessage: error instanceof Error ? error.message : String(error),
-      customerId,
-    });
-  }
-}
+// NOTE: Loan sync to Fineract is now deferred to post-terms-acceptance
+// (when device selection + term selection are finalized in the WhatsApp flow).
+// The reconciliation job handles any missed syncs.
+// See: services/whatsapp-service/src/onboarding/states/loan-offer.ts (handleTermsAcceptance)

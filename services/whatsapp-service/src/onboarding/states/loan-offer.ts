@@ -1,7 +1,8 @@
 /**
- * WhatsApp Onboarding - Loan Offer & Terms Acceptance State Handlers
+ * WhatsApp Onboarding - Loan Summary & Terms Acceptance State Handlers
  *
- * Presents loan offer details and handles terms acceptance flow.
+ * Presents the final loan summary (device-based, declining balance) and
+ * handles terms acceptance flow.
  */
 
 import { db } from '../../../../shared/clients/database';
@@ -9,50 +10,89 @@ import { updateSession } from '../session';
 import type { OnboardingSession, MessageContext } from '../types';
 
 /**
- * Handle LOAN_OFFER state
+ * Handle LOAN_SUMMARY state (and legacy LOAN_OFFER state for in-flight sessions).
+ *
+ * The customer has already seen the summary in the term_selection response.
+ * Here we handle their Yes/Back responses.
  */
-export async function handleLoanOffer(
+export async function handleLoanSummary(
   session: OnboardingSession,
   context: MessageContext
 ): Promise<string> {
   const message = context.message.trim().toLowerCase();
 
-  if (message.includes('yes') || message.includes('continue')) {
+  // "Back" — return to credit_scoring which will re-show device list
+  if (message === 'back' || message.includes('change')) {
+    await updateSession(context.from, {
+      current_state: 'credit_scoring',
+      state_data: {
+        ...session.state_data,
+        selected_device_id: undefined,
+        selected_device_price: undefined,
+        selected_device_name: undefined,
+        selected_term_months: undefined,
+        monthly_payment: undefined,
+        total_repayment: undefined,
+        financed_amount: undefined,
+        deposit_amount: undefined,
+        available_devices: undefined,
+        allowed_terms: undefined,
+      }
+    });
+
+    return 'No problem! Let\'s start again.\n\nReply with any message to see the available devices.';
+  }
+
+  if (message.includes('yes') || message.includes('continue') || message.includes('accept')) {
     await updateSession(context.from, {
       current_state: 'terms_acceptance'
     });
 
-    const creditLimit = session.state_data.credit_limit_usd || 200;
-    const downPaymentPct = session.state_data.down_payment_percentage || 20;
+    const deviceName = session.state_data.selected_device_name || 'Smartphone';
+    const depositAmt = session.state_data.deposit_amount || 0;
+    const termMonths = session.state_data.selected_term_months || 6;
     const interestRate = session.state_data.interest_rate_apr || 4;
-    const downPayment = Math.round(creditLimit * (downPaymentPct / 100));
-    const financed = creditLimit - downPayment;
-    const monthlyPayment = Math.round((financed * (1 + interestRate / 100)) / 6);
+    const monthlyPayment = session.state_data.monthly_payment || 0;
+    const downPct = session.state_data.down_payment_percentage || 20;
 
-    return `\uD83D\uDCC4 *Loan Terms & Conditions*
+    return `*Loan Terms & Conditions*
 
-Before we proceed, please review:
+Please review before accepting:
 
-1. You'll make 6-12 monthly payments
-2. Device will be locked if payment is missed
-3. Device unlocks after final payment
-4. No early repayment penalties
-5. ${downPaymentPct}% down payment required
-
-*Your Loan Details:*
-\u2022 Maximum: $${creditLimit}
-\u2022 Term: 6-12 months
-\u2022 Interest rate: ${interestRate}% APR
-\u2022 Monthly payment: ~$${monthlyPayment}
-\u2022 Down payment: $${downPayment} (${downPaymentPct}%)
+1. Device: ${deviceName}
+2. You will make ${termMonths} monthly payments of $${monthlyPayment.toFixed(2)}
+3. Deposit of $${depositAmt.toFixed(2)} (${downPct}%) required before collection
+4. Device will be locked if payment is missed
+5. Device unlocks permanently after final payment
+6. No early repayment penalties
+7. Interest rate: ${interestRate}% APR (declining balance)
 
 Do you accept these terms?
 
 Reply *I Accept* to continue`;
   }
 
-  return `Please reply *Yes* to continue with your loan application.`;
+  // Unrecognized input — re-show summary
+  const deviceName = session.state_data.selected_device_name || 'Selected device';
+  const devicePrice = session.state_data.selected_device_price || 0;
+  const depositAmt = session.state_data.deposit_amount || 0;
+  const financedAmt = session.state_data.financed_amount || 0;
+  const termMonths = session.state_data.selected_term_months || 6;
+  const monthlyPayment = session.state_data.monthly_payment || 0;
+
+  return `*Your Loan Summary*
+
+Device: ${deviceName} ($${devicePrice.toFixed(2)})
+Deposit: $${depositAmt.toFixed(2)}
+Financed: $${financedAmt.toFixed(2)}
+Term: ${termMonths} months
+Monthly Payment: *$${monthlyPayment.toFixed(2)}*
+
+Reply *Yes* to accept or *Back* to change your selection.`;
 }
+
+// Backward compatibility alias for in-flight sessions
+export const handleLoanOffer = handleLoanSummary;
 
 /**
  * Handle TERMS_ACCEPTANCE state
@@ -80,38 +120,38 @@ export async function handleTermsAcceptance(
       }
     });
 
-    const depositPct = session.state_data.down_payment_percentage || 20;
-    const creditLimitVal = session.state_data.credit_limit_usd || 200;
-    const depositAmount = Math.round(creditLimitVal * (depositPct / 100));
+    const depositAmount = session.state_data.deposit_amount || 0;
+    const deviceName = session.state_data.selected_device_name || 'your device';
+    const termMonths = session.state_data.selected_term_months || 6;
+    const monthlyPayment = session.state_data.monthly_payment || 0;
 
-    return `\u2705 *Application Approved!*
+    return `*Application Approved!*
 
-Congratulations! Your loan application is approved.
+Congratulations! Your loan for ${deviceName} is approved.
 
 *Step 1: Pay Your Deposit*
-\uD83D\uDCB5 Amount: $${depositAmount} USD (${depositPct}% of $${creditLimitVal})
+Amount: $${depositAmount.toFixed(2)}
 
 *How to pay:*
-\u2022 EcoCash: Dial *151*2*1# and pay to merchant code *LYNIA*
-\u2022 OneMoney: Dial *111# and pay to merchant *LYNIA*
-\u2022 InnBucks: Send to LYNIA in the InnBucks app
+- EcoCash: Dial *151*2*1# and pay to merchant code *LYNIA*
+- OneMoney: Dial *111# and pay to merchant *LYNIA*
+- InnBucks: Send to LYNIA in the InnBucks app
 
 Use your phone number as reference.
 
 *Step 2: Visit a Distributor (after deposit is confirmed)*
-We'll send you a confirmation message once your deposit is received. Then visit:
+We will send you a confirmation once your deposit is received.
 
-\uD83D\uDCCD *Tech Hub Harare*
-   123 Jason Moyo Ave, Harare
-   Mon-Sat, 9am-6pm
+*Your Payment Plan:*
+${termMonths} monthly payments of $${monthlyPayment.toFixed(2)}
 
 *What to bring:*
-\u2705 Your National ID
-\u2705 This phone (for verification)
-\u2705 Deposit payment confirmation
+- Your National ID
+- This phone (for verification)
+- Deposit payment confirmation
 
-Welcome to Lynia Finance! \uD83C\uDF89`;
+Welcome to Lynia Finance!`;
   }
 
-  return `Please reply *I Accept* to accept the loan terms and complete your application.`;
+  return 'Please reply *I Accept* to accept the loan terms and complete your application.';
 }

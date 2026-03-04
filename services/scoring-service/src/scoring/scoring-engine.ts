@@ -17,6 +17,7 @@ import {
   CreditScoreInput,
   CreditScoreResult,
 } from './types';
+import { calculateDecliningBalancePayment } from '../../../shared/utils/loan-calculator';
 
 // ===================================================================
 // SCORING FUNCTIONS - 5 COMPONENTS
@@ -29,9 +30,14 @@ import {
  * Uses debt-to-income ratio as primary metric.
  */
 export function scoreAffordability(data: AffordabilityData): number {
-  const loanTerm = 6; // months
-  const estimatedInterestRate = 0.05; // 5% APR (Fineract Tier 1 midpoint)
-  const monthlyInstallment = (data.requested_loan_amount * (1 + estimatedInterestRate)) / loanTerm;
+  // Use 12-month term for conservative affordability estimate — the customer
+  // selects their actual term after approval. Longer term = lower monthly
+  // payment = more generous DTI ratio, avoiding false rejections.
+  const { monthlyPayment: monthlyInstallment } = calculateDecliningBalancePayment({
+    principal: data.requested_loan_amount,
+    annualRatePercent: 5, // Worst-case APR (Tier 1)
+    termMonths: 12,
+  });
 
   // 1. Debt-to-Income Ratio (150 points max)
   const totalMonthlyObligations = data.existing_debt_obligations_usd + monthlyInstallment;

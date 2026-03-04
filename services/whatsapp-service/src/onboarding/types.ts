@@ -24,6 +24,9 @@ export type OnboardingState =
   | 'kyc_selfie_upload'
   | 'kyc_processing'
   | 'credit_scoring'
+  | 'device_selection'
+  | 'term_selection'
+  | 'loan_summary'
   | 'loan_offer'
   | 'terms_acceptance'
   | 'completed'
@@ -65,7 +68,30 @@ export interface OnboardingSession {
     credit_score?: number;
     credit_tier?: string;
     credit_limit_usd?: number;
+    down_payment_percentage?: number;
+    interest_rate_apr?: number;
     decision?: 'approve' | 'review' | 'reject';
+
+    // Device selection
+    available_devices?: Array<{
+      id: string;
+      brand: string;
+      model_name: string;
+      retail_price_usd: number;
+    }>;
+    selected_device_id?: string;
+    selected_device_price?: number;
+    selected_device_name?: string;
+
+    // Term selection
+    selected_term_months?: number;
+    allowed_terms?: number[];
+
+    // Loan calculation
+    monthly_payment?: number;
+    total_repayment?: number;
+    financed_amount?: number;
+    deposit_amount?: number;
 
     // Tracking
     retry_count?: number;

@@ -1,7 +1,7 @@
 /**
  * WhatsApp Onboarding - State Machine Router
  *
- * 8-Step Onboarding Process:
+ * 11-Step Onboarding Process:
  * 1. Welcome & Language Selection
  * 2. Zimbabwe Phone Validation
  * 3. Personal Information Collection
@@ -9,7 +9,10 @@
  * 5. Product Selection
  * 6. KYC Document Upload
  * 7. Credit Scoring
- * 8. Loan Terms Acceptance
+ * 8. Device Selection
+ * 9. Term Selection
+ * 10. Loan Summary
+ * 11. Terms Acceptance
  *
  * Decomposed from the original onboarding monolith into modular state handlers.
  */
@@ -22,7 +25,9 @@ import { handleEmployment } from './states/employment-info';
 import { handleProductSelection } from './states/product-selection';
 import { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
 import { handleCreditScoring } from './states/credit-scoring';
-import { handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
+import { handleDeviceSelection } from './states/device-selection';
+import { handleTermSelection } from './states/term-selection';
+import { handleLoanSummary, handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
 import handleKYCProcessing from './states/kyc-processing';
 import type { MessageContext } from './types';
 
@@ -77,6 +82,16 @@ export async function routeOnboardingMessage(
       case 'credit_scoring':
         return handleCreditScoring(session, context);
 
+      case 'device_selection':
+        return handleDeviceSelection(session, context);
+
+      case 'term_selection':
+        return handleTermSelection(session, context);
+
+      case 'loan_summary':
+        return handleLoanSummary(session, context);
+
+      // Backward compat for in-flight sessions
       case 'loan_offer':
         return handleLoanOffer(session, context);
 
@@ -111,5 +126,7 @@ export { handleEmployment } from './states/employment-info';
 export { handleProductSelection } from './states/product-selection';
 export { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
 export { handleCreditScoring } from './states/credit-scoring';
-export { handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
+export { handleDeviceSelection } from './states/device-selection';
+export { handleTermSelection } from './states/term-selection';
+export { handleLoanSummary, handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
 export { resumeOnboardingAfterKYC } from './states/kyc-processing';
