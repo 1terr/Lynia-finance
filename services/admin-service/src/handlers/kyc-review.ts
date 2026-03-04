@@ -50,7 +50,7 @@ export const handleGetKYCPending: RouteHandler = async (event, _params, auth) =>
       ks.submitted_at AS created_at,
       ks.submitted_at AS updated_at,
       c.id AS customer__id,
-      c.full_name AS customer__full_name,
+      CONCAT(c.first_name, ' ', c.last_name) AS customer__full_name,
       c.phone_number AS customer__phone_number
     FROM kyc_submissions ks
     LEFT JOIN customers c ON c.id = ks.customer_id
@@ -118,7 +118,7 @@ export const handleGetKYCReviewHistory: RouteHandler = async (event, _params, au
       ks.status,
       ks.submitted_at AS created_at,
       COALESCE(ks.verified_at, ks.rejected_at, ks.submitted_at) AS updated_at,
-      c.full_name AS customer__full_name,
+      CONCAT(c.first_name, ' ', c.last_name) AS customer__full_name,
       c.phone_number AS customer__phone_number
     FROM kyc_submissions ks
     LEFT JOIN customers c ON c.id = ks.customer_id
