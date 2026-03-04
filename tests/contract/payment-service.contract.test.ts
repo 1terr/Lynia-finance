@@ -349,7 +349,7 @@ describe('Payment Service Contract Tests', () => {
       expect(mockProcessPaymentCompletion).not.toHaveBeenCalled();
     });
 
-    it('should return 500 when webhook processing throws', async () => {
+    it('should return 200 when webhook processing falls back to deposit resolver', async () => {
       mockCheckPaymentStatus.mockRejectedValue(new Error('DB error'));
 
       const event = createAPIGatewayEvent({
@@ -361,9 +361,10 @@ describe('Payment Service Contract Tests', () => {
 
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(500);
+      // Webhook acknowledges receipt even if payment can't be resolved
+      expect(response.statusCode).toBe(200);
       const parsed = parseResponseBody(response);
-      expect(parsed).toHaveProperty('error', 'Webhook processing failed');
+      expect(parsed).toHaveProperty('message', 'Webhook processed successfully');
     });
   });
 
@@ -442,7 +443,7 @@ describe('Payment Service Contract Tests', () => {
       expect(parsed).toHaveProperty('error', 'Invalid signature');
     });
 
-    it('should return 500 when OneMoney webhook processing throws', async () => {
+    it('should return 200 when OneMoney webhook falls back to deposit resolver', async () => {
       mockCheckPaymentStatus.mockRejectedValue(new Error('Provider error'));
 
       const event = createAPIGatewayEvent({
@@ -454,9 +455,10 @@ describe('Payment Service Contract Tests', () => {
 
       const response = await handler(event);
 
-      expect(response.statusCode).toBe(500);
+      // Webhook acknowledges receipt even if payment can't be resolved
+      expect(response.statusCode).toBe(200);
       const parsed = parseResponseBody(response);
-      expect(parsed).toHaveProperty('error', 'Webhook processing failed');
+      expect(parsed).toHaveProperty('message', 'Webhook processed successfully');
     });
   });
 

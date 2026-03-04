@@ -153,7 +153,7 @@ function parseBody(response: { body: string }) {
 // ── Setup ─────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  jest.clearAllMocks();
+  jest.resetAllMocks();
   mockGetAuthContext.mockReturnValue({
     userId: 'user-1',
     email: 'test@test.com',
@@ -442,9 +442,11 @@ describe('POST /api/v1/distributor/handovers', () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1', user_id: 'user-1' }, error: null });
     // loan check query
     (query as jest.Mock)
-      .mockResolvedValueOnce({ data: [{ id: 'loan-1', status: 'approved', loan_amount_usd: 200 }] })
+      .mockResolvedValueOnce({ data: [{ id: 'loan-1', status: 'paid_deposit', loan_amount_usd: 200 }] })
       // existing handover check
-      .mockResolvedValueOnce({ data: [] });
+      .mockResolvedValueOnce({ data: [] })
+      // deposit verification check
+      .mockResolvedValueOnce({ data: [{ id: 'pay-1', status: 'completed' }] });
     // db.insert (create handover record)
     mockExecute.mockResolvedValueOnce({ data: { id: 'h-new' }, error: null });
 
@@ -453,6 +455,9 @@ describe('POST /api/v1/distributor/handovers', () => {
       loan_id: 'loan-1',
       commission: { amount: 50, percentage: 5 },
     });
+
+    // query for next_payment_date after completion
+    (query as jest.Mock).mockResolvedValueOnce({ data: [{ next_payment_date: '2026-04-04' }] });
 
     const event = createEvent({
       httpMethod: 'POST',
@@ -498,7 +503,7 @@ describe('POST /api/v1/distributor/handovers', () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1', user_id: 'user-1' }, error: null });
     // loan check
     (query as jest.Mock)
-      .mockResolvedValueOnce({ data: [{ id: 'loan-1', status: 'approved', loan_amount_usd: 200 }] })
+      .mockResolvedValueOnce({ data: [{ id: 'loan-1', status: 'paid_deposit', loan_amount_usd: 200 }] })
       // existing handover check — already exists
       .mockResolvedValueOnce({ data: [{ id: 'h-existing' }] });
 

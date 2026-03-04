@@ -273,10 +273,10 @@ describe('calculateRuleBasedScore', () => {
     expect(result.interest_rate_apr).toBe(5);
   });
 
-  // Lowest possible score still gets Tier 1 (review/reject removed)
-  it('scaled_score in 300-349 still produces Tier 1 (no review/reject)', async () => {
+  // Lowest possible score below threshold gets rejected
+  it('scaled_score in 300-349 is rejected (below minimum threshold of 350)', async () => {
     // Worst-case scores across all components
-    // raw = ~70, scaled = ~339 -> Tier 1 (< 500)
+    // raw = ~70, scaled = ~339 -> Below Minimum (< 350)
     const result = await calculateRuleBasedScore(
       buildInput({
         monthly_income_usd: 50,
@@ -313,9 +313,9 @@ describe('calculateRuleBasedScore', () => {
     );
     expect(result.scaled_score).toBeGreaterThanOrEqual(300);
     expect(result.scaled_score).toBeLessThan(350);
-    expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 1');
-    expect(result.credit_limit_usd).toBe(200);
+    expect(result.decision).toBe('reject');
+    expect(result.tier).toBe('Below Minimum');
+    expect(result.credit_limit_usd).toBe(0);
   });
 
   // ─── Product category differences ──────────────────────────────

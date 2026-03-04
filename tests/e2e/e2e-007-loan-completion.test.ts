@@ -512,7 +512,7 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
   // Error Scenarios
   // =========================================================================
   describe('Error Scenarios', () => {
-    it('should handle payment webhook database error', async () => {
+    it('should handle payment webhook database error gracefully', async () => {
       mockDb.from.mockImplementation(() => {
         throw new Error('Connection timeout');
       });
@@ -531,9 +531,10 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
 
       const response = await paymentHandler(event);
 
-      expect(response.statusCode).toBe(500);
+      // Webhook acknowledges receipt — deposit resolver handles errors internally
+      expect(response.statusCode).toBe(200);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error');
+      expect(body).toHaveProperty('message', 'Webhook processed successfully');
     });
 
     it('should return 404 for unknown payment route', async () => {
