@@ -6,7 +6,7 @@
  * transitions to loan_summary.
  */
 
-import { db, query } from '../../../../shared/clients/database';
+import { query } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
 import { calculateDecliningBalancePayment } from '../../../../shared/utils/loan-calculator';
 import type { OnboardingSession, MessageContext } from '../types';

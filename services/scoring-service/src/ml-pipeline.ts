@@ -308,7 +308,7 @@ export function scoreCustomer(
 
   // Determine tier and decision
   let tier: string;
-  const decision: 'approve' = 'approve';
+  const decision = 'approve' as const;
 
   if (clampedScore >= 650) {
     tier = 'Tier 3';

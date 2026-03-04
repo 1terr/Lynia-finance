@@ -370,7 +370,7 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
   // Determine decision based on scaled score (300-850)
   // Thresholds aligned with Fineract product configuration (source of truth)
   // Everyone is approved — only KYC failure blocks progression (handled upstream)
-  const decision: 'approve' = 'approve';
+  const decision = 'approve' as const;
   let credit_limit_usd = 0;
   let tier = '';
   let down_payment_percentage = 0;
