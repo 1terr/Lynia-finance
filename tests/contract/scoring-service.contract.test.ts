@@ -577,7 +577,7 @@ describe('Scoring Service Contract Tests', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'phone_number is required');
+      expect(body).toHaveProperty('error', 'national_id is required');
     });
 
     it('should return found: false when member not found', async () => {
@@ -586,7 +586,7 @@ describe('Scoring Service Contract Tests', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',
-        body: JSON.stringify({ phone_number: '+263770000000' }),
+        body: JSON.stringify({ national_id: '63-0000000A00' }),
       });
 
       const response = await handler(event);
@@ -629,7 +629,7 @@ describe('Scoring Service Contract Tests', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',
-        body: JSON.stringify({ phone_number: '+263771234567' }),
+        body: JSON.stringify({ national_id: '63-2345678B08' }),
       });
 
       const response = await handler(event);
@@ -670,7 +670,7 @@ describe('Scoring Service Contract Tests', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',
-        body: JSON.stringify({ phone_number: '+263771111111' }),
+        body: JSON.stringify({ national_id: '63-1111111A11' }),
       });
 
       const response = await handler(event);
@@ -686,7 +686,7 @@ describe('Scoring Service Contract Tests', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',
-        body: JSON.stringify({ phone_number: '+263771234567' }),
+        body: JSON.stringify({ national_id: '63-2345678B08' }),
       });
 
       const response = await handler(event);

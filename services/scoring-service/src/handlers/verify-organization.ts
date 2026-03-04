@@ -1,7 +1,7 @@
 /**
  * POST /scoring/verify-organization
  *
- * Look up a customer's organization membership by phone number.
+ * Look up a customer's organization membership by national ID.
  * Called before /scoring/calculate to retrieve org verification data.
  */
 
@@ -9,23 +9,26 @@ import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db } from '../../../shared/clients/database';
 import { getSecurityHeaders } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
+import { hashNationalId } from '../../../shared/utils/crypto';
 
 export const handleVerifyOrganization: RouteHandler = async (event, _params, _auth) => {
   const body = JSON.parse(event.body || '{}');
 
-  if (!body.phone_number) {
+  if (!body.national_id) {
     return {
       statusCode: 400,
-      body: JSON.stringify({ error: 'phone_number is required' }),
+      body: JSON.stringify({ error: 'national_id is required' }),
       headers: getSecurityHeaders(event)
     };
   }
 
   try {
+    const idHash = hashNationalId(body.national_id);
+
     const { data: member, error } = await db
       .from('organization_members')
       .select('organization_id, employment_status, employment_start_date, salary_verified, monthly_salary_usd, customer_id')
-      .eq('phone_number', body.phone_number)
+      .eq('national_id_hash', idHash)
       .limit(1)
       .single()
       .execute();

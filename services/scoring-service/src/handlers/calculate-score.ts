@@ -51,7 +51,7 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
         mobile_money_score: scoreResult.components.mobile_money,
         external_credit_score: scoreResult.components.external_credit,
         kyc_verification_score: scoreResult.components.kyc_verification,
-        scoring_data: scoreResult.components,
+        scoring_data: { ...scoreResult.components, employment_type: body.employment_type || null },
         decision: scoreResult.decision,
         credit_tier: scoreResult.tier,
         recommended_limit_usd: scoreResult.credit_limit_usd

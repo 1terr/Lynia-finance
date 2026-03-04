@@ -297,7 +297,7 @@ describe('Loan Products E2E Integration', () => {
   // Organization Verification (Task 9 - E2E Test 5)
   // =========================================================================
   describe('Organization Verification', () => {
-    it('should verify organization membership by phone number', async () => {
+    it('should verify organization membership by national_id', async () => {
       // Mock the DB to return org member data
       mockQueryBuilder.execute
         .mockResolvedValueOnce({
@@ -326,7 +326,7 @@ describe('Loan Products E2E Integration', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',
-        body: JSON.stringify({ phone_number: '+263771234567' }),
+        body: JSON.stringify({ national_id: '63-2345678B08' }),
       });
 
       const response = await handler(event);
@@ -343,7 +343,7 @@ describe('Loan Products E2E Integration', () => {
       expect(body.scoring_trust_level).toBe(90);
     });
 
-    it('should return not found for unregistered phone', async () => {
+    it('should return not found for unregistered national_id', async () => {
       // DB returns no member found
       mockQueryBuilder.execute.mockResolvedValueOnce({
         data: null,
@@ -353,7 +353,7 @@ describe('Loan Products E2E Integration', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',
-        body: JSON.stringify({ phone_number: '+263779999999' }),
+        body: JSON.stringify({ national_id: '63-9999999A99' }),
       });
 
       const response = await handler(event);
@@ -363,7 +363,7 @@ describe('Loan Products E2E Integration', () => {
       expect(body.found).toBe(false);
     });
 
-    it('should reject missing phone number', async () => {
+    it('should reject missing national_id', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/verify-organization',

@@ -74,6 +74,9 @@ export interface CreditScoreInput {
   dependents: number;
   requested_loan_amount: number;
 
+  // Employment context (stored in scoring_data for future scoring use)
+  employment_type?: string;
+
   // Repayment willingness data (nullable for first-time customers)
   previous_loans_count?: number;
   on_time_payment_rate?: number;

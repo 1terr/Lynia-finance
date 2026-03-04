@@ -47,6 +47,59 @@ async function fetchAvailableDevices(creditLimitUsd: number): Promise<DeviceRow[
 }
 
 /**
+ * Fetch repayment history for repeat customers.
+ * Returns metrics from past loans/payments for the scoring engine.
+ */
+async function fetchRepaymentHistory(customerId: string) {
+  try {
+    const { data: loanStats } = await query<{
+      loan_count: string;
+      total_missed: string;
+    }>(
+      `SELECT COUNT(*) as loan_count, COALESCE(SUM(missed_payments_count), 0) as total_missed
+       FROM loans
+       WHERE customer_id = $1
+         AND status IN ('active', 'paid_off', 'defaulted', 'disbursed')`,
+      [customerId]
+    );
+
+    const { data: paymentStats } = await query<{
+      confirmed_payments: string;
+    }>(
+      `SELECT COUNT(*) as confirmed_payments
+       FROM payments
+       WHERE customer_id = $1
+         AND payment_type = 'installment'
+         AND status = 'confirmed'`,
+      [customerId]
+    );
+
+    const loanCount = parseInt(loanStats?.[0]?.loan_count || '0', 10);
+    const totalMissed = parseInt(loanStats?.[0]?.total_missed || '0', 10);
+    const confirmedPayments = parseInt(paymentStats?.[0]?.confirmed_payments || '0', 10);
+
+    const totalPayments = confirmedPayments + totalMissed;
+    const onTimeRate = totalPayments > 0
+      ? Math.min(confirmedPayments / totalPayments, 1)
+      : 0;
+
+    return {
+      previous_loans_count: loanCount,
+      on_time_payment_rate: onTimeRate,
+      bill_payment_consistency: onTimeRate, // Best available proxy
+      communication_response_rate: 0.75,    // Neutral — no WhatsApp response tracking yet
+    };
+  } catch (error) {
+    logger.error('Failed to fetch repayment history', {
+      action: 'scoring.repayment-history',
+      status: 'failed',
+      meta: { error: error instanceof Error ? error.message : 'Unknown' },
+    });
+    return { previous_loans_count: 0, on_time_payment_rate: 0, bill_payment_consistency: 0, communication_response_rate: 0.75 };
+  }
+}
+
+/**
  * Handle CREDIT_SCORING state
  */
 export async function handleCreditScoring(
@@ -54,7 +107,27 @@ export async function handleCreditScoring(
   context: MessageContext
 ): Promise<string> {
   try {
-    // Fetch real KYC data from the latest submission
+    // ── Gap 5: Fail fast if required fields are missing ──────────────
+    const requiredFields = {
+      monthly_income_usd: session.state_data.monthly_income_usd,
+      requested_loan_amount: session.state_data.requested_loan_amount,
+      household_size: session.state_data.household_size,
+    };
+
+    const missingFields = Object.entries(requiredFields)
+      .filter(([_, value]) => value === undefined || value === null)
+      .map(([key]) => key);
+
+    if (missingFields.length > 0) {
+      logger.error('Missing required fields for scoring', {
+        action: 'scoring.validation-failed',
+        status: 'failed',
+        meta: { missingFields, customer_id: session.customer_id },
+      });
+      return `We're missing some information needed to assess your application. Please type *RESTART* to begin again and ensure all questions are answered.`;
+    }
+
+    // ── Gap 2: KYC safety — reject if no submission found ────────────
     const { data: kycSubmission } = await db
       .from('kyc_submissions')
       .select('verification_confidence, face_match_score, liveness_score, verification_decision')
@@ -64,25 +137,53 @@ export async function handleCreditScoring(
       .single()
       .execute();
 
+    if (!kycSubmission) {
+      logger.error('No KYC submission found for scoring', {
+        action: 'scoring.kyc-missing',
+        status: 'failed',
+        meta: { customer_id: session.customer_id || `temp_${context.from}` },
+      });
+      return `Your identity verification is incomplete. Please complete the KYC process before we can assess your application.\n\nType *RESTART* to begin again or *SUPPORT* for help.`;
+    }
+
+    // ── Gap 1: Fetch repayment history for repeat customers ──────────
+    const repaymentHistory = await fetchRepaymentHistory(session.customer_id);
+
+    // ── Build scoring payload (Gaps 2, 3, 4, 5 applied) ─────────────
     const scoringPayload = {
       customer_id: session.customer_id || `temp_${context.from}`,
-      monthly_income_usd: session.state_data.monthly_income_usd || 200,
-      existing_debt_obligations_usd: session.state_data.existing_debt_obligations_usd || 0,
-      household_size: session.state_data.household_size || 1,
-      dependents: session.state_data.dependents || 0,
-      requested_loan_amount: session.state_data.requested_loan_amount || 250,
-      kyc_result: kycSubmission ? {
+
+      // Gap 5: Use validated values — no dangerous defaults
+      monthly_income_usd: session.state_data.monthly_income_usd!,
+      existing_debt_obligations_usd: session.state_data.existing_debt_obligations_usd ?? 0,
+      household_size: session.state_data.household_size!,
+      dependents: session.state_data.dependents ?? 0,
+      requested_loan_amount: session.state_data.requested_loan_amount!,
+
+      // Gap 3: Product category passthrough (map digital_credit → digital)
+      product_category: session.state_data.selected_product === 'digital_credit' ? 'digital' as const : 'smartphone' as const,
+
+      // Gap 4: Employment type passthrough (stored in scoring_data for future use)
+      employment_type: session.state_data.employment_type,
+
+      // Gap 2: Real KYC data only — no fake defaults
+      kyc_result: {
         id_verification: {
-          status: (kycSubmission.verification_decision ?? 'APPROVED') === 'APPROVED' ? 'verified' as const
-            : (kycSubmission.verification_decision === 'MANUAL_REVIEW' ? 'review' as const : 'failed' as const)
+          status: kycSubmission.verification_decision === 'APPROVED' ? 'verified' as const
+            : kycSubmission.verification_decision === 'MANUAL_REVIEW' ? 'review' as const
+            : 'failed' as const,
         },
-        face_match_score: kycSubmission.face_match_score ?? 96,
+        face_match_score: kycSubmission.face_match_score ?? 0,
         liveness_passed: (kycSubmission.liveness_score ?? 0) >= 50,
-      } : {
-        id_verification: { status: 'verified' as const },
-        face_match_score: 96,
-        liveness_passed: true,
-      }
+      },
+
+      // Gap 1: Repeat customer repayment data
+      ...(repaymentHistory.previous_loans_count > 0 ? {
+        previous_loans_count: repaymentHistory.previous_loans_count,
+        on_time_payment_rate: repaymentHistory.on_time_payment_rate,
+        bill_payment_consistency: repaymentHistory.bill_payment_consistency,
+        communication_response_rate: repaymentHistory.communication_response_rate,
+      } : {}),
     };
 
     // Call scoring service

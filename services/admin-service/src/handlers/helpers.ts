@@ -1,7 +1,7 @@
-import { createHash } from 'crypto';
 import { db } from '../../../shared/clients/database';
 import logger from '../../../shared/utils/logger';
 import { AuthContext } from '../../../shared/middleware/authorization';
+export { hashNationalId } from '../../../shared/utils/crypto';
 
 export const COGNITO_ADMIN_ROLES = ['super_admin', 'admin'];
 
@@ -56,10 +56,6 @@ export async function auditLog(
       errorMessage: err instanceof Error ? err.message : String(err),
     });
   }
-}
-
-export function hashNationalId(nationalId: string): string {
-  return createHash('sha256').update(nationalId).digest('hex');
 }
 
 export function maskPhone(phone: string): string {

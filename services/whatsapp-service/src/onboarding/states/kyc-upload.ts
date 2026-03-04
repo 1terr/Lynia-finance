@@ -203,8 +203,17 @@ Make sure:
       const statusResult = statusResponse.data;
 
       if (statusResult.kyc_status === 'verified') {
+        // Deduplicate by national ID — if another customer already has this ID,
+        // merge to their record so loan history is preserved across phone changes.
+        const customerId = await deduplicateByNationalId(
+          customer.id as string,
+          session.state_data.id_number!,
+          context.from
+        );
+
         await updateSession(context.from, {
           current_state: 'credit_scoring',
+          customer_id: customerId,
           state_data: {
             ...session.state_data,
             selfie_photo_url: imageUrl,
@@ -336,5 +345,76 @@ We had trouble processing your documents. This could be due to:
 
 Please try again. Type your National ID number to restart verification.
 Format: *XX-XXXXXXX-X-XX*`;
+  }
+}
+
+// ===================================================================
+// CUSTOMER DEDUPLICATION BY NATIONAL ID
+// ===================================================================
+
+/**
+ * Check if another customer already has this national ID.
+ * If so, merge to the existing record (preserving loan history).
+ * If not, store the national ID on the current customer.
+ *
+ * Returns the customer_id to use going forward (may differ from currentCustomerId
+ * if a merge occurred).
+ */
+async function deduplicateByNationalId(
+  currentCustomerId: string,
+  nationalId: string,
+  whatsappNumber: string
+): Promise<string> {
+  try {
+    // Check if another customer already owns this national ID
+    const { data: existingCustomer } = await db
+      .from('customers')
+      .select('id')
+      .eq('national_id', nationalId)
+      .neq('id', currentCustomerId)
+      .maybeSingle()
+      .execute();
+
+    if (existingCustomer) {
+      // Existing customer found — merge to their record
+      logger.info('Customer dedup: merging to existing record', {
+        action: 'kyc.dedup',
+        status: 'completed',
+        meta: {
+          existing_customer_id: existingCustomer.id,
+          duplicate_customer_id: currentCustomerId,
+        },
+      });
+
+      // Update existing customer's whatsapp_number to current phone
+      await db.from('customers')
+        .update({ whatsapp_number: whatsappNumber })
+        .eq('id', existingCustomer.id)
+        .execute();
+
+      // Delete the duplicate customer record created during this session
+      await db.from('customers')
+        .delete()
+        .eq('id', currentCustomerId)
+        .execute();
+
+      return existingCustomer.id as string;
+    }
+
+    // No duplicate — store national_id on current customer
+    await db.from('customers')
+      .update({ national_id: nationalId })
+      .eq('id', currentCustomerId)
+      .execute();
+
+    return currentCustomerId;
+  } catch (error) {
+    // Non-fatal: if dedup fails, continue with current customer
+    logger.error('Customer dedup failed', {
+      action: 'kyc.dedup',
+      status: 'failed',
+      meta: { error: error instanceof Error ? error.message : 'Unknown' },
+    });
+    return currentCustomerId;
   }
 }
