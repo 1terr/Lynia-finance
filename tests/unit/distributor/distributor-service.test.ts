@@ -153,7 +153,11 @@ function parseBody(response: { body: string }) {
 // ── Setup ─────────────────────────────────────────────────────────────
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  jest.clearAllMocks();
+  // Reset once-queues on shared mocks to prevent leakage between tests
+  mockExecute.mockReset();
+  (query as jest.Mock).mockReset();
+  mockCompleteHandover.mockReset();
   mockGetAuthContext.mockReturnValue({
     userId: 'user-1',
     email: 'test@test.com',
