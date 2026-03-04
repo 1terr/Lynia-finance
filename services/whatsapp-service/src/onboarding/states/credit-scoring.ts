@@ -127,10 +127,10 @@ export async function handleCreditScoring(
       return `We're missing some information needed to assess your application. Please type *RESTART* to begin again and ensure all questions are answered.`;
     }
 
-    // ── Gap 2: KYC safety — reject if no submission found ────────────
+    // ── Gap 2: KYC safety — reject if no verified submission found ───
     const { data: kycSubmission } = await db
       .from('kyc_submissions')
-      .select('verification_confidence, face_match_score, liveness_score, verification_decision')
+      .select('verification_confidence, face_match_score, liveness_score, verification_decision, status')
       .eq('customer_id', session.customer_id || `temp_${context.from}`)
       .order('submitted_at', { ascending: false })
       .limit(1)
@@ -144,6 +144,20 @@ export async function handleCreditScoring(
         meta: { customer_id: session.customer_id || `temp_${context.from}` },
       });
       return `Your identity verification is incomplete. Please complete the KYC process before we can assess your application.\n\nType *RESTART* to begin again or *SUPPORT* for help.`;
+    }
+
+    // Block scoring if KYC is not verified — prevents unverified customers from being approved
+    if (kycSubmission.status !== 'verified' && kycSubmission.verification_decision !== 'APPROVED') {
+      logger.warn('KYC not verified, blocking credit scoring', {
+        action: 'scoring.kyc-not-verified',
+        status: 'failed',
+        meta: {
+          customer_id: session.customer_id || `temp_${context.from}`,
+          kyc_status: kycSubmission.status,
+          verification_decision: kycSubmission.verification_decision,
+        },
+      });
+      return `Your identity verification is still being processed. We'll notify you via WhatsApp once it's complete.\n\nYou cannot proceed to loan assessment until your identity is verified.\n\nType *SUPPORT* for help.`;
     }
 
     // ── Gap 1: Fetch repayment history for repeat customers ──────────

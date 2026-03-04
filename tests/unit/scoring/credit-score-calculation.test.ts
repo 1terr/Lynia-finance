@@ -173,9 +173,10 @@ describe('calculateRuleBasedScore', () => {
         },
       })
     );
-    expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 1');
-    expect(result.credit_limit_usd).toBe(200);
+    // KYC failed → auto-reject regardless of score (defense-in-depth)
+    expect(result.decision).toBe('reject');
+    expect(result.tier).toBe('KYC Not Verified');
+    expect(result.credit_limit_usd).toBe(0);
   });
 
   // ─── First-time customer ───────────────────────────────────────
@@ -314,7 +315,8 @@ describe('calculateRuleBasedScore', () => {
     expect(result.scaled_score).toBeGreaterThanOrEqual(300);
     expect(result.scaled_score).toBeLessThan(350);
     expect(result.decision).toBe('reject');
-    expect(result.tier).toBe('Below Minimum');
+    // KYC failed triggers early rejection before score threshold check
+    expect(result.tier).toBe('KYC Not Verified');
     expect(result.credit_limit_usd).toBe(0);
   });
 

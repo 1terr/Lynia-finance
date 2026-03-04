@@ -377,6 +377,25 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
   let down_payment_percentage = 0;
   let interest_rate_apr = 0;
 
+  // Defense-in-depth: auto-reject if KYC identity verification failed.
+  // Even if the WhatsApp flow guard is bypassed (e.g. direct API call),
+  // we must never approve a customer whose identity is not verified.
+  if (input.kyc_result.id_verification.status === 'failed') {
+    return {
+      customer_id: input.customer_id,
+      product_category: productCategory,
+      total_raw_score,
+      scaled_score,
+      components,
+      decision: 'reject',
+      credit_limit_usd: 0,
+      tier: 'KYC Not Verified',
+      down_payment_percentage: 0,
+      interest_rate_apr: 0,
+      calculated_at: new Date().toISOString()
+    };
+  }
+
   if (scaled_score < MINIMUM_SCORE_THRESHOLD) {
     decision = 'reject';
     tier = 'Below Minimum';

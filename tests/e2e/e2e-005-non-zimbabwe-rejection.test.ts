@@ -386,8 +386,8 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
         credit_limit_usd: number;
       }>(response);
 
-      // All scores are auto-approved — lowest gets Tier 1
-      expect(body.decision).toBe('approve');
+      // KYC failed → auto-reject regardless of score (defense-in-depth)
+      expect(body.decision).toBe('reject');
     });
 
     it('should validate that payment endpoint rejects missing fields', async () => {
