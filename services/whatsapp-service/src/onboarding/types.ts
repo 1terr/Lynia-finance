@@ -70,7 +70,8 @@ export interface OnboardingSession {
     credit_limit_usd?: number;
     down_payment_percentage?: number;
     interest_rate_apr?: number;
-    decision?: 'approve';
+    decision?: 'approve' | 'reject';
+    rejection_reason?: string;
 
     // Device selection
     available_devices?: Array<{
@@ -92,6 +93,10 @@ export interface OnboardingSession {
     total_repayment?: number;
     financed_amount?: number;
     deposit_amount?: number;
+
+    // Loan record
+    loan_id?: string;
+    loan_number?: string;
 
     // Tracking
     retry_count?: number;

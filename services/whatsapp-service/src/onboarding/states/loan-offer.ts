@@ -8,6 +8,8 @@
 import { db } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
 import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
+import { syncLoanToFineract, approveLoanInFineract } from '../../../../shared/clients/fineract-sync';
+import { logger } from '../../../../shared/utils/logger';
 import type { OnboardingSession, MessageContext } from '../types';
 
 /**
@@ -125,31 +127,97 @@ export async function handleTermsAcceptance(
       consent_method: 'whatsapp'
     }).execute();
 
+    const depositAmount = session.state_data.deposit_amount || 0;
+    const deviceName = session.state_data.selected_device_name || 'your device';
+    const devicePrice = session.state_data.selected_device_price || 0;
+    const termMonths = session.state_data.selected_term_months || 6;
+    const monthlyPayment = session.state_data.monthly_payment || 0;
+    const interestRate = session.state_data.interest_rate_apr || 4;
+    const financedAmount = session.state_data.financed_amount || (devicePrice - depositAmount);
+    const totalRepayment = session.state_data.total_repayment || (monthlyPayment * termMonths);
+
+    // Generate loan reference number
+    const year = new Date().getFullYear();
+    const seq = Math.random().toString(36).substring(2, 7).toUpperCase();
+    const loanNumber = `LYNIA-${year}-${seq}`;
+
+    // Create loan record in database
+    let loanId: string | null = null;
+    try {
+      const { data: loan, error: loanError } = await db
+        .from('loans')
+        .insert({
+          customer_id: session.customer_id,
+          loan_number: loanNumber,
+          loan_amount_usd: financedAmount,
+          interest_rate: interestRate,
+          loan_term_months: termMonths,
+          deposit_amount_usd: depositAmount,
+          deposit_paid: false,
+          status: 'approved',
+          approval_status: 'auto_approved',
+          approved_at: new Date().toISOString(),
+          total_amount_due_usd: totalRepayment,
+          outstanding_balance_usd: totalRepayment,
+          next_payment_amount_usd: monthlyPayment,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single()
+        .execute();
+
+      if (loanError || !loan) {
+        logger.error('Failed to create loan record', {
+          action: 'loan.create',
+          status: 'failed',
+          meta: { customerId: session.customer_id, error: String(loanError) },
+        });
+      } else {
+        loanId = loan.id;
+      }
+    } catch (loanCreateError) {
+      logger.error('Loan creation threw error', {
+        action: 'loan.create',
+        status: 'failed',
+        meta: { error: loanCreateError instanceof Error ? loanCreateError.message : String(loanCreateError) },
+      });
+    }
+
+    // Non-blocking: Sync loan to Fineract (create + auto-approve)
+    if (loanId && process.env.FINERACT_SECRET_NAME) {
+      syncLoanToFineractAfterAcceptance(loanId, session).catch((err) => {
+        logger.error('Fineract loan sync failed', {
+          action: 'loan.fineract-sync',
+          status: 'failed',
+          meta: { loanId, error: err instanceof Error ? err.message : String(err) },
+        });
+      });
+    }
+
     await updateSession(context.from, {
       current_state: 'completed',
       state_data: {
-        ...session.state_data
+        ...session.state_data,
+        loan_id: loanId ?? undefined,
+        loan_number: loanNumber ?? undefined,
       }
     });
-
-    const depositAmount = session.state_data.deposit_amount || 0;
-    const deviceName = session.state_data.selected_device_name || 'your device';
-    const termMonths = session.state_data.selected_term_months || 6;
-    const monthlyPayment = session.state_data.monthly_payment || 0;
 
     return `*Application Approved!*
 
 Congratulations! Your loan for ${deviceName} is approved.
+Loan Reference: *${loanNumber}*
 
 *Step 1: Pay Your Deposit*
-Amount: $${depositAmount.toFixed(2)}
+Amount: *$${depositAmount.toFixed(2)}*
 
 *How to pay:*
 - EcoCash: Dial *151*2*1# and pay to merchant code *LYNIA*
 - OneMoney: Dial *111# and pay to merchant *LYNIA*
 - InnBucks: Send to LYNIA in the InnBucks app
 
-Use your phone number as reference.
+*IMPORTANT:* Use your *National ID number* as the payment reference.
 
 *Step 2: Visit a Distributor (after deposit is confirmed)*
 We will send you a confirmation once your deposit is received.
@@ -166,4 +234,62 @@ Welcome to Lynia Finance!`;
   }
 
   return 'Please reply *I Accept* to accept the loan terms and complete your application.';
+}
+
+/**
+ * Non-blocking: Create loan in Fineract and auto-approve it.
+ * Errors are logged but never block the WhatsApp flow.
+ */
+async function syncLoanToFineractAfterAcceptance(
+  loanId: string,
+  session: OnboardingSession
+): Promise<void> {
+  // Look up customer's Fineract client ID
+  const { data: customer } = await db
+    .from('customers')
+    .select('fineract_client_id')
+    .eq('id', session.customer_id)
+    .single()
+    .execute();
+
+  if (!customer?.fineract_client_id) {
+    logger.warn('Customer not synced to Fineract yet, skipping loan sync', {
+      action: 'loan.fineract-sync',
+      meta: { customerId: session.customer_id, loanId },
+    });
+    return;
+  }
+
+  // Fineract product ID from environment (configured per tier in production)
+  const fineractProductId = parseInt(process.env.FINERACT_SMARTPHONE_PRODUCT_ID || '0', 10);
+  if (!fineractProductId) {
+    logger.warn('FINERACT_SMARTPHONE_PRODUCT_ID not configured, skipping loan sync', {
+      action: 'loan.fineract-sync',
+      meta: { loanId },
+    });
+    return;
+  }
+
+  const interestRateApr = session.state_data.interest_rate_apr || 4;
+  const financedAmount = session.state_data.financed_amount
+    || (session.state_data.selected_device_price || 0) - (session.state_data.deposit_amount || 0);
+  const termMonths = session.state_data.selected_term_months || 6;
+
+  // Create loan in Fineract (submittedAndPendingApproval state)
+  const fineractLoanId = await syncLoanToFineract({
+    loanId,
+    customerId: session.customer_id,
+    fineractClientId: customer.fineract_client_id,
+    fineractProductId,
+    principal: financedAmount,
+    numberOfRepayments: termMonths,
+    repaymentEveryMonths: 1,
+    interestRatePerMonth: interestRateApr / 12,
+    expectedDisbursementDate: new Date(),
+  });
+
+  // Auto-approve in Fineract (no admin approval needed)
+  if (fineractLoanId) {
+    await approveLoanInFineract({ loanId, fineractLoanId });
+  }
 }

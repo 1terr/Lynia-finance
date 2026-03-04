@@ -74,6 +74,7 @@ export type LoanStatus =
   | 'submitted'
   | 'pending_approval'
   | 'approved'
+  | 'paid_deposit'
   | 'rejected'
   | 'disbursed'
   | 'active'
@@ -82,8 +83,8 @@ export type LoanStatus =
   | 'written_off';
 
 export const LOAN_STATUSES: LoanStatus[] = [
-  'draft', 'submitted', 'pending_approval', 'approved', 'rejected',
-  'disbursed', 'active', 'paid', 'defaulted', 'written_off',
+  'draft', 'submitted', 'pending_approval', 'approved', 'paid_deposit',
+  'rejected', 'disbursed', 'active', 'paid', 'defaulted', 'written_off',
 ];
 
 // ── Handover Status ──

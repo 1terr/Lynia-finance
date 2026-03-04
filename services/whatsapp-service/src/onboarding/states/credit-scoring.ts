@@ -188,10 +188,59 @@ export async function handleCreditScoring(
 
     // Call scoring service
     const SCORING_API_URL = process.env.SCORING_API_URL!;
-    const response = await axios.post(SCORING_API_URL, scoringPayload);
+    const response = await axios.post(SCORING_API_URL, scoringPayload, {
+      validateStatus: (status) => status < 500, // Don't throw on 4xx
+    });
+
+    // Handle duplicate loan rejection (409)
+    if (response.status === 409) {
+      await updateSession(context.from, {
+        current_state: 'rejected',
+        state_data: {
+          ...session.state_data,
+          decision: 'reject',
+          rejection_reason: 'existing_loan',
+        }
+      });
+
+      return `You already have an active loan with Lynia Finance.
+
+Please complete your current loan before applying for a new one.
+
+Type *BALANCE* to check your loan balance or *SUPPORT* for help.`;
+    }
+
+    if (response.status !== 200) {
+      throw new Error(`Scoring service returned status ${response.status}`);
+    }
+
     const scoreResult = response.data;
 
-    // Decision is always 'approve' — only KYC failure blocks progression upstream
+    // Handle rejection — score below minimum threshold
+    if (scoreResult.decision === 'reject') {
+      await updateSession(context.from, {
+        current_state: 'rejected',
+        state_data: {
+          ...session.state_data,
+          credit_score: scoreResult.scaled_score,
+          credit_tier: scoreResult.tier,
+          decision: scoreResult.decision,
+        }
+      });
+
+      return `We've assessed your application and unfortunately we're unable to approve a loan at this time.
+
+Your Credit Score: ${scoreResult.scaled_score}/850
+
+*How to improve your chances:*
+1. Build a consistent payment history (airtime, bills)
+2. Reduce existing debt obligations
+3. Increase your income documentation
+4. Try again after 3 months
+
+Type *SUPPORT* if you have questions or need help.`;
+    }
+
     const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd);
 
     if (devices.length === 0) {

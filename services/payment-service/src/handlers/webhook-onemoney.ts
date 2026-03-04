@@ -8,6 +8,7 @@ import { PaymentService } from '../payment-service';
 import { OneMoneyProvider, OneMoneyWebhook } from '../onemoney-provider';
 import { PaymentEventLogger } from '../payment-event-logger';
 import { syncPaymentToFineract } from './fineract-sync';
+import { resolveDepositByNationalId } from '../deposit-resolver';
 import { SQSQueues } from '../../../shared/utils/sqs-publisher';
 import logger from '../../../shared/utils/logger';
 
@@ -40,7 +41,7 @@ export const handleOneMoneyWebhook: RouteHandler = async (event, _params, _auth)
 
     const payload: OneMoneyWebhook = JSON.parse(event.body || '{}');
 
-    const paymentId = payload.merchant_reference;
+    let paymentId = payload.merchant_reference;
 
     eventLogger.logEvent({
       payment_id: paymentId,
@@ -54,27 +55,50 @@ export const handleOneMoneyWebhook: RouteHandler = async (event, _params, _auth)
     }).catch(() => {});
 
     if (payload.status === 'SUCCESS') {
-      await paymentService.checkPaymentStatus(paymentId);
-      await paymentService.processPaymentCompletion(paymentId);
-      await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
-
-      // Non-blocking: sync repayment to Fineract core banking
-      if (process.env.FINERACT_SECRET_NAME) {
-        syncPaymentToFineract(paymentId).catch((err) => {
-          logger.error('[fineract-sync] Background repayment sync failed', { action: 'fineract.sync', meta: { error: err instanceof Error ? err.message : String(err) } });
-        });
+      let resolved = false;
+      try {
+        await paymentService.checkPaymentStatus(paymentId);
+        resolved = true;
+      } catch {
+        const deposit = await resolveDepositByNationalId(
+          paymentId, payload.amount, payload.currency || 'USD',
+          payload.transaction_id, 'onemoney'
+        );
+        if (deposit?.resolved && deposit.paymentId) {
+          paymentId = deposit.paymentId;
+          resolved = true;
+        }
       }
 
-      // Non-blocking: real-time DW sync
-      SQSQueues.syncDataWarehouse({
-        eventType: 'payment.confirmed',
-        entityId: paymentId,
-        entityType: 'payment',
-      }).catch((err) => {
-        logger.error('[dw-sync] Background DW sync failed', { action: 'dw.sync', meta: { error: err instanceof Error ? err.message : String(err) } });
-      });
+      if (resolved) {
+        await paymentService.processPaymentCompletion(paymentId);
+        await paymentService.trackCompletedPayment(paymentId, payload.transaction_id);
+
+        if (process.env.FINERACT_SECRET_NAME) {
+          syncPaymentToFineract(paymentId).catch((err: Error) => {
+            logger.error('[fineract-sync] Background sync failed', { action: 'fineract.sync', meta: { error: err.message } });
+          });
+        }
+
+        SQSQueues.syncDataWarehouse({
+          eventType: 'payment.confirmed',
+          entityId: paymentId,
+          entityType: 'payment',
+        }).catch((err: Error) => {
+          logger.error('[dw-sync] Background DW sync failed', { action: 'dw.sync', meta: { error: err.message } });
+        });
+      } else {
+        logger.warn('OneMoney webhook: could not resolve payment', {
+          action: 'onemoney.webhook',
+          meta: { merchantReference: payload.merchant_reference },
+        });
+      }
     } else if (payload.status === 'FAILED' || payload.status === 'CANCELLED') {
-      await paymentService.checkPaymentStatus(paymentId);
+      try {
+        await paymentService.checkPaymentStatus(paymentId);
+      } catch {
+        // Ignore — may be unresolved national ID reference
+      }
     }
 
     return {

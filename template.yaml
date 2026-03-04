@@ -37,6 +37,7 @@ Globals:
         NODE_ENV: !Ref Environment
         DB_SECRET_NAME: !Sub "lynia/${Environment}/database"
         FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
+        FINERACT_SMARTPHONE_PRODUCT_ID: !Ref FineractSmartphoneProductId
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"
         API_STACK_NAME: !Sub "${AWS::StackName}"
@@ -58,6 +59,11 @@ Parameters:
       - staging
       - production
     Description: Deployment environment
+
+  FineractSmartphoneProductId:
+    Type: String
+    Description: Fineract loan product ID for smartphone loans
+    Default: "1"
 
   CognitoUserPoolArn:
     Type: String

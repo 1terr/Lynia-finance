@@ -403,9 +403,9 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
     return notFoundResponse('Loan', event);
   }
 
-  if (loanCheck.data[0].status !== 'approved') {
+  if (loanCheck.data[0].status !== 'paid_deposit') {
     return errorResponse(
-      'Loan is no longer available for handover',
+      'Loan is not ready for handover. Deposit must be paid first.',
       409,
       { current_status: loanCheck.data[0].status },
       event,
@@ -427,6 +427,24 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
     );
   }
 
+  // Verify deposit payment exists and is confirmed
+  const { data: depositPayments } = await query<{ id: string; status: string }>(
+    `SELECT id, status FROM payments
+     WHERE loan_id = $1 AND payment_type = 'deposit' AND status = 'completed'
+     LIMIT 1`,
+    [loan_id]
+  );
+  const depositActuallyVerified = depositPayments && depositPayments.length > 0;
+
+  if (!depositActuallyVerified) {
+    return errorResponse(
+      'Deposit payment has not been confirmed. Customer must pay the deposit before handover.',
+      409,
+      { loan_id },
+      event,
+    );
+  }
+
   // Create the handover record with all wizard data
   const { data: handover, error: insertError } = await db
     .from('device_handovers')
@@ -443,7 +461,7 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
       deposit_payment_method,
       deposit_transaction_ref,
       identity_verified: true,
-      deposit_verified: true,
+      deposit_verified: depositActuallyVerified,
       device_condition_verified: true,
       app_installed: true,
       app_configured: true,

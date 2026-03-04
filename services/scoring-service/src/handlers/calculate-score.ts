@@ -6,7 +6,7 @@
  */
 
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db } from '../../../shared/clients/database';
+import { db, query } from '../../../shared/clients/database';
 import { getSecurityHeaders } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
 import { syncCustomerToFineract } from '../../../shared/clients/fineract-sync';
@@ -33,6 +33,46 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
       }),
       headers: getSecurityHeaders(event)
     };
+  }
+
+  // Check if customer already has an active loan (by national ID to catch re-registrations)
+  try {
+    const { data: customer } = await db
+      .from('customers')
+      .select('national_id')
+      .eq('id', body.customer_id)
+      .single()
+      .execute();
+
+    if (customer?.national_id) {
+      const { data: existingLoans } = await query<{ id: string }>(
+        `SELECT l.id FROM loans l
+         JOIN customers c ON c.id = l.customer_id
+         WHERE c.national_id = $1
+           AND l.status IN ('approved', 'paid_deposit', 'active')
+         LIMIT 1`,
+        [customer.national_id]
+      );
+
+      if (existingLoans && existingLoans.length > 0) {
+        return {
+          statusCode: 409,
+          body: JSON.stringify({
+            error: 'You already have an active loan. Please complete your current loan before applying for a new one.',
+            code: 'LOAN_DUP_001',
+            existing_loan_id: existingLoans[0].id,
+          }),
+          headers: getSecurityHeaders(event)
+        };
+      }
+    }
+  } catch (dupCheckError) {
+    logger.error('Duplicate loan check failed', {
+      action: 'scoring.duplicate-check',
+      status: 'failed',
+      errorMessage: dupCheckError instanceof Error ? dupCheckError.message : String(dupCheckError),
+    });
+    // Continue scoring — don't block on check failure
   }
 
   // Calculate credit score

@@ -177,6 +177,36 @@ export async function completeHandover(handoverId: string): Promise<{
       .eq('id', handoverId)
       .execute();
 
+    // Request device lock (stub — Trustonic not yet integrated)
+    // Records the lock intent in DB; actual Trustonic API call is a no-op until integration
+    try {
+      await db
+        .from('device_locks')
+        .insert({
+          device_id: handover.device_id,
+          loan_id: handover.loan_id,
+          lock_status: 'pending',
+          lock_reason: 'handover_activation',
+          requested_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        })
+        .execute();
+
+      logger.info('Device lock requested (Trustonic stub)', {
+        action: 'lock.handover.lock-request',
+        handoverId,
+        deviceId: handover.device_id,
+        loanId: handover.loan_id,
+      });
+    } catch (lockError) {
+      // Non-blocking — don't fail handover if lock request fails
+      logger.error('Device lock request failed (non-blocking)', {
+        action: 'lock.handover.lock-request',
+        handoverId,
+        errorMessage: lockError instanceof Error ? lockError.message : String(lockError),
+      });
+    }
+
     logger.info('Handover completed successfully', { action: 'lock.handover.complete', handoverId, loanId: handover.loan_id, commissionAmount: commission.amount, commissionPercentage: commission.percentage });
 
     return {
