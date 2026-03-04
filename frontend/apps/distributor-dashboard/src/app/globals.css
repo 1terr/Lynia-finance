@@ -43,6 +43,11 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
   }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
 }
 
 @layer base {
@@ -51,9 +56,70 @@
   }
   body {
     @apply bg-background text-foreground;
+    overscroll-behavior-y: contain;
+  }
+  button, a, input, select, textarea, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
+/* Safe area utilities */
 .safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Touch target utilities */
+@layer utilities {
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .touch-target-lg {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}
+
+/* Scrollbar hiding for horizontal scroll containers */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Snap scrolling for horizontal filter chips */
+.snap-x {
+  scroll-snap-type: x mandatory;
+}
+.snap-x > * {
+  scroll-snap-align: start;
+}
+
+/* Stale data refresh indicator */
+@keyframes stale-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.stale-refresh-bar {
+  position: relative;
+  height: 2px;
+  overflow: hidden;
+  background: hsl(var(--muted));
+}
+
+.stale-refresh-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: hsl(var(--primary));
+  animation: stale-progress 1.5s ease-in-out infinite;
 }

@@ -62,24 +62,24 @@ export default function HandoversPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-xl border bg-card p-3 shadow-sm">
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
-            <span className="text-[10px] text-muted-foreground">Completed</span>
+            <span className="text-xs text-muted-foreground">Completed</span>
           </div>
           <p className="text-xl font-bold">{completed.length}</p>
         </div>
-        <div className="rounded-xl border bg-card p-3 shadow-sm">
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-1">
             <DollarSign className="h-3.5 w-3.5 text-green-600" />
-            <span className="text-[10px] text-muted-foreground">Earned</span>
+            <span className="text-xs text-muted-foreground">Earned</span>
           </div>
           <p className="text-xl font-bold">${totalCommission.toFixed(2)}</p>
         </div>
-        <div className="rounded-xl border bg-card p-3 shadow-sm">
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
           <div className="flex items-center gap-1.5 mb-1">
             <Smartphone className="h-3.5 w-3.5 text-blue-600" />
-            <span className="text-[10px] text-muted-foreground">Devices</span>
+            <span className="text-xs text-muted-foreground">Devices</span>
           </div>
           <p className="text-xl font-bold">{completed.length}</p>
         </div>
@@ -121,7 +121,7 @@ export default function HandoversPage() {
                   <p className="text-xs text-muted-foreground">
                     {h.device_model} &middot; {h.loan_id}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {new Date(h.completed_at).toLocaleDateString('en-ZW', {
                       month: 'short',
                       day: 'numeric',

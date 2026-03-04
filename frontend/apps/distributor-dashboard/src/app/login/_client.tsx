@@ -218,7 +218,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="you@distributor.co.zw"
                   required
                   autoComplete="email"
@@ -232,7 +232,7 @@ export default function LoginPage() {
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full rounded-lg border bg-background px-3 py-2.5 pr-10 text-sm outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full rounded-lg border bg-background px-3 py-3 pr-10 text-base outline-none focus:ring-2 focus:ring-ring"
                     placeholder="Enter your password"
                     required
                     autoComplete="current-password"
@@ -240,14 +240,15 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 p-2 text-muted-foreground touch-target"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
 
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button type="submit" className="w-full h-12" disabled={loading}>
                 {loading ? 'Signing in...' : 'Sign In'}
               </Button>
 
@@ -264,7 +265,7 @@ export default function LoginPage() {
               )}
 
               {isDemoMode && (
-                <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-xs text-blue-700 dark:text-blue-300">
+                <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
                   <p className="font-medium mb-1">Demo credentials</p>
                   <p>Email: kudzai@distributor.co.zw</p>
                   <p>Password: any 4+ characters</p>
@@ -285,7 +286,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="you@distributor.co.zw"
                   required
                   autoComplete="email"
@@ -316,7 +317,7 @@ export default function LoginPage() {
                   inputMode="numeric"
                   value={resetCode}
                   onChange={(e) => setResetCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Enter the code from your email"
                   required
                   autoComplete="one-time-code"
@@ -328,7 +329,7 @@ export default function LoginPage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="At least 12 characters"
                   required
                   autoComplete="new-password"
@@ -340,7 +341,7 @@ export default function LoginPage() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Re-enter your new password"
                   required
                   autoComplete="new-password"
@@ -373,7 +374,7 @@ export default function LoginPage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="At least 12 characters"
                   required
                   autoComplete="new-password"
@@ -385,7 +386,7 @@ export default function LoginPage() {
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Re-enter your new password"
                   required
                   autoComplete="new-password"
@@ -410,7 +411,7 @@ export default function LoginPage() {
                   inputMode="numeric"
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="123456"
                   required
                   autoComplete="one-time-code"

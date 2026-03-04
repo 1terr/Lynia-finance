@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { HandoverData, HandoverResult } from '@/types/distributor';
 import { HANDOVER_STEPS, INITIAL_DEVICE_CONDITION } from '@/types/distributor';
 import { submitHandover } from '@/lib/api';
 import { useOfflineQueue } from '@/lib/hooks/use-offline-queue';
+import { useHaptics } from '@/lib/hooks/use-haptics';
 import { cn } from '@lynia/utils';
 import { Check, ChevronLeft, WifiOff, RotateCcw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,6 +19,7 @@ import { StepConfirm } from './step-confirm';
 import { HandoverSuccess } from './handover-success';
 
 const SESSION_KEY = 'lynia-handover-draft';
+const SWIPE_THRESHOLD = 50;
 
 const initialData: HandoverData = {
   selected_loan: null,
@@ -49,6 +51,13 @@ export function HandoverWizard({ onComplete }: Props) {
   const [result, setResult] = useState<HandoverResult | null>(null);
   const [showResume, setShowResume] = useState(false);
   const [resumeName, setResumeName] = useState('');
+
+  // Haptic feedback
+  const haptics = useHaptics();
+
+  // Swipe gesture tracking
+  const touchStartX = useRef<number | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   // Offline queue for failed submissions
   const offlineQueue = useOfflineQueue(
@@ -143,6 +152,7 @@ export function HandoverWizard({ onComplete }: Props) {
     try {
       const res = await submitHandover(payload);
       clearDraft();
+      haptics.success();
       setResult(res);
     } catch (err) {
       // If offline, queue for later
@@ -167,6 +177,27 @@ export function HandoverWizard({ onComplete }: Props) {
     }
   };
 
+  // Swipe gesture handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+
+    if (Math.abs(diff) < SWIPE_THRESHOLD) return;
+
+    if (diff < 0 && canProceed() && step < 7) {
+      // Swipe left → next step
+      setStep(step + 1);
+    } else if (diff > 0 && step > 1) {
+      // Swipe right → previous step
+      setStep(step - 1);
+    }
+  };
+
   // Resume prompt
   if (showResume) {
     return (
@@ -183,10 +214,10 @@ export function HandoverWizard({ onComplete }: Props) {
           </div>
         </div>
         <div className="flex gap-3">
-          <Button className="flex-1" onClick={handleResume}>
+          <Button className="flex-1 h-12" onClick={handleResume}>
             Resume
           </Button>
-          <Button variant="outline" className="flex-1" onClick={handleDiscardDraft}>
+          <Button variant="outline" className="flex-1 h-12" onClick={handleDiscardDraft}>
             Start Fresh
           </Button>
         </div>
@@ -197,6 +228,8 @@ export function HandoverWizard({ onComplete }: Props) {
   if (result) {
     return <HandoverSuccess result={result} onDone={onComplete} />;
   }
+
+  const progressPercent = ((step - 1) / 6) * 100;
 
   return (
     <div className="space-y-4">
@@ -213,8 +246,26 @@ export function HandoverWizard({ onComplete }: Props) {
         </div>
       )}
 
-      {/* Step indicator */}
-      <div className="flex items-center gap-1 overflow-x-auto pb-2">
+      {/* Mobile step indicator: compact progress bar */}
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-sm font-semibold text-primary">
+            Step {step} of 7
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {HANDOVER_STEPS[step - 1].shortTitle}
+          </p>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div
+            className="h-full rounded-full bg-primary transition-all duration-300"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Desktop step indicator: circles */}
+      <div className="hidden sm:flex items-center gap-1 overflow-x-auto pb-2">
         {HANDOVER_STEPS.map((s) => (
           <div key={s.id} className="flex items-center">
             <div className="flex flex-col items-center min-w-[48px]">
@@ -230,7 +281,7 @@ export function HandoverWizard({ onComplete }: Props) {
               </div>
               <span
                 className={cn(
-                  'text-[9px] mt-0.5 text-center leading-tight',
+                  'text-xs mt-0.5 text-center leading-tight',
                   step === s.id ? 'text-primary font-semibold' : 'text-muted-foreground/60',
                 )}
               >
@@ -254,13 +305,14 @@ export function HandoverWizard({ onComplete }: Props) {
         {step > 1 && (
           <button
             onClick={() => setStep(step - 1)}
-            className="p-1 rounded-lg hover:bg-muted transition-colors"
+            className="p-2.5 rounded-lg hover:bg-muted transition-colors touch-target"
+            aria-label="Go to previous step"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
         )}
         <h2 className="text-lg font-bold flex-1">
-          Step {step}: {HANDOVER_STEPS[step - 1].title}
+          {HANDOVER_STEPS[step - 1].title}
         </h2>
         {step > 1 && (
           <button
@@ -269,16 +321,22 @@ export function HandoverWizard({ onComplete }: Props) {
               setStep(1);
               setData({ ...initialData });
             }}
-            className="p-1 rounded-lg hover:bg-muted transition-colors text-muted-foreground"
+            className="p-2.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground touch-target"
             title="Cancel handover"
+            aria-label="Cancel handover"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         )}
       </div>
 
-      {/* Step content */}
-      <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
+      {/* Step content with swipe support */}
+      <div
+        ref={contentRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        className="rounded-xl border bg-card p-5 md:p-6 shadow-sm"
+      >
         {step === 1 && (
           <StepSelectHandover
             selected={data.selected_loan}
@@ -342,21 +400,21 @@ export function HandoverWizard({ onComplete }: Props) {
       {/* Navigation */}
       <div className="flex gap-3">
         {step > 1 && (
-          <Button variant="outline" className="flex-1" onClick={() => setStep(step - 1)}>
+          <Button variant="outline" className="flex-1 h-12" onClick={() => setStep(step - 1)}>
             Back
           </Button>
         )}
         {step < 7 ? (
           <Button
-            className="flex-1"
+            className="flex-1 h-12"
             disabled={!canProceed()}
-            onClick={() => setStep(step + 1)}
+            onClick={() => { haptics.light(); setStep(step + 1); }}
           >
             Continue
           </Button>
         ) : (
           <Button
-            className="flex-1"
+            className="flex-1 h-14 text-base"
             disabled={!canProceed() || submitting}
             onClick={handleSubmit}
           >

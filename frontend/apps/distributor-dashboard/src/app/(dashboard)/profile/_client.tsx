@@ -195,7 +195,7 @@ export default function ProfilePage() {
           <div>
             <h2 className="text-lg font-bold">{distributor.name}</h2>
             <p className="text-sm text-muted-foreground">{distributor.business_name}</p>
-            <div className="flex items-center gap-2 mt-1">
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               <Badge variant={distributor.status === 'active' ? 'success' : 'destructive'}>
                 {distributor.status}
               </Badge>
@@ -255,7 +255,7 @@ export default function ProfilePage() {
               }}
             />
           </div>
-          <p className="text-[10px] text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {distributor.total_devices_distributed < 50
               ? 'Bronze tier \u2014 reach 50 handovers for Silver'
               : distributor.total_devices_distributed < 100
@@ -291,7 +291,7 @@ export default function ProfilePage() {
                   {...register('phone_number')}
                   placeholder="+263771234567"
                   className={cn(
-                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    "w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring",
                     errors.phone_number && "border-red-500 focus:ring-red-500"
                   )}
                 />
@@ -328,7 +328,7 @@ export default function ProfilePage() {
                   {...register('address')}
                   placeholder="123 Main Street, Harare"
                   className={cn(
-                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    "w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring",
                     errors.address && "border-red-500 focus:ring-red-500"
                   )}
                 />
@@ -367,7 +367,7 @@ export default function ProfilePage() {
                   {...register('mobile_money_number')}
                   placeholder="+263771234567"
                   className={cn(
-                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    "w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring",
                     errors.mobile_money_number && "border-red-500 focus:ring-red-500"
                   )}
                 />
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                   {...register('bank_name')}
                   placeholder="CBZ Bank"
                   className={cn(
-                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    "w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring",
                     errors.bank_name && "border-red-500 focus:ring-red-500"
                   )}
                 />
@@ -411,7 +411,7 @@ export default function ProfilePage() {
                   {...register('account_number')}
                   placeholder="1234567890"
                   className={cn(
-                    "w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring",
+                    "w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring",
                     errors.account_number && "border-red-500 focus:ring-red-500"
                   )}
                 />
@@ -484,20 +484,20 @@ export default function ProfilePage() {
             href="https://wa.me/263771234567?text=Hi%20Lynia%20Support%2C%20I%20need%20help%20with..."
             target="_blank"
             rel="noopener noreferrer"
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 h-12 text-sm font-medium hover:bg-muted transition-colors"
           >
             <MessageCircle className="h-4 w-4 text-green-600" />
             WhatsApp Support
           </a>
           <a
             href="tel:+263771234567"
-            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 h-12 text-sm font-medium hover:bg-muted transition-colors"
           >
             <PhoneCall className="h-4 w-4 text-blue-600" />
             Call Support
           </a>
         </div>
-        <p className="text-[10px] text-muted-foreground text-center">
+        <p className="text-xs text-muted-foreground text-center">
           Support hours: Mon-Fri 8am-5pm, Sat 8am-1pm (CAT)
         </p>
       </div>
@@ -529,7 +529,7 @@ export default function ProfilePage() {
                   type="password"
                   value={oldPassword}
                   onChange={(e) => setOldPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring"
                   required
                   autoComplete="current-password"
                 />
@@ -540,7 +540,7 @@ export default function ProfilePage() {
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="At least 12 characters"
                   required
                   autoComplete="new-password"
@@ -552,7 +552,7 @@ export default function ProfilePage() {
                   type="password"
                   value={confirmNewPassword}
                   onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  className="mt-1 w-full rounded-lg border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  className="mt-1 w-full rounded-lg border bg-background px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-ring"
                   placeholder="Re-enter your new password"
                   required
                   autoComplete="new-password"

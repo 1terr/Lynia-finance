@@ -1,4 +1,6 @@
-const CACHE_NAME = 'lynia-distributor-v2';
+const CACHE_NAME = 'lynia-distributor-v3';
+const API_CACHE = 'lynia-api-v1';
+const API_CACHE_MAX_AGE = 10 * 60 * 1000; // 10 minutes
 
 const STATIC_ASSETS = [
   '/',
@@ -23,7 +25,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((key) => key !== CACHE_NAME)
+          .filter((key) => key !== CACHE_NAME && key !== API_CACHE)
           .map((key) => caches.delete(key))
       )
     )
@@ -31,15 +33,31 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch: cache-first for static assets only, skip API calls
+// Fetch handler
 self.addEventListener('fetch', (event) => {
   const { request } = event;
 
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Don't intercept API calls — React Query handles caching/retry
-  if (request.url.includes('/api/')) return;
+  // Stale-while-revalidate for read-only API endpoints
+  if (request.url.includes('/api/') && !request.url.includes('/api/auth') && !request.url.includes('/api/login')) {
+    event.respondWith(
+      caches.open(API_CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        const fetchPromise = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              cache.put(request, response.clone());
+            }
+            return response;
+          })
+          .catch(() => cached); // If fetch fails, fall back to cache
+        return cached || fetchPromise;
+      })
+    );
+    return;
+  }
 
   // Cache-first for static assets
   event.respondWith(

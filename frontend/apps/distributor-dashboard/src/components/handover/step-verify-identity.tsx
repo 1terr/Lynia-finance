@@ -95,7 +95,7 @@ export function StepVerifyIdentity({ loan, nationalId, verified, onUpdate }: Pro
           className="w-full rounded-lg border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring font-mono tracking-wider"
           disabled={verified}
         />
-        <p className="text-[10px] text-muted-foreground mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           Format: XX-XXXXXXXYY (e.g. 63-234567B89)
         </p>
       </div>

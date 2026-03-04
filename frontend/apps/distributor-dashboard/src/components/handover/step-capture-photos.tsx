@@ -15,6 +15,34 @@ const PHOTO_SLOTS = [
   { label: 'Serial Label', description: 'IMEI/serial sticker visible' },
 ] as const;
 
+// Compress an image data URL for low-bandwidth upload
+// Constrains max dimension to 1024px and uses JPEG at 60% quality
+function compressImage(dataUrl: string, maxDim = 1024, quality = 0.6): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        const ratio = Math.min(maxDim / width, maxDim / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      } else {
+        resolve(dataUrl);
+      }
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 // Generate a placeholder photo URL for demo purposes
 function generateDemoPhoto(label: string): string {
   return `data:image/svg+xml,${encodeURIComponent(
@@ -23,12 +51,15 @@ function generateDemoPhoto(label: string): string {
 }
 
 export function StepCapturePhotos({ photos, onUpdate }: Props) {
-  const handleCapture = (index: number) => {
-    // In production, this would open the camera API
+  const handleCapture = async (index: number) => {
+    // In production, this would open the camera API and compress the result
     // For demo, generate a placeholder
     const label = PHOTO_SLOTS[index]?.label ?? `Photo ${index + 1}`;
+    const raw = generateDemoPhoto(label);
+    // Compress before storing — reduces payload for low-bandwidth upload
+    const compressed = await compressImage(raw);
     const newPhotos = [...photos];
-    newPhotos[index] = generateDemoPhoto(label);
+    newPhotos[index] = compressed;
     onUpdate(newPhotos);
   };
 
@@ -57,17 +88,18 @@ export function StepCapturePhotos({ photos, onUpdate }: Props) {
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
                   <div className="text-center">
                     <Smartphone className="h-8 w-8 text-muted-foreground/40 mx-auto mb-1" />
-                    <span className="text-[10px] text-muted-foreground">{slot.label}</span>
+                    <span className="text-xs text-muted-foreground">{slot.label}</span>
                   </div>
                 </div>
                 <button
                   onClick={() => handleRemove(i)}
-                  className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md"
+                  className="absolute top-1 right-1 h-8 w-8 rounded-full bg-red-500 text-white flex items-center justify-center shadow-md"
+                  aria-label={`Remove ${slot.label} photo`}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
                 <div className="absolute bottom-0 left-0 right-0 bg-green-500/90 py-1 text-center">
-                  <span className="text-[10px] text-white font-medium">Captured</span>
+                  <span className="text-xs text-white font-medium">Captured</span>
                 </div>
               </div>
             ) : (
@@ -79,7 +111,7 @@ export function StepCapturePhotos({ photos, onUpdate }: Props) {
                 )}
               >
                 <Camera className="h-8 w-8 text-muted-foreground/40" />
-                <span className="text-[10px] text-muted-foreground">{slot.description}</span>
+                <span className="text-xs text-muted-foreground">{slot.description}</span>
               </button>
             )}
           </div>

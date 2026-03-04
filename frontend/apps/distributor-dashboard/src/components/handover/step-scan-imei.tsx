@@ -131,11 +131,11 @@ export function StepScanImei({ loan, selectedDevice, confirmed, onUpdate }: Prop
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium">{device.brand} {device.model}</p>
-                      <p className="text-[10px] text-muted-foreground font-mono">{device.imei}</p>
+                      <p className="text-xs text-muted-foreground font-mono">{device.imei}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-bold">${device.retail_price}</p>
-                      <p className="text-[10px] text-muted-foreground capitalize">
+                      <p className="text-xs text-muted-foreground capitalize">
                         {device.condition.replace('_', ' ')}
                         {device.storage_gb ? ` · ${device.storage_gb}GB` : ''}
                       </p>
@@ -222,7 +222,7 @@ export function StepScanImei({ loan, selectedDevice, confirmed, onUpdate }: Prop
                 inputMode="numeric"
                 maxLength={15}
               />
-              <p className="text-[10px] text-muted-foreground mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 {imeiInput.length}/15 digits entered
               </p>
             </div>

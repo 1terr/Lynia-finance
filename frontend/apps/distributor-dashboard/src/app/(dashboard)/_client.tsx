@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { DashboardStats } from '@/types/distributor';
-import { fetchDashboardStats, fetchCompletedHandovers } from '@/lib/api';
+import { fetchDashboardStats, fetchCompletedHandovers, fetchInventory, fetchCommissions } from '@/lib/api';
 import { cn } from '@lynia/utils';
 import { DashboardSkeleton } from '@/components/ui/skeleton';
 import {
@@ -18,6 +18,14 @@ import {
 import Link from 'next/link';
 
 export default function DashboardHome() {
+  const queryClient = useQueryClient();
+
+  // Prefetch likely next pages (inventory + commissions) so they load instantly from nav
+  useEffect(() => {
+    queryClient.prefetchQuery({ queryKey: ['distributor', 'inventory'], queryFn: fetchInventory });
+    queryClient.prefetchQuery({ queryKey: ['distributor', 'commissions'], queryFn: fetchCommissions });
+  }, [queryClient]);
+
   const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['distributor', 'stats'],
     queryFn: fetchDashboardStats,
@@ -38,7 +46,7 @@ export default function DashboardHome() {
       setSlowLoading(false);
       return;
     }
-    const timer = setTimeout(() => setSlowLoading(true), 8000);
+    const timer = setTimeout(() => setSlowLoading(true), 4000);
     return () => clearTimeout(timer);
   }, [loading]);
 

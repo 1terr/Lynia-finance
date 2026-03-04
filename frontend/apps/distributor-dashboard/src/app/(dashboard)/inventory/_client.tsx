@@ -145,13 +145,13 @@ export default function InventoryPage() {
               }
               aria-pressed={statusFilter === status}
               className={cn(
-                'rounded-xl border bg-card p-3 shadow-sm text-left transition-colors',
+                'rounded-xl border bg-card p-4 shadow-sm text-left transition-colors',
                 statusFilter === status && 'ring-2 ring-primary',
               )}
             >
               <div className="flex items-center gap-2 mb-1">
                 <Icon className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="text-[11px] font-medium text-muted-foreground capitalize">
+                <span className="text-xs font-medium text-muted-foreground capitalize">
                   {config.label}
                 </span>
               </div>
@@ -161,10 +161,10 @@ export default function InventoryPage() {
         })}
 
         {/* Total inventory value */}
-        <div className="rounded-xl border bg-card p-3 shadow-sm text-left">
+        <div className="rounded-xl border bg-card p-4 shadow-sm text-left">
           <div className="flex items-center gap-2 mb-1">
             <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[11px] font-medium text-muted-foreground">
+            <span className="text-xs font-medium text-muted-foreground">
               Total Value
             </span>
           </div>
@@ -182,7 +182,7 @@ export default function InventoryPage() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             aria-label="Search devices"
-            className="w-full rounded-lg border bg-background pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            className="w-full rounded-lg border bg-background pl-9 pr-4 py-2.5 text-base h-11 focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
         <div className="flex items-center gap-2">
@@ -191,7 +191,7 @@ export default function InventoryPage() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortOption)}
               aria-label="Sort devices"
-              className="appearance-none rounded-lg border bg-background pl-8 pr-8 py-2 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+              className="appearance-none rounded-lg border bg-background pl-8 pr-8 py-2.5 text-sm font-medium h-11 focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
             >
               {SORT_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -242,13 +242,13 @@ export default function InventoryPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold">{device.brand} {device.model}</p>
-                        <p className="text-[11px] text-muted-foreground font-mono">
+                        <p className="text-xs text-muted-foreground font-mono">
                           IMEI: {device.imei}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Badge variant={config.variant} className="text-[10px]">
+                      <Badge variant={config.variant} className="text-xs">
                         {config.label}
                       </Badge>
                       <ChevronDown className={cn(
@@ -278,7 +278,7 @@ export default function InventoryPage() {
                 {/* Expanded details */}
                 {isExpanded && (
                   <div className="px-4 pb-4 pt-0 border-t">
-                    <div className="grid grid-cols-2 gap-3 text-xs pt-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm pt-3">
                       <div>
                         <p className="text-muted-foreground">Brand</p>
                         <p className="font-medium">{device.brand}</p>

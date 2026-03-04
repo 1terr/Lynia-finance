@@ -118,7 +118,7 @@ export function StepSelectHandover({ selected, onSelect }: Props) {
                   <p className="text-sm font-bold">${loan.loan_amount}</p>
                   <span
                     className={cn(
-                      'inline-block rounded-full px-2 py-0.5 text-[10px] font-medium',
+                      'inline-block rounded-full px-2 py-0.5 text-xs font-medium',
                       loan.deposit_paid
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
@@ -129,7 +129,7 @@ export function StepSelectHandover({ selected, onSelect }: Props) {
                 </div>
               </div>
               <div className="mt-2 pt-2 border-t flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground font-mono">{loan.loan_id}</span>
+                <span className="text-xs text-muted-foreground font-mono">{loan.loan_id}</span>
                 {selected?.loan_id === loan.loan_id && (
                   <span className="text-xs font-semibold text-primary">Selected</span>
                 )}

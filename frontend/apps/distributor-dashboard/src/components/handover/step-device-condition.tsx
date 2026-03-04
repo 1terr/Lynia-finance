@@ -45,7 +45,7 @@ function RatingPicker({
             key={r.value}
             onClick={() => onChange(r.value)}
             className={cn(
-              'flex-1 rounded-md py-1.5 text-[10px] font-medium border-2 transition-all',
+              'flex-1 rounded-md py-1.5 text-xs font-medium border-2 transition-all',
               value === r.value
                 ? `${r.color} text-white border-transparent`
                 : 'border-muted-foreground/20 text-muted-foreground hover:border-muted-foreground/40',
@@ -86,7 +86,7 @@ function BoolToggle({
       <span className="text-xs font-medium flex-1 text-left">{label}</span>
       <span
         className={cn(
-          'text-[10px] font-bold px-1.5 py-0.5 rounded',
+          'text-xs font-bold px-1.5 py-0.5 rounded',
           value ? 'text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900' : 'text-red-700 bg-red-100 dark:text-red-300 dark:bg-red-900',
         )}
       >

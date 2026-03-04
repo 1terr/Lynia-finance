@@ -100,28 +100,28 @@ export function StepConfirm({ data, onUpdate }: Props) {
           <div className="flex items-start gap-2">
             <User className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] text-muted-foreground">Customer</p>
+              <p className="text-xs text-muted-foreground">Customer</p>
               <p className="font-medium">{loan.customer_name}</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <Smartphone className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] text-muted-foreground">Device</p>
+              <p className="text-xs text-muted-foreground">Device</p>
               <p className="font-medium">{device.brand} {device.model}</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <ScanLine className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] text-muted-foreground">IMEI</p>
+              <p className="text-xs text-muted-foreground">IMEI</p>
               <p className="font-medium font-mono text-xs">{device.imei}</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <ClipboardCheck className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] text-muted-foreground">Condition</p>
+              <p className="text-xs text-muted-foreground">Condition</p>
               <p className="font-medium capitalize">
                 Screen: {data.device_condition.screen_condition}, Body: {data.device_condition.body_condition}
               </p>
@@ -130,14 +130,14 @@ export function StepConfirm({ data, onUpdate }: Props) {
           <div className="flex items-start gap-2">
             <Camera className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] text-muted-foreground">Photos</p>
+              <p className="text-xs text-muted-foreground">Photos</p>
               <p className="font-medium">{data.device_photos.filter(Boolean).length} captured</p>
             </div>
           </div>
           <div className="flex items-start gap-2">
             <PenLine className="h-3.5 w-3.5 text-muted-foreground mt-0.5" />
             <div>
-              <p className="text-[10px] text-muted-foreground">Signature</p>
+              <p className="text-xs text-muted-foreground">Signature</p>
               <p className="font-medium">{data.signature_data_url ? 'Captured' : 'Missing'}</p>
             </div>
           </div>
@@ -196,7 +196,7 @@ export function StepConfirm({ data, onUpdate }: Props) {
             Deposit Payment
           </h3>
           {(depositAlreadyPaid || data.deposit_verified) && (
-            <Badge variant="success" className="ml-auto text-[10px]">Verified</Badge>
+            <Badge variant="success" className="ml-auto text-xs">Verified</Badge>
           )}
         </div>
 

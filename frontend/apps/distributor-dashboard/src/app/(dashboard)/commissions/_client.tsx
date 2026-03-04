@@ -124,7 +124,7 @@ export default function CommissionsPage() {
       setSlowLoading(false);
       return;
     }
-    const timer = setTimeout(() => setSlowLoading(true), 8000);
+    const timer = setTimeout(() => setSlowLoading(true), 4000);
     return () => clearTimeout(timer);
   }, [loading]);
 
@@ -301,10 +301,10 @@ export default function CommissionsPage() {
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
           Monthly Earnings (Last 6 Months)
         </h2>
-        <div className="flex items-end gap-2 h-32">
+        <div className="flex items-end gap-2 h-40 sm:h-32">
           {monthlyEarnings.map((m) => (
             <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-[10px] font-medium text-muted-foreground">
+              <span className="text-xs font-medium text-muted-foreground">
                 {m.amount > 0 ? `$${m.amount.toFixed(0)}` : ''}
               </span>
               <div
@@ -317,7 +317,7 @@ export default function CommissionsPage() {
                   minHeight: 4,
                 }}
               />
-              <span className="text-[10px] text-muted-foreground">{m.month}</span>
+              <span className="text-xs text-muted-foreground">{m.month}</span>
             </div>
           ))}
         </div>
@@ -362,14 +362,14 @@ export default function CommissionsPage() {
                 <Target className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
               <p className="text-lg font-bold">{handoverCount}</p>
-              <p className="text-[10px] text-muted-foreground">Total Handovers</p>
+              <p className="text-xs text-muted-foreground">Total Handovers</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
                 <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
               </div>
               <p className="text-lg font-bold">{commissionRate}%</p>
-              <p className="text-[10px] text-muted-foreground">Commission Rate</p>
+              <p className="text-xs text-muted-foreground">Commission Rate</p>
             </div>
             <div className="text-center">
               <div className="flex items-center justify-center gap-1 mb-1">
@@ -380,7 +380,7 @@ export default function CommissionsPage() {
                   ? (stats.total_commissions_earned / handoverCount).toFixed(2)
                   : '0.00'}
               </p>
-              <p className="text-[10px] text-muted-foreground">Avg per Handover</p>
+              <p className="text-xs text-muted-foreground">Avg per Handover</p>
             </div>
           </div>
         </div>
@@ -456,16 +456,16 @@ export default function CommissionsPage() {
         </div>
       ) : (
       <>
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div role="group" aria-label="Filter by payment status" className="flex items-center gap-1 rounded-lg border p-1">
+      {/* Filters — horizontally scrollable on mobile */}
+      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory">
+        <div role="group" aria-label="Filter by payment status" className="flex items-center gap-1 rounded-lg border p-1 flex-shrink-0">
           {(['all', 'paid', 'pending'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setPaymentFilter(f)}
               aria-pressed={paymentFilter === f}
               className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                'rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap touch-target',
                 paymentFilter === f
                   ? 'bg-primary text-primary-foreground'
                   : 'hover:bg-accent',
@@ -476,14 +476,14 @@ export default function CommissionsPage() {
           ))}
         </div>
 
-        <div role="group" aria-label="Filter by time period" className="flex items-center gap-1 rounded-lg border p-1">
+        <div role="group" aria-label="Filter by time period" className="flex items-center gap-1 rounded-lg border p-1 flex-shrink-0">
           {(['all', 'this_month', 'last_month'] as const).map((f) => (
             <button
               key={f}
               onClick={() => setPeriodFilter(f)}
               aria-pressed={periodFilter === f}
               className={cn(
-                'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+                'rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap touch-target',
                 periodFilter === f
                   ? 'bg-primary text-primary-foreground'
                   : 'hover:bg-accent',
@@ -502,7 +502,7 @@ export default function CommissionsPage() {
           variant="outline"
           size="sm"
           onClick={() => exportCSV(filteredCommissions)}
-          className="sm:hidden ml-auto"
+          className="sm:hidden ml-auto flex-shrink-0"
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
@@ -552,7 +552,7 @@ export default function CommissionsPage() {
                           ? 'success'
                           : 'warning'
                       }
-                      className="text-[10px]"
+                      className="text-xs"
                     >
                       {commission.payment_status === 'paid' ? 'Paid' : 'Pending'}
                     </Badge>
@@ -565,11 +565,11 @@ export default function CommissionsPage() {
                   <p className="text-sm font-semibold text-green-600">
                     +${commission.commission_amount.toFixed(2)}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {commission.commission_percentage}% of $
                     {commission.device_retail_price}
                   </p>
-                  <p className="text-[10px] text-muted-foreground">
+                  <p className="text-xs text-muted-foreground">
                     {new Date(commission.calculation_date).toLocaleDateString(
                       'en-ZW',
                       { month: 'short', day: 'numeric' },

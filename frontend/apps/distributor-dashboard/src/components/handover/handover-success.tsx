@@ -31,21 +31,21 @@ export function HandoverSuccess({ result, onDone }: Props) {
         <div className="rounded-lg bg-muted/50 p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">Loan Activated</span>
+            <span className="text-xs text-muted-foreground">Loan Activated</span>
           </div>
           <p className="text-sm font-bold">{result.loan_id}</p>
         </div>
         <div className="rounded-lg bg-muted/50 p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <DollarSign className="h-3.5 w-3.5 text-green-600" />
-            <span className="text-[10px] text-muted-foreground">Commission Earned</span>
+            <span className="text-xs text-muted-foreground">Commission Earned</span>
           </div>
           <p className="text-sm font-bold text-green-600">${result.commission_amount.toFixed(2)}</p>
         </div>
         <div className="rounded-lg bg-muted/50 p-3">
           <div className="flex items-center gap-1.5 mb-1">
             <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">First Payment Due</span>
+            <span className="text-xs text-muted-foreground">First Payment Due</span>
           </div>
           <p className="text-sm font-bold">
             {new Date(result.next_payment_date).toLocaleDateString('en-ZW', {

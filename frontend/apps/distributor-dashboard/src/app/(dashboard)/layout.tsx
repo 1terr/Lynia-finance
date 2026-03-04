@@ -6,6 +6,7 @@ import { MobileNav } from '@/components/layout/mobile-nav';
 import { AuthProvider } from '@/components/layout/auth-provider';
 import { SessionTimeoutWrapper } from '@/components/layout/session-timeout-wrapper';
 import { ErrorBoundary } from '@/components/error-boundary';
+import { StaleRefreshIndicator } from '@/components/layout/stale-refresh-indicator';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar />
         <div className="flex-1 flex flex-col">
           <Header />
+          <StaleRefreshIndicator />
           <main id="main-content" className="flex-1 p-4 md:p-6 pb-20 md:pb-6">
             <ErrorBoundary>
               {children}
