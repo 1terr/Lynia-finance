@@ -340,9 +340,9 @@ export default function ThesisPage() {
               }`}
               style={{ transitionDelay: '180ms' }}
             >
-              Every loan is bundled with health and life insurance, creating a
-              resilience layer that protects borrowers from the economic shocks
-              that derail informal livelihoods.
+              Loans are bundled with insurance, creating a resilience layer
+              that protects borrowers from the economic shocks that derail
+              informal livelihoods.
             </p>
 
             {/* Pull quote — dark card */}
