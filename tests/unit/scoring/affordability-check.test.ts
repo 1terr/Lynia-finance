@@ -22,30 +22,30 @@ function buildAffordability(overrides: Partial<AffordabilityData> = {}): Afforda
 
 describe('scoreAffordability', () => {
   // ─── DTI Ratio tiers ───────────────────────────────────────────
-  // monthlyInstallment = (loan * 1.12) / 6
-  // totalObligations = debt + monthlyInstallment
+  // Uses declining balance: M = P × [r(1+r)^n] / [(1+r)^n - 1]
+  // with r = 5%/12 = 0.00417, n = 12 months
+  // Payment factor ≈ 0.08561, so M ≈ loan × 0.08561
+  // totalObligations = debt + M
   // dtiRatio = totalObligations / max(income, 1)
 
   it('DTI <= 0.30 yields dtiScore = 150', () => {
     // income=500, debt=0, loan=200
-    // monthlyInst = (200*1.12)/6 = 37.333
-    // dti = 37.333 / 500 = 0.0747 (<=0.30)
+    // M = 200 × 0.08561 = 17.12, dti = 17.12/500 = 0.034 (<=0.30)
     // dtiScore=150, incomeScore=100, householdScore=50 => 300
     const score = scoreAffordability(buildAffordability());
     expect(score).toBe(300);
   });
 
   it('DTI 0.31-0.40 yields dtiScore = 120', () => {
-    // Need dti in (0.30, 0.40]
-    // income=300, debt=0, loan=500
-    // monthlyInst = (500*1.12)/6 = 93.333
-    // dti = 93.333 / 300 = 0.3111 (in 0.31-0.40)
-    // dtiScore=120, incomeScore=75 (300>=300), householdScore=50 (300/1=300>=100)
+    // income=300, debt=55, loan=500
+    // M = 500 × 0.08561 = 42.80, total = 55+42.80 = 97.80
+    // dti = 97.80/300 = 0.326 (in 0.31-0.40)
+    // dtiScore=120, incomeScore=75, householdScore=50
     // total = 120 + 75 + 50 = 245
     const score = scoreAffordability(
       buildAffordability({
         monthly_income_usd: 300,
-        existing_debt_obligations_usd: 0,
+        existing_debt_obligations_usd: 55,
         requested_loan_amount: 500,
       })
     );
@@ -53,15 +53,15 @@ describe('scoreAffordability', () => {
   });
 
   it('DTI 0.41-0.50 yields dtiScore = 80', () => {
-    // income=200, debt=0, loan=500
-    // monthlyInst = (500*1.12)/6 = 93.333
-    // dti = 93.333 / 200 = 0.4667 (in 0.41-0.50)
-    // dtiScore=80, incomeScore=50 (200>=150), householdScore=50 (200/1=200>=100)
+    // income=200, debt=50, loan=500
+    // M = 42.80, total = 50+42.80 = 92.80
+    // dti = 92.80/200 = 0.464 (in 0.41-0.50)
+    // dtiScore=80, incomeScore=50, householdScore=50
     // total = 80 + 50 + 50 = 180
     const score = scoreAffordability(
       buildAffordability({
         monthly_income_usd: 200,
-        existing_debt_obligations_usd: 0,
+        existing_debt_obligations_usd: 50,
         requested_loan_amount: 500,
       })
     );
@@ -69,16 +69,15 @@ describe('scoreAffordability', () => {
   });
 
   it('DTI 0.51-0.60 yields dtiScore = 40', () => {
-    // income=200, debt=10, loan=500
-    // monthlyInst = (500*1.12)/6 = 93.333
-    // totalObligations = 10 + 93.333 = 103.333
-    // dti = 103.333 / 200 = 0.5167 (in 0.51-0.60)
-    // dtiScore=40, incomeScore=50 (200>=150), householdScore=50 (200/1=200>=100)
+    // income=200, debt=70, loan=500
+    // M = 42.80, total = 70+42.80 = 112.80
+    // dti = 112.80/200 = 0.564 (in 0.51-0.60)
+    // dtiScore=40, incomeScore=50, householdScore=50
     // total = 40 + 50 + 50 = 140
     const score = scoreAffordability(
       buildAffordability({
         monthly_income_usd: 200,
-        existing_debt_obligations_usd: 10,
+        existing_debt_obligations_usd: 70,
         requested_loan_amount: 500,
       })
     );
@@ -86,15 +85,15 @@ describe('scoreAffordability', () => {
   });
 
   it('DTI > 0.60 yields dtiScore = 0', () => {
-    // income=100, debt=0, loan=500
-    // monthlyInst = (500*1.12)/6 = 93.333
-    // dti = 93.333 / 100 = 0.9333 (> 0.60)
-    // dtiScore=0, incomeScore=25 (100>=100), householdScore=50 (100/1=100>=100)
+    // income=100, debt=30, loan=500
+    // M = 42.80, total = 30+42.80 = 72.80
+    // dti = 72.80/100 = 0.728 (> 0.60)
+    // dtiScore=0, incomeScore=25, householdScore=50
     // total = 0 + 25 + 50 = 75
     const score = scoreAffordability(
       buildAffordability({
         monthly_income_usd: 100,
-        existing_debt_obligations_usd: 0,
+        existing_debt_obligations_usd: 30,
         requested_loan_amount: 500,
       })
     );

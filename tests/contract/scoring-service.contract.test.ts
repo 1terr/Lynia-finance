@@ -251,7 +251,7 @@ describe('Scoring Service Contract Tests', () => {
     // -----------------------------------------------------------------------
     // Decision threshold tests
     // -----------------------------------------------------------------------
-    it('should approve with Tier 3 for scaled_score >= 750', async () => {
+    it('should approve with Tier 3 for scaled_score >= 650', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -261,15 +261,15 @@ describe('Scoring Service Contract Tests', () => {
       const response = await handler(event);
       const body = parseResponseBody<Record<string, unknown>>(response);
 
-      expect((body.scaled_score as number)).toBeGreaterThanOrEqual(750);
+      expect((body.scaled_score as number)).toBeGreaterThanOrEqual(650);
       expect(body.decision).toBe('approve');
       expect(body.tier).toBe('Tier 3');
-      expect(body.credit_limit_usd).toBe(500);
-      expect(body.down_payment_percentage).toBe(5);
-      expect(body.interest_rate_apr).toBe(10);
+      expect(body.credit_limit_usd).toBe(2000);
+      expect(body.down_payment_percentage).toBe(10);
+      expect(body.interest_rate_apr).toBe(3);
     });
 
-    it('should reject for scaled_score < 550', async () => {
+    it('should produce low score for worst-case inputs', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -279,10 +279,11 @@ describe('Scoring Service Contract Tests', () => {
       const response = await handler(event);
       const body = parseResponseBody<Record<string, unknown>>(response);
 
-      expect((body.scaled_score as number)).toBeLessThan(550);
-      expect(body.decision).toBe('reject');
-      expect(body.tier).toBe('Rejected');
-      expect(body.credit_limit_usd).toBe(0);
+      // With bad data across all components, score lands in Tier 1 (350-499)
+      expect((body.scaled_score as number)).toBeLessThan(500);
+      expect(body.decision).toBe('approve');
+      expect(body.tier).toBe('Tier 1');
+      expect(body.credit_limit_usd).toBe(200);
     });
 
     // -----------------------------------------------------------------------

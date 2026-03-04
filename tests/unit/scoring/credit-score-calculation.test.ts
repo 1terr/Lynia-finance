@@ -149,26 +149,13 @@ describe('calculateRuleBasedScore', () => {
     expect(result.scaled_score).toBeGreaterThanOrEqual(750);
   });
 
-  it('all-min input produces reject', async () => {
+  it('all-min input produces low score with Tier 1', async () => {
     // Affordability: income=0, debt=0, loan=200, household=1
-    //   monthlyInst = (200*1.12)/6 = 37.33, dti = 37.33/1 = 37.33 -> 0 (> 0.60)
-    //   incomeScore = 0 (0 < 100)
-    //   householdScore = 10 (0/1 = 0 < 50)
-    //   total = 10
-    // Repayment: previous_loans_count=1, on_time=0, bill=0, comm=0
-    //   on_time < 0.60 -> 0, bill < 0.60 -> 10, comm < 0.60 -> 10 = 20
-    // Mobile Money: null -> 100 (neutral)
-    // External Credit: null -> 75 (neutral)
-    // KYC: failed -> 0, face=0 -> 0, liveness=false -> 0 = 0
-    // Components:
-    //   affordability = round(10/300 * 300) = 10
-    //   repayment = round(20/250 * 250) = 20
-    //   mobile_money = round(100/200 * 200) = 100
-    //   external_credit = round(75/150 * 150) = 75
-    //   kyc = round(0/100 * 100) = 0
-    //   org = 0
-    // raw = 10 + 20 + 100 + 75 + 0 = 205
-    // scaled = 300 + (205/1000) * 550 = 300 + 112.75 = 413 (rounded)
+    //   M = 200 × 0.08561 = 17.12, dti = 17.12/1 = 17.12 -> 0 (> 0.60)
+    //   incomeScore = 0, householdScore = 10. total = 10
+    // Repayment: on_time=0->0, bill=0->10, comm=0->10 = 20
+    // Mobile Money: null -> 100, External: null -> 75, KYC: 0
+    // raw = 10+20+100+75+0 = 205, scaled = 413 -> Tier 1
     const result = await calculateRuleBasedScore(
       buildInput({
         monthly_income_usd: 0,
@@ -186,9 +173,9 @@ describe('calculateRuleBasedScore', () => {
         },
       })
     );
-    expect(result.decision).toBe('reject');
-    expect(result.tier).toBe('Rejected');
-    expect(result.credit_limit_usd).toBe(0);
+    expect(result.decision).toBe('approve');
+    expect(result.tier).toBe('Tier 1');
+    expect(result.credit_limit_usd).toBe(200);
   });
 
   // ─── First-time customer ───────────────────────────────────────
@@ -200,11 +187,10 @@ describe('calculateRuleBasedScore', () => {
   });
 
   // ─── Tier threshold tests ──────────────────────────────────────
-  // Tier 3: scaled >= 750 -> approve, $500, 5% down, 10% APR
-  it('scaled_score >= 750 produces Tier 3 with $500 limit, 5% down, 10% APR', async () => {
-    // Build input to produce raw ~818 -> scaled ~750
-    // Need: affordability=300, repayment=250, mobile=100, external=75, kyc=100, org=0
-    // That gives raw=825, scaled=754 -> Tier 3
+  // Tier 3: scaled >= 650 -> approve, $2000, 10% down, 3% APR
+  it('scaled_score >= 650 produces Tier 3 with $2000 limit, 10% down, 3% APR', async () => {
+    // affordability=300, repayment=250, mobile=100, ext=75, kyc=100
+    // raw=825, scaled=754 -> Tier 3
     const result = await calculateRuleBasedScore(
       buildInput({
         monthly_income_usd: 500,
@@ -219,125 +205,58 @@ describe('calculateRuleBasedScore', () => {
     );
     expect(result.decision).toBe('approve');
     expect(result.tier).toBe('Tier 3');
-    expect(result.credit_limit_usd).toBe(500);
-    expect(result.down_payment_percentage).toBe(5);
-    expect(result.interest_rate_apr).toBe(10);
-  });
-
-  // Tier 2: scaled 700-749 -> approve, $350, 10% down, 12% APR
-  it('scaled_score in 700-749 produces Tier 2 with $350 limit, 10% down, 12% APR', async () => {
-    // Target raw ~727-818, scaled ~700-749
-    // affordability=300, repayment=200 (on_time=0.85->120, bill=0.75->35, comm=0.75->35=190
-    //   -> round(190/250*250)=190), mobile=100, external=75, kyc=100
-    // raw = 300+190+100+75+100 = 765, scaled = 300+(765/1000)*550 = 300+420.75 = 721
-    const result = await calculateRuleBasedScore(
-      buildInput({
-        monthly_income_usd: 500,
-        existing_debt_obligations_usd: 0,
-        requested_loan_amount: 200,
-        household_size: 1,
-        previous_loans_count: 5,
-        on_time_payment_rate: 0.85,
-        bill_payment_consistency: 0.75,
-        communication_response_rate: 0.75,
-      })
-    );
-    expect(result.scaled_score).toBeGreaterThanOrEqual(700);
-    expect(result.scaled_score).toBeLessThan(750);
-    expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 2');
-    expect(result.credit_limit_usd).toBe(350);
+    expect(result.credit_limit_usd).toBe(2000);
     expect(result.down_payment_percentage).toBe(10);
-    expect(result.interest_rate_apr).toBe(12);
+    expect(result.interest_rate_apr).toBe(3);
   });
 
-  // Tier 1: scaled 650-699 -> approve, $200, 10% down, 15% APR
-  it('scaled_score in 650-699 produces Tier 1 with $200 limit, 10% down, 15% APR', async () => {
-    // Target raw ~636-727, scaled ~650-699
-    // affordability=300, repayment: on_time=0.75->80, bill=0.60->20, comm=0.60->20 = 120
-    //   -> round(120/250*250)=120, mobile=100, external=75, kyc=100
-    // raw = 300+120+100+75+100 = 695, scaled = 300+(695/1000)*550 = 300+382.25 = 682
-    const result = await calculateRuleBasedScore(
-      buildInput({
-        monthly_income_usd: 500,
-        existing_debt_obligations_usd: 0,
-        requested_loan_amount: 200,
-        household_size: 1,
-        previous_loans_count: 5,
-        on_time_payment_rate: 0.75,
-        bill_payment_consistency: 0.60,
-        communication_response_rate: 0.60,
-      })
-    );
-    expect(result.scaled_score).toBeGreaterThanOrEqual(650);
-    expect(result.scaled_score).toBeLessThan(700);
-    expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 1');
-    expect(result.credit_limit_usd).toBe(200);
-    expect(result.down_payment_percentage).toBe(10);
-    expect(result.interest_rate_apr).toBe(15);
-  });
-
-  // Manual Review: scaled 550-649 -> review, $0
-  it('scaled_score in 550-649 produces review with Manual Review and $0 limit', async () => {
-    // Target raw ~454-636, scaled ~550-649
-    // affordability: income=200, debt=0, loan=200, household=3
-    //   monthlyInst = (200*1.12)/6 = 37.33, dti = 37.33/200 = 0.187 -> 150
-    //   incomeScore = 75 (200 >= 150)... wait 200 >= 150 -> 50... 200 >= 150 -> 50
-    //   Actually: 200 >= 300? No. 200 >= 150? Yes -> 50
-    //   householdScore: 200/3 = 66.67 >= 50 -> 20
-    //   total = 150 + 50 + 20 = 220
-    // repayment: on_time=0.60->40, bill=0.55->10, comm=0.55->10 = 60
-    //   -> round(60/250*250) = 60
-    // mobile = 100 (null), external = 75 (null), kyc = 100
-    // raw = 220 + 60 + 100 + 75 + 100 = 555, scaled = 300 + (555/1000)*550 = 300+305.25 = 605
-    //
-    // Hmm, let me recalculate: affordability component = round(220/300*300) = 220
-    // raw = 220+60+100+75+100 = 555, scaled = 605
+  // Tier 2: scaled 500-649 -> approve, $500, 20% down, 4% APR
+  it('scaled_score in 500-649 produces Tier 2 with $500 limit, 20% down, 4% APR', async () => {
+    // Lower income and bad repayment to land in Tier 2 range
+    // affordability: income=200, loan=200, household=3
+    //   M=17.12, dti=0.086->150, income=50, household=200/3=67->20 = 220
+    // repayment: on_time=0.75->80, bill=0.60->20, comm=0.60->20 = 120
+    // mobile=100, ext=75, kyc=100
+    // raw = 220+120+100+75+100 = 615, scaled = 638 -> Tier 2
     const result = await calculateRuleBasedScore(
       buildInput({
         monthly_income_usd: 200,
         existing_debt_obligations_usd: 0,
         requested_loan_amount: 200,
         household_size: 3,
-        previous_loans_count: 2,
-        on_time_payment_rate: 0.60,
-        bill_payment_consistency: 0.55,
-        communication_response_rate: 0.55,
+        previous_loans_count: 5,
+        on_time_payment_rate: 0.75,
+        bill_payment_consistency: 0.60,
+        communication_response_rate: 0.60,
       })
     );
-    expect(result.scaled_score).toBeGreaterThanOrEqual(550);
+    expect(result.scaled_score).toBeGreaterThanOrEqual(500);
     expect(result.scaled_score).toBeLessThan(650);
-    expect(result.decision).toBe('review');
-    expect(result.tier).toBe('Manual Review');
-    expect(result.credit_limit_usd).toBe(0);
+    expect(result.decision).toBe('approve');
+    expect(result.tier).toBe('Tier 2');
+    expect(result.credit_limit_usd).toBe(500);
+    expect(result.down_payment_percentage).toBe(20);
+    expect(result.interest_rate_apr).toBe(4);
   });
 
-  // Rejected: scaled < 550 -> reject, $0
-  it('scaled_score < 550 produces reject with Rejected tier and $0 limit', async () => {
-    // Target raw < 454, scaled < 550
-    // affordability: income=80, debt=50, loan=300, household=4
-    //   monthlyInst = (300*1.12)/6 = 56, totalObligations = 50+56 = 106
-    //   dti = 106/80 = 1.325 -> 0 (> 0.60)
-    //   incomeScore = 0 (80 < 100)
-    //   householdScore: 80/4 = 20 < 50 -> 10
-    //   total = 0 + 0 + 10 = 10
-    // repayment: on_time=0.50->0, bill=0.40->10, comm=0.40->10 = 20
-    //   -> round(20/250*250) = 20
-    // mobile = 100 (null), external = 75 (null)
-    // kyc: review -> 25, face=80 -> 15, liveness=false -> 0 = 40
-    //   -> round(40/100*100) = 40
-    // raw = 10+20+100+75+40 = 245, scaled = 300+(245/1000)*550 = 300+134.75 = 435
+  // Tier 1: scaled 350-499 -> approve, $200, 30% down, 5% APR
+  it('scaled_score in 350-499 produces Tier 1 with $200 limit, 30% down, 5% APR', async () => {
+    // Very bad affordability + bad repayment to land in Tier 1
+    // affordability: income=100, debt=50, loan=300, household=5
+    //   M=25.68, total=75.68, dti=0.757->0, income=25, household=20->10 = 35
+    // repayment: on_time=0.60->40, bill=0.50->10, comm=0.50->10 = 60
+    // mobile=100, ext=75, kyc: review->25, face=80->15 = 40
+    // raw = 35+60+100+75+40 = 310, scaled = 471 -> Tier 1
     const result = await calculateRuleBasedScore(
       buildInput({
-        monthly_income_usd: 80,
+        monthly_income_usd: 100,
         existing_debt_obligations_usd: 50,
         requested_loan_amount: 300,
-        household_size: 4,
+        household_size: 5,
         previous_loans_count: 3,
-        on_time_payment_rate: 0.50,
-        bill_payment_consistency: 0.40,
-        communication_response_rate: 0.40,
+        on_time_payment_rate: 0.60,
+        bill_payment_consistency: 0.50,
+        communication_response_rate: 0.50,
         kyc_result: {
           id_verification: { status: 'review' },
           face_match_score: 80,
@@ -345,9 +264,63 @@ describe('calculateRuleBasedScore', () => {
         },
       })
     );
-    expect(result.scaled_score).toBeLessThan(550);
-    expect(result.decision).toBe('reject');
-    expect(result.tier).toBe('Rejected');
+    expect(result.scaled_score).toBeGreaterThanOrEqual(350);
+    expect(result.scaled_score).toBeLessThan(500);
+    expect(result.decision).toBe('approve');
+    expect(result.tier).toBe('Tier 1');
+    expect(result.credit_limit_usd).toBe(200);
+    expect(result.down_payment_percentage).toBe(30);
+    expect(result.interest_rate_apr).toBe(5);
+  });
+
+  // Manual Review: scaled 300-349 -> review, $0
+  it('scaled_score in 300-349 produces review with Manual Review and $0 limit', async () => {
+    // Need extremely low scores across all components
+    // affordability: income=50, debt=100, loan=500, household=8
+    //   M=42.80, total=142.80, dti=2.856->0, income=0, household=50/8=6.25->10 = 10
+    // repayment: on_time=0.40->0, bill=0.30->10, comm=0.30->10 = 20
+    // mobile: worst possible data = 30
+    // external: worst possible data = 10
+    // kyc: failed->0, face=0->0, liveness=false->0 = 0
+    // raw = 10+20+30+10+0 = 70, scaled = 339 -> review
+    const result = await calculateRuleBasedScore(
+      buildInput({
+        monthly_income_usd: 50,
+        existing_debt_obligations_usd: 100,
+        requested_loan_amount: 500,
+        household_size: 8,
+        previous_loans_count: 3,
+        on_time_payment_rate: 0.40,
+        bill_payment_consistency: 0.30,
+        communication_response_rate: 0.30,
+        mobile_money_profile: {
+          account_age_months: 1,
+          avg_monthly_inflow_usd: 10,
+          avg_monthly_outflow_usd: 5,
+          transaction_count_3m: 2,
+          balance_usd: 1,
+          airtime_purchases_3m: 1,
+          airtime_avg_per_purchase_usd: 1,
+        },
+        external_credit_data: {
+          credit_bureau_score: 400,
+          platform_verified: false,
+          platform_earnings_3m_usd: 0,
+          platform_rating: 0,
+          bank_account_verified: false,
+          bank_account_age_months: 0,
+        },
+        kyc_result: {
+          id_verification: { status: 'failed' },
+          face_match_score: 0,
+          liveness_passed: false,
+        },
+      })
+    );
+    expect(result.scaled_score).toBeGreaterThanOrEqual(300);
+    expect(result.scaled_score).toBeLessThan(350);
+    expect(result.decision).toBe('review');
+    expect(result.tier).toBe('Manual Review');
     expect(result.credit_limit_usd).toBe(0);
   });
 
@@ -409,26 +382,15 @@ describe('calculateRuleBasedScore', () => {
   // ─── Exact score verification ──────────────────────────────────
   it('exact score for default input with all neutrals', async () => {
     // Default: income=500, debt=0, loan=200, household=1, no repayment history
-    // Affordability: monthlyInst=(200*1.12)/6=37.33, dti=37.33/500=0.0747 -> 150
-    //   income=500 -> 100, perPerson=500/1=500 -> 50. Total = 300
-    // Repayment: null (no previous_loans_count) -> 125
-    // Mobile Money: null -> 100
-    // External Credit: null -> 75
+    // Affordability: M=17.12, dti=0.034->150, income=100, household=50 = 300
+    // Repayment: null -> 125, Mobile: null -> 100, External: null -> 75
     // KYC: verified->50, face=98->35, liveness->15 = 100
-    // Components (smartphone):
-    //   affordability = round(300/300 * 300) = 300
-    //   repayment = round(125/250 * 250) = 125
-    //   mobile_money = round(100/200 * 200) = 100
-    //   external_credit = round(75/150 * 150) = 75
-    //   kyc = round(100/100 * 100) = 100
-    //   org = 0
-    // raw = 300+125+100+75+100 = 700
-    // scaled = 300 + (700/1000) * 550 = 300 + 385 = 685
+    // raw = 300+125+100+75+100 = 700, scaled = 685 -> Tier 3 (>=650)
     const result = await calculateRuleBasedScore(buildInput());
     expect(result.total_raw_score).toBe(700);
     expect(result.scaled_score).toBe(685);
     expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 1');
+    expect(result.tier).toBe('Tier 3');
   });
 
   it('customer_id is passed through correctly', async () => {
@@ -468,7 +430,7 @@ describe('calculateRuleBasedScore', () => {
     expect(result.total_raw_score).toBe(800);
     expect(result.scaled_score).toBe(740);
     expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 2');
+    expect(result.tier).toBe('Tier 3');
   });
 
   // ─── Score with full mobile money and external credit data ─────

@@ -370,7 +370,7 @@ describe('Credit Score Propagation Data Flow Tests', () => {
   // 3. Decision thresholds
   // =========================================================================
   describe('Decision Thresholds', () => {
-    it('should approve Tier 3 for scaled_score >= 750', async () => {
+    it('should approve Tier 3 for scaled_score >= 650', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -413,16 +413,16 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      if (result.scaled_score >= 750) {
+      if (result.scaled_score >= 650) {
         expect(result.decision).toBe('approve');
         expect(result.tier).toBe('Tier 3');
-        expect(result.credit_limit_usd).toBe(500);
-        expect(result.down_payment_percentage).toBe(5);
-        expect(result.interest_rate_apr).toBe(10);
+        expect(result.credit_limit_usd).toBe(2000);
+        expect(result.down_payment_percentage).toBe(10);
+        expect(result.interest_rate_apr).toBe(3);
       }
     });
 
-    it('should approve Tier 2 for scaled_score >= 700 and < 750', async () => {
+    it('should approve Tier 2 for scaled_score >= 500 and < 650', async () => {
       // Use a moderate input designed to land in 700-749 range
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
@@ -466,16 +466,16 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      if (result.scaled_score >= 700 && result.scaled_score < 750) {
+      if (result.scaled_score >= 500 && result.scaled_score < 650) {
         expect(result.decision).toBe('approve');
         expect(result.tier).toBe('Tier 2');
-        expect(result.credit_limit_usd).toBe(350);
-        expect(result.down_payment_percentage).toBe(10);
-        expect(result.interest_rate_apr).toBe(12);
+        expect(result.credit_limit_usd).toBe(500);
+        expect(result.down_payment_percentage).toBe(20);
+        expect(result.interest_rate_apr).toBe(4);
       }
     });
 
-    it('should reject for scaled_score < 550', async () => {
+    it('should produce low score for worst-case inputs', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -518,49 +518,41 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      expect(result.scaled_score).toBeLessThan(550);
-      expect(result.decision).toBe('reject');
-      expect(result.credit_limit_usd).toBe(0);
+      // With bad data everywhere, score is low but still in review/Tier 1 range
+      expect(result.scaled_score).toBeLessThan(500);
+      expect(['approve', 'review']).toContain(result.decision);
     });
 
     it('should validate all tier thresholds and their corresponding limits', () => {
       const thresholds = [
         {
-          minScore: 750,
+          minScore: 650,
           maxScore: 850,
           tier: 'Tier 3',
-          limit: 500,
-          downPayment: 5,
-          apr: 10,
-        },
-        {
-          minScore: 700,
-          maxScore: 749,
-          tier: 'Tier 2',
-          limit: 350,
+          limit: 2000,
           downPayment: 10,
-          apr: 12,
+          apr: 3,
         },
         {
-          minScore: 650,
-          maxScore: 699,
+          minScore: 500,
+          maxScore: 649,
+          tier: 'Tier 2',
+          limit: 500,
+          downPayment: 20,
+          apr: 4,
+        },
+        {
+          minScore: 350,
+          maxScore: 499,
           tier: 'Tier 1',
           limit: 200,
-          downPayment: 10,
-          apr: 15,
-        },
-        {
-          minScore: 550,
-          maxScore: 649,
-          tier: 'Manual Review',
-          limit: 0,
-          downPayment: 0,
-          apr: 0,
+          downPayment: 30,
+          apr: 5,
         },
         {
           minScore: 300,
-          maxScore: 549,
-          tier: 'Rejected',
+          maxScore: 349,
+          tier: 'Manual Review',
           limit: 0,
           downPayment: 0,
           apr: 0,
@@ -568,26 +560,25 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       ];
 
       for (const threshold of thresholds) {
-        // Check that the tier definitions are internally consistent
         expect(threshold.minScore).toBeLessThanOrEqual(threshold.maxScore);
         expect(threshold.limit).toBeGreaterThanOrEqual(0);
         expect(threshold.downPayment).toBeGreaterThanOrEqual(0);
         expect(threshold.apr).toBeGreaterThanOrEqual(0);
 
         if (threshold.tier === 'Tier 3') {
-          expect(threshold.limit).toBe(500);
-          expect(threshold.downPayment).toBe(5);
-          expect(threshold.apr).toBe(10);
+          expect(threshold.limit).toBe(2000);
+          expect(threshold.downPayment).toBe(10);
+          expect(threshold.apr).toBe(3);
         }
         if (threshold.tier === 'Tier 2') {
-          expect(threshold.limit).toBe(350);
-          expect(threshold.downPayment).toBe(10);
-          expect(threshold.apr).toBe(12);
+          expect(threshold.limit).toBe(500);
+          expect(threshold.downPayment).toBe(20);
+          expect(threshold.apr).toBe(4);
         }
         if (threshold.tier === 'Tier 1') {
           expect(threshold.limit).toBe(200);
-          expect(threshold.downPayment).toBe(10);
-          expect(threshold.apr).toBe(15);
+          expect(threshold.downPayment).toBe(30);
+          expect(threshold.apr).toBe(5);
         }
       }
     });
@@ -719,7 +710,7 @@ describe('Credit Score Propagation Data Flow Tests', () => {
   // 6. Loan tier parameters
   // =========================================================================
   describe('Loan Tier Parameters', () => {
-    it('should return Tier 3 parameters: $500 limit, 5% down, 10% APR for high scores', async () => {
+    it('should return Tier 3 parameters: $2000 limit, 10% down, 3% APR for high scores', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -762,15 +753,15 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      if (result.scaled_score >= 750) {
+      if (result.scaled_score >= 650) {
         expect(result.tier).toBe('Tier 3');
-        expect(result.credit_limit_usd).toBe(500);
-        expect(result.down_payment_percentage).toBe(5);
-        expect(result.interest_rate_apr).toBe(10);
+        expect(result.credit_limit_usd).toBe(2000);
+        expect(result.down_payment_percentage).toBe(10);
+        expect(result.interest_rate_apr).toBe(3);
       }
     });
 
-    it('should return review for borderline scores (550-649)', async () => {
+    it('should return review for borderline scores (300-349)', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -796,7 +787,7 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      if (result.scaled_score >= 550 && result.scaled_score < 650) {
+      if (result.scaled_score >= 300 && result.scaled_score < 350) {
         expect(result.decision).toBe('review');
         expect(result.tier).toBe('Manual Review');
         expect(result.credit_limit_usd).toBe(0);
