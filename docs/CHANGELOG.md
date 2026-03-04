@@ -4,6 +4,121 @@ All notable changes to Lynia Finance are documented in this file.
 
 ---
 
+## [2026-03-04] End-to-End Loan Journey — 8 Critical Blockers Resolved
+
+### Summary
+
+Full audit of the smartphone loan application journey from WhatsApp initiation through
+device handover. Resolved 8 critical blockers that prevented the loan lifecycle from
+functioning end-to-end. The system now supports the complete flow: scoring → loan creation →
+deposit payment → distributor handover.
+
+### Critical Fixes
+
+#### 1. Loan Record Created After Terms Acceptance
+- **File:** `services/whatsapp-service/src/onboarding/states/loan-offer.ts`
+- After terms acceptance, `INSERT INTO loans` with status `'approved'`
+- Generates loan reference (`LYNIA-2026-XXXXX`)
+- Calls `syncLoanToFineract()` (non-blocking, create + auto-approve)
+- Sends WhatsApp message with loan reference + deposit payment instructions
+
+#### 2. Fineract Loan Product Mapping
+- **File:** `template.yaml`
+- Added `FineractProductIdTier1/2/3` parameters for tier → Fineract product ID mapping
+- Products are configured via `phase-6-fineract-integration/config/setup-fineract-products.ts`
+
+#### 3. Deposit Payment Linked to Loan via National ID
+- **File:** `services/payment-service/src/deposit-resolver.ts` (new)
+- **Files:** All 4 webhook handlers (`webhook-ecocash.ts`, `webhook-onemoney.ts`, `webhook-omari.ts`, `webhook-innbucks.ts`)
+- Customer pays deposit with national ID as reference
+- `deposit-resolver.ts` matches by national ID → finds `approved` loan → creates payment → transitions to `paid_deposit`
+- Webhooks always return 200 to payment providers (deposit-resolver catches errors internally)
+
+#### 4. Handover Status Contradiction Fixed
+- **File:** `services/distributor-service/src/handlers/handovers.ts`
+- Submit validation changed from `status !== 'approved'` to `status !== 'paid_deposit'`
+- Aligns with search query and correct loan lifecycle
+
+#### 5. Device Lock Stub During Handover
+- **File:** `services/lock-service/src/handover/handover-workflow.ts`
+- After handover completion, calls `POST /locks/lock` with device IMEI
+- Records lock intent in DB (Trustonic API is a no-op stub until integration)
+- Non-blocking — lock failure doesn't block handover
+
+#### 6. Deposit Verified Before Handover
+- **File:** `services/distributor-service/src/handlers/handovers.ts`
+- Replaced hardcoded `deposit_verified: true` with actual payment lookup
+- Queries `payments` table for confirmed deposit matching loan_id
+
+#### 7. Duplicate Loan Check in Scoring (by National ID)
+- **File:** `services/scoring-service/src/handlers/calculate-score.ts`
+- Before scoring, checks `loans JOIN customers` by national_id for active loans
+- Prevents one person from holding multiple simultaneous loans
+- Uses national ID (not customer_id) to catch re-registrations with different phone numbers
+
+#### 8. Minimum Score Threshold for Rejection
+- **File:** `services/scoring-service/src/scoring/scoring-engine.ts`
+- Score < 350 → `decision = 'reject'` (credit_limit = $0, tier = 'Below Minimum')
+- Score ≥ 350 → tiered approval (Tier 1/2/3 as before)
+- WhatsApp flow handles rejection gracefully with improvement suggestions
+- Decision type expanded from `'approve'` to `'approve' | 'reject'`
+
+### Updated Credit Tiers
+
+| Tier | Score Range | Credit Limit | Down Payment | APR | Decision |
+|------|------------|-------------|-------------|-----|----------|
+| Tier 3 | ≥ 650 | $2,000 | 10% | 3% | Approve |
+| Tier 2 | 500 - 649 | $500 | 20% | 4% | Approve |
+| Tier 1 | 350 - 499 | $200 | 30% | 5% | Approve |
+| Below Minimum | < 350 | $0 | — | — | **Reject** |
+
+### Loan Lifecycle (New)
+
+```
+approved → paid_deposit → active → paid_off / defaulted
+```
+
+### Test Updates (6 files)
+
+| File | Change |
+|------|--------|
+| `tests/unit/scoring/credit-score-calculation.test.ts` | Score 300-349 now expects reject instead of approve |
+| `tests/integration/data-flow/credit-score-propagation.test.ts` | Added 'reject' to valid decisions |
+| `tests/contract/payment-service.contract.test.ts` | Webhook errors return 200 (not 500) |
+| `tests/e2e/e2e-002-payment-collection.test.ts` | Webhook errors return 200 |
+| `tests/e2e/e2e-007-loan-completion.test.ts` | Webhook errors return 200 |
+| `tests/unit/distributor/distributor-service.test.ts` | Handover expects `paid_deposit` status, mock reset fix |
+
+### Files Changed
+
+**Services** (15 files — 14 modified, 1 new):
+- `services/scoring-service/src/scoring/scoring-engine.ts` — rejection threshold
+- `services/scoring-service/src/scoring/types.ts` — decision type `'approve' | 'reject'`
+- `services/scoring-service/src/handlers/calculate-score.ts` — duplicate loan check
+- `services/whatsapp-service/src/onboarding/states/credit-scoring.ts` — rejection handling
+- `services/whatsapp-service/src/onboarding/states/loan-offer.ts` — loan record creation + Fineract sync
+- `services/whatsapp-service/src/onboarding/types.ts` — updated session types
+- `services/payment-service/src/deposit-resolver.ts` — **new file** (national ID deposit matching)
+- `services/payment-service/src/handlers/webhook-ecocash.ts` — deposit resolver fallback
+- `services/payment-service/src/handlers/webhook-onemoney.ts` — deposit resolver fallback
+- `services/payment-service/src/handlers/webhook-omari.ts` — deposit resolver fallback
+- `services/payment-service/src/handlers/webhook-innbucks.ts` — deposit resolver fallback
+- `services/distributor-service/src/handlers/handovers.ts` — status fix + deposit verification
+- `services/lock-service/src/handover/handover-workflow.ts` — device lock stub
+- `services/shared/types/enums.ts` — `paid_deposit` enum value
+- `template.yaml` — Fineract product ID parameters
+
+**Tests** (6 files):
+- See table above
+
+### Deployment
+
+- Deployed to production: 2026-03-04 ~18:40 UTC
+- Stack: `lynia-finance-prod` — `UPDATE_COMPLETE`
+- All test suites pass (3 pipeline attempts — mock leakage fix required)
+
+---
+
 ## [2026-03-04] WhatsApp Flow Fixes & Scoring Simplification
 
 ### Summary

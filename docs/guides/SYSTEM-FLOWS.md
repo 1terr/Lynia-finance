@@ -3,7 +3,7 @@
 **Complete technical documentation of all system flows**
 
 **Last Updated**: 2026-03-04
-**Version**: 2.0
+**Version**: 3.0
 
 ---
 
@@ -200,24 +200,31 @@ if (phoneNumber.startsWith('+263')) {
 
 **2. Credit Scoring Decision**
 
-All customers are auto-approved. There is no manual review or rejection based on
-credit score. Only KYC verification failure blocks progression.
+Customers scoring **≥ 350** are approved and tiered. Customers scoring **< 350** are rejected.
+Customers with an existing active loan (checked by national ID) are also rejected before scoring.
 
 ```typescript
+// Pre-check: duplicate loan prevention (by national ID)
+const existingLoan = await db.query(
+  `SELECT id FROM loans l JOIN customers c ON l.customer_id = c.id
+   WHERE c.national_id = $1 AND l.status IN ('approved', 'paid_deposit', 'active')`,
+  [national_id]
+);
+if (existingLoan) → reject("You already have an active loan")
+
 // scaled_score = 300 + (raw_score / 1000) * 550  (always >= 300)
-// Decision is ALWAYS 'approve' — only KYC failure blocks progression
-
-const decision = 'approve' as const;
-
-if (scaled_score >= 650) {
-  tier = 'Tier 3';  credit_limit = 2000;  down_payment = 10%;  apr = 3%;
+if (scaled_score < 350) {
+  decision = 'reject';  tier = 'Below Minimum';  credit_limit = 0;
+} else if (scaled_score >= 650) {
+  decision = 'approve';  tier = 'Tier 3';  credit_limit = 2000;  down_payment = 10%;  apr = 3%;
 } else if (scaled_score >= 500) {
-  tier = 'Tier 2';  credit_limit = 500;   down_payment = 20%;  apr = 4%;
+  decision = 'approve';  tier = 'Tier 2';  credit_limit = 500;   down_payment = 20%;  apr = 4%;
 } else {
-  tier = 'Tier 1';  credit_limit = 200;   down_payment = 30%;  apr = 5%;
+  decision = 'approve';  tier = 'Tier 1';  credit_limit = 200;   down_payment = 30%;  apr = 5%;
 }
 
-// After scoring → fetch available devices within credit limit → device_selection
+// If approved → fetch available devices within credit limit → device_selection
+// If rejected → inform customer, suggest improvement, end session
 ```
 
 **3. KYC Verification**
@@ -294,9 +301,10 @@ weight from Mobile Money (200→100) and External Credit (150→50).
 
 | Tier | Score Range | Credit Limit | Down Payment | APR | Allowed Terms |
 |------|------------|-------------|-------------|-----|---------------|
-| **Tier 1** | 300 - 499 | $200 | 30% | 5% | 3, 6 months |
-| **Tier 2** | 500 - 649 | $500 | 20% | 4% | 3, 6, 9 months |
-| **Tier 3** | 650 - 850 | $2,000 | 10% | 3% | 3, 6, 9, 12 months |
+| **Tier 3** | 650 - 850 | $2,000 | 10% | 3% | 3, 6, 9, 12 months | Approve |
+| **Tier 2** | 500 - 649 | $500 | 20% | 4% | 3, 6, 9 months | Approve |
+| **Tier 1** | 350 - 499 | $200 | 30% | 5% | 3, 6 months | Approve |
+| **Below Minimum** | < 350 | $0 | — | — | — | **Reject** |
 
 **Repayment calculation**: Declining balance (amortized)
 ```
@@ -304,8 +312,59 @@ M = P x [r(1+r)^n] / [(1+r)^n - 1]
 where P = principal (amount - deposit), r = APR/100/12, n = term in months
 ```
 
-**No reject tier**: `scaled_score = 300 + (raw/1000)*550` guarantees minimum 300.
-All customers get at least Tier 1.
+**Rejection threshold**: Score < 350 → rejected. The WhatsApp flow informs the customer and ends the session.
+
+---
+
+## Loan Lifecycle
+
+### Status Transitions
+
+```
+Terms accepted → INSERT INTO loans (status='approved')
+                 → Fineract sync (create + auto-approve)
+                       ↓
+Customer pays deposit → Payment webhook (national ID match)
+                      → loans.status → 'paid_deposit'
+                       ↓
+Distributor handover → Verify deposit → Complete handover
+                     → Device lock stub recorded
+                     → loans.status → 'active'
+                     → Fineract disbursement
+                       ↓
+Repayments → paid_off / defaulted
+```
+
+### Loan Record Creation (After Terms Acceptance)
+
+When the customer accepts terms in the WhatsApp flow (`loan-offer.ts`):
+1. `INSERT INTO loans` with status `'approved'`, all terms data from session
+2. Generate loan reference: `LYNIA-2026-XXXXX`
+3. Call `syncLoanToFineract()` (non-blocking, create + auto-approve)
+4. Send WhatsApp message with loan reference + deposit payment instructions
+
+### Deposit Payment Resolution
+
+Customers pay deposits via EcoCash/OneMoney using their **national ID** as the payment reference.
+
+```
+Webhook arrives → merchant_reference = national ID
+               → deposit-resolver.ts looks up customer by national ID
+               → Finds their 'approved' loan
+               → Creates payment record → loans.status → 'paid_deposit'
+               → WhatsApp notification: "Deposit received"
+```
+
+The `deposit-resolver.ts` module handles this fallback matching when the standard `merchant_reference` (payment_id) lookup doesn't match a pre-initiated payment. It catches all errors internally and returns `null` on failure — webhooks always return 200 to payment providers.
+
+### Distributor Handover
+
+Distributors search for loans with `status = 'paid_deposit'`, then complete handover:
+1. Verify deposit payment exists in `payments` table (no more hardcoded `deposit_verified: true`)
+2. Complete 5-step verification (customer ID, IMEI scan, condition check, accessories, signature)
+3. Record device lock intent via `POST /locks/lock` (Trustonic stub — records in DB only)
+4. Transition loan to `status = 'active'`
+5. Trigger Fineract disbursement
 
 ---
 
@@ -859,4 +918,4 @@ class CircuitBreaker {
 ---
 
 **Last Updated**: 2026-03-04
-**Version**: 2.0
+**Version**: 3.0

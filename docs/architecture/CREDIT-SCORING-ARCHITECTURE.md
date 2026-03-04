@@ -1,6 +1,6 @@
 # Credit Scoring Architecture
 
-**Last Updated**: 2026-03-04
+**Last Updated**: 2026-03-04 (v2 — scoring threshold + duplicate loan check)
 
 This document describes the credit scoring algorithm, its data pipeline, tier system, and integration with the WhatsApp onboarding flow and Fineract core banking.
 
@@ -26,7 +26,8 @@ This document describes the credit scoring algorithm, its data pipeline, tier sy
 Lynia Finance uses a **rule-based credit scoring model** designed for Zimbabwe's underbanked population. The algorithm produces a raw score (0-1000) scaled to a FICO-like range (300-850), which maps to credit tiers with specific limits, down payments, and interest rates.
 
 **Key design decisions:**
-- **All applicants are approved** — only KYC failure blocks progression. The tier system controls risk exposure instead of binary accept/reject.
+- **Minimum score threshold (350)** — applicants scoring below 350 are rejected. Above 350, the tier system controls risk exposure with graduated limits.
+- **Duplicate loan prevention** — customers with an active loan (approved/paid_deposit/active) are blocked from applying again, checked by national ID to catch re-registrations with different phone numbers.
 - **Neutral scores for missing data** — first-time customers without history receive middle-of-range scores (not zero), preventing false rejections in a thin-file market.
 - **Declining balance payment formula** for DTI calculations, matching real loan repayment schedules.
 
@@ -272,13 +273,36 @@ The `credit-scoring.ts` state handler assembles the full payload:
 
 ## Tier System & Credit Limits
 
-All applicants are approved. The score determines their tier, which controls risk exposure.
+Applicants must score **≥ 350** to be approved. Below 350, the application is rejected. Above 350, the score determines the tier, which controls risk exposure.
 
-| Tier | Scaled Score | Credit Limit | Down Payment | Interest Rate |
-|------|-------------|-------------|--------------|---------------|
-| Tier 3 (Best) | ≥ 650 | $2,000 | 10% | 3% APR |
-| Tier 2 (Standard) | 500–649 | $500 | 20% | 4% APR |
-| Tier 1 (Starter) | < 500 | $200 | 30% | 5% APR |
+| Tier | Scaled Score | Credit Limit | Down Payment | Interest Rate | Decision |
+|------|-------------|-------------|--------------|---------------|----------|
+| Tier 3 (Best) | ≥ 650 | $2,000 | 10% | 3% APR | Approve |
+| Tier 2 (Standard) | 500–649 | $500 | 20% | 4% APR | Approve |
+| Tier 1 (Starter) | 350–499 | $200 | 30% | 5% APR | Approve |
+| Below Minimum | < 350 | $0 | — | — | **Reject** |
+
+### Rejection Handling
+
+When a customer scores below 350, the WhatsApp flow:
+1. Informs them they don't qualify at this time
+2. Suggests ways to improve (build payment history, reduce existing debt, ensure KYC documents are clear)
+3. Session ends — no device selection or loan creation
+
+### Duplicate Loan Check
+
+Before scoring, the system checks for existing active loans by **national ID** (not customer_id):
+
+```sql
+SELECT id FROM loans l
+JOIN customers c ON l.customer_id = c.id
+WHERE c.national_id = :national_id
+AND l.status IN ('approved', 'paid_deposit', 'active')
+```
+
+If found, the application is rejected immediately with: "You already have an active loan. Please complete your current loan before applying for a new one."
+
+This check uses national ID to catch re-registrations with different phone numbers.
 
 ### Typical First-Time Customer Score
 
@@ -304,7 +328,14 @@ Apache Fineract is the core banking system that manages loan lifecycle after sco
 ```
 Scoring API (approve) → Async customer sync to Fineract → Fineract client created
                                                               ↓
-WhatsApp (terms accepted) → Loan sync to Fineract → Fineract loan account created
+WhatsApp (terms accepted) → INSERT INTO loans (status='approved')
+                          → Loan sync to Fineract (create + auto-approve)
+                                                              ↓
+Customer pays deposit → Payment webhook → deposit-resolver matches by national ID
+                      → loans.status → 'paid_deposit'
+                                                              ↓
+Distributor handover → Verify deposit → Complete handover → Device lock stub
+                     → loans.status → 'active' → Fineract disbursement
                                                               ↓
 Payment received → Payment sync → Fineract repayment recorded
 ```
@@ -312,9 +343,27 @@ Payment received → Payment sync → Fineract repayment recorded
 ### Integration Points
 
 1. **Customer sync** (non-blocking, after scoring): Creates a Fineract client record with name and phone number.
-2. **Loan sync** (after terms acceptance): Creates a Fineract loan account with the selected device, term, and payment schedule.
-3. **Payment sync** (on payment confirmation): Records repayments against the Fineract loan.
-4. **Reconciliation job**: Catches any missed syncs and retries.
+2. **Loan record creation** (after terms acceptance): `INSERT INTO loans` with status `'approved'`, generates loan reference `LYNIA-2026-XXXXX`.
+3. **Loan sync to Fineract** (after loan INSERT): Creates a Fineract loan account with the selected device, term, and payment schedule. Auto-approves in Fineract (no admin step).
+4. **Deposit payment resolution** (on webhook): Matches deposit by national ID reference → transitions loan to `'paid_deposit'`.
+5. **Distributor handover** (physical device collection): Verifies deposit payment, completes handover, records device lock intent, transitions loan to `'active'`, triggers Fineract disbursement.
+6. **Payment sync** (on payment confirmation): Records repayments against the Fineract loan.
+7. **Reconciliation job**: Catches any missed syncs and retries.
+
+### Loan Lifecycle
+
+```
+approved → paid_deposit → active → paid_off
+                                 → defaulted
+```
+
+| Status | Meaning | Trigger |
+|--------|---------|---------|
+| `approved` | Loan created after terms acceptance | WhatsApp onboarding completion |
+| `paid_deposit` | Customer paid deposit | Payment webhook (national ID match) |
+| `active` | Device handed over, repayments started | Distributor handover |
+| `paid_off` | All installments paid | Final payment confirmation |
+| `defaulted` | Missed payments beyond grace period | Overdue job |
 
 The scoring service triggers customer sync asynchronously — if Fineract is down, the reconciliation job handles it later. Loan sync is deferred to post-terms-acceptance when the full loan details (device + term) are finalized.
 
@@ -390,7 +439,15 @@ Previously, missing KYC defaulted to `{ status: 'verified', face_match_score: 96
 - `requested_loan_amount` has **no fallback** (was previously defaulting to $250)
 - Only legitimate zero-states use defaults: `existing_debt_obligations_usd ?? 0`, `dependents ?? 0`
 
-### 4. Scoring Service Unavailability
+### 4. Minimum Score Threshold
+
+Applicants scoring below 350 are rejected outright. This prevents lending to high-risk applicants who would likely default. The threshold was introduced to replace the previous "approve everyone" policy.
+
+### 5. Duplicate Loan Prevention
+
+Before scoring, the system checks for existing active loans by national ID. A customer with an active loan (`approved`, `paid_deposit`, or `active` status) is blocked from applying again, preventing multiple simultaneous loans.
+
+### 6. Scoring Service Unavailability
 
 If the scoring API is unreachable, the WhatsApp flow does **not** auto-approve. The session stays in `credit_scoring` state so the customer can retry.
 
