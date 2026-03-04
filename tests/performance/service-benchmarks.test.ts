@@ -142,7 +142,7 @@ const testCreditScores = Array.from({ length: 20 }, (_, i) => ({
   customer_id: `perf-cust-${i}`,
   total_score: 300 + Math.floor(Math.random() * 700),
   scaled_score: 300 + Math.floor(Math.random() * 550),
-  decision: i % 3 === 0 ? 'approve' : i % 3 === 1 ? 'review' : 'reject',
+  decision: 'approve',
   credit_tier: i % 3 === 0 ? 'Tier 3' : i % 3 === 1 ? 'Tier 2' : 'Tier 1',
   model_version: 'rule-based-v1',
   calculated_at: new Date().toISOString(),

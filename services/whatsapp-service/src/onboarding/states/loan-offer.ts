@@ -7,6 +7,7 @@
 
 import { db } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
+import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
 import type { OnboardingSession, MessageContext } from '../types';
 
 /**
@@ -21,26 +22,37 @@ export async function handleLoanSummary(
 ): Promise<string> {
   const message = context.message.trim().toLowerCase();
 
-  // "Back" — return to credit_scoring which will re-show device list
+  // "Back" — return to term_selection, preserving device choice
   if (message === 'back' || message.includes('change')) {
+    const tier = session.state_data.credit_tier || 'Tier 1';
+    const allowedTerms = getAllowedTerms(tier);
+
     await updateSession(context.from, {
-      current_state: 'credit_scoring',
+      current_state: 'term_selection',
       state_data: {
         ...session.state_data,
-        selected_device_id: undefined,
-        selected_device_price: undefined,
-        selected_device_name: undefined,
         selected_term_months: undefined,
         monthly_payment: undefined,
         total_repayment: undefined,
         financed_amount: undefined,
         deposit_amount: undefined,
-        available_devices: undefined,
-        allowed_terms: undefined,
+        allowed_terms: allowedTerms,
       }
     });
 
-    return 'No problem! Let\'s start again.\n\nReply with any message to see the available devices.';
+    const deviceName = session.state_data.selected_device_name || 'Selected device';
+    const devicePrice = session.state_data.selected_device_price || 0;
+    const termList = allowedTerms
+      .map((months, i) => `${i + 1}. ${months} months`)
+      .join('\n');
+
+    return `Device: *${deviceName}* ($${devicePrice.toFixed(2)})
+
+How long would you like to pay?
+
+${termList}
+
+Reply with the number of your choice, or *Back* to change device.`;
   }
 
   if (message.includes('yes') || message.includes('continue') || message.includes('accept')) {

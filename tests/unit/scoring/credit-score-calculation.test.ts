@@ -273,16 +273,10 @@ describe('calculateRuleBasedScore', () => {
     expect(result.interest_rate_apr).toBe(5);
   });
 
-  // Manual Review: scaled 300-349 -> review, $0
-  it('scaled_score in 300-349 produces review with Manual Review and $0 limit', async () => {
-    // Need extremely low scores across all components
-    // affordability: income=50, debt=100, loan=500, household=8
-    //   M=42.80, total=142.80, dti=2.856->0, income=0, household=50/8=6.25->10 = 10
-    // repayment: on_time=0.40->0, bill=0.30->10, comm=0.30->10 = 20
-    // mobile: worst possible data = 30
-    // external: worst possible data = 10
-    // kyc: failed->0, face=0->0, liveness=false->0 = 0
-    // raw = 10+20+30+10+0 = 70, scaled = 339 -> review
+  // Lowest possible score still gets Tier 1 (review/reject removed)
+  it('scaled_score in 300-349 still produces Tier 1 (no review/reject)', async () => {
+    // Worst-case scores across all components
+    // raw = ~70, scaled = ~339 -> Tier 1 (< 500)
     const result = await calculateRuleBasedScore(
       buildInput({
         monthly_income_usd: 50,
@@ -319,9 +313,9 @@ describe('calculateRuleBasedScore', () => {
     );
     expect(result.scaled_score).toBeGreaterThanOrEqual(300);
     expect(result.scaled_score).toBeLessThan(350);
-    expect(result.decision).toBe('review');
-    expect(result.tier).toBe('Manual Review');
-    expect(result.credit_limit_usd).toBe(0);
+    expect(result.decision).toBe('approve');
+    expect(result.tier).toBe('Tier 1');
+    expect(result.credit_limit_usd).toBe(200);
   });
 
   // ─── Product category differences ──────────────────────────────

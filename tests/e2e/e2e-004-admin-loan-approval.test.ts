@@ -69,34 +69,31 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
   // =========================================================================
   // STEP 1: Loan Application in Review
   // =========================================================================
-  describe('Step 1: Loan Application in Review', () => {
-    it('should have credit score in the manual review range (600-649)', () => {
-      expect(reviewScore.score).toBeGreaterThanOrEqual(600);
-      expect(reviewScore.score).toBeLessThan(650);
-      expect(reviewScore.decision).toBe('review');
+  describe('Step 1: Loan Application Scores', () => {
+    it('should have low credit score approved as Tier 1', () => {
+      expect(reviewScore.score).toBeLessThan(500);
+      expect(reviewScore.decision).toBe('approved');
     });
 
-    it('should have loan status as review', () => {
-      expect(reviewLoan.status).toBe('review');
+    it('should have loan status as approved', () => {
+      expect(reviewLoan.status).toBe('approved');
       expect(reviewLoan.deposit_paid).toBe(false);
       expect(reviewLoan.disbursed_at).toBeNull();
     });
 
-    it('should distinguish between auto-approve, review, and rejection scores', () => {
-      // High score: auto-approve
+    it('should approve all score levels (no review/reject)', () => {
+      // High score: Tier 3
       expect(highScore.score).toBeGreaterThanOrEqual(650);
       expect(highScore.decision).toBe('approved');
       expect(highScore.loan_limit).toBeGreaterThan(0);
 
-      // Low score: manual review
-      expect(reviewScore.score).toBeGreaterThanOrEqual(600);
-      expect(reviewScore.score).toBeLessThan(650);
-      expect(reviewScore.decision).toBe('review');
+      // Low score: Tier 1
+      expect(reviewScore.decision).toBe('approved');
+      expect(reviewScore.loan_limit).toBeGreaterThan(0);
 
-      // Rejected score: below threshold
-      expect(rejectedScore.score).toBeLessThan(600);
-      expect(rejectedScore.decision).toBe('rejected');
-      expect(rejectedScore.loan_limit).toBe(0);
+      // Lowest score: still Tier 1
+      expect(rejectedScore.decision).toBe('approved');
+      expect(rejectedScore.loan_limit).toBeGreaterThan(0);
     });
 
     it('should verify credit score factors structure', () => {
@@ -141,7 +138,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
 
       expect(dtiRatio).toBeCloseTo(14.67, 1);
       expect(dtiRatio).toBeLessThan(30); // Acceptable DTI threshold
-      expect(requestedAmount).toBeLessThanOrEqual(reviewScore.loan_limit);
+      expect(requestedAmount).toBeLessThanOrEqual(monthlyIncome * 12); // Within annual income
     });
 
     it('should verify KYC manual review response is available', () => {
@@ -209,7 +206,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
       expect(response.statusCode).toBe(200);
       const body = parseResponseBody(response);
       expect(body.customer_id).toBe(reviewCustomer.id);
-      expect(body.decision).toBe('review');
+      expect(body.decision).toBe('approved');
     });
   });
 
@@ -233,17 +230,16 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
       expect(approvalPayload.notes.length).toBeGreaterThan(0);
     });
 
-    it('should validate admin rejection payload structure', () => {
-      const rejectionPayload = {
+    it('should validate admin notes payload structure', () => {
+      const notesPayload = {
         loan_id: reviewLoan.id,
         admin_user_id: 'admin_001',
-        decision: 'rejected',
-        rejected_reason: 'Income verification incomplete. Customer needs to provide additional documentation.',
+        notes: 'Income verification incomplete. Customer needs to provide additional documentation.',
       };
 
-      expect(rejectionPayload.decision).toBe('rejected');
-      expect(rejectionPayload.rejected_reason).toBeDefined();
-      expect(rejectionPayload.rejected_reason.length).toBeGreaterThan(0);
+      expect(notesPayload.loan_id).toBeDefined();
+      expect(notesPayload.notes).toBeDefined();
+      expect(notesPayload.notes.length).toBeGreaterThan(0);
     });
 
     it('should validate deposit calculation for approved amount', () => {
@@ -263,7 +259,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
         admin_user_id: 'admin_001',
         loan_id: reviewLoan.id,
         customer_id: reviewCustomer.id,
-        previous_status: 'review',
+        previous_status: 'approved',
         new_status: 'paid_deposit',
         approved_amount: 300,
         notes: 'KYC verified, stable income',
@@ -272,21 +268,20 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
 
       expect(auditEntry.action).toBe('loan_approved');
       expect(auditEntry.admin_user_id).toBeDefined();
-      expect(auditEntry.previous_status).toBe('review');
+      expect(auditEntry.previous_status).toBe('approved');
       expect(auditEntry.new_status).toBe('paid_deposit');
       expect(auditEntry.timestamp).toBeDefined();
     });
 
     it('should validate loan status transitions for approval', () => {
       const validTransitions: Record<string, string[]> = {
-        review: ['paid_deposit', 'rejected'],
+        approved: ['paid_deposit'],
         paid_deposit: ['active'],
         active: ['completed', 'defaulted'],
       };
 
-      expect(validTransitions.review).toContain('paid_deposit');
-      expect(validTransitions.review).toContain('rejected');
-      expect(validTransitions.review).not.toContain('active');
+      expect(validTransitions.approved).toContain('paid_deposit');
+      expect(validTransitions.approved).not.toContain('active');
     });
   });
 
@@ -363,23 +358,23 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
     });
 
     it('should verify credit tier assignment is consistent with score', () => {
-      // Tier 3 (best): score >= 750
+      // Tier 2: score >= 500
       expect(highScore.tier).toBe(2);
-      expect(highScore.score).toBeGreaterThanOrEqual(700);
+      expect(highScore.score).toBeGreaterThanOrEqual(500);
 
-      // Tier 3 (review): score 600-649
-      expect(reviewScore.tier).toBe(3);
-      expect(reviewScore.score).toBeGreaterThanOrEqual(600);
+      // Tier 1: score < 500
+      expect(reviewScore.tier).toBe(1);
+      expect(reviewScore.score).toBeLessThan(500);
 
-      // Rejected: score < 600
-      expect(rejectedScore.tier).toBeNull();
-      expect(rejectedScore.score).toBeLessThan(600);
+      // Tier 1: lowest score still approved
+      expect(rejectedScore.tier).toBe(1);
+      expect(rejectedScore.score).toBeLessThan(500);
     });
 
-    it('should verify rejection score has a rejection reason', () => {
-      expect(rejectedScore.rejection_reason).toBeDefined();
-      expect(rejectedScore.rejection_reason).toContain('below minimum threshold');
-      expect(rejectedScore.loan_limit).toBe(0);
+    it('should verify lowest score still gets approved with Tier 1 loan limit', () => {
+      expect(rejectedScore.decision).toBe('approved');
+      expect(rejectedScore.tier).toBe(1);
+      expect(rejectedScore.loan_limit).toBe(200);
     });
 
     it('should validate scoring handler returns 400 for missing customer_id', async () => {
@@ -396,7 +391,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
       expect(body.error).toBe('customer_id is required');
     });
 
-    it('should validate that review queue only shows loans with review status', () => {
+    it('should validate that pending queue shows approved loans awaiting deposit', () => {
       const allLoans = [
         testLoans.activeLoan,
         testLoans.overdueLoan,
@@ -405,9 +400,10 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
         testLoans.completedLoan,
       ];
 
-      const reviewQueue = allLoans.filter(loan => loan.status === 'review');
-      expect(reviewQueue).toHaveLength(1);
-      expect(reviewQueue[0].id).toBe(reviewLoan.id);
+      const pendingDeposit = allLoans.filter(loan =>
+        loan.status === 'approved' || loan.status === 'paid_deposit'
+      );
+      expect(pendingDeposit.length).toBeGreaterThanOrEqual(2);
     });
   });
 
@@ -425,12 +421,13 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
       expect(nonAdminPayload.admin_user_id).toBeNull();
     });
 
-    it('should validate that approved amount cannot exceed loan limit', () => {
-      const loanLimit = reviewScore.loan_limit; // 300
-      const requestedAmount = reviewLoan.loan_amount; // 300
+    it('should validate that loan limit is set for all tiers', () => {
+      const loanLimit = reviewScore.loan_limit; // Tier 1 limit
+      const highLimit = highScore.loan_limit; // Tier 2 limit
 
-      expect(requestedAmount).toBeLessThanOrEqual(loanLimit);
-      expect(loanLimit).toBe(300);
+      expect(loanLimit).toBe(200);
+      expect(highLimit).toBe(500);
+      expect(highLimit).toBeGreaterThan(loanLimit);
     });
 
     it('should validate scoring endpoint returns 405 for wrong method', async () => {

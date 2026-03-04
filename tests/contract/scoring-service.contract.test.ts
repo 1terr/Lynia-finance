@@ -235,7 +235,7 @@ describe('Scoring Service Contract Tests', () => {
       expect(body.scaled_score).toBeLessThanOrEqual(850);
     });
 
-    it('should return decision as approve, review, or reject', async () => {
+    it('should always return decision as approve', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -245,7 +245,7 @@ describe('Scoring Service Contract Tests', () => {
       const response = await handler(event);
       const body = parseResponseBody<Record<string, string>>(response);
 
-      expect(['approve', 'review', 'reject']).toContain(body.decision);
+      expect(body.decision).toBe('approve');
     });
 
     // -----------------------------------------------------------------------

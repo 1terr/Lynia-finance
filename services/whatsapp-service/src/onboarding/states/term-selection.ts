@@ -6,6 +6,7 @@
  * transitions to loan_summary.
  */
 
+import { db, query } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
 import { calculateDecliningBalancePayment } from '../../../../shared/utils/loan-calculator';
 import type { OnboardingSession, MessageContext } from '../types';
@@ -24,6 +25,41 @@ export async function handleTermSelection(
     return 'Something went wrong. Reply *Restart* to begin again.';
   }
 
+  // "Back" — return to device_selection, re-fetch available devices
+  if (message.toLowerCase() === 'back') {
+    const creditLimit = session.state_data.credit_limit_usd || 200;
+    const { data: devices } = await query<{ id: string; brand: string; model_name: string; retail_price_usd: number }>(
+      `SELECT id, brand, model_name, retail_price_usd
+       FROM device_models
+       WHERE retail_price_usd <= $1
+         AND is_active = true AND deleted_at IS NULL AND available_stock > 0
+       ORDER BY retail_price_usd ASC`,
+      [creditLimit]
+    );
+
+    await updateSession(context.from, {
+      current_state: 'device_selection',
+      state_data: {
+        ...session.state_data,
+        selected_device_id: undefined,
+        selected_device_price: undefined,
+        selected_device_name: undefined,
+        allowed_terms: undefined,
+        available_devices: devices || [],
+      }
+    });
+
+    if (!devices || devices.length === 0) {
+      return 'No devices currently available. Please check back later or contact support@lynia.finance.';
+    }
+
+    const deviceList = devices
+      .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
+      .join('\n');
+
+    return `Choose your smartphone:\n\n${deviceList}\n\nReply with the number of your choice (e.g. *1*)`;
+  }
+
   const choice = parseInt(message);
 
   if (isNaN(choice) || choice < 1 || choice > allowedTerms.length) {
@@ -31,7 +67,7 @@ export async function handleTermSelection(
       .map((months, i) => `${i + 1}. ${months} months`)
       .join('\n');
 
-    return `Please reply with a number between 1 and ${allowedTerms.length}.
+    return `Please reply with a number between 1 and ${allowedTerms.length}, or *Back* to change device.
 
 ${termList}`;
   }

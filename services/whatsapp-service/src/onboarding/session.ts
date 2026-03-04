@@ -21,12 +21,12 @@ export async function getOrCreateSession(phoneNumber: string): Promise<Onboardin
     .execute();
 
   if (existingSession && existingSession.current_state !== 'completed') {
-    // Check if session expired (30 minutes)
+    // Check if session expired (24 hours)
     const lastActivity = new Date(existingSession.last_activity_at);
     const now = new Date();
     const diffMinutes = (now.getTime() - lastActivity.getTime()) / (1000 * 60);
 
-    if (diffMinutes < 30) {
+    if (diffMinutes < 1440) {
       return existingSession as OnboardingSession;
     }
   }

@@ -90,37 +90,12 @@ export async function handleCreditScoring(
     const response = await axios.post(SCORING_API_URL, scoringPayload);
     const scoreResult = response.data;
 
-    if (scoreResult.decision === 'approve') {
-      // Fetch available devices within credit limit
-      const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd);
+    // Decision is always 'approve' — only KYC failure blocks progression upstream
+    const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd);
 
-      if (devices.length === 0) {
-        // Store scoring result but keep in credit_scoring state
-        await updateSession(context.from, {
-          state_data: {
-            ...session.state_data,
-            credit_score: scoreResult.scaled_score,
-            credit_tier: scoreResult.tier,
-            credit_limit_usd: scoreResult.credit_limit_usd,
-            down_payment_percentage: scoreResult.down_payment_percentage,
-            interest_rate_apr: scoreResult.interest_rate_apr,
-            decision: scoreResult.decision,
-          }
-        });
-
-        return `*Congratulations! You're Approved!*
-
-Credit Limit: $${scoreResult.credit_limit_usd}
-Credit Score: ${scoreResult.scaled_score}/850
-
-However, there are no devices currently available in your price range. We will notify you when new stock arrives.
-
-Contact support@lynia.finance for more information.`;
-      }
-
-      // Store scoring result + devices, transition to device_selection
+    if (devices.length === 0) {
+      // Store scoring result but keep in credit_scoring state
       await updateSession(context.from, {
-        current_state: 'device_selection',
         state_data: {
           ...session.state_data,
           credit_score: scoreResult.scaled_score,
@@ -129,15 +104,37 @@ Contact support@lynia.finance for more information.`;
           down_payment_percentage: scoreResult.down_payment_percentage,
           interest_rate_apr: scoreResult.interest_rate_apr,
           decision: scoreResult.decision,
-          available_devices: devices,
         }
       });
 
-      const deviceList = devices
-        .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
-        .join('\n');
-
       return `*Congratulations! You're Approved!*
+
+Credit Limit: $${scoreResult.credit_limit_usd}
+Credit Score: ${scoreResult.scaled_score}/850
+
+However, there are no devices currently available in your price range. Please check back later or contact support@lynia.finance for assistance.`;
+    }
+
+    // Store scoring result + devices, transition to device_selection
+    await updateSession(context.from, {
+      current_state: 'device_selection',
+      state_data: {
+        ...session.state_data,
+        credit_score: scoreResult.scaled_score,
+        credit_tier: scoreResult.tier,
+        credit_limit_usd: scoreResult.credit_limit_usd,
+        down_payment_percentage: scoreResult.down_payment_percentage,
+        interest_rate_apr: scoreResult.interest_rate_apr,
+        decision: scoreResult.decision,
+        available_devices: devices,
+      }
+    });
+
+    const deviceList = devices
+      .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
+      .join('\n');
+
+    return `*Congratulations! You're Approved!*
 
 Your Credit Details:
 Loan Limit: $${scoreResult.credit_limit_usd}
@@ -149,44 +146,6 @@ Choose your smartphone:
 ${deviceList}
 
 Reply with the number of your choice (e.g. *1*)`;
-    }
-
-    // Store result for non-approval decisions
-    await updateSession(context.from, {
-      state_data: {
-        ...session.state_data,
-        credit_score: scoreResult.scaled_score,
-        credit_tier: scoreResult.tier,
-        credit_limit_usd: scoreResult.credit_limit_usd,
-        decision: scoreResult.decision,
-      }
-    });
-
-    if (scoreResult.decision === 'review') {
-      return `*Manual Review Required*
-
-We need to manually review your application. This takes up to 24 hours.
-
-You'll receive a WhatsApp message when ready.
-
-Our team will review:
-- Income information
-- Identity verification
-- Eligibility criteria
-
-Usually takes 2-12 hours.`;
-    }
-
-    return `*Application Not Approved*
-
-Unfortunately, we cannot approve your application at this time.
-
-Possible reasons:
-- Income below minimum threshold
-- Debt-to-income ratio too high
-- Incomplete information
-
-You can try again in 30 days or contact support: support@lynia.finance`;
 
   } catch (error) {
     logger.error('Credit scoring failed', { action: 'scoring.calculate', meta: { error: error instanceof Error ? error.message : 'Unknown' } });

@@ -184,7 +184,7 @@ describe('WhatsApp Onboarding', () => {
   // getOrCreateSession()
   // -----------------------------------------------------------------
   describe('getOrCreateSession', () => {
-    it('should return an existing active session within 30 minutes', async () => {
+    it('should return an existing active session within 24 hours', async () => {
       const recentActivity = new Date();
       const existingSession = createSession({
         current_state: 'collecting_personal_info',
@@ -202,8 +202,8 @@ describe('WhatsApp Onboarding', () => {
       expect(mockDb.from).toHaveBeenCalledWith('whatsapp_sessions');
     });
 
-    it('should create a new session when the existing one has expired (> 30 min)', async () => {
-      const expiredActivity = new Date(Date.now() - 31 * 60 * 1000);
+    it('should create a new session when the existing one has expired (> 24h)', async () => {
+      const expiredActivity = new Date(Date.now() - 25 * 60 * 60 * 1000);
       const expiredSession = createSession({
         current_state: 'collecting_personal_info',
         last_activity_at: expiredActivity,

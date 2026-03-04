@@ -115,7 +115,7 @@ export interface PredictionResult {
   scaled_score: number;
   probability_of_default: number;
   tier: string;
-  decision: 'approve' | 'review' | 'reject';
+  decision: 'approve';
   feature_contributions: Record<string, number>;
 }
 
@@ -308,18 +308,14 @@ export function scoreCustomer(
 
   // Determine tier and decision
   let tier: string;
-  let decision: 'approve' | 'review' | 'reject';
+  const decision: 'approve' = 'approve';
 
-  if (clampedScore >= 750) {
-    tier = 'Tier 3'; decision = 'approve';
-  } else if (clampedScore >= 700) {
-    tier = 'Tier 2'; decision = 'approve';
-  } else if (clampedScore >= 650) {
-    tier = 'Tier 1'; decision = 'approve';
-  } else if (clampedScore >= 550) {
-    tier = 'Review'; decision = 'review';
+  if (clampedScore >= 650) {
+    tier = 'Tier 3';
+  } else if (clampedScore >= 500) {
+    tier = 'Tier 2';
   } else {
-    tier = 'Below Threshold'; decision = 'reject';
+    tier = 'Tier 1';
   }
 
   return {

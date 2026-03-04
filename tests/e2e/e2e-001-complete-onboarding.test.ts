@@ -505,8 +505,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(body.scaled_score).toBeGreaterThanOrEqual(650);
       expect(body.decision).toBe('approve');
       expect(body.credit_limit_usd).toBeGreaterThan(0);
-      expect(body.tier).not.toBe('Rejected');
-      expect(body.tier).not.toBe('Manual Review');
+      expect(['Tier 1', 'Tier 2', 'Tier 3']).toContain(body.tier);
       expect(body.components).toBeDefined();
       expect(body.components.affordability).toBeGreaterThan(0);
       expect(body.components.kyc_verification).toBeGreaterThan(0);
@@ -592,7 +591,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
         tier: string;
       }>(response);
 
-      expect(['approve', 'review', 'reject']).toContain(body.decision);
+      expect(body.decision).toBe('approve');
     });
 
     it('should return 404 when fetching score for non-existent customer', async () => {

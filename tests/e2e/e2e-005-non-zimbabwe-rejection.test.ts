@@ -349,9 +349,8 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
         tier: string;
       }>(response);
 
-      // With current thresholds (reject < 300), reject is unreachable
-      // since scaled = 300 + (raw/1000)*550 is always >= 300
-      expect(['approve', 'review']).toContain(body.decision);
+      // All scores are auto-approved (review/reject removed)
+      expect(body.decision).toBe('approve');
     });
 
     it('should give low tier for customer with very low income', async () => {
@@ -387,8 +386,8 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
         credit_limit_usd: number;
       }>(response);
 
-      // With current thresholds, even very low income lands in review or Tier 1
-      expect(['approve', 'review']).toContain(body.decision);
+      // All scores are auto-approved — lowest gets Tier 1
+      expect(body.decision).toBe('approve');
     });
 
     it('should validate that payment endpoint rejects missing fields', async () => {

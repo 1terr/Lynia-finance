@@ -70,7 +70,7 @@ export interface OnboardingSession {
     credit_limit_usd?: number;
     down_payment_percentage?: number;
     interest_rate_apr?: number;
-    decision?: 'approve' | 'review' | 'reject';
+    decision?: 'approve';
 
     // Device selection
     available_devices?: Array<{

@@ -115,7 +115,7 @@ export interface CreditScoreResult {
     kyc_verification: number;
     org_verification: number;
   };
-  decision: 'approve' | 'review' | 'reject';
+  decision: 'approve';
   credit_limit_usd: number;
   tier: string;
   down_payment_percentage: number;

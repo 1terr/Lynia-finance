@@ -542,20 +542,12 @@ describe('Credit Score Propagation Data Flow Tests', () => {
           apr: 4,
         },
         {
-          minScore: 350,
+          minScore: 300,
           maxScore: 499,
           tier: 'Tier 1',
           limit: 200,
           downPayment: 30,
           apr: 5,
-        },
-        {
-          minScore: 300,
-          maxScore: 349,
-          tier: 'Manual Review',
-          limit: 0,
-          downPayment: 0,
-          apr: 0,
         },
       ];
 
@@ -787,10 +779,11 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      if (result.scaled_score >= 300 && result.scaled_score < 350) {
-        expect(result.decision).toBe('review');
-        expect(result.tier).toBe('Manual Review');
-        expect(result.credit_limit_usd).toBe(0);
+      // All scores now get approved — review/reject removed
+      expect(result.decision).toBe('approve');
+      if (result.scaled_score < 500) {
+        expect(result.tier).toBe('Tier 1');
+        expect(result.credit_limit_usd).toBe(200);
       }
     });
   });

@@ -369,42 +369,28 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
 
   // Determine decision based on scaled score (300-850)
   // Thresholds aligned with Fineract product configuration (source of truth)
-  let decision: 'approve' | 'review' | 'reject';
+  // Everyone is approved — only KYC failure blocks progression (handled upstream)
+  const decision: 'approve' = 'approve';
   let credit_limit_usd = 0;
   let tier = '';
   let down_payment_percentage = 0;
   let interest_rate_apr = 0;
 
   if (scaled_score >= 650) {
-    decision = 'approve';
     credit_limit_usd = 2000;
     tier = 'Tier 3';
     down_payment_percentage = 10;
     interest_rate_apr = 3; // 2-4% APR range, use midpoint
   } else if (scaled_score >= 500) {
-    decision = 'approve';
     credit_limit_usd = 500;
     tier = 'Tier 2';
     down_payment_percentage = 20;
     interest_rate_apr = 4; // 3-5% APR range, use midpoint
-  } else if (scaled_score >= 350) {
-    decision = 'approve';
+  } else {
     credit_limit_usd = 200;
     tier = 'Tier 1';
     down_payment_percentage = 30;
     interest_rate_apr = 5; // 4-6% APR range, use midpoint
-  } else if (scaled_score >= 300) {
-    decision = 'review';
-    credit_limit_usd = 0;
-    tier = 'Manual Review';
-    down_payment_percentage = 0;
-    interest_rate_apr = 0;
-  } else {
-    decision = 'reject';
-    credit_limit_usd = 0;
-    tier = 'Rejected';
-    down_payment_percentage = 0;
-    interest_rate_apr = 0;
   }
 
   return {

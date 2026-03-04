@@ -50,7 +50,7 @@ export const testLoans = {
     created_at: new Date().toISOString()
   },
 
-  // Loan application in review
+  // Loan application (previously review, now always approved)
   reviewLoan: {
     id: 'loan_test_003',
     customer_id: 'cust_test_003',
@@ -67,7 +67,7 @@ export const testLoans = {
     outstanding_balance: 264,
     paid_installments: 0,
     total_installments: 6,
-    status: 'review',
+    status: 'approved',
     next_payment_date: null,
     disbursed_at: null,
     created_at: new Date().toISOString()
@@ -140,8 +140,8 @@ export const testCreditScores = {
 
   lowScore: {
     customer_id: 'cust_test_003',
-    score: 640,
-    tier: 3,
+    score: 450,
+    tier: 1,
     factors: {
       kyc_quality: 20,
       income_stability: 50,
@@ -149,15 +149,16 @@ export const testCreditScores = {
       employment_type: 30,
       phone_age: 20
     },
-    decision: 'review',
-    loan_limit: 300,
+    decision: 'approved',
+    loan_limit: 200,
     calculated_at: new Date().toISOString()
   },
 
+  // Kept for backward compat — now also approved (lowest tier)
   rejectedScore: {
     customer_id: 'cust_test_006',
-    score: 580,
-    tier: null,
+    score: 350,
+    tier: 1,
     factors: {
       kyc_quality: 10,
       income_stability: 30,
@@ -165,9 +166,8 @@ export const testCreditScores = {
       employment_type: 20,
       phone_age: 10
     },
-    decision: 'rejected',
-    rejection_reason: 'Credit score below minimum threshold (600)',
-    loan_limit: 0,
+    decision: 'approved',
+    loan_limit: 200,
     calculated_at: new Date().toISOString()
   }
 };

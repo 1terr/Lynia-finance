@@ -23,6 +23,18 @@ export async function handleDeviceSelection(
     return 'Something went wrong. Reply *Restart* to begin again.';
   }
 
+  // "Back" — return to credit_scoring which will re-show device list
+  if (message.toLowerCase() === 'back') {
+    await updateSession(context.from, {
+      current_state: 'credit_scoring',
+      state_data: {
+        ...session.state_data,
+        available_devices: undefined,
+      }
+    });
+    return 'No problem! Reply with any message to see the available devices.';
+  }
+
   const choice = parseInt(message);
 
   if (isNaN(choice) || choice < 1 || choice > devices.length) {
@@ -30,7 +42,7 @@ export async function handleDeviceSelection(
       .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
       .join('\n');
 
-    return `Please reply with a number between 1 and ${devices.length}.
+    return `Please reply with a number between 1 and ${devices.length}, or *Back* to go back.
 
 ${deviceList}`;
   }
