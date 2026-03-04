@@ -18,6 +18,7 @@ function ContactForm() {
       phone: (form.elements.namedItem('phone') as HTMLInputElement).value,
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
       message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+      _hp: (form.elements.namedItem('_hp') as HTMLInputElement).value,
     });
   };
 
@@ -34,6 +35,8 @@ function ContactForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {/* Honeypot — hidden from humans, catches bots that auto-fill */}
+      <input type="text" name="_hp" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 overflow-hidden pointer-events-none" />
       <FormInput id="name" name="name" type="text" required label="Name" placeholder="Your full name" />
       <FormInput id="phone" name="phone" type="tel" required label="Phone number" placeholder="+263 7X XXX XXXX" />
       <FormInput id="email" name="email" type="email" label="Email" optional placeholder="you@example.com" />
@@ -61,6 +64,7 @@ function PartnershipForm() {
       email: (form.elements.namedItem('email') as HTMLInputElement).value,
       partner_type: (form.elements.namedItem('partnerType') as HTMLSelectElement).value,
       message: (form.elements.namedItem('message') as HTMLTextAreaElement).value,
+      _hp: (form.elements.namedItem('_hp_p') as HTMLInputElement).value,
     });
   };
 
@@ -77,6 +81,8 @@ function PartnershipForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-5">
+      {/* Honeypot — hidden from humans, catches bots that auto-fill */}
+      <input type="text" name="_hp_p" autoComplete="off" tabIndex={-1} aria-hidden="true" className="absolute opacity-0 h-0 w-0 overflow-hidden pointer-events-none" />
       <div className="grid sm:grid-cols-2 gap-5">
         <FormInput id="partner-name" name="name" type="text" required label="Name" placeholder="Your full name" />
         <FormInput id="partner-phone" name="phone" type="tel" required label="Phone number" placeholder="+263 7X XXX XXXX" />

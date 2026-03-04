@@ -4,6 +4,7 @@ import '@/styles/globals.css';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { WhatsAppFAB } from '@/components/layout/WhatsAppFAB';
+import { WebVitals } from '@/components/WebVitals';
 
 const siteUrl = 'https://lyniafinance.com';
 
@@ -22,6 +23,12 @@ export const metadata: Metadata = {
     types: {
       'application/rss+xml': '/feed.xml',
     },
+    languages: {
+      'en': siteUrl,
+    },
+  },
+  other: {
+    'theme-color': '#0A2540',
   },
   openGraph: {
     type: 'website',
@@ -57,6 +64,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <head>
+        <meta name="theme-color" content="#0A2540" />
+        <link rel="preconnect" href="https://cdn.sanity.io" />
+        <link rel="dns-prefetch" href="https://cdn.sanity.io" />
+        <meta
+          httpEquiv="Content-Security-Policy"
+          content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' cdn.sanity.io data:; font-src 'self'; connect-src 'self' https:; frame-src 'none'; object-src 'none'; base-uri 'self'"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -97,6 +111,7 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
+        <WebVitals />
         <Navbar />
         <main id="main">{children}</main>
         <Footer />

@@ -1,8 +1,20 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 
+/** Detect low-end devices (<=2 CPU cores) to disable heavy animations. */
+function useIsLowEnd() {
+  const [lowEnd, setLowEnd] = useState(false);
+  useEffect(() => {
+    setLowEnd(navigator.hardwareConcurrency != null && navigator.hardwareConcurrency <= 2);
+  }, []);
+  return lowEnd;
+}
+
 export function Hero() {
+  const isLowEnd = useIsLowEnd();
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-navy">
       {/* Gradient background layers */}
@@ -26,38 +38,42 @@ export function Hero() {
       {/* Line grid pattern overlay */}
       <div className="absolute inset-0 line-grid opacity-[0.35]" />
 
-      {/* Gradient orbs — hidden on mobile for performance */}
-      <div
-        className="gradient-orb hidden md:block animate-float"
-        style={{
-          width: '500px',
-          height: '500px',
-          top: '-10%',
-          right: '-5%',
-          background: 'radial-gradient(circle, rgba(99, 91, 255, 0.12) 0%, transparent 70%)',
-        }}
-      />
-      <div
-        className="gradient-orb hidden md:block animate-float"
-        style={{
-          width: '400px',
-          height: '400px',
-          bottom: '5%',
-          left: '-5%',
-          background: 'radial-gradient(circle, rgba(110, 195, 244, 0.08) 0%, transparent 70%)',
-          animationDelay: '2s',
-        }}
-      />
-      <div
-        className="gradient-orb hidden lg:block animate-slow-spin"
-        style={{
-          width: '300px',
-          height: '300px',
-          top: '50%',
-          right: '15%',
-          background: 'radial-gradient(circle, rgba(99, 91, 255, 0.06) 0%, transparent 70%)',
-        }}
-      />
+      {/* Gradient orbs — hidden on mobile and low-end devices for performance */}
+      {!isLowEnd && (
+        <>
+          <div
+            className="gradient-orb hidden md:block animate-float"
+            style={{
+              width: '500px',
+              height: '500px',
+              top: '-10%',
+              right: '-5%',
+              background: 'radial-gradient(circle, rgba(99, 91, 255, 0.12) 0%, transparent 70%)',
+            }}
+          />
+          <div
+            className="gradient-orb hidden md:block animate-float"
+            style={{
+              width: '400px',
+              height: '400px',
+              bottom: '5%',
+              left: '-5%',
+              background: 'radial-gradient(circle, rgba(110, 195, 244, 0.08) 0%, transparent 70%)',
+              animationDelay: '2s',
+            }}
+          />
+          <div
+            className="gradient-orb hidden lg:block animate-slow-spin"
+            style={{
+              width: '300px',
+              height: '300px',
+              top: '50%',
+              right: '15%',
+              background: 'radial-gradient(circle, rgba(99, 91, 255, 0.06) 0%, transparent 70%)',
+            }}
+          />
+        </>
+      )}
 
       <div className="container-main relative z-10">
         <div className="max-w-[680px] md:max-w-[780px] lg:max-w-[900px] pt-24 lg:pt-0">

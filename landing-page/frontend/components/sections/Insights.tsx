@@ -1,16 +1,30 @@
 'use client';
 
+import { Component, type ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useScrollAnimation } from '@/lib/useScrollAnimation';
 import { SectionLabel } from '@/components/ui/SectionLabel';
 import { Button } from '@/components/ui/Button';
 import type { SanityPost } from '@/lib/sanity-types';
 
+/** Error boundary — gracefully handles Sanity CMS failures without crashing the page. */
+class InsightsErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean }
+> {
+  state = { hasError: false };
+  static getDerivedStateFromError() { return { hasError: true }; }
+  render() {
+    if (this.state.hasError) return null; // silently hide section on error
+    return this.props.children;
+  }
+}
+
 interface InsightsProps {
   posts: SanityPost[];
 }
 
-export function Insights({ posts }: InsightsProps) {
+function InsightsInner({ posts }: InsightsProps) {
   const { ref, isVisible } = useScrollAnimation();
 
   // Fallback when no Sanity content is configured
@@ -175,5 +189,13 @@ export function Insights({ posts }: InsightsProps) {
         </div>
       </div>
     </section>
+  );
+}
+
+export function Insights(props: InsightsProps) {
+  return (
+    <InsightsErrorBoundary>
+      <InsightsInner {...props} />
+    </InsightsErrorBoundary>
   );
 }

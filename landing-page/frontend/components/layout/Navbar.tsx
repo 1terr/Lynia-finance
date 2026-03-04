@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
@@ -21,6 +21,7 @@ function LogoMark({ className }: { className?: string }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      aria-hidden="true"
     >
       <rect x="3" y="4" width="7" height="16" rx="2" fill="currentColor" opacity="0.9" />
       <rect x="12" y="8" width="6" height="12" rx="2" fill="currentColor" opacity="0.6" />
@@ -38,10 +39,25 @@ export function Navbar() {
   const isHomepage = pathname === '/';
   const isDarkHero = isHomepage && !scrolled;
 
+  /* IntersectionObserver replaces scroll listener — fires only on state
+     change instead of every frame during scroll. */
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const sentinel = document.createElement('div');
+    sentinel.setAttribute('aria-hidden', 'true');
+    sentinel.style.cssText =
+      'position:absolute;top:80px;height:1px;width:1px;pointer-events:none;';
+    document.body.appendChild(sentinel);
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setScrolled(!entry.isIntersecting),
+      { threshold: 1 },
+    );
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+      sentinel.remove();
+    };
   }, []);
 
   const handleHashClick = useCallback(
@@ -62,6 +78,8 @@ export function Navbar() {
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
 
   const textColor = isDarkHero ? 'text-white' : 'text-primary-dark';
   const textMuted = isDarkHero ? 'text-white/70 hover:text-white' : 'text-slate hover:text-primary-dark';
@@ -124,11 +142,14 @@ export function Navbar() {
 
         {/* Mobile hamburger */}
         <button
+          ref={hamburgerRef}
           className={`lg:hidden p-2 rounded-md transition-colors duration-250 ease-stripe ${
             isDarkHero ? 'hover:bg-white/10' : 'hover:bg-gray-100'
           }`}
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-nav-menu"
         >
           {mobileOpen ? (
             <X className={`w-6 h-6 ${textColor} transition-colors duration-250`} />
@@ -140,7 +161,18 @@ export function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="lg:hidden bg-white border-t border-border animate-fade-down">
+        <div
+          id="mobile-nav-menu"
+          role="dialog"
+          aria-label="Navigation menu"
+          className="lg:hidden bg-white border-t border-border animate-fade-down"
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setMobileOpen(false);
+              hamburgerRef.current?.focus();
+            }
+          }}
+        >
           <div className="px-6 py-6 flex flex-col gap-1">
             {navLinks.map((link) => {
               const isHash = link.href.includes('#');

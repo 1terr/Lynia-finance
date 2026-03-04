@@ -10,7 +10,7 @@ const products = [
       'Instant micro-loans powered by mobile money transaction history. We analyse EcoCash, Innbucks, and OneMoney velocity to build a credit identity for thin-file borrowers who have never accessed formal credit.',
     audience: 'Informal traders, market vendors, and gig workers across Zimbabwe.',
     icon: (
-      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" />
       </svg>
     ),
@@ -22,7 +22,7 @@ const products = [
       'API-based lending infrastructure for platforms and enterprises. Embed credit decisioning, disbursement, and collection directly into your app or marketplace with a few lines of code.',
     audience: 'Fintechs, e-commerce platforms, and enterprise partners looking to offer credit at the point of need.',
     icon: (
-      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
       </svg>
     ),
@@ -34,7 +34,7 @@ const products = [
       'Smartphone financing with IoT-based risk management. Customers receive a productive asset on credit, and Lynia uses real-time device telemetry to substitute traditional collateral\u2014shifting from negative collateral to productive trust.',
     audience: 'First-time smartphone buyers, small business owners, and informal workers building their digital livelihood.',
     icon: (
-      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
       </svg>
     ),
@@ -44,6 +44,35 @@ const products = [
 export default function ProductsPage() {
   return (
     <div className="pt-[72px]">
+      {/* Structured data — FinancialProduct schema for SEO rich snippets */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'ItemList',
+            name: 'Lynia Finance Products',
+            itemListElement: products.map((p, i) => ({
+              '@type': 'ListItem',
+              position: i + 1,
+              item: {
+                '@type': 'FinancialProduct',
+                name: p.title,
+                description: p.description,
+                provider: {
+                  '@type': 'Organization',
+                  name: 'Lynia Finance',
+                  url: 'https://lyniafinance.com',
+                },
+                areaServed: {
+                  '@type': 'Country',
+                  name: 'Zimbabwe',
+                },
+              },
+            })),
+          }),
+        }}
+      />
       {/* Hero + waitlist */}
       <section className="bg-white py-16 lg:py-[120px]">
         <div className="container-main text-center mx-auto">
