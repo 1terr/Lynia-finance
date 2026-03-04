@@ -6,7 +6,7 @@
  * If Fineract is down, the reconciliation job will retry later.
  */
 
-import { syncRepaymentToFineract, approveLoanInFineract, disburseLoanInFineract } from '../../../shared/clients/fineract-sync';
+import { syncRepaymentToFineract, approveLoanInFineract } from '../../../shared/clients/fineract-sync';
 import { db } from '../../../shared/clients/database';
 import logger from '../../../shared/utils/logger';
 
