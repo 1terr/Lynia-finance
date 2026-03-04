@@ -1070,6 +1070,18 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/kyc/submissions/{proxy+}
             Method: ANY
+        CustomersRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/customers
+            Method: ANY
+        CustomersProxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/customers/{proxy+}
+            Method: ANY
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

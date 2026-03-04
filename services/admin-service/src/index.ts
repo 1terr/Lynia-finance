@@ -42,6 +42,9 @@ import { handleDashboardMetrics, handlePortfolioAtRisk, handleDailyTrends, handl
 // ─── KYC Review ───
 import { handleGetKYCPending, handleGetKYCReviewHistory, handleGetKYCSLAStats, handleApproveKYC, handleRejectKYC } from './handlers/kyc-review';
 
+// ─── Customers ───
+import { handleGetCustomers, handleGetCustomerById, handleUpdateCustomerStatus, handleGetCustomerLoans, handleGetCustomerPayments, handleGetCustomerCreditScore, handleGetCreditScoreHistory, handleGetCustomerKYC, handleGetCustomerTimeline, handleAddCustomerNote } from './handlers/customers';
+
 // ─── Route Map ───
 // Static paths MUST come before parameterized paths of the same segment
 // length so the router matches exact segments first.
@@ -120,4 +123,16 @@ export const handler = createRouter({
   'GET /api/v1/kyc/submissions/sla-stats':        handleGetKYCSLAStats,
   'POST /api/v1/kyc/submissions/:id/approve':     handleApproveKYC,
   'POST /api/v1/kyc/submissions/:id/reject':      handleRejectKYC,
+
+  // Customers (sub-routes before single-ID routes)
+  'GET /api/v1/customers':                              handleGetCustomers,
+  'GET /api/v1/customers/:id/loans':                    handleGetCustomerLoans,
+  'GET /api/v1/customers/:id/payments':                 handleGetCustomerPayments,
+  'GET /api/v1/customers/:id/credit-score/history':     handleGetCreditScoreHistory,
+  'GET /api/v1/customers/:id/credit-score':             handleGetCustomerCreditScore,
+  'GET /api/v1/customers/:id/kyc':                      handleGetCustomerKYC,
+  'GET /api/v1/customers/:id/timeline':                 handleGetCustomerTimeline,
+  'POST /api/v1/customers/:id/notes':                   handleAddCustomerNote,
+  'PATCH /api/v1/customers/:id/status':                 handleUpdateCustomerStatus,
+  'GET /api/v1/customers/:id':                          handleGetCustomerById,
 }, { serviceName: 'admin-service' });
