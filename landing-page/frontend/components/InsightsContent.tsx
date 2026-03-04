@@ -30,6 +30,12 @@ export function InsightsContent({ posts, categories }: InsightsContentProps) {
           <span className="text-overline uppercase tracking-wider text-primary">
             FROM OUR INSIGHTS
           </span>
+          <h1 className="text-display-mobile md:text-display-tablet lg:text-display text-primary-dark mt-4">
+            Insights &amp; Research
+          </h1>
+          <p className="text-body-lg text-slate mt-3 max-w-[600px]">
+            Articles on financial inclusion, credit infrastructure, and building for Zimbabwe&apos;s underbanked majority.
+          </p>
 
           {/* Featured post */}
           {featured && (

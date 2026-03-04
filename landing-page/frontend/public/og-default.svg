@@ -1,0 +1,20 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A2540"/>
+      <stop offset="100%" style="stop-color:#0D2E4D"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Logo mark -->
+  <rect x="80" y="220" width="56" height="128" rx="16" fill="#635BFF" opacity="0.9"/>
+  <rect x="152" y="252" width="48" height="96" rx="16" fill="#635BFF" opacity="0.6"/>
+  <rect x="212" y="284" width="32" height="64" rx="12" fill="#635BFF" opacity="0.35"/>
+  <!-- Text -->
+  <text x="280" y="300" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="700" fill="white">Lynia Finance</text>
+  <text x="80" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="rgba(255,255,255,0.6)">Financial infrastructure for Zimbabwe's informal economy.</text>
+  <text x="80" y="460" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="rgba(255,255,255,0.6)">Transforming mobile money velocity into credit identities.</text>
+  <!-- Accent line -->
+  <rect x="80" y="510" width="120" height="4" rx="2" fill="#635BFF"/>
+  <text x="80" y="560" font-family="system-ui, -apple-system, sans-serif" font-size="18" fill="rgba(255,255,255,0.4)">lyniafinance.com</text>
+</svg>

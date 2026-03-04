@@ -43,7 +43,7 @@ const config: Config = {
         'hero-accent': '#42678E',
       },
       fontFamily: {
-        sans: ['Inter', ...defaultTheme.fontFamily.sans],
+        sans: ['var(--font-inter)', ...defaultTheme.fontFamily.sans],
         mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {

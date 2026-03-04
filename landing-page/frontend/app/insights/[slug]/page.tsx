@@ -66,8 +66,50 @@ export default async function InsightsPostPage({ params }: PageProps) {
     year: 'numeric',
   });
 
+  const articleJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.seo?.metaDescription || post.excerpt,
+    datePublished: post.publishedAt,
+    author: {
+      '@type': 'Person',
+      name: post.author.name,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Lynia Finance',
+      url: 'https://lyniafinance.com',
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://lyniafinance.com/insights/${slug}`,
+    },
+    ...(post.featuredImage && {
+      image: urlFor(post.featuredImage).width(1200).height(630).url(),
+    }),
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://lyniafinance.com' },
+      { '@type': 'ListItem', position: 2, name: 'Insights', item: 'https://lyniafinance.com/insights' },
+      { '@type': 'ListItem', position: 3, name: post.title, item: `https://lyniafinance.com/insights/${slug}` },
+    ],
+  };
+
   return (
     <div className="pt-[72px]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       {/* Back link */}
       <div className="container-main pt-8">
         <a
