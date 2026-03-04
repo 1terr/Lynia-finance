@@ -101,7 +101,7 @@ export async function getKYCPendingReview(page = 1, rawLimit = 25) {
   params.set('limit', String(limit));
 
   return fetchAPI<{
-    data: (KYCSubmission & { customer: Pick<Customer, 'id' | 'full_name' | 'phone_number'> })[];
+    data: (KYCSubmission & { customer: Pick<Customer, 'id' | 'full_name' | 'phone_number'> | null })[];
     total: number;
     page: number;
     limit: number;

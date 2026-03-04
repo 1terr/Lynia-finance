@@ -53,7 +53,7 @@ export const handleGetKYCPending: RouteHandler = async (event, _params, auth) =>
       c.full_name AS customer__full_name,
       c.phone_number AS customer__phone_number
     FROM kyc_submissions ks
-    JOIN customers c ON c.id = ks.customer_id
+    LEFT JOIN customers c ON c.id = ks.customer_id
     WHERE ks.status IN ('pending', 'manual_review')
     ORDER BY ks.submitted_at ASC
     LIMIT $1 OFFSET $2`,
@@ -77,11 +77,11 @@ export const handleGetKYCPending: RouteHandler = async (event, _params, auth) =>
       extracted_first_name: nameParts[0] || null,
       extracted_last_name: nameParts.slice(1).join(' ') || null,
       extracted_date_of_birth: extracted_dob || null,
-      customer: {
+      customer: customer__id ? {
         id: customer__id,
         full_name: customer__full_name,
         phone_number: customer__phone_number,
-      },
+      } : null,
     };
   });
 
@@ -121,7 +121,7 @@ export const handleGetKYCReviewHistory: RouteHandler = async (event, _params, au
       c.full_name AS customer__full_name,
       c.phone_number AS customer__phone_number
     FROM kyc_submissions ks
-    JOIN customers c ON c.id = ks.customer_id
+    LEFT JOIN customers c ON c.id = ks.customer_id
     WHERE ks.status IN ('verified', 'rejected')
     ORDER BY COALESCE(ks.verified_at, ks.rejected_at, ks.submitted_at) DESC
     LIMIT $1`,
@@ -141,10 +141,10 @@ export const handleGetKYCReviewHistory: RouteHandler = async (event, _params, au
     const { customer__full_name, customer__phone_number, ...rest } = row;
     return {
       ...rest,
-      customer: {
+      customer: customer__full_name ? {
         full_name: customer__full_name,
         phone_number: customer__phone_number,
-      },
+      } : null,
     };
   });
 

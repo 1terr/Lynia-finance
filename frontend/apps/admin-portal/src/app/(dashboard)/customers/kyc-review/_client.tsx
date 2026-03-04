@@ -29,7 +29,7 @@ import {
 import Link from 'next/link';
 
 type KYCWithCustomer = KYCSubmission & {
-  customer: Pick<Customer, 'id' | 'full_name' | 'phone_number'>;
+  customer: Pick<Customer, 'id' | 'full_name' | 'phone_number'> | null;
 };
 
 interface KYCReviewRecord {
@@ -252,18 +252,27 @@ export default function KYCReviewPage() {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <Link
-                                  href={`/customers/${submission.customer.id}`}
-                                  className="text-base font-semibold text-gray-900 hover:text-brand-600"
-                                >
-                                  {submission.customer.full_name}
-                                </Link>
+                                {submission.customer ? (
+                                  <Link
+                                    href={`/customers/${submission.customer.id}`}
+                                    className="text-base font-semibold text-gray-900 hover:text-brand-600"
+                                  >
+                                    {submission.customer.full_name}
+                                  </Link>
+                                ) : (
+                                  <span className="text-base font-semibold text-orange-600">
+                                    <AlertTriangle className="mr-1 inline h-4 w-4" />
+                                    Orphaned Submission
+                                  </span>
+                                )}
                                 <span className={`text-xs font-medium ${sla.color}`}>
                                   <Clock className="mr-0.5 inline h-3 w-3" />
                                   {sla.label} waiting
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-500">{submission.customer.phone_number}</p>
+                              <p className="text-sm text-gray-500">
+                                {submission.customer?.phone_number || `No linked customer (ID: ${submission.customer_id})`}
+                              </p>
                             </div>
                           </div>
 
@@ -412,9 +421,9 @@ export default function KYCReviewPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User className="h-4 w-4" />
-              <span className="font-medium">{docViewerSubmission.customer.full_name}</span>
+              <span className="font-medium">{docViewerSubmission.customer?.full_name || 'Unknown Customer'}</span>
               <span className="text-gray-400">|</span>
-              <span>{docViewerSubmission.customer.phone_number}</span>
+              <span>{docViewerSubmission.customer?.phone_number || 'N/A'}</span>
             </div>
 
             <div className="space-y-4">
@@ -499,7 +508,7 @@ export default function KYCReviewPage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Reject KYC for <strong>{rejectModal?.customer.full_name}</strong>?
+            Reject KYC for <strong>{rejectModal?.customer?.full_name || 'Unknown Customer'}</strong>?
             The customer will be notified and can resubmit.
           </p>
           <div>
