@@ -86,13 +86,13 @@ The primary on-call engineer is the first responder for all production alerts.
 
 **Business Account ID:** [XXXXXXXXX]
 
-### Smile Identity (KYC Provider)
+### DIDIT (KYC Provider)
 
 | Contact | Method |
 |---------|--------|
-| Smile Identity Support | support@smileidentity.com |
+| DIDIT Support | support@diditidentity.com |
 | Technical Contact | [Name] - [email] |
-| API Status | https://status.smileidentity.com |
+| API Status | https://status.diditidentity.com |
 
 **Partner ID:** [XXXXX]
 

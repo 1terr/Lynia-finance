@@ -95,20 +95,6 @@ export async function getWhatsAppSecrets(): Promise<{
 }
 
 /**
- * Retrieve Smile Identity (KYC) credentials.
- */
-export async function getSmileIdentitySecrets(): Promise<{
-  SMILE_PARTNER_ID: string;
-  SMILE_API_KEY: string;
-}> {
-  const secrets = await getSecret(buildSecretName('smile-identity'));
-  return {
-    SMILE_PARTNER_ID: secrets.SMILE_PARTNER_ID,
-    SMILE_API_KEY: secrets.SMILE_API_KEY,
-  };
-}
-
-/**
  * Retrieve Didit (KYC) credentials.
  */
 export async function getDiditSecrets(): Promise<{

@@ -2,7 +2,7 @@
  * k6 Load Test: KYC Service
  *
  * Tests KYC submission, status check, and document verification endpoints.
- * External API dependent (Smile Identity) - tests with mocked responses.
+ * External API dependent (DIDIT) - tests with mocked responses.
  *
  * Run: k6 run --env API_URL=https://staging-api.lyniafinance.com kyc-service.k6.js
  */

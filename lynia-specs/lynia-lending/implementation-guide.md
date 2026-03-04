@@ -167,7 +167,7 @@ This document was the source of truth for all changes. It contains:
 - [ ] T018a-T018g: Africa's Talk SMS research and test account setup
 - [ ] T049a-T049j: AWS free tier research (Lambda, EC2, API Gateway)
 - [ ] T001-T006: Apache Fineract REST API research
-- [ ] T019-T024: Smile Identity KYC research
+- [ ] T019-T024: DIDIT KYC research
 - [ ] T044-T049: Device lock provider evaluation
 
 **Deliverables**:
@@ -244,7 +244,7 @@ This document was the source of truth for all changes. It contains:
 **Tasks** (from [tasks.md](./tasks.md)):
 - [ ] T172-T177: TDD tests (contract, integration, E2E) - **WRITE FIRST**
 - [ ] T178-T188a: WhatsApp Cloud API service (webhook, state machine, conversation window tracking)
-- [ ] T189-T196: KYC service (Smile Identity integration, duplicate detection)
+- [ ] T189-T196: KYC service (DIDIT integration, duplicate detection)
 - [ ] T197-T201: Africa's Talk SMS (Next of Kin verification, delivery callbacks)
 - [ ] T202-T210: Scoring service (hybrid Fineract + ML, grace period calculation)
 - [ ] T211-T217: Notification service (Supabase Edge Function for WhatsApp messages)
@@ -377,7 +377,7 @@ Use this checklist monthly to ensure you stay within cost optimization budget:
 
 ### External Services (Variable)
 
-- [ ] Smile Identity KYC: ~$0.10/verification × count
+- [ ] DIDIT KYC: ~$0.10/verification × count
 - [ ] EcoCash/Omari: Transaction fees only (2-3%)
 - [ ] Device lock provider: ~$0.20/device/month × count
 

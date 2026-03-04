@@ -179,9 +179,8 @@ export interface KYCSubmission {
   id_document_front_url: string | null;
   id_document_back_url: string | null;
   selfie_image_url: string | null;
-  kyc_provider: 'smile_identity' | 'didit' | null;
+  kyc_provider: 'didit' | null;
   provider_response: Record<string, unknown> | null;
-  smile_identity_result: Record<string, unknown> | null;
   extracted_first_name: string | null;
   extracted_last_name: string | null;
   extracted_date_of_birth: string | null;
@@ -193,7 +192,6 @@ export interface KYCSubmission {
   customer?: Customer;
   customers?: Customer;
   confidence_score?: number | null;
-  smile_identity_response?: Record<string, unknown> | null;
   submitted_at?: string;
   submission_number?: string;
   id_document_url?: string;

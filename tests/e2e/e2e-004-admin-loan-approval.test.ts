@@ -8,7 +8,7 @@
  */
 
 import { createAPIGatewayEvent, parseResponseBody } from '../helpers/test-utils';
-import { mockSmileIdentityResponses } from '../helpers/mock-external-services';
+import { mockDiditResponses } from '../helpers/mock-external-services';
 import { testCustomers, testLoans, testCreditScores } from '../fixtures';
 
 // Mock external dependencies
@@ -145,7 +145,7 @@ describe('E2E-004: Admin Loan Approval Flow', () => {
     });
 
     it('should verify KYC manual review response is available', () => {
-      const manualReview = mockSmileIdentityResponses.manualReviewKYC;
+      const manualReview = mockDiditResponses.manualReviewKYC;
       expect(manualReview.result.ResultCode).toBe('1013');
       expect(manualReview.result.ResultText).toBe('Needs Review');
       expect(manualReview.result.confidence_value).toBe(72.0);

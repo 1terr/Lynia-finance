@@ -19,7 +19,7 @@
 - ✅ Development tools installation (Node.js, pnpm, Git, etc.)
 - ✅ Supabase setup (step-by-step with screenshots instructions)
 - ✅ WhatsApp Cloud API setup (Meta Developer account, webhooks)
-- ✅ Third-party service credentials (Smile Identity, Mobile Money APIs)
+- ✅ Third-party service credentials (DIDIT, Mobile Money APIs)
 - ✅ Database schema deployment
 - ✅ AWS Lambda configuration
 - ✅ Environment variables
@@ -69,7 +69,7 @@
 **Includes**:
 - ✅ Supabase credentials (URL, keys)
 - ✅ WhatsApp Cloud API (phone number ID, access token)
-- ✅ Smile Identity (partner ID, API key)
+- ✅ DIDIT (partner ID, API key)
 - ✅ Mobile Money APIs (EcoCash, OneMoney)
 - ✅ AWS credentials
 - ✅ Security keys (JWT, encryption)
@@ -234,7 +234,7 @@ Before starting Phase 2 development, verify:
 2. ✅ Credit scoring service (5-component model)
 3. ✅ WhatsApp bot (8-step onboarding)
 4. ✅ Zimbabwe phone validation (+263 only)
-5. ✅ KYC integration (Smile Identity)
+5. ✅ KYC integration (DIDIT)
 6. ✅ Payment processing (EcoCash, OneMoney)
 7. ✅ Device handover with deposit enforcement
 8. ✅ Admin dashboard (Next.js 14)

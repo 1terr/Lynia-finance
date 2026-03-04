@@ -68,7 +68,7 @@ Successfully implemented the complete 8-step WhatsApp customer onboarding flow w
 - Clear photo guidelines provided
 - Image URL stored for processing
 - Selfie photo upload
-- Liveness detection ready (Smile Identity integration point)
+- Liveness detection ready (DIDIT integration point)
 
 **Photo Requirements**:
 - Clear and readable
@@ -78,7 +78,7 @@ Successfully implemented the complete 8-step WhatsApp customer onboarding flow w
 
 #### **Step 6: KYC Processing** ✅
 - Simulated KYC verification (96% confidence)
-- Ready for Smile Identity API integration
+- Ready for DIDIT API integration
 - Auto-approve for testing
 - Handles verification outcomes:
   - Auto-approved (85%+ confidence)
@@ -436,7 +436,7 @@ Built Template: .aws-sam\build\template.yaml
 - Status updates
 
 ### 4. Future Integrations (Placeholder)
-- Smile Identity KYC API (ready for integration)
+- DIDIT KYC API (ready for integration)
 - SMS OTP verification (architecture ready)
 - Payment gateways (referenced in flow)
 
@@ -526,7 +526,7 @@ sam deploy --guided
 
 ## Known Limitations
 
-### 1. Smile Identity KYC Not Yet Integrated
+### 1. DIDIT KYC Not Yet Integrated
 - Currently simulates KYC verification (96% confidence)
 - Returns auto-approve for testing
 - Ready for API integration in P2-T007
@@ -543,7 +543,7 @@ sam deploy --guided
 ### 3. Image Processing Not Implemented
 - Image URLs stored but not processed
 - No blur detection, brightness checks
-- Smile Identity will handle this
+- DIDIT will handle this
 
 **Mitigation**: Manual review available
 
@@ -581,7 +581,7 @@ sam deploy --guided
 
 ### Future Enhancements (Post-MVP)
 
-**P2-T007: Smile Identity KYC Integration**
+**P2-T007: DIDIT KYC Integration**
 - Replace simulated KYC with real API
 - Implement photo quality checks
 - Add liveness detection

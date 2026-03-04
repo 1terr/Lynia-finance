@@ -210,8 +210,8 @@ deploy_t007() {
     echo "      WhatsAppPhoneNumberId=<value> \\"
     echo "      WhatsAppAccessToken=<value> \\"
     echo "      WhatsAppWebhookVerifyToken=<value> \\"
-    echo "      SmilePartnerId=<value> \\"
-    echo "      SmileApiKey=<value> \\"
+    echo "      DiditApiKey=<value> \\"
+    echo "      DiditWebhookSecret=<value> \\"
     echo "      EcocashMerchantId=<value> \\"
     echo "      EcocashApiKey=<value> \\"
     echo "      OnemoneyMerchantId=<value> \\"
@@ -233,8 +233,8 @@ deploy_t007() {
     "WhatsAppPhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}" \
     "WhatsAppAccessToken=${WHATSAPP_ACCESS_TOKEN:-}" \
     "WhatsAppWebhookVerifyToken=${WHATSAPP_WEBHOOK_VERIFY_TOKEN:-}" \
-    "SmilePartnerId=${SMILE_PARTNER_ID:-}" \
-    "SmileApiKey=${SMILE_API_KEY:-}" \
+    "DiditApiKey=${DIDIT_API_KEY:-}" \
+    "DiditWebhookSecret=${DIDIT_WEBHOOK_SECRET:-}" \
     "EcocashMerchantId=${ECOCASH_MERCHANT_ID:-}" \
     "EcocashApiKey=${ECOCASH_API_KEY:-}" \
     "OnemoneyMerchantId=${ONEMONEY_MERCHANT_ID:-}" \

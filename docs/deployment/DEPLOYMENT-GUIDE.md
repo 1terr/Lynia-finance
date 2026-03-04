@@ -196,9 +196,9 @@ Edit `config/parameters-staging.json`:
     "WhatsAppPhoneNumberId": "your-staging-phone-id",
     "WhatsAppAccessToken": "your-staging-whatsapp-token",
     "WhatsAppWebhookVerifyToken": "your-staging-verify-token",
-    "SmilePartnerId": "your-smile-partner-id",
-    "SmileApiKey": "your-smile-api-key",
-    "SmileEnvironment": "sandbox",
+    "DiditApiKey": "your-didit-partner-id",
+    "DiditWebhookSecret": "your-didit-api-key",
+    "DiditEnvironment": "sandbox",
     "EcocashMerchantId": "your-ecocash-merchant-id",
     "EcocashApiKey": "your-ecocash-api-key",
     "OnemoneyMerchantId": "your-onemoney-merchant-id",
@@ -295,7 +295,7 @@ Edit `config/parameters-production.json`:
     "Environment": "production",
     "SupabaseUrl": "https://your-project.supabase.co",
     "SupabaseServiceRoleKey": "your-PRODUCTION-supabase-key",
-    "SmileEnvironment": "production",
+    "DiditEnvironment": "production",
     ...
   }
 }
@@ -416,8 +416,8 @@ Configure in: **Settings → Secrets and variables → Actions**
 - `STAGING_WHATSAPP_PHONE_ID`
 - `STAGING_WHATSAPP_TOKEN`
 - `STAGING_WEBHOOK_TOKEN`
-- `STAGING_SMILE_PARTNER_ID`
-- `STAGING_SMILE_API_KEY`
+- `STAGING_DIDIT_API_KEY`
+- `STAGING_DIDIT_WEBHOOK_SECRET`
 - `STAGING_ECOCASH_MERCHANT_ID`
 - `STAGING_ECOCASH_API_KEY`
 - `STAGING_ONEMONEY_MERCHANT_ID`
@@ -723,7 +723,7 @@ return {
           ┌──────────────┐       ┌──────────────────┐
           │  Supabase    │       │  External APIs   │
           │  PostgreSQL  │       │ • WhatsApp       │
-          │              │       │ • Smile ID       │
+          │              │       │ • DIDIT       │
           └──────────────┘       │ • OneMoney       │
                                  │ • Trustonic      │
                                  └──────────────────┘

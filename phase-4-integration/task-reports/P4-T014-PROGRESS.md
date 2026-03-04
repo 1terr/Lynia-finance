@@ -90,7 +90,7 @@ P1-P4 severity classification and response procedures:
 Complete contact directory:
 - On-call rotation schedule
 - Internal team contacts (engineering + business + operations)
-- External providers (AWS, Supabase, Meta/WhatsApp, Smile Identity, EcoCash, OneMoney, Trustonic, Twilio)
+- External providers (AWS, Supabase, Meta/WhatsApp, DIDIT, EcoCash, OneMoney, Trustonic, Twilio)
 - Regulatory contacts (RBZ, Zimbabwe Data Protection Authority)
 - Severity-based escalation paths with timelines
 - Communication channels and maintenance windows

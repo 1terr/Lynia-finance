@@ -61,7 +61,7 @@ on_failure = "ROLLBACK"    # Auto-rollback on failure
 {
   "Parameters": {
     "Environment": "staging",
-    "SmileEnvironment": "sandbox",
+    "DiditEnvironment": "sandbox",
     // All staging credentials
   }
 }
@@ -72,7 +72,7 @@ on_failure = "ROLLBACK"    # Auto-rollback on failure
 {
   "Parameters": {
     "Environment": "production",
-    "SmileEnvironment": "production",
+    "DiditEnvironment": "production",
     // All production credentials
   }
 }
@@ -85,9 +85,9 @@ on_failure = "ROLLBACK"    # Auto-rollback on failure
 4. WhatsApp Phone Number ID
 5. WhatsApp Access Token
 6. WhatsApp Webhook Verify Token
-7. Smile Identity Partner ID
-8. Smile Identity API Key
-9. Smile Environment (sandbox/production)
+7. DIDIT Partner ID
+8. DIDIT API Key
+9. DIDIT Environment (sandbox/production)
 10. EcoCash Merchant ID
 11. EcoCash API Key
 12. OneMoney Merchant ID
@@ -241,8 +241,8 @@ on:
 - `STAGING_WHATSAPP_PHONE_ID`
 - `STAGING_WHATSAPP_TOKEN`
 - `STAGING_WEBHOOK_TOKEN`
-- `STAGING_SMILE_PARTNER_ID`
-- `STAGING_SMILE_API_KEY`
+- `STAGING_DIDIT_API_KEY`
+- `STAGING_DIDIT_WEBHOOK_SECRET`
 - `STAGING_ECOCASH_MERCHANT_ID`
 - `STAGING_ECOCASH_API_KEY`
 - `STAGING_ONEMONEY_MERCHANT_ID`
@@ -429,7 +429,7 @@ All 6 Lambda functions configured identically:
 
 1. **ScoringFunction** - Credit scoring and loan assessment
 2. **WhatsAppFunction** - WhatsApp messaging and webhook
-3. **KYCFunction** - KYC verification (Smile Identity)
+3. **KYCFunction** - KYC verification (DIDIT)
 4. **PaymentFunction** - Payment processing (EcoCash, OneMoney)
 5. **LockFunction** - Device lock/unlock (Trustonic)
 6. **NotificationFunction** - Multi-channel notifications

@@ -386,7 +386,7 @@ Given both accounts are ready, here is the recommended execution order:
 **Track A - KYC (Didit) Wiring:**
 1. Add `form-data` to `services/kyc-service/package.json`
 2. Create `kyc-provider-factory.ts`
-3. Adapt `SmileIdentityService` to implement `KYCProvider`
+3. Adapt `DiditService` to implement `KYCProvider`
 4. Refactor `index.ts` handler to use factory
 5. Create database migration for provider columns
 6. Add Didit to Secrets Manager template + SAM params
@@ -440,7 +440,7 @@ Given both accounts are ready, here is the recommended execution order:
 | 5 | i18n not wired into onboarding | `onboarding.ts`, `i18n.ts` | MEDIUM |
 | 6 | KYC notification TODO in callback | `kyc-service/src/index.ts` | HIGH |
 | 7 | SQS Lambda triggers commented out | `template.yaml` | LOW (not blocking) |
-| 8 | Scoring uses `SmileIdentityResult` name | `scoring-service/src/index.ts` | MEDIUM |
+| 8 | Scoring uses `DiditResult` name | `scoring-service/src/index.ts` | MEDIUM |
 | 9 | `form-data` missing from KYC package.json | `services/kyc-service/package.json` | HIGH |
 
 ---

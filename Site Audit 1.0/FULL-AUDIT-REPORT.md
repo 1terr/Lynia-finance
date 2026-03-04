@@ -157,7 +157,7 @@ Apache Fineract integration is **fully coded** across 3 phases (6, 7, 10) with:
 │                                                                          │
 │  ┌──────────────────────────────────────────────────────────────────┐    │
 │  │ Secrets Manager (7 secrets)                                      │    │
-│  │ Database | WhatsApp | Smile Identity | EcoCash | OneMoney |      │    │
+│  │ Database | WhatsApp | DIDIT | EcoCash | OneMoney |      │    │
 │  │ Trustonic | SMS Provider                                         │    │
 │  └──────────────────────────────────────────────────────────────────┘    │
 │                                                                          │
@@ -169,7 +169,7 @@ Apache Fineract integration is **fully coded** across 3 phases (6, 7, 10) with:
 │                                                                          │
 │  ┌──────────────────────────────────────────────────────────────────┐    │
 │  │ External Services                                                │    │
-│  │ WhatsApp Cloud API | Smile Identity | EcoCash | OneMoney |       │    │
+│  │ WhatsApp Cloud API | DIDIT | EcoCash | OneMoney |       │    │
 │  │ Trustonic | Twilio/Africa's Talking                              │    │
 │  └──────────────────────────────────────────────────────────────────┘    │
 └──────────────────────────────────────────────────────────────────────────┘
@@ -178,7 +178,7 @@ Apache Fineract integration is **fully coded** across 3 phases (6, 7, 10) with:
 ### Key Data Flow: Loan Lifecycle
 
 ```
-Customer (WhatsApp) → WhatsApp Service → KYC Service (Smile Identity)
+Customer (WhatsApp) → WhatsApp Service → KYC Service (DIDIT)
                                        → Scoring Service (5-component model)
                                        → Loan Created (RDS)
                                        → [Fineract Sync: syncLoanToFineract()]

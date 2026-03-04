@@ -9,7 +9,7 @@
 
 ## Objective
 
-Wire the existing `DiditService` client into the KYC Lambda handler via a provider factory pattern, maintaining Smile Identity as a fallback.
+Wire the existing `DiditService` client into the KYC Lambda handler via a provider factory pattern, maintaining DIDIT as a fallback.
 
 ## Prerequisites
 
@@ -24,14 +24,14 @@ Wire the existing `DiditService` client into the KYC Lambda handler via a provid
 - **Action:** `npm install form-data` (required by DiditService for multipart uploads)
 - **Test:** `npm ls form-data` shows installed version
 
-### A1.2: Adapt SmileIdentityService to implement KYCProvider
-- **File:** `services/kyc-service/src/smile-identity-service.ts`
+### A1.2: Adapt DiditService to implement KYCProvider
+- **File:** `services/kyc-service/src/didit-service.ts`
 - **Action:** Add `implements KYCProvider` and adapter methods:
-  - `submitVerification()` → delegates to existing `submitEnhancedKYC()`
+  - `submitVerification()` → delegates to existing `submitVerification()`
   - `verifyWebhookSignature()` → delegates to existing method
-  - `parseWebhookPayload()` → converts Smile payload to `KYCVerificationResult`
+  - `parseWebhookPayload()` → converts DIDIT payload to `KYCVerificationResult`
   - `determineDecision()` → delegates to existing `determineVerificationDecision()`
-  - `handleError()` → delegates to existing `handleSmileError()`
+  - `handleError()` → delegates to existing `handleError()`
 - **Constraint:** All existing methods remain unchanged for backward compatibility
 - **Test:** Existing contract tests still pass
 
@@ -40,9 +40,9 @@ Wire the existing `DiditService` client into the KYC Lambda handler via a provid
 - **Action:** Create factory that reads `KYC_PROVIDER` env var:
   ```typescript
   export function createKYCProvider(): KYCProvider {
-    const provider = process.env.KYC_PROVIDER || 'smile_identity';
+    const provider = process.env.KYC_PROVIDER || 'didit';
     if (provider === 'didit') return new DiditService();
-    return new SmileIdentityService();
+    return new DiditService();
   }
   ```
 - **Test:** Factory returns correct provider type based on env var
@@ -50,12 +50,12 @@ Wire the existing `DiditService` client into the KYC Lambda handler via a provid
 ### A1.4: Refactor Lambda Handler
 - **File:** `services/kyc-service/src/index.ts`
 - **Action:**
-  1. Replace `const smileService = new SmileIdentityService()` with `const kycProvider = createKYCProvider()`
+  1. Replace `const diditService = new DiditService()` with `const kycProvider = createKYCProvider()`
   2. `initiateKYC`: Use `kycProvider.submitVerification()`, write `kyc_provider` to DB
-  3. `handleSmileCallback` → `handleKYCCallback`: Detect provider from webhook headers, delegate accordingly
+  3. `handleKYCCallback` → `handleKYCCallback`: Detect provider from webhook headers, delegate accordingly
   4. Write `provider_job_id` and `provider_response` to new DB columns
 - **Constraint:** Must work with existing DB schema (new columns added in Task A2)
-- **Test:** Contract tests pass with both `KYC_PROVIDER=smile_identity` and `KYC_PROVIDER=didit`
+- **Test:** Contract tests pass with both `KYC_PROVIDER=didit` and `KYC_PROVIDER=didit`
 
 ### A1.5: Export KYC Provider Types
 - **File:** `services/shared/types/index.ts`
@@ -65,9 +65,9 @@ Wire the existing `DiditService` client into the KYC Lambda handler via a provid
 ## Acceptance Criteria
 
 - [ ] `form-data` is in `kyc-service/package.json` dependencies
-- [ ] `SmileIdentityService implements KYCProvider`
+- [ ] `DiditService implements KYCProvider`
 - [ ] `createKYCProvider()` factory returns correct provider based on `KYC_PROVIDER` env var
-- [ ] Lambda handler uses provider factory (no direct Smile instantiation)
+- [ ] Lambda handler uses provider factory (no direct DIDIT instantiation)
 - [ ] Callback handler detects provider from webhook headers
 - [ ] All existing contract tests pass unchanged
 - [ ] TypeScript compilation succeeds (`sam build`)
@@ -85,7 +85,7 @@ Wire the existing `DiditService` client into the KYC Lambda handler via a provid
 | File | Action |
 |------|--------|
 | `services/kyc-service/package.json` | Add `form-data` dependency |
-| `services/kyc-service/src/smile-identity-service.ts` | Add `implements KYCProvider` |
+| `services/kyc-service/src/didit-service.ts` | Add `implements KYCProvider` |
 | `services/kyc-service/src/kyc-provider-factory.ts` | NEW - Provider factory |
 | `services/kyc-service/src/index.ts` | Refactor to use factory |
 | `services/shared/types/index.ts` | Export KYC provider types |

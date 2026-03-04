@@ -53,7 +53,7 @@ type ConsentType =
   | 'kyc_data_collection'       // ID & biometric data
   | 'credit_check'              // Credit scoring consent
   | 'marketing_communications'  // WhatsApp/SMS marketing
-  | 'data_sharing_smile'        // Share data with Smile Identity
+  | 'data_sharing_didit'        // Share data with DIDIT
   | 'data_sharing_payment'      // Share data with payment gateways
   | 'device_lock_authorization' // Consent to remote device lock;
 
@@ -117,7 +117,7 @@ To verify your identity, we'll share your:
 ✓ Selfie photo
 
 With our verification partner:
-Smile Identity
+DIDIT
 
 This is required for loan approval.
 
@@ -291,7 +291,7 @@ We DO NOT:
 🤝 *Who We Share Data With*
 
 Verification Partner:
-• Smile Identity (KYC verification)
+• DIDIT (KYC verification)
 • Data shared: ID number, photos
 
 Payment Partners:
@@ -369,7 +369,7 @@ interface DataSharingConsent {
   customer_id: string;
 
   // Required consents (cannot proceed without these)
-  consent_kyc_verification: boolean;        // Smile Identity
+  consent_kyc_verification: boolean;        // DIDIT
   consent_payment_processing: boolean;      // Payment gateways
   consent_device_lock: boolean;             // Device lock provider
 
@@ -398,7 +398,7 @@ To verify your identity, we'll share:
 • Selfie photo
 • Full name
 
-With: Smile Identity
+With: DIDIT
 Purpose: Prevent fraud, comply with regulations
 
 Required to proceed.
@@ -493,7 +493,7 @@ async function revokeConsent(
     'terms_and_conditions',
     'privacy_policy',
     'kyc_data_collection',
-    'data_sharing_smile',
+    'data_sharing_didit',
     'data_sharing_payment'
   ];
 
@@ -803,7 +803,7 @@ This specification defines the complete privacy and consent management system fo
 
 ### What Was Delivered
 This document provides:
-1. **8 Consent Types**: Terms & conditions, privacy policy, KYC data collection, credit check, marketing communications, Smile Identity data sharing, payment gateway data sharing, device lock authorization
+1. **8 Consent Types**: Terms & conditions, privacy policy, KYC data collection, credit check, marketing communications, DIDIT data sharing, payment gateway data sharing, device lock authorization
 2. **Onboarding Consent Flow**: 4-step consent collection integrated into customer journey (terms → privacy → KYC/credit → device lock)
 3. **Terms & Privacy Documents**: WhatsApp-friendly summaries (150-200 words) + full web versions
 4. **Data Subject Rights**: Complete implementation of access, rectification, deletion, and portability requests

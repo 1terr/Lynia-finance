@@ -106,7 +106,7 @@ Lynia Finance is a WhatsApp-first device financing platform for Zimbabwe's infor
 ├─────────┼──────────────────────────────────────────────────────────────┤
 │         │                                                               │
 │  ┌──────▼──────────┐  ┌──────────────┐  ┌──────────────┐             │
-│  │   WhatsApp      │  │    Smile     │  │   EcoCash    │             │
+│  │   WhatsApp      │  │    DIDIT     │  │   EcoCash    │             │
 │  │   Cloud API     │  │   Identity   │  │   / EcoCash/Omari/Innbucks/OneWallet   │             │
 │  │   (Meta)        │  │    (KYC)     │  │  (Payments)  │             │
 │  └─────────────────┘  └──────────────┘  └──────────────┘             │
@@ -201,11 +201,11 @@ Lynia Finance is a WhatsApp-first device financing platform for Zimbabwe's infor
 - **Trigger**: Event-driven (SQS queue)
 - **Responsibilities**:
   - Document upload to S3
-  - Smile Identity API integration
+  - DIDIT API integration
   - Verification status tracking
   - Manual review escalation
 - **SLA**: <5 minutes for automated verification
-- **Integrations**: Smile Identity, S3
+- **Integrations**: DIDIT, S3
 
 #### 3.2 Credit Scoring Service
 - **Runtime**: AWS Lambda (Python 3.11)
@@ -341,8 +341,8 @@ Lynia Finance is a WhatsApp-first device financing platform for Zimbabwe's infor
 - **Webhook**: HTTPS endpoint with signature verification
 - **Features**: Messages, Media, Templates, Interactive components
 
-#### 5.2 Smile Identity (KYC)
-- **Provider**: Smile Identity
+#### 5.2 DIDIT (KYC)
+- **Provider**: DIDIT
 - **Authentication**: API key + Partner ID
 - **SLA**: <3 minutes for automated verification
 - **Features**: Document verification, Selfie matching, Liveness detection
@@ -403,9 +403,9 @@ Customer uploads ID photo
     ▼
 KYC Processing Service (Lambda)
     │
-    │ 6. Submit to Smile Identity API
+    │ 6. Submit to DIDIT API
     ▼
-Smile Identity (External)
+DIDIT (External)
     │
     │ 7. Return verification result
     ▼
@@ -628,7 +628,7 @@ Customer (WhatsApp)
 |---------|----------------|----------|-------------|-----------|
 | WhatsApp Bot | WhatsApp Cloud API | HTTPS (Webhook) | OAuth 2.0 | Real-time |
 | WhatsApp Bot | Supabase | PostgreSQL | JWT | Real-time |
-| KYC Service | Smile Identity | REST API | API Key | On-demand |
+| KYC Service | DIDIT | REST API | API Key | On-demand |
 | KYC Service | AWS S3 | AWS SDK | IAM Role | On-demand |
 | Credit Scoring | Supabase | PostgreSQL | JWT | On-demand |
 | Payment Service | EcoCash | HTTPS (Webhook) | API Key | Real-time |
@@ -700,7 +700,7 @@ Customer (WhatsApp)
 
 ### External Services
 - **WhatsApp**: Meta WhatsApp Cloud API
-- **KYC**: Smile Identity
+- **KYC**: DIDIT
 - **Payments**: EcoCash, EcoCash/Omari/Innbucks/OneWallet
 - **Device Lock**: Absolute Software / Prey
 - **Email**: AWS SES

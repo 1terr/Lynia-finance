@@ -20,7 +20,7 @@ Every push to master triggers a full pipeline: Lint & Test -> Security Scan -> B
 | VPC stacks | Usually don't exist (`staging-lynia-vpc`) | Always exist (`production-lynia-vpc`) |
 | VpcEnabled | `false` (placeholders used) | `true` (real subnet/SG IDs) |
 | Cognito | Placeholder ARN if no `staging-lynia-cognito` stack | Real ARN from `production-lynia-cognito` |
-| SmileEnvironment | `sandbox` | `production` |
+| DiditEnvironment | `sandbox` | `production` |
 | Secrets prefix | `STAGING_*` | `PRODUCTION_*` |
 | ROLLBACK_COMPLETE handling | Auto-deletes and recreates | Must verify manually before deploy |
 | Inter-service URLs | Empty on first deploy, resolved on subsequent | Resolved from existing stack |

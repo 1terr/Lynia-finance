@@ -18,7 +18,7 @@ Implemented 5 SQS queues with dead-letter queues (DLQ) for decoupled, asynchrono
 |-------|-------------------|-------------|---------------|----------|
 | `{env}-lynia-notifications` | 60s | 3 | 14 days | SMS, WhatsApp, email sends |
 | `{env}-lynia-payment-callbacks` | 120s | 5 | 14 days | EcoCash/OneMoney callbacks |
-| `{env}-lynia-kyc-processing` | 120s | 3 | 14 days | Smile Identity callbacks |
+| `{env}-lynia-kyc-processing` | 120s | 3 | 14 days | DIDIT callbacks |
 | `{env}-lynia-device-locks` | 90s | 3 | 14 days | Trustonic lock/unlock ops |
 | `{env}-lynia-credit-scoring` | 90s | 3 | 14 days | Background score calculations |
 

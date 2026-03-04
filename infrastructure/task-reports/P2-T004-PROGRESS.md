@@ -47,7 +47,7 @@ Successfully implemented the complete 5-component rule-based credit scoring algo
 - ✅ ID document verification (50 points)
 - ✅ Selfie-ID face match confidence (35 points)
 - ✅ Liveness check (15 points)
-- **Integration**: Smile Identity API ready
+- **Integration**: DIDIT API ready
 
 ### 2. Score Scaling & Decision Logic ✅
 

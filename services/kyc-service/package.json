@@ -1,7 +1,7 @@
 {
   "name": "@lynia/kyc-service",
   "version": "1.0.0",
-  "description": "KYC verification Lambda function (Smile Identity integration)",
+  "description": "KYC verification Lambda function (DIDIT integration)",
   "main": "dist/index.ts",
   "scripts": {
     "build": "esbuild src/index.ts --bundle --platform=node --target=node20 --outfile=dist/index.js --sourcemap",

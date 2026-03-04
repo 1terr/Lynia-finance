@@ -163,7 +163,7 @@
 **Triage Steps**:
 1. Check X-Ray traces for slow operations
 2. Check database query latency
-3. Check external API response times (Smile Identity, payment providers)
+3. Check external API response times (DIDIT, payment providers)
 
 **Resolution**:
 - If database: Check connection pool, add indices

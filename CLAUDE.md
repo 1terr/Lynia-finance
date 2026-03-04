@@ -56,7 +56,7 @@ Our users trust us with their financial and personal data.
 - Clear opt-in for data collection via WhatsApp flows
 - Users can request their data export (GDPR-style rights)
 - Audit trail for who accessed what data and when
-- Third-party data sharing (Smile Identity, payment providers) requires explicit consent
+- Third-party data sharing (DIDIT, payment providers) requires explicit consent
 
 **Database Privacy Rules**
 ```typescript
@@ -313,7 +313,7 @@ describe('POST /loans/apply', () => {
 - Use factories for test data generation
 - Never use production data in tests
 - Reset database state between integration tests
-- Mock external APIs (Smile Identity, EcoCash) in tests
+- Mock external APIs (DIDIT, EcoCash) in tests
 
 ### 7. Financial Inclusion Design Patterns
 
@@ -563,11 +563,9 @@ const isStaging = process.env.NODE_ENV === 'staging';
 const isProd = process.env.NODE_ENV === 'production';
 
 // Example: Different behavior per environment
-const getSmileIdentityConfig = () => ({
-  baseUrl: isProd
-    ? 'https://api.smileidentity.com'
-    : 'https://testapi.smileidentity.com',
-  partnerId: process.env.SMILE_PARTNER_ID,
+const getDiditConfig = () => ({
+  baseUrl: 'https://verification.didit.me/v3/',
+  apiKey: process.env.DIDIT_API_KEY,
 });
 ```
 
@@ -906,7 +904,7 @@ bash infrastructure/aws/scripts/deploy-infrastructure.sh  # Deploy all stacks
 | SQS | Async message queues | `infrastructure/aws/sqs-queues.yaml` |
 | CloudFront + WAF | CDN + Security | `docs/infrastructure/PRODUCTION-NETWORK-ARCHITECTURE.md` |
 | WhatsApp Cloud API | Customer messaging | `docs/guides/WHATSAPP-CLOUD-API-SETUP.md` |
-| Smile Identity | KYC verification | `services/kyc-service/README.md` |
+| DIDIT | KYC verification | `services/kyc-service/README.md` |
 | EcoCash/OneMoney | Mobile payments | `services/payment-service/README.md` |
 | Trustonic | Device lock | `services/lock-service/README.md` |
 

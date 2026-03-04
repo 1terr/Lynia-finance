@@ -181,7 +181,7 @@ curl -sI -X OPTIONS https://api.lyniafinance.com/scoring/health \
 
 ### KYC
 
-- [ ] Smile Identity callback URL updated
+- [ ] DIDIT callback URL updated
 - [ ] Test KYC submission triggers callback
 
 ---

@@ -44,7 +44,7 @@
 
 | Issue | Title | Priority | Hours | Labels |
 |-------|-------|----------|-------|--------|
-| [#125](https://github.com/1terr/Lynia-finance/issues/125) | P2-T007: Smile Identity KYC Integration | High | 12h | phase-2, high-priority, kyc |
+| [#125](https://github.com/1terr/Lynia-finance/issues/125) | P2-T007: DIDIT KYC Integration | High | 12h | phase-2, high-priority, kyc |
 | [#126](https://github.com/1terr/Lynia-finance/issues/126) | P2-T008: Mobile Money Payment Integration | High | 16h | phase-2, high-priority, payments |
 | [#127](https://github.com/1terr/Lynia-finance/issues/127) | P2-T009: Device Handover Process Implementation | High | 10h | phase-2, high-priority, device-management |
 
@@ -271,7 +271,7 @@ All Services ─→ P2-T012 (Testing) ─→ P2-T013 (Deployment)
    - **Mitigation**: Start application immediately, use test numbers meanwhile
 
 2. **Third-Party API Access** (#125, #126)
-   - **Risk**: Smile Identity, EcoCash, OneMoney may require business docs
+   - **Risk**: DIDIT, EcoCash, OneMoney may require business docs
    - **Mitigation**: Contact sales early, use sandbox for development
 
 3. **Device Lock API** (#128)

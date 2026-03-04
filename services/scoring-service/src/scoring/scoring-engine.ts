@@ -30,7 +30,7 @@ import {
  */
 export function scoreAffordability(data: AffordabilityData): number {
   const loanTerm = 6; // months
-  const estimatedInterestRate = 0.12; // 12% APR
+  const estimatedInterestRate = 0.05; // 5% APR (Fineract Tier 1 midpoint)
   const monthlyInstallment = (data.requested_loan_amount * (1 + estimatedInterestRate)) / loanTerm;
 
   // 1. Debt-to-Income Ratio (150 points max)
@@ -198,7 +198,7 @@ export function scoreExternalCredit(data: ExternalCreditData | null): number {
  * Component 5: KYC Verification (10%, 0-100 points)
  *
  * Provider-agnostic identity verification scoring.
- * Works with both Smile Identity and Didit providers.
+ * Works with the DIDIT KYC provider.
  * All input scores are on 0-100 scale.
  */
 export function scoreKYCVerification(kycResult: KYCVerificationInput): number {
@@ -362,31 +362,32 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
   const scaled_score = Math.round(300 + (total_raw_score / 1000) * 550);
 
   // Determine decision based on scaled score (300-850)
+  // Thresholds aligned with Fineract product configuration (source of truth)
   let decision: 'approve' | 'review' | 'reject';
   let credit_limit_usd = 0;
   let tier = '';
-  let down_payment_percentage = 10;
-  let interest_rate_apr = 15;
+  let down_payment_percentage = 0;
+  let interest_rate_apr = 0;
 
-  if (scaled_score >= 750) {
+  if (scaled_score >= 650) {
+    decision = 'approve';
+    credit_limit_usd = 2000;
+    tier = 'Tier 3';
+    down_payment_percentage = 10;
+    interest_rate_apr = 3; // 2-4% APR range, use midpoint
+  } else if (scaled_score >= 500) {
     decision = 'approve';
     credit_limit_usd = 500;
-    tier = 'Tier 3';
-    down_payment_percentage = 5;
-    interest_rate_apr = 10;
-  } else if (scaled_score >= 700) {
-    decision = 'approve';
-    credit_limit_usd = 350;
     tier = 'Tier 2';
-    down_payment_percentage = 10;
-    interest_rate_apr = 12;
-  } else if (scaled_score >= 650) {
+    down_payment_percentage = 20;
+    interest_rate_apr = 4; // 3-5% APR range, use midpoint
+  } else if (scaled_score >= 350) {
     decision = 'approve';
     credit_limit_usd = 200;
     tier = 'Tier 1';
-    down_payment_percentage = 10;
-    interest_rate_apr = 15;
-  } else if (scaled_score >= 550) {
+    down_payment_percentage = 30;
+    interest_rate_apr = 5; // 4-6% APR range, use midpoint
+  } else if (scaled_score >= 300) {
     decision = 'review';
     credit_limit_usd = 0;
     tier = 'Manual Review';

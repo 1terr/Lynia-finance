@@ -432,7 +432,7 @@ async function testEndpoint(service, testName, config) {
 
 2. Scenario 1: Success (8 min)
    ├─ WhatsApp onboarding (8 steps)
-   ├─ KYC verification (Smile Identity)
+   ├─ KYC verification (DIDIT)
    ├─ Credit scoring (ML model)
    ├─ Device selection
    └─ Payment & activation
@@ -686,7 +686,7 @@ By Service:
 - Lock/unlock commands
 
 **KYC Service**:
-- Smile Identity request structure
+- DIDIT request structure
 - Document verification flow
 - Confidence scoring
 
@@ -754,7 +754,7 @@ By Service:
 - Included edge cases (borderline scores, overdue payments)
 
 ### Challenge 2: Testing Without Live Services
-**Issue**: External services (EcoCash, Trustonic, Smile ID) not available in dev
+**Issue**: External services (EcoCash, Trustonic, DIDIT) not available in dev
 **Solution**:
 - Created mock request/response structures
 - Documented expected API formats

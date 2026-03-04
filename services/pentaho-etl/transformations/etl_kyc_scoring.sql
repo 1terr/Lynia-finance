@@ -31,10 +31,7 @@ SELECT
   ks.id_document_type,
   ks.status AS verification_status,
   ks.rejection_reason,
-  CASE
-    WHEN ks.smile_identity_response IS NOT NULL THEN 'smile_identity'
-    ELSE 'didit'
-  END AS kyc_provider,
+  COALESCE(ks.kyc_provider, 'didit') AS kyc_provider,
   ks.submitted_at::DATE AS submission_date,
   ks.verified_at::DATE AS verification_date,
   NOW() AS etl_loaded_at

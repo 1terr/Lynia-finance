@@ -301,7 +301,7 @@ describe('P4-T004: Lambda Cold Start Benchmarks', () => {
         'Use arm64 architecture (already configured) - ~34% faster cold starts',
         'Keep Lambda bundles under 5MB (esbuild configured for tree shaking)',
         'Use Lambda SnapStart when available for Node.js',
-        'Lazy-load heavy dependencies (Smile Identity SDK, payment SDKs)',
+        'Lazy-load heavy dependencies (DIDIT SDK, payment SDKs)',
         'Use provisioned concurrency for payment-service and scoring-service',
         'Minimize top-level imports and initialization code',
         'Use connection pooling via Supabase PgBouncer',

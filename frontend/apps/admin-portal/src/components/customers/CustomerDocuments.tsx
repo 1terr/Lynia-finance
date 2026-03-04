@@ -149,43 +149,6 @@ export function CustomerDocuments({
               )}
             </div>
 
-            {/* Smile Identity Results */}
-            {submission.smile_result && (
-              <div className="mt-4 rounded-lg bg-blue-50 p-4">
-                <p className="text-sm font-medium text-blue-900">
-                  Smile Identity Analysis
-                </p>
-                <div className="mt-2 grid grid-cols-3 gap-4">
-                  <div>
-                    <p className="text-xs text-blue-600">Face Match</p>
-                    <p className="font-medium">
-                      {submission.smile_result.face_match ? 'Pass' : 'Fail'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600">Liveness Check</p>
-                    <p className="font-medium">
-                      {submission.smile_result.liveness_check ? 'Pass' : 'Fail'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-blue-600">ID Validation</p>
-                    <p className="font-medium">
-                      {submission.smile_result.id_validation ? 'Pass' : 'Fail'}
-                    </p>
-                  </div>
-                </div>
-                {submission.smile_confidence_score !== null && (
-                  <div className="mt-2">
-                    <p className="text-xs text-blue-600">Confidence</p>
-                    <p className="text-lg font-bold text-blue-900">
-                      {submission.smile_confidence_score}%
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
             {submission.rejection_reason && (
               <div className="mt-4 rounded-lg bg-red-50 p-4">
                 <p className="text-sm font-medium text-red-900">

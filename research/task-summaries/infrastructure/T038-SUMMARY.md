@@ -472,7 +472,7 @@ serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // Example: Submit ID card to Smile Identity for verification
+  // Example: Submit ID card to DIDIT for verification
   if (bucket === 'kyc-documents' && path.includes('id-card')) {
     const customerId = path.split('/')[0];
 
@@ -485,12 +485,12 @@ serve(async (req: Request) => {
     const arrayBuffer = await file.arrayBuffer();
     const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-    // Submit to Smile Identity (example)
-    await fetch('https://api.smileidentity.com/v1/biometric_kyc', {
+    // Submit to DIDIT (example)
+    await fetch('https://api.diditidentity.com/v1/biometric_kyc', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Deno.env.get('SMILE_API_KEY')}`,
+        'Authorization': `Bearer ${Deno.env.get('DIDIT_WEBHOOK_SECRET')}`,
       },
       body: JSON.stringify({
         customer_id: customerId,

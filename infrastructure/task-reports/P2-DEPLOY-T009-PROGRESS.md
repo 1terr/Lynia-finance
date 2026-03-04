@@ -38,7 +38,7 @@ Enabled AWS X-Ray distributed tracing across all 6 Lambda functions with custom 
 | High Latency | `responsetime > 5` | Enabled | No |
 
 ### Service Map
-X-Ray automatically generates a service map showing all 6 Lambda functions, API Gateway, and external dependencies (Supabase, Smile Identity, EcoCash, OneMoney, Trustonic).
+X-Ray automatically generates a service map showing all 6 Lambda functions, API Gateway, and external dependencies (Supabase, DIDIT, EcoCash, OneMoney, Trustonic).
 
 ## Shared Tracing Utility
 

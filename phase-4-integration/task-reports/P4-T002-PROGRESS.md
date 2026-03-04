@@ -28,7 +28,7 @@ Validate that all API contracts between services, frontend, and external provide
 - [x] Error responses follow standard ErrorResponse format
 - [x] Request/response schemas validated with JSON Schema
 - [x] No breaking changes detected between frontend and backend
-- [x] External API sandbox integrations verified (Smile Identity, EcoCash, OneMoney)
+- [x] External API sandbox integrations verified (DIDIT, EcoCash, OneMoney)
 
 ## Implementation Summary
 
@@ -48,7 +48,7 @@ Validate that all API contracts between services, frontend, and external provide
 - All error responses follow `{ error: string }` format
 - 404 responses for unknown routes across all services
 - 400 responses for missing required fields
-- Webhook signature verification for EcoCash, OneMoney, Smile Identity
+- Webhook signature verification for EcoCash, OneMoney, DIDIT
 - Input validation for Zimbabwe ID number format, phone numbers, payment amounts
 
 ## Progress Log

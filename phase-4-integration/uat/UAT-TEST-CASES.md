@@ -20,7 +20,7 @@
 ## Scenario 1: New Customer Onboarding via WhatsApp (Shona Language)
 
 **Objective:** Validate end-to-end customer registration via WhatsApp in Shona language.
-**Preconditions:** WhatsApp test number active, Smile Identity sandbox ready.
+**Preconditions:** WhatsApp test number active, DIDIT sandbox ready.
 **Test Data:** Phone: `+263771000001`, National ID: `63-2345678A90`
 
 ### UAT-S1-001: WhatsApp Initial Contact
@@ -96,17 +96,17 @@
 | **Priority** | CRITICAL |
 | **Precondition** | UAT-S1-006 completed |
 | **Steps** | 1. System prompts for selfie in Shona<br>2. Send selfie photo via WhatsApp<br>3. Observe processing confirmation |
-| **Expected Result** | Selfie received. System sends to Smile Identity for face match and liveness check. Confirmation in Shona. |
+| **Expected Result** | Selfie received. System sends to DIDIT for face match and liveness check. Confirmation in Shona. |
 | **Result** | |
 | **Notes** | |
 
-### UAT-S1-008: Smile Identity Verification Callback
+### UAT-S1-008: DIDIT Verification Callback
 
 | Field | Value |
 |-------|-------|
 | **Priority** | CRITICAL |
 | **Precondition** | UAT-S1-007 completed |
-| **Steps** | 1. Wait for Smile Identity sandbox callback (up to 30 seconds)<br>2. Observe KYC status update<br>3. Verify WhatsApp notification to customer |
+| **Steps** | 1. Wait for DIDIT sandbox callback (up to 30 seconds)<br>2. Observe KYC status update<br>3. Verify WhatsApp notification to customer |
 | **Expected Result** | Callback received with ResultCode "1012" (Verified). KYC status updated to "verified" in database. Customer receives Shona notification: "Makorokoto! Mazita enyu averified." Confidence score >= 95%. |
 | **Result** | |
 | **Notes** | Face match score >= 0.95, liveness status "passed", country "ZW" |

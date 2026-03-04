@@ -36,7 +36,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 - ✅ T030-T034: SMS/Email notification research
 
 #### **KYC & Identity Verification**
-- ✅ T010-T012: Smile Identity integration
+- ✅ T010-T012: DIDIT integration
 - ✅ T013: Zimbabwe National ID validation
 
 #### **Payment Gateways**
@@ -65,7 +65,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 - AWS Lambda (microservices) ✅
 - Supabase PostgreSQL (application data) ✅
 - WhatsApp Cloud API (customer communication) ✅
-- Smile Identity (KYC) ✅
+- DIDIT (KYC) ✅
 - EcoCash/Omari (payments) ✅
 - Trustonic (device lock) ✅
 
@@ -105,7 +105,7 @@ Payment gateway integration architecture, reconciliation logic, notifications, r
 
 ### 1.5 KYC & Onboarding Design ✅ (5 tasks)
 
-KYC requirements, Smile Identity integration, customer onboarding flow (8 steps), status management, and consent handling.
+KYC requirements, DIDIT integration, customer onboarding flow (8 steps), status management, and consent handling.
 
 **Key Files:** `planning/kyc-*.md` (5 files, 1,800+ lines)
 
@@ -176,7 +176,7 @@ Dashboard wireframes, user roles & permissions, reporting requirements, manual r
 **Services Implemented:**
 1. **WhatsApp Service** - 8-step onboarding, webhook handling, state management
 2. **Credit Scoring Service** - Hybrid AI/ML, 35 features, tier calculation
-3. **KYC Service** - Smile Identity integration, document processing
+3. **KYC Service** - DIDIT integration, document processing
 4. **Payment Service** - EcoCash/OneMoney, reconciliation, webhooks
 5. **Lock Service** - Trustonic integration, device lock/unlock, handover
 6. **Notification Service** - Multi-channel delivery, smart reminders
@@ -348,7 +348,7 @@ Dashboard wireframes, user roles & permissions, reporting requirements, manual r
 - Document viewer modal (ID front/back, selfie)
 - SLA tracking with 4h/24h breach indicators
 - Review history tab with processing time metrics
-- Smile Identity results display
+- DIDIT results display
 
 **Files Modified:**
 - `src/app/(dashboard)/customers/kyc-review/page.tsx` - Enhanced with document viewer, SLA stats, review history tab

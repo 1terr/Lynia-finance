@@ -10,7 +10,7 @@
 
 ## Objective
 
-Update the admin portal KYC review components to display results from either Smile Identity or Didit, with a provider badge and backward compatibility.
+Update the admin portal KYC review components to display results from either DIDIT or Didit, with a provider badge and backward compatibility.
 
 ## Tasks
 
@@ -20,20 +20,20 @@ Update the admin portal KYC review components to display results from either Smi
   ```typescript
   export interface KYCSubmission {
     // ... existing fields
-    kyc_provider?: 'smile_identity' | 'didit';
+    kyc_provider?: 'didit' | 'didit';
     provider_result?: Record<string, unknown> | null;
     provider_warnings?: Array<{ risk: string; details: string }> | null;
     // Keep existing for backward compat
-    smile_identity_result: Record<string, unknown> | null;
+    didit_result: Record<string, unknown> | null;
   }
   ```
 
 ### A5.2: Update KYC Review Card (Queue View)
 - **File:** `frontend/admin-portal/src/components/kyc-review/KYCReviewCard.tsx`
 - **Action:**
-  1. Read from `provider_result` with fallback to `smile_identity_response`
-  2. Add provider badge: "DIDIT" (blue) or "Smile Identity" (purple)
-  3. Rename "Smile Identity Results" heading to "Verification Results"
+  1. Read from `provider_result` with fallback to `didit_response`
+  2. Add provider badge: "DIDIT" (blue) or "DIDIT" (purple)
+  3. Rename "DIDIT Results" heading to "Verification Results"
   4. Display `provider_warnings` if present (Didit-specific)
   5. Keep all existing functionality (approve/reject actions, document viewer)
 
@@ -43,7 +43,7 @@ Update the admin portal KYC review components to display results from either Smi
 
 ### A5.4: Visual Test
 - **Action:** Verify in browser:
-  1. Existing Smile Identity submissions display correctly (backward compat)
+  1. Existing DIDIT submissions display correctly (backward compat)
   2. New Didit submissions show provider badge and formatted results
   3. Warnings display for Didit submissions
   4. Approve/reject actions work for both providers
@@ -51,11 +51,11 @@ Update the admin portal KYC review components to display results from either Smi
 ## Acceptance Criteria
 
 - [ ] `KYCSubmission` type includes `kyc_provider`, `provider_result`, `provider_warnings`
-- [ ] KYC review card reads `provider_result` with `smile_identity_response` fallback
-- [ ] Provider badge displays ("DIDIT" or "Smile Identity")
-- [ ] "Smile Identity Results" heading renamed to "Verification Results"
+- [ ] KYC review card reads `provider_result` with `didit_response` fallback
+- [ ] Provider badge displays ("DIDIT" or "DIDIT")
+- [ ] "DIDIT Results" heading renamed to "Verification Results"
 - [ ] Didit warnings display when present
-- [ ] Existing Smile Identity submissions render correctly
+- [ ] Existing DIDIT submissions render correctly
 - [ ] No TypeScript compilation errors in frontend
 
 ## Progress Report

@@ -677,7 +677,7 @@ async function detectMimeType(buffer: Buffer): Promise<string> {
 - ✅ Sufficient for high-quality photos (4000x3000px)
 - ✅ Fast upload even on slow 3G (< 60 seconds)
 - ✅ Reasonable Lambda /tmp storage (512MB limit)
-- ✅ Smile Identity API limit is 10MB
+- ✅ DIDIT API limit is 10MB
 
 **Minimum 10KB for Images**:
 - ❌ Rejects tiny, low-quality images

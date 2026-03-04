@@ -478,7 +478,7 @@ Submit KYC documents for verification.
   "data": {
     "submission_id": "uuid",
     "status": "pending",
-    "smile_job_id": "job_abc123",
+    "provider_job_id": "job_abc123",
     "estimated_completion": "2025-11-24T12:05:00Z"
   }
 }

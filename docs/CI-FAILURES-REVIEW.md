@@ -201,7 +201,7 @@ Affected provider files:
 - `services/lock-service/src/trustonic-provider.ts`
 - `services/payment-service/src/ecocash-provider.ts`
 - `services/payment-service/src/onemoney-provider.ts`
-- `services/kyc-service/src/smile-identity-service.ts`
+- `services/kyc-service/src/didit-service.ts`
 
 ### Resolution
 

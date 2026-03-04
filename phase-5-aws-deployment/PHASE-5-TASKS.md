@@ -287,7 +287,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 - [ ] Collect RDS endpoint from T004 stack outputs
 - [ ] Collect external API credentials (or sandbox placeholders)
 - [ ] Deploy `infrastructure/aws/secrets-manager.yaml` as stack `{env}-lynia-secrets`
-- [ ] Verify 7 secrets created (database, whatsapp, smile-identity, ecocash, onemoney, trustonic, sms)
+- [ ] Verify 7 secrets created (database, whatsapp, didit, ecocash, onemoney, trustonic, sms)
 - [ ] Verify 6 IAM managed policies created (one per service)
 - [ ] Test that database secret contains correct RDS connection info
 

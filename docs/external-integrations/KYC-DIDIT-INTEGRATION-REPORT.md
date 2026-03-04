@@ -1,4 +1,4 @@
-# KYC Integration Report - Dual Provider (Didit + Smile Identity)
+# KYC Integration Report - Dual Provider (Didit + DIDIT)
 
 **Date**: 2026-02-17
 **Status**: Code Complete, Deployed to Staging, Pending External Configuration
@@ -8,17 +8,17 @@
 
 ## Executive Summary
 
-The KYC service has been upgraded from a single-provider (Smile Identity) architecture to a **dual-provider system** supporting both Smile Identity and Didit. Providers are switchable via the `KYC_PROVIDER` environment variable with no code changes required. All 69 unit + contract tests pass (40 Didit, 29 contract).
+The KYC service has been upgraded from a single-provider (DIDIT) architecture to a **dual-provider system** supporting both DIDIT and Didit. Providers are switchable via the `KYC_PROVIDER` environment variable with no code changes required. All 69 unit + contract tests pass (40 Didit, 29 contract).
 
 ### Integration at a Glance
 
 | Component | Status | Detail |
 |-----------|--------|--------|
 | Didit client (`didit-service.ts`) | DONE | 3-step verification: ID, liveness, face-match |
-| Smile Identity client | DONE | Implements `KYCProvider` interface |
+| DIDIT client | DONE | Implements `KYCProvider` interface |
 | Provider factory (`kyc-provider-factory.ts`) | DONE | Reads `KYC_PROVIDER` env var |
 | Provider interface (`kyc-provider.ts`) | DONE | Normalized types for both providers |
-| Lambda handler refactor | DONE | Uses factory instead of direct Smile instantiation |
+| Lambda handler refactor | DONE | Uses factory instead of direct DIDIT instantiation |
 | WhatsApp notification on KYC result | DONE | Sends result via WhatsApp Cloud API directly |
 | Database migration 023 | DONE | `kyc_provider`, `provider_job_id`, `provider_response` columns |
 | Scoring normalization | DONE | Both providers normalize to 0-100 integer scale |
@@ -42,7 +42,7 @@ The KYC service has been upgraded from a single-provider (Smile Identity) archit
 KYC_PROVIDER env var
        │
        ▼
-createKYCProvider()  ─── 'smile_identity' ──► SmileIdentityService
+createKYCProvider()  ─── 'didit' ──► DiditService
        │                                       implements KYCProvider
        └─────────────── 'didit' ────────────► DiditService
                                                implements KYCProvider
@@ -62,7 +62,7 @@ interface KYCProvider {
 
 ### Normalized Score Scales
 
-| Field | Smile Identity Raw | Didit Raw | Normalized (Both) |
+| Field | DIDIT Raw | Didit Raw | Normalized (Both) |
 |-------|-------------------|-----------|-------------------|
 | `face_match_score` | 0-1 float | 0-100 int | 0-100 int |
 | `liveness_score` | 0-1 float | 0-100 int | 0-100 int |
@@ -84,7 +84,7 @@ interface KYCProvider {
 | File | Change |
 |------|--------|
 | `services/kyc-service/src/index.ts` | Use factory; add WhatsApp notification |
-| `services/kyc-service/src/smile-identity-service.ts` | Implements `KYCProvider` interface |
+| `services/kyc-service/src/didit-service.ts` | Implements `KYCProvider` interface |
 | `services/kyc-service/src/didit-service.ts` | Add `synchronous_result` support |
 | `services/kyc-service/package.json` | Add `form-data` dependency |
 | `services/shared/types/kyc-provider.ts` | Add `synchronous_result` field |
@@ -107,14 +107,14 @@ interface KYCProvider {
 
 ```sql
 ALTER TABLE kyc_submissions
-  ADD COLUMN kyc_provider VARCHAR(50) DEFAULT 'smile_identity',
+  ADD COLUMN kyc_provider VARCHAR(50) DEFAULT 'didit',
   ADD COLUMN provider_job_id VARCHAR(200),
   ADD COLUMN provider_response JSONB;
 
 CREATE INDEX idx_kyc_submissions_provider ON kyc_submissions(kyc_provider);
 
 -- Backfill existing rows
-UPDATE kyc_submissions SET kyc_provider = 'smile_identity' WHERE kyc_provider IS NULL;
+UPDATE kyc_submissions SET kyc_provider = 'didit' WHERE kyc_provider IS NULL;
 ```
 
 ---
@@ -149,16 +149,16 @@ UPDATE kyc_submissions SET kyc_provider = 'smile_identity' WHERE kyc_provider IS
 ### 5. Production Rollout
 - [ ] Deploy with `KYC_PROVIDER=didit` to production
 - [ ] Monitor first 10 verifications
-- [ ] Compare Didit vs Smile results if running both
+- [ ] Compare Didit vs DIDIT results if running both
 
 ---
 
 ## Rollback Plan
 
-To revert to Smile Identity only:
+To revert to DIDIT only:
 ```bash
-gh secret set STAGING_KYC_PROVIDER --body "smile_identity"
-gh secret set PRODUCTION_KYC_PROVIDER --body "smile_identity"
+gh secret set STAGING_KYC_PROVIDER --body "didit"
+gh secret set PRODUCTION_KYC_PROVIDER --body "didit"
 # Re-deploy (no code change needed)
 gh workflow run deploy.yml --field environment=production
 ```

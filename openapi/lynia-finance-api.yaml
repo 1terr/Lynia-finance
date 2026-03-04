@@ -65,7 +65,7 @@ paths:
       tags:
         - KYC
       summary: Submit KYC documents
-      description: Submit customer identity documents for verification via Smile Identity
+      description: Submit customer identity documents for verification via DIDIT
       operationId: submitKYC
       security:
         - BearerAuth: []
@@ -1435,7 +1435,7 @@ components:
         status:
           type: string
           enum: [pending, approved, rejected, manual_review]
-        smile_job_id:
+        provider_job_id:
           type: string
         estimated_completion:
           type: string

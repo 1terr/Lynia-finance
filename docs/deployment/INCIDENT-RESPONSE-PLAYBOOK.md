@@ -305,7 +305,7 @@ aws cloudwatch get-metric-statistics \
 1. Check for cold starts (are provisioned concurrency Lambda instances warming?)
 2. Check database connection pool health
 3. Check for slow queries (CloudWatch Logs with duration > 100ms)
-4. Check external API latency (Smile Identity, EcoCash)
+4. Check external API latency (DIDIT, EcoCash)
 5. Scale up Lambda memory if CPU-bound
 
 ---

@@ -63,6 +63,8 @@ export async function handleCreditScoring(
         credit_score: scoreResult.scaled_score,
         credit_tier: scoreResult.tier,
         credit_limit_usd: scoreResult.credit_limit_usd,
+        down_payment_percentage: scoreResult.down_payment_percentage,
+        interest_rate_apr: scoreResult.interest_rate_apr,
         decision: scoreResult.decision
       }
     });

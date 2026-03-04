@@ -37,9 +37,9 @@ function createKYCProvider(): KYCProvider {
 
   switch (mode) {
     case 'live':
-      return new SmileIdentityProvider(getLiveConfig());
+      return new DiditProvider(getLiveConfig());
     case 'sandbox':
-      return new SmileIdentityProvider(getSandboxConfig());
+      return new DiditProvider(getSandboxConfig());
     case 'stub':
     default:
       return new StubKYCProvider();
@@ -96,7 +96,7 @@ Customer Journey:
 
 ### 2. KYC - Manual Document Review
 
-**How it works without Smile Identity:**
+**How it works without DIDIT:**
 
 ```
 Customer Journey:

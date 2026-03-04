@@ -93,7 +93,7 @@ Time to market: 2-4 weeks       Time to market: 4-8 weeks     Time to market: 12
 │                                                      │
 │  Manual Processes (No Automation):                   │
 │  ├─ WhatsApp messages (manual copy/paste)           │
-│  ├─ KYC verification (upload to Smile ID portal)    │
+│  ├─ KYC verification (upload to DIDIT portal)    │
 │  ├─ Device locking (manual via provider dashboard)  │
 │  ├─ Payment webhooks (check email notifications)    │
 │  └─ Credit scoring (spreadsheet calculations)       │
@@ -118,7 +118,7 @@ Infrastructure:
 
 ❌ **Manual**:
 - WhatsApp payment confirmations (copy message from template, paste in WhatsApp Web)
-- KYC verification (manually upload selfie + ID to Smile ID portal)
+- KYC verification (manually upload selfie + ID to DIDIT portal)
 - Device lock/unlock (log into lock provider dashboard, trigger manually)
 - Payment webhook monitoring (check EcoCash/O'mari email notifications)
 - Credit scoring (update spreadsheet with payment history, calculate score)
@@ -135,7 +135,7 @@ Infrastructure:
 
 3. Staff manually verifies KYC
    ├─ Download selfie + ID photo from Fineract
-   ├─ Upload to Smile ID portal manually
+   ├─ Upload to DIDIT portal manually
    ├─ Wait for result (< 3 min)
    └─ Update customer status in Fineract
 
@@ -231,7 +231,7 @@ At 100 loans:
 │  └─ Deployment: AWS Lambda                           │
 │                                                      │
 │  Microservice: KYC Verification ⚡                   │
-│  ├─ Smile ID API integration                         │
+│  ├─ DIDIT API integration                         │
 │  ├─ Automated ID + selfie verification               │
 │  ├─ Auto-update customer status                      │
 │  └─ Deployment: AWS Lambda                           │
@@ -300,7 +300,7 @@ At 500 loans:
 │  Core Services:                                      │
 │  ├─ Fineract (Loan core)                             │
 │  ├─ WhatsApp Service (notifications)                 │
-│  ├─ KYC Service (Smile ID)                           │
+│  ├─ KYC Service (DIDIT)                           │
 │  ├─ Payment Service (webhooks, processing)           │
 │  ├─ Device Lock Service (lock/unlock)                │
 │  ├─ Scoring Service (credit scores)                  │
@@ -364,7 +364,7 @@ Infrastructure:
 Week 1: Development
 ├─ Day 1-2: WhatsApp service (Lambda + Twilio)
 ├─ Day 3-4: Payment webhook service (Lambda)
-├─ Day 5-6: KYC service (Lambda + Smile ID)
+├─ Day 5-6: KYC service (Lambda + DIDIT)
 └─ Day 7: Testing + QA
 
 Week 2: Deployment
@@ -519,7 +519,7 @@ Lynia Finance
 ```
 □ Download selfie from Fineract
 □ Download ID photo from Fineract
-□ Log into Smile ID portal
+□ Log into DIDIT portal
 □ Upload selfie
 □ Upload ID photo
 □ Enter ID number: {{id_number}}

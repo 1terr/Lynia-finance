@@ -1,4 +1,4 @@
-# KYC Provider Migration: Smile Identity to DIDIT
+# KYC Provider Migration: DIDIT to DIDIT
 
 > **Status:** In Progress
 > **Branch:** `claude/switch-kyc-provider-QOWP1`
@@ -9,7 +9,7 @@
 
 ## 1. Context & Motivation
 
-Lynia Finance currently integrates with **Smile Identity** for KYC verification. We are switching to **DIDIT** (https://didit.me/) as our KYC provider.
+Lynia Finance currently integrates with **DIDIT** for KYC verification. We are switching to **DIDIT** (https://didit.me/) as our KYC provider.
 
 **Why DIDIT:**
 - Simpler authentication model (API key header vs HMAC-signed requests)
@@ -23,29 +23,29 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 
 ---
 
-## 2. Current Architecture (Smile Identity)
+## 2. Current Architecture (DIDIT)
 
 ### Service Layer
 | Component | File | Role |
 |-----------|------|------|
 | Lambda handler | `services/kyc-service/src/index.ts` | 4 routes: initiate, callback, status, retry |
-| Smile client | `services/kyc-service/src/smile-identity-service.ts` | Job Type 5 (Enhanced KYC), HMAC auth, webhook verification |
+| DIDIT client | `services/kyc-service/src/didit-service.ts` | Job Type 5 (Enhanced KYC), HMAC auth, webhook verification |
 | Image processor | `services/kyc-service/src/image-processor.ts` | Zimbabwe ID validation, image format conversion |
-| Scoring integration | `services/scoring-service/src/index.ts` | `SmileIdentityResult` interface, 10% credit score weight |
+| Scoring integration | `services/scoring-service/src/index.ts` | `DiditResult` interface, 10% credit score weight |
 | WhatsApp flow | `services/whatsapp-service/src/onboarding.ts` | KYC states in onboarding (currently auto-approves for testing) |
 
 ### Infrastructure
 | Resource | Location | Details |
 |----------|----------|---------|
-| SAM params | `template.yaml` | `SmilePartnerId`, `SmileApiKey`, `SmileEnvironment` |
-| Secrets | `infrastructure/aws/secrets-manager.yaml` | `{env}/lynia/smile-identity` |
+| SAM params | `template.yaml` | `DiditApiKey`, `DiditWebhookSecret`, `DiditEnvironment` |
+| Secrets | `infrastructure/aws/secrets-manager.yaml` | `{env}/lynia/didit` |
 | SQS queue | `infrastructure/aws/sqs-queues.yaml` | `{env}-lynia-kyc-processing` (exists but not wired) |
-| Env vars | `.env.example` | `SMILE_PARTNER_ID`, `SMILE_API_KEY`, etc. |
+| Env vars | `.env.example` | `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`, etc. |
 
 ### Database
 | Table | KYC Columns |
 |-------|-------------|
-| `kyc_submissions` | `verification_id`, `smile_identity_response JSONB`, `confidence_score`, `face_match_score`, `liveness_passed` |
+| `kyc_submissions` | `verification_id`, `didit_response JSONB`, `confidence_score`, `face_match_score`, `liveness_passed` |
 | `customers` | `kyc_status`, `kyc_verified_at`, `kyc_expires_at` |
 | `credit_scores` | `kyc_verification_score` (0-100) |
 
@@ -112,7 +112,7 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 
 ### Score Normalization
 
-| Field | Smile Identity | DIDIT | Normalized (internal) |
+| Field | DIDIT | DIDIT | Normalized (internal) |
 |---|---|---|---|
 | Confidence | 0-100 float | 0-100 int | 0-100 int |
 | Face match | 0-100 int | 0-100 int | 0-100 int |
@@ -129,7 +129,7 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 |---|-------------|------|--------|
 | 1.1 | Provider-neutral KYC types | `services/shared/types/kyc-provider.ts` (NEW) | DONE |
 | 1.2 | DIDIT service client | `services/kyc-service/src/didit-service.ts` (NEW) | DONE |
-| 1.3 | SmileIdentityService adapter | `services/kyc-service/src/smile-identity-service.ts` (MODIFY) | TODO |
+| 1.3 | DiditService adapter | `services/kyc-service/src/didit-service.ts` (MODIFY) | TODO |
 | 1.4 | Provider factory | `services/kyc-service/src/kyc-provider-factory.ts` (NEW) | TODO |
 | 1.5 | Add `form-data` dependency | `services/kyc-service/package.json` (MODIFY) | TODO |
 | 1.6 | Update shared types exports | `services/shared/types/index.ts` (MODIFY) | TODO |
@@ -141,7 +141,7 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 - `KYCVerificationResult` — normalized result with `provider`, `provider_job_id`, scores (0-100), boolean checks, extracted `id_info`, `warnings[]`, `raw_response`
 - `KYCSubmitParams` — customer_id, id_number, images, optional name/dob/phone
 - `KYCSubmissionResponse`, `KYCErrorResponse`, `KYCDecision` types
-- `KYCProviderName` type: `'smile_identity' | 'didit'`
+- `KYCProviderName` type: `'didit' | 'didit'`
 
 **1.2 `services/kyc-service/src/didit-service.ts`** — `DiditService implements KYCProvider`:
 - Constructor reads `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET` from env via `requireEnv()`
@@ -156,14 +156,14 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 - `determineDecision()`: Same thresholds (>=85 approve, <50 reject, 50-84 review)
 - `handleError()`: Maps HTTP errors (400/401/403/429) to `KYCErrorResponse`
 
-**1.3 SmileIdentityService adapter** — Add `implements KYCProvider` + thin adapter methods:
-- `submitVerification()` delegates to existing `submitEnhancedKYC()`
-- `parseWebhookPayload()` converts `SmileWebhookPayload` to `KYCVerificationResult`
+**1.3 DiditService adapter** — Add `implements KYCProvider` + thin adapter methods:
+- `submitVerification()` delegates to existing `submitVerification()`
+- `parseWebhookPayload()` converts `DIDITWebhookPayload` to `KYCVerificationResult`
 - `determineDecision()` delegates to existing `determineVerificationDecision()`
-- `handleError()` delegates to existing `handleSmileError()`
+- `handleError()` delegates to existing `handleError()`
 - All existing methods remain unchanged for backward compatibility
 
-**1.4 Provider factory** — reads `KYC_PROVIDER` env var, returns `DiditService` or `SmileIdentityService`
+**1.4 Provider factory** — reads `KYC_PROVIDER` env var, returns `DiditService` or `DiditService`
 
 ### Phase 2: Lambda Handler Updates
 
@@ -172,9 +172,9 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 | 2.1 | Refactor handler to use provider abstraction | `services/kyc-service/src/index.ts` (MODIFY) | TODO |
 
 **Changes:**
-1. Replace `const smileService = new SmileIdentityService()` with `const kycProvider = createKYCProvider()`
-2. `initiateKYC`: Call `kycProvider.submitVerification()` instead of `smileService.submitEnhancedKYC()`; write `kyc_provider` and `provider_job_id` to DB
-3. `handleSmileCallback` -> `handleKYCCallback`: Detect provider from webhook headers (`X-Signature-V2` = DIDIT, `X-Signature` without V2 = Smile); delegate to provider methods; write to `provider_response` column
+1. Replace `const diditService = new DiditService()` with `const kycProvider = createKYCProvider()`
+2. `initiateKYC`: Call `kycProvider.submitVerification()` instead of `diditService.submitVerification()`; write `kyc_provider` and `provider_job_id` to DB
+3. `handleKYCCallback` -> `handleKYCCallback`: Detect provider from webhook headers (`X-Signature-V2` = DIDIT, `X-Signature` without V2 = DIDIT); delegate to provider methods; write to `provider_response` column
 4. `getKYCStatus` and `retryKYC`: No functional changes needed
 
 ### Phase 3: Database Migration
@@ -185,23 +185,23 @@ Lynia Finance currently integrates with **Smile Identity** for KYC verification.
 
 **Migration adds to `kyc_submissions`:**
 ```sql
-kyc_provider VARCHAR(50) DEFAULT 'smile_identity'
+kyc_provider VARCHAR(50) DEFAULT 'didit'
 provider_job_id VARCHAR(200)
 provider_response JSONB
 provider_warnings JSONB
 ```
-- Backfills existing rows with `kyc_provider='smile_identity'`, `provider_job_id=verification_id`, `provider_response=smile_identity_response`
+- Backfills existing rows with `kyc_provider='didit'`, `provider_job_id=verification_id`, `provider_response=didit_response`
 - Adds indexes: `idx_kyc_provider`, `idx_kyc_provider_job_id`
-- Does NOT drop Smile-specific columns (RBZ 7-year record retention requirement)
+- Does NOT drop DIDIT-specific columns (RBZ 7-year record retention requirement)
 
 ### Phase 4: Scoring Service
 
 | # | Deliverable | File | Status |
 |---|-------------|------|--------|
-| 4.1 | Rename `SmileIdentityResult` to `KYCVerificationInput` | `services/scoring-service/src/index.ts` (MODIFY) | TODO |
+| 4.1 | Rename `DiditResult` to `KYCVerificationInput` | `services/scoring-service/src/index.ts` (MODIFY) | TODO |
 
 **Changes:**
-- Rename `SmileIdentityResult` interface to `KYCVerificationInput` (same shape)
+- Rename `DiditResult` interface to `KYCVerificationInput` (same shape)
 - Update `CreditScoreInput.kyc_result` type reference
 - `scoreKYCVerification()` logic unchanged (already provider-agnostic)
 
@@ -217,7 +217,7 @@ provider_warnings JSONB
 **template.yaml changes:**
 - Add parameters: `DiditApiKey`, `DiditWebhookSecret`, `DiditEnvironment`, `KYCProvider`
 - Add env vars to `KYCFunction`: `KYC_PROVIDER`, `DIDIT_API_KEY`, `DIDIT_WEBHOOK_SECRET`, `DIDIT_ENVIRONMENT`
-- Keep Smile params during transition period
+- Keep DIDIT params during transition period
 - Update IAM policy: add `${Environment}/lynia/didit-*` secret access
 
 **secrets-manager.yaml changes:**
@@ -234,9 +234,9 @@ provider_warnings JSONB
 
 **Changes:**
 - Add `kyc_provider` and `provider_result` fields to KYC submission types
-- Read from `provider_result` with `smile_identity_response` fallback
-- Show provider name badge ("DIDIT" or "Smile Identity")
-- Rename "Smile Identity Analysis" heading to "Verification Analysis"
+- Read from `provider_result` with `didit_response` fallback
+- Show provider name badge ("DIDIT" or "DIDIT")
+- Rename "DIDIT Analysis" heading to "Verification Analysis"
 - Display DIDIT warnings if present
 
 ### Phase 7: Tests
@@ -293,15 +293,15 @@ provider_warnings JSONB
 | `mapGender` - female variants | `'F'`, `'FEMALE'`, `'female'` | `'F'` |
 | `mapGender` - null/unknown | `undefined`, `'X'` | `null` |
 
-### 5.2 Unit Tests — SmileIdentityService Adapter
+### 5.2 Unit Tests — DiditService Adapter
 
 | Test Case | Description | Expected Result |
 |-----------|-------------|-----------------|
-| `submitVerification` adapter | Delegates to `submitEnhancedKYC` | Correct `KYCSubmissionResponse` |
-| `parseWebhookPayload` | Smile payload -> `KYCVerificationResult` | Correct field mapping |
-| `parseWebhookPayload` - face_match score | Smile score 85 (0-100) | Normalized to 85 |
+| `submitVerification` adapter | Delegates to `submitVerification` | Correct `KYCSubmissionResponse` |
+| `parseWebhookPayload` | DIDIT payload -> `KYCVerificationResult` | Correct field mapping |
+| `parseWebhookPayload` - face_match score | DIDIT score 85 (0-100) | Normalized to 85 |
 | `determineDecision` adapter | Delegates to existing `determineVerificationDecision` | Same decisions as before |
-| `handleError` adapter | Delegates to existing `handleSmileError` | Same error responses |
+| `handleError` adapter | Delegates to existing `handleError` | Same error responses |
 
 ### 5.3 Contract Tests Updates (`tests/contract/kyc-service.contract.test.ts`)
 
@@ -314,12 +314,12 @@ provider_warnings JSONB
 | `POST /kyc/callback` - DIDIT in review | In Review webhook | Creates `kyc_manual_reviews` entry |
 | `POST /kyc/callback` - DIDIT invalid sig | Wrong `X-Signature-V2` | Returns 401 |
 | `POST /kyc/callback` - DIDIT stale timestamp | Old `X-Timestamp` | Returns 401 |
-| `POST /kyc/callback` - Smile legacy | Smile payload with `X-Signature` | Still works (backward compatible) |
-| All existing Smile tests | No regressions | Pass unchanged |
+| `POST /kyc/callback` - DIDIT legacy | DIDIT payload with `X-Signature` | Still works (backward compatible) |
+| All existing DIDIT tests | No regressions | Pass unchanged |
 
 ### 5.4 Mock Fixtures (`tests/helpers/mock-external-services.ts`)
 
-Add DIDIT fixtures alongside existing Smile fixtures:
+Add DIDIT fixtures alongside existing DIDIT fixtures:
 
 ```typescript
 export const mockDiditResponses = {
@@ -346,7 +346,7 @@ export const mockDiditResponses = {
 | Test Case | Description | Expected Result |
 |-----------|-------------|-----------------|
 | Complete onboarding with DIDIT | WhatsApp flow -> KYC initiate -> DIDIT APIs -> callback -> scoring | End-to-end pass |
-| Provider fallback | Set `KYC_PROVIDER=smile_identity` | Smile flow works as before |
+| Provider fallback | Set `KYC_PROVIDER=didit` | DIDIT flow works as before |
 | Admin KYC review (DIDIT) | DIDIT submission appears in review queue | Provider badge shows "DIDIT", warnings displayed |
 | Scoring with DIDIT result | DIDIT scores fed to credit scoring | Correct score calculation (face_match/100 for 0-1 range) |
 
@@ -361,8 +361,8 @@ export const mockDiditResponses = {
 [ ] Admin portal displays DIDIT verification results
 [ ] Admin portal displays provider badge ("DIDIT")
 [ ] KYC approve/reject actions work for DIDIT submissions
-[ ] Rollback to Smile Identity works (set KYC_PROVIDER=smile_identity)
-[ ] Existing Smile Identity submissions still display correctly
+[ ] Rollback to DIDIT works (set KYC_PROVIDER=didit)
+[ ] Existing DIDIT submissions still display correctly
 [ ] Credit scoring accepts DIDIT results
 [ ] Rate limiting works with DIDIT (3 requests/hour for /kyc paths)
 ```
@@ -374,33 +374,33 @@ export const mockDiditResponses = {
 ### Step 1: Infrastructure (Zero risk)
 - Deploy DIDIT secret to Secrets Manager
 - Update IAM policies to include DIDIT secret access
-- Set `KYC_PROVIDER=smile_identity` (no behavior change)
+- Set `KYC_PROVIDER=didit` (no behavior change)
 
 ### Step 2: Code deployment (Low risk)
 - Deploy provider abstraction, DIDIT client, updated handler
-- Still routing all traffic to Smile Identity
+- Still routing all traffic to DIDIT
 - Run contract and unit tests
 
 ### Step 3: Database migration (Low risk)
 - Run migration to add provider-agnostic columns
-- Backfill existing Smile data
+- Backfill existing DIDIT data
 - Verify no data loss
 
 ### Step 4: Staging validation (Medium risk)
 - Set `KYC_PROVIDER=didit` in staging
 - Run full E2E tests with DIDIT sandbox
-- Compare results with Smile Identity for same test documents
+- Compare results with DIDIT for same test documents
 - Monitor DIDIT's 500 free checks/month allocation
 
 ### Step 5: Production cutover (Controlled)
 - Set `KYC_PROVIDER=didit` in production
 - Monitor first 20 real verifications closely
 - Check: webhook delivery, processing time, confidence distributions, approve/reject/review ratios
-- Keep Smile Identity credentials active for 30 days as rollback
+- Keep DIDIT credentials active for 30 days as rollback
 
 ### Step 6: Cleanup (After 30 days stable)
-- Remove Smile Identity env vars from active config
-- Mark Smile code as deprecated (keep for compliance)
+- Remove DIDIT env vars from active config
+- Mark DIDIT code as deprecated (keep for compliance)
 - Do NOT drop deprecated DB columns (RBZ 7-year retention)
 
 ---
@@ -424,13 +424,13 @@ export const mockDiditResponses = {
 
 | Item | Status | Next Step |
 |------|--------|-----------|
-| SmileIdentityService adapter | IN PROGRESS | Add `implements KYCProvider` |
+| DiditService adapter | IN PROGRESS | Add `implements KYCProvider` |
 
 ### Remaining
 
 | Item | Est. Effort | Dependencies |
 |------|-------------|-------------|
-| SmileIdentityService adapter | Small | Types (done) |
+| DiditService adapter | Small | Types (done) |
 | Provider factory | Small | Both service classes |
 | Lambda handler refactor (`index.ts`) | Medium | Factory, both services |
 | Database migration SQL | Small | None |
@@ -453,7 +453,7 @@ export const mockDiditResponses = {
 | Score threshold mismatch | Wrong approval rates | Shadow-test with same documents before cutover |
 | DIDIT V2 signature canonicalization bugs | Webhooks rejected | Thorough unit tests + test with real DIDIT sandbox |
 | `multipart/form-data` issues in Lambda | Submissions fail | Use `form-data` npm package; test with sandbox |
-| Existing Smile data becomes unqueryable | Admin portal broken | Keep all deprecated columns; add provider fallback |
+| Existing DIDIT data becomes unqueryable | Admin portal broken | Keep all deprecated columns; add provider fallback |
 | DIDIT rate limiting (500 free/month) | Service blocked | Monitor usage; upgrade to prepaid credits plan |
 | Zimbabwe document support gaps | KYC failures | Verify Zimbabwe National ID support in DIDIT sandbox before production |
 
@@ -464,10 +464,10 @@ These pre-existing issues are documented for reference (not part of this migrati
 1. **WhatsApp flow auto-approves KYC** — `handleKYCSelfieUpload` in `onboarding.ts` hardcodes `kycResult.verified = true`
 2. **Missing `kyc_manual_reviews` table migration** — code inserts into this table but no migration defines it
 3. **`kyc_verifications` vs `kyc_submissions` naming conflict** — migration 013 alters `kyc_verifications` but runtime uses `kyc_submissions`
-4. **Runtime vs schema field mismatch** — insert uses `id_document_photo_url`, `smile_identity_transaction_id` but migration defines `id_document_url`, `verification_id`
+4. **Runtime vs schema field mismatch** — insert uses `id_document_photo_url`, `didit_transaction_id` but migration defines `id_document_url`, `verification_id`
 5. **SQS queue not wired** — KYC processing queue provisioned but Lambda trigger commented out
 6. **No WhatsApp notification on KYC completion** — callback handler has `// TODO: Send notification`
-7. **Credential loading inconsistency** — Service uses `requireEnv()` instead of `getSmileIdentitySecrets()` from Secrets Manager
+7. **Credential loading inconsistency** — Service uses `requireEnv()` instead of `getDiditSecrets()` from Secrets Manager
 
 ---
 

@@ -107,7 +107,7 @@ export const handleSearchApprovedLoans: RouteHandler = async (event, _params, au
      FROM loans l
      JOIN customers c ON c.id = l.customer_id
      JOIN loan_products lp ON lp.id = l.product_id
-     WHERE l.status = 'approved'
+     WHERE l.status = 'paid_deposit'
        AND NOT EXISTS (
          SELECT 1 FROM device_handovers dh
          WHERE dh.loan_id = l.id AND dh.status = 'completed'
@@ -150,12 +150,12 @@ export const handleVerifyIdentity: RouteHandler = async (event, _params, auth) =
     `SELECT c.national_id
      FROM loans l
      JOIN customers c ON c.id = l.customer_id
-     WHERE l.id = $1 AND l.status = 'approved'`,
+     WHERE l.id = $1 AND l.status = 'paid_deposit'`,
     [loan_id]
   );
 
   if (result.data.length === 0) {
-    return notFoundResponse('Approved loan', event);
+    return notFoundResponse('Loan with paid deposit', event);
   }
 
   const storedId = result.data[0].national_id;
@@ -232,7 +232,7 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
 
   // Check price is within approved loan budget
   const loanResult = await query<{ loan_amount_usd: number }>(
-    `SELECT l.loan_amount_usd FROM loans l WHERE l.id = $1 AND l.status = 'approved'`,
+    `SELECT l.loan_amount_usd FROM loans l WHERE l.id = $1 AND l.status = 'paid_deposit'`,
     [loan_id]
   );
 

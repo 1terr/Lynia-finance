@@ -96,7 +96,7 @@ ERROR_CODES
     ├── 502 Bad Gateway
     │   ├── GATEWAY_ERROR
     │   ├── UPSTREAM_SERVICE_ERROR
-    │   └── SMILE_IDENTITY_ERROR
+    │   └── DIDIT_ERROR
     │
     ├── 503 Service Unavailable
     │   ├── SERVICE_UNAVAILABLE
@@ -141,7 +141,7 @@ ERROR_CODES
 | **DATABASE_ERROR** | 500 | System | Critical | "Database error. Please contact support" | ✅ Yes |
 | **FINERACT_ERROR** | 500 | System | Critical | "Loan system error. Please contact support" | ✅ Yes |
 | **EXTERNAL_SERVICE_ERROR** | 502 | System | High | "External service error. Please try again" | ✅ Yes |
-| **SMILE_IDENTITY_ERROR** | 502 | System | High | "KYC verification service unavailable" | ✅ Yes |
+| **DIDIT_ERROR** | 502 | System | High | "KYC verification service unavailable" | ✅ Yes |
 | **SERVICE_UNAVAILABLE** | 503 | System | High | "Service temporarily unavailable. Please try again later" | ✅ Yes |
 | **MAINTENANCE_MODE** | 503 | System | High | "System maintenance in progress. We'll be back soon" | ✅ Yes |
 | **GATEWAY_TIMEOUT** | 504 | System | High | "Request timed out. Please try again" | ✅ Yes |
@@ -461,7 +461,7 @@ function maskPII(data) {
 ├── /kyc-service
 │   ├── application.log
 │   ├── error.log
-│   └── smile-identity.log
+│   └── didit.log
 │
 ├── /credit-scoring-service
 │   ├── application.log

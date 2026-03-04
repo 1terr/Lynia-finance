@@ -1,4 +1,4 @@
-# T028: Smile Identity API Request/Response Schemas
+# T028: DIDIT API Request/Response Schemas
 
 **Task ID**: T028 (GitHub Issue #33)
 **Phase**: Phase 0 - Research
@@ -9,9 +9,9 @@
 
 ## Executive Summary
 
-This document provides comprehensive API request/response schemas for all Smile Identity products used by Lynia Finance: **Enhanced KYC**, **Biometric KYC**, **Document Verification**, and **SmartSelfie™ Authentication**. Each schema includes field definitions, data types, validation rules, complete result code mappings, and TypeScript/JavaScript type definitions for implementation.
+This document provides comprehensive API request/response schemas for all DIDIT products used by Lynia Finance: **Enhanced KYC**, **Biometric KYC**, **Document Verification**, and **SmartSelfie™ Authentication**. Each schema includes field definitions, data types, validation rules, complete result code mappings, and TypeScript/JavaScript type definitions for implementation.
 
-**Purpose**: Serve as the single source of truth for Smile Identity API integration, reducing development errors and ensuring consistent error handling across all KYC verification flows.
+**Purpose**: Serve as the single source of truth for DIDIT API integration, reducing development errors and ensuring consistent error handling across all KYC verification flows.
 
 ---
 
@@ -146,17 +146,17 @@ const zimbabweRequest = {
 | **1013** | Unable to Validate ID | ❌ Failed | ID not found in database |
 | **1014** | Invalid Format | ❌ Error | Check ID number format |
 | **1015** | Database Unavailable | ⏳ Retry | ID authority offline, retry later |
-| **1016** | Need to Activate Product | ❌ Error | Contact Smile ID support |
+| **1016** | Need to Activate Product | ❌ Error | Contact DIDIT support |
 
 ### Usage Example
 
 ```javascript
-const SmileIdentityCore = require('smile-identity-core');
-const IDApi = SmileIdentityCore.IDApi;
+const DiditCore = require('didit-core');
+const IDApi = DiditCore.IDApi;
 
 const connection = new IDApi(
-  process.env.SMILE_PARTNER_ID,
-  process.env.SMILE_API_KEY,
+  process.env.DIDIT_API_KEY,
+  process.env.DIDIT_WEBHOOK_SECRET,
   '0'  // 0 = sandbox, 1 = production
 );
 
@@ -297,7 +297,7 @@ Images must be uploaded as a **ZIP file** containing:
       "job_type": 1
     },
     "file_name": "selfie.jpg",
-    "smile_client_id": "your_partner_id",
+    "didit_client_id": "your_partner_id",
     "timestamp": "2025-11-14T10:30:00Z"
   },
   "id_info": {
@@ -316,7 +316,7 @@ Images must be uploaded as a **ZIP file** containing:
 
 #### Webhook Callback Response
 
-Smile ID sends results to your configured callback URL via HTTP POST.
+DIDIT sends results to your configured callback URL via HTTP POST.
 
 ```json
 {
@@ -362,7 +362,7 @@ Smile ID sends results to your configured callback URL via HTTP POST.
 
 | Action | Possible Values | Description |
 |--------|-----------------|-------------|
-| `Liveness_Check` | Passed / Failed / Not Applicable | Active liveness detection (smile test) |
+| `Liveness_Check` | Passed / Failed / Not Applicable | Active liveness detection (didit test) |
 | `Selfie_Check` | Passed / Failed / Not Applicable | Passive liveness detection (AI analysis) |
 | `Selfie_To_ID_Authority_Compare` | Passed / Failed / Not Applicable | Selfie vs government database photo |
 | `Selfie_To_ID_Card_Compare` | Passed / Failed / Not Applicable | Selfie vs uploaded ID card photo |
@@ -418,14 +418,14 @@ The `Confidence` field (0-100) indicates face matching confidence:
 ### Usage Example
 
 ```javascript
-const SmileIdentityCore = require('smile-identity-core');
-const WebApi = SmileIdentityCore.WebApi;
+const DiditCore = require('didit-core');
+const WebApi = DiditCore.WebApi;
 const fs = require('fs');
 
 const connection = new WebApi(
-  process.env.SMILE_PARTNER_ID,
-  process.env.SMILE_CALLBACK_URL,
-  process.env.SMILE_API_KEY,
+  process.env.DIDIT_API_KEY,
+  process.env.DIDIT_WEBHOOK_URL,
+  process.env.DIDIT_WEBHOOK_SECRET,
   '0'  // sandbox
 );
 
@@ -1113,7 +1113,7 @@ interface SmartSelfieAuthResponse {
 ### Complete Type Union
 
 ```typescript
-type SmileIDResponse =
+type DIDITIDResponse =
   | EnhancedKYCResponse
   | BiometricKYCResponse
   | DocumentVerificationResponse
@@ -1147,7 +1147,7 @@ interface KYCErrorContext {
   userMessage: string;
 }
 
-function handleSmileIDResult(resultCode: string, resultText: string): KYCErrorContext {
+function handleDIDITIDResult(resultCode: string, resultText: string): KYCErrorContext {
   const errorMap: Record<string, KYCErrorContext> = {
     // Success codes
     '1012': {
@@ -1313,7 +1313,7 @@ function handleSmileIDResult(resultCode: string, resultText: string): KYCErrorCo
 
 ```typescript
 async function processKYCResult(response: BiometricKYCResponse) {
-  const context = handleSmileIDResult(response.ResultCode, response.ResultText);
+  const context = handleDIDITIDResult(response.ResultCode, response.ResultText);
 
   switch (context.action) {
     case 'proceed':
@@ -1372,7 +1372,7 @@ async function processKYCResult(response: BiometricKYCResponse) {
 
 ## Summary
 
-This document provides complete API schemas for all four Smile Identity products used by Lynia Finance:
+This document provides complete API schemas for all four DIDIT products used by Lynia Finance:
 
 1. **Enhanced KYC**: Government database lookup for PII retrieval
 2. **Biometric KYC**: Selfie + ID card photo with liveness detection

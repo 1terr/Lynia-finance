@@ -68,20 +68,16 @@ jest.mock('../../services/payment-service/src/onemoney-provider', () => ({
 
 // KYC service mocks
 const mockKYCProvider = {
-  submitEnhancedKYC: jest.fn().mockRejectedValue(new Error('Test error')),
   submitVerification: jest.fn().mockRejectedValue(new Error('Test error')),
   verifyWebhookSignature: jest.fn().mockReturnValue(true),
   parseWebhookPayload: jest.fn(),
   determineDecision: jest.fn(),
   determineVerificationDecision: jest.fn(),
   handleError: jest.fn(),
-  handleSmileError: jest.fn(),
   providerName: 'didit',
 };
 
-jest.mock('../../services/kyc-service/src/smile-identity-service', () => ({
-  SmileIdentityService: jest.fn().mockImplementation(() => mockKYCProvider),
-}));
+// DIDIT service removed — DIDIT is sole KYC provider
 
 jest.mock('../../services/kyc-service/src/didit-service', () => ({
   DiditService: jest.fn().mockImplementation(() => mockKYCProvider),

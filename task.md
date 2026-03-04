@@ -369,7 +369,7 @@ tests/migration/phase1/services/whatsapp.test.ts
 ```
 tests/migration/phase1/services/kyc.test.ts
 - POST /kyc/initiate creates KYC submission record
-- POST /kyc/callback updates submission status from Smile Identity
+- POST /kyc/callback updates submission status from DIDIT
 - GET /kyc/{customerId} returns correct KYC status
 - KYC approval updates customer kyc_status field
 - KYC rejection stores reason correctly
@@ -600,7 +600,7 @@ tests/migration/phase2/cognito-auth.test.ts
   - `POST /whatsapp/webhook` (WhatsApp verification)
   - `GET /whatsapp/webhook` (WhatsApp challenge)
   - `POST /payments/webhook` (EcoCash/OneMoney callbacks)
-  - `POST /kyc/callback` (Smile Identity callbacks)
+  - `POST /kyc/callback` (DIDIT callbacks)
 - [ ] 2.4.4: Deploy and verify auth enforcement
 
 **Tests:**

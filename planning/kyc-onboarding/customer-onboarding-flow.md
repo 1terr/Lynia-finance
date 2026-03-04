@@ -57,7 +57,7 @@ Step 4: National ID Upload
     ↓
 Step 5: Selfie Capture
     ↓
-Step 6: KYC Verification (Smile Identity)
+Step 6: KYC Verification (DIDIT)
     ↓
 Step 7: Credit Assessment
     ↓
@@ -326,7 +326,7 @@ Tips for best results:
 ```
 
 **Liveness Detection:**
-- Uses Smile Identity passive liveness
+- Uses DIDIT passive liveness
 - Detects photo-of-photo, masks, videos
 - Score threshold: ≥80 to pass
 
@@ -1003,7 +1003,7 @@ This document provides:
 - [WhatsApp Conversation Flows](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/whatsapp-conversation-flows.md) - Conversational UI patterns
 - [WhatsApp State Management](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/whatsapp-state-management.md) - Session state handling
 - [KYC Document Requirements](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/kyc-document-requirements.md) - Document upload steps
-- [Smile Identity Integration](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/smile-identity-integration.md) - Biometric verification
+- [DIDIT Integration](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/didit-integration.md) - Biometric verification
 - [KYC Status Management](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/kyc-status-management.md) - Verification status tracking
 - [Credit Scoring Features](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/credit-scoring-features.md) - Loan amount calculation
 

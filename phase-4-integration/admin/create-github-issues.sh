@@ -84,7 +84,7 @@ Validate that all API contracts between services, frontend, and external provide
 - [ ] OpenAPI/Swagger specs defined for all service endpoints
 - [ ] Contract tests written for scoring-service API
 - [ ] Contract tests written for payment-service API (EcoCash, OneMoney, InnBucks)
-- [ ] Contract tests written for kyc-service API (Smile Identity)
+- [ ] Contract tests written for kyc-service API (DIDIT)
 - [ ] Contract tests written for whatsapp-service API (webhook payloads)
 - [ ] Contract tests written for lock-service API (Trustonic)
 - [ ] Contract tests written for notification-service API

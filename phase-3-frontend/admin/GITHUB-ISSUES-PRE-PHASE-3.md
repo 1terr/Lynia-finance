@@ -413,11 +413,11 @@ WHATSAPP_VERIFY_TOKEN=your-verify-token
 WHATSAPP_BUSINESS_ACCOUNT_ID=your-business-account-id
 
 # ---------------------
-# SMILE IDENTITY (KYC)
+# DIDIT (KYC)
 # ---------------------
-SMILE_IDENTITY_API_KEY=your-api-key
-SMILE_IDENTITY_PARTNER_ID=your-partner-id
-SMILE_IDENTITY_ENVIRONMENT=sandbox
+DIDIT_API_KEY=your-api-key
+DIDIT_PARTNER_ID=your-partner-id
+DIDIT_ENVIRONMENT=sandbox
 
 # ---------------------
 # PAYMENT GATEWAYS

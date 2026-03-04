@@ -239,7 +239,7 @@ describe('Audit Trail Data Flow Tests', () => {
     it('should log KYC approval', () => {
       const entry = createAuditEntry({
         action: 'kyc.approved',
-        actor: 'smile_identity',
+        actor: 'didit',
         entity_type: 'customer',
         entity_id: customerId,
         old_value: { kyc_status: 'pending' },
@@ -257,7 +257,7 @@ describe('Audit Trail Data Flow Tests', () => {
     it('should log KYC rejection', () => {
       const entry = createAuditEntry({
         action: 'kyc.rejected',
-        actor: 'smile_identity',
+        actor: 'didit',
         entity_type: 'customer',
         entity_id: customerId,
         old_value: { kyc_status: 'pending' },
@@ -279,7 +279,7 @@ describe('Audit Trail Data Flow Tests', () => {
     it('should log KYC manual review', () => {
       const entry = createAuditEntry({
         action: 'kyc.manual_review',
-        actor: 'smile_identity',
+        actor: 'didit',
         entity_type: 'customer',
         entity_id: customerId,
         old_value: { kyc_status: 'pending' },

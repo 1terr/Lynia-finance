@@ -305,7 +305,7 @@ Next Payment: ${{3}} due on {{4}}
     │ ID within 24 hours" │
     └─────────────────────┘
            │
-           │ [Smile ID verification completed]
+           │ [DIDIT verification completed]
            ▼
     ┌─────────────────────┐
     │ Bot: Send loan      │
@@ -673,7 +673,7 @@ The bot should recognize these common phrases:
 1. National ID number (Zimbabwe format)
 2. Clear photo of ID front
 3. Clear photo of ID back
-4. Smile ID verification must pass
+4. DIDIT verification must pass
 
 ### Payment Rules
 
@@ -765,7 +765,7 @@ Before launching the WhatsApp bot:
 - [ ] Webhook URL configured and verified
 - [ ] Environment variables set (tokens, phone number ID)
 - [ ] Database tables created (whatsapp_messages, whatsapp_conversations)
-- [ ] Smile ID integration tested
+- [ ] DIDIT integration tested
 - [ ] EcoCash/OneMoney payment webhooks tested
 - [ ] Trustonic device lock/unlock tested
 - [ ] Error handling implemented
@@ -782,7 +782,7 @@ Before launching the WhatsApp bot:
 1. Implement state machine for conversation flows
 2. Add device selection with product catalog integration
 3. Implement KYC photo upload handling
-4. Integrate Smile ID verification API
+4. Integrate DIDIT verification API
 5. Add payment webhook handlers (EcoCash, OneMoney)
 6. Implement scheduled task for payment reminders
 7. Add natural language processing for intent recognition

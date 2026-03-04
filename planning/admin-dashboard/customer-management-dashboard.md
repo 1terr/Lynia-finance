@@ -678,15 +678,15 @@ export function KYCReviewCard({ submission }: { submission: KYCSubmission & { cu
           </p>
         </div>
 
-        {submission.smile_identity_result && (
+        {submission.didit_result && (
           <div className="text-right">
-            <div className="text-sm text-gray-500">Smile ID Confidence</div>
+            <div className="text-sm text-gray-500">DIDIT Confidence</div>
             <div className={`text-2xl font-bold ${
-              submission.smile_identity_result.confidence >= 85 ? 'text-green-600' :
-              submission.smile_identity_result.confidence >= 50 ? 'text-yellow-600' :
+              submission.didit_result.confidence >= 85 ? 'text-green-600' :
+              submission.didit_result.confidence >= 50 ? 'text-yellow-600' :
               'text-red-600'
             }`}>
-              {submission.smile_identity_result.confidence}%
+              {submission.didit_result.confidence}%
             </div>
           </div>
         )}
@@ -764,22 +764,22 @@ export function KYCReviewCard({ submission }: { submission: KYCSubmission & { cu
         </div>
       </div>
 
-      {/* Smile Identity Results */}
-      {submission.smile_identity_result && (
+      {/* DIDIT Results */}
+      {submission.didit_result && (
         <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-          <p className="text-sm font-medium text-blue-900">Smile Identity Analysis</p>
+          <p className="text-sm font-medium text-blue-900">DIDIT Analysis</p>
           <div className="mt-2 grid grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-blue-600">Face Match</p>
-              <p className="font-medium">{submission.smile_identity_result.face_match ? '✓ Pass' : '✗ Fail'}</p>
+              <p className="font-medium">{submission.didit_result.face_match ? '✓ Pass' : '✗ Fail'}</p>
             </div>
             <div>
               <p className="text-xs text-blue-600">Liveness Check</p>
-              <p className="font-medium">{submission.smile_identity_result.liveness_check ? '✓ Pass' : '✗ Fail'}</p>
+              <p className="font-medium">{submission.didit_result.liveness_check ? '✓ Pass' : '✗ Fail'}</p>
             </div>
             <div>
               <p className="text-xs text-blue-600">ID Validation</p>
-              <p className="font-medium">{submission.smile_identity_result.id_validation ? '✓ Pass' : '✗ Fail'}</p>
+              <p className="font-medium">{submission.didit_result.id_validation ? '✓ Pass' : '✗ Fail'}</p>
             </div>
           </div>
         </div>
@@ -1048,7 +1048,7 @@ This customer management dashboard provides comprehensive tools for managing cus
 
 **Customer List**: Advanced filtering, search, and pagination for customer discovery
 **Customer Profile**: Complete 360-degree view with tabs for loans, payments, documents, timeline
-**KYC Manual Review**: Dedicated interface for reviewing pending KYC submissions with image zoom and Smile Identity results
+**KYC Manual Review**: Dedicated interface for reviewing pending KYC submissions with image zoom and DIDIT results
 **Customer Timeline**: Chronological view of all customer events and interactions
 **Credit Management**: Tools to adjust credit limits and tiers
 **Customer Notes**: Internal note-taking for support and collections teams

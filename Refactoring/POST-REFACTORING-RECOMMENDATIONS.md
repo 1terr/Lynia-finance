@@ -78,7 +78,7 @@ All three services migrated in parallel. Zero `console.*` calls remain.
 ### Item 5: kyc-service — 12 console.* → logger
 
 **Files modified:**
-- `services/kyc-service/src/smile-identity-service.ts` — 7 calls migrated
+- `services/kyc-service/src/didit-service.ts` — 7 calls migrated
 - `services/kyc-service/src/didit-service.ts` — 5 calls migrated
 - `services/kyc-service/src/image-processor.ts` — 1 call migrated
 
@@ -127,7 +127,7 @@ Covers full Lambda handler invocation:
 
 Covers:
 - POST /kyc/initiate — missing fields, successful initiation
-- POST /kyc/callback — invalid signature, valid Didit/Smile callbacks
+- POST /kyc/callback — invalid signature, valid Didit/DIDIT callbacks
 - GET /kyc/status/:customerId — not found, pending, verified, rejected
 
 ---

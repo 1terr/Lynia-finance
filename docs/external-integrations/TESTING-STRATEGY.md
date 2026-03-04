@@ -393,7 +393,7 @@ describe('EcoCash API Contract', () => {
 // - tests/contract/omari.contract.test.ts
 // - tests/contract/onewallet.contract.test.ts
 // - tests/contract/innbucks.contract.test.ts
-// - tests/contract/smile-identity.contract.test.ts
+// - tests/contract/didit.contract.test.ts
 // - tests/contract/trustonic.contract.test.ts
 // - tests/contract/whatsapp.contract.test.ts
 ```

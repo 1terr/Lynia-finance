@@ -8,7 +8,7 @@
  */
 
 import { createAPIGatewayEvent, parseResponseBody } from '../helpers/test-utils';
-import { createWhatsAppWebhookPayload, mockSmileIdentityResponses } from '../helpers/mock-external-services';
+import { createWhatsAppWebhookPayload, mockDiditResponses } from '../helpers/mock-external-services';
 import { testCustomers } from '../fixtures';
 
 // Mock external dependencies
@@ -22,7 +22,6 @@ jest.mock('axios');
 // Mock provider services to bypass signature verification in tests
 const mockKYCProvider = {
   providerName: 'didit',
-  submitEnhancedKYC: jest.fn().mockResolvedValue({ job_id: 'job_001', smile_job_id: 'smile_job_001', message: 'KYC verification submitted successfully' }),
   submitVerification: jest.fn().mockResolvedValue({ provider_job_id: 'job_001', status: 'processing' }),
   verifyWebhookSignature: jest.fn().mockReturnValue(true),
   parseWebhookPayload: jest.fn().mockImplementation((rawPayload: string) => {
@@ -30,7 +29,7 @@ const mockKYCProvider = {
     const code = payload.ResultCode || (payload.result && payload.result.ResultCode) || '1014';
     return {
       provider: 'didit',
-      provider_job_id: payload.partner_params?.job_id || payload.SmileJobID || 'job_001',
+      provider_job_id: payload.partner_params?.job_id || payload.job_id || 'job_001',
       status: 'completed',
       decision: code === '1012' ? 'APPROVED' : code === '1014' ? 'REJECTED' : 'MANUAL_REVIEW',
       confidence_score: 30,
@@ -58,12 +57,7 @@ const mockKYCProvider = {
     return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
   }),
   handleError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
-  handleSmileError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
 };
-
-jest.mock('../../services/kyc-service/src/smile-identity-service', () => ({
-  SmileIdentityService: jest.fn().mockImplementation(() => mockKYCProvider),
-}));
 
 jest.mock('../../services/kyc-service/src/didit-service', () => ({
   DiditService: jest.fn().mockImplementation(() => mockKYCProvider),
@@ -239,8 +233,8 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
       expect(body).toHaveProperty('error', 'Missing required fields');
     });
 
-    it('should validate that Smile Identity rejected KYC response has correct structure', () => {
-      const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
+    it('should validate that DIDIT rejected KYC response has correct structure', () => {
+      const rejectedKyc = mockDiditResponses.rejectedKYC;
 
       expect(rejectedKyc.result.ResultCode).toBe('1014');
       expect(rejectedKyc.result.ResultText).toBe('Face Not Matched');
@@ -274,7 +268,7 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
     });
 
     it('should process KYC callback with rejection result', async () => {
-      const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
+      const rejectedKyc = mockDiditResponses.rejectedKYC;
 
       mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
@@ -284,7 +278,7 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
               id: 'kyc_non_zw_001',
               customer_id: 'cust_non_zw_001',
               status: 'pending',
-              smile_identity_transaction_id: 'job_reject_001',
+              provider_job_id: 'job_reject_001',
             },
             error: null,
           });
@@ -307,7 +301,7 @@ describe('E2E-005: Non-Zimbabwe Customer Rejection', () => {
     });
 
     it('should verify that rejected KYC prevents loan progression', () => {
-      const rejectedKyc = mockSmileIdentityResponses.rejectedKYC;
+      const rejectedKyc = mockDiditResponses.rejectedKYC;
       const resultCode = rejectedKyc.result.ResultCode;
       const isApproved = resultCode === '1012'; // Only 1012 is verified
 

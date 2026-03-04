@@ -138,7 +138,7 @@ Non-sensitive information:
 #### **Third-Party Data**
 | Data Type | Retention Period | Justification |
 |-----------|------------------|---------------|
-| Smile Identity KYC results | 7 years | Regulatory compliance |
+| DIDIT KYC results | 7 years | Regulatory compliance |
 | EcoCash/EcoCash/Omari/Innbucks/OneWallet transaction records | 7 years | Financial reconciliation |
 | WhatsApp message metadata | 90 days | Conversation context |
 | Device lock provider records | 3 years | Device management |
@@ -249,7 +249,7 @@ Only collect data required for:
 const kycConsent = {
   customer_id: 'uuid',
   consent_type: 'kyc_verification',
-  consent_text: 'I authorize Lynia Finance to verify my identity using Smile Identity...',
+  consent_text: 'I authorize Lynia Finance to verify my identity using DIDIT...',
   consented_at: '2025-11-24T12:00:00Z',
   ip_address: '102.133.45.67',
   user_agent: 'WhatsApp/2.23.20.76',
@@ -752,7 +752,7 @@ async function handleDataAccessRequest(customerId, requestType) {
 ### 5.4 Cross-Border Data Transfer
 
 **Current Transfers**:
-- **Smile Identity** (KYC provider) - Data sent to Nigeria/South Africa
+- **DIDIT** (KYC provider) - Data sent to Nigeria/South Africa
 - **WhatsApp Cloud API** - Data processed by Meta (Ireland, USA)
 - **AWS Services** - Data stored in India (ap-south-1)
 
@@ -764,7 +764,7 @@ async function handleDataAccessRequest(customerId, requestType) {
 **Transfer Impact Assessment**:
 | Vendor | Data Transferred | Destination | Legal Basis | Risk Level |
 |--------|------------------|-------------|-------------|------------|
-| Smile Identity | National ID, selfie | Nigeria/SA | Contractual necessity | Medium |
+| DIDIT | National ID, selfie | Nigeria/SA | Contractual necessity | Medium |
 | Meta (WhatsApp) | Phone, messages | Ireland/USA | User consent | Low |
 | AWS | All application data | India | Legitimate interest | Low |
 | EcoCash/EcoCash/Omari/Innbucks/OneWallet | Payment details | Zimbabwe | Contractual necessity | Low |
@@ -853,7 +853,7 @@ Maintain records of all processing activities:
   "purposes": ["Identity verification", "AML/CFT compliance"],
   "data_subjects": ["Loan applicants"],
   "data_categories": ["National ID number", "Selfie photo", "Full name", "Date of birth"],
-  "recipients": ["Smile Identity (processor)", "Data Protection Authority (regulator)"],
+  "recipients": ["DIDIT (processor)", "Data Protection Authority (regulator)"],
   "transfers": {
     "countries": ["Nigeria", "South Africa"],
     "safeguards": "Standard Contractual Clauses (SCCs)"
@@ -1127,7 +1127,7 @@ ORDER BY failed_attempts DESC;
 - Employee email account compromised
 - Stolen laptop with unencrypted customer data
 - Insider threat (employee stealing customer data)
-- Third-party breach (Smile Identity, EcoCash)
+- Third-party breach (DIDIT, EcoCash)
 
 ### 8.2 Breach Response Team
 
@@ -1503,7 +1503,7 @@ const newCustomer = {
     }
   },
   "data_usage": {
-    "kyc_verification": "Your ID was verified by Smile Identity on 2025-11-20",
+    "kyc_verification": "Your ID was verified by DIDIT on 2025-11-20",
     "credit_scoring": "Your credit score was calculated on 2025-11-21",
     "marketing": "You have opted out of marketing communications"
   },
@@ -1515,7 +1515,7 @@ const newCustomer = {
   },
   "third_parties": [
     {
-      "name": "Smile Identity",
+      "name": "DIDIT",
       "purpose": "Identity verification",
       "data_shared": "National ID, selfie photo",
       "location": "Nigeria"
@@ -1571,7 +1571,7 @@ const newCustomer = {
 **Vendors Requiring DPAs**:
 | Vendor | Data Processed | DPA Status | Review Date |
 |--------|----------------|------------|-------------|
-| Smile Identity | National ID, selfie | ✅ Signed | 2025-10-01 |
+| DIDIT | National ID, selfie | ✅ Signed | 2025-10-01 |
 | AWS | All application data | ✅ Signed (AWS GDPR DPA) | N/A (standard) |
 | Supabase | All application data | ✅ Signed | 2025-09-15 |
 | Twilio (SMS) | Phone numbers, message content | ⏳ Pending | 2025-12-01 |
@@ -1623,7 +1623,7 @@ We use your information to:
 
 ## Who We Share With
 We share your data with:
-- Smile Identity (to verify your ID)
+- DIDIT (to verify your ID)
 - EcoCash/EcoCash/Omari/Innbucks/OneWallet (to process payments)
 - Data Protection Authority (if required by law)
 

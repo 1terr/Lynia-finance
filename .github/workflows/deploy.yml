@@ -346,11 +346,8 @@ jobs:
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
           WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
           META_SECRET="${META_APP_SECRET:-placeholder}"
-          SMILE_PID="${SMILE_PARTNER_ID:-placeholder}"
-          SMILE_KEY="${SMILE_API_KEY:-placeholder}"
           DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
           DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
-          KYC_PROV="${KYC_PROVIDER:-didit}"
           ECO_MID="${ECOCASH_MERCHANT_ID:-placeholder}"
           ECO_KEY="${ECOCASH_API_KEY:-placeholder}"
           OM_MID="${ONEMONEY_MERCHANT_ID:-placeholder}"
@@ -383,12 +380,8 @@ jobs:
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
               "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
               "MetaAppSecret=${META_SECRET}" \
-              "SmilePartnerId=${SMILE_PID}" \
-              "SmileApiKey=${SMILE_KEY}" \
-              "SmileEnvironment=sandbox" \
               "DiditApiKey=${DIDIT_KEY}" \
               "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
-              "KYCProvider=${KYC_PROV}" \
               "EcocashMerchantId=${ECO_MID}" \
               "EcocashApiKey=${ECO_KEY}" \
               "OnemoneyMerchantId=${OM_MID}" \
@@ -407,11 +400,8 @@ jobs:
           WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
           WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID }}
           META_APP_SECRET: ${{ secrets.STAGING_META_APP_SECRET }}
-          SMILE_PARTNER_ID: ${{ secrets.STAGING_SMILE_PARTNER_ID }}
-          SMILE_API_KEY: ${{ secrets.STAGING_SMILE_API_KEY }}
           DIDIT_API_KEY: ${{ secrets.STAGING_DIDIT_API_KEY }}
           DIDIT_WEBHOOK_SECRET: ${{ secrets.STAGING_DIDIT_WEBHOOK_SECRET }}
-          KYC_PROVIDER: ${{ secrets.STAGING_KYC_PROVIDER }}
           ECOCASH_MERCHANT_ID: ${{ secrets.STAGING_ECOCASH_MERCHANT_ID }}
           ECOCASH_API_KEY: ${{ secrets.STAGING_ECOCASH_API_KEY }}
           ONEMONEY_MERCHANT_ID: ${{ secrets.STAGING_ONEMONEY_MERCHANT_ID }}
@@ -620,11 +610,8 @@ jobs:
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
           WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
           META_SECRET="${META_APP_SECRET:-placeholder}"
-          SMILE_PID="${SMILE_PARTNER_ID:-placeholder}"
-          SMILE_KEY="${SMILE_API_KEY:-placeholder}"
           DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
           DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
-          KYC_PROV="${KYC_PROVIDER:-didit}"
           ECO_MID="${ECOCASH_MERCHANT_ID:-placeholder}"
           ECO_KEY="${ECOCASH_API_KEY:-placeholder}"
           OM_MID="${ONEMONEY_MERCHANT_ID:-placeholder}"
@@ -658,12 +645,8 @@ jobs:
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
               "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
               "MetaAppSecret=${META_SECRET}" \
-              "SmilePartnerId=${SMILE_PID}" \
-              "SmileApiKey=${SMILE_KEY}" \
-              "SmileEnvironment=production" \
               "DiditApiKey=${DIDIT_KEY}" \
               "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
-              "KYCProvider=${KYC_PROV}" \
               "EcocashMerchantId=${ECO_MID}" \
               "EcocashApiKey=${ECO_KEY}" \
               "OnemoneyMerchantId=${OM_MID}" \
@@ -682,11 +665,8 @@ jobs:
           WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
           WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
           META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
-          SMILE_PARTNER_ID: ${{ secrets.PRODUCTION_SMILE_PARTNER_ID }}
-          SMILE_API_KEY: ${{ secrets.PRODUCTION_SMILE_API_KEY }}
           DIDIT_API_KEY: ${{ secrets.PRODUCTION_DIDIT_API_KEY }}
           DIDIT_WEBHOOK_SECRET: ${{ secrets.PRODUCTION_DIDIT_WEBHOOK_SECRET }}
-          KYC_PROVIDER: ${{ secrets.PRODUCTION_KYC_PROVIDER }}
           ECOCASH_MERCHANT_ID: ${{ secrets.PRODUCTION_ECOCASH_MERCHANT_ID }}
           ECOCASH_API_KEY: ${{ secrets.PRODUCTION_ECOCASH_API_KEY }}
           ONEMONEY_MERCHANT_ID: ${{ secrets.PRODUCTION_ONEMONEY_MERCHANT_ID }}

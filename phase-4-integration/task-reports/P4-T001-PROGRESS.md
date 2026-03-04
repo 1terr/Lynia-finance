@@ -38,7 +38,7 @@ Build comprehensive E2E integration tests covering all critical user journeys ac
 
 ### Test Framework Setup
 - Created `tests/helpers/test-utils.ts` - Mock Supabase client, Lambda handler invoker, fixture helpers, response validators
-- Created `tests/helpers/mock-external-services.ts` - Mock responses for Smile Identity, EcoCash, OneMoney, Trustonic, WhatsApp API
+- Created `tests/helpers/mock-external-services.ts` - Mock responses for DIDIT, EcoCash, OneMoney, Trustonic, WhatsApp API
 - Created `tests/helpers/index.ts` - Centralized exports
 
 ### E2E Test Suites (7 files, 3,616 lines, 613 assertions)

@@ -148,7 +148,7 @@ interface ReviewHistoryEntry {
 ### 3.1 KYC Review Queue
 
 **Trigger Conditions**:
-- Smile Identity confidence score < 85%
+- DIDIT confidence score < 85%
 - Document quality issues
 - ID/selfie mismatch
 - Suspicious patterns detected
@@ -187,8 +187,8 @@ interface KYCReviewItem extends ReviewItem<KYCSubmission> {
       qualityScore: number;
     };
 
-    // Smile Identity results
-    smileIdentity: {
+    // DIDIT results
+    diditIdentity: {
       confidenceScore: number;
       verificationStatus: string;
       flags: string[];
@@ -233,8 +233,8 @@ function KYCReviewCard({ reviewItem, onApprove, onReject, ... }: KYCReviewCardPr
         }}
       />
 
-      {/* Smile Identity results */}
-      <VerificationResults results={reviewItem.resourceData.smileIdentity} />
+      {/* DIDIT results */}
+      <VerificationResults results={reviewItem.resourceData.diditIdentity} />
 
       {/* Risk indicators */}
       {reviewItem.resourceData.riskIndicators.length > 0 && (

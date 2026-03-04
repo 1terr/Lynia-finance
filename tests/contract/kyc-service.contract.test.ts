@@ -51,7 +51,7 @@ const mockHandleError = jest.fn();
 
 jest.mock('../../services/kyc-service/src/kyc-provider-factory', () => ({
   createKYCProvider: jest.fn(() => ({
-    providerName: 'smile_identity',
+    providerName: 'didit',
     submitVerification: mockSubmitVerification,
     verifyWebhookSignature: mockVerifyWebhookSignature,
     parseWebhookPayload: mockParseWebhookPayload,
@@ -339,7 +339,7 @@ describe('KYC Service Contract Tests', () => {
   describe('POST /kyc/callback', () => {
     const callbackPayload = {
       partner_id: 'partner_001',
-      smile_job_id: 'smile_job_001',
+      provider_job_id: 'didit_job_001',
       job_success: true,
       result: {
         confidence_value: 0.95,
@@ -359,7 +359,7 @@ describe('KYC Service Contract Tests', () => {
 
     /** Normalized KYCVerificationResult returned by parseWebhookPayload */
     const normalizedResult = {
-      provider: 'smile_identity' as const,
+      provider: 'didit' as const,
       provider_job_id: 'job_001',
       internal_job_id: 'internal_001',
       confidence_score: 95,
@@ -408,7 +408,7 @@ describe('KYC Service Contract Tests', () => {
         body: JSON.stringify(callbackPayload),
         headers: {
           'Content-Type': 'application/json',
-          'x-signature': 'valid-smile-sig',
+          'x-signature': 'valid-didit-sig',
         },
       });
 

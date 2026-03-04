@@ -96,7 +96,7 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
     │ External APIs             │              │ AWS Services              │
     │                           │              │                           │
     │ - WhatsApp Cloud API      │              │ - Secrets Manager         │
-    │ - Smile Identity (KYC)    │              │ - CloudWatch Logs         │
+    │ - DIDIT (KYC)    │              │ - CloudWatch Logs         │
     │ - EcoCash API             │              │ - SQS Queues              │
     │ - OneMoney API            │              │ - X-Ray Tracing           │
     │ - Trustonic API           │              │ - CodeDeploy              │
@@ -232,7 +232,7 @@ for service endpoints. All traffic is encrypted in transit via TLS 1.2+.
 |-------------|---------|----------|
 | production/lynia/database | All | Host, Port, Database, Username, Password |
 | production/lynia/whatsapp | WhatsApp | Phone Number ID, Access Token, Webhook Token |
-| production/lynia/smile-identity | KYC | Partner ID, API Key |
+| production/lynia/didit | KYC | Partner ID, API Key |
 | production/lynia/ecocash | Payment | Merchant ID, API Key |
 | production/lynia/onemoney | Payment | Merchant ID, API Key |
 | production/lynia/trustonic | Lock | API Key, API Secret |

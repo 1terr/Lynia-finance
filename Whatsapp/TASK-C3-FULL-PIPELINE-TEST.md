@@ -78,7 +78,7 @@ Validate the complete end-to-end pipeline: WhatsApp → KYC (Didit) → Credit S
 6. Test fuzzy matching: "BALANSE" → still works
 
 ### C3.7: Dual-Provider Validation
-1. Set `KYC_PROVIDER=smile_identity` → verify Smile path still works
+1. Set `KYC_PROVIDER=didit` → verify DIDIT path still works
 2. Set `KYC_PROVIDER=didit` → verify Didit path works
 3. Admin portal shows correct provider badge for each submission
 4. Scoring correctly normalizes both providers' face_match scores
@@ -125,11 +125,11 @@ sam deploy --config-env production --no-confirm-changeset \
 ### C3.11: Production Monitoring (First 48 Hours)
 - [ ] Monitor first 20 real customer verifications
 - [ ] Check Didit confidence score distributions
-- [ ] Check approve/reject/review ratios vs historical Smile data
+- [ ] Check approve/reject/review ratios vs historical DIDIT data
 - [ ] Verify Fineract sync log shows successes
 - [ ] Verify no sensitive data in CloudWatch logs
 - [ ] Check WhatsApp delivery rates (no 131047/130472 errors)
-- [ ] Keep Smile Identity credentials active for 30-day rollback window
+- [ ] Keep DIDIT credentials active for 30-day rollback window
 
 ## Acceptance Criteria
 
@@ -138,7 +138,7 @@ sam deploy --config-env production --no-confirm-changeset \
 - [ ] Production deployment successful
 - [ ] First 20 real verifications complete without errors
 - [ ] No data loss, no security incidents
-- [ ] Rollback plan tested (switch `KYC_PROVIDER` back to `smile_identity`)
+- [ ] Rollback plan tested (switch `KYC_PROVIDER` back to `didit`)
 
 ## Progress Report
 

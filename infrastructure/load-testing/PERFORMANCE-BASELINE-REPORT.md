@@ -113,7 +113,7 @@ This report establishes performance baselines for the Lynia Finance platform acr
 | Verification Result | < 5ms | < 300ms | < 500ms | < 1000ms | p95 < 300ms |
 
 **Bottleneck Analysis:**
-- KYC submission depends on Smile Identity API (external, ~2-5s response)
+- KYC submission depends on DIDIT API (external, ~2-5s response)
 - Status checks are database reads; well-indexed
 - Recommendation: Submit KYC async, poll for results via webhook callback
 
@@ -174,7 +174,7 @@ This report establishes performance baselines for the Lynia Finance platform acr
 
 1. **Use ARM64 architecture** (already configured) - ~34% faster cold starts
 2. **Keep Lambda bundles under 5MB** - esbuild configured for tree shaking
-3. **Lazy-load heavy dependencies** - Smile Identity SDK, payment provider SDKs
+3. **Lazy-load heavy dependencies** - DIDIT SDK, payment provider SDKs
 4. **Use provisioned concurrency** for payment-service and scoring-service (critical paths)
 5. **Minimize top-level imports** and initialization code
 6. **Use connection pooling** via Supabase PgBouncer (already configured)
@@ -229,7 +229,7 @@ This report establishes performance baselines for the Lynia Finance platform acr
 
 | Priority | Bottleneck | Service | Impact | Recommendation |
 |----------|-----------|---------|--------|---------------|
-| Critical | External API latency (EcoCash, Smile Identity) | Payment, KYC | p95 latency spike | Async processing via SQS |
+| Critical | External API latency (EcoCash, DIDIT) | Payment, KYC | p95 latency spike | Async processing via SQS |
 | High | Database connection pool saturation | All | Connection timeouts at scale | Tune PgBouncer pool size |
 | High | Cold starts on infrequent Lambdas | KYC, Lock | First-request latency | Provisioned concurrency |
 | Medium | Large query result sets (reports) | Admin Dashboard | Slow page loads | Materialized views, pagination |

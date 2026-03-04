@@ -38,7 +38,7 @@
 │                    CUSTOM MICROSERVICES (10)                 │
 ├─────────────────────────────────────────────────────────────┤
 │ 1. whatsapp-service (Node.js) - Twilio webhook, state       │
-│ 2. kyc-service (Node.js) - Smile Identity integration       │
+│ 2. kyc-service (Node.js) - DIDIT integration       │
 │ 3. scoring-service (Python) - ML models, Fineract Scorecard │
 │ 4. payment-service (Node.js) - EcoCash/Omari integration    │
 │ 5. notification-service (Node.js) - SMS/email/WhatsApp     │❌
@@ -109,7 +109,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │ Supabase Storage:                                           │
 │  ├── Commission PDFs (auto-generated, signed URLs)          │
-│  ├── KYC documents (Smile Identity results, encrypted)      │
+│  ├── KYC documents (DIDIT results, encrypted)      │
 │  ├── Inventory reconciliation photos (auto-optimized)       │
 │  └── ML model files (versioned, S3-compatible)              │
 └─────────────────────────────────────────────────────────────┘
@@ -123,7 +123,7 @@
 │    - Complex WhatsApp flows (KYC, phone selection, payment) │
 ├─────────────────────────────────────────────────────────────┤
 │ 2. kyc-service (Node.js)                                    │
-│    - Smile Identity API integration (Zimbabwe national ID)  │
+│    - DIDIT API integration (Zimbabwe national ID)  │
 │    - Duplicate customer detection (National ID checks)      │
 │    - Next of Kin SMS verification (24hr window)             │
 ├─────────────────────────────────────────────────────────────┤
@@ -159,7 +159,7 @@
 ├─────────────────────────────────────────────────────────────┤
 │ - Apache Fineract (self-hosted, PostgreSQL mode)           │
 │ - Twilio WhatsApp Business API                              │
-│ - Smile Identity KYC API                                    │
+│ - DIDIT KYC API                                    │
 │ - EcoCash + Omari Payment Gateways                         │
 │ - Third-party Device Lock Provider                          │
 └─────────────────────────────────────────────────────────────┘

@@ -17,7 +17,7 @@
 - ✅ Created comprehensive SAM template for all 6 microservices:
   1. **scoring-service** - Credit scoring and loan assessment
   2. **whatsapp-service** - WhatsApp messaging and webhooks
-  3. **kyc-service** - KYC verification (Smile Identity integration)
+  3. **kyc-service** - KYC verification (DIDIT integration)
   4. **payment-service** - Payment processing (EcoCash, OneMoney)
   5. **lock-service** - Device lock/unlock (Trustonic integration)
   6. **notification-service** - Multi-channel notifications (SMS, WhatsApp, Email)
@@ -44,7 +44,7 @@
 - ✅ Created comprehensive type definitions ([types/index.ts](services/shared/types/index.ts)):
   - Database types (Customer, Loan, Device, Payment, KYC, etc.)
   - API request/response types
-  - External API integration types (Trustonic, Smile ID, EcoCash, OneMoney)
+  - External API integration types (Trustonic, DIDIT, EcoCash, OneMoney)
 
 - ✅ Created utility modules:
   - [clients/supabase.ts](services/shared/clients/supabase.ts) - Centralized Supabase client

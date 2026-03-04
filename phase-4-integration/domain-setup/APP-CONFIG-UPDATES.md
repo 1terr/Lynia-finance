@@ -174,13 +174,13 @@ Callback URL: https://api.lyniafinance.com/payments/webhook
 
 Location: OneMoney Merchant Portal
 
-### 5.4 Smile Identity (KYC)
+### 5.4 DIDIT (KYC)
 
 ```
 Callback URL: https://api.lyniafinance.com/kyc/callback
 ```
 
-Location: Smile Identity Partner Portal
+Location: DIDIT Partner Portal
 
 ### 5.5 Trustonic
 

@@ -183,7 +183,7 @@
 ### Service Provider Status
 - [ ] Supabase: Production project active
 - [ ] WhatsApp Cloud API: Verified business, phone number registered
-- [ ] Smile Identity: Production credentials obtained
+- [ ] DIDIT: Production credentials obtained
 - [ ] EcoCash: Production merchant ID and API key
 - [ ] OneMoney: Production merchant ID and API key
 - [ ] Trustonic: Production API credentials

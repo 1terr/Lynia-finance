@@ -464,7 +464,7 @@ check_secrets() {
   local secrets=(
     "${ENVIRONMENT}/lynia/database"
     "${ENVIRONMENT}/lynia/whatsapp"
-    "${ENVIRONMENT}/lynia/smile-identity"
+    "${ENVIRONMENT}/lynia/didit"
     "${ENVIRONMENT}/lynia/ecocash"
     "${ENVIRONMENT}/lynia/onemoney"
     "${ENVIRONMENT}/lynia/trustonic"

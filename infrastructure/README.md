@@ -69,7 +69,7 @@ This folder contains all progress reports, documentation, and test results from 
 ### **Core Services**
 2. [P2-T003: Payment Service](P2-T003-PROGRESS.md) - EcoCash/OneMoney integration
 3. [P2-T004: Credit Scoring](P2-T004-PROGRESS.md) - Hybrid ML scoring system
-4. [P2-T005: KYC Service](P2-T005-PROGRESS.md) - Smile Identity integration
+4. [P2-T005: KYC Service](P2-T005-PROGRESS.md) - DIDIT integration
 5. [P2-T006: WhatsApp Service](P2-T006-PROGRESS.md) - Bot & onboarding flow
 6. [P2-T007: Notification Service](P2-T007-PROGRESS.md) - Multi-channel notifications
 

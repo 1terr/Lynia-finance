@@ -142,7 +142,7 @@ S3), Supabase custom domain, and security hardening.
 - [ ] 6.5 Update CORS allowed origins in Lambda services
 - [ ] 6.6 Update Supabase Auth redirect URLs
 - [ ] 6.7 Update WhatsApp Business API webhook URL
-- [ ] 6.8 Update external service callback URLs (EcoCash, OneMoney, Smile Identity)
+- [ ] 6.8 Update external service callback URLs (EcoCash, OneMoney, DIDIT)
 
 ### Task 7: Security Hardening
 **Priority**: Critical | **Estimated Complexity**: Medium

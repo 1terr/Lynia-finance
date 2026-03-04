@@ -48,7 +48,7 @@ Deploy 3 tiered API Gateway usage plans (internal, partner, public) with rate li
 | `distributor-dashboard-key` | Internal | Distributor agent portal |
 | `whatsapp-webhook-key` | Public | WhatsApp webhook callbacks |
 | `payment-provider-key` | Partner | EcoCash/OneMoney callbacks |
-| `kyc-provider-key` | Partner | Smile Identity callbacks |
+| `kyc-provider-key` | Partner | DIDIT callbacks |
 
 ---
 

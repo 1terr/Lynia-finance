@@ -296,7 +296,7 @@ Phase 4 focused on validating the full Lynia Finance system through integration 
 2. **Train on-call team** — The deployment runbook, incident response playbook, and emergency contacts are now ready. Schedule training session immediately.
 3. **Run P4-T013 (Pilot) as soft launch** — Onboard initial distributors and customers as part of a controlled production soft-launch.
 4. **Proceed with production deployment** — All technical, security, infrastructure, and operations items now PASS. The system is technically ready for go-live once UAT is executed and team is trained.
-5. **Pursue external API credentials** — EcoCash, OneMoney, Smile Identity, and Trustonic API agreements in parallel. Stub-mode launch is fully operational.
+5. **Pursue external API credentials** — EcoCash, OneMoney, DIDIT, and Trustonic API agreements in parallel. Stub-mode launch is fully operational.
 
 ---
 

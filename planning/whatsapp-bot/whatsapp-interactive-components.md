@@ -322,7 +322,7 @@ const KYC_CONFIRMATION_BUTTONS = [
     id: 'btn_confirm_kyc',
     title: 'Yes, Submit',
     next_state: 'KYC_PENDING',
-    action: 'submit_kyc_to_smile_identity'
+    action: 'submit_kyc_to_didit'
   },
   {
     id: 'btn_retake_kyc',

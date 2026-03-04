@@ -26,7 +26,7 @@
 ┌─────────────────────────────────────────────────────────────────┐
 │                         External Services                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  WhatsApp API  │  Smile ID  │  EcoCash  │  OneMoney  │ Trustonic│
+│  WhatsApp API  │  DIDIT  │  EcoCash  │  OneMoney  │ Trustonic│
 └────────┬────────────┬──────────────┬──────────┬───────────┬──────┘
          │            │              │          │           │
          ▼            ▼              ▼          ▼           ▼
@@ -73,7 +73,7 @@
 
 **Integrations**:
 - WhatsApp Cloud API (messaging)
-- Smile Identity (KYC verification)
+- DIDIT (KYC verification)
 - EcoCash/OneMoney (payments)
 - Trustonic (device locks)
 - Twilio (SMS backup)
@@ -126,7 +126,7 @@ Customer          WhatsApp          Lambda           Supabase         External
    │                 │                 │                 │                │
    │──[image]────────▶│──────forward────▶│                 │                │
    │                 │                 │──────kyc_submit──────────────────▶│
-   │                 │                 │                 │       Smile ID │
+   │                 │                 │                 │       DIDIT │
    │                 │                 │◀─────verified────────────────────│
    │                 │                 │──update_kyc──────▶│                │
    │◀──"ID front?"───│◀────reply───────│◀──updated───────│                │
@@ -160,7 +160,7 @@ onboarding_step ENUM(
   'kyc_selfie',          -- Selfie upload
   'kyc_id_front',        -- ID front upload
   'kyc_id_back',         -- ID back upload
-  'kyc_verification',    -- Smile ID processing
+  'kyc_verification',    -- DIDIT processing
   'credit_assessment',   -- ML scoring
   'manual_review',       -- Human review if needed
   'completed',           -- Onboarding done
@@ -209,7 +209,7 @@ if (score >= 700) {
 
 **3. KYC Verification**
 ```typescript
-const kycResult = await smileIdentity.verify({
+const kycResult = await diditIdentity.verify({
   selfie,
   idFront,
   idBack,
@@ -913,7 +913,7 @@ class CircuitBreaker {
 - Regular security audits
 
 **KYC/AML**:
-- Smile Identity verification (certified)
+- DIDIT verification (certified)
 - Document retention for 7 years
 - Suspicious activity monitoring
 - Regulatory reporting

@@ -10,7 +10,7 @@
 
 ## Objective
 
-Add provider-agnostic columns to `kyc_submissions` table so both Smile Identity and Didit results can be stored in a normalized format. Keep all existing columns for RBZ 7-year retention compliance.
+Add provider-agnostic columns to `kyc_submissions` table so both DIDIT and Didit results can be stored in a normalized format. Keep all existing columns for RBZ 7-year retention compliance.
 
 ## Tasks
 
@@ -18,7 +18,7 @@ Add provider-agnostic columns to `kyc_submissions` table so both Smile Identity 
 - **File:** `database/migrations/024_kyc_provider_columns.sql` (NEW)
 - **Action:** Add columns to `kyc_submissions`:
   ```sql
-  ALTER TABLE kyc_submissions ADD COLUMN kyc_provider VARCHAR(50) DEFAULT 'smile_identity';
+  ALTER TABLE kyc_submissions ADD COLUMN kyc_provider VARCHAR(50) DEFAULT 'didit';
   ALTER TABLE kyc_submissions ADD COLUMN provider_job_id VARCHAR(200);
   ALTER TABLE kyc_submissions ADD COLUMN provider_response JSONB;
   ALTER TABLE kyc_submissions ADD COLUMN provider_warnings JSONB;
@@ -27,15 +27,15 @@ Add provider-agnostic columns to `kyc_submissions` table so both Smile Identity 
   ```sql
   UPDATE kyc_submissions SET
     provider_job_id = verification_id,
-    provider_response = smile_identity_response
-  WHERE kyc_provider = 'smile_identity';
+    provider_response = didit_response
+  WHERE kyc_provider = 'didit';
   ```
 - **Indexes:**
   ```sql
   CREATE INDEX idx_kyc_provider ON kyc_submissions(kyc_provider);
   CREATE INDEX idx_kyc_provider_job_id ON kyc_submissions(provider_job_id);
   ```
-- **Constraint:** Do NOT drop `smile_identity_response` or `verification_id` columns (RBZ retention)
+- **Constraint:** Do NOT drop `didit_response` or `verification_id` columns (RBZ retention)
 
 ### A2.2: Create `kyc_manual_reviews` Table (Fix Pre-existing Issue)
 - **File:** Same migration file
@@ -65,7 +65,7 @@ Add provider-agnostic columns to `kyc_submissions` table so both Smile Identity 
 ## Acceptance Criteria
 
 - [ ] Migration adds 4 new columns to `kyc_submissions`
-- [ ] Existing `smile_identity_response` and `verification_id` columns preserved
+- [ ] Existing `didit_response` and `verification_id` columns preserved
 - [ ] Backfill populates `provider_job_id` and `provider_response` for existing rows
 - [ ] `kyc_manual_reviews` table created
 - [ ] Indexes created on `kyc_provider` and `provider_job_id`

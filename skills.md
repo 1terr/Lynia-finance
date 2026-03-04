@@ -263,7 +263,7 @@ sam deploy --config-env production  # Production (requires approval)
 ### /health
 **System Health** - `trigger: /health [service]`
 
-Checks all services (GET /health), dependencies (Supabase, WhatsApp, Smile Identity, EcoCash, Trustonic), metrics (error rate <1%, P95 <500ms).
+Checks all services (GET /health), dependencies (Supabase, WhatsApp, DIDIT, EcoCash, Trustonic), metrics (error rate <1%, P95 <500ms).
 
 ### /incident
 **Incident Response** - `trigger: /incident <severity> <description>`

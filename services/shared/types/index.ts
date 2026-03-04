@@ -125,8 +125,6 @@ export interface KYCVerification {
   customer_id: string;
   verification_type: 'national_id' | 'selfie' | 'liveness';
   verification_status: 'pending' | 'verified' | 'rejected';
-  smile_job_id?: string;
-  smile_result?: Record<string, unknown>;
   verified_at?: string;
   created_at: string;
   updated_at: string;
@@ -244,13 +242,6 @@ export interface TrustonicLockRequest {
 export interface TrustonicUnlockRequest {
   device_id: string;
   unlock_reason: string;
-}
-
-export interface SmileIDVerificationRequest {
-  partner_id: string;
-  id_number: string;
-  id_type: string;
-  callback_url: string;
 }
 
 export interface EcocashPaymentRequest {

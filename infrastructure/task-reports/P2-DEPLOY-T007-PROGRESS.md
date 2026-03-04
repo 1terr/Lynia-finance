@@ -17,7 +17,7 @@ Configured three-tier API Gateway usage plans with per-endpoint throttling, API 
 | Plan | Burst Limit | Rate Limit | Daily Quota | Consumers |
 |------|-------------|------------|-------------|-----------|
 | Internal | 200 | 100 req/s | 100,000 | Admin portal, Distributor dashboard |
-| Partner | 500 | 200 req/s | 500,000 | WhatsApp, EcoCash, OneMoney, Smile ID |
+| Partner | 500 | 200 req/s | 500,000 | WhatsApp, EcoCash, OneMoney, DIDIT |
 | Public | 50 | 20 req/s | 10,000 | Customer-facing access |
 
 ## Per-Endpoint Throttling
@@ -38,7 +38,7 @@ Configured three-tier API Gateway usage plans with per-endpoint throttling, API 
 | `{env}-lynia-distributor-dashboard` | Internal | Field agent portal API access |
 | `{env}-lynia-whatsapp-webhook` | Partner | WhatsApp Cloud API callbacks |
 | `{env}-lynia-payment-providers` | Partner | EcoCash/OneMoney callbacks |
-| `{env}-lynia-kyc-provider` | Partner | Smile Identity callbacks |
+| `{env}-lynia-kyc-provider` | Partner | DIDIT callbacks |
 
 ## Stage Method Settings
 

@@ -97,7 +97,7 @@ Supabase PostgreSQL 15
 │ first_name      │         │ document_url    │         │ location        │
 │ last_name       │         │ selfie_url      │         │ status          │
 │ credit_limit    │         │ status          │         │ user_id (FK)    │
-│ kyc_status      │         │ smile_job_id    │         └─────────────────┘
+│ kyc_status      │         │ provider_job_id    │         └─────────────────┘
 │ fineract_id     │         │ verified_at     │                 │
 │ created_at      │         └─────────────────┘                 │
 └─────────────────┘                                              │
@@ -336,11 +336,11 @@ CREATE TABLE kyc_submissions (
   document_back_url TEXT, -- Optional
   selfie_url TEXT NOT NULL, -- S3 URL
 
-  -- Smile Identity Integration
-  smile_job_id VARCHAR(100) UNIQUE,
-  smile_partner_params JSONB,
-  smile_result JSONB,
-  smile_confidence_score DECIMAL(5,2), -- 0-100
+  -- DIDIT Integration
+  provider_job_id VARCHAR(100) UNIQUE,
+  didit_partner_params JSONB,
+  didit_result JSONB,
+  confidence_score DECIMAL(5,2), -- 0-100
 
   -- Verification Result
   status VARCHAR(20) DEFAULT 'pending', -- pending, approved, rejected, manual_review
@@ -369,14 +369,14 @@ CREATE TABLE kyc_submissions (
 
   -- Constraints
   CONSTRAINT valid_status CHECK (status IN ('pending', 'approved', 'rejected', 'manual_review')),
-  CONSTRAINT valid_confidence CHECK (smile_confidence_score BETWEEN 0 AND 100),
+  CONSTRAINT valid_confidence CHECK (confidence_score BETWEEN 0 AND 100),
   CONSTRAINT valid_attempt CHECK (attempt_number <= max_attempts)
 );
 
 -- Indexes
 CREATE INDEX idx_kyc_customer ON kyc_submissions(customer_id);
 CREATE INDEX idx_kyc_status ON kyc_submissions(status);
-CREATE INDEX idx_kyc_smile_job ON kyc_submissions(smile_job_id);
+CREATE INDEX idx_kyc_didit_job ON kyc_submissions(provider_job_id);
 CREATE INDEX idx_kyc_submitted_at ON kyc_submissions(submitted_at DESC);
 
 -- Enable RLS

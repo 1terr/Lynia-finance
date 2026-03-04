@@ -360,7 +360,7 @@ console.assert(totalPoints === 1000, 'Points must sum to 1000');
 4. Customer selects Smartphone Financing → `whatsapp-conversation-flows.md` (NEW)
 5. SMS OTP verification → `customer-onboarding-flow.md`
 6. Customer uploads ID + selfie → `kyc-document-requirements.md`
-7. Smile Identity verification → `smile-identity-integration.md`
+7. DIDIT verification → `didit-integration.md`
 8. Credit scoring calculation → `credit-scoring-algorithm.md` (UPDATED)
 9. Loan approval (700+ score) → `loan-origination-flow.md`
 10. Customer pays deposit → `payment-processing-flow.md`
@@ -401,7 +401,7 @@ console.assert(totalPoints === 1000, 'Points must sum to 1000');
    - "Where does the +263 validation happen?"
 
 3. **Edge Cases**:
-   - "What if Smile Identity API is down?"
+   - "What if DIDIT API is down?"
    - "How do you handle duplicate phone numbers?"
    - "What if an agent runs out of stock?"
 
@@ -471,7 +471,7 @@ Feature: Zimbabwe Phone Validation
 
 **Integration Points**:
 - [ ] Fineract API integration clear
-- [ ] Smile Identity integration clear
+- [ ] DIDIT integration clear
 - [ ] Payment gateway integration clear
 - [ ] WhatsApp Cloud API integration clear
 - [ ] External credit bureau integration clear

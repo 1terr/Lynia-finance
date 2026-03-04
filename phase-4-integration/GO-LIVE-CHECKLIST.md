@@ -178,7 +178,7 @@ Per the [Integration Master Plan](../docs/external-integrations/INTEGRATION-MAST
 
 | # | Item | Status | Evidence | Owner |
 |---|------|--------|----------|-------|
-| 5.2.1 | Smile Identity KYC: manual review fallback ready | PASS | Admin KYC review queue documented | Engineering |
+| 5.2.1 | DIDIT KYC: manual review fallback ready | PASS | Admin KYC review queue documented | Engineering |
 | 5.2.2 | Trustonic device lock: manual tracking operational | BLOCKED | No remote lock until API access obtained | Operations |
 
 ### 5.3 Communication

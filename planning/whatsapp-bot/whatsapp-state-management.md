@@ -844,10 +844,10 @@ const BEFORE_TRANSITION_HOOKS: Record<string, TransitionHook> = {
 // After transition
 const AFTER_TRANSITION_HOOKS: Record<string, TransitionHook> = {
   'KYC_SUBMIT->KYC_PENDING': async (session, newState) => {
-    // Submit KYC to Smile Identity
+    // Submit KYC to DIDIT
     const onboardingContext = getContext(session, 'onboarding');
     if (onboardingContext) {
-      await smileIdentityService.submitKYC({
+      await diditIdentityService.submitKYC({
         customer_id: session.customer_id!,
         national_id: onboardingContext.national_id!,
         id_front_url: onboardingContext.id_front_url!,

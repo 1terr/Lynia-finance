@@ -140,7 +140,7 @@ Bot: Perfect! Now I need 3 photos for verification:
 Send them one by one ⬇️
 ```
 
-**Explain**: "Behind the scenes, this triggers our KYC service which uses Smile Identity for facial recognition and ID verification."
+**Explain**: "Behind the scenes, this triggers our KYC service which uses DIDIT for facial recognition and ID verification."
 
 **Show API call** (optional):
 ```bash
@@ -621,7 +621,7 @@ WhatsApp → API Gateway → Lambda Functions → Services
    - Trained on 10,000+ applications
 
 3. **KYC Service**
-   - Smile Identity integration
+   - DIDIT integration
    - Facial recognition + ID verification
    - Document OCR
    - 98% accuracy
@@ -678,7 +678,7 @@ WhatsApp → API Gateway → Lambda Functions → Services
 
 **Q: How do you prevent fraud?**
 A: Multi-layered approach:
-- KYC with facial recognition (Smile Identity)
+- KYC with facial recognition (DIDIT)
 - ML fraud detection models
 - Reference verification
 - Device fingerprinting

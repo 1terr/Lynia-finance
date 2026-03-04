@@ -8,7 +8,7 @@
  * the Lambda is invoked. This middleware extracts the claims from the
  * event context.
  *
- * Webhook endpoints (called by external providers like EcoCash, Smile Identity)
+ * Webhook endpoints (called by external providers like EcoCash, DIDIT)
  * use signature verification instead of JWT auth — see individual handlers.
  *
  * Usage:

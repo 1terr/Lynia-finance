@@ -52,7 +52,7 @@ If you're within your first 12 months of AWS, many services are free:
 | **Year 1 Total** | | | **~$49/month** |
 
 **The big cost item is NAT Gateway** ($32.40/month). This is required for
-Lambda functions in a VPC to reach the internet (for external APIs like Smile
+Lambda functions in a VPC to reach the internet (for external APIs like DIDIT
 Identity, EcoCash, WhatsApp). Options to reduce:
 
 1. **Use VPC Endpoints** for AWS services (S3, Secrets Manager, SQS) --

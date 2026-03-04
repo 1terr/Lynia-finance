@@ -1,4 +1,4 @@
-# T027: Smile Identity Liveness Detection (Selfie + ID Document)
+# T027: DIDIT Liveness Detection (Selfie + ID Document)
 
 **Task ID**: T027 (GitHub Issue #32)
 **Phase**: Phase 0 - Research
@@ -9,13 +9,13 @@
 
 ## Executive Summary
 
-Smile Identity's liveness detection technology combines **SmartSelfie™** (active liveness with smile test) and biometric face matching to provide robust fraud prevention for customer onboarding. This research documents three key products: **Biometric KYC** (selfie + government database lookup), **Document Verification** (selfie + ID card photo matching), and **SmartSelfie™ Authentication** (returning user verification).
+DIDIT's liveness detection technology combines **SmartSelfie™** (active liveness with didit test) and biometric face matching to provide robust fraud prevention for customer onboarding. This research documents three key products: **Biometric KYC** (selfie + government database lookup), **Document Verification** (selfie + ID card photo matching), and **SmartSelfie™ Authentication** (returning user verification).
 
 **Key Findings**:
 - ✅ **ISO/IEC 30107-3:2023 Level 2 Certified**: 0% penetration rate against advanced spoofing
 - ✅ **99.8% Face Matching Accuracy**: Trained on 5+ million African faces
-- ✅ **Enhanced SmartSelfie™**: Dynamic liveness with random gestures (head turn, smile)
-- ✅ **Hybrid Liveness Detection**: Active (smile test) + Passive (AI analysis)
+- ✅ **Enhanced SmartSelfie™**: Dynamic liveness with random gestures (head turn, didit)
+- ✅ **Hybrid Liveness Detection**: Active (didit test) + Passive (AI analysis)
 - ✅ **Human Review**: Real-time review within 3 minutes for edge cases
 - ✅ **8,500+ Documents Supported**: 226 countries, all Zimbabwe ID types
 - ✅ **Multiple Integration Methods**: Web SDK, Mobile SDK, REST API, Server-to-Server
@@ -27,7 +27,7 @@ Smile Identity's liveness detection technology combines **SmartSelfie™** (acti
 
 ## Table of Contents
 
-1. [Smile Identity Liveness Detection Overview](#1-smile-identity-liveness-detection-overview)
+1. [DIDIT Liveness Detection Overview](#1-didit-liveness-detection-overview)
 2. [SmartSelfie™ Technology](#2-smartselfie-technology)
 3. [Product Comparison](#3-product-comparison)
 4. [Biometric KYC Implementation](#4-biometric-kyc-implementation)
@@ -41,7 +41,7 @@ Smile Identity's liveness detection technology combines **SmartSelfie™** (acti
 
 ---
 
-## 1. Smile Identity Liveness Detection Overview
+## 1. DIDIT Liveness Detection Overview
 
 ### What is Liveness Detection?
 
@@ -52,9 +52,9 @@ Liveness detection is a security technology that verifies a user is **physically
 - Deepfakes
 - Digital manipulation
 
-### Smile Identity's Approach
+### DIDIT's Approach
 
-Smile ID employs a **hybrid liveness detection strategy**:
+DIDIT employs a **hybrid liveness detection strategy**:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -62,7 +62,7 @@ Smile ID employs a **hybrid liveness detection strategy**:
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │  1️⃣ Active Liveness (User Action Required)         │
-│     ├─ Smile for camera                            │
+│     ├─ DIDIT for camera                            │
 │     ├─ Turn head (random direction)                │
 │     ├─ Perform gesture (dynamic challenge)         │
 │     └─ Capture multiple angles                     │
@@ -93,12 +93,12 @@ Smile ID employs a **hybrid liveness detection strategy**:
 | **Penetration Rate** | Advanced spoofing resistance | **0%** |
 | **Test Methods** | 3D masks, deepfakes, video replay | **All passed** |
 
-**What This Means**: Smile ID's liveness detection successfully blocked 100% of advanced spoofing attempts during independent testing, including high-quality 3D printed masks and AI-generated deepfakes.
+**What This Means**: DIDIT's liveness detection successfully blocked 100% of advanced spoofing attempts during independent testing, including high-quality 3D printed masks and AI-generated deepfakes.
 
 ### 99.8% Face Matching Accuracy
 
 ```javascript
-const smileIdAccuracy = {
+const diditIdAccuracy = {
   trainingDataset: '5+ million African faces',
   diversityCoverage: 'All skin tones',
   matchingAccuracy: 0.998,  // 99.8%
@@ -114,7 +114,7 @@ const smileIdAccuracy = {
 };
 ```
 
-**Competitive Advantage**: Most global biometric systems are trained on predominantly Western datasets, leading to lower accuracy for African users. Smile ID's Africa-specific training delivers superior performance.
+**Competitive Advantage**: Most global biometric systems are trained on predominantly Western datasets, leading to lower accuracy for African users. DIDIT's Africa-specific training delivers superior performance.
 
 ---
 
@@ -122,7 +122,7 @@ const smileIdAccuracy = {
 
 ### What is SmartSelfie™?
 
-**SmartSelfie™** is Smile ID's proprietary biometric capture technology that combines:
+**SmartSelfie™** is DIDIT's proprietary biometric capture technology that combines:
 
 1. **Primary Selfie Image**: High-resolution face photo
 2. **Liveness Images**: Multiple frames (up to 8) capturing user actions
@@ -143,7 +143,7 @@ User Journey:
 │  └─ User centers face in oval guide           │
 │                                                │
 │  Step 4: Active Liveness Challenge            │
-│  └─ "Please smile for the camera"             │
+│  └─ "Please didit for the camera"             │
 │  └─ OR "Turn your head to the left"           │
 │  └─ OR "Nod your head up and down"            │
 │                                                │
@@ -157,7 +157,7 @@ User Journey:
 │  └─ Face visibility check                     │
 │                                                │
 │  Step 7: Submission                           │
-│  └─ Upload to Smile ID servers                │
+│  └─ Upload to DIDIT servers                │
 │                                                │
 └────────────────────────────────────────────────┘
 ```
@@ -173,8 +173,8 @@ const livenessChallenge = {
 
   challenges: [
     {
-      action: 'smile',
-      instruction: 'Please smile for the camera',
+      action: 'didit',
+      instruction: 'Please didit for the camera',
       duration: '2-3 seconds'
     },
     {
@@ -205,7 +205,7 @@ const livenessChallenge = {
 };
 ```
 
-**Why Dynamic?** Traditional liveness (always "smile") can be bypassed with pre-recorded videos. Random challenges ensure the user is live and responding in real-time.
+**Why Dynamic?** Traditional liveness (always "didit") can be bypassed with pre-recorded videos. Random challenges ensure the user is live and responding in real-time.
 
 ### Passive Liveness Analysis
 
@@ -253,7 +253,7 @@ const imageRequirements = {
 
 ## 3. Product Comparison
 
-Smile ID offers **three biometric products** for identity verification. Understanding their differences is crucial for choosing the right solution.
+DIDIT offers **three biometric products** for identity verification. Understanding their differences is crucial for choosing the right solution.
 
 ### Quick Comparison Table
 
@@ -285,7 +285,7 @@ Smile ID offers **three biometric products** for identity verification. Understa
 │  How It Works:                                       │
 │  1. Customer uploads selfie                          │
 │  2. Customer uploads photo of ID card                │
-│  3. Smile ID queries government database             │
+│  3. DIDIT queries government database             │
 │  4. Compares selfie to government photo (if available│
 │  5. Compares selfie to uploaded ID card photo        │
 │  6. Returns verified identity data                   │
@@ -305,7 +305,7 @@ Smile ID offers **three biometric products** for identity verification. Understa
 │  How It Works:                                       │
 │  1. Customer uploads selfie                          │
 │  2. Customer uploads photo of ID document            │
-│  3. Smile ID validates document security features    │
+│  3. DIDIT validates document security features    │
 │  4. Extracts data via OCR (MRZ, barcodes)            │
 │  5. Compares selfie to ID card photo                 │
 │  6. Human review validates authenticity (< 3 min)    │
@@ -324,7 +324,7 @@ Smile ID offers **three biometric products** for identity verification. Understa
 │                                                      │
 │  How It Works:                                       │
 │  1. Customer takes new selfie                        │
-│  2. Smile ID compares to previously enrolled selfie  │
+│  2. DIDIT compares to previously enrolled selfie  │
 │  3. Returns match/no-match result                    │
 │                                                      │
 │  Cost: Lower (no gov lookup, no document upload)     │
@@ -337,7 +337,7 @@ Smile ID offers **three biometric products** for identity verification. Understa
 
 **Process Flow**:
 ```
-Customer                 Smile ID                 Government DB
+Customer                 DIDIT                 Government DB
    │                        │                         │
    ├─ Upload selfie ───────▶│                         │
    ├─ Upload ID card photo ▶│                         │
@@ -400,7 +400,7 @@ Customer                 Smile ID                 Government DB
 
 **Process Flow**:
 ```
-Customer                 Smile ID                 Human Reviewer
+Customer                 DIDIT                 Human Reviewer
    │                        │                         │
    ├─ Upload selfie ───────▶│                         │
    ├─ Upload ID document ──▶│                         │
@@ -467,7 +467,7 @@ Customer                 Smile ID                 Human Reviewer
 
 **Process Flow**:
 ```
-Customer                 Smile ID
+Customer                 DIDIT
    │                        │
    ├─ Take new selfie ─────▶│
    │                        ├─ Liveness check
@@ -517,22 +517,22 @@ Customer                 Smile ID
 #### Step 1: Install SDK
 
 ```bash
-npm install smile-identity-core
+npm install didit-core
 ```
 
 #### Step 2: Configure Credentials
 
 ```javascript
-// config/smileidentity.js
+// config/diditidentity.js
 require('dotenv').config();
 
-const SmileIdentityCore = require('smile-identity-core');
+const DiditCore = require('didit-core');
 
 const credentials = {
-  partnerId: process.env.SMILE_PARTNER_ID,
-  apiKey: process.env.SMILE_API_KEY,
-  sidServer: process.env.SMILE_SID_SERVER || '0',  // 0 = sandbox, 1 = production
-  callbackUrl: process.env.SMILE_CALLBACK_URL
+  partnerId: process.env.DIDIT_API_KEY,
+  apiKey: process.env.DIDIT_WEBHOOK_SECRET,
+  sidServer: process.env.DIDIT_SID_SERVER || '0',  // 0 = sandbox, 1 = production
+  callbackUrl: process.env.DIDIT_WEBHOOK_URL
 };
 
 module.exports = credentials;
@@ -542,10 +542,10 @@ module.exports = credentials;
 
 ```javascript
 // controllers/token.controller.js
-const SmileIdentityCore = require('smile-identity-core');
-const WebApi = SmileIdentityCore.WebApi;
+const DiditCore = require('didit-core');
+const WebApi = DiditCore.WebApi;
 const { v4: uuidv4 } = require('uuid');
-const credentials = require('../config/smileidentity');
+const credentials = require('../config/diditidentity');
 
 async function generateWebToken(req, res) {
   try {
@@ -597,24 +597,24 @@ module.exports = { generateWebToken };
 <html>
 <head>
   <title>KYC Verification - Lynia Finance</title>
-  <script src="https://cdn.smileidentity.com/smile-id-web.js"></script>
+  <script src="https://cdn.diditidentity.com/didit-id-web.js"></script>
 </head>
 <body>
-  <div id="smile-id-container"></div>
+  <div id="didit-id-container"></div>
 
   <script>
     // Fetch token from backend
     async function startKYC() {
-      const response = await fetch('/api/smile/token', {
+      const response = await fetch('/api/didit/token', {
         headers: { 'Authorization': `Bearer ${userToken}` }
       });
 
       const { token, user_id, job_id } = await response.json();
 
-      // Initialize Smile ID Web SDK
-      const smileID = new SmileIdentity({
+      // Initialize DIDIT Web SDK
+      const diditID = new Didit({
         token: token,
-        callback_url: 'https://api.lyniafinance.com/webhooks/smile-kyc',
+        callback_url: 'https://api.lyniafinance.com/webhooks/didit-kyc',
         environment: 'sandbox',  // or 'production'
 
         // Product configuration
@@ -639,7 +639,7 @@ module.exports = { generateWebToken };
       });
 
       // Render SDK widget
-      smileID.render('#smile-id-container');
+      diditID.render('#didit-id-container');
     }
 
     // Start KYC when page loads
@@ -655,12 +655,12 @@ For full backend control:
 
 ```javascript
 // services/biometric-kyc.service.js
-const SmileIdentityCore = require('smile-identity-core');
-const WebApi = SmileIdentityCore.WebApi;
+const DiditCore = require('didit-core');
+const WebApi = DiditCore.WebApi;
 const { v4: uuidv4 } = require('uuid');
 const fs = require('fs');
 const archiver = require('archiver');
-const credentials = require('../config/smileidentity');
+const credentials = require('../config/diditidentity');
 
 class BiometricKYCService {
   constructor() {
@@ -779,7 +779,7 @@ class BiometricKYCService {
             job_type: 1
           },
           file_name: 'selfie.jpg',
-          smile_client_id: credentials.partnerId,
+          didit_client_id: credentials.partnerId,
           timestamp: new Date().toISOString()
         },
         id_info: idInfo
@@ -846,9 +846,9 @@ const Customer = require('../models/Customer');
 const BiometricVerification = require('../models/BiometricVerification');
 
 /**
- * Smile Identity Biometric KYC callback
+ * DIDIT Biometric KYC callback
  */
-router.post('/smile-kyc', async (req, res) => {
+router.post('/didit-kyc', async (req, res) => {
   try {
     const payload = req.body;
 
@@ -927,16 +927,16 @@ module.exports = router;
 Use **Document Verification** as a **backup/alternative** to Biometric KYC when:
 - Government database lookup fails (code 1015)
 - Customer has Zimbabwe Passport or Driver's License (not National ID)
-- Operating in countries without Smile ID government database integration
+- Operating in countries without DIDIT government database integration
 - Need to verify document authenticity (detect fake IDs)
 
 ### Implementation
 
 ```javascript
 // services/document-verification.service.js
-const SmileIdentityCore = require('smile-identity-core');
-const WebApi = SmileIdentityCore.WebApi;
-const credentials = require('../config/smileidentity');
+const DiditCore = require('didit-core');
+const WebApi = DiditCore.WebApi;
+const credentials = require('../config/diditidentity');
 
 class DocumentVerificationService {
   constructor() {
@@ -1096,9 +1096,9 @@ Document Verification includes **real-time human review** within **< 3 minutes**
 
 ```javascript
 // services/smartselfie-auth.service.js
-const SmileIdentityCore = require('smile-identity-core');
-const WebApi = SmileIdentityCore.WebApi;
-const credentials = require('../config/smileidentity');
+const DiditCore = require('didit-core');
+const WebApi = DiditCore.WebApi;
+const credentials = require('../config/diditidentity');
 
 class SmartSelfieAuthService {
   constructor() {
@@ -1234,14 +1234,14 @@ async function disburseLoan(req, res) {
 
 ## 7. Integration Methods
 
-Smile ID offers **4 integration methods**. Choose based on your technical requirements and user experience preferences.
+DIDIT offers **4 integration methods**. Choose based on your technical requirements and user experience preferences.
 
 ### Integration Methods Comparison
 
 | Method | Platform | Control Level | Complexity | Use Case |
 |--------|----------|---------------|------------|----------|
-| **Web SDK** | Web browser | Low (Smile UI) | ⭐ Easy | Quick integration, minimal code |
-| **Mobile SDK** | iOS/Android/Flutter/React Native | Low (Smile UI) | ⭐⭐ Easy | Native mobile apps |
+| **Web SDK** | Web browser | Low (DIDIT UI) | ⭐ Easy | Quick integration, minimal code |
+| **Mobile SDK** | iOS/Android/Flutter/React Native | Low (DIDIT UI) | ⭐⭐ Easy | Native mobile apps |
 | **REST API** | Any | Medium | ⭐⭐⭐ Medium | Custom UI, multi-platform |
 | **Server-to-Server** | Backend | High (full control) | ⭐⭐⭐⭐ Advanced | Full customization |
 
@@ -1250,24 +1250,24 @@ Smile ID offers **4 integration methods**. Choose based on your technical requir
 **Best for**: Web-based customer onboarding with minimal development effort.
 
 ```html
-<!-- Step 1: Include Smile ID script -->
-<script src="https://cdn.smileidentity.com/smile-id-web.js"></script>
+<!-- Step 1: Include DIDIT script -->
+<script src="https://cdn.diditidentity.com/didit-id-web.js"></script>
 
 <!-- Step 2: Container div -->
-<div id="smile-kyc-container"></div>
+<div id="didit-kyc-container"></div>
 
 <!-- Step 3: Initialize and render -->
 <script>
   async function startBiometricKYC() {
     // Fetch token from backend
-    const response = await fetch('/api/smile/token');
+    const response = await fetch('/api/didit/token');
     const { token, user_id, job_id } = await response.json();
 
-    // Initialize Smile ID SDK
-    const smileID = new SmileIdentity({
+    // Initialize DIDIT SDK
+    const diditID = new Didit({
       // Authentication
       token: token,
-      callback_url: 'https://api.lyniafinance.com/webhooks/smile-kyc',
+      callback_url: 'https://api.lyniafinance.com/webhooks/didit-kyc',
       environment: 'production',  // or 'sandbox'
 
       // Product configuration
@@ -1300,7 +1300,7 @@ Smile ID offers **4 integration methods**. Choose based on your technical requir
     });
 
     // Render widget
-    smileID.render('#smile-kyc-container');
+    diditID.render('#didit-kyc-container');
   }
 
   startBiometricKYC();
@@ -1308,7 +1308,7 @@ Smile ID offers **4 integration methods**. Choose based on your technical requir
 ```
 
 **Advantages**:
-- ✅ Smile ID handles camera access, image capture, quality checks
+- ✅ DIDIT handles camera access, image capture, quality checks
 - ✅ Built-in UI optimized for mobile and desktop
 - ✅ Automatic retries and error handling
 - ✅ Multi-language support (English, French, Portuguese, Swahili, etc.)
@@ -1319,27 +1319,27 @@ For native mobile apps:
 
 **Android (Kotlin)**:
 ```kotlin
-import com.smileidentity.SmileID
+import com.diditidentity.DIDITID
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Initialize Smile ID
-        SmileID.initialize(
+        // Initialize DIDIT
+        DIDITID.initialize(
             context = this,
             partnerId = "your_partner_id",
             apiKey = "your_api_key",
-            environment = SmileID.Environment.PRODUCTION
+            environment = DIDITID.Environment.PRODUCTION
         )
 
         // Launch Biometric KYC
-        val intent = SmileID.BiometricKYC()
+        val intent = DIDITID.BiometricKYC()
             .userId("customer_${customerId}")
             .jobId("job_${UUID.randomUUID()}")
             .country("ZW")
             .idType("NATIONAL_ID")
-            .callbackUrl("https://api.lyniafinance.com/webhooks/smile-kyc")
+            .callbackUrl("https://api.lyniafinance.com/webhooks/didit-kyc")
             .build(this)
 
         startActivityForResult(intent, REQUEST_CODE_KYC)
@@ -1362,24 +1362,24 @@ class MainActivity : AppCompatActivity() {
 
 **iOS (Swift)**:
 ```swift
-import SmileID
+import DIDITID
 
 class ViewController: UIViewController {
     func startBiometricKYC() {
-        let config = SmileIDConfig(
+        let config = DIDITIDConfig(
             partnerId: "your_partner_id",
             apiKey: "your_api_key",
             environment: .production
         )
 
-        SmileID.initialize(config: config)
+        DIDITID.initialize(config: config)
 
-        let kyc = SmileID.BiometricKYC(
+        let kyc = DIDITID.BiometricKYC(
             userId: "customer_\(customerId)",
             jobId: "job_\(UUID().uuidString)",
             country: "ZW",
             idType: "NATIONAL_ID",
-            callbackUrl: "https://api.lyniafinance.com/webhooks/smile-kyc"
+            callbackUrl: "https://api.lyniafinance.com/webhooks/didit-kyc"
         )
 
         kyc.onSuccess = { result in
@@ -1401,7 +1401,7 @@ class ViewController: UIViewController {
 
 For custom UI with full control:
 
-**Endpoint**: `POST https://api.smileidentity.com/v1/job`
+**Endpoint**: `POST https://api.diditidentity.com/v1/job`
 
 ```javascript
 // Full REST API example
@@ -1451,7 +1451,7 @@ async function submitBiometricKYC(customerId, selfieBase64, idCardBase64, idInfo
     }
   };
 
-  const response = await fetch('https://api.smileidentity.com/v1/job', {
+  const response = await fetch('https://api.diditidentity.com/v1/job', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -1471,7 +1471,7 @@ Covered in Section 4 - provides full control over the entire flow.
 
 ## 8. Liveness Detection Technical Details
 
-### Active Liveness: The Smile Test
+### Active Liveness: The DIDIT Test
 
 **How it works**:
 
@@ -1481,24 +1481,24 @@ Covered in Section 4 - provides full control over the entire flow.
    └─ Validates face position (centered, clear)
 
 2. Instruction Display
-   └─ "Please smile for the camera"
+   └─ "Please didit for the camera"
    └─ OR random gesture instruction
 
 3. User Action
-   └─ User smiles (or performs gesture)
+   └─ User didits (or performs gesture)
    └─ System captures multiple frames
 
 4. Action Validation
-   └─ Did user actually smile?
+   └─ Did user actually didit?
    └─ Was action completed correctly?
    └─ Timing analysis (too fast = suspicious)
 
 5. Liveness Determination
-   └─ Passed: Natural smile detected
-   └─ Failed: No smile, unnatural motion, or timeout
+   └─ Passed: Natural didit detected
+   └─ Failed: No didit, unnatural motion, or timeout
 ```
 
-**Why smile?**
+**Why didit?**
 - Natural human action (difficult to fake)
 - Creates facial movement and expression change
 - Harder to replicate with photos or masks
@@ -1519,7 +1519,7 @@ Runs **simultaneously** with active liveness:
 
 ### Spoof Attack Detection
 
-Smile ID's Enhanced SmartSelfie™ successfully blocks:
+DIDIT's Enhanced SmartSelfie™ successfully blocks:
 
 | Attack Type | Description | Detection Method |
 |-------------|-------------|------------------|
@@ -1565,7 +1565,7 @@ Customer Application Journey:
 │  Step 4: Biometric KYC (Selfie + ID Photo)      │
 │  ├─ Customer takes selfie (with liveness)       │
 │  ├─ Customer uploads photo of ID card           │
-│  ├─ Smile ID verifies:                          │
+│  ├─ DIDIT verifies:                          │
 │  │   ├─ Liveness (active + passive)             │
 │  │   ├─ Selfie matches gov database photo       │
 │  │   └─ Selfie matches ID card photo            │
@@ -1949,7 +1949,7 @@ if (customer.previouslyVerified) {
 
 ```
 Development:
-├─ Use Smile ID sandbox exclusively
+├─ Use DIDIT sandbox exclusively
 ├─ Test with team members' real photos
 ├─ Test edge cases:
 │   ├─ Poor lighting
@@ -1980,7 +1980,7 @@ Production:
 
 ### Summary
 
-Smile Identity's liveness detection technology provides world-class fraud prevention for customer onboarding through a combination of **Enhanced SmartSelfie™** (ISO-certified active + passive liveness) and **99.8% accurate face matching** trained specifically on African faces.
+DIDIT's liveness detection technology provides world-class fraud prevention for customer onboarding through a combination of **Enhanced SmartSelfie™** (ISO-certified active + passive liveness) and **99.8% accurate face matching** trained specifically on African faces.
 
 **Three Key Products**:
 1. **Biometric KYC**: Selfie + ID card photo + government database lookup (RECOMMENDED for initial onboarding)
@@ -1990,7 +1990,7 @@ Smile Identity's liveness detection technology provides world-class fraud preven
 **Key Advantages**:
 - ✅ **ISO/IEC 30107-3:2023 Level 2**: 0% penetration rate against advanced spoofing
 - ✅ **99.8% Face Matching**: Optimized for African phenotypes and skin tones
-- ✅ **Hybrid Liveness**: Active (smile test) + Passive (AI analysis)
+- ✅ **Hybrid Liveness**: Active (didit test) + Passive (AI analysis)
 - ✅ **Human Review**: Real-time validation within 3 minutes
 - ✅ **Multiple Integration Methods**: Web SDK, Mobile SDK, REST API, Server-to-Server
 - ✅ **8,500+ Documents**: Support for 226 countries including all Zimbabwe ID types
@@ -2009,19 +2009,19 @@ Smile Identity's liveness detection technology provides world-class fraud preven
 
 ```
 ☐ Review T026 (Enhanced KYC implementation)
-   Already have Smile ID account and credentials
+   Already have DIDIT account and credentials
 
 ☐ Choose integration method
    Recommended: Web SDK for simplicity
 
 ☐ Implement token generation endpoint
-   Backend: /api/smile/token
+   Backend: /api/didit/token
 
 ☐ Integrate Web SDK on frontend
    Customer onboarding page: /kyc-verification
 
 ☐ Implement webhook handler
-   POST /api/webhooks/smile-kyc
+   POST /api/webhooks/didit-kyc
 
 ☐ Create BiometricVerification model
    Store verification results in database
@@ -2039,7 +2039,7 @@ Smile Identity's liveness detection technology provides world-class fraud preven
    For device collection authorization
 
 ☐ Request production pricing
-   Contact sales@usesmileid.com
+   Contact sales@usediditid.com
 
 ☐ Go live
    Start with small batch, monitor closely
@@ -2058,18 +2058,18 @@ Smile Identity's liveness detection technology provides world-class fraud preven
    - Create instruction screens
 
 2. **Implement Token Generation**
-   - Create `/api/smile/token` endpoint
+   - Create `/api/didit/token` endpoint
    - Generate web tokens for frontend
 
 3. **Integrate Web SDK**
-   - Add Smile ID script to KYC page
+   - Add DIDIT script to KYC page
    - Test selfie capture flow
    - Test with team members
 
 #### Short-Term (Next 2 Weeks)
 
 4. **Implement Webhook Handler**
-   - Create `/api/webhooks/smile-kyc` endpoint
+   - Create `/api/webhooks/didit-kyc` endpoint
    - Parse and store verification results
    - Update customer KYC status
 
@@ -2129,19 +2129,19 @@ Smile Identity's liveness detection technology provides world-class fraud preven
 
 ### Resources
 
-- **Biometric KYC Docs**: [https://docs.usesmileid.com/products/for-individuals-kyc/biometric-kyc](https://docs.usesmileid.com/products/for-individuals-kyc/biometric-kyc)
-- **Document Verification**: [https://docs.usesmileid.com/products/for-individuals-kyc/document-verification](https://docs.usesmileid.com/products/for-individuals-kyc/document-verification)
-- **SmartSelfie™ Auth**: [https://docs.usesmileid.com/products/for-individuals-kyc/biometric-authentication](https://docs.usesmileid.com/products/for-individuals-kyc/biometric-authentication)
-- **Web SDK Guide**: [https://docs.usesmileid.com/integration-options/web-mobile-web/web-integration](https://docs.usesmileid.com/integration-options/web-mobile-web/web-integration)
-- **Portal**: [https://portal.usesmileid.com/](https://portal.usesmileid.com/)
-- **Support**: [support@usesmileid.com](mailto:support@usesmileid.com)
-- **Sales**: [sales@usesmileid.com](mailto:sales@usesmileid.com)
+- **Biometric KYC Docs**: [https://docs.usediditid.com/products/for-individuals-kyc/biometric-kyc](https://docs.usediditid.com/products/for-individuals-kyc/biometric-kyc)
+- **Document Verification**: [https://docs.usediditid.com/products/for-individuals-kyc/document-verification](https://docs.usediditid.com/products/for-individuals-kyc/document-verification)
+- **SmartSelfie™ Auth**: [https://docs.usediditid.com/products/for-individuals-kyc/biometric-authentication](https://docs.usediditid.com/products/for-individuals-kyc/biometric-authentication)
+- **Web SDK Guide**: [https://docs.usediditid.com/integration-options/web-mobile-web/web-integration](https://docs.usediditid.com/integration-options/web-mobile-web/web-integration)
+- **Portal**: [https://portal.usediditid.com/](https://portal.usediditid.com/)
+- **Support**: [support@usediditid.com](mailto:support@usediditid.com)
+- **Sales**: [sales@usediditid.com](mailto:sales@usediditid.com)
 
 ---
 
 ## Conclusion
 
-Smile Identity's liveness detection and biometric verification technology provides enterprise-grade fraud prevention optimized for African markets. With **ISO-certified 0% spoof penetration rate**, **99.8% face matching accuracy**, and **multiple integration methods**, it's the ideal solution for Lynia Finance's customer onboarding security.
+DIDIT's liveness detection and biometric verification technology provides enterprise-grade fraud prevention optimized for African markets. With **ISO-certified 0% spoof penetration rate**, **99.8% face matching accuracy**, and **multiple integration methods**, it's the ideal solution for Lynia Finance's customer onboarding security.
 
 **Recommended Implementation**:
 - **Primary**: Biometric KYC (selfie + ID photo + government database)

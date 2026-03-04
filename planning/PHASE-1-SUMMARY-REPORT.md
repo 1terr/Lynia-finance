@@ -36,7 +36,7 @@ All deliverables include detailed technical specifications, database schemas, AP
 - ✅ **WhatsApp conversation flows** mapped with state management
 - ✅ **Credit scoring algorithm** designed (hybrid rule-based + ML)
 - ✅ **Payment processing architecture** with multi-gateway support
-- ✅ **KYC verification workflows** with Smile Identity integration
+- ✅ **KYC verification workflows** with DIDIT integration
 - ✅ **Device management system** with lock/unlock capabilities
 - ✅ **Multi-channel notification system** designed
 - ✅ **Admin dashboard architecture** with RBAC and reporting
@@ -83,7 +83,7 @@ All deliverables include detailed technical specifications, database schemas, AP
 2. **API Gateway Layer** - AWS Lambda microservices
 3. **Core Banking Layer** - Apache Fineract 1.13.0
 4. **Data Layer** - Supabase PostgreSQL
-5. **External Integrations** - KYC (Smile Identity), Payments (EcoCash/OneMoney/Innbucks), Device Lock APIs
+5. **External Integrations** - KYC (DIDIT), Payments (EcoCash/OneMoney/Innbucks), Device Lock APIs
 
 ---
 
@@ -141,7 +141,7 @@ All deliverables include detailed technical specifications, database schemas, AP
 
 **Microservices Documented:**
 1. **WhatsApp Bot Service** - Webhook handling, message processing
-2. **KYC Processing Service** - Document verification, Smile Identity integration
+2. **KYC Processing Service** - Document verification, DIDIT integration
 3. **Credit Scoring Service** - Risk assessment, loan eligibility
 4. **Payment Processing Service** - Gateway integration, reconciliation
 5. **Device Lock Service** - Remote lock/unlock, IMEI tracking
@@ -621,7 +621,7 @@ class RateLimiter {
 **2. Integration Tests**
 - WhatsApp webhook handling
 - Database interactions
-- External service calls (Fineract, Smile Identity)
+- External service calls (Fineract, DIDIT)
 
 **3. End-to-End Tests**
 - Complete conversation flows
@@ -1452,19 +1452,19 @@ function validateNationalID(idNumber: string): boolean {
 
 ---
 
-#### P1-T028: Smile Identity Integration Flow ✅
-**File:** `smile-identity-integration.md`
+#### P1-T028: DIDIT Integration Flow ✅
+**File:** `didit-integration.md`
 **Priority:** Critical
 **Estimated:** 6 hours | **Actual:** 6 hours
 
 **Key Deliverables:**
-- Smile Identity API integration design
+- DIDIT API integration design
 - Document upload flow
 - Verification callback handling
 - Retry logic for failed verifications
 - Manual review escalation
 
-**Smile Identity Products Used:**
+**DIDIT Products Used:**
 
 **1. Document Verification**
 - Verify Zimbabwe National ID authenticity
@@ -1482,9 +1482,9 @@ Customer uploads ID + Selfie
           ↓
 Lynia Backend validates files
           ↓
-Submit to Smile Identity API
+Submit to DIDIT API
           ↓
-Smile processes (5-30 seconds)
+DIDIT processes (5-30 seconds)
           ↓
 Webhook callback to Lynia
           ↓
@@ -1495,8 +1495,8 @@ Notify customer of outcome
 
 **API Request:**
 ```typescript
-const smileRequest = {
-  partner_id: process.env.SMILE_PARTNER_ID,
+const diditRequest = {
+  partner_id: process.env.DIDIT_API_KEY,
   partner_params: {
     user_id: customer.id,
     job_id: kyc_submission.id,
@@ -1525,7 +1525,7 @@ const smileRequest = {
 
 **Response Handling:**
 ```typescript
-interface SmileIdentityResponse {
+interface DiditResponse {
   ResultCode: string; // '0000' = success
   ResultText: string;
   PartnerParams: {
@@ -1547,7 +1547,7 @@ interface SmileIdentityResponse {
   DOB: string;
 }
 
-async function handleSmileCallback(response: SmileIdentityResponse) {
+async function handleKYCCallback(response: DiditResponse) {
   if (response.ResultCode === '0000' && response.ConfidenceValue >= 85) {
     // Auto-approve
     await approveKYC(response.PartnerParams.job_id);
@@ -1619,7 +1619,7 @@ async function handleSmileCallback(response: SmileIdentityResponse) {
 - Retry if quality issues
 
 **Step 6: KYC Verification (5-30 seconds)**
-- Submit to Smile Identity
+- Submit to DIDIT
 - Display loading message
 - Real-time status updates
 
@@ -1755,7 +1755,7 @@ EXPIRED
 - Email newsletters
 
 **4. Data Sharing**
-- Mandatory: Smile Identity (KYC)
+- Mandatory: DIDIT (KYC)
 - Mandatory: Fineract (loan processing)
 - Mandatory: Payment gateways
 - Optional: Analytics providers
@@ -2938,7 +2938,7 @@ Indicators:
 - ✅ SMS/Email (fallback channels)
 
 **External Services:**
-- ✅ Smile Identity (KYC verification)
+- ✅ DIDIT (KYC verification)
 - ✅ EcoCash/OneMoney/Innbucks (payments)
 - ✅ Device Lock APIs (remote device control)
 
@@ -2975,7 +2975,7 @@ Indicators:
 **Variable Costs:**
 - WhatsApp messages: $0.005 per message
 - SMS fallback: $0.03 per message
-- Smile Identity KYC: $1.50 per verification
+- DIDIT KYC: $1.50 per verification
 - Payment gateway fees: 2-3% of transaction
 
 ---
@@ -3025,7 +3025,7 @@ Indicators:
 
 **Third-Party Integrations:**
 - ✅ WhatsApp Cloud API (flow diagrams complete)
-- ✅ Smile Identity (integration architecture ready)
+- ✅ DIDIT (integration architecture ready)
 - ✅ Payment Gateways (API specifications documented)
 - ✅ Device Lock APIs (workflow defined)
 - ✅ Email/SMS providers (Resend, Twilio)
@@ -3116,7 +3116,7 @@ Indicators:
 
 1. **Phase 2 Focus**: Prioritize critical path (AWS Lambda, Supabase, WhatsApp Bot)
 2. **Parallel Development**: Start frontend and backend development simultaneously in Phase 3
-3. **Early Integration**: Test external service integrations (Smile Identity, Payment Gateways) early
+3. **Early Integration**: Test external service integrations (DIDIT, Payment Gateways) early
 4. **User Feedback**: Conduct user testing during Phase 4 for WhatsApp conversation flows
 5. **Monitoring**: Set up comprehensive monitoring before production deployment
 
@@ -3183,7 +3183,7 @@ Phase 1 (Architecture & Design Specifications) has been successfully completed w
 
 ### KYC & Onboarding (5 files)
 27. `kyc-document-requirements.md` - Document requirements
-28. `smile-identity-integration.md` - Smile Identity API
+28. `didit-integration.md` - DIDIT API
 29. `customer-onboarding-flow.md` - Onboarding workflow
 30. `kyc-status-management.md` - KYC status states
 31. `privacy-consent-management.md` - Consent management

@@ -33,7 +33,7 @@ Before starting, create accounts for the following services:
 
 - [ ] **Supabase** - https://supabase.com (Free tier available)
 - [ ] **Meta Developer** - https://developers.facebook.com
-- [ ] **Smile Identity** - https://usesmileid.com (Sandbox access)
+- [ ] **DIDIT** - https://usediditid.com (Sandbox access)
 - [ ] **AWS** - https://aws.amazon.com (Free tier available)
 - [ ] **GitHub** - https://github.com (for version control)
 
@@ -425,24 +425,24 @@ WHATSAPP_PERMANENT_ACCESS_TOKEN=EAAxxxxxxxxxxxxx
 
 ## Third-Party Service Credentials
 
-### Smile Identity (KYC Verification)
+### DIDIT (KYC Verification)
 
 **Step 1: Request Sandbox Access**
-1. Go to https://usesmileid.com/
+1. Go to https://usediditid.com/
 2. Click **"Get Started"** or **"Request Demo"**
 3. Fill form requesting **Sandbox API Access**
 4. Mention: "Zimbabwe ID verification for fintech startup"
 
 **Step 2: Get Credentials** (they'll email you)
 ```bash
-SMILE_PARTNER_ID=001
-SMILE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-SMILE_CALLBACK_URL=https://your-api.com/api/kyc/callback
+DIDIT_API_KEY=001
+DIDIT_WEBHOOK_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+DIDIT_WEBHOOK_URL=https://your-api.com/api/kyc/callback
 ```
 
 **Step 3: Test Connection** (once credentials received)
 ```bash
-curl -X POST https://testapi.smileidentity.com/v1/services \
+curl -X POST https://testapi.diditidentity.com/v1/services \
   -H "Content-Type: application/json" \
   -d '{
     "partner_id": "001",
@@ -714,11 +714,11 @@ WHATSAPP_ACCESS_TOKEN=EAAxxxxxxxxxxxxx
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=lynia_webhook_2025  # Your secret token
 WHATSAPP_API_VERSION=v18.0
 
-# ----- Smile Identity (KYC) -----
-SMILE_PARTNER_ID=001
-SMILE_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-SMILE_CALLBACK_URL=https://your-api.com/api/kyc/callback
-SMILE_ENVIRONMENT=sandbox  # or 'production'
+# ----- DIDIT (KYC) -----
+DIDIT_API_KEY=001
+DIDIT_WEBHOOK_SECRET=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+DIDIT_WEBHOOK_URL=https://your-api.com/api/kyc/callback
+DIDIT_ENVIRONMENT=sandbox  # or 'production'
 
 # ----- Mobile Money - EcoCash -----
 ECOCASH_MERCHANT_ID=TEST_MERCHANT_001
@@ -1108,14 +1108,14 @@ Run through this checklist to verify setup is complete:
 - [ ] Supabase account
 - [ ] Meta Developer account
 - [ ] AWS account
-- [ ] Smile Identity sandbox requested
+- [ ] DIDIT sandbox requested
 - [ ] Mobile Money sandbox requested
 
 ### Credentials Obtained
 - [ ] Supabase URL and keys
 - [ ] WhatsApp Phone Number ID and Access Token
 - [ ] AWS Access Key and Secret
-- [ ] Smile Identity Partner ID (pending)
+- [ ] DIDIT Partner ID (pending)
 - [ ] EcoCash/OneMoney credentials (pending)
 
 ### Project Setup

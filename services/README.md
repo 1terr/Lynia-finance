@@ -10,7 +10,7 @@ Microservices for the Lynia Finance platform.
 - **fineract-proxy-service**: Fineract core banking proxy (loans, products, GL, reports)
 - **form-submission-service**: Public form capture (no auth)
 - **investor-reporting-service**: Investor portfolio & covenant reporting
-- **kyc-service**: KYC verification with Smile Identity / Didit
+- **kyc-service**: KYC verification with DIDIT
 - **lock-service**: Device lock/unlock management via Trustonic
 - **notification-service**: Multi-channel notifications + reminder scheduling
 - **payment-service**: Mobile money payment processing (InnBucks, EcoCash, OneWallet, OMari)

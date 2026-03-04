@@ -306,7 +306,7 @@ employment_type: 'self_employed', // Collected for future use, not scored in Pha
 - ✅ API contracts with request/response examples
 - ✅ Business logic with complete TypeScript functions
 - ✅ State machines with transition matrices
-- ✅ Integration patterns (Smile Identity, Fineract, WhatsApp API)
+- ✅ Integration patterns (DIDIT, Fineract, WhatsApp API)
 - ✅ Error handling patterns
 - ✅ Security implementations (RLS policies, authentication flows)
 

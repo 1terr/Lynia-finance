@@ -375,8 +375,8 @@ LOG_LEVEL=info
    - Implement KYC photo upload handling
    - Add interactive buttons and lists
 
-2. **P2-T007: Smile Identity KYC Integration**
-   - Integrate Smile ID API
+2. **P2-T007: DIDIT KYC Integration**
+   - Integrate DIDIT API
    - Handle KYC callbacks
    - Update customer KYC status
 

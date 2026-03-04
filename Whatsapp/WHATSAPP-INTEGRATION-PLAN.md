@@ -165,7 +165,7 @@ sam build && sam deploy --config-env dev
 
 **Current code (hardcoded auto-approve in `onboarding.ts`):**
 ```typescript
-// SIMULATED - This is where Smile Identity would be called
+// SIMULATED - This is where DIDIT would be called
 const kycResult = { verified: true, confidence: 0.96 };
 if (kycResult.verified) {
   // Auto-approve...

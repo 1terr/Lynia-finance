@@ -15,7 +15,7 @@ Phase 2 focuses on establishing the technical infrastructure and implementing co
 - ✅ **Complete infrastructure setup** (Supabase, AWS Lambda, Fineract)
 - ✅ **Database implementation** (15+ tables with RLS policies)
 - ✅ **5 critical microservices** (Credit scoring, WhatsApp, KYC, Payment, Device lock)
-- ✅ **3rd party integrations** (Smile Identity, WhatsApp Cloud API, Mobile Money)
+- ✅ **3rd party integrations** (DIDIT, WhatsApp Cloud API, Mobile Money)
 - ✅ **Admin dashboard foundation** (Next.js 14 with authentication)
 
 ### Success Criteria
@@ -26,7 +26,7 @@ Phase 2 focuses on establishing the technical infrastructure and implementing co
 - [ ] WhatsApp bot handles complete onboarding flow (8 steps)
 - [ ] Zimbabwe phone validation (+263) working
 - [ ] Deposit payment enforcement implemented
-- [ ] KYC integration with Smile Identity functional
+- [ ] KYC integration with DIDIT functional
 - [ ] Admin dashboard deployed with login and basic views
 - [ ] All services pass integration tests
 - [ ] Demo-ready end-to-end flow working
@@ -364,14 +364,14 @@ Have a Zimbabwean number?
 
 ---
 
-#### P2-T007: KYC Service - Smile Identity Integration
+#### P2-T007: KYC Service - DIDIT Integration
 **Duration**: 12 hours
 **Priority**: 🔴 Critical
 **Dependencies**: P2-T002, P2-T006
-**Spec Reference**: [planning/smile-identity-integration.md](planning/smile-identity-integration.md)
+**Spec Reference**: [planning/didit-integration.md](planning/didit-integration.md)
 
 **Tasks**:
-1. Get Smile Identity API credentials (sandbox)
+1. Get DIDIT API credentials (sandbox)
 2. Implement ID verification endpoint
 3. Implement selfie verification
 4. Implement liveness check
@@ -404,7 +404,7 @@ Response: {
 ```
 
 **Deliverables**:
-- [ ] Smile Identity SDK integrated
+- [ ] DIDIT SDK integrated
 - [ ] Verification working in sandbox
 - [ ] Results stored in database
 - [ ] Retry logic implemented
@@ -732,10 +732,10 @@ WHATSAPP_PHONE_NUMBER_ID=xxx
 WHATSAPP_ACCESS_TOKEN=xxx
 WHATSAPP_WEBHOOK_VERIFY_TOKEN=xxx
 
-# Smile Identity
-SMILE_PARTNER_ID=xxx
-SMILE_API_KEY=xxx
-SMILE_CALLBACK_URL=https://xxx/api/kyc/callback
+# DIDIT
+DIDIT_API_KEY=xxx
+DIDIT_WEBHOOK_SECRET=xxx
+DIDIT_WEBHOOK_URL=https://xxx/api/kyc/callback
 
 # Mobile Money (Sandbox)
 ECOCASH_MERCHANT_ID=xxx
@@ -790,7 +790,7 @@ AWS_SECRET_ACCESS_KEY=xxx
 | Risk | Impact | Mitigation |
 |------|--------|-----------|
 | WhatsApp API approval delay | High | Start approval process immediately |
-| Smile Identity sandbox issues | Medium | Have backup manual verification |
+| DIDIT sandbox issues | Medium | Have backup manual verification |
 | Mobile Money API access | High | Use sandbox, have mock data ready |
 | Supabase free tier limits | Low | Monitor usage, upgrade if needed |
 
@@ -821,7 +821,7 @@ AWS_SECRET_ACCESS_KEY=xxx
 - [ ] Credit scoring service working (5 components)
 - [ ] WhatsApp bot handling messages
 - [ ] Zimbabwe +263 validation functional
-- [ ] KYC integration with Smile Identity
+- [ ] KYC integration with DIDIT
 - [ ] Payment processing (deposit + installments)
 
 ### Business Logic ✅
@@ -853,7 +853,7 @@ AWS_SECRET_ACCESS_KEY=xxx
 
 1. **Start P2-T001**: Create Supabase project
 2. **Apply for WhatsApp API**: Begin approval process
-3. **Get Smile Identity sandbox**: Request API credentials
+3. **Get DIDIT sandbox**: Request API credentials
 4. **Set up development environment**: Install all tools
 
 ### This Week (Week 1)

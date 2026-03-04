@@ -322,12 +322,12 @@ export default function KYCReviewPage() {
                             )}
                           </div>
 
-                          {/* Smile Identity Results */}
-                          {submission.smile_identity_result && (
+                          {/* DIDIT Provider Results */}
+                          {submission.provider_response && (
                             <div className="rounded-md bg-gray-50 p-3">
-                              <p className="text-xs font-medium text-gray-600 mb-1">Smile Identity Results</p>
+                              <p className="text-xs font-medium text-gray-600 mb-1">DIDIT Verification Results</p>
                               <div className="flex flex-wrap gap-3 text-xs">
-                                {Object.entries(submission.smile_identity_result).slice(0, 4).map(([key, value]) => (
+                                {Object.entries(submission.provider_response).slice(0, 4).map(([key, value]) => (
                                   <span key={key} className="text-gray-600">
                                     <span className="text-gray-400">{key}: </span>
                                     {String(value)}
@@ -479,11 +479,11 @@ export default function KYCReviewPage() {
                 )}
             </div>
 
-            {docViewerSubmission.smile_identity_result && (
+            {docViewerSubmission.provider_response && (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Smile Identity Verification</p>
+                <p className="text-sm font-medium text-gray-700 mb-2">DIDIT Verification</p>
                 <pre className="rounded-md bg-gray-50 p-3 text-xs text-gray-600 overflow-auto max-h-48">
-                  {JSON.stringify(docViewerSubmission.smile_identity_result, null, 2)}
+                  {JSON.stringify(docViewerSubmission.provider_response, null, 2)}
                 </pre>
               </div>
             )}

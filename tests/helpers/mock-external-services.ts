@@ -2,19 +2,19 @@
  * Mock External Services
  *
  * Provides mock implementations for external APIs used in integration tests:
- * - Smile Identity (KYC)
+ * - DIDIT (KYC)
  * - EcoCash / OneMoney (Payments)
  * - Trustonic (Device Lock)
  * - WhatsApp Cloud API (Messaging)
  */
 
 // =====================================================
-// SMILE IDENTITY MOCKS
+// DIDIT KYC MOCKS
 // =====================================================
 
-export const mockSmileIdentityResponses = {
+export const mockDiditResponses = {
   verifiedKYC: {
-    smile_job_id: 'smile_job_001',
+    provider_job_id: 'didit_job_001',
     job_id: 'job_001',
     result: {
       ResultCode: '1012',
@@ -50,7 +50,7 @@ export const mockSmileIdentityResponses = {
   },
 
   rejectedKYC: {
-    smile_job_id: 'smile_job_002',
+    provider_job_id: 'didit_job_002',
     job_id: 'job_002',
     result: {
       ResultCode: '1014',
@@ -86,7 +86,7 @@ export const mockSmileIdentityResponses = {
   },
 
   manualReviewKYC: {
-    smile_job_id: 'smile_job_003',
+    provider_job_id: 'didit_job_003',
     job_id: 'job_003',
     result: {
       ResultCode: '1013',

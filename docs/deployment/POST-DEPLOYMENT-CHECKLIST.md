@@ -119,7 +119,7 @@ Run: `./scripts/create-cognito-users.sh --env=production && ./scripts/configure-
 - [ ] GitHub secrets set: DISTRIBUTOR_BUCKET, DISTRIBUTOR_CF_DISTRIBUTION
 - [ ] GitHub variable set: API_URL
 - [ ] Manual: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY set
-- [ ] Manual: External service API keys set (WhatsApp, Smile ID, EcoCash, etc.)
+- [ ] Manual: External service API keys set (WhatsApp, DIDIT, EcoCash, etc.)
 
 ## 9. E2E Validation (T0017)
 

@@ -118,7 +118,7 @@ graph TB
 **Core Banking**: Apache Fineract v1.13.0 on ECS Fargate
 **Security**: WAF, Secrets Manager, VPC endpoints, X-Ray tracing
 **CI/CD**: GitHub Actions (backend + frontend deployment pipelines)
-**Integrations**: WhatsApp Cloud API, Smile Identity, InnBucks/EcoCash/OneWallet/OMari, Trustonic
+**Integrations**: WhatsApp Cloud API, DIDIT, InnBucks/EcoCash/OneWallet/OMari, Trustonic
 
 See [docs/architecture/AWS-ARCHITECTURE.md](docs/architecture/AWS-ARCHITECTURE.md) for detailed diagrams and infrastructure reference.
 
@@ -133,7 +133,7 @@ Lynia-finance/
 │   ├── fineract-proxy-service/     # Fineract core banking proxy (loans, products, GL, reports)
 │   ├── form-submission-service/    # Public form capture (no auth)
 │   ├── investor-reporting-service/ # Investor portfolio & covenant reporting
-│   ├── kyc-service/                # Smile Identity / Didit KYC verification
+│   ├── kyc-service/                # DIDIT / Didit KYC verification
 │   ├── lock-service/               # Trustonic device lock management
 │   ├── notification-service/       # Multi-channel notifications + reminder scheduling
 │   ├── payment-service/            # Mobile money payments (InnBucks, EcoCash, OneWallet, OMari)

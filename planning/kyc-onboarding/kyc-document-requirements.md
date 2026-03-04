@@ -91,7 +91,7 @@ interface NationalIDCapture {
 - **Min Resolution**: 640x480 pixels
 - **File Format**: JPEG, PNG
 - **Max File Size**: 5MB
-- **Liveness Detection**: Smile Identity liveness check
+- **Liveness Detection**: DIDIT liveness check
 
 ```typescript
 interface SelfieCapture {
@@ -185,14 +185,14 @@ function validateZimbabweNationalID(idNumber: string): ValidationResult {
 
 ---
 
-### 3.3 Smile Identity Verification
+### 3.3 DIDIT Verification
 
-**Integration with Smile Identity:**
+**Integration with DIDIT:**
 
-Smile Identity provides biometric verification services for Zimbabwe:
+DIDIT provides biometric verification services for Zimbabwe:
 
 ```typescript
-interface SmileIdentityRequest {
+interface DiditRequest {
   country: 'ZW';                  // Zimbabwe
   id_type: 'NATIONAL_ID';
   id_number: string;              // e.g., "63-123456A47"
@@ -210,7 +210,7 @@ interface SmileIdentityRequest {
   phone_number: string;           // +263...
 }
 
-interface SmileIdentityResponse {
+interface DiditResponse {
   success: boolean;
   confidence_score: number;       // 0-100
   match_result: 'VERIFIED' | 'NOT_VERIFIED' | 'REVIEW_REQUIRED';
@@ -243,33 +243,33 @@ interface SmileIdentityResponse {
 ### 3.4 Verification Decision Logic
 
 ```typescript
-function evaluateKYCVerification(smileResponse: SmileIdentityResponse): KYCDecision {
+function evaluateKYCVerification(diditResponse: DiditResponse): KYCDecision {
 
   // Auto-approve criteria
   if (
-    smileResponse.match_result === 'VERIFIED' &&
-    smileResponse.confidence_score >= 85 &&
-    smileResponse.liveness.passed &&
-    !smileResponse.document_validation.tampered
+    diditResponse.match_result === 'VERIFIED' &&
+    diditResponse.confidence_score >= 85 &&
+    diditResponse.liveness.passed &&
+    !diditResponse.document_validation.tampered
   ) {
     return {
       decision: 'APPROVED',
       reason: 'Automatic verification passed',
-      confidence: smileResponse.confidence_score
+      confidence: diditResponse.confidence_score
     };
   }
 
   // Auto-reject criteria
   if (
-    smileResponse.match_result === 'NOT_VERIFIED' ||
-    smileResponse.confidence_score < 50 ||
-    smileResponse.document_validation.tampered ||
-    smileResponse.document_validation.expired
+    diditResponse.match_result === 'NOT_VERIFIED' ||
+    diditResponse.confidence_score < 50 ||
+    diditResponse.document_validation.tampered ||
+    diditResponse.document_validation.expired
   ) {
     return {
       decision: 'REJECTED',
       reason: 'Verification failed',
-      confidence: smileResponse.confidence_score
+      confidence: diditResponse.confidence_score
     };
   }
 
@@ -277,7 +277,7 @@ function evaluateKYCVerification(smileResponse: SmileIdentityResponse): KYCDecis
   return {
     decision: 'MANUAL_REVIEW',
     reason: 'Confidence score 50-84, requires human verification',
-    confidence: smileResponse.confidence_score
+    confidence: diditResponse.confidence_score
   };
 }
 ```
@@ -311,15 +311,15 @@ function evaluateKYCVerification(smileResponse: SmileIdentityResponse): KYCDecis
 
 **Purpose:** Prevent fraud (using printed photos, videos, deepfakes)
 
-**Smile Identity Liveness Methods:**
+**DIDIT Liveness Methods:**
 1. **Passive Liveness**: Analyzes single image for signs of life (texture, depth, reflection)
-2. **Active Liveness**: User performs action (smile, blink, turn head) - NOT USED (poor WhatsApp UX)
+2. **Active Liveness**: User performs action (didit, blink, turn head) - NOT USED (poor WhatsApp UX)
 
 **Implementation:**
 ```typescript
 async function checkLiveness(selfieImageBase64: string): Promise<LivenessResult> {
 
-  const response = await smileIdentity.checkLiveness({
+  const response = await diditIdentity.checkLiveness({
     image: selfieImageBase64,
     liveness_type: 'passive'  // No user action required
   });
@@ -354,7 +354,7 @@ async function matchFaceToID(
   selfieUrl: string
 ): Promise<FaceMatchResult> {
 
-  const result = await smileIdentity.compareFaces({
+  const result = await diditIdentity.compareFaces({
     reference_image: idPhotoUrl,   // National ID photo
     comparison_image: selfieUrl    // Customer selfie
   });
@@ -380,7 +380,7 @@ async function matchFaceToID(
 
 ### 5.1 Automated Image Quality Validation
 
-Before sending to Smile Identity, validate image quality locally:
+Before sending to DIDIT, validate image quality locally:
 
 ```typescript
 async function validateDocumentImage(
@@ -464,7 +464,7 @@ Tips for verification:
 ✓ Face the camera directly
 ✓ Remove sunglasses/hat
 ✓ Use good lighting
-✓ Don't smile too much
+✓ Don't didit too much
 ✓ Hold phone at eye level
 
 Take selfie now 📷
@@ -581,7 +581,7 @@ async function checkRetryEligibility(customer_id: string): Promise<RetryEligibil
 
 **Triggers for Manual Review:**
 
-1. **Smile Identity Confidence 50-84%**: Uncertain match
+1. **DIDIT Confidence 50-84%**: Uncertain match
 2. **3 Failed Automated Attempts**: Customer struggling with automation
 3. **Document Quality Issues**: Damaged/old ID cards
 4. **Name Discrepancies**: Name on ID doesn't match phone registration
@@ -599,7 +599,7 @@ interface ManualKYCReview {
   selfie_image_url: string;
 
   // Automated verification results
-  smile_identity_response: SmileIdentityResponse;
+  didit_response: DiditResponse;
   auto_decision: 'APPROVED' | 'REJECTED' | 'MANUAL_REVIEW';
   auto_confidence: number;
 
@@ -629,7 +629,7 @@ interface ManualKYCReview {
 
 ### 6.3 Alternative Verification Methods
 
-**For Edge Cases Where Smile Identity Fails:**
+**For Edge Cases Where DIDIT Fails:**
 
 **Option 1: Video Call Verification**
 - Schedule WhatsApp video call with admin
@@ -680,9 +680,9 @@ CREATE TABLE kyc_submissions (
   id_image_quality_score INT,            -- 0-100
   selfie_quality_score INT,              -- 0-100
 
-  -- Smile Identity verification
-  smile_identity_transaction_id TEXT,
-  smile_identity_response JSONB,
+  -- DIDIT verification
+  didit_transaction_id TEXT,
+  didit_response JSONB,
   verification_confidence DECIMAL(5,2),  -- 0.00-100.00
   liveness_score DECIMAL(5,2),
   face_match_score DECIMAL(5,2),
@@ -827,8 +827,8 @@ export async function submitKYCDocuments(
   const idImageUrl = await uploadToS3(nationalIDImage, `kyc/${customer_id}/id-${Date.now()}.jpg`);
   const selfieUrl = await uploadToS3(selfieImage, `kyc/${customer_id}/selfie-${Date.now()}.jpg`);
 
-  // Step 5: Submit to Smile Identity
-  const smileResponse = await smileIdentity.verify({
+  // Step 5: Submit to DIDIT
+  const diditResponse = await diditIdentity.verify({
     country: 'ZW',
     id_type: 'NATIONAL_ID',
     id_number: id_number,
@@ -839,7 +839,7 @@ export async function submitKYCDocuments(
   });
 
   // Step 6: Evaluate decision
-  const decision = evaluateKYCVerification(smileResponse);
+  const decision = evaluateKYCVerification(diditResponse);
 
   // Step 7: Create KYC submission record
   const submission = await supabase.from('kyc_submissions').insert({
@@ -848,11 +848,11 @@ export async function submitKYCDocuments(
     id_number: id_number,
     id_front_image_url: idImageUrl,
     selfie_image_url: selfieUrl,
-    smile_identity_transaction_id: smileResponse.transaction_id,
-    smile_identity_response: smileResponse,
+    didit_transaction_id: diditResponse.transaction_id,
+    didit_response: diditResponse,
     verification_confidence: decision.confidence,
-    liveness_score: smileResponse.liveness.score,
-    face_match_score: smileResponse.confidence_score,
+    liveness_score: diditResponse.liveness.score,
+    face_match_score: diditResponse.confidence_score,
     status: decision.decision === 'APPROVED' ? 'verified' :
             decision.decision === 'REJECTED' ? 'rejected' : 'manual_review',
     verification_decision: decision.decision,
@@ -891,7 +891,7 @@ export async function submitKYCDocuments(
 ### 8.2 Integration Points
 
 **External Services:**
-1. **Smile Identity API** - Biometric verification
+1. **DIDIT API** - Biometric verification
 2. **AWS S3** - Document image storage
 3. **WhatsApp Cloud API** - Document upload via WhatsApp
 4. **Supabase Storage** - Alternative to S3 (consider for cost)
@@ -913,13 +913,13 @@ This document provides:
 1. **Document Requirements**: Zimbabwe National ID + Live Selfie as required documents for all customers
 2. **Validation System**: Automated ID number format validation (00-000000X00) with district code verification
 3. **Quality Standards**: Image quality checks (resolution, lighting, blur detection) with user-friendly guidance
-4. **Biometric Verification**: Smile Identity integration with 85%+ auto-approval threshold
+4. **Biometric Verification**: DIDIT integration with 85%+ auto-approval threshold
 5. **Retry Policy**: 3-attempt limit with 24-hour cooldowns and manual review fallback
 6. **Data Architecture**: Complete database schema for KYC submissions, retry tracking, and manual review queue
 
 ### Technical Components
 - **Validation Functions**: Zimbabwe National ID format validator, image quality checker
-- **Smile Identity Integration**: Enhanced KYC (job_type: 5) with liveness detection
+- **DIDIT Integration**: Enhanced KYC (job_type: 5) with liveness detection
 - **Decision Logic**: Auto-approve (≥85%), manual review (50-84%), auto-reject (<50%)
 - **Database Tables**: `kyc_submissions`, `kyc_retry_state`, `kyc_manual_reviews`
 - **WhatsApp Integration**: Document upload flow with user guidance templates
@@ -931,25 +931,25 @@ This document provides:
 - **Scalability**: Automated verification handles 85%+ of submissions without human intervention
 
 ### Implementation Checklist
-- [ ] Set up Smile Identity API credentials and test environment
+- [ ] Set up DIDIT API credentials and test environment
 - [ ] Implement Zimbabwe National ID validator
 - [ ] Build image quality pre-validation service
 - [ ] Create S3 bucket for document storage with encryption
 - [ ] Set up database tables (kyc_submissions, kyc_retry_state, kyc_manual_reviews)
-- [ ] Integrate Smile Identity biometric verification API
+- [ ] Integrate DIDIT biometric verification API
 - [ ] Build retry tracking and cooldown logic
 - [ ] Create manual review admin interface
-- [ ] Set up webhook endpoint for async Smile Identity callbacks
+- [ ] Set up webhook endpoint for async DIDIT callbacks
 - [ ] Implement WhatsApp message templates for document upload guidance
 
 ### Dependencies
-- **Smile Identity Account**: Enhanced KYC product subscription required
+- **DIDIT Account**: Enhanced KYC product subscription required
 - **AWS S3 or Supabase Storage**: For secure document image storage
 - **Database Schema**: Supabase tables (customers, kyc_submissions, etc.)
 - **WhatsApp Cloud API**: For document media handling
 
 ### Related Specifications
-- [Smile Identity Integration Flow](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/smile-identity-integration.md) - Complete API integration details
+- [DIDIT Integration Flow](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/didit-integration.md) - Complete API integration details
 - [Customer Onboarding Flow](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/customer-onboarding-flow.md) - Full customer journey including KYC
 - [KYC Status Management](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/kyc-status-management.md) - Status lifecycle and transitions
 - [Privacy & Consent Management](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/privacy-consent-management.md) - Data protection compliance
@@ -957,5 +957,5 @@ This document provides:
 - [WhatsApp Media Handling](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/whatsapp-media-handling.md) - Document upload via WhatsApp
 
 ### External References
-- [Smile Identity Documentation](https://docs.usesmileidentity.com) - Biometric verification API
+- [DIDIT Documentation](https://docs.usediditidentity.com) - Biometric verification API
 - [Zimbabwe Registrar General's Office](https://www.rg.gov.zw) - National ID information

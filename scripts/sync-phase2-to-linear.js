@@ -158,10 +158,10 @@ AWS Lambda credit scoring service with comprehensive risk assessment algorithm.
 **GitHub Commit**: [54882f9a2](${GITHUB_REPO}/commit/54882f9a2)
 
 ## Implementation Summary
-AWS Lambda KYC verification service with Smile Identity integration for Zimbabwe identity verification.
+AWS Lambda KYC verification service with DIDIT integration for Zimbabwe identity verification.
 
 ## Key Features
-- Smile Identity API integration (sandbox + production)
+- DIDIT API integration (sandbox + production)
 - Document verification (Zimbabwe National ID, Passport, Driver's License)
 - Biometric verification (selfie matching)
 - Liveness detection (anti-spoofing)
@@ -177,14 +177,14 @@ AWS Lambda KYC verification service with Smile Identity integration for Zimbabwe
 ## Verification Workflow
 1. Customer submits ID document + selfie
 2. Image preprocessing and optimization
-3. Submit to Smile Identity for verification
+3. Submit to DIDIT for verification
 4. Receive verification result (verified/pending/rejected)
 5. Update KYC status in database
 6. Trigger loan decision workflow if verified
 
 ## API Endpoints
 - POST /kyc/verify - Initiate KYC verification
-- POST /kyc/callback - Smile Identity webhook
+- POST /kyc/callback - DIDIT webhook
 - GET /kyc/status/{customerId} - Get verification status
 
 ## Build Status

@@ -16,7 +16,7 @@ Add Didit-specific infrastructure: Secrets Manager secret, SAM template paramete
 
 ### A3.1: Add Didit Secret to Secrets Manager Template
 - **File:** `infrastructure/aws/secrets-manager.yaml`
-- **Action:** Add `DiditSecret` resource alongside existing `SmileIdentitySecret`:
+- **Action:** Add `DiditSecret` resource alongside existing `DiditSecret`:
   ```yaml
   DiditSecret:
     Type: AWS::SecretsManager::Secret
@@ -48,8 +48,8 @@ Add Didit-specific infrastructure: Secrets Manager secret, SAM template paramete
     Default: ''
   KYCProvider:
     Type: String
-    Default: 'smile_identity'
-    AllowedValues: ['smile_identity', 'didit']
+    Default: 'didit'
+    AllowedValues: ['didit', 'didit']
   ```
 - **Update KYCFunction env vars:**
   ```yaml
@@ -61,7 +61,7 @@ Add Didit-specific infrastructure: Secrets Manager secret, SAM template paramete
 
 ### A3.3: Add `getDiditSecrets()` to Shared Utils
 - **File:** `services/shared/utils/secrets.ts`
-- **Action:** Add alongside existing `getSmileIdentitySecrets()`:
+- **Action:** Add alongside existing `getDiditSecrets()`:
   ```typescript
   export async function getDiditSecrets(): Promise<{
     DIDIT_API_KEY: string;
@@ -82,7 +82,7 @@ Add Didit-specific infrastructure: Secrets Manager secret, SAM template paramete
   ```
   DIDIT_API_KEY=your-didit-api-key
   DIDIT_WEBHOOK_SECRET=your-didit-webhook-secret
-  KYC_PROVIDER=smile_identity
+  KYC_PROVIDER=didit
   ```
 
 ## Acceptance Criteria

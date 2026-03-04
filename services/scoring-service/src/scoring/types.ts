@@ -44,7 +44,7 @@ export interface ExternalCreditData {
 /**
  * Provider-agnostic KYC verification input for scoring.
  * All scores normalized to 0-100 scale.
- * Works with both Smile Identity and Didit providers.
+ * Works with DIDIT KYC provider.
  */
 export interface KYCVerificationInput {
   id_verification: {

@@ -44,7 +44,7 @@ This document provides a comprehensive catalog of all features used in the Lynia
 #### Feature 1: `kyc_face_match_score`
 **Description**: Confidence score (0.0-1.0) of face match between selfie and ID photo
 **Type**: Continuous (float)
-**Data Source**: Smile Identity API → `face_match.confidence`
+**Data Source**: DIDIT API → `face_match.confidence`
 **Range**: 0.0 - 1.0
 **Importance**: ⭐⭐⭐⭐⭐ (Critical)
 **Missing Data Strategy**: Reject application (required for approval)
@@ -72,7 +72,7 @@ LIMIT 1;
 #### Feature 2: `kyc_liveness_passed`
 **Description**: Whether the liveness check passed (anti-spoofing)
 **Type**: Boolean
-**Data Source**: Smile Identity API → `liveness.status`
+**Data Source**: DIDIT API → `liveness.status`
 **Values**: 0 (failed), 1 (passed)
 **Importance**: ⭐⭐⭐⭐ (High)
 **Missing Data Strategy**: Default to 0 (failed)
@@ -93,7 +93,7 @@ WHERE customer_id = :customer_id;
 #### Feature 3: `kyc_id_verified`
 **Description**: Whether the national ID was successfully verified
 **Type**: Boolean
-**Data Source**: Smile Identity API → `id_verification.status`
+**Data Source**: DIDIT API → `id_verification.status`
 **Values**: 0 (not verified), 1 (verified)
 **Importance**: ⭐⭐⭐⭐⭐ (Critical)
 **Missing Data Strategy**: Reject application (required)
@@ -236,7 +236,7 @@ WHERE customer_id = :customer_id;
 #### Feature 9: `selfie_quality_score`
 **Description**: Image quality score of selfie (0.0-1.0)
 **Type**: Continuous (float)
-**Data Source**: Smile Identity API → `selfie_quality.score`
+**Data Source**: DIDIT API → `selfie_quality.score`
 **Range**: 0.0-1.0
 **Importance**: ⭐⭐ (Low)
 **Missing Data Strategy**: Default to 0.5 (neutral)
@@ -253,7 +253,7 @@ FROM kyc_submissions;
 #### Feature 10: `id_photo_quality_score`
 **Description**: Image quality score of ID photo (0.0-1.0)
 **Type**: Continuous (float)
-**Data Source**: Smile Identity API → `id_photo_quality.score`
+**Data Source**: DIDIT API → `id_photo_quality.score`
 **Range**: 0.0-1.0
 **Importance**: ⭐⭐ (Low)
 **Missing Data Strategy**: Default to 0.5 (neutral)
@@ -1367,7 +1367,7 @@ print(top_20_features)
 | Data Source | Features Count | Availability | API/Database |
 |-------------|---------------|--------------|--------------|
 | **Customer Table** | 8 | 100% | PostgreSQL |
-| **KYC Submissions** | 10 | 100% | PostgreSQL + Smile Identity API |
+| **KYC Submissions** | 10 | 100% | PostgreSQL + DIDIT API |
 | **Mobile Money API** | 15 | 60% | Zimbocash/EcoCash API (optional Phase 1) |
 | **Device Catalog** | 5 | 100% | PostgreSQL |
 | **Loan Application** | 7 | 100% | PostgreSQL |
@@ -1379,16 +1379,16 @@ print(top_20_features)
 
 ### 4.2 API Integration Requirements
 
-**Smile Identity API**:
+**DIDIT API**:
 ```typescript
 // Required for KYC features
-const smileIdentityClient = new SmileIdentity({
-  partner_id: process.env.SMILE_PARTNER_ID,
-  api_key: process.env.SMILE_API_KEY,
+const diditIdentityClient = new Didit({
+  partner_id: process.env.DIDIT_API_KEY,
+  api_key: process.env.DIDIT_WEBHOOK_SECRET,
   environment: 'production'
 });
 
-async function getKYCResult(customerId: string): Promise<SmileIdentityResult> {
+async function getKYCResult(customerId: string): Promise<DiditResult> {
   const { data } = await supabase
     .from('kyc_submissions')
     .select('kyc_result')
@@ -1689,7 +1689,7 @@ Complete catalog of 60 credit scoring features across 6 categories (Demographics
 ### What Was Delivered
 1. **60 Feature Catalog**: Detailed descriptions with data sources, ranges, importance (⭐⭐⭐⭐⭐ to ⭐⭐)
 2. **Feature Importance Ranking**: Top 10 critical features (installment_to_income_ratio, mm_avg_monthly_inflow, etc.)
-3. **10 Data Sources**: PostgreSQL tables, Smile Identity API, Mobile Money API (optional Phase 1), static lookup tables
+3. **10 Data Sources**: PostgreSQL tables, DIDIT API, Mobile Money API (optional Phase 1), static lookup tables
 4. **Transformation Logic**: Log transforms, winsorization (99th percentile), normalization (0-1 scale), one-hot encoding
 5. **Missing Data Strategies**: Reject (KYC features), impute median (Mobile Money), domain-specific defaults
 6. **Quality Monitoring**: Data quality checks, Kolmogorov-Smirnov drift detection
@@ -1699,7 +1699,7 @@ Complete catalog of 60 credit scoring features across 6 categories (Demographics
 
 ### Implementation Checklist
 - [ ] Create feature_store table with 60 feature columns
-- [ ] Implement data source connectors (PostgreSQL, Smile Identity, Mobile Money APIs)
+- [ ] Implement data source connectors (PostgreSQL, DIDIT, Mobile Money APIs)
 - [ ] Build feature transformation pipeline (log/winsorize/normalize)
 - [ ] Implement imputation strategies (reject/median/domain-specific)
 - [ ] Set up feature quality monitoring dashboard

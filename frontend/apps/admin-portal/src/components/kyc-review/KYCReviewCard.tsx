@@ -42,8 +42,8 @@ export function KYCReviewCard({
 
   const customer = submission.customers;
   const confidence = getConfidenceLevel(submission.verification_confidence ?? submission.confidence_score);
-  const providerResult = submission.provider_response || submission.smile_identity_response;
-  const providerName = submission.kyc_provider || 'smile_identity';
+  const providerResult = submission.provider_response;
+  const providerName = submission.kyc_provider || 'didit';
 
   // Calculate SLA deadline (24 hours from submission)
   const slaDeadline = new Date(
@@ -202,7 +202,7 @@ export function KYCReviewCard({
                       Verification Checks
                     </h4>
                     <Badge variant="outline" className="text-xs">
-                      {providerName === 'didit' ? 'Didit' : 'Smile Identity'}
+                      DIDIT
                     </Badge>
                   </div>
                   <div className="space-y-2">

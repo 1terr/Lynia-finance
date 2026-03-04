@@ -17,7 +17,7 @@ The Lynia Finance platform is an asset-backed lending system targeting Zimbabwe'
 - Fineract REST API for loan origination, repayment processing, account management
 - Apache Fineract Scorecard API for baseline credit scoring
 - In-house ML models for advanced risk assessment (behavioral scoring, payment prediction)
-- Smile Identity API for KYC/ID verification (Zimbabwe national ID validation)
+- DIDIT API for KYC/ID verification (Zimbabwe national ID validation)
 - EcoCash + Omari payment gateway SDKs with circuit breaker pattern
 - WhatsApp Cloud API (Meta) for WhatsApp messaging (FREE 1000 conversations/month, replacing Twilio $75/month)
 - Africa's Talk SMS API for Zimbabwe SMS delivery ($0.008/SMS, 6x cheaper than Twilio $0.05/SMS)
@@ -33,7 +33,7 @@ The Lynia Finance platform is an asset-backed lending system targeting Zimbabwe'
 - scikit-learn compiled to WASM with Pyodide (ML models on Cloudflare Workers free tier)
 - WhatsApp Cloud API SDK (Meta, 1000 conversations/month FREE)
 - Africa's Talk REST API SDK (SMS for Zimbabwe, $0.008/SMS vs Twilio $0.05/SMS)
-- Smile Identity REST API SDK (KYC/ID verification for Zimbabwe)
+- DIDIT REST API SDK (KYC/ID verification for Zimbabwe)
 - Next.js 14 on Vercel FREE Tier (App Router with Supabase Auth integration, 100GB bandwidth/month)
 - EcoCash SDK, Omari Payment SDK
 - AWS Lambda for microservices (1M requests/month FREE forever)
@@ -64,7 +64,7 @@ The Lynia Finance platform is an asset-backed lending system targeting Zimbabwe'
 - **5 Custom Microservices** (AWS Lambda Node.js/Python): whatsapp-service, kyc-service, payment-service, lock-service (+ Cloudflare Workers for scoring-service)
 - **Supabase Edge Functions** (Deno/TypeScript): weekly-commission-batch, payment-reconciliation, daily-reminders, low-stock-alerts, send-sms, send-email
 - **Supabase Managed Services** (FREE Tier): PostgreSQL, Auth, Realtime, Storage
-- **External Services**: Apache Fineract (AWS EC2 t3.micro), WhatsApp Cloud API (Meta), Smile Identity, EcoCash/Omari, Africa's Talk SMS, Device Lock Provider
+- **External Services**: Apache Fineract (AWS EC2 t3.micro), WhatsApp Cloud API (Meta), DIDIT, EcoCash/Omari, Africa's Talk SMS, Device Lock Provider
 
 **Performance Goals**:
 - WhatsApp message response: <2s p95
@@ -143,9 +143,9 @@ apache-fineract-src-1.12.1/
 │   │   │       ├── contract/          # Fineract API contract tests
 │   │   │       ├── integration/       # E2E WhatsApp journey tests
 │   │   │       └── unit/              # Handler, state, validation tests
-│   │   ├── kyc-service/               # Smile Identity KYC API integration (Zimbabwe ID verification)
+│   │   ├── kyc-service/               # DIDIT KYC API integration (Zimbabwe ID verification)
 │   │   │   ├── src/
-│   │   │   │   ├── client/            # Smile Identity REST API client (authentication, request/response handling)
+│   │   │   │   ├── client/            # DIDIT REST API client (authentication, request/response handling)
 │   │   │   │   ├── verification/      # ID format validation (XX-XXXXXXAXX), liveness detection, biometric matching
 │   │   │   │   ├── cache/             # Supabase PostgreSQL table `kyc_cache` (duplicate detection: phone + ID, valid verifications 7-day TTL)
 │   │   │   ├── serverless.yml         # Serverless Framework config (AWS Lambda deployment)
@@ -338,11 +338,11 @@ apache-fineract-src-1.12.1/
 - [ ] Circuit breaker trips after simulating 3 EcoCash failures
 - [ ] Webhook correctly posts payment to Fineract repayment endpoint
 
-### R0.4: Smile Identity KYC API Integration
-**Goal**: Integrate Smile Identity for Zimbabwe national ID verification, understand API request/response format, ID validation logic, error handling.
+### R0.4: DIDIT KYC API Integration
+**Goal**: Integrate DIDIT for Zimbabwe national ID verification, understand API request/response format, ID validation logic, error handling.
 **Deliverables**:
-- Smile Identity REST API documentation (endpoint, authentication via API key/partner ID, request schema, response schema)
-- Smile Identity SDK setup for Node.js (if available) or direct REST API integration
+- DIDIT REST API documentation (endpoint, authentication via API key/partner ID, request schema, response schema)
+- DIDIT SDK setup for Node.js (if available) or direct REST API integration
 - ID format validation (Zimbabwe format: XX-XXXXXXAXX) before API submission
 - Document ID types supported (Zimbabwe National ID, Passport, Driver's License)
 - Flagging logic (stolen ID, fake ID, mismatch, expired ID, biometric verification failure)
@@ -350,15 +350,15 @@ apache-fineract-src-1.12.1/
 - Error response handling (API down, invalid ID, flagged ID, insufficient image quality)
 - Caching strategy (Supabase PostgreSQL table `kyc_cache`: store valid verifications, TTL 7 days for RBZ compliance - no Redis needed)
 - Webhook configuration for async verification results (if supported)
-- Test account setup with Smile Identity for sandbox testing
+- Test account setup with DIDIT for sandbox testing
 
 **Acceptance Criteria**:
-- [ ] Successfully verify test Zimbabwe national ID via Smile Identity API
+- [ ] Successfully verify test Zimbabwe national ID via DIDIT API
 - [ ] Validate ID format before API call (XX-XXXXXXAXX regex)
 - [ ] Handle flagged ID response (stolen, fake, expired) and block loan application
 - [ ] Process liveness detection results (selfie matches ID photo)
 - [ ] Cache valid verification for 7 days (RBZ compliance window)
-- [ ] Document Smile Identity pricing model and transaction costs
+- [ ] Document DIDIT pricing model and transaction costs
 - [ ] Test error scenarios (API timeout, invalid credentials, rate limiting)
 
 ### R0.5: Hybrid Credit Scoring System Design (Fineract + In-House ML)
@@ -367,7 +367,7 @@ apache-fineract-src-1.12.1/
 - **Apache Fineract Scorecard API research**: Understand Fineract's built-in scoring capabilities, scorecard configuration, criteria weighting, score calculation API endpoints
 - **Fineract Scorecard configuration**: Define scoring criteria (KYC completeness, Next of Kin verification, employment type, loan amount requested, deposit percentage)
 - **In-house ML model design**: Behavioral scoring algorithm using features available for underbanked customers (no credit bureau data)
-- **Feature engineering**: Map KYC data to ML features (income estimate, employment stability, Next of Kin responsiveness, phone ownership duration, Smile Identity liveness confidence score)
+- **Feature engineering**: Map KYC data to ML features (income estimate, employment stability, Next of Kin responsiveness, phone ownership duration, DIDIT liveness confidence score)
 - **Model selection**: Logistic regression (interpretability) vs. XGBoost (accuracy) for payment default prediction
 - **Training data strategy**: Initial rule-based scoring → collect payment history → retrain models monthly
 - **Hybrid scoring logic**: Fineract baseline score (0-100) + ML adjustment factor (-20 to +20) = final score (0-100)
@@ -664,7 +664,7 @@ apache-fineract-src-1.12.1/
   - Supabase Auth logs: login attempts, failed authentications, password resets
 - **Secrets Management**:
   - Supabase project settings for API keys (anon key, service_role key)
-  - Environment variables for third-party APIs (Twilio, Smile Identity, EcoCash, Omari)
+  - Environment variables for third-party APIs (Twilio, DIDIT, EcoCash, Omari)
   - Secrets rotation policy: 90 days (manual rotation for third-party keys, automatic for Supabase JWTs)
 
 **Acceptance Criteria**:
@@ -898,25 +898,25 @@ apache-fineract-src-1.12.1/
 
 ### Milestone 4: KYC & Hybrid Scoring Services (Weeks 6-7)
 **Deliverables**:
-- KYC service (Smile Identity API integration, Zimbabwe national ID verification, liveness detection, ID format validation, flagging logic, Redis caching)
-- Smile Identity SDK/REST client implementation (authentication, request/response handling)
+- KYC service (DIDIT API integration, Zimbabwe national ID verification, liveness detection, ID format validation, flagging logic, Redis caching)
+- DIDIT SDK/REST client implementation (authentication, request/response handling)
 - Selfie capture and document upload workflow (via WhatsApp or web form)
 - **Hybrid Scoring Service** implementation:
   - Apache Fineract Scorecard API integration (baseline scoring)
   - Fineract scorecard configuration (KYC completeness, Next of Kin, employment, deposit %, loan amount)
   - In-house ML model (Python FastAPI/Flask service for behavioral scoring)
-  - ML feature extraction from KYC data (income, employment stability, Smile Identity liveness score)
+  - ML feature extraction from KYC data (income, employment stability, DIDIT liveness score)
   - Hybrid scoring logic: Fineract baseline (0-100) + ML adjustment (-20 to +20) = final score
   - Score-based loan tiers: 60-70=$200, 71-85=$350, 86-100=$500
   - Cold start handling: Fineract scorecard only until 100+ loans disbursed
   - Model retraining pipeline (monthly retraining on payment history data)
 - Duplicate detection logic (flag if phone + ID exists)
 - Next of kin validation (no external verification required)
-- Contract tests (Smile Identity API, Fineract Scorecard API, ML Scoring API)
+- Contract tests (DIDIT API, Fineract Scorecard API, ML Scoring API)
 - Integration tests (KYC → Scoring → Fineract loan approval)
 
 **Acceptance Criteria**:
-- [ ] KYC service verifies Zimbabwe national ID via Smile Identity API
+- [ ] KYC service verifies Zimbabwe national ID via DIDIT API
 - [ ] Liveness detection (selfie verification) works correctly
 - [ ] Flagged IDs (stolen, fake, expired, biometric mismatch) block loan application
 - [ ] Fineract Scorecard API scores test customer and returns baseline score (0-100)
@@ -925,7 +925,7 @@ apache-fineract-src-1.12.1/
 - [ ] Max loan calculated using score-based tiers (capped at $500)
 - [ ] Cold start mode uses Fineract scorecard only
 - [ ] Duplicate detection works (phone + ID check)
-- [ ] Smile Identity webhooks handled for async verification results
+- [ ] DIDIT webhooks handled for async verification results
 - [ ] Integration test: KYC → Hybrid Scoring → Loan approval flow
 
 ### Milestone 5: Payment Service (Weeks 8-9)
@@ -1129,7 +1129,7 @@ apache-fineract-src-1.12.1/
 | **Cloudflare Workers FREE Tier** for ML scoring | **100K requests/day FREE** (3M/month), Pyodide enables Python ML models in WASM, <10ms cold start, global edge network | Railway Python service ($15/month), AWS Lambda Python (slower cold start, vendor lock-in) |
 | **AWS EC2 t3.micro FREE Tier** for Apache Fineract (Year 1) | **750 hours/month FREE** (24/7 uptime), 1GB RAM sufficient for <500 loans, easy migration to t3.small Year 2 ($8/month reserved instance) | Railway Docker ($15/month), Render Docker ($7/month), AWS ECS Fargate ($30/month) |
 | Hybrid credit scoring (Fineract Scorecard + In-house ML) | Fineract provides baseline scoring infrastructure, in-house ML enables continuous improvement from payment data, targets underbanked without credit bureau, **scikit-learn WASM on Cloudflare FREE** | Third-party scoring API (expensive $0.10/request, not customizable), Rules-based only (no learning from data) |
-| Smile Identity for KYC verification | Zimbabwe-specific ID verification, liveness detection, biometric matching, RBZ compliance | Manual ID verification (fraud risk), Generic KYC APIs (limited Zimbabwe support) |
+| DIDIT for KYC verification | Zimbabwe-specific ID verification, liveness detection, biometric matching, RBZ compliance | Manual ID verification (fraud risk), Generic KYC APIs (limited Zimbabwe support) |
 | **Vercel FREE Tier** for Next.js frontends | **100GB bandwidth/month FREE**, automatic HTTPS, global CDN, unlimited deployments, integrates with Supabase Auth out-of-box | Netlify (50GB/month), AWS Amplify ($0.15/GB = $15/month for 100GB), self-hosted ($20/month) |
 | Dual payment gateways (EcoCash + Omari) | Redundancy, customer choice, higher success rate | Single gateway (single point of failure) |
 | Circuit breaker pattern for payments | Prevent cascade failures, block payments during gateway outages | Unlimited retries (DDoS risk, customer confusion) |
@@ -1170,7 +1170,7 @@ apache-fineract-src-1.12.1/
 | **SMS** | Africa's Talk | $0.80/mo | 100 SMS @ $0.008/SMS (Next of Kin verification) |
 | **Email** | Resend FREE Tier | $0 | 100 emails/day = 3000/month (notifications, alerts) |
 | **Frontend Hosting** | Vercel FREE Tier | $0 | 100GB bandwidth/month, unlimited deployments |
-| **KYC** | Smile Identity | $20/mo | ~200 verifications @ $0.10/verification |
+| **KYC** | DIDIT | $20/mo | ~200 verifications @ $0.10/verification |
 | **Payments** | EcoCash + Omari | $0 | Pay-per-transaction (passed to customer) |
 | **Device Lock** | Third-party provider | TBD | Typically $1-2/device/month |
 | **Monitoring** | CloudWatch FREE Tier | $0 | 5GB ingestion, 10 custom metrics |
@@ -1210,8 +1210,8 @@ See [cost-optimization-COST-OPTIMIZATION.md](./cost-optimization-COST-OPTIMIZATI
 | WhatsApp message delivery failure | Medium | Retry mechanism (3 attempts, exponential backoff), fallback to SMS, conversation state persists for 24hrs |
 | Device lock provider API downtime | High | Manual lock via provider dashboard, CS alert for urgent locks, retry mechanism (exponential backoff, 3 max retries), escalation to phone supplier for critical cases |
 | Device tamper or provider app removal | High | Provider's tamper detection alerts, device offline monitoring, CS manual intervention, contractual phone recovery process with distributor |
-| Smile Identity KYC API downtime | Medium | Supabase PostgreSQL `kyc_cache` table (valid verifications persist 7 days), manual review workflow for urgent applications, webhook fallback for async processing |
-| Smile Identity rate limiting or quota exhaustion | Medium | Monitor daily verification quota, implement request queue with priority (urgent applications first), negotiate higher limits with Smile Identity |
+| DIDIT KYC API downtime | Medium | Supabase PostgreSQL `kyc_cache` table (valid verifications persist 7 days), manual review workflow for urgent applications, webhook fallback for async processing |
+| DIDIT rate limiting or quota exhaustion | Medium | Monitor daily verification quota, implement request queue with priority (urgent applications first), negotiate higher limits with DIDIT |
 | In-house ML Scoring API downtime | Medium | Fallback to Fineract Scorecard only (baseline scoring), manual review for edge cases, conservative max loan ($200 instead of $500) |
 | ML model performance degradation | Medium | Monitor prediction accuracy weekly, A/B test new models before deployment, maintain model versioning with rollback capability, retrain monthly on fresh payment data |
 | Insufficient training data (cold start) | High | Use Fineract Scorecard only for first 100 loans, synthetic data augmentation, transfer learning from similar markets, manual underwriting for high-value loans |

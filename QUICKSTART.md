@@ -230,7 +230,7 @@ Run this checklist to confirm everything is working:
 4. P2-T006: Build WhatsApp bot onboarding flow
 
 **Week 3-4: Core Services**
-5. P2-T007: Integrate Smile Identity KYC
+5. P2-T007: Integrate DIDIT KYC
 6. P2-T008: Mobile money payment integration
 7. P2-T009: Device handover process
 
@@ -373,7 +373,7 @@ Lynia Finance is a WhatsApp-based device financing platform for Zimbabwe's infor
 1. **Core Infrastructure** (Supabase + AWS Lambda)
 2. **Credit Scoring** (5-component affordability model)
 3. **WhatsApp Bot** (8-step onboarding with +263 validation)
-4. **KYC Integration** (Smile Identity)
+4. **KYC Integration** (DIDIT)
 5. **Payment Processing** (EcoCash/OneMoney)
 6. **Admin Dashboard** (Next.js 14)
 
@@ -392,7 +392,7 @@ Lynia Finance is a WhatsApp-based device financing platform for Zimbabwe's infor
 - **Backend**: AWS Lambda (Node.js 18, TypeScript)
 - **Frontend**: Next.js 14, React, Tailwind CSS
 - **Messaging**: WhatsApp Cloud API
-- **KYC**: Smile Identity
+- **KYC**: DIDIT
 - **Payments**: EcoCash, OneMoney
 - **Deployment**: AWS SAM, Vercel
 

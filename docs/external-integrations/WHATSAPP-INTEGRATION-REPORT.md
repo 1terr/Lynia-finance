@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The WhatsApp service onboarding flow has been fully wired to the real KYC API and WhatsApp Cloud API for media handling. The 20-state onboarding state machine now collects National ID numbers, downloads ID photos and selfies via WhatsApp Cloud API media endpoints, submits them to the KYC service, and handles both synchronous (Didit) and asynchronous (Smile Identity) verification results. KYC result notifications are sent back to customers via WhatsApp.
+The WhatsApp service onboarding flow has been fully wired to the real KYC API and WhatsApp Cloud API for media handling. The 20-state onboarding state machine now collects National ID numbers, downloads ID photos and selfies via WhatsApp Cloud API media endpoints, submits them to the KYC service, and handles both synchronous (Didit) and asynchronous (DIDIT) verification results. KYC result notifications are sent back to customers via WhatsApp.
 
 ### Integration at a Glance
 
@@ -20,7 +20,7 @@ The WhatsApp service onboarding flow has been fully wired to the real KYC API an
 | ID number collection (text input) | DONE | Zimbabwe ID format validation before photo |
 | KYC initiation from onboarding | DONE | Downloads media, calls `POST /kyc/initiate` |
 | Sync KYC result handling (Didit) | DONE | Immediate approval/rejection in same message |
-| Async KYC result handling (Smile) | DONE | "Please wait" → callback notification |
+| Async KYC result handling (DIDIT) | DONE | "Please wait" → callback notification |
 | `kyc_processing` wait state | DONE | Checks DB for completed KYC when customer messages |
 | KYC result notification via WhatsApp | DONE | KYC Lambda sends directly via Cloud API |
 | Credit scoring with real KYC data | DONE | Fetches KYC scores from `kyc_submissions` table |
@@ -77,7 +77,7 @@ Customer sends WhatsApp message
          │
     ┌────┴────┐
     │ Sync    │ Async
-    │ (Didit) │ (Smile)
+    │ (Didit) │ (DIDIT)
     ▼         ▼
   Immediate   "Please wait"
   result      → kyc_processing state
@@ -88,7 +88,7 @@ Customer sends WhatsApp message
 ### KYC Result Notification Flow
 
 ```
-Didit/Smile webhook → KYC Lambda callback handler
+Didit/DIDIT webhook → KYC Lambda callback handler
          │
          ▼
   processKYCResult()

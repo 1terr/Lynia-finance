@@ -2,7 +2,7 @@
  * Circuit Breaker Pattern (T011)
  *
  * Protects against cascading failures when calling external APIs
- * (Fineract, Smile Identity, EcoCash, OneMoney, WhatsApp Cloud API).
+ * (Fineract, DIDIT, EcoCash, OneMoney, WhatsApp Cloud API).
  *
  * States:
  *  CLOSED   - Normal operation, requests pass through

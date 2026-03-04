@@ -59,7 +59,7 @@ UAT covers 8 critical business scenarios that represent the complete customer an
 | Database | Supabase staging instance with PgBouncer connection pooling |
 | Auth | Supabase Auth with JWT validation |
 | WhatsApp | Meta WhatsApp Cloud API (test business number) |
-| KYC Provider | Smile Identity sandbox (`https://testapi.smileidentity.com`) |
+| KYC Provider | DIDIT sandbox (`https://testapi.diditidentity.com`) |
 | EcoCash | Sandbox (`https://sandbox.ecocash.co.zw`) |
 | OneMoney | Sandbox (`https://sandbox.onemoney.co.zw`) |
 | Device Lock | Trustonic sandbox environment |
@@ -161,7 +161,7 @@ UAT is complete when ALL of the following are met:
 
 **Objective:** Validate that a new customer can complete registration via WhatsApp in Shona, including language selection, personal data collection, and KYC initiation.
 
-**Preconditions:** WhatsApp test number active, Smile Identity sandbox ready.
+**Preconditions:** WhatsApp test number active, DIDIT sandbox ready.
 
 **Key validations:**
 - Language selection flow (English/Shona/Ndebele)
@@ -169,7 +169,7 @@ UAT is complete when ALL of the following are met:
 - Phone number validation (+263 prefix)
 - National ID format validation (XX-XXXXXXXAXX)
 - KYC document submission via WhatsApp
-- Smile Identity verification callback processing
+- DIDIT verification callback processing
 - Customer record creation in database
 
 ---
@@ -345,7 +345,7 @@ UAT is complete when ALL of the following are met:
 |------|--------|-----------|------------|
 | WhatsApp sandbox rate limiting | Test delays | Medium | Pre-register test numbers, batch test executions |
 | EcoCash/OneMoney sandbox downtime | Cannot test payments | Medium | Schedule payment tests with provider uptime windows |
-| Smile Identity sandbox latency | KYC tests slow | Low | Use cached responses for repeat tests |
+| DIDIT sandbox latency | KYC tests slow | Low | Use cached responses for repeat tests |
 | Stakeholder unavailability | Sign-off delay | Medium | Schedule sign-off meetings in advance |
 | Critical bugs found | UAT blocked | Low | Development team on standby for hot fixes |
 | Low-end device unavailability | Cannot validate target market | Low | Procure test devices in advance |

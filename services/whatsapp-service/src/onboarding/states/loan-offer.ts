@@ -23,22 +23,28 @@ export async function handleLoanOffer(
     });
 
     const creditLimit = session.state_data.credit_limit_usd || 200;
+    const downPaymentPct = session.state_data.down_payment_percentage || 20;
+    const interestRate = session.state_data.interest_rate_apr || 4;
+    const downPayment = Math.round(creditLimit * (downPaymentPct / 100));
+    const financed = creditLimit - downPayment;
+    const monthlyPayment = Math.round((financed * (1 + interestRate / 100)) / 6);
 
     return `\uD83D\uDCC4 *Loan Terms & Conditions*
 
 Before we proceed, please review:
 
-1. You'll make 6-8 monthly payments
+1. You'll make 6-12 monthly payments
 2. Device will be locked if payment is missed
 3. Device unlocks after final payment
 4. No early repayment penalties
-5. 10% down payment required
+5. ${downPaymentPct}% down payment required
 
 *Your Loan Details:*
 \u2022 Maximum: $${creditLimit}
-\u2022 Term: 6-8 months
-\u2022 Monthly payment: ~$${Math.round((creditLimit * 1.15) / 6)}
-\u2022 Down payment: $${Math.round(creditLimit * 0.1)}
+\u2022 Term: 6-12 months
+\u2022 Interest rate: ${interestRate}% APR
+\u2022 Monthly payment: ~$${monthlyPayment}
+\u2022 Down payment: $${downPayment} (${downPaymentPct}%)
 
 Do you accept these terms?
 
@@ -74,26 +80,35 @@ export async function handleTermsAcceptance(
       }
     });
 
-    return `\u2705 *Onboarding Complete!*
+    const depositPct = session.state_data.down_payment_percentage || 20;
+    const creditLimitVal = session.state_data.credit_limit_usd || 200;
+    const depositAmount = Math.round(creditLimitVal * (depositPct / 100));
 
-Congratulations! Your application is approved.
+    return `\u2705 *Application Approved!*
 
-*Next Steps:*
-1. Visit a Lynia distributor
-2. Choose your device
-3. Pay deposit (${session.state_data.credit_limit_usd ? Math.round(session.state_data.credit_limit_usd * 0.1) : 20} USD)
-4. Collect your device
+Congratulations! Your loan application is approved.
 
-*Nearest Distributor:*
-\uD83D\uDCCD Tech Hub Harare
+*Step 1: Pay Your Deposit*
+\uD83D\uDCB5 Amount: $${depositAmount} USD (${depositPct}% of $${creditLimitVal})
+
+*How to pay:*
+\u2022 EcoCash: Dial *151*2*1# and pay to merchant code *LYNIA*
+\u2022 OneMoney: Dial *111# and pay to merchant *LYNIA*
+\u2022 InnBucks: Send to LYNIA in the InnBucks app
+
+Use your phone number as reference.
+
+*Step 2: Visit a Distributor (after deposit is confirmed)*
+We'll send you a confirmation message once your deposit is received. Then visit:
+
+\uD83D\uDCCD *Tech Hub Harare*
    123 Jason Moyo Ave, Harare
    Mon-Sat, 9am-6pm
 
 *What to bring:*
 \u2705 Your National ID
 \u2705 This phone (for verification)
-
-We'll send you payment instructions shortly.
+\u2705 Deposit payment confirmation
 
 Welcome to Lynia Finance! \uD83C\uDF89`;
   }

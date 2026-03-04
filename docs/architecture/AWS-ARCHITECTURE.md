@@ -79,7 +79,7 @@ graph TB
 
     subgraph External["External APIs"]
         WhatsAppAPI[WhatsApp Cloud API]
-        SmileID[Smile Identity KYC]
+        DIDITID[DIDIT KYC]
         MobileMoney[InnBucks / EcoCash /<br/>OneWallet / OMari]
         Trustonic[Trustonic Device Lock]
     end
@@ -98,7 +98,7 @@ graph TB
     Integration --> RDS & S3Store & SQS & SM
 
     WhatsAppSvc --> WhatsAppAPI
-    KYCSvc --> SmileID
+    KYCSvc --> DIDITID
     PaymentSvc --> MobileMoney
     LockSvc --> Trustonic
     FineractProxy --> Fineract
@@ -150,7 +150,7 @@ graph TB
     end
 
     subgraph ExternalAPIs["External APIs — Via NAT Gateway"]
-        ExtAPIs[WhatsApp / Smile ID /<br/>InnBucks / EcoCash / Trustonic]
+        ExtAPIs[WhatsApp / DIDIT /<br/>InnBucks / EcoCash / Trustonic]
     end
 
     IGW --> PS1 & PS2

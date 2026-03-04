@@ -8,7 +8,7 @@
 # Secrets:
 #   1. database          — RDS PostgreSQL connection (host, port, db, user, pass)
 #   2. whatsapp          — WhatsApp Cloud API credentials
-#   3. smile-identity    — Smile Identity KYC credentials
+#   3. didit             — DIDIT KYC credentials
 #   4. ecocash           — EcoCash mobile money credentials
 #   5. onemoney          — OneMoney mobile money credentials
 #   6. trustonic         — Trustonic device lock credentials
@@ -92,8 +92,8 @@ while [[ $# -gt 0 ]]; do
       echo "  WHATSAPP_PHONE_NUMBER_ID     WhatsApp Business phone number ID"
       echo "  WHATSAPP_ACCESS_TOKEN        WhatsApp Cloud API access token"
       echo "  WHATSAPP_WEBHOOK_TOKEN       WhatsApp webhook verification token"
-      echo "  SMILE_PARTNER_ID             Smile Identity partner ID"
-      echo "  SMILE_API_KEY                Smile Identity API key"
+      echo "  DIDIT_API_KEY                DIDIT API key"
+      echo "  DIDIT_WEBHOOK_SECRET         DIDIT webhook secret"
       echo "  ECOCASH_MERCHANT_ID          EcoCash merchant ID"
       echo "  ECOCASH_API_KEY              EcoCash API key"
       echo "  ONEMONEY_MERCHANT_ID         OneMoney merchant ID"
@@ -115,7 +115,7 @@ RDS_STACK_NAME="${ENVIRONMENT}-lynia-rds"
 SECRET_NAMES=(
   "${ENVIRONMENT}/lynia/database"
   "${ENVIRONMENT}/lynia/whatsapp"
-  "${ENVIRONMENT}/lynia/smile-identity"
+  "${ENVIRONMENT}/lynia/didit"
   "${ENVIRONMENT}/lynia/ecocash"
   "${ENVIRONMENT}/lynia/onemoney"
   "${ENVIRONMENT}/lynia/trustonic"
@@ -306,8 +306,8 @@ if [[ "$VERIFY_ONLY" != true ]]; then
         "WhatsAppPhoneNumberId=${WHATSAPP_PHONE_NUMBER_ID:-}" \
         "WhatsAppAccessToken=${WHATSAPP_ACCESS_TOKEN:-}" \
         "WhatsAppWebhookVerifyToken=${WHATSAPP_WEBHOOK_TOKEN:-}" \
-        "SmilePartnerId=${SMILE_PARTNER_ID:-}" \
-        "SmileApiKey=${SMILE_API_KEY:-}" \
+        "DiditApiKey=${DIDIT_API_KEY:-}" \
+        "DiditWebhookSecret=${DIDIT_WEBHOOK_SECRET:-}" \
         "EcocashMerchantId=${ECOCASH_MERCHANT_ID:-}" \
         "EcocashApiKey=${ECOCASH_API_KEY:-}" \
         "OnemoneyMerchantId=${ONEMONEY_MERCHANT_ID:-}" \
@@ -503,7 +503,7 @@ echo -e "  │ Secret                     │ Service(s)         │ Contents   
 echo -e "  ├────────────────────────────┼────────────────────┼──────────────────────────────┤"
 echo -e "  │ database                   │ All                │ host, port, db, user, pass   │"
 echo -e "  │ whatsapp                   │ WhatsApp           │ phone_id, token, webhook     │"
-echo -e "  │ smile-identity             │ KYC                │ partner_id, api_key          │"
+echo -e "  │ didit                      │ KYC                │ api_key, webhook_secret      │"
 echo -e "  │ ecocash                    │ Payment            │ merchant_id, api_key         │"
 echo -e "  │ onemoney                   │ Payment            │ merchant_id, api_key         │"
 echo -e "  │ trustonic                  │ Lock               │ api_key, api_secret          │"

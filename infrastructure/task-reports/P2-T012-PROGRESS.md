@@ -414,7 +414,7 @@ Configuration Files:
 ### Services Tested
 1. **Payment Service** - OneMoney integration, payment verification, webhooks
 2. **Scoring Service** - Credit scoring algorithm (23 factors), loan decisions
-3. **KYC Service** - Smile Identity integration, document verification
+3. **KYC Service** - DIDIT integration, document verification
 4. **WhatsApp Service** - 18-step onboarding, message handling
 5. **Lock Service** - Trustonic integration, automated lock/unlock, handover
 6. **Notification Service** - Multi-channel notifications, delivery tracking
@@ -422,7 +422,7 @@ Configuration Files:
 ### External Dependencies
 - **Supabase** - PostgreSQL database (test instance)
 - **OneMoney API** - Payment gateway (sandbox)
-- **Smile Identity API** - KYC verification (sandbox)
+- **DIDIT API** - KYC verification (sandbox)
 - **Trustonic API** - Device lock management (sandbox)
 - **WhatsApp Cloud API** - Messaging (test credentials)
 

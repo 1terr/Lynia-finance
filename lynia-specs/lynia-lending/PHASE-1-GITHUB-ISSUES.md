@@ -83,7 +83,7 @@
 | Issue | Title | Priority | Hours | Labels |
 |-------|-------|----------|-------|--------|
 | [#100](https://github.com/1terr/Lynia-finance/issues/100) | P1-T027: KYC Document Requirements | Critical | 4h | phase-1, kyc, critical |
-| [#101](https://github.com/1terr/Lynia-finance/issues/101) | P1-T028: Smile Identity Integration Flow | Critical | 6h | phase-1, kyc, critical |
+| [#101](https://github.com/1terr/Lynia-finance/issues/101) | P1-T028: DIDIT Integration Flow | Critical | 6h | phase-1, kyc, critical |
 | [#102](https://github.com/1terr/Lynia-finance/issues/102) | P1-T029: Customer Onboarding Flow | Critical | 8h | phase-1, kyc, critical |
 | [#103](https://github.com/1terr/Lynia-finance/issues/103) | P1-T030: KYC Status Management | Medium | 4h | phase-1, kyc, medium-priority |
 | [#104](https://github.com/1terr/Lynia-finance/issues/104) | P1-T031: Privacy & Consent Management | High | 4h | phase-1, kyc, high-priority |

@@ -48,7 +48,7 @@ The primary objective of Phase 2 was to build the complete backend infrastructur
 
 1. ✅ Complete database schema deployment
 2. ✅ Core microservices implementation (6 Lambda functions)
-3. ✅ Third-party integrations (WhatsApp, Smile ID, Payment gateways, Trustonic)
+3. ✅ Third-party integrations (WhatsApp, DIDIT, Payment gateways, Trustonic)
 4. ✅ Testing infrastructure and test suites
 5. ✅ CI/CD pipeline and deployment automation
 6. ✅ Comprehensive documentation and demo preparation
@@ -111,10 +111,10 @@ All objectives were successfully achieved.
 - **API Endpoints**: 1 (calculate score)
 
 #### **1.3 KYC Service**
-- **Purpose**: Identity verification via Smile Identity
+- **Purpose**: Identity verification via DIDIT
 - **Technology**: Node.js 20.x, TypeScript
 - **Key Features**:
-  - Smile Identity API integration
+  - DIDIT API integration
   - Document upload (selfie, ID front, ID back)
   - Image processing and optimization
   - Facial recognition and ID validation
@@ -317,7 +317,7 @@ All objectives were successfully achieved.
 ┌─────────────────────────────────────────────────────────────────┐
 │                         External Services                        │
 ├─────────────────────────────────────────────────────────────────┤
-│  WhatsApp API  │  Smile ID  │  EcoCash  │  OneMoney  │ Trustonic│
+│  WhatsApp API  │  DIDIT  │  EcoCash  │  OneMoney  │ Trustonic│
 └────────┬────────────┬──────────────┬──────────┬───────────┬──────┘
          │            │              │          │           │
          ▼            ▼              ▼          ▼           ▼
@@ -369,7 +369,7 @@ All objectives were successfully achieved.
 
 **External Integrations**:
 - WhatsApp Cloud API (messaging)
-- Smile Identity (KYC verification)
+- DIDIT (KYC verification)
 - EcoCash/OneMoney (mobile money payments)
 - Trustonic (device lock management)
 - Twilio (SMS backup)
@@ -398,7 +398,7 @@ services/
 ├── kyc-service/              # KYC verification
 │   ├── src/
 │   │   ├── index.ts          # Lambda handler
-│   │   ├── smile-identity-service.ts
+│   │   ├── didit-service.ts
 │   │   └── image-processor.ts
 │   ├── package.json
 │   └── tsconfig.json
@@ -612,7 +612,7 @@ describe('Credit Scoring Service', () => {
 - Environment identifier
 - Supabase credentials
 - WhatsApp credentials
-- Smile Identity credentials
+- DIDIT credentials
 - Payment gateway credentials
 - Device lock credentials
 - SMS provider credentials
@@ -749,7 +749,7 @@ describe('Credit Scoring Service', () => {
 
 ### Challenge 2: Testing Without Live Services
 
-**Problem**: External services (EcoCash, Trustonic, Smile ID) not available in development
+**Problem**: External services (EcoCash, Trustonic, DIDIT) not available in development
 
 **Solution**:
 - Created mock implementations
@@ -820,7 +820,7 @@ describe('Credit Scoring Service', () => {
 
 **KYC Service** (5 files):
 - `services/kyc-service/src/index.ts`
-- `services/kyc-service/src/smile-identity-service.ts`
+- `services/kyc-service/src/didit-service.ts`
 - `services/kyc-service/src/image-processor.ts`
 - `services/kyc-service/package.json`
 - `services/kyc-service/tsconfig.json`

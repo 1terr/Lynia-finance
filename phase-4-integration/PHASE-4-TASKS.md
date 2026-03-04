@@ -95,7 +95,7 @@
 - [ ] Define OpenAPI/Swagger specifications for all service endpoints
 - [ ] Write contract tests for scoring-service API (request/response schemas)
 - [ ] Write contract tests for payment-service API (EcoCash, OneMoney, InnBucks)
-- [ ] Write contract tests for kyc-service API (Smile Identity integration)
+- [ ] Write contract tests for kyc-service API (DIDIT integration)
 - [ ] Write contract tests for whatsapp-service API (webhook payloads)
 - [ ] Write contract tests for lock-service API (Trustonic integration)
 - [ ] Write contract tests for notification-service API
@@ -678,7 +678,7 @@ All Tasks ─→ P4-T015 (Go-Live Readiness)
    - **Mitigation**: Pre-warm critical Lambdas, optimize connection pooling
 
 3. **Third-party API instability** (P4-T001)
-   - **Risk**: EcoCash, Smile Identity, or WhatsApp API sandbox unreliable
+   - **Risk**: EcoCash, DIDIT, or WhatsApp API sandbox unreliable
    - **Mitigation**: Implement circuit breakers, test with mocks first
 
 4. **UAT stakeholder availability** (P4-T012)

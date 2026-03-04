@@ -94,26 +94,6 @@ Parameters:
     NoEcho: true
     Default: ""
 
-  SmilePartnerId:
-    Type: String
-    Description: Smile Identity Partner ID
-    NoEcho: true
-    Default: ""
-
-  SmileApiKey:
-    Type: String
-    Description: Smile Identity API Key
-    NoEcho: true
-    Default: ""
-
-  SmileEnvironment:
-    Type: String
-    Description: Smile Identity Environment (sandbox/production)
-    Default: sandbox
-    AllowedValues:
-      - sandbox
-      - production
-
   DiditApiKey:
     Type: String
     Description: Didit KYC API Key
@@ -125,14 +105,6 @@ Parameters:
     Description: Didit Webhook Secret for signature verification
     NoEcho: true
     Default: ""
-
-  KYCProvider:
-    Type: String
-    Description: Active KYC provider (smile_identity or didit)
-    Default: didit
-    AllowedValues:
-      - smile_identity
-      - didit
 
   EcocashMerchantId:
     Type: String
@@ -480,7 +452,7 @@ Resources:
       FunctionName: !Sub ${Environment}-lynia-kyc-service
       CodeUri: services/
       Handler: kyc-service/src/index.handler
-      Description: KYC verification service (Smile Identity integration)
+      Description: KYC verification service (DIDIT integration)
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -489,7 +461,6 @@ Resources:
                 - secretsmanager:GetSecretValue
               Resource:
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/database-*"
-                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/smile-identity-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/didit-*"
                 - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/whatsapp-*"
             - Effect: Allow
@@ -506,10 +477,7 @@ Resources:
               Resource: "*"
       Environment:
         Variables:
-          KYC_PROVIDER: !Ref KYCProvider
-          SMILE_PARTNER_ID: !Ref SmilePartnerId
-          SMILE_API_KEY: !Ref SmileApiKey
-          SMILE_ENVIRONMENT: !Ref SmileEnvironment
+          KYC_PROVIDER: didit
           DIDIT_API_KEY: !Ref DiditApiKey
           DIDIT_WEBHOOK_SECRET: !Ref DiditWebhookSecret
           WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId

@@ -1,4 +1,4 @@
-# T026: Smile Identity Zimbabwe National ID Verification API
+# T026: DIDIT Zimbabwe National ID Verification API
 
 **Task ID**: T026 (GitHub Issue #31)
 **Phase**: Phase 0 - Research
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Smile Identity (Smile ID) is Africa's leading digital identity verification, KYC compliance, and fraud detection platform operating in 52 African countries including Zimbabwe. This research documents their Zimbabwe National ID verification API, which connects directly to the Registrar General's Office database to verify citizen identities in real-time for KYC compliance.
+DIDIT (DIDIT) is Africa's leading digital identity verification, KYC compliance, and fraud detection platform operating in 52 African countries including Zimbabwe. This research documents their Zimbabwe National ID verification API, which connects directly to the Registrar General's Office database to verify citizen identities in real-time for KYC compliance.
 
 **Key Findings**:
 - ✅ **Direct Government Integration**: Real-time verification with Zimbabwe Registrar General's Office
@@ -27,7 +27,7 @@ Smile Identity (Smile ID) is Africa's leading digital identity verification, KYC
 
 ## Table of Contents
 
-1. [Smile Identity Platform Overview](#1-smile-identity-platform-overview)
+1. [DIDIT Platform Overview](#1-didit-platform-overview)
 2. [Zimbabwe National ID Verification](#2-zimbabwe-national-id-verification)
 3. [Basic KYC vs Enhanced KYC](#3-basic-kyc-vs-enhanced-kyc)
 4. [API Integration](#4-api-integration)
@@ -40,15 +40,15 @@ Smile Identity (Smile ID) is Africa's leading digital identity verification, KYC
 
 ---
 
-## 1. Smile Identity Platform Overview
+## 1. DIDIT Platform Overview
 
-### What is Smile Identity?
+### What is DIDIT?
 
-Smile Identity (rebranded as **Smile ID**) is the leading digital identity verification and KYC compliance platform built specifically for Africa. Founded to solve the unique challenges of identity verification across the continent, they now serve thousands of businesses across 52 African countries.
+DIDIT (rebranded as **DIDIT**) is the leading digital identity verification and KYC compliance platform built specifically for Africa. Founded to solve the unique challenges of identity verification across the continent, they now serve thousands of businesses across 52 African countries.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│          Smile Identity Platform                    │
+│          DIDIT Platform                    │
 ├─────────────────────────────────────────────────────┤
 │                                                     │
 │  🆔 Identity Verification    🔍 Fraud Detection    │
@@ -63,7 +63,7 @@ Smile Identity (rebranded as **Smile ID**) is the leading digital identity verif
 │  - Director verification     - Adverse media       │
 │                                                     │
 │  🔐 Authentication           📱 SmartSelfie™       │
-│  - Face authentication       - Smile-based liveness│
+│  - Face authentication       - DIDIT-based liveness│
 │  - Re-verification           - 99.8% accuracy      │
 │                                                     │
 └─────────────────────────────────────────────────────┘
@@ -85,7 +85,7 @@ Smile Identity (rebranded as **Smile ID**) is the leading digital identity verif
 
 ### For Lynia Finance
 
-Smile ID provides the **critical KYC infrastructure** needed to:
+DIDIT provides the **critical KYC infrastructure** needed to:
 - Verify customer identity using Zimbabwe National ID
 - Comply with Reserve Bank of Zimbabwe lending regulations
 - Prevent fraud and identity theft
@@ -98,7 +98,7 @@ Smile ID provides the **critical KYC infrastructure** needed to:
 
 ### Supported Zimbabwe Documents
 
-Smile ID supports **three document types** for Zimbabwe:
+DIDIT supports **three document types** for Zimbabwe:
 
 | Document | Issuing Authority | Verification Method | Use Case |
 |----------|------------------|---------------------|----------|
@@ -148,7 +148,7 @@ isValidZimbabweIDNumber('12345678912');   // false (missing letter)
 
 ### Verification Products for Zimbabwe
 
-Smile ID offers **two products** for Zimbabwe National ID verification:
+DIDIT offers **two products** for Zimbabwe National ID verification:
 
 | Product | API Type | Returns PII | Use Case |
 |---------|----------|-------------|----------|
@@ -282,7 +282,7 @@ Smile ID offers **two products** for Zimbabwe National ID verification:
 Install the official Node.js SDK:
 
 ```bash
-npm install smile-identity-core
+npm install didit-core
 ```
 
 **Requirements**:
@@ -292,15 +292,15 @@ npm install smile-identity-core
 ### Authentication Setup
 
 ```javascript
-// config/smileidentity.js
+// config/diditidentity.js
 require('dotenv').config();
 
-const SmileIdentityCore = require('smile-identity-core');
+const DiditCore = require('didit-core');
 
 const credentials = {
-  partnerId: process.env.SMILE_PARTNER_ID,
-  apiKey: process.env.SMILE_API_KEY,
-  sidServer: process.env.SMILE_SID_SERVER || '0'  // 0 = sandbox, 1 = production
+  partnerId: process.env.DIDIT_API_KEY,
+  apiKey: process.env.DIDIT_WEBHOOK_SECRET,
+  sidServer: process.env.DIDIT_SID_SERVER || '0'  // 0 = sandbox, 1 = production
 };
 
 module.exports = credentials;
@@ -309,17 +309,17 @@ module.exports = credentials;
 **Environment Variables**:
 ```bash
 # .env file (NEVER commit to git!)
-SMILE_PARTNER_ID=your_partner_id_here
-SMILE_API_KEY=your_api_key_here
-SMILE_SID_SERVER=0  # Use 0 for sandbox, 1 for production
-SMILE_CALLBACK_URL=https://api.lyniafinance.com/webhooks/smile-identity
+DIDIT_API_KEY=your_partner_id_here
+DIDIT_WEBHOOK_SECRET=your_api_key_here
+DIDIT_SID_SERVER=0  # Use 0 for sandbox, 1 for production
+DIDIT_WEBHOOK_URL=https://api.lyniafinance.com/webhooks/didit
 ```
 
 ### Getting API Credentials
 
-1. **Sign Up**: [https://portal.usesmileid.com/signup](https://portal.usesmileid.com/signup)
+1. **Sign Up**: [https://portal.usediditid.com/signup](https://portal.usediditid.com/signup)
 2. **Verify Email**: Check inbox and verify account
-3. **Access Portal**: Log in to [https://portal.usesmileid.com/](https://portal.usesmileid.com/)
+3. **Access Portal**: Log in to [https://portal.usediditid.com/](https://portal.usediditid.com/)
 4. **Get Sandbox Credentials**:
    - Navigate to **Developer** section
    - Toggle to **Sandbox** environment
@@ -333,8 +333,8 @@ The SDK provides **four main classes**:
 #### 1. **IDApi** Class (for Enhanced/Basic KYC)
 
 ```javascript
-const SmileIdentityCore = require('smile-identity-core');
-const IDApi = SmileIdentityCore.IDApi;
+const DiditCore = require('didit-core');
+const IDApi = DiditCore.IDApi;
 
 const connection = new IDApi(
   credentials.partnerId,
@@ -350,7 +350,7 @@ const connection = new IDApi(
 #### 2. **WebApi** Class (for Biometric KYC, Document Verification)
 
 ```javascript
-const WebApi = SmileIdentityCore.WebApi;
+const WebApi = DiditCore.WebApi;
 
 const connection = new WebApi(
   credentials.partnerId,
@@ -370,7 +370,7 @@ const connection = new WebApi(
 Generates secure signatures for API requests.
 
 ```javascript
-const Signature = SmileIdentityCore.Signature;
+const Signature = DiditCore.Signature;
 
 const signature = new Signature(
   credentials.partnerId,
@@ -389,10 +389,10 @@ Provides utility methods for common tasks.
 
 ```javascript
 // services/kyc.service.js
-const SmileIdentityCore = require('smile-identity-core');
-const IDApi = SmileIdentityCore.IDApi;
+const DiditCore = require('didit-core');
+const IDApi = DiditCore.IDApi;
 const { v4: uuidv4 } = require('uuid');
-const credentials = require('../config/smileidentity');
+const credentials = require('../config/diditidentity');
 
 class KYCService {
   constructor() {
@@ -524,7 +524,7 @@ async function verifyCustomerID(req, res) {
   try {
     const { nationalId, customerId } = req.body;
 
-    // Verify ID with Smile Identity
+    // Verify ID with DIDIT
     const result = await kycService.verifyZimbabweNationalID(
       nationalId,
       customerId
@@ -563,7 +563,7 @@ async function verifyCustomerID(req, res) {
       gender: result.data.gender,
       nationalIdVerified: true,
       nationalIdVerifiedAt: new Date(),
-      smileJobId: result.jobId
+      diditJobId: result.jobId
     }, {
       where: { id: customerId }
     });
@@ -654,7 +654,7 @@ Upon signup, you get **instant and free access** to the Sandbox environment. All
 
 ### Test Zimbabwe National IDs
 
-Smile ID provides **5 test ID numbers** for Zimbabwe sandbox testing:
+DIDIT provides **5 test ID numbers** for Zimbabwe sandbox testing:
 
 | Test ID | Expected Result | Result Code | Use Case |
 |---------|-----------------|-------------|----------|
@@ -865,7 +865,7 @@ This allows you to test specific edge cases like:
 
 ### Pricing Overview
 
-Smile Identity offers **two pricing models**:
+DIDIT offers **two pricing models**:
 
 #### 1. **Pay-As-You-Go** (Recommended for Lynia)
 
@@ -876,7 +876,7 @@ Smile Identity offers **two pricing models**:
 │                                                  │
 │  ✅ No monthly fees                              │
 │  ✅ Pay only for verifications performed         │
-│  ✅ Full access to all Smile ID products         │
+│  ✅ Full access to all DIDIT products         │
 │  ✅ User portal with built-in analytics          │
 │  ✅ Unlimited free testing in sandbox            │
 │  ✅ No long-term commitments                     │
@@ -916,7 +916,7 @@ Smile Identity offers **two pricing models**:
 
 ### Cost Per Verification
 
-⚠️ **Important**: Smile Identity does **not publicly disclose** exact per-verification pricing. Pricing is customized based on:
+⚠️ **Important**: DIDIT does **not publicly disclose** exact per-verification pricing. Pricing is customized based on:
 - Verification volume
 - Products used (Basic KYC cheaper than Enhanced KYC)
 - Contract length
@@ -935,7 +935,7 @@ Based on similar KYC platforms in Africa:
 | **Document Verification** | $0.30 - $0.80 | Per document |
 | **Biometric KYC** | $0.50 - $1.50 | Per verification |
 
-**Note**: These are estimates. Contact Smile Identity for exact Zimbabwe pricing.
+**Note**: These are estimates. Contact DIDIT for exact Zimbabwe pricing.
 
 ### Cost Projections for Lynia Finance
 
@@ -1024,7 +1024,7 @@ console.log('ROI Analysis:', roiAnalysis);
 
 ### How to Get Exact Pricing
 
-1. **Contact Sales**: [sales@usesmileid.com](mailto:sales@usesmileid.com)
+1. **Contact Sales**: [sales@usediditid.com](mailto:sales@usediditid.com)
 2. **Specify Requirements**:
    - Product: Enhanced KYC for Zimbabwe National ID
    - Volume: 500 verifications/month (Year 1)
@@ -1038,7 +1038,7 @@ console.log('ROI Analysis:', roiAnalysis);
 
 ### Security Certifications
 
-Smile Identity holds **industry-leading security certifications**:
+DIDIT holds **industry-leading security certifications**:
 
 | Certification | Description | Significance |
 |---------------|-------------|--------------|
@@ -1049,17 +1049,17 @@ Smile Identity holds **industry-leading security certifications**:
 **Biometric Security**:
 - **0% attack rating** on facial recognition
 - **99.8% accuracy** across all skin tones
-- Liveness detection (smile-based)
+- Liveness detection (didit-based)
 
 ### Zimbabwe Regulatory Compliance
 
-Smile ID helps Lynia Finance comply with:
+DIDIT helps Lynia Finance comply with:
 
 #### 1. **Reserve Bank of Zimbabwe (RBZ) Lending Regulations**
 
 **Requirement**: KYC verification for all lending customers
 
-**Smile ID Solution**:
+**DIDIT Solution**:
 - Real-time ID verification with Registrar General database
 - Confirms identity before loan disbursement
 - Audit trail for regulatory inspection
@@ -1068,7 +1068,7 @@ Smile ID helps Lynia Finance comply with:
 
 **Requirement**: Process personal data lawfully, store securely
 
-**Smile ID Solution**:
+**DIDIT Solution**:
 - ISO 27001 certified data handling
 - Encryption in transit and at rest
 - GDPR-aligned privacy practices
@@ -1078,7 +1078,7 @@ Smile ID helps Lynia Finance comply with:
 
 **Requirement**: Customer Due Diligence (CDD) for financial services
 
-**Smile ID Solution**:
+**DIDIT Solution**:
 - Enhanced KYC meets CDD requirements
 - PEP screening (available as add-on)
 - Sanctions screening (available as add-on)
@@ -1088,14 +1088,14 @@ Smile ID helps Lynia Finance comply with:
 
 Zimbabwe is a member of **ESAAMLG** (Eastern and Southern Africa Anti-Money Laundering Group), aligned with FATF standards.
 
-**Smile ID Solution**:
+**DIDIT Solution**:
 - FATF-compliant identity verification
 - Risk-based approach to CDD
 - Ongoing monitoring capabilities
 
 ### Supported Zimbabwean Authorities
 
-Smile ID integrates with:
+DIDIT integrates with:
 
 | Authority | Function | Integration |
 |-----------|----------|-------------|
@@ -1107,7 +1107,7 @@ Smile ID integrates with:
 
 ```
 ┌──────────────────────────────────────────────────┐
-│  Smile ID Data Privacy Practices                 │
+│  DIDIT Data Privacy Practices                 │
 ├──────────────────────────────────────────────────┤
 │                                                  │
 │  ✅ Data encrypted in transit (TLS 1.3)          │
@@ -1123,7 +1123,7 @@ Smile ID integrates with:
 ```
 
 **For Lynia Finance**:
-- Customer data never stored by Smile ID longer than necessary
+- Customer data never stored by DIDIT longer than necessary
 - Lynia controls data retention in own database
 - Clear consent obtained from customers during onboarding
 
@@ -1140,7 +1140,7 @@ Smile ID integrates with:
 │                                                     │
 │  ┌──────────────┐         ┌──────────────┐        │
 │  │  Customer    │────────▶│  KYC Service │        │
-│  │  Application │         │  (Smile ID)  │        │
+│  │  Application │         │  (DIDIT)  │        │
 │  └──────────────┘         └──────┬───────┘        │
 │                                   │                 │
 │                                   │ Verify ID      │
@@ -1162,7 +1162,7 @@ Smile ID integrates with:
                           │
                           ▼
                 ┌──────────────────┐
-                │  Smile Identity  │
+                │  DIDIT  │
                 │    API           │
                 └────────┬─────────┘
                          │
@@ -1196,7 +1196,7 @@ app.post('/api/customers/start-application', async (req, res) => {
   });
 });
 
-// Step 2: Verify National ID with Smile Identity
+// Step 2: Verify National ID with DIDIT
 app.post('/api/customers/:id/verify-kyc', async (req, res) => {
   const { id } = req.params;
 
@@ -1207,7 +1207,7 @@ app.post('/api/customers/:id/verify-kyc', async (req, res) => {
   }
 
   try {
-    // Verify ID with Smile Identity
+    // Verify ID with DIDIT
     const result = await kycService.verifyZimbabweNationalID(
       customer.nationalId,
       customer.id
@@ -1258,7 +1258,7 @@ app.post('/api/customers/:id/verify-kyc', async (req, res) => {
     customer.age = age;
     customer.kycStatus = 'VERIFIED';
     customer.kycVerifiedAt = new Date();
-    customer.smileJobId = result.jobId;
+    customer.diditJobId = result.jobId;
     await customer.save();
 
     res.json({
@@ -1330,7 +1330,7 @@ module.exports = (sequelize) => {
       }
     },
 
-    // Verified Identity Data (from Smile ID)
+    // Verified Identity Data (from DIDIT)
     firstName: {
       type: DataTypes.STRING,
       allowNull: true
@@ -1378,10 +1378,10 @@ module.exports = (sequelize) => {
       allowNull: true
     },
 
-    smileJobId: {
+    diditJobId: {
       type: DataTypes.STRING,
       allowNull: true,
-      comment: 'Smile Identity job ID for audit trail'
+      comment: 'DIDIT job ID for audit trail'
     }
 
   }, {
@@ -1514,7 +1514,7 @@ async function verifyWithCache(nationalId, customerId) {
     return cached;
   }
 
-  // Verify with Smile ID
+  // Verify with DIDIT
   const result = await kycService.verifyZimbabweNationalID(nationalId, customerId);
 
   // Cache successful results only
@@ -1558,7 +1558,7 @@ const apiKey = '1234abcd';
 console.log('Using API key:', apiKey);
 
 // ✅ Good
-const apiKey = process.env.SMILE_API_KEY;
+const apiKey = process.env.DIDIT_WEBHOOK_SECRET;
 console.log('Using API key: [REDACTED]');
 
 // Mask National ID in logs
@@ -1597,7 +1597,7 @@ Production:
 
 ### Summary
 
-Smile Identity provides a robust, compliant, and cost-effective solution for Zimbabwe National ID verification that perfectly aligns with Lynia Finance's KYC requirements.
+DIDIT provides a robust, compliant, and cost-effective solution for Zimbabwe National ID verification that perfectly aligns with Lynia Finance's KYC requirements.
 
 **Key Advantages**:
 - ✅ **Direct Government Integration**: Real-time verification with Registrar General
@@ -1622,8 +1622,8 @@ Smile Identity provides a robust, compliant, and cost-effective solution for Zim
 ### Implementation Checklist
 
 ```
-☐ Sign up for Smile Identity account
-   URL: https://portal.usesmileid.com/signup
+☐ Sign up for DIDIT account
+   URL: https://portal.usediditid.com/signup
 
 ☐ Verify email and access portal
 
@@ -1631,10 +1631,10 @@ Smile Identity provides a robust, compliant, and cost-effective solution for Zim
    Developer section > Sandbox > Copy Partner ID & API Key
 
 ☐ Save credentials securely
-   .env file: SMILE_PARTNER_ID, SMILE_API_KEY, SMILE_SID_SERVER=0
+   .env file: DIDIT_API_KEY, DIDIT_WEBHOOK_SECRET, DIDIT_SID_SERVER=0
 
 ☐ Install Node.js SDK
-   npm install smile-identity-core
+   npm install didit-core
 
 ☐ Implement KYC service
    See Section 4: API Integration
@@ -1661,13 +1661,13 @@ Smile Identity provides a robust, compliant, and cost-effective solution for Zim
    Customer application → KYC → Device selection
 
 ☐ Contact sales for pricing
-   Email: sales@usesmileid.com for Zimbabwe quotes
+   Email: sales@usediditid.com for Zimbabwe quotes
 
 ☐ Request production credentials
    Once testing complete, request production access
 
 ☐ Go live
-   Switch SMILE_SID_SERVER from 0 to 1
+   Switch DIDIT_SID_SERVER from 0 to 1
 ```
 
 ### Next Steps
@@ -1675,12 +1675,12 @@ Smile Identity provides a robust, compliant, and cost-effective solution for Zim
 #### Immediate (This Week)
 
 1. **Create Test Account**
-   - Sign up at Smile Identity portal
+   - Sign up at DIDIT portal
    - Get sandbox Partner ID and API Key
    - Save credentials in `.env` file
 
 2. **Implement KYC Service**
-   - Install `smile-identity-core` package
+   - Install `didit-core` package
    - Create KYC service wrapper (Section 4)
    - Implement Zimbabwe ID validator
 
@@ -1710,7 +1710,7 @@ Smile Identity provides a robust, compliant, and cost-effective solution for Zim
 #### Medium-Term (Next Month)
 
 7. **Request Production Pricing**
-   - Contact sales@usesmileid.com
+   - Contact sales@usediditid.com
    - Specify: Enhanced KYC for Zimbabwe
    - Volume: 500/month initially
    - Request Pay-As-You-Go quote
@@ -1759,12 +1759,12 @@ Track these KPIs once implemented:
 
 ### Resources
 
-- **Portal**: [https://portal.usesmileid.com/](https://portal.usesmileid.com/)
-- **Docs**: [https://docs.usesmileid.com/](https://docs.usesmileid.com/)
-- **Node.js SDK**: [https://github.com/smileidentity/smile-identity-core-js](https://github.com/smileidentity/smile-identity-core-js)
-- **Zimbabwe Page**: [https://usesmileid.com/countries/zimbabwe/](https://usesmileid.com/countries/zimbabwe/)
-- **Support**: [support@usesmileid.com](mailto:support@usesmileid.com)
-- **Sales**: [sales@usesmileid.com](mailto:sales@usesmileid.com)
+- **Portal**: [https://portal.usediditid.com/](https://portal.usediditid.com/)
+- **Docs**: [https://docs.usediditid.com/](https://docs.usediditid.com/)
+- **Node.js SDK**: [https://github.com/diditidentity/didit-core-js](https://github.com/diditidentity/didit-core-js)
+- **Zimbabwe Page**: [https://usediditid.com/countries/zimbabwe/](https://usediditid.com/countries/zimbabwe/)
+- **Support**: [support@usediditid.com](mailto:support@usediditid.com)
+- **Sales**: [sales@usediditid.com](mailto:sales@usediditid.com)
 
 ### Cost-Benefit Analysis
 
@@ -1786,7 +1786,7 @@ Track these KPIs once implemented:
 
 ## Conclusion
 
-Smile Identity provides the ideal KYC verification solution for Lynia Finance's Zimbabwe operations. With direct integration to the Registrar General's Office, 99.8% biometric accuracy, ISO certifications, free sandbox testing, and pay-as-you-go pricing, it enables compliant, secure, and efficient customer onboarding at minimal cost.
+DIDIT provides the ideal KYC verification solution for Lynia Finance's Zimbabwe operations. With direct integration to the Registrar General's Office, 99.8% biometric accuracy, ISO certifications, free sandbox testing, and pay-as-you-go pricing, it enables compliant, secure, and efficient customer onboarding at minimal cost.
 
 **Recommended Product**: **Enhanced KYC** for Zimbabwe National ID verification
 

@@ -17,7 +17,7 @@
 | P2-T004 | Credit Scoring Service Implementation | Critical | 16h | Pending | P2-T002, P2-T003 |
 | P2-T005 | WhatsApp Cloud API Setup & Configuration | High | 6h | Pending | P2-T001 |
 | P2-T006 | WhatsApp Bot - Customer Onboarding Flow | Critical | 20h | Pending | P2-T005, P2-T002 |
-| P2-T007 | Smile Identity KYC Integration | High | 12h | Pending | P2-T002, P2-T003 |
+| P2-T007 | DIDIT KYC Integration | High | 12h | Pending | P2-T002, P2-T003 |
 | P2-T008 | Mobile Money Payment Integration | High | 16h | Pending | P2-T002, P2-T003 |
 | P2-T009 | Device Handover Process Implementation | High | 10h | Pending | P2-T002, P2-T008 |
 | P2-T010 | Device Lock/Unlock Management | Medium | 8h | Pending | P2-T002, P2-T009 |
@@ -356,7 +356,7 @@ Subscribed Events: messages, message_status
 6. **KYC Document Upload**
    - Request national ID photo
    - Request selfie photo
-   - Submit to Smile Identity API
+   - Submit to DIDIT API
    - Wait for verification result
 
 7. **Credit Scoring**
@@ -449,21 +449,21 @@ function validateZimbabwePhone(phone: string): boolean {
 
 ## Week 3-4: KYC & Payments (Dec 12 - Dec 25)
 
-### P2-T007: Smile Identity KYC Integration
+### P2-T007: DIDIT KYC Integration
 **Priority**: High
 **Estimate**: 12 hours
 **Status**: Pending
 **Dependencies**: P2-T002, P2-T003
 
-**Objective**: Integrate Smile Identity for ID + selfie verification (Zimbabwe only).
+**Objective**: Integrate DIDIT for ID + selfie verification (Zimbabwe only).
 
 **Tasks**:
-- [ ] Sign up for Smile Identity sandbox account
+- [ ] Sign up for DIDIT sandbox account
 - [ ] Get partner ID and API key
 - [ ] Create KYC service Lambda handler
 - [ ] Implement ID document upload endpoint
 - [ ] Implement selfie upload endpoint
-- [ ] Integrate Smile Identity Enhanced KYC API
+- [ ] Integrate DIDIT Enhanced KYC API
 - [ ] Set country filter: Zimbabwe only
 - [ ] Handle verification results:
   - [ ] Approved: Update customer kyc_status = 'verified'
@@ -501,12 +501,12 @@ Response: {
 
 **Deliverables**:
 - Working KYC Lambda function
-- Smile Identity integration complete
+- DIDIT integration complete
 - Webhook handling async results
 - Integration tests passing
 
 **Success Criteria**:
-- [ ] Can submit ID + selfie to Smile Identity
+- [ ] Can submit ID + selfie to DIDIT
 - [ ] Receives verification results correctly
 - [ ] Updates customer kyc_status
 - [ ] Stores verification data
@@ -1220,7 +1220,7 @@ POST https://api.trustonic.com/v1/devices/{trustonic_device_id}/unlock
    - Mitigation: Start application immediately, use test numbers meanwhile
 
 2. **Third-Party API Access** (P2-T007, P2-T008)
-   - Risk: Smile Identity, EcoCash, OneMoney may require business docs
+   - Risk: DIDIT, EcoCash, OneMoney may require business docs
    - Mitigation: Contact sales early, use sandbox for development
 
 3. **Device Lock API** (P2-T010)
@@ -1249,7 +1249,7 @@ POST https://api.trustonic.com/v1/devices/{trustonic_device_id}/unlock
 - Supabase account (can create immediately)
 - Meta Developer account (can create immediately)
 - WhatsApp Business approval (1-2 weeks)
-- Smile Identity API access (1 week)
+- DIDIT API access (1 week)
 - EcoCash API access (1-2 weeks, may require business docs)
 - OneMoney API access (1-2 weeks, may require business docs)
 - AWS account (can create immediately)

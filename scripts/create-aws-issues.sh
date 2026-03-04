@@ -50,7 +50,7 @@ Migrate all service credentials from environment variables / GitHub Secrets to A
 - [ ] Create AWS Secrets Manager secrets for each environment (staging, production)
   - Supabase URL + service role key
   - WhatsApp Cloud API (phone ID, access token, webhook verify token)
-  - Smile Identity (partner ID, API key)
+  - DIDIT (API key, webhook secret)
   - EcoCash (merchant ID, API key)
   - OneMoney (merchant ID, API key)
   - Trustonic (API key, API secret)
@@ -114,7 +114,7 @@ Configure a VPC with private subnets, NAT gateways, and security groups to run L
   - `com.amazonaws.us-east-1.monitoring` (CloudWatch)
   - `com.amazonaws.us-east-1.logs` (CloudWatch Logs)
   - `com.amazonaws.us-east-1.sqs` (if SQS is used)
-- [ ] Test all external API connectivity (Supabase, Smile Identity, EcoCash, etc.) from VPC
+- [ ] Test all external API connectivity (Supabase, DIDIT, EcoCash, etc.) from VPC
 - [ ] Update deployment documentation
 
 ## Acceptance Criteria
@@ -281,7 +281,7 @@ Implement Amazon SQS queues to decouple synchronous API calls and enable reliabl
 ## Current State
 
 - All Lambda functions are invoked synchronously via API Gateway
-- No retry mechanism for failed external API calls (Smile Identity, EcoCash, etc.)
+- No retry mechanism for failed external API calls (DIDIT, EcoCash, etc.)
 - Notification sending is synchronous and blocks the main request
 - No dead letter queues for failed processing
 
@@ -297,7 +297,7 @@ Implement Amazon SQS queues to decouple synchronous API calls and enable reliabl
   - Visibility timeout: 30s
   - Message retention: 7 days
   - DLQ: `PaymentCallbackDLQ` (maxReceiveCount: 5)
-- [ ] **KYCProcessingQueue** - Async KYC verification results from Smile Identity
+- [ ] **KYCProcessingQueue** - Async KYC verification results from DIDIT
   - Visibility timeout: 120s
   - Message retention: 7 days
   - DLQ: `KYCProcessingDLQ` (maxReceiveCount: 3)
@@ -582,7 +582,7 @@ Enable AWS X-Ray distributed tracing across all Lambda functions and API Gateway
       Tracing: Active
   ```
 - [ ] Add `aws-xray-sdk` to shared dependencies
-- [ ] Instrument outbound HTTP calls (Supabase, Smile Identity, EcoCash, etc.)
+- [ ] Instrument outbound HTTP calls (Supabase, DIDIT, EcoCash, etc.)
 - [ ] Instrument Supabase database queries as subsegments
 - [ ] Add custom annotations for business context:
   - `customerId` on loan and payment traces
@@ -814,7 +814,7 @@ Comprehensive production readiness review and load testing before launching Lyni
 - [ ] Database backup strategy confirmed (Supabase auto-backups)
 - [ ] Error handling verified in all Lambda functions
 - [ ] Idempotency verified for payment operations
-- [ ] Circuit breakers for external API calls (Smile Identity, EcoCash)
+- [ ] Circuit breakers for external API calls (DIDIT, EcoCash)
 
 ### Load Testing
 

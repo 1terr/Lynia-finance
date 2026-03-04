@@ -157,7 +157,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 | Resource | Count | Details |
 |----------|-------|---------|
 | SQS Queues | 10 | 5 main + 5 DLQ |
-| Secrets Manager | 7 | Database, WhatsApp, Smile ID, EcoCash, OneMoney, Trustonic, SMS |
+| Secrets Manager | 7 | Database, WhatsApp, DIDIT, EcoCash, OneMoney, Trustonic, SMS |
 | IAM Roles | 4 | Deployment, AdminReadOnly, IncidentResponse, FrontendDeploy |
 | Cognito User Pool | 1 | 2 app clients, 5 user groups |
 | WAF Web ACL | 1 | SQL injection, XSS, rate limiting |
@@ -279,7 +279,7 @@ T001 (Prerequisites) ─┬─→ T002 (VPC) ──→ T004 (RDS) ─┬─→ T
 After Phase 5 completion:
 
 1. **User Acceptance Testing (UAT)** — Invite pilot users to test the admin portal and distributor dashboard with production Cognito credentials
-2. **External API Activation** — Replace sandbox credentials with production API keys for WhatsApp, Smile Identity, EcoCash, OneMoney, Trustonic
+2. **External API Activation** — Replace sandbox credentials with production API keys for WhatsApp, DIDIT, EcoCash, OneMoney, Trustonic
 3. **WhatsApp Business Verification** — Complete Meta Business Manager verification for production WhatsApp API access
 4. **Security Audit** — Conduct penetration testing against the production API and frontends
 5. **Load Testing** — Run performance benchmarks against production infrastructure

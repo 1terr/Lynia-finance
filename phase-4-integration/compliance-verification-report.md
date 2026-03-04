@@ -22,9 +22,9 @@ A compliance verification was conducted against Reserve Bank of Zimbabwe (RBZ) r
 |-------------|---------------|----------|
 | National ID collection | Validated via `validateZimbabweIDNumber()` | `kyc-service/src/image-processor.ts` |
 | ID format validation | Regex: `/^[0-9]{2}-[0-9]{7}[A-Z][0-9]{2}$/` | `services/shared/utils/validation.ts:28-32` |
-| Face match verification | Smile Identity integration (face_match_score) | `kyc-service/src/smile-identity-service.ts` |
-| Liveness detection | Smile Identity liveness_check | `kyc-service/src/index.ts:285` |
-| ID document storage | Stored via Smile Identity (not locally) | `kyc-service/src/index.ts:170-171` |
+| Face match verification | DIDIT integration (face_match_score) | `kyc-service/src/didit-service.ts` |
+| Liveness detection | DIDIT liveness_check | `kyc-service/src/index.ts:285` |
+| ID document storage | Stored via DIDIT (not locally) | `kyc-service/src/index.ts:170-171` |
 
 ### 1.2 Proof of Residence (Loans > $500)
 **Status:** REMEDIATED (Schema added)

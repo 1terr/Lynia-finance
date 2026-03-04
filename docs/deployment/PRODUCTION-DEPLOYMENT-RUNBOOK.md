@@ -81,7 +81,7 @@ Execute **at least 2 hours** before scheduled deployment:
 [ ] On-call engineer identified and available
 [ ] Communication sent to team (Slack #deployments channel)
 [ ] Rollback plan reviewed for this specific deployment
-[ ] External dependencies verified (EcoCash, Smile Identity, Trustonic APIs)
+[ ] External dependencies verified (EcoCash, DIDIT, Trustonic APIs)
 ```
 
 ### 2.2 Verify Staging Health

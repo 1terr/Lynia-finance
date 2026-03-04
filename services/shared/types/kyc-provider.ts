@@ -1,7 +1,6 @@
 /**
  * Provider-neutral KYC types for Lynia Finance.
- * Allows switching between KYC providers (Smile Identity, DIDIT, etc.)
- * without changing downstream consumers (scoring, frontend, WhatsApp flow).
+ * KYC provider: DIDIT standalone verification APIs.
  */
 
 // =====================================================
@@ -9,8 +8,7 @@
 // =====================================================
 
 /**
- * Provider-neutral KYC verification result.
- * Both Smile Identity and DIDIT map their responses into this shape.
+ * Normalized KYC verification result from DIDIT.
  */
 export interface KYCVerificationResult {
   provider: KYCProviderName;
@@ -103,11 +101,11 @@ export interface KYCDecision {
 // PROVIDER INTERFACE
 // =====================================================
 
-export type KYCProviderName = 'smile_identity' | 'didit';
+export type KYCProviderName = 'didit';
 
 /**
  * KYC provider interface.
- * Implementations: SmileIdentityService, DiditService.
+ * Implementation: DiditService.
  */
 export interface KYCProvider {
   readonly providerName: KYCProviderName;

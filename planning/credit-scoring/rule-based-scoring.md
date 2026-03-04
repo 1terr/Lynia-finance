@@ -81,7 +81,7 @@ function checkKYCVerification(customer: Customer): RuleResult {
 
 **Triggers**:
 - `kyc_status` = 'rejected', 'pending', 'expired', or null
-- Smile Identity API returned fraud flags
+- DIDIT API returned fraud flags
 - ID document not readable/authentic
 
 **User Message**: "We couldn't verify your identity. Please retry verification with clearer photos."

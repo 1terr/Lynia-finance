@@ -6,7 +6,7 @@
 
 | Integration | Code Written | API Access | Live Status |
 |-------------|:----------:|:----------:|:-----------:|
-| **Smile Identity** (KYC) | Yes | No | Not connected |
+| **DIDIT** (KYC) | Yes | No | Not connected |
 | **Trustonic** (Device Lock) | Yes | No | Not connected |
 | **EcoCash** (Payments) | Yes | No | Not connected |
 | **O'mari** (Payments) | No (was via Paynow) | No | Not connected |
@@ -104,7 +104,7 @@ See: [DEPLOY-WITHOUT-INTEGRATIONS.md](./DEPLOY-WITHOUT-INTEGRATIONS.md)
 | Integration | Action |
 |-------------|--------|
 | **EcoCash** | Obtain sandbox credentials, connect to test API |
-| **Smile Identity** | Obtain partner ID, test with sandbox |
+| **DIDIT** | Obtain partner ID, test with sandbox |
 | **Trustonic** | Obtain API keys, test device enrollment in sandbox |
 | **InnBucks** | Obtain sandbox credentials |
 | **OneWallet** | Obtain sandbox credentials |
@@ -124,7 +124,7 @@ See: [DEPLOY-WITHOUT-INTEGRATIONS.md](./DEPLOY-WITHOUT-INTEGRATIONS.md)
 **Activation order (by business priority):**
 
 1. **EcoCash** (70% market share - activate first)
-2. **Smile Identity** (KYC required before loan disbursement)
+2. **DIDIT** (KYC required before loan disbursement)
 3. **O'mari** (~10% market share)
 4. **OneWallet** (~5% market share)
 5. **InnBucks** (~8% market share)
@@ -157,7 +157,7 @@ See: [DEPLOY-WITHOUT-INTEGRATIONS.md](./DEPLOY-WITHOUT-INTEGRATIONS.md)
 
 ```
 Customer Onboarding:
-  WhatsApp → KYC (Smile Identity) → Scoring → Loan Approval
+  WhatsApp → KYC (DIDIT) → Scoring → Loan Approval
 
 Loan Disbursement:
   Payment (deposit collection) → Device Handover → Lock (Trustonic enrollment)
@@ -189,7 +189,7 @@ Admin Operations:
 | Document | Purpose |
 |----------|---------|
 | [DEPLOY-WITHOUT-INTEGRATIONS.md](./DEPLOY-WITHOUT-INTEGRATIONS.md) | Go-live strategy with stubs |
-| [KYC-SMILE-IDENTITY.md](./KYC-SMILE-IDENTITY.md) | Smile Identity integration plan |
+| [KYC-DIDIT-INTEGRATION.md](./KYC-DIDIT-INTEGRATION.md) | DIDIT integration plan |
 | [PAYMENTS-INTEGRATION.md](./PAYMENTS-INTEGRATION.md) | All 4 payment providers |
 | [DEVICE-LOCK-TRUSTONIC.md](./DEVICE-LOCK-TRUSTONIC.md) | Trustonic integration plan |
 | [WHATSAPP-CLOUD-API.md](./WHATSAPP-CLOUD-API.md) | WhatsApp Cloud API plan |

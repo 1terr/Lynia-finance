@@ -71,7 +71,7 @@ A comprehensive security audit was conducted across the Lynia Finance codebase c
 
 ### A08:2021 - Software and Data Integrity Failures: PASS
 - Webhook payloads verified via HMAC-SHA256 signatures
-- EcoCash, OneMoney, and Smile Identity webhooks all validated
+- EcoCash, OneMoney, and DIDIT webhooks all validated
 - No deserialization of untrusted data without validation
 
 ### A09:2021 - Security Logging and Monitoring Failures: REMEDIATED

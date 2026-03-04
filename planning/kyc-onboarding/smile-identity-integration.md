@@ -1,4 +1,4 @@
-# P1-T028: Smile Identity Integration Flow
+# P1-T028: DIDIT Integration Flow
 
 **Task ID:** P1-T028
 **Section:** 1.5 KYC & Onboarding Design
@@ -12,7 +12,7 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Smile Identity Product Selection](#smile-identity-product-selection)
+2. [DIDIT Product Selection](#didit-product-selection)
 3. [API Integration Architecture](#api-integration-architecture)
 4. [Document Upload Flow](#document-upload-flow)
 5. [Verification Callback Handling](#verification-callback-handling)
@@ -25,9 +25,9 @@
 
 ## 1. Overview
 
-Smile Identity is our chosen KYC verification provider for Zimbabwe. This document details the complete integration flow, from document submission to verification callback handling.
+DIDIT is our chosen KYC verification provider for Zimbabwe. This document details the complete integration flow, from document submission to verification callback handling.
 
-### Why Smile Identity?
+### Why DIDIT?
 
 **Advantages:**
 - ✅ **Zimbabwe Support**: Verified National ID support
@@ -42,7 +42,7 @@ Smile Identity is our chosen KYC verification provider for Zimbabwe. This docume
 
 ---
 
-## 2. Smile Identity Product Selection
+## 2. DIDIT Product Selection
 
 ### 2.1 Product Comparison
 
@@ -86,14 +86,14 @@ Customer WhatsApp Flow
                │
                ▼
 ┌─────────────────────────────────┐
-│  4. Submit to Smile Identity API │
+│  4. Submit to DIDIT API │
 │     - Enhanced KYC (job_type: 5) │
 │     - Async verification         │
 └──────────────┬──────────────────┘
                │
                ▼
 ┌─────────────────────────────────┐
-│  5. Smile Identity Processing    │
+│  5. DIDIT Processing    │
 │     a) Document validation       │
 │     b) Face extraction from ID   │
 │     c) Face match (ID vs Selfie) │
@@ -130,31 +130,31 @@ Customer WhatsApp Flow
 
 ## 3. API Integration Architecture
 
-### 3.1 Smile Identity API Credentials
+### 3.1 DIDIT API Credentials
 
 ```typescript
-interface SmileIdentityConfig {
-  partner_id: string;           // Lynia's Smile partner ID
+interface DiditConfig {
+  partner_id: string;           // Lynia's DIDIT partner ID
   api_key: string;              // API authentication key
   sid_server: string;           // Production: 'https://3eydmgh10d.execute-api.us-west-2.amazonaws.com/test'
   callback_url: string;         // Webhook for async results
   environment: 'test' | 'prod'; // Sandbox vs Production
 }
 
-const smileConfig: SmileIdentityConfig = {
-  partner_id: process.env.SMILE_PARTNER_ID,
-  api_key: process.env.SMILE_API_KEY,
-  sid_server: process.env.SMILE_SERVER_URL,
-  callback_url: `${process.env.API_BASE_URL}/webhooks/smile-identity`,
+const diditConfig: DiditConfig = {
+  partner_id: process.env.DIDIT_API_KEY,
+  api_key: process.env.DIDIT_WEBHOOK_SECRET,
+  sid_server: process.env.DIDIT_API_URL,
+  callback_url: `${process.env.API_BASE_URL}/webhooks/didit`,
   environment: process.env.NODE_ENV === 'production' ? 'prod' : 'test'
 };
 ```
 
 **Environment Variables:**
 ```bash
-SMILE_PARTNER_ID=<partner_id_from_smile>
-SMILE_API_KEY=<api_key_from_smile>
-SMILE_SERVER_URL=https://3eydmgh10d.execute-api.us-west-2.amazonaws.com/test
+DIDIT_API_KEY=<partner_id_from_didit>
+DIDIT_WEBHOOK_SECRET=<api_key_from_didit>
+DIDIT_API_URL=https://3eydmgh10d.execute-api.us-west-2.amazonaws.com/test
 ```
 
 ---
@@ -164,7 +164,7 @@ SMILE_SERVER_URL=https://3eydmgh10d.execute-api.us-west-2.amazonaws.com/test
 **Enhanced KYC Request:**
 
 ```typescript
-interface SmileEnhancedKYCRequest {
+interface DIDITEnhancedKYCRequest {
   // Partner credentials
   partner_id: string;
   partner_params: {
@@ -205,7 +205,7 @@ interface SmileEnhancedKYCRequest {
 **Example Request:**
 
 ```typescript
-const kycRequest: SmileEnhancedKYCRequest = {
+const kycRequest: DIDITEnhancedKYCRequest = {
   partner_id: 'lynia_finance_001',
   partner_params: {
     user_id: 'cust_abc123',
@@ -228,7 +228,7 @@ const kycRequest: SmileEnhancedKYCRequest = {
       image: 'data:image/jpeg;base64,iVBORw0KGgoAAAANSUhEUg...'
     }
   ],
-  callback_url: 'https://api.lyniafinance.com/webhooks/smile-identity',
+  callback_url: 'https://api.lyniafinance.com/webhooks/didit',
   use_enrolled_image: false
 };
 ```
@@ -240,9 +240,9 @@ const kycRequest: SmileEnhancedKYCRequest = {
 **Synchronous Response (Immediate):**
 
 ```typescript
-interface SmileImmediateResponse {
+interface DIDITImmediateResponse {
   success: boolean;
-  smile_job_id: string;         // Smile's internal job ID
+  provider_job_id: string;         // DIDIT's internal job ID
   timestamp: string;
   code: string;                 // Status code
   message: string;              // Human-readable message
@@ -252,10 +252,10 @@ interface SmileImmediateResponse {
 **Asynchronous Response (Webhook):**
 
 ```typescript
-interface SmileWebhookPayload {
+interface DIDITWebhookPayload {
   // Job identification
   partner_id: string;
-  smile_job_id: string;
+  provider_job_id: string;
   job_success: boolean;
   job_complete: boolean;
 
@@ -318,28 +318,28 @@ interface SmileWebhookPayload {
 ### 4.1 Step-by-Step Integration
 
 ```typescript
-// src/services/kyc/smile-identity.ts
+// src/services/kyc/didit.ts
 
 import { createHmac } from 'crypto';
 import axios from 'axios';
 
-class SmileIdentityService {
+class DiditService {
 
-  private config: SmileIdentityConfig;
+  private config: DiditConfig;
 
-  constructor(config: SmileIdentityConfig) {
+  constructor(config: DiditConfig) {
     this.config = config;
   }
 
   /**
    * Step 1: Submit Enhanced KYC request
    */
-  async submitEnhancedKYC(
+  async submitVerification(
     customer_id: string,
     id_number: string,
     nationalIDImage: Buffer,
     selfieImage: Buffer
-  ): Promise<SmileEnhancedKYCResult> {
+  ): Promise<DIDITEnhancedKYCResult> {
 
     const job_id = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
@@ -348,7 +348,7 @@ class SmileIdentityService {
     const selfieBase64 = `data:image/jpeg;base64,${selfieImage.toString('base64')}`;
 
     // Construct request payload
-    const payload: SmileEnhancedKYCRequest = {
+    const payload: DIDITEnhancedKYCRequest = {
       partner_id: this.config.partner_id,
       partner_params: {
         user_id: customer_id,
@@ -389,13 +389,13 @@ class SmileIdentityService {
 
       return {
         success: true,
-        smile_job_id: response.data.smile_job_id,
+        provider_job_id: response.data.provider_job_id,
         job_id: job_id,
         timestamp: response.data.timestamp
       };
 
     } catch (error) {
-      console.error('Smile Identity API error:', error);
+      console.error('DIDIT API error:', error);
       throw new Error(`KYC verification failed: ${error.message}`);
     }
   }
@@ -403,7 +403,7 @@ class SmileIdentityService {
   /**
    * Generate HMAC signature for request authentication
    */
-  private generateSignature(payload: SmileEnhancedKYCRequest): string {
+  private generateSignature(payload: DIDITEnhancedKYCRequest): string {
 
     const signatureData = {
       partner_id: payload.partner_id,
@@ -426,7 +426,7 @@ class SmileIdentityService {
 
 ### 4.2 Image Preprocessing
 
-Before submitting to Smile Identity, preprocess images:
+Before submitting to DIDIT, preprocess images:
 
 ```typescript
 async function preprocessImage(imageBuffer: Buffer): Promise<Buffer> {
@@ -459,19 +459,19 @@ async function preprocessImage(imageBuffer: Buffer): Promise<Buffer> {
 ### 5.1 Webhook Endpoint
 
 ```typescript
-// src/api/webhooks/smile-identity.ts
+// src/api/webhooks/didit.ts
 
-export async function handleSmileIdentityWebhook(
+export async function handleDiditWebhook(
   event: APIGatewayProxyEvent
 ): Promise<APIGatewayProxyResult> {
 
   try {
-    const payload: SmileWebhookPayload = JSON.parse(event.body);
+    const payload: DIDITWebhookPayload = JSON.parse(event.body);
 
     // Step 1: Verify webhook signature
-    const isValid = verifySmileWebhookSignature(event);
+    const isValid = verifyDIDITWebhookSignature(event);
     if (!isValid) {
-      console.error('Invalid Smile webhook signature');
+      console.error('Invalid DIDIT webhook signature');
       return {
         statusCode: 401,
         body: JSON.stringify({ error: 'Invalid signature' })
@@ -482,14 +482,14 @@ export async function handleSmileIdentityWebhook(
     const customer_id = payload.partner_params.user_id;
     const job_id = payload.partner_params.job_id;
 
-    console.log(`Processing Smile webhook for customer ${customer_id}, job ${job_id}`);
+    console.log(`Processing DIDIT webhook for customer ${customer_id}, job ${job_id}`);
 
     // Step 3: Fetch KYC submission record
     const { data: submission } = await supabase
       .from('kyc_submissions')
       .select('*')
       .eq('customer_id', customer_id)
-      .eq('smile_identity_transaction_id', job_id)
+      .eq('didit_transaction_id', job_id)
       .single();
 
     if (!submission) {
@@ -540,7 +540,7 @@ export async function handleSmileIdentityWebhook(
       verification_confidence: confidence,
       liveness_score: payload.result.liveness_check.score,
       face_match_score: payload.result.face_match.score,
-      smile_identity_response: payload,
+      didit_response: payload,
       verified_at: decision === 'APPROVED' ? new Date() : null,
       updated_at: new Date()
     }).eq('id', submission.id);
@@ -573,7 +573,7 @@ export async function handleSmileIdentityWebhook(
     };
 
   } catch (error) {
-    console.error('Error processing Smile webhook:', error);
+    console.error('Error processing DIDIT webhook:', error);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Internal server error' })
@@ -587,7 +587,7 @@ export async function handleSmileIdentityWebhook(
 ### 5.2 Webhook Signature Verification
 
 ```typescript
-function verifySmileWebhookSignature(event: APIGatewayProxyEvent): boolean {
+function verifyDIDITWebhookSignature(event: APIGatewayProxyEvent): boolean {
 
   const receivedSignature = event.headers['x-signature'] || event.headers['X-Signature'];
 
@@ -597,7 +597,7 @@ function verifySmileWebhookSignature(event: APIGatewayProxyEvent): boolean {
 
   const payload = event.body;
 
-  const expectedSignature = createHmac('sha256', process.env.SMILE_API_KEY)
+  const expectedSignature = createHmac('sha256', process.env.DIDIT_WEBHOOK_SECRET)
     .update(payload)
     .digest('hex');
 
@@ -618,7 +618,7 @@ function verifySmileWebhookSignature(event: APIGatewayProxyEvent): boolean {
 | Failure Type | Retriable? | Reason |
 |--------------|------------|--------|
 | **Network Timeout** | ✅ Yes | Temporary connection issue |
-| **Smile API Unavailable (503)** | ✅ Yes | Service temporarily down |
+| **DIDIT API Unavailable (503)** | ✅ Yes | Service temporarily down |
 | **Poor Image Quality** | ✅ Yes | Customer can retake photo |
 | **Liveness Check Failed** | ✅ Yes | Customer can retry selfie |
 | **Face Mismatch** | ✅ Yes (1 time) | Allow one retry |
@@ -727,7 +727,7 @@ async function createManualKYCReview(
 
 ## 8. Error Handling
 
-### 8.1 Smile Identity Error Codes
+### 8.1 DIDIT Error Codes
 
 | Error Code | Meaning | Action |
 |-----------|---------|--------|
@@ -745,7 +745,7 @@ async function createManualKYCReview(
 ### 8.2 Error Handling Implementation
 
 ```typescript
-async function handleSmileError(error: any): Promise<KYCErrorResponse> {
+async function handleError(error: any): Promise<KYCErrorResponse> {
 
   const errorCode = error.response?.data?.code;
   const errorMessage = error.response?.data?.message;
@@ -754,7 +754,7 @@ async function handleSmileError(error: any): Promise<KYCErrorResponse> {
     case '2201':
     case '2202':
       // Authentication errors - alert dev team
-      await alertDevTeam('Smile Identity authentication error', error);
+      await alertDevTeam('DIDIT authentication error', error);
       return {
         retriable: false,
         user_message: 'Verification service error. Please try again later.',
@@ -795,7 +795,7 @@ async function handleSmileError(error: any): Promise<KYCErrorResponse> {
 
     default:
       // Unknown error
-      await logError('Unknown Smile Identity error', { code: errorCode, message: errorMessage });
+      await logError('Unknown DIDIT error', { code: errorCode, message: errorMessage });
       return {
         retriable: true,
         user_message: 'Verification failed. Please try again.',
@@ -812,19 +812,19 @@ async function handleSmileError(error: any): Promise<KYCErrorResponse> {
 ### 9.1 Complete Integration Service
 
 ```typescript
-// src/services/kyc/smile-identity-service.ts
+// src/services/kyc/didit-service.ts
 
-export class SmileIdentityService {
+export class DiditService {
 
-  private config: SmileIdentityConfig;
+  private config: DiditConfig;
   private client: AxiosInstance;
 
   constructor() {
     this.config = {
-      partner_id: process.env.SMILE_PARTNER_ID!,
-      api_key: process.env.SMILE_API_KEY!,
-      sid_server: process.env.SMILE_SERVER_URL!,
-      callback_url: `${process.env.API_BASE_URL}/webhooks/smile-identity`,
+      partner_id: process.env.DIDIT_API_KEY!,
+      api_key: process.env.DIDIT_WEBHOOK_SECRET!,
+      sid_server: process.env.DIDIT_API_URL!,
+      callback_url: `${process.env.API_BASE_URL}/webhooks/didit`,
       environment: process.env.NODE_ENV === 'production' ? 'prod' : 'test'
     };
 
@@ -854,8 +854,8 @@ export class SmileIdentityService {
     const processedIDImage = await preprocessImage(nationalIDImage);
     const processedSelfie = await preprocessImage(selfieImage);
 
-    // 2. Submit to Smile Identity
-    const result = await this.submitEnhancedKYC(
+    // 2. Submit to DIDIT
+    const result = await this.submitVerification(
       customer_id,
       id_number,
       processedIDImage,
@@ -867,24 +867,24 @@ export class SmileIdentityService {
 
     return {
       success: true,
-      smile_job_id: result.smile_job_id,
+      provider_job_id: result.provider_job_id,
       message: 'KYC verification submitted. You will be notified when complete.'
     };
   }
 
-  private async submitEnhancedKYC(
+  private async submitVerification(
     customer_id: string,
     id_number: string,
     idImage: Buffer,
     selfie: Buffer
-  ): Promise<SmileEnhancedKYCResult> {
+  ): Promise<DIDITEnhancedKYCResult> {
     // Implementation from section 4.1
     // ...
   }
 
   private async saveKYCSubmission(
     customer_id: string,
-    result: SmileEnhancedKYCResult
+    result: DIDITEnhancedKYCResult
   ): Promise<void> {
     // Save to database
     // ...
@@ -897,7 +897,7 @@ export class SmileIdentityService {
 ## Summary
 
 ### Executive Summary
-This specification provides the complete technical integration guide for Smile Identity's biometric verification service. It enables Lynia Finance to verify customer identities using Zimbabwe National IDs and live selfies with 95%+ accuracy in under 10 seconds, meeting regulatory requirements while providing a seamless WhatsApp-based user experience.
+This specification provides the complete technical integration guide for DIDIT's biometric verification service. It enables Lynia Finance to verify customer identities using Zimbabwe National IDs and live selfies with 95%+ accuracy in under 10 seconds, meeting regulatory requirements while providing a seamless WhatsApp-based user experience.
 
 ### What Was Delivered
 This document provides:
@@ -910,7 +910,7 @@ This document provides:
 7. **Security Implementation**: API key management, request signing, and secure credential storage
 
 ### Technical Components
-- **SmileIdentityService**: Core service class for API communication
+- **DiditService**: Core service class for API communication
 - **Authentication Module**: Partner authentication with SHA256 signature generation
 - **Image Preprocessing**: Compression, format conversion, and quality optimization
 - **Webhook Handler**: Async callback processing with idempotency checks
@@ -925,20 +925,20 @@ This document provides:
 - **Compliance**: Meets Zimbabwe RBZ requirements for financial institution KYC
 
 ### Implementation Checklist
-- [ ] Create Smile Identity account and obtain partner credentials
-- [ ] Set up environment variables (SMILE_PARTNER_ID, SMILE_API_KEY, SMILE_SERVER_URL)
-- [ ] Implement SmileIdentityService class with authentication
+- [ ] Create DIDIT account and obtain partner credentials
+- [ ] Set up environment variables (DIDIT_API_KEY, DIDIT_WEBHOOK_SECRET, DIDIT_API_URL)
+- [ ] Implement DiditService class with authentication
 - [ ] Build image preprocessing pipeline (compression, Base64 encoding)
-- [ ] Create webhook endpoint at /webhooks/smile-identity
+- [ ] Create webhook endpoint at /webhooks/didit
 - [ ] Implement webhook signature verification for security
 - [ ] Set up idempotency tracking to prevent duplicate processing
 - [ ] Build retry logic with exponential backoff
 - [ ] Create error mapping and user guidance system
-- [ ] Test with Smile Identity sandbox environment
+- [ ] Test with DIDIT sandbox environment
 - [ ] Configure production API endpoints and credentials
 
 ### Dependencies
-- **Smile Identity Account**: Enhanced KYC product subscription required
+- **DIDIT Account**: Enhanced KYC product subscription required
 - **API Credentials**: Partner ID, API key, and callback URL
 - **Image Processing Library**: Sharp or similar for image optimization
 - **Database**: To store submission records and webhook results
@@ -952,6 +952,6 @@ This document provides:
 - [Auth & Security](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/auth-security.md) - Credential management
 
 ### External References
-- [Smile Identity Documentation](https://docs.usesmileidentity.com) - Official API reference
-- [Smile Identity Enhanced KYC Guide](https://docs.usesmileidentity.com/products/enhanced-kyc) - Product-specific documentation
-- [Smile Identity Webhooks](https://docs.usesmileidentity.com/further-reading/webhooks) - Callback implementation guide
+- [DIDIT Documentation](https://docs.usediditidentity.com) - Official API reference
+- [DIDIT Enhanced KYC Guide](https://docs.usediditidentity.com/products/enhanced-kyc) - Product-specific documentation
+- [DIDIT Webhooks](https://docs.usediditidentity.com/further-reading/webhooks) - Callback implementation guide

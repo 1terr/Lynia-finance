@@ -552,7 +552,7 @@ After completing this setup:
 
 1. ✅ P2-T005: WhatsApp Cloud API Setup (this task)
 2. ➡️ P2-T006: WhatsApp Bot - Customer Onboarding Flow
-3. ➡️ P2-T007: Smile Identity KYC Integration
+3. ➡️ P2-T007: DIDIT KYC Integration
 4. ➡️ P2-T008: Mobile Money Payment Integration
 
 ---

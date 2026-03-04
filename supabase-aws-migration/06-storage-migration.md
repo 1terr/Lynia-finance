@@ -8,7 +8,7 @@ architecture defines 4 buckets:
 | Bucket | Purpose | Current Status |
 |--------|---------|---------------|
 | `commission-pdfs` | Auto-generated commission statements | Planned |
-| `kyc-documents` | Smile Identity results, encrypted | Planned |
+| `kyc-documents` | DIDIT results, encrypted | Planned |
 | `reconciliation-photos` | Inventory reconciliation photos | Planned |
 | `model-files` | ML model versions | Planned |
 
@@ -276,11 +276,11 @@ Add S3 permissions to Lambda functions that need storage access:
 // services/kyc-service/src/index.ts
 import { uploadFile, getSignedDownloadUrl } from '../../shared/clients/storage';
 
-// After Smile Identity callback:
+// After DIDIT callback:
 await uploadFile(
   'kyc',
   `${customerId}/verification-${Date.now()}.json`,
-  JSON.stringify(smileResult),
+  JSON.stringify(diditResult),
   'application/json'
 );
 ```

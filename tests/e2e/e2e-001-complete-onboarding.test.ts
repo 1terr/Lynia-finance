@@ -2,13 +2,13 @@
  * E2E Test: E2E-001 - Complete Onboarding Flow
  *
  * Scenario: Zimbabwe customer completes full onboarding process
- * Flow: Register via WhatsApp (+263) -> KYC via Smile Identity -> Credit scoring -> Deposit payment -> Device handover
+ * Flow: Register via WhatsApp (+263) -> KYC via DIDIT -> Credit scoring -> Deposit payment -> Device handover
  *
  * Expected Result: Customer gets approved, pays deposit, and receives device with active loan
  */
 
 import { createAPIGatewayEvent, parseResponseBody, expectCORSHeaders } from '../helpers/test-utils';
-import { createWhatsAppWebhookPayload, mockSmileIdentityResponses } from '../helpers/mock-external-services';
+import { createWhatsAppWebhookPayload, mockDiditResponses } from '../helpers/mock-external-services';
 import { testCustomers, testDevices } from '../fixtures';
 
 // Mock external dependencies
@@ -22,7 +22,6 @@ jest.mock('axios');
 // Mock provider services to bypass signature verification in tests
 const mockKYCProvider = {
   providerName: 'didit',
-  submitEnhancedKYC: jest.fn().mockResolvedValue({ job_id: 'job_001', smile_job_id: 'smile_job_001', message: 'KYC verification submitted successfully' }),
   submitVerification: jest.fn().mockResolvedValue({ provider_job_id: 'job_001', status: 'processing' }),
   verifyWebhookSignature: jest.fn().mockReturnValue(true),
   parseWebhookPayload: jest.fn().mockImplementation((rawPayload: string) => {
@@ -30,7 +29,7 @@ const mockKYCProvider = {
     const code = payload.ResultCode || (payload.result && payload.result.ResultCode) || '1012';
     return {
       provider: 'didit',
-      provider_job_id: payload.partner_params?.job_id || payload.SmileJobID || 'job_001',
+      provider_job_id: payload.partner_params?.job_id || payload.job_id || 'job_001',
       status: 'completed',
       decision: code === '1012' ? 'APPROVED' : code === '1014' ? 'REJECTED' : 'MANUAL_REVIEW',
       confidence_score: 95,
@@ -58,12 +57,7 @@ const mockKYCProvider = {
     return { decision: 'MANUAL_REVIEW', reason: 'Low confidence' };
   }),
   handleError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
-  handleSmileError: jest.fn().mockReturnValue({ user_message: 'Verification failed', retriable: true, retry_after: 300 }),
 };
-
-jest.mock('../../services/kyc-service/src/smile-identity-service', () => ({
-  SmileIdentityService: jest.fn().mockImplementation(() => mockKYCProvider),
-}));
 
 jest.mock('../../services/kyc-service/src/didit-service', () => ({
   DiditService: jest.fn().mockImplementation(() => mockKYCProvider),
@@ -265,7 +259,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
   });
 
   // =========================================================================
-  // STEP 2: KYC Verification via Smile Identity
+  // STEP 2: KYC Verification via DIDIT
   // =========================================================================
   describe('Step 2: KYC Verification', () => {
     it('should return 400 when required KYC fields are missing', async () => {
@@ -363,8 +357,8 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(body.kyc_status).toBe('not_started');
     });
 
-    it('should process Smile Identity callback and update KYC to verified', async () => {
-      const smilePayload = mockSmileIdentityResponses.verifiedKYC;
+    it('should process DIDIT callback and update KYC to verified', async () => {
+      const diditPayload = mockDiditResponses.verifiedKYC;
 
       mockDb.from.mockImplementation((table: string) => {
         const qb = createMockQueryBuilder();
@@ -374,7 +368,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
               id: 'kyc_sub_001',
               customer_id: 'cust_test_001',
               status: 'pending',
-              smile_identity_transaction_id: 'job_001',
+              provider_job_id: 'job_001',
             },
             error: null,
           });
@@ -385,7 +379,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/kyc/callback',
-        body: JSON.stringify(smilePayload),
+        body: JSON.stringify(diditPayload),
         headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
@@ -396,22 +390,22 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(body.message).toBe('Webhook processed successfully');
     });
 
-    it('should return 404 when Smile callback references unknown submission', async () => {
+    it('should return 404 when DIDIT callback references unknown submission', async () => {
       mockDb.from.mockImplementation(() => {
         const qb = createMockQueryBuilder();
         qb.execute.mockResolvedValue({ data: null, error: { code: 'PGRST116' } });
         return qb;
       });
 
-      const smilePayload = {
-        ...mockSmileIdentityResponses.verifiedKYC,
+      const diditPayload = {
+        ...mockDiditResponses.verifiedKYC,
         partner_params: { user_id: 'nonexistent', job_id: 'job_999' },
       };
 
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/kyc/callback',
-        body: JSON.stringify(smilePayload),
+        body: JSON.stringify(diditPayload),
         headers: { 'Content-Type': 'application/json', 'x-signature': 'valid-test-sig' },
       });
 
@@ -422,8 +416,8 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(body).toHaveProperty('error', 'Submission not found');
     });
 
-    it('should validate Smile Identity verification result data structure', () => {
-      const verified = mockSmileIdentityResponses.verifiedKYC;
+    it('should validate DIDIT verification result data structure', () => {
+      const verified = mockDiditResponses.verifiedKYC;
       expect(verified.result.ResultCode).toBe('1012');
       expect(verified.result.ResultText).toBe('Verified');
       expect(verified.result.confidence_value).toBeGreaterThanOrEqual(95);
@@ -881,7 +875,7 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       });
 
       const payload = {
-        ...mockSmileIdentityResponses.verifiedKYC,
+        ...mockDiditResponses.verifiedKYC,
         partner_params: { user_id: '', job_id: '' },
       };
 

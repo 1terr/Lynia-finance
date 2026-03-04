@@ -169,11 +169,11 @@ The system uses a dual-provider architecture:
 | Environment Variable | Current Value | Effect |
 |---|---|---|
 | `KYC_PROVIDER` | `didit` | Didit is the active KYC provider |
-| Fallback | `smile_identity` | Change env var to switch providers |
+| Fallback | `didit` | Change env var to switch providers |
 
-**Rollback procedure**: If Didit has issues, change `KYC_PROVIDER` to `smile_identity` in GitHub secrets and re-deploy:
+**Rollback procedure**: If Didit has issues, change `KYC_PROVIDER` to `didit` in GitHub secrets and re-deploy:
 ```bash
-gh secret set PRODUCTION_KYC_PROVIDER --body "smile_identity"
+gh secret set PRODUCTION_KYC_PROVIDER --body "didit"
 gh workflow run deploy.yml --field environment=production
 ```
 
@@ -194,12 +194,12 @@ POST /kyc/initiate
 createKYCProvider() → reads KYC_PROVIDER env var
          |
     ┌────┴────┐
-    | didit   | smile_identity
+    | didit   | didit
     v         v
-DiditService  SmileIdentityService
+DiditService  DiditService
     |         |
     v         v
-Three standalone    Smile API
+Three standalone    DIDIT API
 API calls:          (async webhook)
  - /v3/id-verification/
  - /v3/passive-liveness/
@@ -231,5 +231,5 @@ sendKYCResultNotification() → WhatsApp message to customer
 | `STAGING_DIDIT_WEBHOOK_SECRET` | Set (2026-02-18) |
 | `PRODUCTION_DIDIT_API_KEY` | Set (2026-02-18) |
 | `PRODUCTION_DIDIT_WEBHOOK_SECRET` | Set (2026-02-18) |
-| `STAGING_SMILE_API_KEY` | Set (fallback provider) |
-| `STAGING_SMILE_PARTNER_ID` | Set (fallback provider) |
+| `STAGING_DIDIT_WEBHOOK_SECRET` | Set (fallback provider) |
+| `STAGING_DIDIT_API_KEY` | Set (fallback provider) |

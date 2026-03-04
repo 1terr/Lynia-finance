@@ -101,7 +101,7 @@
 │    - $0.0092/conversation after (still 50% cheaper)         │
 │  - Estimated: 200 conversations/month = FREE ✅             │
 ├─────────────────────────────────────────────────────────────┤
-│ Smile Identity KYC (Zimbabwe):                              │
+│ DIDIT KYC (Zimbabwe):                              │
 │  - $0.10/verification (50 verifications/month = $5/month)   │
 │  - Negotiate startup discount (YC companies get 50% off)    │
 │  - Estimated with discount: $2.50/month                     │
@@ -145,7 +145,7 @@
 | **Frontend** | Vercel $0 (already free) | Vercel $0 | $0 |
 | **Monitoring** | CloudWatch $10 | Better Stack Free $0 | **-$10** |
 | **WhatsApp** | Twilio $75 | WhatsApp Cloud API Free | **-$75** |
-| **KYC** | Smile Identity $5 | Smile Identity $2.50 (YC discount) | **-$2.50** |
+| **KYC** | DIDIT $5 | DIDIT $2.50 (YC discount) | **-$2.50** |
 | **SMS** | Twilio $5 | Africa's Talk $0.80 | **-$4.20** |
 | **Device Lock** | $10 | $2 (pay-per-lock) | **-$8** |
 | **Total** | **$195/month** | **~$5.30/month** | **-$189.70 (97% savings)** |
@@ -559,7 +559,7 @@ wrangler pages deploy .vercel/output/static
 │                                                              │
 │ AWS Lambda ($0 forever - always free)                       │
 │  ├── whatsapp-service (Node.js, WhatsApp Cloud API)         │
-│  ├── kyc-service (Node.js, Smile Identity)                  │
+│  ├── kyc-service (Node.js, DIDIT)                  │
 │  ├── payment-service (Node.js, EcoCash/Omari)               │
 │  └── lock-service (Node.js, device lock provider)           │
 │                                                              │
@@ -593,7 +593,7 @@ wrangler pages deploy .vercel/output/static
 │                    EXTERNAL SERVICES                         │
 ├─────────────────────────────────────────────────────────────┤
 │ WhatsApp Cloud API (Meta) - FREE for 1K conversations/month │
-│ Smile Identity - $0.10/verification (YC discount: $0.05)    │
+│ DIDIT - $0.10/verification (YC discount: $0.05)    │
 │ Africa's Talk SMS - $0.008/SMS                              │
 │ EcoCash/Omari - Transaction fees only (2-3%)                │
 │ Device Lock Provider - $0.20/device/month (pay-per-lock)    │
@@ -757,7 +757,7 @@ wrangler pages deploy .vercel/output/static
 - [ ] Test Realtime updates (inventory, commissions)
 
 ### Week 6: External Service Integration
-- [ ] Integrate Smile Identity (KYC)
+- [ ] Integrate DIDIT (KYC)
 - [ ] Integrate Africa's Talk (SMS)
 - [ ] Integrate EcoCash/Omari (payments)
 - [ ] Integrate device lock provider
@@ -812,7 +812,7 @@ wrangler pages deploy .vercel/output/static
 6. **Edge/CDN is free** - Cloudflare, Vercel, Cloudflare Pages = unlimited bandwidth at $0
 7. **Database optimization delays upgrades** - Compression, partitioning, archival = stay on free tier 2x longer
 8. **Hybrid cloud is optimal** - Mix AWS (Lambda), Supabase (database), Cloudflare (edge), Vercel (frontend) for best economics
-9. **YC network = discounts** - Smile Identity, cloud providers, SaaS tools give 50%+ discounts to YC companies
+9. **YC network = discounts** - DIDIT, cloud providers, SaaS tools give 50%+ discounts to YC companies
 10. **Scrappiness = runway** - $200/month saved = $2400/year = 2 extra months of runway = survive to next milestone
 
 ---

@@ -36,7 +36,7 @@ Lynia-finance/
 ├── services/                  # AWS Lambda microservices
 │   ├── scoring-service/       # Credit scoring (5-component model)
 │   ├── whatsapp-service/      # WhatsApp Cloud API integration
-│   ├── kyc-service/           # Smile Identity KYC verification
+│   ├── kyc-service/           # DIDIT KYC verification
 │   ├── payment-service/       # EcoCash/OneMoney payments
 │   ├── lock-service/          # Trustonic device lock/unlock
 │   ├── notification-service/  # Multi-channel alerts
@@ -342,7 +342,7 @@ Only creates `CognitoUserPool` when env vars look like real AWS IDs. Falls back 
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  ┌─────────────────────────────────────────────────────────────────┐   │
-│  │ External: WhatsApp Cloud API | Smile Identity | EcoCash |       │   │
+│  │ External: WhatsApp Cloud API | DIDIT | EcoCash |       │   │
 │  │           OneMoney | Trustonic | Twilio/Africa's Talking        │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────────┘

@@ -24,7 +24,7 @@ Supabase Edge Functions run on **Deno Deploy** infrastructure, providing serverl
 - WhatsApp/SMS webhooks (Africa's Talking, Twilio)
 - Payment gateway webhooks (EcoCash, Omari)
 - Scheduled jobs (daily reminders, weekly commissions)
-- KYC verification workflows (Smile Identity callbacks)
+- KYC verification workflows (DIDIT callbacks)
 - Device lock/unlock API integrations
 
 ---
@@ -245,7 +245,7 @@ serve(async (req: Request) => {
 supabase secrets set TWILIO_ACCOUNT_SID=AC1234567890abcdef
 supabase secrets set TWILIO_AUTH_TOKEN=your_auth_token
 supabase secrets set AFRICASTALKING_API_KEY=your_api_key
-supabase secrets set SMILE_IDENTITY_PARTNER_ID=your_partner_id
+supabase secrets set DIDIT_PARTNER_ID=your_partner_id
 ```
 
 ### 4.2 Accessing Secrets in Edge Functions
@@ -471,7 +471,7 @@ serve(async (req: Request) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
   );
 
-  // Extract Smile Identity response
+  // Extract DIDIT response
   const { job_id, ResultCode, ResultText, IDInfo } = payload;
 
   if (ResultCode === '1012') {
@@ -700,7 +700,7 @@ serve(async (req: Request) => {
 ### 9.3 Next Steps
 
 - [ ] Deploy first Edge Function (payment-webhook)
-- [ ] Set up environment variables for APIs (Twilio, Africa's Talking, Smile Identity)
+- [ ] Set up environment variables for APIs (Twilio, Africa's Talking, DIDIT)
 - [ ] Test locally with `supabase functions serve`
 - [ ] Configure CORS for client access
 - [ ] Set up CI/CD with GitHub Actions

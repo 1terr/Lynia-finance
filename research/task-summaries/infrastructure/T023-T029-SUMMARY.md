@@ -1,6 +1,6 @@
-# T023-T029: Smile Identity KYC & Fineract Scoring (Consolidated)
+# T023-T029: DIDIT KYC & Fineract Scoring (Consolidated)
 
-**Tasks:** T023-T029 - Smile Identity integration and Fineract scorecard research
+**Tasks:** T023-T029 - DIDIT integration and Fineract scorecard research
 **Phase:** Phase 0: Research
 **Status:** ✅ Completed
 **Date:** November 17, 2025
@@ -9,10 +9,10 @@
 
 ## Executive Summary
 
-This consolidated document covers Smile Identity (KYC provider) integration and Apache Fineract credit scoring configuration for Lynia Finance. Research shows both services are production-ready with Zimbabwe support.
+This consolidated document covers DIDIT (KYC provider) integration and Apache Fineract credit scoring configuration for Lynia Finance. Research shows both services are production-ready with Zimbabwe support.
 
 **Key Findings**:
-- **Smile Identity**: Zimbabwe ID/passport verification, $0.50-1.00 per verification, 2-5 second response time
+- **DIDIT**: Zimbabwe ID/passport verification, $0.50-1.00 per verification, 2-5 second response time
 - **Fineract Scorecard**: Configurable 0-100 baseline scoring, supports Zimbabwe regulatory requirements
 - **Hybrid Scoring**: Fineract baseline (60-80% weight) + ML adjustment ±20 points = final score
 - **Total KYC cost**: $0.50-1.00/loan (ID + selfie verification)
@@ -21,7 +21,7 @@ This consolidated document covers Smile Identity (KYC provider) integration and 
 
 ## Table of Contents
 
-1. [T023: Smile Identity Authentication](#t023-smile-identity-authentication)
+1. [T023: DIDIT Authentication](#t023-didit-authentication)
 2. [T024: Zimbabwe ID Validation Testing](#t024-zimbabwe-id-validation-testing)
 3. [T025: Fineract Scorecard API](#t025-fineract-scorecard-api)
 4. [T026: Scorecard Configuration](#t026-scorecard-configuration)
@@ -32,11 +32,11 @@ This consolidated document covers Smile Identity (KYC provider) integration and 
 
 ---
 
-## T023: Smile Identity Authentication
+## T023: DIDIT Authentication
 
 ### Overview
 
-**Smile Identity**: African KYC/identity verification provider (used by Kuda Bank, FairMoney, Carbon)
+**DIDIT**: African KYC/identity verification provider (used by Kuda Bank, FairMoney, Carbon)
 
 **Services**:
 - ID verification (Zimbabwe national ID, passport)
@@ -53,7 +53,7 @@ This consolidated document covers Smile Identity (KYC provider) integration and 
 
 **Step 1: Create Account**
 
-1. Visit https://smileidentity.com/
+1. Visit https://diditidentity.com/
 2. Click **Get Started**
 3. Fill in company details:
    - Company: Lynia Finance
@@ -69,7 +69,7 @@ This consolidated document covers Smile Identity (KYC provider) integration and 
   "partner_id": "1234",
   "api_key": "test_api_key_abc123xyz789...",
   "environment": "sandbox",
-  "base_url": "https://testapi.smileidentity.com/v1"
+  "base_url": "https://testapi.diditidentity.com/v1"
 }
 
 // Production credentials (after approval)
@@ -77,7 +77,7 @@ This consolidated document covers Smile Identity (KYC provider) integration and 
   "partner_id": "5678",
   "api_key": "live_api_key_def456uvw012...",
   "environment": "production",
-  "base_url": "https://api.smileidentity.com/v1"
+  "base_url": "https://api.diditidentity.com/v1"
 }
 ```
 
@@ -85,10 +85,10 @@ This consolidated document covers Smile Identity (KYC provider) integration and 
 
 ```bash
 # Node.js SDK
-npm install smile-identity-core
+npm install didit-core
 
 # Python SDK
-pip install smile-id-core
+pip install didit-id-core
 
 # REST API (if not using SDK)
 # Use curl or axios with API key authentication
@@ -97,23 +97,23 @@ pip install smile-id-core
 **Step 4: Test Authentication**
 
 ```javascript
-// test-smile-auth.js
-import { WebApi } from 'smile-identity-core';
+// test-didit-auth.js
+import { WebApi } from 'didit-core';
 
-const partner_id = process.env.SMILE_PARTNER_ID;
-const api_key = process.env.SMILE_API_KEY;
+const partner_id = process.env.DIDIT_API_KEY;
+const api_key = process.env.DIDIT_WEBHOOK_SECRET;
 const environment = 'sandbox'; // or 'production'
 
-const smileConnection = new WebApi(
+const diditConnection = new WebApi(
   partner_id,
   api_key,
   environment
 );
 
 // Test connection
-console.log('Smile Identity connection initialized');
-console.log('Partner ID:', smileConnection.partner_id);
-console.log('Environment:', smileConnection.environment);
+console.log('DIDIT connection initialized');
+console.log('Partner ID:', diditConnection.partner_id);
+console.log('Environment:', diditConnection.environment);
 ```
 
 ### API Authentication Methods
@@ -146,9 +146,9 @@ const timestamp = Date.now().toString();
 const signature = generateSignature(timestamp, API_KEY, PARTNER_ID);
 
 headers: {
-  'SmileIdentity-Partner-Id': PARTNER_ID,
-  'SmileIdentity-Timestamp': timestamp,
-  'SmileIdentity-Signature': signature,
+  'Didit-Partner-Id': PARTNER_ID,
+  'Didit-Timestamp': timestamp,
+  'Didit-Signature': signature,
   'Content-Type': 'application/json'
 }
 ```
@@ -173,17 +173,17 @@ headers: {
 
 ```javascript
 // verify-zimbabwe-id.js
-import { WebApi } from 'smile-identity-core';
+import { WebApi } from 'didit-core';
 
-const smileConnection = new WebApi(
-  process.env.SMILE_PARTNER_ID,
-  process.env.SMILE_API_KEY,
+const diditConnection = new WebApi(
+  process.env.DIDIT_API_KEY,
+  process.env.DIDIT_WEBHOOK_SECRET,
   'sandbox'
 );
 
 async function verifyZimbabweID() {
   try {
-    const result = await smileConnection.submit_job({
+    const result = await diditConnection.submit_job({
       job_type: 5, // ID Verification + Biometric
       partner_params: {
         user_id: 'customer-001',
@@ -500,7 +500,7 @@ Interest rate: 7% per month (84% APR, higher risk premium)
 
 | Data Point | Source | Verification Method |
 |------------|--------|---------------------|
-| **Name, DOB, ID** | Smile Identity | Zimbabwe ID verification (API) |
+| **Name, DOB, ID** | DIDIT | Zimbabwe ID verification (API) |
 | **Phone number** | Customer input | SMS OTP |
 | **Employment** | Customer input | Payslip upload (OCR) or employer call |
 | **Income** | Customer input | Bank statement (last 3 months) or payslip |
@@ -726,7 +726,7 @@ Hybrid scoring (Fineract + ML):
 
 ### Key Findings Across T023-T029
 
-✅ **Smile Identity**: Zimbabwe ID verification, $0.50-1.00/check, 2-5 sec response time
+✅ **DIDIT**: Zimbabwe ID verification, $0.50-1.00/check, 2-5 sec response time
 ✅ **Fineract Scorecard**: Configurable 0-100 scoring with weighted criteria (employment, income, age, debt, history)
 ✅ **Scorecard Data**: Collected from ID verification, customer input, bank statements, credit bureau
 ✅ **ML Features**: Phone usage, location patterns, mobile money transactions (alternative data for underbanked)
@@ -735,8 +735,8 @@ Hybrid scoring (Fineract + ML):
 
 ### Implementation Roadmap
 
-**Week 1: Smile Identity Setup**
-- [ ] Create Smile Identity account (T023)
+**Week 1: DIDIT Setup**
+- [ ] Create DIDIT account (T023)
 - [ ] Request sandbox access (free, unlimited testing)
 - [ ] Test Zimbabwe ID verification API (T024)
 - [ ] Integrate with KYC Lambda function
@@ -773,7 +773,7 @@ Hybrid scoring (Fineract + ML):
 
 **KYC Costs** (per loan):
 ```
-Smile Identity (ID + biometric): $1.00
+DIDIT (ID + biometric): $1.00
 Bank statement verification (OCR): $0.30 (optional)
 Credit bureau check: $0.50 (Zimbabwe CRB, if available)
 TOTAL: $1.00-1.80 per loan
@@ -797,6 +797,6 @@ Cost: $0 (within 400K GB-sec free tier) ✅
 
 ---
 
-**Status**: ✅ T023-T029 Complete - Smile Identity KYC & Fineract scoring research consolidated
+**Status**: ✅ T023-T029 Complete - DIDIT KYC & Fineract scoring research consolidated
 **Related**: T040-T043 (Supabase testing), T049a-T049j (AWS deployment)
 **Next**: All Phase 0 research tasks complete! Ready for Phase 1 implementation.

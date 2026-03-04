@@ -28,7 +28,7 @@ Implemented centralized secret management using AWS Secrets Manager for all 6 La
 |---------------------|---------|----------|
 | `{env}/lynia/supabase` | All services | URL, Service Role Key |
 | `{env}/lynia/whatsapp` | WhatsApp | Phone Number ID, Access Token, Webhook Token |
-| `{env}/lynia/smile-identity` | KYC | Partner ID, API Key |
+| `{env}/lynia/didit` | KYC | Partner ID, API Key |
 | `{env}/lynia/ecocash` | Payment | Merchant ID, API Key |
 | `{env}/lynia/onemoney` | Payment | Merchant ID, API Key |
 | `{env}/lynia/trustonic` | Lock | API Key, API Secret |
@@ -40,7 +40,7 @@ Implemented centralized secret management using AWS Secrets Manager for all 6 La
 |----------------|----------------|
 | ScoringFunction | supabase |
 | WhatsAppFunction | supabase, whatsapp |
-| KYCFunction | supabase, smile-identity |
+| KYCFunction | supabase, didit |
 | PaymentFunction | supabase, ecocash, onemoney |
 | LockFunction | supabase, trustonic |
 | NotificationFunction | supabase, sms |

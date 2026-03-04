@@ -161,9 +161,9 @@ export interface KYCSubmission {
   document_front_url: string;
   document_back_url: string | null;
   selfie_url: string | null;
-  smile_job_id: string | null;
-  smile_result: SmileIdentityResult | null;
-  smile_confidence_score: number | null;
+  provider_job_id: string | null;
+  provider_response: Record<string, unknown> | null;
+  confidence_score: number | null;
   status: 'pending' | 'approved' | 'rejected' | 'manual_review';
   verified_at: string | null;
   verified_by: string | null;
@@ -177,13 +177,6 @@ export interface KYCSubmission {
   submitted_at: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface SmileIdentityResult {
-  face_match: boolean;
-  liveness_check: boolean;
-  id_validation: boolean;
-  confidence: number;
 }
 
 export interface TimelineEvent {

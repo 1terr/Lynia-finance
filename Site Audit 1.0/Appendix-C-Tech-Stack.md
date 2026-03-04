@@ -140,7 +140,7 @@
 | Service | Provider | Purpose | Integration Status |
 |---------|----------|---------|-------------------|
 | WhatsApp Cloud API | Meta | Customer messaging | Code complete |
-| Smile Identity | Smile Identity | KYC verification | Code complete |
+| DIDIT | DIDIT | KYC verification | Code complete |
 | EcoCash | Econet Wireless | Mobile money payments | Code complete |
 | OneMoney | NetOne | Mobile money payments | Code complete |
 | InnBucks | InnBucks | Mobile money payments | Pending |

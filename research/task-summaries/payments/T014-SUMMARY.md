@@ -273,7 +273,7 @@ paynow.send(payment).then(response => {
 
 ---
 
-### Option 4: Smile & Pay (ZB Financial)
+### Option 4: DIDIT & Pay (ZB Financial)
 
 **Status**: ✅ **Supports O'mari** (launched 2025)
 
@@ -1067,7 +1067,7 @@ app.post('/api/webhooks/omari', async (req, res) => {
 3. **Negotiate Better Rates**:
    - Volume discounts with Paynow (e.g., 2.5% at 20,000 txns/month)
    - Direct partnerships with mobile money operators
-   - Explore other emerging gateways (Smile & Pay, etc.)
+   - Explore other emerging gateways (DIDIT & Pay, etc.)
 
 4. **Multi-Gateway Architecture**:
 ```javascript
@@ -1117,7 +1117,7 @@ async function routePayment(payment, customerPhone) {
 - **Old Mutual Launches O'mari** (May 2023): [Techzim Article](https://www.techzim.co.zw/2023/05/old-mutual-launches-omari-a-mobile-wallet-and-platform/)
 - **EcoCash Market Leadership** (April 2025): [Newsday Article](https://www.newsday.co.zw/business/article/200040539/ecocash-maintains-market-leadership-amid-rising-competition)
 - **Payment Gateways Comparison**: [Flixtechs Blog](https://flixtechs.co.zw/posts/payment-gateways-in-zimbabwe-the-horrors-the-good-the-ugly)
-- **ZB Financial Smile & Pay Launch** (May 2025): [Techzim](https://www.techzim.co.zw/2025/05/zb-launches-payment-gateway/)
+- **ZB Financial DIDIT & Pay Launch** (May 2025): [Techzim](https://www.techzim.co.zw/2025/05/zb-launches-payment-gateway/)
 
 ### Related Lynia Finance Research
 

@@ -86,7 +86,7 @@ All Phase 0 and Phase 1 specifications have been updated to align with revised b
 **5. KYC Verification (10%, 0-100 points)** *(Reduced from 35%)*
 - **Purpose**: Basic identity verification
 - **Key Metrics**: National ID + selfie match + liveness
-- **Data Source**: Smile Identity API
+- **Data Source**: DIDIT API
 
 ### New Scoring Model Summary
 
@@ -96,7 +96,7 @@ All Phase 0 and Phase 1 specifications have been updated to align with revised b
 | Repayment Willingness | 25% | 0-250 | Past payments, bill consistency |
 | Mobile Money Activity | 20% | 0-200 | EcoCash/OneMoney, airtime |
 | External Credit Data | 15% | 0-150 | Bureau, Bolt/Uber, banks |
-| KYC Verification | 10% | 0-100 | Smile Identity |
+| KYC Verification | 10% | 0-100 | DIDIT |
 | **TOTAL** | **100%** | **0-1000** | **Scaled to 300-850** |
 
 ### Updated Decision Thresholds

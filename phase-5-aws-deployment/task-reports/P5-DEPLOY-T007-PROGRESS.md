@@ -40,7 +40,7 @@ Deploy AWS Secrets Manager with 7 secrets for centralized credential management 
 |-------------|-----------|----------|
 | `{env}/lynia/database` | All services | host, port, database, username, password |
 | `{env}/lynia/whatsapp` | WhatsApp service | phone_number_id, access_token, webhook_verify_token |
-| `{env}/lynia/smile-identity` | KYC service | partner_id, api_key |
+| `{env}/lynia/didit` | KYC service | partner_id, api_key |
 | `{env}/lynia/ecocash` | Payment service | merchant_id, api_key |
 | `{env}/lynia/onemoney` | Payment service | merchant_id, api_key |
 | `{env}/lynia/trustonic` | Lock service | api_key, api_secret |
@@ -53,7 +53,7 @@ Deploy AWS Secrets Manager with 7 secrets for centralized credential management 
 | SharedSecretsPolicy | All functions | database |
 | WhatsAppSecretsPolicy | WhatsAppFunction | database, whatsapp |
 | PaymentSecretsPolicy | PaymentFunction | database, ecocash, onemoney |
-| KYCSecretsPolicy | KYCFunction | database, smile-identity |
+| KYCSecretsPolicy | KYCFunction | database, didit |
 | LockSecretsPolicy | LockFunction | database, trustonic |
 | NotificationSecretsPolicy | NotificationFunction | database, sms |
 
@@ -79,8 +79,8 @@ Gather credentials for all external services. Use sandbox/test credentials for i
 WHATSAPP_PHONE_ID="<from Meta Business Manager>"
 WHATSAPP_TOKEN="<from Meta Business Manager>"
 WHATSAPP_WEBHOOK_TOKEN="<generate a random string>"
-SMILE_PARTNER_ID="<from Smile Identity dashboard>"
-SMILE_API_KEY="<from Smile Identity dashboard>"
+DIDIT_API_KEY="<from DIDIT dashboard>"
+DIDIT_WEBHOOK_SECRET="<from DIDIT dashboard>"
 ECOCASH_MERCHANT_ID="<from EcoCash merchant portal>"
 ECOCASH_API_KEY="<from EcoCash merchant portal>"
 ONEMONEY_MERCHANT_ID="<from OneMoney merchant portal>"
@@ -106,8 +106,8 @@ aws cloudformation deploy \
     WhatsAppPhoneNumberId="$WHATSAPP_PHONE_ID" \
     WhatsAppAccessToken="$WHATSAPP_TOKEN" \
     WhatsAppWebhookVerifyToken="$WHATSAPP_WEBHOOK_TOKEN" \
-    SmilePartnerId="$SMILE_PARTNER_ID" \
-    SmileApiKey="$SMILE_API_KEY" \
+    DiditApiKey="$DIDIT_API_KEY" \
+    DiditWebhookSecret="$DIDIT_WEBHOOK_SECRET" \
     EcocashMerchantId="$ECOCASH_MERCHANT_ID" \
     EcocashApiKey="$ECOCASH_API_KEY" \
     OnemoneyMerchantId="$ONEMONEY_MERCHANT_ID" \
@@ -142,7 +142,7 @@ aws cloudformation describe-stacks --stack-name production-lynia-secrets \
 aws secretsmanager list-secrets \
   --filters Key=name,Values=production/lynia \
   --query "SecretList[].Name" --output text
-# Expected: 7 secrets (database, whatsapp, smile-identity, ecocash, onemoney, trustonic, sms)
+# Expected: 7 secrets (database, whatsapp, didit, ecocash, onemoney, trustonic, sms)
 
 # 3. Verify database secret content (non-sensitive check)
 aws secretsmanager get-secret-value \

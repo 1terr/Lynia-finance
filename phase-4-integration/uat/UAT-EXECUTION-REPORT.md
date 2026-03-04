@@ -57,7 +57,7 @@
 | UAT-S1-005 | National ID Submission and Validation | CRITICAL | | | |
 | UAT-S1-006 | KYC Document Upload (ID Photo) | CRITICAL | | | |
 | UAT-S1-007 | KYC Selfie Capture | CRITICAL | | | |
-| UAT-S1-008 | Smile Identity Verification Callback | CRITICAL | | | |
+| UAT-S1-008 | DIDIT Verification Callback | CRITICAL | | | |
 | UAT-S1-009 | Customer Record Verification | HIGH | | | |
 | UAT-S1-010 | Low-End Device WhatsApp Flow | HIGH | | | |
 | UAT-S1-011 | Ndebele Language Verification | HIGH | | | |

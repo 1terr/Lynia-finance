@@ -537,7 +537,7 @@ Send your selfie now.
 BOT:
 ✅ Selfie received!
 
-I'm now verifying your identity with our partner Smile Identity.
+I'm now verifying your identity with our partner DIDIT.
 This usually takes 2-3 minutes. ⏳
 
 You'll get a notification as soon as it's done. Feel free to close WhatsApp and come back later.
@@ -547,7 +547,7 @@ You'll get a notification as soon as it's done. Feel free to close WhatsApp and 
 
 **Backend Process**:
 1. Upload photos to S3 (encrypted)
-2. Submit to Smile Identity API
+2. Submit to DIDIT API
 3. Wait for webhook callback (async)
 4. Update customer KYC status
 
@@ -555,7 +555,7 @@ You'll get a notification as soon as it's done. Feel free to close WhatsApp and 
 
 #### **Step 8A: KYC Approved** (Success Path)
 
-**Trigger**: Smile Identity webhook returns "approved"
+**Trigger**: DIDIT webhook returns "approved"
 
 ```
 BOT:
@@ -626,7 +626,7 @@ We'll notify you as soon as it's done.
 | User abandons flow mid-way | Save progress, remind after 1 hour |
 | User tries to skip steps | Explain step is required, offer help |
 | National ID already exists | Offer login to existing account |
-| Smile Identity API timeout | Retry 3 times, then manual review |
+| DIDIT API timeout | Retry 3 times, then manual review |
 | User's phone number changes | Re-verify via OTP to old number |
 
 ### 3.5 Conversation Metrics
@@ -2715,7 +2715,7 @@ Status: https://status.lyniafinance.com
 
 ### 9.2 Graceful Degradation
 
-**When Smile Identity API is down**:
+**When DIDIT API is down**:
 ```
 BOT:
 ⚠️ KYC Verification Delayed

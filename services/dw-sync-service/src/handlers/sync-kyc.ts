@@ -34,7 +34,7 @@ export async function syncKYC(kycId: string): Promise<void> {
       ks.document_type,
       ks.status,
       ks.rejection_reason,
-      COALESCE(ks.provider, 'smile_identity'),
+      COALESCE(ks.provider, 'didit'),
       ks.created_at::DATE,
       ks.verified_at::DATE,
       NOW()

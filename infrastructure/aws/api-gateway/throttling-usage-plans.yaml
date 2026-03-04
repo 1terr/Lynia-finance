@@ -181,12 +181,12 @@ Resources:
       KeyType: API_KEY
       UsagePlanId: !Ref PartnerUsagePlan
 
-  # KYC Provider API Key (Smile Identity callbacks)
+  # KYC Provider API Key (DIDIT callbacks)
   KYCProviderApiKey:
     Type: AWS::ApiGateway::ApiKey
     Properties:
       Name: !Sub "${Environment}-lynia-kyc-provider"
-      Description: API key for KYC provider (Smile Identity) callbacks
+      Description: API key for KYC provider (DIDIT) callbacks
       Enabled: true
 
   KYCProviderUsagePlanKey:

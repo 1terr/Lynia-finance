@@ -42,7 +42,7 @@ KYC status management tracks the verification lifecycle of customer identities. 
 type KYCStatus =
   | 'not_started'           // Customer has not begun KYC
   | 'pending'               // Documents submitted, awaiting verification
-  | 'processing'            // Smile Identity verification in progress
+  | 'processing'            // DIDIT verification in progress
   | 'manual_review'         // Requires human review (50-84% confidence)
   | 'verified'              // Successfully verified (85%+ confidence)
   | 'rejected'              // Verification failed (<50% confidence or fraud)
@@ -57,7 +57,7 @@ type KYCStatus =
 |--------|-------------|---------------------|----------------|
 | **not_started** | Has not uploaded KYC documents | ❌ No | Upload National ID + Selfie |
 | **pending** | Documents submitted, awaiting processing | ❌ No | Wait for verification |
-| **processing** | Smile Identity verification in progress | ❌ No | Wait (<30 seconds) |
+| **processing** | DIDIT verification in progress | ❌ No | Wait (<30 seconds) |
 | **manual_review** | Human review required (ambiguous results) | ❌ No | Wait (up to 24 hours) |
 | **verified** | Identity confirmed, can borrow | ✅ Yes | None |
 | **rejected** | Verification failed, can retry | ❌ No | Retry (max 3 attempts) |
@@ -79,7 +79,7 @@ type KYCStatus =
 └────────┬────────┘
          ↓
 ┌─────────────────┐
-│   processing    │  ← Smile Identity API call
+│   processing    │  ← DIDIT API call
 └────────┬────────┘
          ↓
     ┌────┴────┐
@@ -170,11 +170,11 @@ async function transitionKYCStatus(
 
 ### 3.3 Automatic Status Transitions
 
-**Triggered by Smile Identity Webhook:**
+**Triggered by DIDIT Webhook:**
 
 ```typescript
 // In webhook handler
-async function handleSmileIdentityWebhook(payload: SmileWebhookPayload): Promise<void> {
+async function handleDiditWebhook(payload: DIDITWebhookPayload): Promise<void> {
 
   const customer_id = payload.partner_params.user_id;
   const confidence = payload.result.confidence_value;
@@ -264,7 +264,7 @@ async function expireOldVerifications(): Promise<void> {
 **Trigger 5: Customer Request**
 - **When**: Customer wants to update ID (new photo, name change)
 - **Required**: New ID upload
-- **Verification**: Standard Smile Identity flow
+- **Verification**: Standard DIDIT flow
 
 ---
 
@@ -294,7 +294,7 @@ Customer triggers re-verification
 └──────────┬──────────────┘
            ↓
 ┌─────────────────────────┐
-│ Smile Identity check    │
+│ DIDIT check    │
 └──────────┬──────────────┘
            ↓
 ┌─────────────────────────┐
@@ -659,12 +659,12 @@ This document provides:
 - [ ] Set up daily cron job for verification expiry checks (runs at midnight)
 - [ ] Implement 30-day grace period logic and account restrictions
 - [ ] Create notification templates for each status (verified, expired, manual_review, rejected)
-- [ ] Build webhook handler to update status from Smile Identity callbacks
+- [ ] Build webhook handler to update status from DIDIT callbacks
 - [ ] Create admin dashboard for manual status changes (flagged/blocked)
 - [ ] Set up monitoring alerts for blocked accounts and manual review queue
 
 ### Dependencies
-- **Smile Identity Webhooks**: Triggers status updates (processing → verified/rejected)
+- **DIDIT Webhooks**: Triggers status updates (processing → verified/rejected)
 - **Database**: Customers table with kyc_status field
 - **Notification System**: WhatsApp messaging for status updates
 - **Cron Scheduler**: Daily job for expiry checks
@@ -672,7 +672,7 @@ This document provides:
 
 ### Related Specifications
 - [KYC Document Requirements](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/kyc-document-requirements.md) - Verification process that creates statuses
-- [Smile Identity Integration](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/smile-identity-integration.md) - Webhook triggers for status transitions
+- [DIDIT Integration](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/didit-integration.md) - Webhook triggers for status transitions
 - [Customer Onboarding Flow](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/customer-onboarding-flow.md) - Initial KYC status creation
 - [Privacy & Consent Management](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/privacy-consent-management.md) - Data retention after account blocking
 - [Database Schema](https://github.com/1terr/Lynia-finance/blob/master/lynia-specs/lynia-lending/database-schema.md) - Table definitions

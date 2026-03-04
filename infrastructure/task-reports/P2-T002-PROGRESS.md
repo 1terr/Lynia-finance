@@ -376,7 +376,7 @@ node database/deploy-database.js
 - `status` - pending, processing, approved, rejected
 - `id_type` - national_id, passport, drivers_license
 - `id_number` - Document number
-- `smile_identity_job_id` - Provider reference
+- `didit_job_id` - Provider reference
 - `verification_result` (JSONB) - Full API response
 - `rejection_reason` - If rejected
 - `document_url` - Secure storage link
@@ -384,12 +384,12 @@ node database/deploy-database.js
 **Indexes**:
 - `idx_kyc_customer` - Customer submissions
 - `idx_kyc_status` - Pending queue
-- `idx_kyc_smile_job` - Provider sync
+- `idx_kyc_didit_job` - Provider sync
 
 **KYC Workflow**:
 1. Customer submits documents via WhatsApp
 2. Files uploaded to secure storage (S3)
-3. Smile Identity API called for verification
+3. DIDIT API called for verification
 4. Results stored in `verification_result` JSONB
 5. Customer KYC status updated
 6. Credit scoring triggered if approved

@@ -123,7 +123,7 @@ export const testCustomers = {
 export const testKycVerifications = {
   verified: {
     customer_id: 'cust_test_001',
-    verification_provider: 'smile_identity',
+    verification_provider: 'didit',
     id_type: 'national_id',
     id_number: 'ZIM123456789',
     id_document_url: 'https://test.supabase.co/storage/kyc/id_front_001.jpg',
@@ -135,7 +135,7 @@ export const testKycVerifications = {
 
   rejected: {
     customer_id: 'cust_test_005',
-    verification_provider: 'smile_identity',
+    verification_provider: 'didit',
     id_type: 'national_id',
     id_number: 'ZIM999999999',
     id_document_url: 'https://test.supabase.co/storage/kyc/id_front_005.jpg',

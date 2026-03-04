@@ -82,7 +82,7 @@ This phase established the complete AWS production infrastructure for Lynia Fina
     (VPC EP) (VPC EP)(VPC EP) (VPC EP)
          |
     [NAT Gateway] --> External APIs
-                      (Supabase, Smile ID, EcoCash, OneMoney, Trustonic)
+                      (Supabase, DIDIT, EcoCash, OneMoney, Trustonic)
 ```
 
 ---
@@ -90,7 +90,7 @@ This phase established the complete AWS production infrastructure for Lynia Fina
 ## Security Infrastructure
 
 ### Secrets Management (#181)
-- **7 secrets** in AWS Secrets Manager (Supabase, WhatsApp, Smile ID, EcoCash, OneMoney, Trustonic, SMS)
+- **7 secrets** in AWS Secrets Manager (Supabase, WhatsApp, DIDIT, EcoCash, OneMoney, Trustonic, SMS)
 - **Least-privilege IAM**: Each Lambda function accesses only its required secrets
 - **5-minute in-memory cache**: Reduces API calls during warm invocations
 - **Environment-prefixed**: `{env}/lynia/{service}` for multi-environment isolation

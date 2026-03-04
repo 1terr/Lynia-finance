@@ -100,7 +100,7 @@ All 14 manual AWS infrastructure tasks from the deployment runbook have been com
 - **Secrets Created**: 7
   1. `lynia/production/database` — Real credentials (host, port, username, password, dbname)
   2. `lynia/production/whatsapp` — Placeholder
-  3. `lynia/production/smile-identity` — Placeholder
+  3. `lynia/production/didit` — Placeholder
   4. `lynia/production/ecocash` — Placeholder
   5. `lynia/production/onemoney` — Placeholder
   6. `lynia/production/trustonic` — Placeholder
@@ -199,7 +199,7 @@ The `github-actions-deploy` user required 6 additional inline policies beyond it
 ### Must Complete Before Launch
 - [ ] Replace Secrets Manager placeholders with real API credentials:
   - [ ] WhatsApp Cloud API token and phone number ID
-  - [ ] Smile Identity partner ID and API key
+  - [ ] DIDIT partner ID and API key
   - [ ] EcoCash merchant credentials
   - [ ] OneMoney merchant credentials
   - [ ] Trustonic API credentials

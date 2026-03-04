@@ -263,7 +263,7 @@ jobs:
             - Supabase (URL, keys)
             - AWS (region, credentials)
             - WhatsApp Cloud API (phone ID, tokens)
-            - Smile Identity (API key, partner ID)
+            - DIDIT (API key, partner ID)
             - Payment Gateways (EcoCash, OneMoney)
             - Trustonic (API key, partner ID)
             - Application settings

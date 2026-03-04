@@ -59,12 +59,12 @@ Parameters:
     NoEcho: true
     Default: ""
 
-  # Smile Identity (KYC)
-  SmilePartnerId:
+  # DIDIT (KYC)
+  DiditApiKey:
     Type: String
     NoEcho: true
     Default: ""
-  SmileApiKey:
+  DiditWebhookSecret:
     Type: String
     NoEcho: true
     Default: ""
@@ -148,8 +148,8 @@ Resources:
         WhatsAppPhoneNumberId: !Ref WhatsAppPhoneNumberId
         WhatsAppAccessToken: !Ref WhatsAppAccessToken
         WhatsAppWebhookVerifyToken: !Ref WhatsAppWebhookVerifyToken
-        SmilePartnerId: !Ref SmilePartnerId
-        SmileApiKey: !Ref SmileApiKey
+        DiditApiKey: !Ref DiditApiKey
+        DiditWebhookSecret: !Ref DiditWebhookSecret
         EcocashMerchantId: !Ref EcocashMerchantId
         EcocashApiKey: !Ref EcocashApiKey
         OnemoneyMerchantId: !Ref OnemoneyMerchantId

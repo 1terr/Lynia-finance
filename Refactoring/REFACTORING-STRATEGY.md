@@ -113,7 +113,7 @@ No production code is modified. Only test files and configuration.
 | 2 | `tests/unit/shared/database-query-builder.test.ts` | `services/shared/clients/database.ts` | 370 | **Every database operation** flows through this QueryBuilder (custom Supabase replacement). SELECT, INSERT, UPDATE, DELETE, UPSERT — all parameterized queries built here. A regression means data corruption. |
 | 3 | `tests/unit/shared/response.test.ts` | `services/shared/utils/response.ts` | 145 | **Every API response** formatted through `successResponse()`, `errorResponse()`, `validationErrorResponse()`. Includes security headers (CORS, CSP, XSS protection). Wrong headers = security vulnerability. |
 | 4 | `tests/unit/shared/validation.test.ts` | `services/shared/utils/validation.ts` | 63 | Validates phone numbers, emails, UUIDs, IMEI numbers, national IDs. **Wrong validation = accepting fraudulent identity documents or rejecting legitimate customers.** |
-| 5 | `tests/unit/shared/circuit-breaker.test.ts` | `services/shared/utils/circuit-breaker.ts` | 122 | Protects against cascading failures when external APIs (Smile Identity, EcoCash, Trustonic) go down. Without tests, we can't verify it opens/closes correctly under failure conditions. |
+| 5 | `tests/unit/shared/circuit-breaker.test.ts` | `services/shared/utils/circuit-breaker.ts` | 122 | Protects against cascading failures when external APIs (DIDIT, EcoCash, Trustonic) go down. Without tests, we can't verify it opens/closes correctly under failure conditions. |
 | 6 | `tests/unit/shared/rate-limiter.test.ts` | `services/shared/utils/rate-limiter.ts` | 171 | **DoS protection.** Rate limits on auth endpoints, OTP endpoints, payment endpoints. If rate limiting fails silently, we're exposed to brute-force attacks. |
 | 7 | `tests/unit/shared/logger.test.ts` | `services/shared/utils/logger.ts` | 263 | **PII masking.** The logger masks phone numbers, national IDs, passwords before logging. If masking breaks, we leak customer PII to CloudWatch — a compliance violation in Zimbabwe's regulatory framework. |
 
@@ -519,7 +519,7 @@ Affects loan decisions and identity verification. Existing contract tests and in
 
 | Test File | What To Test |
 |-----------|-------------|
-| `tests/unit/kyc/provider-factory.test.ts` | Factory returns correct provider (Didit vs Smile Identity), provider switching, fallback behavior |
+| `tests/unit/kyc/provider-factory.test.ts` | Factory returns correct provider (Didit vs DIDIT), provider switching, fallback behavior |
 | `tests/unit/kyc/callback-handler.test.ts` | Webhook processing from KYC providers, status mapping (verified/rejected/manual_review), error handling for malformed callbacks |
 
 ---

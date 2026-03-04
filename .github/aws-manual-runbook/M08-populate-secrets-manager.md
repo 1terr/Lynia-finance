@@ -6,7 +6,7 @@
 
 ## Why This Is Needed
 
-The code uses `@aws-sdk/client-secrets-manager` (via `services/shared/utils/secrets.ts`) to fetch credentials at runtime. If these secrets don't exist, Lambda functions will crash with "secret not found" errors when calling EcoCash, OneMoney, Smile Identity, Trustonic, or WhatsApp APIs.
+The code uses `@aws-sdk/client-secrets-manager` (via `services/shared/utils/secrets.ts`) to fetch credentials at runtime. If these secrets don't exist, Lambda functions will crash with "secret not found" errors when calling EcoCash, OneMoney, DIDIT, Trustonic, or WhatsApp APIs.
 
 ## What You Need
 
@@ -19,7 +19,7 @@ The code uses `@aws-sdk/client-secrets-manager` (via `services/shared/utils/secr
 |-------------|----------|----------|
 | `lynia/{env}/database` | DB connection details | AWS RDS |
 | `lynia/{env}/whatsapp` | WhatsApp Cloud API credentials | Meta |
-| `lynia/{env}/smile-identity` | KYC provider credentials | Smile Identity |
+| `lynia/{env}/didit` | KYC provider credentials | DIDIT |
 | `lynia/{env}/ecocash` | Mobile money credentials | Econet |
 | `lynia/{env}/onemoney` | Mobile money credentials | NetOne |
 | `lynia/{env}/trustonic` | Device lock credentials | Trustonic |
@@ -71,18 +71,17 @@ aws secretsmanager create-secret \
 
 **Note**: For `webhook_verify_token`, generate a random string (e.g., `openssl rand -hex 32`). You'll configure this same string in the Meta webhook settings.
 
-### 4. Store Smile Identity credentials (KYC)
+### 4. Store DIDIT credentials (KYC)
 
-Get these from the [Smile Identity Partner Portal](https://portal.smileidentity.com/):
+Get these from the [DIDIT Dashboard](https://dashboard.didit.me/):
 
 ```bash
 aws secretsmanager create-secret \
-  --name "lynia/${ENV}/smile-identity" \
-  --description "Smile Identity KYC provider credentials" \
+  --name "lynia/${ENV}/didit" \
+  --description "DIDIT KYC provider credentials" \
   --secret-string '{
-    "partner_id": "REPLACE_WITH_PARTNER_ID",
     "api_key": "REPLACE_WITH_API_KEY",
-    "callback_url": "https://api.lyniafinance.com/kyc/callback"
+    "webhook_secret": "REPLACE_WITH_WEBHOOK_SECRET"
   }' \
   --region ${REGION}
 ```

@@ -25,7 +25,7 @@ UAT Environment Architecture
                                                       - Storage
                                                             |
                                             [External Services (Sandbox)]
-                                             - Smile Identity (Test)
+                                             - DIDIT (Test)
                                              - EcoCash (Sandbox)
                                              - OneMoney (Sandbox)
                                              - Trustonic (Sandbox)
@@ -42,7 +42,7 @@ UAT Environment Architecture
 | AWS Staging Account | IAM user with Lambda/API Gateway access | DevOps Lead |
 | Supabase Staging | Project URL + service role key | Engineering Lead |
 | Meta WhatsApp Business | Test business number + API token | Product Manager |
-| Smile Identity | Sandbox partner_id + API key | Engineering Lead |
+| DIDIT | Sandbox partner_id + API key | Engineering Lead |
 | EcoCash Sandbox | Merchant ID + API credentials | Finance Lead |
 | OneMoney Sandbox | Merchant ID + API credentials | Finance Lead |
 | Trustonic Sandbox | API key + device management credentials | Engineering Lead |
@@ -187,14 +187,14 @@ Environment variables:
   ONEMONEY_CALLBACK_URL: https://staging-api.lynia.co.zw/payments/callback/onemoney
 ```
 
-### 3.7 Configure Smile Identity Sandbox
+### 3.7 Configure DIDIT Sandbox
 
 ```yaml
 Environment variables:
-  SMILE_IDENTITY_URL: https://testapi.smileidentity.com
-  SMILE_PARTNER_ID: (from sandbox registration)
-  SMILE_API_KEY: (from sandbox registration)
-  SMILE_CALLBACK_URL: https://staging-api.lynia.co.zw/kyc/callback
+  DIDIT_URL: https://testapi.diditidentity.com
+  DIDIT_API_KEY: (from sandbox registration)
+  DIDIT_WEBHOOK_SECRET: (from sandbox registration)
+  DIDIT_WEBHOOK_URL: https://staging-api.lynia.co.zw/kyc/callback
 ```
 
 ### 3.8 Deploy Frontend Applications
@@ -230,7 +230,7 @@ Run this checklist after setup to confirm everything is ready:
 | 5 | Admin portal loads | Open staging-admin URL | Login page renders | [ ] |
 | 6 | Distributor dashboard loads | Open staging-distributor URL | Login page renders | [ ] |
 | 7 | WhatsApp webhook active | Send "Hi" from test number | Response received | [ ] |
-| 8 | Smile Identity sandbox | POST test KYC request | Callback received | [ ] |
+| 8 | DIDIT sandbox | POST test KYC request | Callback received | [ ] |
 | 9 | EcoCash sandbox | POST test payment | USSD prompt delivered | [ ] |
 | 10 | OneMoney sandbox | POST test payment | USSD prompt delivered | [ ] |
 | 11 | UAT admin login | Login with uat-admin credentials | Dashboard loads | [ ] |
@@ -262,7 +262,7 @@ pnpm db:seed      # Re-seed test data
 | WhatsApp webhook not receiving | Webhook URL misconfigured | Verify URL and verify_token in Meta dashboard |
 | Supabase connection refused | Connection pooling limit | Check PgBouncer settings, increase pool size |
 | Payment callback not received | Callback URL not registered | Verify callback URLs in sandbox dashboards |
-| KYC verification stuck | Smile Identity sandbox delay | Wait up to 60 seconds; check callback logs |
+| KYC verification stuck | DIDIT sandbox delay | Wait up to 60 seconds; check callback logs |
 | Admin portal blank page | Build artifacts stale | Re-run `pnpm build` and redeploy |
 | CORS errors on frontend | API Gateway CORS headers | Verify CORS configuration in SAM template |
 

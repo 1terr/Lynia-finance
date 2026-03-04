@@ -142,7 +142,7 @@ The fully established Lynia Finance credit scoring system will assess **three cr
                  ↓
 ┌────────────────────────────────────────────────────┐
 │ Data Enrichment Layer (Phase 1)                   │
-│ - Smile Identity (KYC verification)               │
+│ - DIDIT (KYC verification)               │
 │ - Zimbocash API (mobile money history - optional) │
 │ - Location data (from phone)                      │
 └────────────────┬───────────────────────────────────┘
@@ -459,10 +459,10 @@ function scoreExternalCredit(data: ExternalCreditData | null): number {
 
 **Purpose**: Basic identity verification (reduced from 35% as affordability is now primary)
 
-**Data Source**: Smile Identity API
+**Data Source**: DIDIT API
 
 ```typescript
-async function scoreKYCVerification(kycResult: SmileIdentityResult): Promise<number> {
+async function scoreKYCVerification(kycResult: DiditResult): Promise<number> {
   let score = 0;
 
   // 1. ID Document Verification (50 points)
@@ -520,7 +520,7 @@ interface CreditScoreInput {
   external_credit_data: ExternalCreditData | null;
 
   // KYC data
-  kyc_result: SmileIdentityResult;
+  kyc_result: DiditResult;
 }
 
 async function calculateRuleBasedScore(input: CreditScoreInput): Promise<{

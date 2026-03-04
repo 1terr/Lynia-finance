@@ -29,7 +29,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 - ✅ T030-T034: SMS/Email notification research
 
 #### **KYC & Identity Verification**
-- ✅ T010-T012: Smile Identity integration
+- ✅ T010-T012: DIDIT integration
 - ✅ T013: Zimbabwe National ID validation
 
 #### **Payment Gateways**
@@ -58,7 +58,7 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 - AWS Lambda (microservices) ✅
 - Supabase PostgreSQL (application data) ✅
 - WhatsApp Cloud API (customer communication) ✅
-- Smile Identity (KYC) ✅
+- DIDIT (KYC) ✅
 - EcoCash/EcoCash/Omari/Innbucks/OneWallet (payments) ✅
 
 ---
@@ -525,13 +525,13 @@ This document tracks all implementation tasks for the Lynia Finance platform, or
 
 ---
 
-#### P1-T028: Smile Identity Integration Flow
+#### P1-T028: DIDIT Integration Flow
 **Priority:** Critical
 **Est:** 6 hours
 **Dependencies:** P1-T027, Phase 0 (T010-T012)
 
 **Deliverable:**
-- Smile Identity API integration design
+- DIDIT API integration design
 - Document upload flow
 - Verification callback handling
 - Retry logic for failed verifications

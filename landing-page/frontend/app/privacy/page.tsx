@@ -101,8 +101,7 @@ export default function PrivacyPage() {
               </p>
               <ul className="list-disc pl-6 space-y-2 text-body text-slate">
                 <li>
-                  <strong>KYC verification providers</strong> (e.g., Smile
-                  Identity) to verify your identity.
+                  <strong>KYC verification providers</strong> (e.g., DIDIT) to verify your identity.
                 </li>
                 <li>
                   <strong>Payment processors</strong> (EcoCash, OneMoney) to

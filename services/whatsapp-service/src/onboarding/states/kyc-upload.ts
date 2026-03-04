@@ -271,7 +271,7 @@ Format: *XX-XXXXXXX-X-XX*`;
       }
     }
 
-    // Async flow (e.g., Smile Identity) — tell customer to wait
+    // Async flow (e.g., DIDIT) — tell customer to wait
     return `\u23F3 *Verifying Your Identity...*
 
 Your documents have been submitted for verification.

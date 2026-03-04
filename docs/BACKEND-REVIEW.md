@@ -29,7 +29,7 @@ production deployment.
 
 **Files**: `payment-service/src/index.ts`, `kyc-service/src/index.ts`
 
-All webhook handlers (EcoCash, OneMoney, O'mari, Smile Identity) previously
+All webhook handlers (EcoCash, OneMoney, O'mari, DIDIT) previously
 checked signatures only *if* the header was present:
 
 ```typescript
@@ -131,7 +131,7 @@ DynamoDB or ElastiCache."*
 Without rate limiting, the following attacks are possible:
 - Brute-force scoring to find credit-worthy customer IDs
 - Payment flooding
-- KYC submission spam against Smile Identity (costs money per API call)
+- KYC submission spam against DIDIT (costs money per API call)
 
 **Note**: API Gateway throttling (if configured in `template.yaml`) provides
 first-line defense, but no `Auth`/`Authorizer` configuration was found in the
@@ -314,6 +314,6 @@ Phase 3 (Hardening):
 | File | Change |
 |------|--------|
 | `services/payment-service/src/index.ts` | Webhook signatures now mandatory (3 handlers) |
-| `services/kyc-service/src/index.ts` | Smile Identity webhook signature now mandatory |
+| `services/kyc-service/src/index.ts` | DIDIT webhook signature now mandatory |
 | `services/shared/utils/auth.ts` | **NEW** — JWT auth middleware for Lambda handlers |
 | `services/shared/utils/response.ts` | Added `parseBody()` safe JSON parsing utility |

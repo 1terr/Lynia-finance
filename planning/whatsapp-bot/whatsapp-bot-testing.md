@@ -1311,7 +1311,7 @@ This specification defines a comprehensive testing strategy for Lynia Finance's 
 This document provides:
 1. **Testing Pyramid Structure**: 70% unit tests (200-300), 20% integration tests (50-70), 10% E2E tests (10-15)
 2. **Unit Test Suite**: Intent classification, entity extraction, state machine, rate limiter, circuit breaker tests
-3. **Integration Tests**: Database, WhatsApp API, AWS SQS, Smile Identity, payment gateway integrations
+3. **Integration Tests**: Database, WhatsApp API, AWS SQS, DIDIT, payment gateway integrations
 4. **E2E Test Framework**: WhatsApp conversation simulator for full user journey testing
 5. **Mock WhatsApp API**: MSW mock server with rate limit simulation (no real API calls in tests)
 6. **Performance Testing**: Artillery load tests for 1000 concurrent users, <200ms p95 target

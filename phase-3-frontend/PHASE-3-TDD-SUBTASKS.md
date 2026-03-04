@@ -791,7 +791,7 @@ describe('KYCDocumentViewer', () => {
   it('should display selfie image', () => {});
   it('should zoom on click', () => {});
   it('should rotate image', () => {});
-  it('should show Smile Identity match score', () => {});
+  it('should show DIDIT match score', () => {});
 });
 
 describe('KYCApproval', () => {

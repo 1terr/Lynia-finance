@@ -24,7 +24,7 @@ All 14 tasks have been completed for the **production** environment.
 |------|-------|--------|----------|-------|
 | M6 | [Store VPC Outputs in SSM](./M06-store-vpc-outputs-ssm.md) | COMPLETE | 3 params verified | `/production/lynia/vpc/private-subnet-1`, `private-subnet-2`, `lambda-sg` |
 | M7 | [Store Cognito ARN in SSM](./M07-store-cognito-arn-ssm.md) | COMPLETE | 1 param verified | `/production/lynia/cognito/user-pool-arn` |
-| M8 | [Populate Secrets Manager](./M08-populate-secrets-manager.md) | COMPLETE | 7 secrets verified | `lynia/production/database` (real creds), whatsapp, smile-identity, ecocash, onemoney, trustonic, sms (placeholders -- update with real API keys before go-live) |
+| M8 | [Populate Secrets Manager](./M08-populate-secrets-manager.md) | COMPLETE | 7 secrets verified | `lynia/production/database` (real creds), whatsapp, didit, ecocash, onemoney, trustonic, sms (placeholders -- update with real API keys before go-live) |
 
 ### Phase 3: CI/CD & GitHub
 
@@ -141,6 +141,6 @@ The `github-actions-deploy` user required additional inline policies beyond the 
 ## Known Issues & Follow-ups
 
 1. **RDS is on free-tier settings** -- Upgrade to `db.t4g.small`, Multi-AZ, 50GB gp3, 35-day backups when moving off free tier
-2. **Secrets Manager placeholders** -- Replace placeholder values for WhatsApp, Smile Identity, EcoCash, OneMoney, Trustonic, and SMS with real API credentials before go-live
+2. **Secrets Manager placeholders** -- Replace placeholder values for WhatsApp, DIDIT, EcoCash, OneMoney, Trustonic, and SMS with real API credentials before go-live
 3. **Migration dependency bug** -- `001_initial_schema.sql` has a table ordering issue (loans references admin_users before it's created). Fixed via `database/migrations/aws/fix_missing_tables.sql`
 4. **WAF template fixes** -- `waf.yaml` had an invalid single-statement OrStatement and rate limit below minimum; both fixed

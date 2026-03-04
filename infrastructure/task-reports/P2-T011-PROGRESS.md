@@ -27,7 +27,7 @@ This guide provides a complete implementation plan for the Lynia Finance Admin D
 - ✅ P2-T004: Credit Scoring Service
 - ✅ P2-T005: WhatsApp Cloud API
 - ✅ P2-T006: WhatsApp Bot Onboarding
-- ✅ P2-T007: Smile Identity KYC
+- ✅ P2-T007: DIDIT KYC
 - ✅ P2-T008: Mobile Money Payments (EcoCash, OneMoney)
 - ✅ P2-T009: Device Handover Process
 - ✅ P2-T010: Trustonic Device Lock/Unlock
