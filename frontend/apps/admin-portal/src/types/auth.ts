@@ -66,7 +66,9 @@ export type Permission =
   | 'settings:write'
   | 'admin_users:read'
   | 'admin_users:write'
-  | 'notifications:send';
+  | 'notifications:send'
+  | 'distributors:read'
+  | 'distributors:write';
 
 /**
  * Single source of truth for role-permission mappings.
@@ -84,6 +86,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'settings:read', 'settings:write',
     'admin_users:read', 'admin_users:write',
     'notifications:send',
+    'distributors:read', 'distributors:write',
   ],
   admin: [
     'dashboard:view',
@@ -95,6 +98,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'reports:read', 'reports:export',
     'settings:read',
     'notifications:send',
+    'distributors:read', 'distributors:write',
   ],
   operations_manager: [
     'dashboard:view',
@@ -105,6 +109,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     'payments:read', 'payments:reconcile',
     'reports:read', 'reports:export',
     'notifications:send',
+    'distributors:read', 'distributors:write',
   ],
   kyc_reviewer: [
     'dashboard:view',
@@ -121,6 +126,7 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   inventory_manager: [
     'dashboard:view',
     'devices:read', 'devices:write', 'devices:delete',
+    'distributors:read',
   ],
   customer_support: [
     'dashboard:view',
