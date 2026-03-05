@@ -395,6 +395,8 @@ describe('Admin Service — Product Management', () => {
       };
       const chain = chainableMock({ data: productRow, error: null });
       mockDb.from.mockReturnValue(chain);
+      // Mock linked device models query (returns empty array)
+      mockQuery.mockResolvedValue({ data: [], error: null });
 
       const event = buildEvent({ httpMethod: 'GET', path: '/admin/products/a1b2c3d4-e5f6-0001-abcd-ef0000000001' });
       const result = await handler(event as never);
