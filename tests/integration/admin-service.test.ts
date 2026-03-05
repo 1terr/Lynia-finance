@@ -393,9 +393,11 @@ describe('Admin Service Integration Tests', () => {
   describe('POST /api/v1/kyc/submissions/:id/approve', () => {
     it('should approve a KYC submission', async () => {
       mockQuery
-        .mockResolvedValueOnce({ data: [], error: null })  // UPDATE kyc_submissions
+        .mockResolvedValueOnce({ data: [{ id: 'kyc-001' }], error: null })  // UPDATE kyc_submissions RETURNING id
         .mockResolvedValueOnce({ data: [], error: null })  // UPDATE customers
         .mockResolvedValueOnce({ data: [], error: null }); // INSERT audit_log
+      mockQueryOne
+        .mockResolvedValueOnce({ data: { extracted_name: null }, error: null }); // SELECT extracted_name
 
       const event = createEvent({
         httpMethod: 'POST',
@@ -427,7 +429,8 @@ describe('Admin Service Integration Tests', () => {
   describe('POST /api/v1/kyc/submissions/:id/reject', () => {
     it('should reject a KYC submission with reason', async () => {
       mockQuery
-        .mockResolvedValueOnce({ data: [], error: null })  // UPDATE kyc_submissions
+        .mockResolvedValueOnce({ data: [{ id: 'kyc-002' }], error: null })  // UPDATE kyc_submissions RETURNING id
+        .mockResolvedValueOnce({ data: [], error: null })  // UPDATE customers kyc_status
         .mockResolvedValueOnce({ data: [], error: null }); // INSERT audit_log
 
       const event = createEvent({

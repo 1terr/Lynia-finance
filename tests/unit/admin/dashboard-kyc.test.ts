@@ -665,11 +665,13 @@ describe('GET /api/v1/kyc/submissions/sla-stats', () => {
 
 describe('POST /api/v1/kyc/submissions/:id/approve', () => {
   it('should approve a KYC submission', async () => {
-    // Three query calls: update kyc_submissions, update customers, insert audit_log
+    // Four query calls: UPDATE kyc_submissions RETURNING, SELECT extracted_name, UPDATE customers, INSERT audit_log
     mockQuery
-      .mockResolvedValueOnce({ data: [], error: null })   // UPDATE kyc_submissions
+      .mockResolvedValueOnce({ data: [{ id: 'abcdef0000000123' }], error: null })  // UPDATE kyc_submissions RETURNING id
       .mockResolvedValueOnce({ data: [], error: null })   // UPDATE customers
       .mockResolvedValueOnce({ data: [], error: null });   // INSERT audit_log
+    mockQueryOne
+      .mockResolvedValueOnce({ data: { extracted_name: null }, error: null }); // SELECT extracted_name
 
     const event = createAPIGatewayEvent({
       httpMethod: 'POST',
@@ -683,23 +685,26 @@ describe('POST /api/v1/kyc/submissions/:id/approve', () => {
     expect(body.data.message).toBe('KYC approved');
   });
 
-  it('should use admin_id from body if provided', async () => {
+  it('should update customer name from extracted KYC data on approve', async () => {
     mockQuery
-      .mockResolvedValueOnce({ data: [], error: null })
-      .mockResolvedValueOnce({ data: [], error: null })
-      .mockResolvedValueOnce({ data: [], error: null });
+      .mockResolvedValueOnce({ data: [{ id: 'abcdef0000000123' }], error: null })  // UPDATE kyc_submissions RETURNING id
+      .mockResolvedValueOnce({ data: [], error: null })   // UPDATE customers (with name)
+      .mockResolvedValueOnce({ data: [], error: null });   // INSERT audit_log
+    mockQueryOne
+      .mockResolvedValueOnce({ data: { extracted_name: 'John Doe' }, error: null }); // SELECT extracted_name
 
     const event = createAPIGatewayEvent({
       httpMethod: 'POST',
       path: '/api/v1/kyc/submissions/abcdef0000000123/approve',
-      body: JSON.stringify({ customer_id: 'cust-1', admin_id: 'specific-admin-1' }),
+      body: JSON.stringify({ customer_id: 'cust-1' }),
     });
     const result = await handler(event);
     expect(result.statusCode).toBe(200);
 
-    // Verify the second parameter (admin_id) in the UPDATE query call
-    const updateCall = mockQuery.mock.calls[0];
-    expect(updateCall[1][1]).toBe('specific-admin-1');
+    // Verify customer UPDATE includes the extracted name
+    const customerUpdateCall = mockQuery.mock.calls[1];
+    expect(customerUpdateCall[1]).toContain('John');
+    expect(customerUpdateCall[1]).toContain('Doe');
   });
 
   it('should return 400 when customer_id is missing', async () => {
@@ -735,7 +740,8 @@ describe('POST /api/v1/kyc/submissions/:id/approve', () => {
 describe('POST /api/v1/kyc/submissions/:id/reject', () => {
   it('should reject a KYC submission with a reason', async () => {
     mockQuery
-      .mockResolvedValueOnce({ data: [], error: null })   // UPDATE kyc_submissions
+      .mockResolvedValueOnce({ data: [{ id: 'abcdef0000000456' }], error: null })   // UPDATE kyc_submissions RETURNING id
+      .mockResolvedValueOnce({ data: [], error: null })   // UPDATE customers kyc_status
       .mockResolvedValueOnce({ data: [], error: null });   // INSERT audit_log
 
     const event = createAPIGatewayEvent({
