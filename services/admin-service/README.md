@@ -1,6 +1,6 @@
 # Admin Service
 
-Powers the admin portal with user management, system configuration, audit logging, product/device-model CRUD, organization management, inventory operations (devices, adjustments, transfers, reports), dashboard metrics, and KYC review workflows.
+Powers the admin portal with user management, system configuration, audit logging, product/device-model CRUD, organization management, distributor management (CRUD, inventory allocation, handovers, transfers, commissions), inventory operations (devices, adjustments, transfers, reports), dashboard metrics, and KYC review workflows.
 
 ## Endpoints
 
@@ -33,6 +33,16 @@ Powers the admin portal with user management, system configuration, audit loggin
 | PATCH | /admin/organizations/:id | Update an organization |
 | POST | /admin/organizations/:id/import | Import organization members |
 | GET | /admin/organizations/:id/members | List organization members |
+| GET | /admin/distributors | List distributors (paginated, searchable) |
+| GET | /admin/distributors/stats | Aggregate stats: total, active, revenue, devices distributed |
+| POST | /admin/distributors | Create distributor + Cognito account |
+| GET | /admin/distributors/:id | Get distributor with inventory/commission/handover counts |
+| PATCH | /admin/distributors/:id | Update distributor details or status |
+| GET | /admin/distributors/:id/inventory | Distributor device inventory (IMEI search, status filter) |
+| GET | /admin/distributors/:id/handovers | Distributor device handovers |
+| GET | /admin/distributors/:id/transfers | Distributor stock transfers |
+| GET | /admin/distributors/:id/commissions | Distributor commissions with summary totals |
+| POST | /admin/distributors/:id/commissions/pay | Bulk mark commissions as paid |
 | GET | /admin/devices | List device inventory |
 | POST | /admin/devices | Register a device |
 | POST | /admin/devices/bulk-import | Bulk import devices |

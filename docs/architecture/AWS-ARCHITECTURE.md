@@ -421,7 +421,7 @@ logger.info({
 | Form Submission | form-submission | 256 MB | 15s | Public form capture |
 | Fineract Reconciliation | fineract-reconciliation | 512 MB | 300s | Fineract data reconciliation |
 | Fineract Proxy | fineract-proxy | 512 MB | 60s | Core banking API proxy |
-| Admin | admin-service | 512 MB | 30s | Admin portal API |
+| Admin | admin-service | 512 MB | 30s | Admin portal API (users, config, products, devices, inventory, distributors, KYC, dashboard) |
 | Distributor | distributor-service | 512 MB | 30s | Distributor portal API |
 | Investor Reporting | investor-reporting | 512 MB | 60s | Investor portfolio reports |
 | DW Sync | dw-sync | 512 MB | 120s | Data warehouse sync |

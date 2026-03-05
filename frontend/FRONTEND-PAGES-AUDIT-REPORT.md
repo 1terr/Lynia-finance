@@ -7,7 +7,7 @@
 
 ## 1. INVENTORY: All Pages Built in the Codebase
 
-### Admin Portal (`frontend/admin-portal`) — 20 Routes
+### Admin Portal (`frontend/admin-portal`) — 22 Routes
 
 | # | Route | Page File | Status |
 |---|-------|-----------|--------|
@@ -22,17 +22,19 @@
 | 9 | `/devices/[id]` | `(dashboard)/devices/[id]/page.tsx` + `_client.tsx` | Built |
 | 10 | `/devices/handovers` | `(dashboard)/devices/handovers/page.tsx` + `_client.tsx` | Built |
 | 11 | `/devices/lock-unlock` | `(dashboard)/devices/lock-unlock/page.tsx` + `_client.tsx` | Built |
-| 12 | `/loans` | `(dashboard)/loans/page.tsx` + `_client.tsx` | Built |
-| 13 | `/loans/[id]` | `(dashboard)/loans/[id]/page.tsx` + `_client.tsx` | Built |
-| 14 | `/loans/pending-approval` | `(dashboard)/loans/pending-approval/page.tsx` + `_client.tsx` | Built |
-| 15 | `/payments` | `(dashboard)/payments/page.tsx` + `_client.tsx` | Built |
-| 16 | `/payments/[id]` | `(dashboard)/payments/[id]/page.tsx` + `_client.tsx` | Built |
-| 17 | `/payments/collections` | `(dashboard)/payments/collections/page.tsx` + `_client.tsx` | Built |
-| 18 | `/payments/reconciliation` | `(dashboard)/payments/reconciliation/page.tsx` + `_client.tsx` | Built |
-| 19 | `/reports` | `(dashboard)/reports/page.tsx` + `_client.tsx` | Built |
-| 20 | `/settings` | `(dashboard)/settings/page.tsx` + `_client.tsx` | Built |
+| 12 | `/distributors` | `(dashboard)/distributors/page.tsx` + `_client.tsx` | Built |
+| 13 | `/distributors/[id]` | `(dashboard)/distributors/[id]/page.tsx` + `_client.tsx` | Built |
+| 14 | `/loans` | `(dashboard)/loans/page.tsx` + `_client.tsx` | Built |
+| 15 | `/loans/[id]` | `(dashboard)/loans/[id]/page.tsx` + `_client.tsx` | Built |
+| 16 | `/loans/pending-approval` | `(dashboard)/loans/pending-approval/page.tsx` + `_client.tsx` | Built |
+| 17 | `/payments` | `(dashboard)/payments/page.tsx` + `_client.tsx` | Built |
+| 18 | `/payments/[id]` | `(dashboard)/payments/[id]/page.tsx` + `_client.tsx` | Built |
+| 19 | `/payments/collections` | `(dashboard)/payments/collections/page.tsx` + `_client.tsx` | Built |
+| 20 | `/payments/reconciliation` | `(dashboard)/payments/reconciliation/page.tsx` + `_client.tsx` | Built |
+| 21 | `/reports` | `(dashboard)/reports/page.tsx` + `_client.tsx` | Built |
+| 22 | `/settings` | `(dashboard)/settings/page.tsx` + `_client.tsx` | Built |
 
-**Supporting component directories:** `auth/`, `customers/`, `dashboard/`, `devices/`, `kyc-review/`, `layout/`, `payments/`, `reports/`, `settings/`, `shared/`, `ui/`
+**Supporting component directories:** `auth/`, `customers/`, `dashboard/`, `devices/`, `distributors/`, `kyc-review/`, `layout/`, `payments/`, `reports/`, `settings/`, `shared/`, `ui/`
 
 ### Distributor Dashboard (`frontend/distributor-dashboard`) — 6 Routes
 
@@ -175,9 +177,9 @@ Both apps are deployed via:
 
 | Metric | Admin Portal | Distributor Dashboard |
 |--------|-------------|---------------------|
-| **Total pages built** | 20 | 6 |
+| **Total pages built** | 22 | 6 |
 | **Planned pages (Phase 3 core)** | ~28 | 6 |
-| **Completion rate** | ~71% | 100% |
+| **Completion rate** | ~79% | 100% |
 | **Deployed to production** | YES (`admin.lyniafinance.com`) | YES (`distributor.lyniafinance.com`) |
 | **Framework** | Next.js 14 (App Router, static export) | Next.js 14 (App Router, static export) |
 | **Component library** | shadcn/ui + Tailwind CSS | shadcn/ui + Tailwind CSS |
@@ -186,11 +188,11 @@ Both apps are deployed via:
 
 ### Key Findings
 
-1. **Core pages are built and deployed.** Both admin portal (20 pages) and distributor dashboard (6 pages) are live on their respective domains.
+1. **Core pages are built and deployed.** Both admin portal (22 pages) and distributor dashboard (6 pages) are live on their respective domains.
 
 2. **Distributor dashboard is complete** against Phase 3 specs — all planned pages including the 7-step handover wizard are implemented.
 
-3. **Admin portal is ~71% complete.** The main CRUD pages for customers, loans, payments, devices, KYC, reports, and settings are all present. The gaps are secondary views (overdue loans, handover detail, forgot password) and Phase 3.6–3.9 advanced features (ticketing, fraud detection, regulatory reporting, referral program, data privacy).
+3. **Admin portal is ~79% complete.** The main CRUD pages for customers, loans, payments, devices, distributors, KYC, reports, and settings are all present. The `/distributors` list page and `/distributors/[id]` detail page (with 4 tabs: Inventory, Handovers, Transfers, Commissions) were added in March 2026. The gaps are secondary views (overdue loans, handover detail, forgot password) and Phase 3.6–3.9 advanced features (ticketing, fraud detection, regulatory reporting, referral program, data privacy).
 
 4. **Both sites are live** at `admin.lyniafinance.com` and `distributor.lyniafinance.com`, served via AWS S3 + CloudFront with proper SSL and security headers.
 

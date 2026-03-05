@@ -448,6 +448,24 @@ const PERMISSIONS: PermissionDefinition[] = [
     sensitivityLevel: 'high'
   },
 
+  // Distributor permissions
+  {
+    permission: 'distributors:read',
+    resource: 'distributors',
+    action: 'read',
+    description: 'View distributor profiles, inventory, handovers, transfers, and commissions',
+    requiresAuditLog: false,
+    sensitivityLevel: 'low'
+  },
+  {
+    permission: 'distributors:write',
+    resource: 'distributors',
+    action: 'write',
+    description: 'Create/update distributors, allocate inventory, mark commissions as paid',
+    requiresAuditLog: true,
+    sensitivityLevel: 'high'
+  },
+
   // Notification permissions
   {
     permission: 'notifications:send',
@@ -555,6 +573,9 @@ const PERMISSIONS: PermissionDefinition[] = [
 | devices:lock                   | ✓           | ✓           | -       | -       | -       | -         | -       |
 | devices:unlock                 | ✓           | ✓           | -       | -       | -       | -         | -       |
 | devices:handover               | ✓           | ✓           | -       | -       | -       | ✓         | -       |
+| **Distributors**               |             |             |         |         |         |           |         |
+| distributors:read              | ✓           | ✓           | -       | -       | -       | ✓         | -       |
+| distributors:write             | ✓           | ✓           | -       | -       | -       | ✓         | -       |
 | **Notifications**              |             |             |         |         |         |           |         |
 | notifications:send             | ✓           | ✓           | ✓       | -       | -       | -         | -       |
 | **Reports**                    |             |             |         |         |         |           |         |
@@ -1119,6 +1140,12 @@ const NAVIGATION_ITEMS = [
     href: '/dashboard/devices',
     icon: DevicePhoneMobileIcon,
     requiredPermissions: ['devices:read']
+  },
+  {
+    label: 'Distributors',
+    href: '/dashboard/distributors',
+    icon: StoreIcon,
+    requiredPermissions: ['distributors:read']
   },
   {
     label: 'Payments',

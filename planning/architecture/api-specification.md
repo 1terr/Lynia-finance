@@ -22,8 +22,9 @@
 10. [Notification Service API](#notification-service-api)
 11. [Inventory Service API](#inventory-service-api)
 12. [Admin API Service](#admin-api-service)
-13. [Webhooks](#webhooks)
-14. [Rate Limiting](#rate-limiting)
+13. [Distributor Admin API](#distributor-admin-api)
+14. [Webhooks](#webhooks)
+15. [Rate Limiting](#rate-limiting)
 
 ---
 
@@ -1190,6 +1191,154 @@ Get customer details with full history.
       "delinquency_rate": 11.1
     }
   }
+}
+```
+
+---
+
+## Distributor Admin API
+
+**Base Path**: `/admin/distributors`
+
+Manage the distributor (agent/dealer) network, inventory allocations, handovers, stock transfers, and commissions. All endpoints require Admin JWT with `distributors:read` or `distributors:write` permission.
+
+### GET /admin/distributors
+
+List distributors with pagination, search, and status filter.
+
+**Query Parameters:**
+- `search`: Search by business_name, contact_person, or phone_number
+- `status`: Filter by status (active, inactive, suspended)
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 25, max: 100)
+
+---
+
+### GET /admin/distributors/stats
+
+Aggregate statistics for the distributor network.
+
+**Response:**
+```json
+{
+  "total": 42,
+  "active": 38,
+  "total_revenue_usd": 125000.00,
+  "total_devices_distributed": 890
+}
+```
+
+---
+
+### POST /admin/distributors
+
+Create a new distributor and auto-provision a Cognito login account.
+
+**Required Permission:** `distributors:write`
+
+**Request:**
+```json
+{
+  "business_name": "Harare Mobile Solutions",
+  "contact_person": "John Moyo",
+  "phone_number": "+263771234567",
+  "email": "john@example.com",
+  "address_line1": "123 Main St",
+  "city": "Harare",
+  "province": "Harare Metropolitan",
+  "bank_name": "CBZ Bank",
+  "account_number": "1234567890",
+  "account_name": "Harare Mobile Solutions",
+  "ecocash_number": "+263771234567",
+  "onemoney_number": "+263711234567",
+  "status": "active"
+}
+```
+
+**Side Effects:**
+- Creates Cognito user with username `dist_<uuid>` in the `distributor` group
+- Sends temporary password via email and SMS
+
+---
+
+### GET /admin/distributors/:id
+
+Get a single distributor with enriched aggregate data (inventory count, commission totals, handover count).
+
+---
+
+### PATCH /admin/distributors/:id
+
+Update distributor details (business info, contact, address, payment details, status).
+
+**Required Permission:** `distributors:write`
+
+---
+
+### GET /admin/distributors/:id/inventory
+
+Paginated list of devices assigned to this distributor (`agent_inventory` table).
+
+**Query Parameters:**
+- `search`: Filter by IMEI
+- `status`: Filter by status (available, sold, returned, damaged)
+- `page`, `limit`: Pagination
+
+---
+
+### GET /admin/distributors/:id/handovers
+
+Paginated list of device handovers performed by this distributor.
+
+**Query Parameters:**
+- `search`: Filter by customer name or IMEI
+- `status`: Filter by handover status
+- `page`, `limit`: Pagination
+
+---
+
+### GET /admin/distributors/:id/transfers
+
+Paginated list of stock transfers to/from this distributor.
+
+**Query Parameters:**
+- `status`: Filter by transfer status (requested, approved, in_transit, received, cancelled)
+- `page`, `limit`: Pagination
+
+---
+
+### GET /admin/distributors/:id/commissions
+
+Paginated list of commissions earned by this distributor, with summary totals.
+
+**Response includes:**
+```json
+{
+  "data": [...],
+  "total": 50,
+  "page": 1,
+  "limit": 25,
+  "total_pages": 2,
+  "summary": {
+    "total_earned": 5000.00,
+    "total_paid": 3500.00,
+    "pending": 1500.00
+  }
+}
+```
+
+---
+
+### POST /admin/distributors/:id/commissions/pay
+
+Bulk mark selected commissions as paid.
+
+**Required Permission:** `distributors:write`
+
+**Request:**
+```json
+{
+  "commission_ids": ["uuid-1", "uuid-2", "uuid-3"]
 }
 ```
 
