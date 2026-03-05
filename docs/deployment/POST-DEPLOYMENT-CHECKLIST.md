@@ -90,6 +90,8 @@ Run: `./scripts/deploy-frontend-hosting.sh --env=production && ./scripts/build-a
 - [ ] CloudFront distributions deployed (HTTP/2 + HTTP/3)
 - [ ] Security headers: HSTS, X-Frame-Options, CSP, X-Content-Type-Options
 - [ ] SPA routing: 403/404 redirect to `/index.html`
+- [ ] CloudFront Function (`{env}-lynia-directory-index`): UUID → `_` rewrite + directory index
+- [ ] Dynamic routes work: `/products/{uuid}/` resolves to product detail page (not dashboard redirect)
 - [ ] `admin.lyniafinance.com` returns HTTP 200
 - [ ] `distributor.lyniafinance.com` returns HTTP 200
 - [ ] Cognito config baked into builds (UserPoolId, ClientId, Region)

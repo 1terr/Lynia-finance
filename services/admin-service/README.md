@@ -19,6 +19,9 @@ Powers the admin portal with user management, system configuration, audit loggin
 | GET | /admin/products/:id | Get loan product by ID |
 | PATCH | /admin/products/:id | Update a loan product |
 | DELETE | /admin/products/:id | Delete a loan product |
+| GET | /admin/products/:id/device-models | List device models linked to a product |
+| POST | /admin/products/:id/device-models | Link a device model to a product |
+| DELETE | /admin/products/:id/device-models/:modelId | Unlink a device model from a product |
 | GET | /admin/device-models | List device models |
 | POST | /admin/device-models | Create a device model |
 | GET | /admin/device-models/:id | Get device model by ID |

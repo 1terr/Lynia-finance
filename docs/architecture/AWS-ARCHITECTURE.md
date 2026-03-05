@@ -1,6 +1,6 @@
 # Lynia Finance - AWS Architecture
 
-**Last Updated**: 2026-02-27
+**Last Updated**: 2026-03-05
 
 This document provides comprehensive architecture diagrams and infrastructure reference
 for the Lynia Finance AWS-native platform.
@@ -240,6 +240,31 @@ graph LR
     FPush --> NextBuild --> S3Sync --> CFInvalidate
 ```
 
+### CloudFront Function — SPA Dynamic Route Support
+
+Both frontend CloudFront distributions use a **viewer-request CloudFront Function** (`{environment}-lynia-directory-index`) that handles two concerns:
+
+1. **UUID dynamic route rewriting**: Next.js static export generates pages at placeholder paths (e.g., `/products/_/index.html` via `generateStaticParams`). The CloudFront Function rewrites UUID path segments to `_` so that requests like `/products/550e8400-e29b-41d4-a716-446655440000/` resolve to the correct static page.
+
+2. **Directory index rewriting**: Appends `index.html` to directory paths (e.g., `/products/` → `/products/index.html`) and extensionless paths (e.g., `/dashboard` → `/dashboard/index.html`).
+
+```javascript
+// infrastructure/aws/cloudfront-functions/directory-index.js
+function handler(event) {
+  var request = event.request;
+  var uri = request.uri;
+  // Replace UUID path segments with '_' for Next.js dynamic routes
+  uri = uri.replace(/\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(\/|$)/gi, '/_$1');
+  // Standard directory index rewrite
+  if (uri.endsWith('/')) uri += 'index.html';
+  else if (uri.indexOf('.') === -1) uri += '/index.html';
+  request.uri = uri;
+  return request;
+}
+```
+
+This works in conjunction with the `CustomErrorResponses` in `frontend-hosting.yaml` which redirects S3 403/404 errors to `/index.html` as a fallback for client-side routing.
+
 **Canary Deployment Strategy:**
 
 | Service | Strategy | Wait Period | Rollback Trigger |
@@ -312,6 +337,16 @@ sequenceDiagram
 ---
 
 ## 5. Architecture Patterns
+
+### API Gateway CORS Configuration
+
+CORS is configured at three levels to support all HTTP methods used by the frontend:
+
+1. **API-level** (`template.yaml` Globals → Api → Cors): `AllowMethods: GET,POST,PUT,PATCH,DELETE,OPTIONS`
+2. **Gateway Responses** (`DEFAULT_4XX`, `DEFAULT_5XX`): Include CORS headers so error responses don't trigger browser CORS failures
+3. **Lambda response headers** (`services/shared/utils/response.ts`): Every Lambda response includes `Access-Control-Allow-Methods` with all methods
+
+All three must be in sync. Missing a method (e.g., PATCH) at any level causes the browser to reject the preflight OPTIONS response with "Failed to fetch".
 
 ### Lambda Router
 
