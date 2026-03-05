@@ -17,7 +17,9 @@ import { Modal } from '@/components/ui/modal';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { formatDateTime } from '@lynia/utils';
-import { ArrowLeft, Plus, ArrowRightLeft, Check, X, Truck, PackageCheck } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { DeviceSearch } from '@/components/devices/DeviceSearch';
+import { ArrowLeft, Plus, ArrowRightLeft, Check, X, Truck, PackageCheck, Search } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -38,8 +40,11 @@ const STATUS_BADGE_MAP: Record<string, string> = {
 
 export default function TransfersPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [createModal, setCreateModal] = useState(false);
   const [actionModal, setActionModal] = useState<StockTransfer | null>(null);
   const [cancelReason, setCancelReason] = useState('');
@@ -54,9 +59,10 @@ export default function TransfersPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['transfers', page, statusFilter],
+    queryKey: ['transfers', page, statusFilter, search],
     queryFn: () => getTransfers({
       status: statusFilter || undefined,
+      search: search || undefined,
       page,
     }),
   });
@@ -74,6 +80,10 @@ export default function TransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['transfers'] });
       setCreateModal(false);
       setForm({ device_id: '', from_distributor_id: '', to_distributor_id: '', from_location: '', to_location: '', notes: '' });
+      toast({ title: 'Transfer request created', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to create transfer', description: error.message, variant: 'error' });
     },
   });
 
@@ -86,6 +96,10 @@ export default function TransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
       setActionModal(null);
       setCancelReason('');
+      toast({ title: 'Transfer updated', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update transfer', description: error.message, variant: 'error' });
     },
   });
 
@@ -197,8 +211,26 @@ export default function TransfersPage() {
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Search & Filters */}
       <div className="flex gap-3">
+        <form
+          onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); setPage(1); }}
+          className="relative flex-1 max-w-sm"
+        >
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search by IMEI, device, or distributor..."
+            className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          {searchInput && (
+            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </form>
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
@@ -233,15 +265,14 @@ export default function TransfersPage() {
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="New Stock Transfer">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Device ID *</label>
-            <input
-              type="text"
-              value={form.device_id}
-              onChange={(e) => setForm((f) => ({ ...f, device_id: e.target.value }))}
-              placeholder="Device UUID"
-              required
-              className={inputClass + ' mt-1 font-mono'}
-            />
+            <label className="block text-sm font-medium text-gray-700">Device *</label>
+            <div className="mt-1">
+              <DeviceSearch
+                value={form.device_id}
+                onSelect={(d) => setForm((f) => ({ ...f, device_id: d.id }))}
+                placeholder="Search by IMEI to find device..."
+              />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

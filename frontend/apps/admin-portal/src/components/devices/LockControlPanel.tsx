@@ -25,6 +25,7 @@ export function LockControlPanel({
   const [lockReason, setLockReason] = useState('');
   const [showLockForm, setShowLockForm] = useState(false);
   const [showConfirmPermanent, setShowConfirmPermanent] = useState(false);
+  const [permanentUnlockText, setPermanentUnlockText] = useState('');
 
   const handleLock = () => {
     if (lockReason.trim()) {
@@ -127,23 +128,41 @@ export function LockControlPanel({
           </div>
         )}
 
-        {/* Permanent Unlock Confirmation */}
+        {/* Permanent Unlock Confirmation — Two-Step */}
         {showConfirmPermanent && (
           <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-            <p className="text-sm text-blue-800 mb-2">
-              Are you sure? Permanently unlocking this device means it can no longer be remotely locked.
-              This is typically done when a loan is fully paid off.
-            </p>
+            <div className="flex items-start gap-2 mb-3">
+              <span className="mt-0.5 text-blue-600 font-bold">⚠</span>
+              <div>
+                <p className="text-sm font-medium text-blue-900">This action cannot be undone</p>
+                <p className="text-sm text-blue-800 mt-1">
+                  Permanently unlocking this device means it can <strong>never</strong> be remotely locked again.
+                  This is typically done when a loan is fully paid off.
+                </p>
+              </div>
+            </div>
+            <div className="mb-3">
+              <label className="block text-sm font-medium text-blue-800 mb-1">
+                Type <span className="font-mono font-bold">PERMANENTLY UNLOCK</span> to confirm
+              </label>
+              <input
+                type="text"
+                value={permanentUnlockText}
+                onChange={(e) => setPermanentUnlockText(e.target.value)}
+                placeholder="PERMANENTLY UNLOCK"
+                className="w-full rounded-md border border-blue-300 px-3 py-2 text-sm font-mono"
+              />
+            </div>
             <div className="flex gap-2">
               <button
-                onClick={() => { onPermanentUnlock(); setShowConfirmPermanent(false); }}
-                disabled={isLoading}
-                className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50"
+                onClick={() => { onPermanentUnlock(); setShowConfirmPermanent(false); setPermanentUnlockText(''); }}
+                disabled={isLoading || permanentUnlockText !== 'PERMANENTLY UNLOCK'}
+                className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Confirm Permanent Unlock
               </button>
               <button
-                onClick={() => setShowConfirmPermanent(false)}
+                onClick={() => { setShowConfirmPermanent(false); setPermanentUnlockText(''); }}
                 className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
               >
                 Cancel

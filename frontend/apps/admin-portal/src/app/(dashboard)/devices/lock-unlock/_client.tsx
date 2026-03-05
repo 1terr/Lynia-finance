@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
 import { truncateId } from '@lynia/utils';
+import { useToast } from '@/hooks/use-toast';
 import {
   Lock,
   Unlock,
@@ -24,6 +25,7 @@ import {
 export default function LockUnlockPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [lockStatusFilter, setLockStatusFilter] = useState('');
   const [search, setSearch] = useState('');
@@ -56,6 +58,10 @@ export default function LockUnlockPage() {
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
       setLockModal(null);
       setReason('');
+      toast({ title: 'Device locked successfully', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to lock device', description: error.message, variant: 'error' });
     },
   });
 
@@ -69,6 +75,10 @@ export default function LockUnlockPage() {
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
       setUnlockModal(null);
       setReason('');
+      toast({ title: 'Device unlocked successfully', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to unlock device', description: error.message, variant: 'error' });
     },
   });
 

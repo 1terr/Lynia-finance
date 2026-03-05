@@ -30,8 +30,13 @@ export const handleGetAdjustments: RouteHandler = async (event, _params, auth) =
     whereClause += ` AND a.adjustment_type = $${params.length}`;
   }
 
+  if (qs.search) {
+    params.push(`%${qs.search}%`);
+    whereClause += ` AND (d.imei ILIKE $${params.length} OR d.manufacturer ILIKE $${params.length} OR d.model ILIKE $${params.length} OR a.reason ILIKE $${params.length})`;
+  }
+
   const { data: countRows } = await query<{ count: string }>(
-    `SELECT COUNT(*) as count FROM inventory_adjustments a WHERE ${whereClause}`,
+    `SELECT COUNT(*) as count FROM inventory_adjustments a LEFT JOIN devices d ON a.device_id = d.id WHERE ${whereClause}`,
     params
   );
   const total = parseInt(countRows[0]?.count || '0');

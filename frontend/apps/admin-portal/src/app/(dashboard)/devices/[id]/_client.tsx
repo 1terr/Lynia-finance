@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getDeviceById, getDeviceLockHistory, lockDevice, unlockDevice } from '@/lib/api/devices';
+import { getDeviceById, getDeviceLockHistory, lockDevice, unlockDevice, updateDevice } from '@/lib/api/devices';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { hasPermission } from '@/lib/permissions';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { formatCurrency, formatDate, formatDateTime } from '@lynia/utils';
+import { useToast } from '@/hooks/use-toast';
 import type { DeviceLock } from '@/types';
-import { ArrowLeft, Smartphone, Lock, Unlock, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Smartphone, Lock, Unlock, AlertTriangle, Pencil } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DeviceDetailPage() {
@@ -22,8 +23,10 @@ export default function DeviceDetailPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
+  const { toast } = useToast();
   const [lockModal, setLockModal] = useState(false);
   const [unlockModal, setUnlockModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
   const [reason, setReason] = useState('');
 
   const { data: device, isLoading } = useQuery({
@@ -45,6 +48,10 @@ export default function DeviceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['device-lock-history', id] });
       setLockModal(false);
       setReason('');
+      toast({ title: 'Device locked successfully', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to lock device', description: error.message, variant: 'error' });
     },
   });
 
@@ -55,10 +62,65 @@ export default function DeviceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['device-lock-history', id] });
       setUnlockModal(false);
       setReason('');
+      toast({ title: 'Device unlocked successfully', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to unlock device', description: error.message, variant: 'error' });
     },
   });
 
   const canLock = user && hasPermission(user.role, 'devices:lock');
+  const canEdit = user && hasPermission(user.role, 'devices:write');
+
+  const [editForm, setEditForm] = useState({
+    status: '',
+    condition: '',
+    purchase_price_usd: '',
+    retail_price_usd: '',
+    location: '',
+    color: '',
+    storage_gb: '',
+  });
+
+  const editMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => updateDevice(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device', id] });
+      setEditModal(false);
+      toast({ title: 'Device updated successfully', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update device', description: error.message, variant: 'error' });
+    },
+  });
+
+  function openEditModal() {
+    if (device) {
+      setEditForm({
+        status: device.status || '',
+        condition: device.condition || '',
+        purchase_price_usd: device.purchase_price_usd != null ? String(device.purchase_price_usd) : '',
+        retail_price_usd: device.retail_price_usd != null ? String(device.retail_price_usd) : '',
+        location: device.location || '',
+        color: device.color || '',
+        storage_gb: device.storage_gb != null ? String(device.storage_gb) : '',
+      });
+      setEditModal(true);
+    }
+  }
+
+  function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const payload: Record<string, unknown> = {};
+    if (editForm.status) payload.status = editForm.status;
+    if (editForm.condition) payload.condition = editForm.condition;
+    if (editForm.purchase_price_usd) payload.purchase_price_usd = parseFloat(editForm.purchase_price_usd);
+    if (editForm.retail_price_usd) payload.retail_price_usd = parseFloat(editForm.retail_price_usd);
+    if (editForm.location) payload.location = editForm.location;
+    if (editForm.color) payload.color = editForm.color;
+    if (editForm.storage_gb) payload.storage_gb = parseInt(editForm.storage_gb);
+    editMutation.mutate(payload);
+  }
 
   const lockHistoryColumns: Column<DeviceLock>[] = [
     {
@@ -149,21 +211,29 @@ export default function DeviceDetailPage() {
           </div>
           <p className="text-sm text-gray-500 font-mono">{device.id}</p>
         </div>
-        {canLock && (
-          <div>
-            {device.lock_status === 'unlocked' ? (
-              <Button variant="danger" onClick={() => setLockModal(true)}>
-                <Lock className="mr-1.5 h-4 w-4" />
-                Lock Device
-              </Button>
-            ) : device.lock_status === 'locked' ? (
-              <Button variant="primary" onClick={() => setUnlockModal(true)}>
-                <Unlock className="mr-1.5 h-4 w-4" />
-                Unlock Device
-              </Button>
-            ) : null}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {canEdit && (
+            <Button variant="outline" onClick={openEditModal}>
+              <Pencil className="mr-1.5 h-4 w-4" />
+              Edit
+            </Button>
+          )}
+          {canLock && (
+            <>
+              {device.lock_status === 'unlocked' ? (
+                <Button variant="danger" onClick={() => setLockModal(true)}>
+                  <Lock className="mr-1.5 h-4 w-4" />
+                  Lock Device
+                </Button>
+              ) : device.lock_status === 'locked' ? (
+                <Button variant="primary" onClick={() => setUnlockModal(true)}>
+                  <Unlock className="mr-1.5 h-4 w-4" />
+                  Unlock Device
+                </Button>
+              ) : null}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -391,6 +461,103 @@ export default function DeviceDetailPage() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      {/* Edit Device Modal */}
+      <Modal open={editModal} onClose={() => setEditModal(false)} title="Edit Device" size="lg">
+        <form onSubmit={handleEditSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <select
+                value={editForm.status}
+                onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option value="in_stock">In Stock</option>
+                <option value="assigned">Assigned</option>
+                <option value="reserved">Reserved</option>
+                <option value="sold">Sold</option>
+                <option value="returned">Returned</option>
+                <option value="repossessed">Repossessed</option>
+                <option value="damaged">Damaged</option>
+                <option value="lost">Lost</option>
+                <option value="written_off">Written Off</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Condition</label>
+              <select
+                value={editForm.condition}
+                onChange={(e) => setEditForm((f) => ({ ...f, condition: e.target.value }))}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              >
+                <option value="new">New</option>
+                <option value="grade_a">Grade A</option>
+                <option value="grade_b">Grade B</option>
+                <option value="grade_c">Grade C</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Purchase Price (USD)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editForm.purchase_price_usd}
+                onChange={(e) => setEditForm((f) => ({ ...f, purchase_price_usd: e.target.value }))}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Retail Price (USD)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={editForm.retail_price_usd}
+                onChange={(e) => setEditForm((f) => ({ ...f, retail_price_usd: e.target.value }))}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Location</label>
+              <input
+                type="text"
+                value={editForm.location}
+                onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
+                placeholder="e.g. Warehouse, Harare Office"
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Color</label>
+              <input
+                type="text"
+                value={editForm.color}
+                onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
+                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Storage (GB)</label>
+            <input
+              type="number"
+              value={editForm.storage_gb}
+              onChange={(e) => setEditForm((f) => ({ ...f, storage_gb: e.target.value }))}
+              className="mt-1 block w-full max-w-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </div>
+          <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
+            <Button variant="outline" type="button" onClick={() => setEditModal(false)}>Cancel</Button>
+            <Button type="submit" disabled={editMutation.isPending}>
+              {editMutation.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

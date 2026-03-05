@@ -75,6 +75,14 @@ export async function deleteProduct(id: string): Promise<void> {
   });
 }
 
+export async function getProductStats(): Promise<Record<string, { totalLoans: number; totalVolume: number }>> {
+  return fetchAPI<Record<string, { totalLoans: number; totalVolume: number }>>('/api/v1/admin/products/stats');
+}
+
+export async function getProductLoansCount(id: string): Promise<{ active_loans: number }> {
+  return fetchAPI<{ active_loans: number }>(`/api/v1/admin/products/${id}/loans-count`);
+}
+
 // ─── Device Model Filters ───
 
 export interface DeviceModelFilters {

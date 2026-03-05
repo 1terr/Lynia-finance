@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { ConfigGuard } from '@/components/layout/config-guard';
+import { ToastContainer } from '@/components/ui/toast';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export default function RootLayout({
         >
           <ConfigGuard>
             {children}
+            <ToastContainer />
           </ConfigGuard>
         </ThemeProvider>
       </body>

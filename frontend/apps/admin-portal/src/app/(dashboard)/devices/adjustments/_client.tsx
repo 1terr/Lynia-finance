@@ -18,7 +18,9 @@ import { Modal } from '@/components/ui/modal';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { formatDateTime } from '@lynia/utils';
-import { ArrowLeft, Plus, CheckCircle, XCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { DeviceSearch } from '@/components/devices/DeviceSearch';
+import { ArrowLeft, Plus, CheckCircle, XCircle, Search, X } from 'lucide-react';
 
 const ADJUSTMENT_TYPE_OPTIONS = [
   { value: '', label: 'All Types' },
@@ -48,9 +50,12 @@ const STATUS_TO_BADGE: Record<string, string> = {
 export default function AdjustmentsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [typeFilter, setTypeFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [createModal, setCreateModal] = useState(false);
   const [approveModal, setApproveModal] = useState<InventoryAdjustment | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -65,10 +70,11 @@ export default function AdjustmentsPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['adjustments', page, typeFilter, statusFilter],
+    queryKey: ['adjustments', page, typeFilter, statusFilter, search],
     queryFn: () => getAdjustments({
       approval_status: statusFilter || undefined,
       adjustment_type: typeFilter || undefined,
+      search: search || undefined,
       page,
     }),
   });
@@ -79,18 +85,33 @@ export default function AdjustmentsPage() {
       queryClient.invalidateQueries({ queryKey: ['adjustments'] });
       setCreateModal(false);
       setForm({ device_id: '', adjustment_type: 'damage', reason: '', new_status: 'damaged', notes: '' });
+      toast({ title: 'Adjustment created', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to create adjustment', description: error.message, variant: 'error' });
     },
   });
 
   const approveMutation = useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'approve' | 'reject' }) =>
       approveAdjustment(id, action, action === 'reject' ? rejectReason : undefined),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['adjustments'] });
       queryClient.invalidateQueries({ queryKey: ['devices'] });
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
       setApproveModal(null);
       setRejectReason('');
+      toast({
+        title: variables.action === 'approve' ? 'Adjustment approved' : 'Adjustment rejected',
+        variant: 'success',
+      });
+    },
+    onError: (error: Error, variables) => {
+      toast({
+        title: variables.action === 'approve' ? 'Failed to approve' : 'Failed to reject',
+        description: error.message,
+        variant: 'error',
+      });
     },
   });
 
@@ -175,8 +196,26 @@ export default function AdjustmentsPage() {
         </Button>
       </div>
 
-      {/* Filters */}
+      {/* Search & Filters */}
       <div className="flex gap-3">
+        <form
+          onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); setPage(1); }}
+          className="relative flex-1 max-w-sm"
+        >
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search by IMEI, device, or reason..."
+            className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          {searchInput && (
+            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X className="h-4 w-4" />
+            </button>
+          )}
+        </form>
         <select
           value={typeFilter}
           onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
@@ -220,15 +259,14 @@ export default function AdjustmentsPage() {
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="New Inventory Adjustment">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Device ID *</label>
-            <input
-              type="text"
-              value={form.device_id}
-              onChange={(e) => setForm((f) => ({ ...f, device_id: e.target.value }))}
-              placeholder="Device UUID"
-              required
-              className={inputClass + ' mt-1 font-mono'}
-            />
+            <label className="block text-sm font-medium text-gray-700">Device *</label>
+            <div className="mt-1">
+              <DeviceSearch
+                value={form.device_id}
+                onSelect={(d) => setForm((f) => ({ ...f, device_id: d.id }))}
+                placeholder="Search by IMEI to find device..."
+              />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">Adjustment Type *</label>

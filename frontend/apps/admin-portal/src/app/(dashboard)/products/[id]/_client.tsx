@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProduct, updateProduct, deleteProduct } from '@/lib/api/products';
+import { getProduct, updateProduct, deleteProduct, getProductLoansCount } from '@/lib/api/products';
 import { ProductForm } from '@/components/products/product-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@lynia/utils';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 import type { LoanProduct, CreateProductInput } from '@/types';
 
 const STATUS_VARIANTS: Record<string, 'green' | 'gray' | 'blue'> = {
@@ -24,9 +25,16 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const id = params.id as string;
+  const { toast } = useToast();
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const { data: loansCountData, isFetching: loadingLoansCount } = useQuery({
+    queryKey: ['product-loans-count', id],
+    queryFn: () => getProductLoansCount(id),
+    enabled: deleteOpen,
+  });
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
@@ -38,6 +46,10 @@ export default function ProductDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product', id] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast({ title: 'Product updated successfully', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update product', description: error.message, variant: 'error' });
     },
   });
 
@@ -45,7 +57,11 @@ export default function ProductDetailPage() {
     mutationFn: () => deleteProduct(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      toast({ title: 'Product deleted successfully', variant: 'success' });
       router.push('/products');
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to delete product', description: error.message, variant: 'error' });
     },
   });
 
@@ -154,13 +170,31 @@ export default function ProductDetailPage() {
 
       <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Product" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete <span className="font-medium">{product.product_name}</span>?
-            This action cannot be undone.
-          </p>
+          {loadingLoansCount ? (
+            <div className="h-8 animate-pulse rounded bg-gray-100" />
+          ) : loansCountData && loansCountData.active_loans > 0 ? (
+            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+              <p className="text-sm font-medium text-red-800">
+                This product has {loansCountData.active_loans} active loan{loansCountData.active_loans !== 1 ? 's' : ''}.
+              </p>
+              <p className="mt-1 text-sm text-red-600">
+                You cannot delete a product with active loans. Please resolve all active loans first.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete <span className="font-medium">{product.product_name}</span>?
+              This action cannot be undone.
+            </p>
+          )}
           <div className="flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-            <Button variant="danger" isLoading={deleteMutation.isPending} onClick={() => deleteMutation.mutate()}>
+            <Button
+              variant="danger"
+              isLoading={deleteMutation.isPending}
+              disabled={loadingLoansCount || (loansCountData?.active_loans ?? 0) > 0}
+              onClick={() => deleteMutation.mutate()}
+            >
               Delete Product
             </Button>
           </div>

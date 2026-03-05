@@ -9,7 +9,8 @@ import type { DeviceModel } from '@/types';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Plus, Upload, CheckCircle, AlertTriangle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, Plus, Upload, CheckCircle, AlertTriangle, Eye } from 'lucide-react';
 import Link from 'next/link';
 
 type Tab = 'single' | 'bulk';
@@ -17,6 +18,7 @@ type Tab = 'single' | 'bulk';
 export default function AddDevicePage() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [tab, setTab] = useState<Tab>('single');
 
   // Single device form state
@@ -39,6 +41,8 @@ export default function AddDevicePage() {
   const [csvText, setCsvText] = useState('');
   const [bulkLocation, setBulkLocation] = useState('Warehouse');
   const [bulkResult, setBulkResult] = useState<BulkImportResult | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
+  const [parsedDevices, setParsedDevices] = useState<{ device: CreateDeviceRequest; errors: string[]; row: number }[]>([]);
 
   const { data: deviceModels } = useQuery({
     queryKey: ['device-models-select'],
@@ -50,7 +54,11 @@ export default function AddDevicePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['devices'] });
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
+      toast({ title: 'Device added successfully', variant: 'success' });
       router.push('/devices');
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to add device', description: error.message, variant: 'error' });
     },
   });
 
@@ -61,6 +69,10 @@ export default function AddDevicePage() {
       setBulkResult(result);
       queryClient.invalidateQueries({ queryKey: ['devices'] });
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
+      toast({ title: `Bulk import completed: ${result.inserted} inserted`, variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Bulk import failed', description: error.message, variant: 'error' });
     },
   });
 
@@ -69,35 +81,62 @@ export default function AddDevicePage() {
     createMutation.mutate(form);
   }
 
-  function handleBulkSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function parseCSVData() {
     const lines = csvText.trim().split('\n').filter((l) => l.trim());
-    if (lines.length < 2) return;
+    if (lines.length < 2) {
+      toast({ title: 'CSV must have a header row and at least one data row', variant: 'error' });
+      return;
+    }
 
     const headers = lines[0].split(',').map((h) => h.trim().toLowerCase());
-    const devices: CreateDeviceRequest[] = [];
+    const parsed: { device: CreateDeviceRequest; errors: string[]; row: number }[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',').map((v) => v.trim());
-      const device: Record<string, string> = {};
-      headers.forEach((h, idx) => {
-        device[h] = values[idx] || '';
-      });
+      const record: Record<string, string> = {};
+      headers.forEach((h, idx) => { record[h] = values[idx] || ''; });
 
-      devices.push({
-        imei: device.imei || '',
-        manufacturer: device.manufacturer || device.brand || '',
-        model: device.model || '',
-        serial_number: device.serial_number || undefined,
-        storage_gb: device.storage_gb ? parseInt(device.storage_gb) : undefined,
-        color: device.color || undefined,
-        condition: (device.condition as CreateDeviceRequest['condition']) || 'new',
-        purchase_price_usd: device.purchase_price_usd ? parseFloat(device.purchase_price_usd) : undefined,
-        retail_price_usd: device.retail_price_usd ? parseFloat(device.retail_price_usd) : undefined,
+      const errors: string[] = [];
+      const imei = record.imei || '';
+      if (!imei) errors.push('Missing IMEI');
+      else if (!/^\d{15}$/.test(imei)) errors.push('IMEI must be 15 digits');
+      if (!record.manufacturer && !record.brand) errors.push('Missing manufacturer');
+      if (!record.model) errors.push('Missing model');
+
+      parsed.push({
+        device: {
+          imei,
+          manufacturer: record.manufacturer || record.brand || '',
+          model: record.model || '',
+          serial_number: record.serial_number || undefined,
+          storage_gb: record.storage_gb ? parseInt(record.storage_gb) : undefined,
+          color: record.color || undefined,
+          condition: (record.condition as CreateDeviceRequest['condition']) || 'new',
+          purchase_price_usd: record.purchase_price_usd ? parseFloat(record.purchase_price_usd) : undefined,
+          retail_price_usd: record.retail_price_usd ? parseFloat(record.retail_price_usd) : undefined,
+        },
+        errors,
+        row: i + 1,
       });
     }
 
-    bulkMutation.mutate(devices);
+    setParsedDevices(parsed);
+    setShowPreview(true);
+  }
+
+  function handlePreviewSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    parseCSVData();
+  }
+
+  function handleConfirmImport() {
+    const validDevices = parsedDevices.filter((p) => p.errors.length === 0).map((p) => p.device);
+    if (validDevices.length === 0) {
+      toast({ title: 'No valid devices to import', variant: 'error' });
+      return;
+    }
+    bulkMutation.mutate(validDevices);
+    setShowPreview(false);
   }
 
   function handleModelSelect(modelId: string) {
@@ -387,8 +426,61 @@ export default function AddDevicePage() {
                   </Button>
                 </div>
               </div>
+            ) : showPreview ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-gray-900">
+                    Preview: {parsedDevices.length} rows — {parsedDevices.filter((p) => p.errors.length === 0).length} valid, {parsedDevices.filter((p) => p.errors.length > 0).length} with errors
+                  </h3>
+                </div>
+                <div className="max-h-80 overflow-auto rounded-md border border-gray-200">
+                  <table className="min-w-full divide-y divide-gray-200 text-xs">
+                    <thead className="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">Row</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">IMEI</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">Brand</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">Model</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">Condition</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">Price</th>
+                        <th className="px-3 py-2 text-left font-medium text-gray-500">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {parsedDevices.map((p, i) => (
+                        <tr key={i} className={p.errors.length > 0 ? 'bg-red-50' : ''}>
+                          <td className="px-3 py-1.5 text-gray-500">{p.row}</td>
+                          <td className="px-3 py-1.5 font-mono">{p.device.imei || '—'}</td>
+                          <td className="px-3 py-1.5">{p.device.manufacturer || '—'}</td>
+                          <td className="px-3 py-1.5">{p.device.model || '—'}</td>
+                          <td className="px-3 py-1.5 capitalize">{p.device.condition || '—'}</td>
+                          <td className="px-3 py-1.5">{p.device.retail_price_usd ? `$${p.device.retail_price_usd}` : '—'}</td>
+                          <td className="px-3 py-1.5">
+                            {p.errors.length > 0 ? (
+                              <span className="text-red-600">{p.errors.join(', ')}</span>
+                            ) : (
+                              <span className="text-green-600">Valid</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" onClick={() => setShowPreview(false)}>
+                    Back to Edit
+                  </Button>
+                  <Button
+                    onClick={handleConfirmImport}
+                    disabled={bulkMutation.isPending || parsedDevices.filter((p) => p.errors.length === 0).length === 0}
+                  >
+                    {bulkMutation.isPending ? 'Importing...' : `Import ${parsedDevices.filter((p) => p.errors.length === 0).length} Devices`}
+                  </Button>
+                </div>
+              </div>
             ) : (
-              <form onSubmit={handleBulkSubmit} className="space-y-4">
+              <form onSubmit={handlePreviewSubmit} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Default Location</label>
                   <input
@@ -434,7 +526,8 @@ export default function AddDevicePage() {
                     Cancel
                   </Button>
                   <Button type="submit" disabled={bulkMutation.isPending}>
-                    {bulkMutation.isPending ? 'Importing...' : 'Import Devices'}
+                    <Eye className="mr-1.5 h-4 w-4" />
+                    Preview Import
                   </Button>
                 </div>
               </form>

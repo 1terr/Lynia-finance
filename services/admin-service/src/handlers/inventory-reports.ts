@@ -181,7 +181,7 @@ export const handleLowStockReport: RouteHandler = async (event, _params, _auth) 
       dm.retail_price_usd
     FROM device_models dm
     WHERE dm.available_stock = 0
-      AND dm.active = true
+      AND dm.is_active = true
     ORDER BY dm.manufacturer, dm.model_name
   `);
 

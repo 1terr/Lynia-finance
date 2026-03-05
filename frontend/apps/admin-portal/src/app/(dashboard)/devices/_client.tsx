@@ -13,7 +13,9 @@ import { formatCurrency, formatDate } from '@lynia/utils';
 import type { Device, DeviceStatus, LockStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Search, Smartphone, Lock, Package, Plus, ArrowRightLeft, ClipboardList, Handshake, BarChart3 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { exportDevicesToCSV } from '@/lib/api/devices';
+import { Search, Smartphone, Lock, Package, Plus, ArrowRightLeft, ClipboardList, Handshake, BarChart3, Download } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -37,8 +39,25 @@ const LOCK_STATUS_OPTIONS = [
 
 export default function DevicesPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [filters, setFilters] = useState<DeviceFilters>({ page: 1, limit: 25 });
   const [searchInput, setSearchInput] = useState('');
+
+  function handleExportCSV() {
+    if (!data?.data?.length) {
+      toast({ title: 'No devices to export', variant: 'warning' });
+      return;
+    }
+    const csv = exportDevicesToCSV(data.data as any);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `devices-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast({ title: 'CSV exported successfully', variant: 'success' });
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ['devices', filters],
@@ -131,6 +150,10 @@ export default function DevicesPage() {
           {data && (
             <p className="mr-2 text-sm text-gray-500">{data.total} total</p>
           )}
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <Download className="mr-1.5 h-4 w-4" />
+            Export CSV
+          </Button>
           <Link href="/devices/add">
             <Button size="sm">
               <Plus className="mr-1.5 h-4 w-4" />

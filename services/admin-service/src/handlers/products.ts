@@ -63,6 +63,66 @@ export const handleGetProducts: RouteHandler = async (event, _params, auth) => {
   return successResponse({ data: rows, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
 };
 
+// ─── GET /admin/products/stats ───
+
+export const handleGetProductStats: RouteHandler = async (event, _params, auth) => {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const { data: rows, error } = await query<{
+    product_category: string;
+    total_loans: string;
+    total_volume: string;
+  }>(
+    `SELECT
+       lp.product_category,
+       COUNT(l.id) as total_loans,
+       COALESCE(SUM(l.loan_amount_usd), 0) as total_volume
+     FROM loan_products lp
+     LEFT JOIN loans l ON l.product_id = lp.id AND l.status IN ('active', 'disbursed', 'approved', 'paid_off')
+     WHERE lp.deleted_at IS NULL
+     GROUP BY lp.product_category`,
+    []
+  );
+
+  if (error) {
+    logger.error('Error fetching product stats', {
+      action: 'admin.products.stats',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to fetch product stats', 500, {}, event);
+  }
+
+  const stats: Record<string, { totalLoans: number; totalVolume: number }> = {};
+  for (const row of rows) {
+    stats[row.product_category] = {
+      totalLoans: parseInt(row.total_loans) || 0,
+      totalVolume: parseFloat(row.total_volume) || 0,
+    };
+  }
+
+  return successResponse(stats, 200, event);
+};
+
+// ─── GET /admin/products/:id/loans-count ───
+
+export const handleGetProductLoansCount: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const id = params.id;
+
+  const { data: rows } = await query<{ count: string }>(
+    `SELECT COUNT(*) as count FROM loans WHERE product_id = $1 AND status IN ('active', 'disbursed', 'approved')`,
+    [id]
+  );
+
+  return successResponse({ active_loans: parseInt(rows[0]?.count || '0') }, 200, event);
+};
+
 // ─── GET /admin/products/:id ───
 
 export const handleGetProductById: RouteHandler = async (event, params, auth) => {

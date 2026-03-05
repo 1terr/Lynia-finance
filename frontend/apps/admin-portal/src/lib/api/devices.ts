@@ -264,12 +264,13 @@ export interface CreateAdjustmentRequest {
   notes?: string;
 }
 
-export async function getAdjustments(filters: { approval_status?: string; adjustment_type?: string; page?: number; limit?: number } = {}) {
+export async function getAdjustments(filters: { approval_status?: string; adjustment_type?: string; search?: string; page?: number; limit?: number } = {}) {
   const params = new URLSearchParams();
   params.set('page', String(filters.page || 1));
   params.set('limit', String(filters.limit || 25));
   if (filters.approval_status) params.set('approval_status', filters.approval_status);
   if (filters.adjustment_type) params.set('adjustment_type', filters.adjustment_type);
+  if (filters.search) params.set('search', filters.search);
 
   return fetchAPI<{
     data: InventoryAdjustment[];
@@ -319,11 +320,12 @@ export interface CreateTransferRequest {
   notes?: string;
 }
 
-export async function getTransfers(filters: { status?: string; page?: number; limit?: number } = {}) {
+export async function getTransfers(filters: { status?: string; search?: string; page?: number; limit?: number } = {}) {
   const params = new URLSearchParams();
   params.set('page', String(filters.page || 1));
   params.set('limit', String(filters.limit || 25));
   if (filters.status) params.set('status', filters.status);
+  if (filters.search) params.set('search', filters.search);
 
   return fetchAPI<{
     data: StockTransfer[];

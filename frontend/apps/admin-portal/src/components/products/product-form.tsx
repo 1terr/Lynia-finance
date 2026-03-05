@@ -5,6 +5,7 @@ import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import type { LoanProduct, CreateProductInput, ProductCategory, ProductStatus } from '@/types';
 
 interface ProductFormProps {
@@ -27,7 +28,7 @@ const STATUS_OPTIONS = [
 
 const DISBURSEMENT_OPTIONS = ['ecocash', 'onemoney', 'innbucks'] as const;
 
-const PRODUCT_CODE_REGEX = /^[A-Z0-9_]{3,50}$/;
+const PRODUCT_CODE_REGEX = /^[A-Za-z0-9_]{1,50}$/;
 
 interface FormErrors {
   [key: string]: string;
@@ -35,6 +36,7 @@ interface FormErrors {
 
 export function ProductForm({ open, onClose, onSubmit, product }: ProductFormProps) {
   const isEditing = !!product;
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
@@ -125,7 +127,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
 
     if (!name.trim()) newErrors.name = 'Product name is required';
     if (!code.trim()) newErrors.code = 'Product code is required';
-    else if (!PRODUCT_CODE_REGEX.test(code)) newErrors.code = 'Code must be 3-50 uppercase alphanumeric characters with underscores';
+    else if (!PRODUCT_CODE_REGEX.test(code)) newErrors.code = 'Code must be 1-50 alphanumeric characters or underscores';
 
     const minAmt = parseFloat(minAmount);
     const maxAmt = parseFloat(maxAmount);
@@ -178,6 +180,12 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
       };
       await onSubmit(data);
       onClose();
+    } catch (error) {
+      toast({
+        title: isEditing ? 'Failed to update product' : 'Failed to create product',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'error',
+      });
     } finally {
       setSubmitting(false);
     }
