@@ -37,6 +37,7 @@ Globals:
         NODE_ENV: !Ref Environment
         DB_SECRET_NAME: !Sub "lynia/${Environment}/database"
         FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
+        FINERACT_TLS_SERVERNAME: api.lyniafinance.com
         FINERACT_SMARTPHONE_PRODUCT_ID: !Ref FineractSmartphoneProductId
         LOG_LEVEL: info
         SECRETS_PREFIX: !Sub "${Environment}/lynia"

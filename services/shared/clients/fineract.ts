@@ -126,6 +126,11 @@ async function request<T>(
       },
       timeout: config.timeoutMs,
       rejectUnauthorized: config.rejectUnauthorized,
+      // When connecting via internal ALB, the hostname won't match the cert's SAN.
+      // Override SNI so TLS handshake sends the expected servername.
+      ...(process.env.FINERACT_TLS_SERVERNAME && {
+        servername: process.env.FINERACT_TLS_SERVERNAME,
+      }),
     };
 
     if (bodyStr) {
