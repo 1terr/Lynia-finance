@@ -24,6 +24,9 @@ import { handleGetDeviceModels, handleCreateDeviceModel, handleGetDeviceModelByI
 // ─── Organizations ───
 import { handleGetOrganizations, handleCreateOrganization, handleGetOrganizationById, handleUpdateOrganization, handleImportOrgMembers, handleGetOrgMembers } from './handlers/organizations';
 
+// ─── Distributors ───
+import { handleGetDistributors, handleGetDistributorStats, handleCreateDistributor, handleGetDistributorById, handleUpdateDistributor, handleGetDistributorInventory, handleGetDistributorHandovers, handleGetDistributorTransfers, handleGetDistributorCommissions, handleBulkPayCommissions } from './handlers/distributors';
+
 // ─── Inventory: Devices ───
 import { handleGetDevices, handleCreateDevice, handleBulkImportDevices, handleGetDeviceInventoryStats, handleGetDeviceById, handleUpdateDevice, handleGetDeviceMovements } from './handlers/inventory-devices';
 
@@ -90,6 +93,18 @@ export const handler = createRouter({
   'POST /admin/organizations':              handleCreateOrganization,
   'GET /admin/organizations/:id':           handleGetOrganizationById,
   'PATCH /admin/organizations/:id':         handleUpdateOrganization,
+
+  // Distributors (sub-routes before single-ID routes)
+  'GET /admin/distributors/stats':                    handleGetDistributorStats,
+  'GET /admin/distributors/:id/inventory':            handleGetDistributorInventory,
+  'GET /admin/distributors/:id/handovers':            handleGetDistributorHandovers,
+  'GET /admin/distributors/:id/transfers':            handleGetDistributorTransfers,
+  'POST /admin/distributors/:id/commissions/pay':     handleBulkPayCommissions,
+  'GET /admin/distributors/:id/commissions':          handleGetDistributorCommissions,
+  'GET /admin/distributors':                          handleGetDistributors,
+  'POST /admin/distributors':                         handleCreateDistributor,
+  'GET /admin/distributors/:id':                      handleGetDistributorById,
+  'PATCH /admin/distributors/:id':                    handleUpdateDistributor,
 
   // Inventory: Devices (static before parameterized)
   'GET /admin/devices':                     handleGetDevices,

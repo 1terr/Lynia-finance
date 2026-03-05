@@ -284,6 +284,86 @@ export interface Distributor {
   updated_at: string;
 }
 
+export interface CreateDistributorInput {
+  business_name: string;
+  contact_person: string;
+  phone_number: string;
+  email?: string;
+  address_line1?: string;
+  city?: string;
+  province?: string;
+  bank_name?: string;
+  account_number?: string;
+  account_name?: string;
+  ecocash_number?: string;
+  onemoney_number?: string;
+  status?: DistributorStatus;
+}
+
+export interface DistributorInventoryItem {
+  id: string;
+  device_id: string;
+  imei: string;
+  manufacturer: string;
+  model: string;
+  retail_price_usd: number;
+  status: string;
+  device_status: string;
+  condition: string;
+  assigned_date: string;
+  sold_date: string | null;
+}
+
+export interface DistributorHandover {
+  id: string;
+  loan_id: string;
+  customer_id: string;
+  device_id: string;
+  customer_name: string;
+  customer_phone: string;
+  device_imei: string;
+  device_model: string;
+  status: string;
+  scheduled_date: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface DistributorTransfer {
+  id: string;
+  device_id: string;
+  device_imei: string;
+  manufacturer: string;
+  device_model: string;
+  from_distributor_name: string | null;
+  to_distributor_name: string | null;
+  from_location: string | null;
+  to_location: string | null;
+  status: string;
+  requested_by_name: string | null;
+  created_at: string;
+}
+
+export interface DistributorCommission {
+  id: string;
+  loan_id: string;
+  device_id: string;
+  device_imei: string | null;
+  device_model: string | null;
+  commission_amount_usd: number;
+  commission_percentage: number;
+  device_retail_price_usd: number;
+  payment_status: string;
+  created_at: string;
+}
+
+export interface DistributorStatsResponse {
+  total: number;
+  active: number;
+  total_revenue_usd: number;
+  total_devices_distributed: number;
+}
+
 // --- System Config ---
 
 export interface SystemConfig {

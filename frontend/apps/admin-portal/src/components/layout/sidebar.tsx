@@ -20,6 +20,7 @@ import {
   Boxes,
   Building2,
   Database,
+  Store,
 } from 'lucide-react';
 import { cn } from '@lynia/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -71,6 +72,7 @@ const navSections: NavSection[] = [
   {
     title: 'Partners',
     items: [
+      { label: 'Distributors', href: '/distributors', icon: Store, requiredPermissions: ['distributors:read'] },
       { label: 'Organizations', href: '/products/organizations', icon: Building2, requiredPermissions: ['settings:read'] },
     ],
   },
@@ -102,6 +104,7 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     if (item.href === '/products/device-models') return pathname.startsWith('/products/device-models');
     if (item.href === '/products/organizations') return pathname.startsWith('/products/organizations');
     if (item.href === '/products') return pathname === '/products' || (pathname.startsWith('/products/') && !pathname.startsWith('/products/device-models') && !pathname.startsWith('/products/organizations'));
+    if (item.href === '/distributors') return pathname.startsWith('/distributors');
     return pathname.startsWith(item.href);
   }
 

@@ -318,6 +318,7 @@ export interface CreateTransferRequest {
   from_location?: string;
   to_location?: string;
   notes?: string;
+  auto_approve?: boolean;
 }
 
 export async function getTransfers(filters: { status?: string; search?: string; page?: number; limit?: number } = {}) {

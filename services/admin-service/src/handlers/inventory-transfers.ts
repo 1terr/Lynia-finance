@@ -96,18 +96,28 @@ export const handleCreateTransfer: RouteHandler = async (event, _params, auth) =
     return errorResponse(`Cannot transfer device with status: ${deviceRecord.status}`, 400, { code: 'VAL_FMT_001' }, event);
   }
 
+  const now = new Date().toISOString();
+  const autoApprove = body.auto_approve === true;
+
   const insertData: Record<string, unknown> = {
     device_id: body.device_id,
     from_distributor_id: body.from_distributor_id || null,
     to_distributor_id: body.to_distributor_id || null,
     from_location: body.from_location || null,
     to_location: body.to_location || null,
-    status: 'requested',
+    status: autoApprove ? 'received' : 'requested',
     requested_by: auth.userId,
     notes: body.notes || null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: now,
+    updated_at: now,
   };
+
+  if (autoApprove) {
+    insertData.approved_by = auth.userId;
+    insertData.approved_at = now;
+    insertData.shipped_at = now;
+    insertData.received_at = now;
+  }
 
   const { data: created, error } = await db.from('stock_transfers').insert(insertData).execute();
 
@@ -122,11 +132,33 @@ export const handleCreateTransfer: RouteHandler = async (event, _params, auth) =
 
   const row = Array.isArray(created) ? created[0] : created;
 
+  // Auto-approve: update device and create agent_inventory record
+  if (autoApprove && body.to_distributor_id) {
+    await db.from('devices')
+      .update({
+        status: 'assigned',
+        location: body.to_location || null,
+        updated_at: now,
+      })
+      .eq('id', body.device_id)
+      .execute();
+
+    await db.from('agent_inventory').insert({
+      distributor_id: body.to_distributor_id,
+      device_id: body.device_id,
+      assigned_date: now.split('T')[0],
+      status: 'available',
+      created_at: now,
+      updated_at: now,
+    }).execute();
+  }
+
   await auditLog(auth, 'inventory.transfer.create', 'stock_transfer', row.id as string,
-    `Created stock transfer for device ${body.device_id}`, {
+    `Created stock transfer for device ${body.device_id}${autoApprove ? ' (auto-approved)' : ''}`, {
     device_id: body.device_id,
     from_distributor_id: body.from_distributor_id,
     to_distributor_id: body.to_distributor_id,
+    auto_approve: autoApprove,
   });
 
   return successResponse(row, 201, event);
