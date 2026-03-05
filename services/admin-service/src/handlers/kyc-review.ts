@@ -272,9 +272,9 @@ export const handleApproveKYC: RouteHandler = async (event, params, auth) => {
 
   // Audit log
   await query(
-    `INSERT INTO audit_log (admin_user_id, action, entity_type, entity_id, details, created_at)
-     VALUES ($1, 'kyc.approve', 'kyc_submission', $2, $3, $4)`,
-    [auth.userId, submissionId, JSON.stringify({ customer_id, reviewer_email: auth.email }), now]
+    `INSERT INTO audit_log (user_id, user_type, user_email, action, entity_type, entity_id, description, created_at)
+     VALUES ($1, 'admin', $2, 'kyc.approve', 'kyc_submission', $3, $4, $5)`,
+    [auth.userId, auth.email, submissionId, `Approved KYC for customer ${customer_id}`, now]
   );
 
   return successResponse({ message: 'KYC approved' }, 200, event);
@@ -336,9 +336,9 @@ export const handleRejectKYC: RouteHandler = async (event, params, auth) => {
 
   // Audit log
   await query(
-    `INSERT INTO audit_log (admin_user_id, action, entity_type, entity_id, details, created_at)
-     VALUES ($1, 'kyc.reject', 'kyc_submission', $2, $3, $4)`,
-    [auth.userId, submissionId, JSON.stringify({ customer_id, reason, reviewer_email: auth.email }), now]
+    `INSERT INTO audit_log (user_id, user_type, user_email, action, entity_type, entity_id, description, created_at)
+     VALUES ($1, 'admin', $2, 'kyc.reject', 'kyc_submission', $3, $4, $5)`,
+    [auth.userId, auth.email, submissionId, `Rejected KYC for customer ${customer_id}: ${reason}`, now]
   );
 
   return successResponse({ message: 'KYC rejected' }, 200, event);

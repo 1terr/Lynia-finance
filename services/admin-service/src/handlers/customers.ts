@@ -396,7 +396,7 @@ export const handleAddCustomerNote: RouteHandler = async (event, params, auth) =
 
   // Insert into audit_log as a note action
   const result = await queryOne<{ id: string }>(
-    `INSERT INTO audit_log (admin_user_id, user_type, user_email, action, entity_type, entity_id, description, created_at)
+    `INSERT INTO audit_log (user_id, user_type, user_email, action, entity_type, entity_id, description, created_at)
      VALUES ($1, 'admin', $2, 'customer.note.add', 'customer', $3, $4, $5)
      RETURNING id`,
     [auth.userId, auth.email, params.id, note_text, now]
