@@ -5,7 +5,7 @@
  * handles terms acceptance flow.
  */
 
-import { db } from '../../../../shared/clients/database';
+import { db, query } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
 import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
 import { syncLoanToFineract, approveLoanInFineract } from '../../../../shared/clients/fineract-sync';
@@ -141,6 +141,25 @@ export async function handleTermsAcceptance(
     const seq = Math.random().toString(36).substring(2, 7).toUpperCase();
     const loanNumber = `LYNIA-${year}-${seq}`;
 
+    // Resolve the loan product for this category
+    const productCategory = session.state_data.selected_product === 'digital_credit' ? 'digital' : 'smartphone';
+    let productId: string | null = null;
+    try {
+      const { data: productRows } = await query<{ id: string }>(
+        `SELECT id FROM loan_products
+         WHERE product_category = $1 AND status = 'active' AND deleted_at IS NULL
+         ORDER BY display_order ASC LIMIT 1`,
+        [productCategory]
+      );
+      productId = productRows?.[0]?.id ?? null;
+    } catch (productLookupError) {
+      logger.error('Failed to resolve loan product', {
+        action: 'loan.product-lookup',
+        status: 'failed',
+        meta: { productCategory, error: productLookupError instanceof Error ? productLookupError.message : String(productLookupError) },
+      });
+    }
+
     // Create loan record in database
     let loanId: string | null = null;
     try {
@@ -148,6 +167,9 @@ export async function handleTermsAcceptance(
         .from('loans')
         .insert({
           customer_id: session.customer_id,
+          product_id: productId,
+          product_category: productCategory,
+          disbursement_method: productCategory === 'smartphone' ? 'device_handover' : 'ecocash',
           loan_number: loanNumber,
           loan_amount_usd: financedAmount,
           interest_rate: interestRate,
@@ -186,7 +208,7 @@ export async function handleTermsAcceptance(
 
     // Non-blocking: Sync loan to Fineract (create + auto-approve)
     if (loanId && process.env.FINERACT_SECRET_NAME) {
-      syncLoanToFineractAfterAcceptance(loanId, session).catch((err) => {
+      syncLoanToFineractAfterAcceptance(loanId, session, productId).catch((err) => {
         logger.error('Fineract loan sync failed', {
           action: 'loan.fineract-sync',
           status: 'failed',
@@ -242,7 +264,8 @@ Welcome to Lynia Finance!`;
  */
 async function syncLoanToFineractAfterAcceptance(
   loanId: string,
-  session: OnboardingSession
+  session: OnboardingSession,
+  productId: string | null
 ): Promise<void> {
   // Look up customer's Fineract client ID
   const { data: customer } = await db
@@ -260,12 +283,22 @@ async function syncLoanToFineractAfterAcceptance(
     return;
   }
 
-  // Fineract product ID from environment (configured per tier in production)
-  const fineractProductId = parseInt(process.env.FINERACT_SMARTPHONE_PRODUCT_ID || '0', 10);
+  // Resolve Fineract product ID: prefer DB value from loan_products, fall back to env var
+  let fineractProductId = 0;
+  if (productId) {
+    const { data: productRows } = await query<{ fineract_product_id: number | null }>(
+      `SELECT fineract_product_id FROM loan_products WHERE id = $1`,
+      [productId]
+    );
+    fineractProductId = productRows?.[0]?.fineract_product_id ?? 0;
+  }
   if (!fineractProductId) {
-    logger.warn('FINERACT_SMARTPHONE_PRODUCT_ID not configured, skipping loan sync', {
+    fineractProductId = parseInt(process.env.FINERACT_SMARTPHONE_PRODUCT_ID || '0', 10);
+  }
+  if (!fineractProductId) {
+    logger.warn('No Fineract product ID found (DB or env), skipping loan sync', {
       action: 'loan.fineract-sync',
-      meta: { loanId },
+      meta: { loanId, productId },
     });
     return;
   }

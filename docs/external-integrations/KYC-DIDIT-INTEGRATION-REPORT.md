@@ -167,6 +167,29 @@ The `KYCProvider` interface ensures both providers produce identical output shap
 
 ---
 
+## Bug Fixes (2026-03-05)
+
+### Critical: DIDIT Results Not Persisting to Database
+
+**Symptoms**: All KYC submissions remained `pending` with null verification fields, despite CloudWatch logs confirming DIDIT returned `APPROVED` results in ~7 seconds.
+
+**Root causes** (3 column-name mismatches):
+
+| Bug | File | Impact |
+|-----|------|--------|
+| `.order('created_at')` — column is `submitted_at` | `initiate-kyc.ts`, `get-kyc-status.ts`, `retry-kyc.ts` | Duplicate check always failed (→ 4 duplicate submissions for same customer). Status queries always returned "not found". Retry always failed. |
+| `full_name` — customers table has `first_name`/`last_name` | `process-kyc-result.ts` | Customer KYC status update silently failed |
+| Error return discarded | `process-kyc-result.ts` | Both DB updates (kyc_submissions + customers) failed silently with no logging |
+
+**Fixes** (commit `956f29f`):
+- Changed `created_at` → `submitted_at` in all 3 handlers
+- Removed `full_name` from customer update in `process-kyc-result.ts`
+- Added error logging for both DB update operations
+
+**Note on DIDIT API model**: DIDIT uses **synchronous standalone APIs**, not webhooks. The `/kyc/callback` endpoint exists but is unused. Results from ID verification, passive liveness, and face match are returned inline during `POST /kyc/initiate` via the `synchronous_result` field in the `KYCSubmissionResult` type.
+
+---
+
 ## Test Results
 
 ```

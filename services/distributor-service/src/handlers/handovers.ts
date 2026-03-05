@@ -32,7 +32,7 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
     SELECT
       dh.id,
       l.id AS loan_id,
-      c.full_name AS customer_name,
+      CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
       CONCAT(d.manufacturer, ' ', d.model) AS device_model,
       d.imei AS device_imei,
       l.loan_amount_usd AS loan_amount,
@@ -91,18 +91,18 @@ export const handleSearchApprovedLoans: RouteHandler = async (event, _params, au
     `SELECT
        l.id AS loan_id,
        c.id AS customer_id,
-       c.full_name AS customer_name,
+       CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
        l.loan_amount_usd AS loan_amount,
        l.loan_amount_usd * (lp.deposit_percentage / 100.0) AS deposit_amount,
        CASE WHEN EXISTS (
          SELECT 1 FROM payments p
-         WHERE p.loan_id = l.id AND p.payment_type = 'deposit' AND p.payment_status = 'confirmed'
+         WHERE p.loan_id = l.id AND p.payment_type = 'deposit' AND p.status = 'confirmed'
        ) THEN true ELSE false END AS deposit_paid,
        l.approved_at AS approved_date,
-       lp.name AS device_category,
-       lp.term_months AS loan_term_months,
-       l.loan_amount_usd / lp.term_months AS monthly_payment,
-       lp.interest_rate,
+       lp.product_name AS device_category,
+       lp.loan_term_months AS loan_term_months,
+       l.loan_amount_usd / NULLIF(lp.loan_term_months, 0) AS monthly_payment,
+       lp.interest_rate_annual AS interest_rate,
        l.approved_at::date + INTERVAL '30 days' AS first_payment_date
      FROM loans l
      JOIN customers c ON c.id = l.customer_id
@@ -113,7 +113,7 @@ export const handleSearchApprovedLoans: RouteHandler = async (event, _params, au
          WHERE dh.loan_id = l.id AND dh.status = 'completed'
        )
        AND (
-         c.full_name ILIKE $1
+         CONCAT(c.first_name, ' ', c.last_name) ILIKE $1
          OR c.national_id = $2
          OR l.id::text ILIKE $1
        )
@@ -284,8 +284,8 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
   }
 
   // Check if deposit already confirmed
-  const depositResult = await query<{ amount_usd: number; payment_status: string }>(
-    `SELECT p.amount_usd, p.payment_status
+  const depositResult = await query<{ amount_usd: number; status: string }>(
+    `SELECT p.amount_usd, p.status
      FROM payments p
      WHERE p.loan_id = $1 AND p.payment_type = 'deposit'
      ORDER BY p.created_at DESC
@@ -293,7 +293,7 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
     [loan_id]
   );
 
-  if (depositResult.data.length > 0 && depositResult.data[0].payment_status === 'confirmed') {
+  if (depositResult.data.length > 0 && depositResult.data[0].status === 'confirmed') {
     return successResponse({
       verified: true,
       amount: depositResult.data[0].amount_usd,
@@ -301,9 +301,9 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
     }, 200, event);
   }
 
-  // Look up the expected deposit amount
-  const loanResult = await query<{ loan_amount_usd: number; deposit_percentage: number }>(
-    `SELECT l.loan_amount_usd, lp.deposit_percentage
+  // Look up the expected deposit amount and customer_id
+  const loanResult = await query<{ customer_id: string; loan_amount_usd: number; deposit_percentage: number }>(
+    `SELECT l.customer_id, l.loan_amount_usd, lp.deposit_percentage
      FROM loans l
      JOIN loan_products lp ON lp.id = l.product_id
      WHERE l.id = $1`,
@@ -314,18 +314,20 @@ export const handleVerifyDeposit: RouteHandler = async (event, _params, auth) =>
     return notFoundResponse('Loan', event);
   }
 
-  const expectedDeposit = loanResult.data[0].loan_amount_usd * (loanResult.data[0].deposit_percentage / 100);
+  const { customer_id: loanCustomerId, loan_amount_usd, deposit_percentage } = loanResult.data[0];
+  const expectedDeposit = loan_amount_usd * (deposit_percentage / 100);
 
   // Record the deposit payment for later verification by payment service
   await db
     .from('payments')
     .insert({
       loan_id,
+      customer_id: loanCustomerId,
       payment_type: 'deposit',
       amount_usd: expectedDeposit,
       payment_method,
       transaction_reference: transaction_ref,
-      payment_status: 'pending_verification',
+      status: 'pending',
       created_at: new Date().toISOString(),
     })
     .execute();
@@ -430,7 +432,7 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
   // Verify deposit payment exists and is confirmed
   const { data: depositPayments } = await query<{ id: string; status: string }>(
     `SELECT id, status FROM payments
-     WHERE loan_id = $1 AND payment_type = 'deposit' AND status = 'completed'
+     WHERE loan_id = $1 AND payment_type = 'deposit' AND status = 'confirmed'
      LIMIT 1`,
     [loan_id]
   );

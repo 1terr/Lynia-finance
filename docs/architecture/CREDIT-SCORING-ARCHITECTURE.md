@@ -425,12 +425,20 @@ The result feeds into Component 6 (Organization Verification, 200 points) which 
 
 Required fields (`monthly_income_usd`, `requested_loan_amount`, `household_size`) are validated before payload construction. Missing fields return an error message — no dangerous defaults.
 
-### 2. KYC Rejection Safety
+### 2. KYC Verification Gate (Two Layers)
 
-If no KYC submission exists in the database, scoring is **blocked entirely**. The system returns:
-> "Your identity verification is incomplete. Please complete the KYC process before we can assess your application."
+Scoring is blocked unless the customer has a **verified** KYC submission. This is enforced at two levels:
 
-Previously, missing KYC defaulted to `{ status: 'verified', face_match_score: 96 }` — a fraud risk.
+**Layer 1 — WhatsApp Flow Guard** (`credit-scoring.ts`):
+Before calling the scoring API, the WhatsApp state handler checks `kycSubmission.status === 'verified'` OR `verification_decision === 'APPROVED'`. If neither condition is met, the customer sees:
+> "Your identity verification is still being processed. Please wait for the verification to complete before we can assess your application."
+
+This prevents unverified customers from reaching the scoring service entirely.
+
+**Layer 2 — Scoring Engine Auto-Reject** (`scoring-engine.ts`):
+Even if the WhatsApp guard is bypassed (e.g., direct API call), the scoring engine checks `kyc_result.id_verification.status`. If the status is `'failed'`, scoring returns `decision: 'reject'` with `tier: 'KYC Not Verified'` and `credit_limit: $0`. The score is still calculated for diagnostics but no loan offer is made.
+
+**History**: Previously, missing KYC defaulted to `{ status: 'verified', face_match_score: 96 }` — a fraud risk. After that was fixed, scoring only checked if a KYC submission *existed* (not if it was verified), allowing customers with pending KYC to score 616/850 on other components and receive loan approval.
 
 ### 3. No Dangerous Defaults
 
@@ -441,7 +449,9 @@ Previously, missing KYC defaulted to `{ status: 'verified', face_match_score: 96
 
 ### 4. Minimum Score Threshold
 
-Applicants scoring below 350 are rejected outright. This prevents lending to high-risk applicants who would likely default. The threshold was introduced to replace the previous "approve everyone" policy.
+Applicants scoring below 350 are rejected outright (`decision: 'reject'`, `tier: 'Below Minimum'`). This prevents lending to high-risk applicants who would likely default. The threshold was introduced to replace the previous "approve everyone" policy.
+
+Note: The KYC verification gate (Safety Mechanism #2) takes precedence — a customer with failed KYC is rejected as `'KYC Not Verified'` regardless of their score.
 
 ### 5. Duplicate Loan Prevention
 

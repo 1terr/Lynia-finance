@@ -1,8 +1,8 @@
 # WhatsApp Bot Flow Specifications - Lynia Finance
 
 **Project**: Lynia Finance
-**Version**: 2.0
-**Last Updated**: 2026-03-04
+**Version**: 2.1
+**Last Updated**: 2026-03-05
 
 ## Overview
 
@@ -53,6 +53,12 @@ welcome → phone_validation → personal_info_name → personal_info_dob
 → kyc_processing → credit_scoring → device_selection → term_selection
 → loan_offer → terms_acceptance → completed
 
+KYC verification gate (at credit_scoring):
+  kyc_processing → credit_scoring
+    IF kycSubmission.status === 'verified' → proceed to scoring
+    IF kycSubmission.status !== 'verified' → "Your identity verification is still being processed..."
+       (customer stays in credit_scoring state, can retry)
+
 Back navigation (post-scoring):
   device_selection ← "back" → credit_scoring (re-fetch devices)
   term_selection   ← "back" → device_selection (re-show device list)
@@ -60,6 +66,9 @@ Back navigation (post-scoring):
 
 KYC failure:
   kyc_processing → rejected (customer can restart with "Hi")
+
+Score rejection:
+  credit_scoring → rejected (score < 350, "KYC Not Verified", or failed KYC)
 ```
 
 ## Message Templates
@@ -701,10 +710,11 @@ The bot should recognize these common phrases:
 
 1. Customer must have a Zimbabwe phone number (+263)
 2. National ID must be valid Zimbabwe format (XX-XXXXXXXAXX)
-3. KYC verification via DIDIT must pass
-4. All customers are auto-approved (no manual review, no rejection based on score)
+3. KYC verification via DIDIT must be **verified** before scoring begins
+4. Credit score must be >= 350 for approval (below 350 = rejection)
 5. Credit limit based on tier: Tier 1 ($200), Tier 2 ($500), Tier 3 ($2,000)
 6. Deposit required before device handover (10-30% depending on tier)
+7. Customers with failed or pending KYC are blocked from scoring (two-layer enforcement)
 
 ### KYC Requirements
 
@@ -820,8 +830,9 @@ Before launching the WhatsApp bot:
 All conversation flows are implemented and deployed to production:
 
 - 23-state onboarding machine with session persistence (24h timeout)
-- DIDIT KYC verification with webhook callback handling
-- Credit scoring with 3-tier auto-approval (no manual review)
+- DIDIT KYC verification via synchronous API (not webhooks)
+- KYC verification gate — scoring blocked until KYC status is `verified`
+- Credit scoring with 3-tier approval and rejection below 350
 - Device selection filtered by credit limit with real-time stock check
 - Declining balance loan calculation with term selection
 - Back navigation at device, term, and loan offer stages
@@ -830,5 +841,5 @@ All conversation flows are implemented and deployed to production:
 
 ---
 
-**Document Version**: 2.0
-**Last Updated**: 2026-03-04
+**Document Version**: 2.1
+**Last Updated**: 2026-03-05

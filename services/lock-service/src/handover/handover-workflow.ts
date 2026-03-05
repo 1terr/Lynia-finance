@@ -115,11 +115,11 @@ export async function completeHandover(handoverId: string): Promise<{
       .eq('id', handover.loan_id)
       .execute();
 
-    // Update device status to 'assigned'
+    // Update device status to 'sold' (handed over to customer)
     await db
       .from('devices')
       .update({
-        status: 'assigned',
+        status: 'sold',
         customer_id: handover.customer_id,
         loan_id: handover.loan_id,
         assigned_at: handoverDate.toISOString(),

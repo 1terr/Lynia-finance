@@ -21,7 +21,7 @@ export const handleGetCommissions: RouteHandler = async (event, _params, auth) =
        dc.id,
        dc.loan_id,
        CONCAT(d.manufacturer, ' ', d.model) AS device_model,
-       c.full_name AS customer_name,
+       CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
        dc.device_retail_price_usd AS device_retail_price,
        dc.commission_percentage,
        dc.commission_amount_usd AS commission_amount,

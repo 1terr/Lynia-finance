@@ -58,7 +58,7 @@ export const handleGetDevices: RouteHandler = async (event, _params, auth) => {
 
   params.push(limit, offset);
   const { data: rows, error } = await query(
-    `SELECT d.*, c.full_name as customer_name, c.phone_number as customer_phone
+    `SELECT d.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.phone_number as customer_phone
      FROM devices d
      LEFT JOIN customers c ON d.customer_id = c.id
      WHERE d.${whereClause}
@@ -284,7 +284,7 @@ export const handleGetDeviceById: RouteHandler = async (event, params, auth) => 
   }
 
   const { data: rows } = await query(
-    `SELECT d.*, c.full_name as customer_name, c.phone_number as customer_phone,
+    `SELECT d.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.phone_number as customer_phone,
             dm.brand, dm.model_name as catalog_model_name
      FROM devices d
      LEFT JOIN customers c ON d.customer_id = c.id
