@@ -44,43 +44,43 @@ export async function getProducts(filters: ProductFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/admin/products?${params.toString()}`);
+  }>(`/admin/products?${params.toString()}`);
 }
 
 export async function getProduct(id: string): Promise<LoanProduct | null> {
   try {
-    return await fetchAPI<LoanProduct>(`/api/v1/admin/products/${id}`);
+    return await fetchAPI<LoanProduct>(`/admin/products/${id}`);
   } catch {
     return null;
   }
 }
 
 export async function createProduct(data: CreateProductInput): Promise<LoanProduct> {
-  return fetchAPI<LoanProduct>('/api/v1/admin/products', {
+  return fetchAPI<LoanProduct>('/admin/products', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export async function updateProduct(id: string, data: Partial<LoanProduct>): Promise<LoanProduct> {
-  return fetchAPI<LoanProduct>(`/api/v1/admin/products/${id}`, {
+  return fetchAPI<LoanProduct>(`/admin/products/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteProduct(id: string): Promise<void> {
-  return fetchAPI<void>(`/api/v1/admin/products/${id}`, {
+  return fetchAPI<void>(`/admin/products/${id}`, {
     method: 'DELETE',
   });
 }
 
 export async function getProductStats(): Promise<Record<string, { totalLoans: number; totalVolume: number }>> {
-  return fetchAPI<Record<string, { totalLoans: number; totalVolume: number }>>('/api/v1/admin/products/stats');
+  return fetchAPI<Record<string, { totalLoans: number; totalVolume: number }>>('/admin/products/stats');
 }
 
 export async function getProductLoansCount(id: string): Promise<{ active_loans: number }> {
-  return fetchAPI<{ active_loans: number }>(`/api/v1/admin/products/${id}/loans-count`);
+  return fetchAPI<{ active_loans: number }>(`/admin/products/${id}/loans-count`);
 }
 
 // ─── Device Model Filters ───
@@ -112,33 +112,33 @@ export async function getDeviceModels(filters: DeviceModelFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/admin/device-models?${params.toString()}`);
+  }>(`/admin/device-models?${params.toString()}`);
 }
 
 export async function getDeviceModel(id: string): Promise<DeviceModel | null> {
   try {
-    return await fetchAPI<DeviceModel>(`/api/v1/admin/device-models/${id}`);
+    return await fetchAPI<DeviceModel>(`/admin/device-models/${id}`);
   } catch {
     return null;
   }
 }
 
 export async function createDeviceModel(data: CreateDeviceModelInput): Promise<DeviceModel> {
-  return fetchAPI<DeviceModel>('/api/v1/admin/device-models', {
+  return fetchAPI<DeviceModel>('/admin/device-models', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export async function updateDeviceModel(id: string, data: Partial<DeviceModel>): Promise<DeviceModel> {
-  return fetchAPI<DeviceModel>(`/api/v1/admin/device-models/${id}`, {
+  return fetchAPI<DeviceModel>(`/admin/device-models/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
 }
 
 export async function deleteDeviceModel(id: string): Promise<void> {
-  return fetchAPI<void>(`/api/v1/admin/device-models/${id}`, {
+  return fetchAPI<void>(`/admin/device-models/${id}`, {
     method: 'DELETE',
   });
 }
@@ -172,26 +172,26 @@ export async function getOrganizations(filters: OrganizationFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/admin/organizations?${params.toString()}`);
+  }>(`/admin/organizations?${params.toString()}`);
 }
 
 export async function getOrganization(id: string): Promise<Organization | null> {
   try {
-    return await fetchAPI<Organization>(`/api/v1/admin/organizations/${id}`);
+    return await fetchAPI<Organization>(`/admin/organizations/${id}`);
   } catch {
     return null;
   }
 }
 
 export async function createOrganization(data: CreateOrganizationInput): Promise<Organization> {
-  return fetchAPI<Organization>('/api/v1/admin/organizations', {
+  return fetchAPI<Organization>('/admin/organizations', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export async function updateOrganization(id: string, data: Partial<Organization>): Promise<Organization> {
-  return fetchAPI<Organization>(`/api/v1/admin/organizations/${id}`, {
+  return fetchAPI<Organization>(`/admin/organizations/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(data),
   });
@@ -218,7 +218,7 @@ export async function getMembers(orgId: string, filters: MemberFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/admin/organizations/${orgId}/members?${params.toString()}`);
+  }>(`/admin/organizations/${orgId}/members?${params.toString()}`);
 }
 
 export async function importMembers(
@@ -226,7 +226,7 @@ export async function importMembers(
   members: MemberImportInput[],
   dataSource: string = 'manual'
 ): Promise<MemberImportResult> {
-  return fetchAPI<MemberImportResult>(`/api/v1/admin/organizations/${orgId}/import`, {
+  return fetchAPI<MemberImportResult>(`/admin/organizations/${orgId}/import`, {
     method: 'POST',
     body: JSON.stringify({ members, data_source: dataSource }),
   });
