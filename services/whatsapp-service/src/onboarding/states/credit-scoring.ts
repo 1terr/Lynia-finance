@@ -21,18 +21,41 @@ interface DeviceRow {
 
 /**
  * Fetch active devices with stock, within the customer's credit limit.
+ * If a loan product has linked device models (via product_device_models),
+ * only those models are returned. Otherwise, all eligible models are shown.
  */
-async function fetchAvailableDevices(creditLimitUsd: number): Promise<DeviceRow[]> {
-  const { data, error } = await query<DeviceRow>(
-    `SELECT id, brand, model_name, retail_price_usd
-     FROM device_models
-     WHERE retail_price_usd <= $1
-       AND is_active = true
-       AND deleted_at IS NULL
-       AND available_stock > 0
-     ORDER BY retail_price_usd ASC`,
-    [creditLimitUsd]
-  );
+async function fetchAvailableDevices(creditLimitUsd: number, productId?: string): Promise<DeviceRow[]> {
+  // If a product ID is given, check if it has linked device models
+  let useProductFilter = false;
+  if (productId) {
+    const { data: linkCount } = await query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM product_device_models WHERE product_id = $1`,
+      [productId]
+    );
+    useProductFilter = parseInt(linkCount?.[0]?.count || '0') > 0;
+  }
+
+  const sql = useProductFilter
+    ? `SELECT dm.id, dm.brand, dm.model_name, dm.retail_price_usd
+       FROM device_models dm
+       JOIN product_device_models pdm ON pdm.device_model_id = dm.id
+       WHERE pdm.product_id = $2
+         AND dm.retail_price_usd <= $1
+         AND dm.is_active = true
+         AND dm.deleted_at IS NULL
+         AND dm.available_stock > 0
+       ORDER BY dm.retail_price_usd ASC`
+    : `SELECT id, brand, model_name, retail_price_usd
+       FROM device_models
+       WHERE retail_price_usd <= $1
+         AND is_active = true
+         AND deleted_at IS NULL
+         AND available_stock > 0
+       ORDER BY retail_price_usd ASC`;
+
+  const params: unknown[] = useProductFilter ? [creditLimitUsd, productId] : [creditLimitUsd];
+
+  const { data, error } = await query<DeviceRow>(sql, params);
 
   if (error) {
     logger.error('Failed to fetch device models', {
@@ -44,6 +67,25 @@ async function fetchAvailableDevices(creditLimitUsd: number): Promise<DeviceRow[
   }
 
   return data;
+}
+
+/**
+ * Resolve the best matching loan product for a smartphone financing request.
+ * Picks the active smartphone product whose amount range covers the credit limit.
+ */
+async function resolveSmartphoneProduct(creditLimitUsd: number): Promise<string | undefined> {
+  const { data } = await query<{ id: string }>(
+    `SELECT id FROM loan_products
+     WHERE product_category = 'smartphone'
+       AND status = 'active'
+       AND deleted_at IS NULL
+       AND min_amount_usd <= $1
+       AND max_amount_usd >= $1
+     ORDER BY display_order ASC
+     LIMIT 1`,
+    [creditLimitUsd]
+  );
+  return data?.[0]?.id;
 }
 
 /**
@@ -255,7 +297,9 @@ Your Credit Score: ${scoreResult.scaled_score}/850
 Type *SUPPORT* if you have questions or need help.`;
     }
 
-    const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd);
+    // Resolve loan product to filter device models by linked models (if any)
+    const resolvedProductId = await resolveSmartphoneProduct(scoreResult.credit_limit_usd);
+    const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd, resolvedProductId);
 
     if (devices.length === 0) {
       // Store scoring result but keep in credit_scoring state
@@ -291,6 +335,7 @@ However, there are no devices currently available in your price range. Please ch
         interest_rate_apr: scoreResult.interest_rate_apr,
         decision: scoreResult.decision,
         available_devices: devices,
+        resolved_product_id: resolvedProductId,
       }
     });
 

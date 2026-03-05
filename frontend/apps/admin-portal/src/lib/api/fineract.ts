@@ -165,6 +165,14 @@ export async function getFineractLoanProducts(): Promise<FineractLoanProductView
   return fetchFineractAPI<FineractLoanProductView[]>('/api/v1/fineract/loan-products');
 }
 
+/** Create a Fineract loan product from a Lynia product and link them */
+export async function createFineractProductFromLynia(lyniaProductId: string): Promise<{ fineract_product_id: number; lynia_product_id: string }> {
+  return fetchFineractAPI<{ fineract_product_id: number; lynia_product_id: string }>(
+    '/api/v1/fineract/loan-products/create-from-lynia',
+    { method: 'POST', body: JSON.stringify({ lynia_product_id: lyniaProductId }) }
+  );
+}
+
 /** Fetch a single loan product */
 export async function getFineractLoanProduct(
   productId: number

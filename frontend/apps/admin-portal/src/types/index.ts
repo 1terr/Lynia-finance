@@ -341,7 +341,7 @@ export interface LoanProduct {
   display_order: number;
   description?: string;
   scoring_config?: Record<string, unknown>;
-  fineract_product_id?: number;
+  fineract_product_id?: number | null;
   created_at: string;
   updated_at: string;
   deleted_at?: string;
@@ -368,6 +368,7 @@ export interface CreateProductInput {
   max_active_loans?: number;
   display_order?: number;
   description?: string;
+  fineract_product_id?: number | null;
 }
 
 // --- Device Models ---

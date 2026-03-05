@@ -123,7 +123,9 @@ export default function DevicesPage() {
       header: 'Customer',
       render: (row) =>
         row.customer ? (
-          <span className="text-sm">{row.customer.full_name}</span>
+          <Link href={`/customers/${row.customer.id}`} className="text-sm text-brand-600 hover:text-brand-700 hover:underline" onClick={(e) => e.stopPropagation()}>
+            {row.customer.full_name}
+          </Link>
         ) : (
           <span className="text-gray-400">-</span>
         ),

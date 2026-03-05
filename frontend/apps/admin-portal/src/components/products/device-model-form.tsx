@@ -103,7 +103,7 @@ export function DeviceModelForm({ open, onClose, onSubmit, deviceModel, productD
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEditing ? 'Edit Device Model' : 'Add Device Model'} size="lg">
+    <Modal open={open} onClose={onClose} title={isEditing ? 'Edit Phone Model' : 'Add Phone Model'} size="lg">
       <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
         <div className="grid grid-cols-3 gap-4">
           <Input label="Brand" id="brand" value={brand} onChange={(e) => setBrand(e.target.value)} error={errors.brand} placeholder="e.g. Samsung" />
@@ -153,7 +153,7 @@ export function DeviceModelForm({ open, onClose, onSubmit, deviceModel, productD
 
         <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
-          <Button type="submit" isLoading={submitting}>{isEditing ? 'Update Device Model' : 'Add Device Model'}</Button>
+          <Button type="submit" isLoading={submitting}>{isEditing ? 'Update Phone Model' : 'Add Phone Model'}</Button>
         </div>
       </form>
     </Modal>

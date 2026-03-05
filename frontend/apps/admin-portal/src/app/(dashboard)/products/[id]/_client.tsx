@@ -3,22 +3,33 @@
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProduct, updateProduct, deleteProduct, getProductLoansCount } from '@/lib/api/products';
+import {
+  getProduct, updateProduct, deleteProduct, getProductLoansCount,
+  getDeviceModels, linkDeviceModels, unlinkDeviceModel,
+  type LinkedDeviceModel,
+} from '@/lib/api/products';
+import { createFineractProductFromLynia } from '@/lib/api/fineract';
 import { ProductForm } from '@/components/products/product-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@lynia/utils';
-import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Plus, X, Check, Circle, Link2, Smartphone, Database as DatabaseIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { LoanProduct, CreateProductInput } from '@/types';
+import type { LoanProduct, CreateProductInput, DeviceModel } from '@/types';
 
 const STATUS_VARIANTS: Record<string, 'green' | 'gray' | 'blue'> = {
   active: 'green',
   inactive: 'gray',
   launching_soon: 'blue',
 };
+
+// Extended product type with linked models from the API
+interface ProductWithLinks extends LoanProduct {
+  linked_device_models?: LinkedDeviceModel[];
+  in_stock_device_count?: number;
+}
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -29,6 +40,8 @@ export default function ProductDetailPage() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
 
   const { data: loansCountData, isFetching: loadingLoansCount } = useQuery({
     queryKey: ['product-loans-count', id],
@@ -38,7 +51,14 @@ export default function ProductDetailPage() {
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],
-    queryFn: () => getProduct(id),
+    queryFn: () => getProduct(id) as Promise<ProductWithLinks | null>,
+  });
+
+  // Fetch all device models for linking modal
+  const { data: allModelsData } = useQuery({
+    queryKey: ['device-models', { limit: 200 }],
+    queryFn: () => getDeviceModels({ limit: 200 }),
+    enabled: linkModalOpen,
   });
 
   const updateMutation = useMutation({
@@ -65,9 +85,54 @@ export default function ProductDetailPage() {
     },
   });
 
+  const linkMutation = useMutation({
+    mutationFn: (modelIds: string[]) => linkDeviceModels(id, modelIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      toast({ title: 'Device models linked successfully', variant: 'success' });
+      setLinkModalOpen(false);
+      setSelectedModels([]);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to link device models', description: error.message, variant: 'error' });
+    },
+  });
+
+  const fineractCreateMutation = useMutation({
+    mutationFn: () => createFineractProductFromLynia(id),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      toast({ title: `Fineract product created (ID: ${data.fineract_product_id})`, variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to create Fineract product', description: error.message, variant: 'error' });
+    },
+  });
+
+  const unlinkMutation = useMutation({
+    mutationFn: (modelId: string) => unlinkDeviceModel(id, modelId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      toast({ title: 'Device model unlinked', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to unlink device model', description: error.message, variant: 'error' });
+    },
+  });
+
   async function handleUpdate(data: CreateProductInput) {
     await updateMutation.mutateAsync(data);
   }
+
+  function toggleModelSelection(modelId: string) {
+    setSelectedModels((prev) =>
+      prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
+    );
+  }
+
+  // Filter out already-linked models from the link modal
+  const linkedIds = new Set((product?.linked_device_models || []).map((m) => m.device_model_id));
+  const availableModels = (allModelsData?.data || []).filter((m: DeviceModel) => !linkedIds.has(m.id) && m.is_active);
 
   if (isLoading) {
     return (
@@ -90,6 +155,22 @@ export default function ProductDetailPage() {
       </div>
     );
   }
+
+  // Setup checklist items
+  const isSmartphone = product.product_category === 'smartphone';
+  const linkedModels = product.linked_device_models || [];
+  const inStockCount = product.in_stock_device_count || 0;
+
+  const checklistItems = [
+    { label: 'Product created', done: true },
+    { label: 'Fineract product linked', done: product.fineract_product_id != null },
+    ...(isSmartphone ? [
+      { label: 'Phone models assigned', done: linkedModels.length > 0 },
+      { label: 'Physical devices in stock', done: inStockCount > 0 },
+    ] : []),
+  ];
+  const completedCount = checklistItems.filter((i) => i.done).length;
+  const allComplete = completedCount === checklistItems.length;
 
   return (
     <div className="space-y-6">
@@ -116,6 +197,47 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
+      {/* Setup Checklist */}
+      <Card className={`p-4 ${allComplete ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-gray-900">
+            Product Setup {allComplete ? '- Ready' : `- ${completedCount}/${checklistItems.length} complete`}
+          </h3>
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allComplete ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
+            {allComplete ? 'All set' : 'Setup incomplete'}
+          </span>
+        </div>
+        <div className="flex flex-wrap gap-4">
+          {checklistItems.map((item) => (
+            <div key={item.label} className="flex items-center gap-2 text-sm">
+              {item.done ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Circle className="h-4 w-4 text-gray-300" />
+              )}
+              <span className={item.done ? 'text-green-700' : 'text-gray-500'}>
+                {item.label}
+              </span>
+            </div>
+          ))}
+        </div>
+        {product.fineract_product_id == null && (
+          <div className="mt-3 pt-3 border-t border-amber-200">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => fineractCreateMutation.mutate()}
+              isLoading={fineractCreateMutation.isPending}
+            >
+              <DatabaseIcon className="mr-1 h-3.5 w-3.5" /> Create in Fineract
+            </Button>
+            <span className="ml-2 text-xs text-gray-500">
+              Auto-creates a matching loan product in Fineract core banking.
+            </span>
+          </div>
+        )}
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Configuration</h2>
@@ -133,10 +255,10 @@ export default function ProductDetailPage() {
 
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            {product.product_category === 'smartphone' ? 'Smartphone Details' : 'Digital Loan Details'}
+            {isSmartphone ? 'Smartphone Details' : 'Digital Loan Details'}
           </h2>
           <dl className="space-y-3 text-sm">
-            {product.product_category === 'smartphone' ? (
+            {isSmartphone ? (
               <>
                 <Row label="Deposit Percentage" value={`${product.deposit_percentage}%`} />
                 <Row label="Minimum Deposit" value={formatCurrency(product.min_deposit_usd)} />
@@ -154,12 +276,152 @@ export default function ProductDetailPage() {
               </>
             )}
             <Row label="Display Order" value={String(product.display_order)} />
-            {product.fineract_product_id != null && (
-              <Row label="Fineract Product ID" value={String(product.fineract_product_id)} />
-            )}
+            <Row
+              label="Fineract Product"
+              value={product.fineract_product_id != null ? `Linked (ID: ${product.fineract_product_id})` : 'Not linked'}
+            />
           </dl>
         </Card>
       </div>
+
+      {/* Compatible Phone Models (smartphone products only) */}
+      {isSmartphone && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Compatible Phone Models</h2>
+              <p className="text-sm text-gray-500">
+                Only these phone models will be available for customers applying under this product.
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setLinkModalOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" /> Add Models
+            </Button>
+          </div>
+
+          {linkedModels.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed border-gray-200 py-8 text-center">
+              <Smartphone className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+              <p className="text-sm text-gray-500">No phone models linked yet.</p>
+              <p className="text-xs text-gray-400 mt-1">
+                Without linked models, customers will see ALL active models during loan application.
+              </p>
+              <Button size="sm" variant="secondary" className="mt-3" onClick={() => setLinkModalOpen(true)}>
+                <Link2 className="mr-1 h-3.5 w-3.5" /> Link Phone Models
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {linkedModels.map((model) => (
+                <div key={model.device_model_id} className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
+                      <Smartphone className="h-4 w-4 text-gray-500" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {model.brand} {model.model_name}
+                        {model.storage_gb ? ` (${model.storage_gb}GB)` : ''}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        <span className="font-mono">{model.model_code}</span>
+                        {' \u00b7 '}
+                        Retail: {formatCurrency(model.retail_price_usd)}
+                        {' \u00b7 '}
+                        Stock: <span className={model.available_stock === 0 ? 'text-red-600 font-medium' : ''}>{model.available_stock}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={model.is_active ? 'green' : 'gray'}>
+                      {model.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => unlinkMutation.mutate(model.device_model_id)}
+                      disabled={unlinkMutation.isPending}
+                    >
+                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-gray-400 pt-1">
+                {linkedModels.length} model{linkedModels.length !== 1 ? 's' : ''} linked
+                {' \u00b7 '}
+                {inStockCount} device{inStockCount !== 1 ? 's' : ''} in stock
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Link Device Models Modal */}
+      <Modal open={linkModalOpen} onClose={() => { setLinkModalOpen(false); setSelectedModels([]); }} title="Link Phone Models" size="lg">
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600">
+            Select phone models to make available under this loan product.
+          </p>
+          <div className="max-h-[50vh] overflow-y-auto space-y-1">
+            {availableModels.length === 0 ? (
+              <p className="py-8 text-center text-sm text-gray-500">
+                All active phone models are already linked to this product.
+              </p>
+            ) : (
+              availableModels.map((model: DeviceModel) => {
+                const selected = selectedModels.includes(model.id);
+                return (
+                  <button
+                    key={model.id}
+                    type="button"
+                    onClick={() => toggleModelSelection(model.id)}
+                    className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
+                      selected ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">
+                        {model.brand} {model.model_name}
+                        {model.storage_gb ? ` (${model.storage_gb}GB)` : ''}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        Retail: {formatCurrency(model.retail_price_usd)}
+                        {' \u00b7 '}
+                        Wholesale: {formatCurrency(model.wholesale_price_usd)}
+                        {' \u00b7 '}
+                        Stock: {model.available_stock}
+                      </p>
+                    </div>
+                    <div className={`flex h-5 w-5 items-center justify-center rounded border ${
+                      selected ? 'border-brand-500 bg-brand-500' : 'border-gray-300'
+                    }`}>
+                      {selected && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+          <div className="flex justify-between items-center border-t border-gray-200 pt-4">
+            <span className="text-sm text-gray-500">
+              {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => { setLinkModalOpen(false); setSelectedModels([]); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => linkMutation.mutate(selectedModels)}
+                disabled={selectedModels.length === 0}
+                isLoading={linkMutation.isPending}
+              >
+                Link {selectedModels.length > 0 ? `${selectedModels.length} Model${selectedModels.length !== 1 ? 's' : ''}` : 'Models'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       <ProductForm
         open={editOpen}

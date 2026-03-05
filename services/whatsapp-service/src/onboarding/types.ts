@@ -83,6 +83,7 @@ export interface OnboardingSession {
     selected_device_id?: string;
     selected_device_price?: number;
     selected_device_name?: string;
+    resolved_product_id?: string;
 
     // Term selection
     selected_term_months?: number;

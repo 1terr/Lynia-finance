@@ -147,15 +147,15 @@ export default function DeviceModelsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Button variant="ghost" size="sm" onClick={() => router.push('/products')}>
-            <ArrowLeft className="mr-1 h-4 w-4" /> Products
+            <ArrowLeft className="mr-1 h-4 w-4" /> Loan Products
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Device Models</h1>
-            <p className="text-sm text-gray-500">Manage the device catalog for smartphone financing.</p>
+            <h1 className="text-2xl font-bold text-gray-900">Phone Catalog</h1>
+            <p className="text-sm text-gray-500">Manage phone models available for smartphone financing.</p>
           </div>
         </div>
         <Button size="sm" onClick={() => { setEditingModel(null); setFormOpen(true); }}>
-          <Plus className="mr-1 h-4 w-4" /> Add Device Model
+          <Plus className="mr-1 h-4 w-4" /> Add Phone Model
         </Button>
       </div>
 
@@ -203,7 +203,7 @@ export default function DeviceModelsPage() {
         deviceModel={editingModel}
       />
 
-      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Device Model" size="sm">
+      <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Phone Model" size="sm">
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
             Are you sure you want to delete <span className="font-medium">{deleteTarget?.brand} {deleteTarget?.model_name}</span>?

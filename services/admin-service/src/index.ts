@@ -16,7 +16,7 @@ import { handleGetConfigs, handleUpdateConfig } from './handlers/configuration';
 import { handleGetAuditLogs } from './handlers/audit-logs';
 
 // ─── Products ───
-import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount } from './handlers/products';
+import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel } from './handlers/products';
 
 // ─── Device Models ───
 import { handleGetDeviceModels, handleCreateDeviceModel, handleGetDeviceModelById, handleUpdateDeviceModel, handleDeleteDeviceModel } from './handlers/device-models';
@@ -68,7 +68,10 @@ export const handler = createRouter({
   'GET /admin/products/stats':           handleGetProductStats,
   'GET /admin/products':                 handleGetProducts,
   'POST /admin/products':                handleCreateProduct,
-  'GET /admin/products/:id/loans-count': handleGetProductLoansCount,
+  'GET /admin/products/:id/loans-count':            handleGetProductLoansCount,
+  'GET /admin/products/:id/device-models':          handleGetProductDeviceModels,
+  'POST /admin/products/:id/device-models':         handleLinkDeviceModel,
+  'DELETE /admin/products/:id/device-models/:modelId': handleUnlinkDeviceModel,
   'GET /admin/products/:id':             handleGetProductById,
   'PATCH /admin/products/:id':           handleUpdateProduct,
   'DELETE /admin/products/:id':          handleDeleteProduct,

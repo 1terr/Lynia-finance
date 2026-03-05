@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { getFineractLoanProducts } from '@/lib/api/fineract';
 import type { LoanProduct, CreateProductInput, ProductCategory, ProductStatus } from '@/types';
 
 interface ProductFormProps {
@@ -56,6 +58,13 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
   const [description, setDescription] = useState('');
   const [requiresOrgVerification, setRequiresOrgVerification] = useState(false);
   const [disbursementMethods, setDisbursementMethods] = useState<string[]>([]);
+  const [fineractProductId, setFineractProductId] = useState('');
+
+  const { data: fineractProducts } = useQuery({
+    queryKey: ['fineract-loan-products'],
+    queryFn: () => getFineractLoanProducts(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   useEffect(() => {
     if (product) {
@@ -75,6 +84,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
       setDescription(product.description || '');
       setRequiresOrgVerification(product.requires_organization_verification);
       setDisbursementMethods(product.allowed_disbursement_methods || []);
+      setFineractProductId(product.fineract_product_id != null ? String(product.fineract_product_id) : '');
     } else {
       resetForm();
     }
@@ -97,6 +107,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
     setDescription('');
     setRequiresOrgVerification(false);
     setDisbursementMethods([]);
+    setFineractProductId('');
     setErrors({});
   }
 
@@ -177,6 +188,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
         allowed_disbursement_methods: category === 'digital' ? disbursementMethods : [],
         max_active_loans: parseInt(maxActiveLoans) || 1,
         description: description || undefined,
+        fineract_product_id: fineractProductId ? parseInt(fineractProductId) : null,
       };
       await onSubmit(data);
       onClose();
@@ -361,6 +373,28 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
             onChange={(e) => setMaxActiveLoans(e.target.value)}
             min="1"
           />
+        </div>
+
+        <div>
+          <label htmlFor="fineractProductId" className="block text-sm font-medium text-gray-700 mb-1">
+            Fineract Product (Core Banking)
+          </label>
+          <select
+            id="fineractProductId"
+            value={fineractProductId}
+            onChange={(e) => setFineractProductId(e.target.value)}
+            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          >
+            <option value="">Not linked</option>
+            {fineractProducts?.map((fp) => (
+              <option key={fp.id} value={String(fp.id)}>
+                {fp.name} (ID: {fp.id})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-gray-400">
+            Link to a Fineract loan product for core banking sync.
+          </p>
         </div>
 
         <div>

@@ -9,6 +9,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { getFineractLoanDetail } from '@/lib/api/fineract';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -85,7 +86,11 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
         <div className="flex-1">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-gray-900">
-              {loan.customerName}
+              {loan.lyniaCustomerId ? (
+                <Link href={`/customers/${loan.lyniaCustomerId}`} className="hover:text-brand-600 transition-colors">
+                  {loan.customerName}
+                </Link>
+              ) : loan.customerName}
             </h1>
             <span
               className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusDisplay.bgColor} ${statusDisplay.color}`}
@@ -245,7 +250,14 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
                 value={`${loan.deviceBrand} ${loan.deviceModel}`}
               />
               {loan.deviceImei && (
-                <DetailRow label="IMEI" value={loan.deviceImei} />
+                <div className="flex items-center justify-between border-b border-gray-100 py-2">
+                  <dt className="text-sm text-gray-500">IMEI</dt>
+                  <dd className="text-sm font-medium">
+                    <Link href={`/devices?search=${loan.deviceImei}`} className="font-mono text-brand-600 hover:text-brand-700 hover:underline">
+                      {loan.deviceImei}
+                    </Link>
+                  </dd>
+                </div>
               )}
             </dl>
           ) : (

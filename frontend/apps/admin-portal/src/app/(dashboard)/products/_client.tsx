@@ -150,12 +150,12 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-sm text-gray-500">Manage loan products, device models, and organizations.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Loan Products</h1>
+          <p className="text-sm text-gray-500">Manage loan products, phone catalog, and organizations.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => router.push('/products/device-models')}>
-            Device Models
+            Phone Catalog
           </Button>
           <Button variant="secondary" size="sm" onClick={() => router.push('/products/organizations')}>
             Organizations

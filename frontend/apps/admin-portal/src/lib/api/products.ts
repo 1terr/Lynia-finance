@@ -83,6 +83,38 @@ export async function getProductLoansCount(id: string): Promise<{ active_loans: 
   return fetchAPI<{ active_loans: number }>(`/admin/products/${id}/loans-count`);
 }
 
+// ─── Product-Device Model Linking ───
+
+export interface LinkedDeviceModel {
+  id: string;
+  device_model_id: string;
+  brand: string;
+  model_name: string;
+  model_code: string;
+  retail_price_usd: number;
+  wholesale_price_usd: number;
+  available_stock: number;
+  is_active: boolean;
+  storage_gb: number | null;
+}
+
+export async function getProductDeviceModels(productId: string): Promise<{ data: LinkedDeviceModel[] }> {
+  return fetchAPI<{ data: LinkedDeviceModel[] }>(`/admin/products/${productId}/device-models`);
+}
+
+export async function linkDeviceModels(productId: string, deviceModelIds: string[]): Promise<void> {
+  return fetchAPI<void>(`/admin/products/${productId}/device-models`, {
+    method: 'POST',
+    body: JSON.stringify({ device_model_ids: deviceModelIds }),
+  });
+}
+
+export async function unlinkDeviceModel(productId: string, deviceModelId: string): Promise<void> {
+  return fetchAPI<void>(`/admin/products/${productId}/device-models/${deviceModelId}`, {
+    method: 'DELETE',
+  });
+}
+
 // ─── Device Model Filters ───
 
 export interface DeviceModelFilters {

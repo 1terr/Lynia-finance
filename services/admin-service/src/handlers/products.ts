@@ -143,7 +143,33 @@ export const handleGetProductById: RouteHandler = async (event, params, auth) =>
     return errorResponse('Product not found', 404, {}, event);
   }
 
-  return successResponse(row, 200, event);
+  // Fetch linked device models
+  const { data: linkedModels } = await query<{
+    id: string; device_model_id: string; brand: string; model_name: string; model_code: string;
+    retail_price_usd: string; wholesale_price_usd: string; available_stock: string; is_active: boolean;
+    storage_gb: string | null;
+  }>(
+    `SELECT pdm.id, pdm.device_model_id, dm.brand, dm.model_name, dm.model_code,
+            dm.retail_price_usd, dm.wholesale_price_usd, dm.available_stock, dm.is_active, dm.storage_gb
+     FROM product_device_models pdm
+     JOIN device_models dm ON dm.id = pdm.device_model_id AND dm.deleted_at IS NULL
+     WHERE pdm.product_id = $1
+     ORDER BY dm.brand, dm.model_name`,
+    [id]
+  );
+
+  // Count in-stock devices for linked models
+  let inStockCount = 0;
+  if (linkedModels && linkedModels.length > 0) {
+    const modelIds = linkedModels.map(m => m.device_model_id);
+    const { data: stockRows } = await query<{ count: string }>(
+      `SELECT COUNT(*) as count FROM devices WHERE device_model_id = ANY($1) AND status = 'in_stock' AND deleted_at IS NULL`,
+      [modelIds]
+    );
+    inStockCount = parseInt(stockRows[0]?.count || '0');
+  }
+
+  return successResponse({ ...row, linked_device_models: linkedModels || [], in_stock_device_count: inStockCount }, 200, event);
 };
 
 // ─── POST /admin/products ───
@@ -238,6 +264,7 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     max_active_loans: body.max_active_loans || 1,
     display_order: body.display_order || 0,
     description: body.description || null,
+    fineract_product_id: body.fineract_product_id || null,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -280,7 +307,7 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
     'loan_term_months', 'interest_rate_annual', 'deposit_percentage', 'min_deposit_usd',
     'min_term_months', 'max_term_months', 'interest_rate_monthly', 'requires_device',
     'requires_organization_verification', 'allowed_disbursement_methods', 'max_active_loans',
-    'display_order', 'description',
+    'display_order', 'description', 'fineract_product_id',
   ];
 
   for (const field of allowedFields) {
@@ -361,4 +388,117 @@ export const handleDeleteProduct: RouteHandler = async (event, params, auth) => 
   await auditLog(auth, 'product.delete', 'loan_product', id, `Soft-deleted product: ${id}`);
 
   return successResponse({ message: 'Product deleted successfully' }, 200, event);
+};
+
+// ─── GET /admin/products/:id/device-models ───
+
+export const handleGetProductDeviceModels: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+
+  const { data: rows, error } = await query<{
+    id: string; device_model_id: string; brand: string; model_name: string; model_code: string;
+    retail_price_usd: string; wholesale_price_usd: string; available_stock: string; is_active: boolean;
+    storage_gb: string | null;
+  }>(
+    `SELECT pdm.id, pdm.device_model_id, dm.brand, dm.model_name, dm.model_code,
+            dm.retail_price_usd, dm.wholesale_price_usd, dm.available_stock, dm.is_active, dm.storage_gb
+     FROM product_device_models pdm
+     JOIN device_models dm ON dm.id = pdm.device_model_id AND dm.deleted_at IS NULL
+     WHERE pdm.product_id = $1
+     ORDER BY dm.brand, dm.model_name`,
+    [productId]
+  );
+
+  if (error) {
+    return errorResponse('Failed to fetch linked device models', 500, {}, event);
+  }
+
+  return successResponse({ data: rows || [] }, 200, event);
+};
+
+// ─── POST /admin/products/:id/device-models ───
+
+export const handleLinkDeviceModel: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+  const body = JSON.parse(event.body || '{}');
+  const deviceModelIds: string[] = body.device_model_ids;
+
+  if (!deviceModelIds || !Array.isArray(deviceModelIds) || deviceModelIds.length === 0) {
+    return errorResponse('device_model_ids array is required', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  // Verify product exists
+  const { data: product } = await db.from('loan_products')
+    .select('id, product_category')
+    .eq('id', productId)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .execute();
+
+  if (!product) {
+    return errorResponse('Product not found', 404, {}, event);
+  }
+
+  // Insert links (ignore duplicates)
+  const values = deviceModelIds.map((_, i) => `($1, $${i + 2}, now())`).join(', ');
+  const insertParams = [productId, ...deviceModelIds];
+
+  const { error } = await query(
+    `INSERT INTO product_device_models (product_id, device_model_id, created_at)
+     VALUES ${values}
+     ON CONFLICT (product_id, device_model_id) DO NOTHING`,
+    insertParams
+  );
+
+  if (error) {
+    logger.error('Error linking device models', {
+      action: 'admin.products.linkDeviceModels',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to link device models', 500, {}, event);
+  }
+
+  await auditLog(auth, 'product.linkDeviceModels', 'loan_product', productId,
+    `Linked ${deviceModelIds.length} device model(s) to product`, { device_model_ids: deviceModelIds });
+
+  return successResponse({ message: `Linked ${deviceModelIds.length} device model(s)` }, 200, event);
+};
+
+// ─── DELETE /admin/products/:id/device-models/:modelId ───
+
+export const handleUnlinkDeviceModel: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth as never)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+  const modelId = params.modelId;
+
+  const { error } = await query(
+    `DELETE FROM product_device_models WHERE product_id = $1 AND device_model_id = $2`,
+    [productId, modelId]
+  );
+
+  if (error) {
+    logger.error('Error unlinking device model', {
+      action: 'admin.products.unlinkDeviceModel',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to unlink device model', 500, {}, event);
+  }
+
+  await auditLog(auth, 'product.unlinkDeviceModel', 'loan_product', productId,
+    `Unlinked device model ${modelId} from product`, { device_model_id: modelId });
+
+  return successResponse({ message: 'Device model unlinked' }, 200, event);
 };
