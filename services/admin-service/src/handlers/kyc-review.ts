@@ -195,39 +195,86 @@ export const handleApproveKYC: RouteHandler = async (event, params, auth) => {
   }
 
   const body = JSON.parse(event.body || '{}');
-  const { customer_id, admin_id } = body;
+  const { customer_id } = body;
 
   if (!customer_id) {
     return errorResponse('customer_id is required', 400, {}, event);
   }
 
-  // Update kyc_submissions
   const now = new Date().toISOString();
-  await query(
+
+  // Update kyc_submissions (reviewed_by set to NULL to avoid FK issues with Cognito sub)
+  const updateResult = await query(
     `UPDATE kyc_submissions
      SET status = 'verified',
          verified_at = $1,
          reviewed_at = $1,
-         reviewed_by = $2,
          verification_decision = 'APPROVED'
-     WHERE id = $3 AND status IN ('pending', 'manual_review')`,
-    [now, admin_id || auth.userId, submissionId]
+     WHERE id = $2 AND status IN ('pending', 'manual_review')
+     RETURNING id`,
+    [now, submissionId]
   );
 
-  // Update customer kyc_status
-  await query(
-    `UPDATE customers
-     SET kyc_status = 'verified',
-         kyc_verified_at = $1
-     WHERE id = $2`,
-    [now, customer_id]
+  if (updateResult.error) {
+    logger.error('KYC approve update failed', {
+      action: 'kyc.approve',
+      status: 'failed',
+      submissionId,
+      errorMessage: updateResult.error.message,
+    });
+    return errorResponse('Failed to approve KYC submission', 500, {}, event);
+  }
+
+  if (updateResult.data.length === 0) {
+    return errorResponse('Submission not found or already reviewed', 404, {}, event);
+  }
+
+  // Update customer kyc_status and name from extracted KYC data
+  const submission = await queryOne<{ extracted_name: string | null }>(
+    `SELECT extracted_name FROM kyc_submissions WHERE id = $1`,
+    [submissionId]
   );
+
+  const extractedName = (submission.data?.extracted_name || '').trim();
+  const nameParts = extractedName.split(/\s+/);
+  const extractedFirst = nameParts[0] || null;
+  const extractedLast = nameParts.slice(1).join(' ') || null;
+
+  // Update customer: set kyc_status and update name from KYC if extracted
+  const customerUpdate = extractedFirst
+    ? await query(
+        `UPDATE customers
+         SET kyc_status = 'verified',
+             kyc_verified_at = $1,
+             first_name = COALESCE($3, first_name),
+             last_name = COALESCE($4, last_name),
+             updated_at = $1
+         WHERE id = $2`,
+        [now, customer_id, extractedFirst, extractedLast]
+      )
+    : await query(
+        `UPDATE customers
+         SET kyc_status = 'verified',
+             kyc_verified_at = $1,
+             updated_at = $1
+         WHERE id = $2`,
+        [now, customer_id]
+      );
+
+  if (customerUpdate.error) {
+    logger.error('Customer kyc_status update failed', {
+      action: 'kyc.approve',
+      status: 'failed',
+      customerId: customer_id,
+      errorMessage: customerUpdate.error.message,
+    });
+  }
 
   // Audit log
   await query(
     `INSERT INTO audit_log (admin_user_id, action, entity_type, entity_id, details, created_at)
      VALUES ($1, 'kyc.approve', 'kyc_submission', $2, $3, $4)`,
-    [admin_id || auth.userId, submissionId, JSON.stringify({ customer_id }), now]
+    [auth.userId, submissionId, JSON.stringify({ customer_id, reviewer_email: auth.email }), now]
   );
 
   return successResponse({ message: 'KYC approved' }, 200, event);
@@ -245,7 +292,7 @@ export const handleRejectKYC: RouteHandler = async (event, params, auth) => {
   }
 
   const body = JSON.parse(event.body || '{}');
-  const { customer_id, admin_id, reason } = body;
+  const { customer_id, reason } = body;
 
   if (!customer_id) {
     return errorResponse('customer_id is required', 400, {}, event);
@@ -255,23 +302,43 @@ export const handleRejectKYC: RouteHandler = async (event, params, auth) => {
   }
 
   const now = new Date().toISOString();
-  await query(
+  const updateResult = await query(
     `UPDATE kyc_submissions
      SET status = 'rejected',
          rejected_at = $1,
          reviewed_at = $1,
-         reviewed_by = $2,
-         rejection_reason = $3,
+         rejection_reason = $2,
          verification_decision = 'REJECTED'
-     WHERE id = $4 AND status IN ('pending', 'manual_review')`,
-    [now, admin_id || auth.userId, reason, submissionId]
+     WHERE id = $3 AND status IN ('pending', 'manual_review')
+     RETURNING id`,
+    [now, reason, submissionId]
+  );
+
+  if (updateResult.error) {
+    logger.error('KYC reject update failed', {
+      action: 'kyc.reject',
+      status: 'failed',
+      submissionId,
+      errorMessage: updateResult.error.message,
+    });
+    return errorResponse('Failed to reject KYC submission', 500, {}, event);
+  }
+
+  if (updateResult.data.length === 0) {
+    return errorResponse('Submission not found or already reviewed', 404, {}, event);
+  }
+
+  // Update customer kyc_status back to rejected
+  await query(
+    `UPDATE customers SET kyc_status = 'rejected', updated_at = $1 WHERE id = $2`,
+    [now, customer_id]
   );
 
   // Audit log
   await query(
     `INSERT INTO audit_log (admin_user_id, action, entity_type, entity_id, details, created_at)
      VALUES ($1, 'kyc.reject', 'kyc_submission', $2, $3, $4)`,
-    [admin_id || auth.userId, submissionId, JSON.stringify({ customer_id, reason }), now]
+    [auth.userId, submissionId, JSON.stringify({ customer_id, reason, reviewer_email: auth.email }), now]
   );
 
   return successResponse({ message: 'KYC rejected' }, 200, event);

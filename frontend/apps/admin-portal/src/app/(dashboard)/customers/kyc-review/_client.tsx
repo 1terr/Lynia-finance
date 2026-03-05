@@ -78,13 +78,19 @@ export default function KYCReviewPage() {
       ),
   });
 
+  const [mutationError, setMutationError] = useState<string | null>(null);
+
   const approveMutation = useMutation({
     mutationFn: (submission: KYCWithCustomer) =>
       approveKYC(submission.id, submission.customer_id, user!.id),
     onSuccess: () => {
+      setMutationError(null);
       queryClient.invalidateQueries({ queryKey: ['kyc-pending'] });
       queryClient.invalidateQueries({ queryKey: ['kyc-review-history'] });
       queryClient.invalidateQueries({ queryKey: ['kyc-sla-stats'] });
+    },
+    onError: (error: Error) => {
+      setMutationError(`Approve failed: ${error.message}`);
     },
   });
 
@@ -94,9 +100,15 @@ export default function KYCReviewPage() {
       return rejectKYC(rejectModal.id, rejectModal.customer_id, user!.id, rejectReason);
     },
     onSuccess: () => {
+      setMutationError(null);
       queryClient.invalidateQueries({ queryKey: ['kyc-pending'] });
       queryClient.invalidateQueries({ queryKey: ['kyc-review-history'] });
       queryClient.invalidateQueries({ queryKey: ['kyc-sla-stats'] });
+      setRejectModal(null);
+      setRejectReason('');
+    },
+    onError: (error: Error) => {
+      setMutationError(`Reject failed: ${error.message}`);
       setRejectModal(null);
       setRejectReason('');
     },
@@ -164,6 +176,17 @@ export default function KYCReviewPage() {
           </div>
         )}
       </div>
+
+      {/* Error Banner */}
+      {mutationError && (
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+          <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+          <span>{mutationError}</span>
+          <button onClick={() => setMutationError(null)} className="ml-auto text-red-600 hover:text-red-800">
+            <XCircle className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
       {/* SLA Stats */}
       {slaStats && slaStats.total > 0 && (
@@ -240,6 +263,10 @@ export default function KYCReviewPage() {
             <div className="space-y-4">
               {(data?.data ?? []).map((submission) => {
                 const sla = getSLAStatus(submission.created_at);
+                const extractedName = submission.extracted_first_name
+                  ? `${submission.extracted_first_name} ${submission.extracted_last_name || ''}`.trim()
+                  : null;
+                const displayName = extractedName || submission.customer?.full_name || 'Unknown';
                 return (
                   <Card key={submission.id}>
                     <CardContent className="p-6">
@@ -257,7 +284,7 @@ export default function KYCReviewPage() {
                                     href={`/customers/${submission.customer.id}`}
                                     className="text-base font-semibold text-gray-900 hover:text-brand-600"
                                   >
-                                    {submission.customer.full_name}
+                                    {displayName}
                                   </Link>
                                 ) : (
                                   <span className="text-base font-semibold text-orange-600">
@@ -277,11 +304,11 @@ export default function KYCReviewPage() {
                           </div>
 
                           <div className="grid gap-2 sm:grid-cols-2">
-                            {submission.extracted_first_name && (
+                            {extractedName && submission.customer?.full_name && extractedName !== submission.customer.full_name && (
                               <div className="text-sm">
-                                <span className="text-gray-500">ID Name: </span>
-                                <span className="font-medium">
-                                  {submission.extracted_first_name} {submission.extracted_last_name}
+                                <span className="text-gray-500">Registered as: </span>
+                                <span className="font-medium text-gray-600">
+                                  {submission.customer.full_name}
                                 </span>
                               </div>
                             )}
@@ -421,7 +448,11 @@ export default function KYCReviewPage() {
           <div className="space-y-6">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <User className="h-4 w-4" />
-              <span className="font-medium">{docViewerSubmission.customer?.full_name || 'Unknown Customer'}</span>
+              <span className="font-medium">
+                {docViewerSubmission.extracted_first_name
+                  ? `${docViewerSubmission.extracted_first_name} ${docViewerSubmission.extracted_last_name || ''}`.trim()
+                  : docViewerSubmission.customer?.full_name || 'Unknown Customer'}
+              </span>
               <span className="text-gray-400">|</span>
               <span>{docViewerSubmission.customer?.phone_number || 'N/A'}</span>
             </div>
@@ -508,7 +539,11 @@ export default function KYCReviewPage() {
       >
         <div className="space-y-4">
           <p className="text-sm text-gray-600">
-            Reject KYC for <strong>{rejectModal?.customer?.full_name || 'Unknown Customer'}</strong>?
+            Reject KYC for <strong>{
+              rejectModal?.extracted_first_name
+                ? `${rejectModal.extracted_first_name} ${rejectModal.extracted_last_name || ''}`.trim()
+                : rejectModal?.customer?.full_name || 'Unknown Customer'
+            }</strong>?
             The customer will be notified and can resubmit.
           </p>
           <div>

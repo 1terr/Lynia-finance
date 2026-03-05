@@ -49,7 +49,7 @@ export default function CustomersPage() {
       sortable: true,
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.full_name}</p>
+          <p className="font-medium text-gray-900">{row.full_name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Unnamed'}</p>
           <p className="text-xs text-gray-500">{row.phone_number}</p>
         </div>
       ),

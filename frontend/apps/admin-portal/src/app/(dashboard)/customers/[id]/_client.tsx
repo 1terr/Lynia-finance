@@ -165,6 +165,10 @@ export default function CustomerDetailPage() {
     );
   }
 
+  const customerName = customer.full_name
+    || `${customer.first_name || ''} ${customer.last_name || ''}`.trim()
+    || 'Unnamed Customer';
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -174,7 +178,7 @@ export default function CustomerDetailPage() {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{customer.full_name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{customerName}</h1>
             <Badge variant="status" status={customer.status}>{customer.status}</Badge>
             <Badge variant="status" status={customer.kyc_status}>KYC: {customer.kyc_status}</Badge>
           </div>
@@ -362,7 +366,7 @@ export default function CustomerDetailPage() {
             <CardContent className="p-4">
               <dl className="grid gap-4 sm:grid-cols-2">
                 {[
-                  ['Full Name', customer.full_name],
+                  ['Full Name', customerName],
                   ['Phone', customer.phone_number],
                   ['Email', customer.email || 'N/A'],
                   ['Date of Birth', customer.date_of_birth ? formatDate(customer.date_of_birth) : 'N/A'],

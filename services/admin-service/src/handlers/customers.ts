@@ -36,7 +36,7 @@ export const handleGetCustomers: RouteHandler = async (event, _params, auth) => 
   if (qs.search) {
     const term = `%${qs.search}%`;
     conditions.push(
-      `(c.full_name ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR c.email ILIKE $${paramIdx})`
+      `(CONCAT(c.first_name, ' ', c.last_name) ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR c.email ILIKE $${paramIdx})`
     );
     paramIdx++;
     values.push(term);
@@ -57,7 +57,7 @@ export const handleGetCustomers: RouteHandler = async (event, _params, auth) => 
       c.id,
       c.phone_number,
       c.email,
-      c.full_name,
+      CONCAT(c.first_name, ' ', c.last_name) AS full_name,
       c.first_name,
       c.last_name,
       c.whatsapp_number,
@@ -116,6 +116,7 @@ export const handleGetCustomerById: RouteHandler = async (event, params, auth) =
   const result = await queryOne(
     `SELECT
       c.*,
+      CONCAT(c.first_name, ' ', c.last_name) AS full_name,
       cs.scaled_score AS credit_score
     FROM customers c
     LEFT JOIN LATERAL (
