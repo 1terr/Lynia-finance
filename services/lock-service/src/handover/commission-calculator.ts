@@ -53,12 +53,12 @@ export async function calculateDistributorCommission(
     .single()
     .execute();
 
-  const commissionRate = (distributor?.commission_rate ?? 5) / 100;
-  const commissionAmount = loan.principal * commissionRate;
+  const percentageRate = distributor?.commission_rate ?? 5;
+  const commissionAmount = Math.round(loan.principal * percentageRate) / 100;
 
   return {
     amount: commissionAmount,
-    percentage: commissionRate * 100,
+    percentage: percentageRate,
     loan_amount: loan.principal,
     device_price: device.retail_price,
     device_model: device.model
