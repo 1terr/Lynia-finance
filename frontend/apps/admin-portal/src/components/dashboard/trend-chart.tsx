@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@lynia/utils';
+import { BarChart3 } from 'lucide-react';
 import type { DailyTrend } from '@/types';
 
 interface TrendChartProps {
@@ -35,8 +36,14 @@ export function TrendChart({ data, title = 'Disbursements & Collections' }: Tren
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (
-          <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
-            No trend data available
+          <div className="flex h-[300px] flex-col items-center justify-center gap-3 text-center">
+            <BarChart3 className="h-10 w-10 text-gray-300" />
+            <div>
+              <p className="text-sm font-medium text-gray-500">No data available</p>
+              <p className="mt-1 text-xs text-gray-400">
+                Trend data will appear here once disbursements or collections are recorded.
+              </p>
+            </div>
           </div>
         ) : (
           <div className="h-[300px]">

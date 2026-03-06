@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchAPI } from '@lynia/api-client';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
 import type {
   KYCSubmission,
   KYCReviewFilters,
@@ -77,50 +78,32 @@ export function useKYCSubmissionDetail(submissionId: string) {
   };
 }
 
-export function useKYCActions() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const approveKYC = useCallback(
-    async (submissionId: string, notes?: string) => {
-      setIsSubmitting(true);
-      try {
-        await fetchAPI(`/api/v1/kyc/submissions/${submissionId}/approve`, {
-          method: 'POST',
-          body: JSON.stringify({ notes }),
-        });
-        return { success: true };
-      } catch (err) {
-        return {
-          success: false,
-          error: err instanceof Error ? err.message : 'Failed to approve KYC',
-        };
-      } finally {
-        setIsSubmitting(false);
-      }
+export function useKYCActions(onActionComplete?: () => void) {
+  const approveMutation = useMutationWithToast<void, { submissionId: string; notes?: string }>({
+    mutationFn: async ({ submissionId, notes }) => {
+      await fetchAPI(`/api/v1/kyc/submissions/${submissionId}/approve`, {
+        method: 'POST',
+        body: JSON.stringify({ notes }),
+      });
     },
-    []
-  );
+    successMessage: 'KYC submission approved successfully',
+    errorMessage: 'Failed to approve KYC submission',
+    invalidateKeys: [['kyc-review-queue'], ['kyc-pending'], ['kyc-review-history'], ['kyc-sla-stats']],
+    onSuccess: () => onActionComplete?.(),
+  });
 
-  const rejectKYC = useCallback(
-    async (submissionId: string, reason: string) => {
-      setIsSubmitting(true);
-      try {
-        await fetchAPI(`/api/v1/kyc/submissions/${submissionId}/reject`, {
-          method: 'POST',
-          body: JSON.stringify({ reason }),
-        });
-        return { success: true };
-      } catch (err) {
-        return {
-          success: false,
-          error: err instanceof Error ? err.message : 'Failed to reject KYC',
-        };
-      } finally {
-        setIsSubmitting(false);
-      }
+  const rejectMutation = useMutationWithToast<void, { submissionId: string; reason: string }>({
+    mutationFn: async ({ submissionId, reason }) => {
+      await fetchAPI(`/api/v1/kyc/submissions/${submissionId}/reject`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
     },
-    []
-  );
+    successMessage: 'KYC submission rejected',
+    errorMessage: 'Failed to reject KYC submission',
+    invalidateKeys: [['kyc-review-queue'], ['kyc-pending'], ['kyc-review-history'], ['kyc-sla-stats']],
+    onSuccess: () => onActionComplete?.(),
+  });
 
-  return { approveKYC, rejectKYC, isSubmitting };
+  return { approveMutation, rejectMutation };
 }

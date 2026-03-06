@@ -179,8 +179,8 @@ export async function getDistributorCommissions(id: string, filters: Distributor
 
 // ─── Commission Payments ───
 
-export async function bulkPayCommissions(distributorId: string, commissionIds: string[]): Promise<void> {
-  return fetchAPI<void>(`/admin/distributors/${distributorId}/commissions/pay`, {
+export async function bulkPayCommissions(distributorId: string, commissionIds: string[]): Promise<{ paid: number; total: number }> {
+  return fetchAPI<{ paid: number; total: number }>(`/admin/distributors/${distributorId}/commissions/pay`, {
     method: 'POST',
     body: JSON.stringify({ commission_ids: commissionIds }),
   });

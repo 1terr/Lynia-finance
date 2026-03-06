@@ -702,11 +702,17 @@ function ConfigCard({
 
 function AuditLogTab() {
   const [filters, setFilters] = useState<AuditLogFilters>({ page: 1, limit: 25 });
+  const [searchInput, setSearchInput] = useState('');
 
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs', filters],
     queryFn: () => getAuditLogs(filters),
   });
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFilters((f) => ({ ...f, search: searchInput || undefined, page: 1 }));
+  };
 
   const columns: Column<AuditLog>[] = [
     {
@@ -758,6 +764,31 @@ function AuditLogTab() {
 
   return (
     <div className="space-y-4">
+      {/* Search */}
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search by email, entity ID, or description..."
+          className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+        />
+        <Button type="submit" variant="secondary" size="sm">Search</Button>
+        {filters.search && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setSearchInput('');
+              setFilters((f) => ({ ...f, search: undefined, page: 1 }));
+            }}
+          >
+            Clear
+          </Button>
+        )}
+      </form>
+
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <Select

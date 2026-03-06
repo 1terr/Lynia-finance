@@ -5,7 +5,7 @@
  * proxy requests to the Fineract core banking engine.
  */
 
-import { getSession } from '@lynia/auth';
+import { getValidSession } from '@lynia/auth';
 import { MAX_PAGE_SIZE } from '@lynia/utils';
 
 /**
@@ -17,7 +17,7 @@ const FINERACT_API_BASE = process.env.NEXT_PUBLIC_FINERACT_API_URL || process.en
 
 /** Authenticated fetch against the Fineract proxy API */
 async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const session = await getSession();
+  const session = await getValidSession();
   if (!session) throw new Error('Authentication required. Please sign in.');
   const token = session.getIdToken().getJwtToken();
 
@@ -32,7 +32,19 @@ async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise
 
   if (res.status === 401) throw new Error('Session expired. Redirecting to login.');
   if (res.status === 403) throw new Error('You do not have permission to perform this action.');
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
+
+  if (!res.ok) {
+    // Parse Fineract error response for detailed message
+    try {
+      const body = await res.json();
+      const message = body?.defaultUserMessage || body?.error || body?.message;
+      if (message) throw new Error(message);
+    } catch (e) {
+      if (e instanceof Error && e.message !== `API error: ${res.status}`) throw e;
+    }
+    throw new Error(`Fineract request failed (${res.status})`);
+  }
+
   return res.json();
 }
 import type {
@@ -142,6 +154,20 @@ export async function disburseFineractLoan(
   );
 }
 
+/** Reject a loan in Fineract */
+export async function rejectFineractLoan(
+  lyniaLoanId: string,
+  request: { rejectedOnDate: string; note: string }
+): Promise<FineractActionResponse> {
+  return fetchFineractAPI<FineractActionResponse>(
+    `/api/v1/fineract/loans/${lyniaLoanId}/reject`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  );
+}
+
 /** Record a repayment in Fineract */
 export async function recordFineractRepayment(
   lyniaLoanId: string,
@@ -153,6 +179,26 @@ export async function recordFineractRepayment(
       method: 'POST',
       body: JSON.stringify(request),
     }
+  );
+}
+
+/** Write off a loan in Fineract */
+export async function writeOffFineractLoan(
+  lyniaLoanId: string
+): Promise<FineractActionResponse> {
+  return fetchFineractAPI<FineractActionResponse>(
+    `/api/v1/fineract/loans/${lyniaLoanId}/writeoff`,
+    { method: 'POST' }
+  );
+}
+
+/** Close a loan in Fineract */
+export async function closeFineractLoan(
+  lyniaLoanId: string
+): Promise<FineractActionResponse> {
+  return fetchFineractAPI<FineractActionResponse>(
+    `/api/v1/fineract/loans/${lyniaLoanId}/close`,
+    { method: 'POST' }
   );
 }
 

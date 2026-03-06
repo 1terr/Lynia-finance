@@ -66,29 +66,24 @@ function buildAdminUserFromSession(session: CognitoUserSession): AdminUser | nul
   };
 }
 
-// ── Demo mode helpers ──
-
-const DEMO_ADMIN: AdminUser = {
-  id: 'demo-admin-001',
-  email: 'admin@lynia.co.zw',
-  first_name: 'Demo',
-  last_name: 'Admin',
-  full_name: 'Demo Admin',
-  role: 'super_admin',
-  is_active: true,
-  department: 'Operations',
-  last_login_at: null,
-  login_count: 1,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
-const DEMO_CREDENTIALS: Record<string, AdminUser> = {
-  'admin@lynia.co.zw': DEMO_ADMIN,
-  'demo@lynia.co.zw': DEMO_ADMIN,
-};
-
-const DEMO_SESSION_KEY = 'lynia-demo-admin';
+/** Map Cognito error codes to user-friendly messages. */
+function getCognitoErrorMessage(err: Error & { code?: string }): string {
+  switch (err.code) {
+    case 'NotAuthorizedException':
+    case 'UserNotFoundException':
+      return 'Invalid email or password';
+    case 'UserNotConfirmedException':
+      return 'Your account is not confirmed. Contact your administrator.';
+    case 'TooManyRequestsException':
+      return 'Too many login attempts. Please wait before trying again.';
+    case 'PasswordResetRequiredException':
+      return 'You must reset your password before signing in.';
+    case 'InvalidParameterException':
+      return 'Invalid input. Please check your credentials.';
+    default:
+      return 'Invalid email or password';
+  }
+}
 
 // Stores the CognitoUser instance while a challenge is in progress
 let pendingCognitoUser: InstanceType<typeof CognitoUser> | null = null;
@@ -115,20 +110,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   signIn: async (email: string, password: string) => {
-    // ── Demo mode: accept known demo credentials ──
     if (!isCognitoConfigured()) {
-      const demoUser = DEMO_CREDENTIALS[email.toLowerCase()];
-      if (demoUser && password.length >= 4) {
-        const user = { ...demoUser, email };
-        document.cookie = 'lynia-auth-active=1; path=/; SameSite=Lax';
-        try { sessionStorage.setItem(DEMO_SESSION_KEY, JSON.stringify(user)); } catch { /* private browsing */ }
-        set({ user });
-        return {};
-      }
-      return { error: 'Invalid email or password' };
+      return { error: 'Cognito is not configured. Contact your administrator.' };
     }
 
-    // ── Cognito authentication ──
     const cognitoUser = new CognitoUser({
       Username: email,
       Pool: userPool!,
@@ -146,16 +131,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           const adminUser = buildAdminUserFromSession(session);
           if (!adminUser) {
             cognitoSignOut();
-            resolve({ error: 'Invalid email or password' });
+            resolve({ error: 'Your account does not have an admin role assigned. Contact your administrator.' });
             return;
           }
           document.cookie = 'lynia-auth-active=1; path=/; SameSite=Lax';
           set({ user: adminUser, challenge: null });
           resolve({});
         },
-        onFailure: () => {
+        onFailure: (err: Error & { code?: string }) => {
           pendingCognitoUser = null;
-          resolve({ error: 'Invalid email or password' });
+          resolve({ error: getCognitoErrorMessage(err) });
         },
         newPasswordRequired: (userAttributes: Record<string, string>) => {
           pendingCognitoUser = cognitoUser;
@@ -238,7 +223,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   forgotPassword: async (email: string) => {
     if (!isCognitoConfigured()) {
-      return { error: 'Password reset is not available in demo mode' };
+      return { error: 'Cognito is not configured. Contact your administrator.' };
     }
     try {
       await cognitoForgotPassword(email);
@@ -251,7 +236,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   confirmForgotPassword: async (email: string, code: string, newPassword: string) => {
     if (!isCognitoConfigured()) {
-      return { error: 'Password reset is not available in demo mode' };
+      return { error: 'Cognito is not configured. Contact your administrator.' };
     }
     try {
       await cognitoConfirmForgotPassword(email, code, newPassword);
@@ -264,7 +249,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   changePassword: async (oldPassword: string, newPassword: string) => {
     if (!isCognitoConfigured()) {
-      return { error: 'Password change is not available in demo mode' };
+      return { error: 'Cognito is not configured. Contact your administrator.' };
     }
     try {
       await cognitoChangePassword(oldPassword, newPassword);
@@ -278,20 +263,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOutUser: () => {
     cognitoSignOut();
     document.cookie = 'lynia-auth-active=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    try { sessionStorage.removeItem(DEMO_SESSION_KEY); } catch { /* private browsing */ }
     set({ user: null });
   },
 
   initialize: async () => {
-    // Demo mode: restore session from sessionStorage
     if (!isCognitoConfigured()) {
-      try {
-        const stored = sessionStorage.getItem(DEMO_SESSION_KEY);
-        if (stored) {
-          set({ user: JSON.parse(stored), isLoading: false });
-          return;
-        }
-      } catch { /* private browsing or corrupt data */ }
       set({ isLoading: false });
       return;
     }

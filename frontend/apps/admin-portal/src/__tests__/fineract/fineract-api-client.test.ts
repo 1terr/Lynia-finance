@@ -18,13 +18,23 @@ import {
   getOverdueLoans,
   getAgingSummary,
 } from '@/lib/api/fineract';
-import { fetchAPI } from '@lynia/api-client';
 
-jest.mock('@/lib/api/client', () => ({
-  fetchAPI: jest.fn(),
+jest.mock('@lynia/auth', () => ({
+  getValidSession: jest.fn(() => ({
+    getIdToken: () => ({ getJwtToken: () => 'mock-token' }),
+  })),
 }));
 
-const mockedFetch = fetchAPI as jest.MockedFunction<typeof fetchAPI>;
+const mockFetch = jest.fn();
+global.fetch = mockFetch;
+
+function mockFetchResponse(data: unknown) {
+  mockFetch.mockResolvedValue({
+    ok: true,
+    status: 200,
+    json: () => Promise.resolve(data),
+  });
+}
 
 describe('Fineract API Client', () => {
   beforeEach(() => {
@@ -33,65 +43,72 @@ describe('Fineract API Client', () => {
 
   describe('getFineractLoans', () => {
     it('calls correct endpoint with default params', async () => {
-      mockedFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
+      mockFetchResponse({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
 
       await getFineractLoans();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/v1/fineract/loans?')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loans?'),
+        expect.any(Object)
       );
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('page=1')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('page=1'),
+        expect.any(Object)
       );
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('limit=25')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('limit=25'),
+        expect.any(Object)
       );
     });
 
     it('includes status filter when provided', async () => {
-      mockedFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
+      mockFetchResponse({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
 
       await getFineractLoans({ status: 'loanStatusType.active' });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('status=loanStatusType.active')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('status=loanStatusType.active'),
+        expect.any(Object)
       );
     });
 
     it('includes search filter when provided', async () => {
-      mockedFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
+      mockFetchResponse({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
 
       await getFineractLoans({ search: 'Tendai' });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('search=Tendai')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('search=Tendai'),
+        expect.any(Object)
       );
     });
 
     it('caps limit at MAX_PAGE_SIZE', async () => {
-      mockedFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 100, total_pages: 0 });
+      mockFetchResponse({ data: [], total: 0, page: 1, limit: 100, total_pages: 0 });
 
       await getFineractLoans({ limit: 500 });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('limit=100')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('limit=100'),
+        expect.any(Object)
       );
     });
   });
 
   describe('getFineractLoanDetail', () => {
     it('calls correct endpoint with loan ID', async () => {
-      mockedFetch.mockResolvedValue({});
+      mockFetchResponse({});
 
       await getFineractLoanDetail('loan-001');
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/loans/loan-001'
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loans/loan-001'),
+        expect.any(Object)
       );
     });
 
     it('returns null on error', async () => {
-      mockedFetch.mockRejectedValue(new Error('Not found'));
+      mockFetch.mockRejectedValue(new Error('Not found'));
 
       const result = await getFineractLoanDetail('nonexistent');
 
@@ -101,15 +118,15 @@ describe('Fineract API Client', () => {
 
   describe('approveFineractLoan', () => {
     it('calls POST with approval data', async () => {
-      mockedFetch.mockResolvedValue({ success: true, resourceId: 1 });
+      mockFetchResponse({ success: true, resourceId: 1 });
 
       await approveFineractLoan('loan-001', {
         approvedOnDate: '2026-02-14',
         note: 'Approved by admin',
       });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/loans/loan-001/approve',
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loans/loan-001/approve'),
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('2026-02-14'),
@@ -120,14 +137,14 @@ describe('Fineract API Client', () => {
 
   describe('disburseFineractLoan', () => {
     it('calls POST with disbursement data', async () => {
-      mockedFetch.mockResolvedValue({ success: true, resourceId: 1 });
+      mockFetchResponse({ success: true, resourceId: 1 });
 
       await disburseFineractLoan('loan-001', {
         actualDisbursementDate: '2026-02-14',
       });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/loans/loan-001/disburse',
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loans/loan-001/disburse'),
         expect.objectContaining({
           method: 'POST',
         })
@@ -137,7 +154,7 @@ describe('Fineract API Client', () => {
 
   describe('recordFineractRepayment', () => {
     it('calls POST with repayment data', async () => {
-      mockedFetch.mockResolvedValue({ success: true, resourceId: 503 });
+      mockFetchResponse({ success: true, resourceId: 503 });
 
       await recordFineractRepayment('loan-001', {
         transactionDate: '2026-02-14',
@@ -145,8 +162,8 @@ describe('Fineract API Client', () => {
         note: 'Monthly payment',
       });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/loans/loan-001/repayment',
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loans/loan-001/repayment'),
         expect.objectContaining({
           method: 'POST',
           body: expect.stringContaining('23.34'),
@@ -157,88 +174,95 @@ describe('Fineract API Client', () => {
 
   describe('getFineractLoanProducts', () => {
     it('calls correct endpoint', async () => {
-      mockedFetch.mockResolvedValue([]);
+      mockFetchResponse([]);
 
       await getFineractLoanProducts();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/loan-products'
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loan-products'),
+        expect.any(Object)
       );
     });
   });
 
   describe('getGLAccounts', () => {
     it('calls correct endpoint', async () => {
-      mockedFetch.mockResolvedValue([]);
+      mockFetchResponse([]);
 
       await getGLAccounts();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/gl-accounts'
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/gl-accounts'),
+        expect.any(Object)
       );
     });
   });
 
   describe('getJournalEntries', () => {
     it('includes date filters', async () => {
-      mockedFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 50, total_pages: 0 });
+      mockFetchResponse({ data: [], total: 0, page: 1, limit: 50, total_pages: 0 });
 
       await getJournalEntries({
         fromDate: '2026-01-01',
         toDate: '2026-02-14',
       });
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('fromDate=2026-01-01')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('fromDate=2026-01-01'),
+        expect.any(Object)
       );
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('toDate=2026-02-14')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('toDate=2026-02-14'),
+        expect.any(Object)
       );
     });
   });
 
   describe('getTrialBalance', () => {
     it('calls correct endpoint without dates', async () => {
-      mockedFetch.mockResolvedValue([]);
+      mockFetchResponse([]);
 
       await getTrialBalance();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/trial-balance'
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/trial-balance'),
+        expect.any(Object)
       );
     });
 
     it('includes dates when provided', async () => {
-      mockedFetch.mockResolvedValue([]);
+      mockFetchResponse([]);
 
       await getTrialBalance('2026-01-01', '2026-02-14');
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('fromDate=2026-01-01')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('fromDate=2026-01-01'),
+        expect.any(Object)
       );
     });
   });
 
   describe('getReconciliationResults', () => {
     it('calls correct endpoint', async () => {
-      mockedFetch.mockResolvedValue({});
+      mockFetchResponse({});
 
       await getReconciliationResults();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/reconciliation'
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/reconciliation'),
+        expect.any(Object)
       );
     });
   });
 
   describe('triggerReconciliation', () => {
     it('calls POST to trigger reconciliation', async () => {
-      mockedFetch.mockResolvedValue({});
+      mockFetchResponse({});
 
       await triggerReconciliation();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/reconciliation/run',
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/reconciliation/run'),
         expect.objectContaining({ method: 'POST' })
       );
     });
@@ -246,27 +270,30 @@ describe('Fineract API Client', () => {
 
   describe('getOverdueLoans', () => {
     it('calls correct endpoint with pagination', async () => {
-      mockedFetch.mockResolvedValue({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
+      mockFetchResponse({ data: [], total: 0, page: 1, limit: 25, total_pages: 0 });
 
       await getOverdueLoans(2, 10);
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('page=2')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('page=2'),
+        expect.any(Object)
       );
-      expect(mockedFetch).toHaveBeenCalledWith(
-        expect.stringContaining('limit=10')
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('limit=10'),
+        expect.any(Object)
       );
     });
   });
 
   describe('getAgingSummary', () => {
     it('calls correct endpoint', async () => {
-      mockedFetch.mockResolvedValue({});
+      mockFetchResponse({});
 
       await getAgingSummary();
 
-      expect(mockedFetch).toHaveBeenCalledWith(
-        '/api/v1/fineract/loans/aging-summary'
+      expect(mockFetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/v1/fineract/loans/aging-summary'),
+        expect.any(Object)
       );
     });
   });

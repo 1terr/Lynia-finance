@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useAuthStore } from '@/lib/store/auth-store';
-import { isCognitoConfigured } from '@lynia/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -27,7 +26,6 @@ export default function LoginPage() {
   const completeMfaChallenge = useAuthStore((s) => s.completeMfaChallenge);
   const forgotPassword = useAuthStore((s) => s.forgotPassword);
   const confirmForgotPassword = useAuthStore((s) => s.confirmForgotPassword);
-  const isDemoMode = typeof window !== 'undefined' && !isCognitoConfigured();
 
   async function handleSignIn(e: React.FormEvent) {
     e.preventDefault();
@@ -231,25 +229,15 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
 
-            {!isDemoMode && (
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={goToForgotPassword}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Forgot password?
-                </button>
-              </div>
-            )}
-
-            {isDemoMode && (
-              <div className="rounded-md bg-blue-50 dark:bg-blue-900/20 p-3 text-xs text-blue-700 dark:text-blue-300">
-                <p className="font-medium mb-1">Demo credentials</p>
-                <p>Email: admin@lynia.co.zw</p>
-                <p>Password: any 4+ characters</p>
-              </div>
-            )}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={goToForgotPassword}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Forgot password?
+              </button>
+            </div>
           </form>
         )}
 

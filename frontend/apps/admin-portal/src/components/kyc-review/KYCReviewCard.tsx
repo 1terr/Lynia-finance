@@ -15,12 +15,21 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { DocumentViewer } from './DocumentViewer';
 import { SLAIndicator } from './SLAIndicator';
 import { ReviewHistory } from './ReviewHistory';
 import { cn, formatDateTime, getConfidenceLevel, maskPhone, maskId } from '@lynia/utils';
 import { useKYCActions } from '@/lib/hooks/useKYCReview';
 import type { KYCSubmission } from '@/types';
+
+/** Common rejection reason templates for quick selection */
+const REJECTION_TEMPLATES = [
+  'Document illegible',
+  'Face mismatch with ID photo',
+  'ID document expired',
+  'Suspected fraud',
+] as const;
 
 interface KYCReviewCardProps {
   submission: KYCSubmission;
@@ -37,10 +46,15 @@ export function KYCReviewCard({
   const [rejectionReason, setRejectionReason] = useState('');
   const [approvalNotes, setApprovalNotes] = useState('');
   const [showRejectForm, setShowRejectForm] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const { approveKYC, rejectKYC, isSubmitting } = useKYCActions();
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
+  const { approveMutation, rejectMutation } = useKYCActions(onActionComplete);
+
+  const isSubmitting = approveMutation.isPending || rejectMutation.isPending;
 
   const customer = submission.customers;
+  const customerName = customer
+    ? `${customer.first_name ?? ''} ${customer.last_name ?? ''}`.trim()
+    : 'Unknown';
   const confidence = getConfidenceLevel(submission.verification_confidence ?? submission.confidence_score);
   const providerResult = submission.provider_response;
   const providerName = submission.kyc_provider || 'didit';
@@ -50,26 +64,21 @@ export function KYCReviewCard({
     new Date(submission.submitted_at ?? submission.created_at).getTime() + 24 * 60 * 60 * 1000
   ).toISOString();
 
-  const handleApprove = useCallback(async () => {
-    setActionError(null);
-    const result = await approveKYC(submission.id, approvalNotes || undefined);
-    if (result.success) {
-      onActionComplete();
-    } else {
-      setActionError(result.error || 'Failed to approve');
-    }
-  }, [submission.id, approvalNotes, approveKYC, onActionComplete]);
+  const handleApprove = useCallback(() => {
+    approveMutation.mutate({
+      submissionId: submission.id,
+      notes: approvalNotes || undefined,
+    });
+    setShowApproveConfirm(false);
+  }, [submission.id, approvalNotes, approveMutation]);
 
-  const handleReject = useCallback(async () => {
+  const handleReject = useCallback(() => {
     if (!rejectionReason.trim()) return;
-    setActionError(null);
-    const result = await rejectKYC(submission.id, rejectionReason);
-    if (result.success) {
-      onActionComplete();
-    } else {
-      setActionError(result.error || 'Failed to reject');
-    }
-  }, [submission.id, rejectionReason, rejectKYC, onActionComplete]);
+    rejectMutation.mutate({
+      submissionId: submission.id,
+      reason: rejectionReason,
+    });
+  }, [submission.id, rejectionReason, rejectMutation]);
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -253,12 +262,6 @@ export function KYCReviewCard({
                   Review Decision
                 </h4>
 
-                {actionError && (
-                  <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {actionError}
-                  </div>
-                )}
-
                 {!showRejectForm ? (
                   <>
                     {/* Approval Notes */}
@@ -280,8 +283,9 @@ export function KYCReviewCard({
                       <Button
                         variant="success"
                         className="flex-1"
-                        onClick={handleApprove}
-                        isLoading={isSubmitting}
+                        onClick={() => setShowApproveConfirm(true)}
+                        disabled={isSubmitting}
+                        isLoading={approveMutation.isPending}
                       >
                         <ShieldCheck className="h-4 w-4 mr-1.5" />
                         Approve
@@ -296,6 +300,19 @@ export function KYCReviewCard({
                         Reject
                       </Button>
                     </div>
+
+                    {/* Approve Confirmation Dialog */}
+                    <ConfirmationDialog
+                      open={showApproveConfirm}
+                      onClose={() => setShowApproveConfirm(false)}
+                      onConfirm={handleApprove}
+                      title="Approve KYC Submission"
+                      description={`Approve KYC for ${customerName}? This will verify their identity and update their KYC status. This action cannot be undone.`}
+                      confirmLabel="Approve"
+                      cancelLabel="Cancel"
+                      variant="warning"
+                      isLoading={approveMutation.isPending}
+                    />
                   </>
                 ) : (
                   <>
@@ -315,6 +332,24 @@ export function KYCReviewCard({
                       />
                     </div>
 
+                    {/* Quick-select rejection reason templates */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {REJECTION_TEMPLATES.map((template) => (
+                        <button
+                          key={template}
+                          type="button"
+                          onClick={() => {
+                            setRejectionReason((prev) =>
+                              prev.trim() ? `${prev.trimEnd()}; ${template}` : template
+                            );
+                          }}
+                          className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                        >
+                          {template}
+                        </button>
+                      ))}
+                    </div>
+
                     <div className="flex gap-2">
                       <Button
                         variant="secondary"
@@ -331,8 +366,8 @@ export function KYCReviewCard({
                         variant="danger"
                         className="flex-1"
                         onClick={handleReject}
-                        isLoading={isSubmitting}
-                        disabled={!rejectionReason.trim()}
+                        isLoading={rejectMutation.isPending}
+                        disabled={!rejectionReason.trim() || isSubmitting}
                       >
                         Confirm Rejection
                       </Button>

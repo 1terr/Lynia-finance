@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   getCustomerById,
   getCustomerLoans,
@@ -9,9 +10,12 @@ import {
   getCustomerCreditScore,
   getCustomerKYC,
   updateCustomerStatus,
+  addCustomerNote,
 } from '@/lib/api/customers';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { hasPermission } from '@/lib/permissions';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,7 +40,7 @@ export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const [showBlockDialog, setShowBlockDialog] = useState(false);
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', id],
@@ -68,14 +72,29 @@ export default function CustomerDetailPage() {
     enabled: !!id,
   });
 
-  const blockMutation = useMutation({
+  const blockMutation = useMutationWithToast({
     mutationFn: () => updateCustomerStatus(id, 'blocked', user!.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer', id] }),
+    successMessage: 'Customer has been blocked',
+    errorMessage: 'Failed to block customer',
+    invalidateKeys: [['customer', id], ['customers']],
+    onSuccess: () => setShowBlockDialog(false),
   });
 
-  const unblockMutation = useMutation({
+  const unblockMutation = useMutationWithToast({
     mutationFn: () => updateCustomerStatus(id, 'active', user!.id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['customer', id] }),
+    successMessage: 'Customer has been unblocked',
+    errorMessage: 'Failed to unblock customer',
+    invalidateKeys: [['customer', id], ['customers']],
+  });
+
+  const addNoteMutation = useMutationWithToast<
+    { id: string; customer_id: string; note_type: string; note_text: string; created_by: string; created_at: string },
+    { noteType: string; noteText: string }
+  >({
+    mutationFn: ({ noteType, noteText }) => addCustomerNote(id, noteType, noteText, user!.id),
+    successMessage: 'Note added successfully',
+    errorMessage: 'Failed to add note',
+    invalidateKeys: [['customer', id]],
   });
 
   const canWrite = user && hasPermission(user.role, 'customers:write');
@@ -200,7 +219,7 @@ export default function CustomerDetailPage() {
               <Button
                 variant="danger"
                 size="sm"
-                onClick={() => blockMutation.mutate()}
+                onClick={() => setShowBlockDialog(true)}
                 disabled={blockMutation.isPending}
               >
                 <Ban className="mr-1.5 h-4 w-4" />
@@ -209,6 +228,22 @@ export default function CustomerDetailPage() {
             )}
           </div>
         )}
+
+        <ConfirmationDialog
+          open={showBlockDialog}
+          onClose={() => setShowBlockDialog(false)}
+          onConfirm={() => blockMutation.mutate()}
+          title="Block Customer"
+          description={
+            <>
+              Are you sure you want to block <strong>{customerName}</strong>? This will prevent them from accessing loans, making payments, and using all Lynia services. This action can be reversed later.
+            </>
+          }
+          variant="destructive"
+          confirmLabel="Block Customer"
+          cancelLabel="Cancel"
+          isLoading={blockMutation.isPending}
+        />
       </div>
 
       {/* Info Cards */}

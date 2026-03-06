@@ -2,7 +2,9 @@
 
 import { cn } from '@lynia/utils';
 import { Card } from '@/components/ui/card';
-import { TrendingUp, TrendingDown, Minus, type LucideIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Minus, Database, CheckCircle2, type LucideIcon } from 'lucide-react';
+
+type DataSource = 'db_only' | 'fineract_verified';
 
 interface MetricCardProps {
   title: string;
@@ -13,6 +15,7 @@ interface MetricCardProps {
   icon: LucideIcon;
   iconColor?: string;
   iconBg?: string;
+  dataSource?: DataSource;
 }
 
 export function MetricCard({
@@ -24,6 +27,7 @@ export function MetricCard({
   icon: Icon,
   iconColor = 'text-brand-600',
   iconBg = 'bg-brand-50',
+  dataSource,
 }: MetricCardProps) {
   const TrendIcon =
     change === undefined || change === 0
@@ -47,6 +51,21 @@ export function MetricCard({
           <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
           {subtitle && (
             <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p>
+          )}
+          {dataSource && (
+            <div className="mt-1.5 flex items-center gap-1">
+              {dataSource === 'fineract_verified' ? (
+                <>
+                  <CheckCircle2 className="h-3 w-3 text-green-600" />
+                  <span className="text-xs text-green-700">Fineract verified</span>
+                </>
+              ) : (
+                <>
+                  <Database className="h-3 w-3 text-yellow-600" />
+                  <span className="text-xs text-yellow-700">DB only</span>
+                </>
+              )}
+            </div>
           )}
         </div>
         <div className={cn('flex-shrink-0 rounded-lg p-2.5', iconBg)}>

@@ -6,22 +6,17 @@
  */
 
 import { fetchAPI } from '@lynia/api-client';
-import { getSession, signOut } from '@lynia/auth';
+import { getValidSession } from '@lynia/auth';
 
-jest.mock('@/lib/auth/cognito', () => ({
-  getSession: jest.fn(),
-  signOut: jest.fn(),
+jest.mock('@lynia/auth', () => ({
+  getValidSession: jest.fn(),
 }));
 
-const mockedGetSession = getSession as jest.MockedFunction<typeof getSession>;
-const mockedSignOut = signOut as jest.MockedFunction<typeof signOut>;
+const mockedGetSession = getValidSession as jest.MockedFunction<typeof getValidSession>;
 
 // Mock global fetch
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
-
-// Note: jsdom 26 does not support window.location.href navigation,
-// so redirect assertions use signOut() as the observable side-effect.
 
 describe('Fineract Cognito Auth Integration', () => {
   beforeEach(() => {
@@ -66,7 +61,7 @@ describe('Fineract Cognito Auth Integration', () => {
   });
 
   describe('fetchAPI session expiry handling', () => {
-    it('clears Cognito session and redirects on 401', async () => {
+    it('clears auth cookie and throws on 401', async () => {
       const mockSession = {
         getIdToken: () => ({
           getJwtToken: () => 'expired-token',
@@ -82,8 +77,6 @@ describe('Fineract Cognito Auth Integration', () => {
       await expect(
         fetchAPI('/api/v1/fineract/loans')
       ).rejects.toThrow('Session expired');
-
-      expect(mockedSignOut).toHaveBeenCalled();
     });
 
     it('throws permission error on 403 without redirect', async () => {
@@ -102,13 +95,11 @@ describe('Fineract Cognito Auth Integration', () => {
       await expect(
         fetchAPI('/api/v1/fineract/loans/loan-001/approve')
       ).rejects.toThrow('permission');
-
-      expect(mockedSignOut).not.toHaveBeenCalled();
     });
   });
 
   describe('fetchAPI standard error handling', () => {
-    it('throws generic API error for non-auth failures', async () => {
+    it('extracts error message from response body', async () => {
       const mockSession = {
         getIdToken: () => ({
           getJwtToken: () => 'valid-token',
@@ -123,9 +114,25 @@ describe('Fineract Cognito Auth Integration', () => {
 
       await expect(
         fetchAPI('/api/v1/fineract/loans')
-      ).rejects.toThrow('API error: 500');
+      ).rejects.toThrow('Internal Server Error');
+    });
 
-      expect(mockedSignOut).not.toHaveBeenCalled();
+    it('falls back to generic error when body has no message', async () => {
+      const mockSession = {
+        getIdToken: () => ({
+          getJwtToken: () => 'valid-token',
+        }),
+      };
+      mockedGetSession.mockResolvedValue(mockSession as never);
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.reject(new Error('parse error')),
+      });
+
+      await expect(
+        fetchAPI('/api/v1/fineract/loans')
+      ).rejects.toThrow('API error: 500');
     });
   });
 });

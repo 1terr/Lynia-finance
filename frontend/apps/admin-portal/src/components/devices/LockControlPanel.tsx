@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { formatDateTime } from '@lynia/utils';
+import { useToast } from '@/hooks/use-toast';
 import type { DeviceAssignment, DeviceLockEvent } from '@/types/database';
 
 interface LockControlPanelProps {
@@ -22,8 +24,10 @@ export function LockControlPanel({
   onPermanentUnlock,
   isLoading,
 }: LockControlPanelProps) {
+  const { toast } = useToast();
   const [lockReason, setLockReason] = useState('');
   const [showLockForm, setShowLockForm] = useState(false);
+  const [showUnlockConfirm, setShowUnlockConfirm] = useState(false);
   const [showConfirmPermanent, setShowConfirmPermanent] = useState(false);
   const [permanentUnlockText, setPermanentUnlockText] = useState('');
 
@@ -32,7 +36,14 @@ export function LockControlPanel({
       onLock(lockReason.trim());
       setLockReason('');
       setShowLockForm(false);
+      toast({ title: 'Device locked successfully', variant: 'success' });
     }
+  };
+
+  const handleUnlock = () => {
+    onUnlock();
+    setShowUnlockConfirm(false);
+    toast({ title: 'Device unlocked successfully', variant: 'success' });
   };
 
   const lockStatusConfig: Record<string, { label: string; color: string }> = {
@@ -86,7 +97,7 @@ export function LockControlPanel({
           )}
           {assignment.lock_status === 'locked' && (
             <button
-              onClick={onUnlock}
+              onClick={() => setShowUnlockConfirm(true)}
               disabled={isLoading}
               className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:opacity-50"
             >
@@ -207,6 +218,18 @@ export function LockControlPanel({
           </div>
         </div>
       )}
+
+      {/* Unlock Confirmation Dialog */}
+      <ConfirmationDialog
+        open={showUnlockConfirm}
+        onClose={() => setShowUnlockConfirm(false)}
+        onConfirm={handleUnlock}
+        title="Unlock Device"
+        description="This device will be unlocked. The customer will regain full access."
+        confirmLabel="Unlock Device"
+        variant="warning"
+        isLoading={isLoading}
+      />
     </div>
   );
 }

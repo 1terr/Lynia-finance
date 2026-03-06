@@ -1,4 +1,4 @@
-import { getSession } from '@lynia/auth';
+import { getValidSession } from '@lynia/auth';
 
 const DEFAULT_TIMEOUT_MS = 15_000;
 
@@ -15,7 +15,7 @@ export async function fetchAPI<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
-  const session = await getSession();
+  const session = await getValidSession();
 
   if (!session) {
     handleSessionExpired();

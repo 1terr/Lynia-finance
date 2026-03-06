@@ -160,6 +160,17 @@ export async function getDeviceHandovers(filters: { status?: string; search?: st
   }>(`/api/v1/devices/handovers?${params.toString()}`);
 }
 
+export async function updateHandoverStatus(
+  id: string,
+  status: DeviceHandoverRow['status'],
+  notes?: string
+) {
+  return fetchAPI<{ message: string }>(`/api/v1/devices/handovers/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, notes }),
+  });
+}
+
 export async function getDeviceStats(): Promise<DeviceStats> {
   return fetchAPI<DeviceStats>('/api/v1/devices/stats');
 }

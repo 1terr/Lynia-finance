@@ -10,12 +10,15 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { formatCurrency, formatDate, formatDateTime } from '@lynia/utils';
 import { useToast } from '@/hooks/use-toast';
 import type { DeviceLock } from '@/types';
 import { ArrowLeft, Smartphone, Lock, Unlock, AlertTriangle, Pencil } from 'lucide-react';
 import Link from 'next/link';
+
+const DESTRUCTIVE_STATUSES = ['damaged', 'lost', 'written_off'] as const;
 
 export default function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +31,8 @@ export default function DeviceDetailPage() {
   const [unlockModal, setUnlockModal] = useState(false);
   const [editModal, setEditModal] = useState(false);
   const [reason, setReason] = useState('');
+  const [destructiveConfirm, setDestructiveConfirm] = useState(false);
+  const [pendingEditPayload, setPendingEditPayload] = useState<Record<string, unknown> | null>(null);
 
   const { data: device, isLoading } = useQuery({
     queryKey: ['device', id],
@@ -109,8 +114,7 @@ export default function DeviceDetailPage() {
     }
   }
 
-  function handleEditSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function buildEditPayload(): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
     if (editForm.status) payload.status = editForm.status;
     if (editForm.condition) payload.condition = editForm.condition;
@@ -119,7 +123,29 @@ export default function DeviceDetailPage() {
     if (editForm.location) payload.location = editForm.location;
     if (editForm.color) payload.color = editForm.color;
     if (editForm.storage_gb) payload.storage_gb = parseInt(editForm.storage_gb);
-    editMutation.mutate(payload);
+    return payload;
+  }
+
+  function handleEditSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const payload = buildEditPayload();
+    const isDestructive = DESTRUCTIVE_STATUSES.includes(editForm.status as typeof DESTRUCTIVE_STATUSES[number])
+      && editForm.status !== device?.status;
+
+    if (isDestructive) {
+      setPendingEditPayload(payload);
+      setDestructiveConfirm(true);
+    } else {
+      editMutation.mutate(payload);
+    }
+  }
+
+  function handleDestructiveConfirm() {
+    if (pendingEditPayload) {
+      editMutation.mutate(pendingEditPayload);
+    }
+    setDestructiveConfirm(false);
+    setPendingEditPayload(null);
   }
 
   const lockHistoryColumns: Column<DeviceLock>[] = [
@@ -559,6 +585,22 @@ export default function DeviceDetailPage() {
           </div>
         </form>
       </Modal>
+
+      {/* Destructive Status Change Confirmation */}
+      <ConfirmationDialog
+        open={destructiveConfirm}
+        onClose={() => { setDestructiveConfirm(false); setPendingEditPayload(null); }}
+        onConfirm={handleDestructiveConfirm}
+        title={`Mark Device as ${editForm.status.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())}`}
+        description={
+          `You are about to change this device's status to "${editForm.status.replace(/_/g, ' ')}". ` +
+          'This is a destructive action that may affect inventory records and cannot be easily reversed. ' +
+          'Are you sure you want to proceed?'
+        }
+        confirmLabel={`Mark as ${editForm.status.replace(/_/g, ' ')}`}
+        variant="destructive"
+        isLoading={editMutation.isPending}
+      />
     </div>
   );
 }

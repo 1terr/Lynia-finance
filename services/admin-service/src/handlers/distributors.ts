@@ -103,6 +103,13 @@ export const handleCreateDistributor: RouteHandler = async (event, _params, auth
     }
   }
 
+  if (body.email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(body.email)) {
+      return errorResponse('Invalid email format', 400, { code: 'VAL_FMT_001' }, event);
+    }
+  }
+
   // Check phone uniqueness
   const { data: existing } = await db.from('distributors')
     .select('id')
@@ -566,6 +573,15 @@ export const handleBulkPayCommissions: RouteHandler = async (event, params, auth
     );
   }
 
+  // Get total amount before updating
+  const { data: amountRows } = await query<{ total_amount: string }>(
+    `SELECT COALESCE(SUM(commission_amount_usd), 0) as total_amount
+     FROM distributor_commissions
+     WHERE distributor_id = $1 AND payment_status = 'pending' AND id IN (${placeholders})`,
+    [distributorId, ...commissionIds]
+  );
+  const totalAmount = parseFloat(amountRows[0]?.total_amount || '0');
+
   const now = new Date().toISOString();
   const { error } = await query(
     `UPDATE distributor_commissions
@@ -582,5 +598,5 @@ export const handleBulkPayCommissions: RouteHandler = async (event, params, auth
   await auditLog(auth, 'distributor.commissions.pay', 'distributor', distributorId,
     `Marked ${commissionIds.length} commissions as paid`, { commission_ids: commissionIds });
 
-  return successResponse({ message: `${commissionIds.length} commissions marked as paid` }, 200, event);
+  return successResponse({ paid: commissionIds.length, total: totalAmount }, 200, event);
 };

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
 import { formatDate, formatDateTime, formatCurrency, maskPhone } from '@lynia/utils';
 import {
   confirmPayment,
@@ -17,6 +18,8 @@ interface PaymentDetailProps {
   payment: PaymentWithCustomer;
 }
 
+type ActionType = 'confirm' | 'fail' | 'refund' | 'reconcile' | null;
+
 const statusMap: Record<string, { variant: 'green' | 'yellow' | 'red' | 'gray'; label: string }> = {
   confirmed: { variant: 'green', label: 'Confirmed' },
   pending: { variant: 'yellow', label: 'Pending' },
@@ -27,33 +30,40 @@ const statusMap: Record<string, { variant: 'green' | 'yellow' | 'red' | 'gray'; 
 export function PaymentDetail({ payment }: PaymentDetailProps) {
   const [actionNotes, setActionNotes] = useState('');
   const [showRefundForm, setShowRefundForm] = useState(false);
-  const queryClient = useQueryClient();
+  const [pendingAction, setPendingAction] = useState<ActionType>(null);
   const statusInfo = statusMap[payment.status] || statusMap.pending;
 
-  const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: ['payment', payment.id] });
+  const paymentQueryKey = ['payment', payment.id];
 
-  const confirmMutation = useMutation({
+  const confirmMutation = useMutationWithToast({
     mutationFn: () => confirmPayment(payment.id, actionNotes),
-    onSuccess: invalidate,
+    successMessage: 'Payment confirmed successfully',
+    invalidateKeys: [paymentQueryKey],
+    onSuccess: () => setPendingAction(null),
   });
 
-  const failMutation = useMutation({
+  const failMutation = useMutationWithToast({
     mutationFn: () => failPayment(payment.id, actionNotes),
-    onSuccess: invalidate,
+    successMessage: 'Payment marked as failed',
+    invalidateKeys: [paymentQueryKey],
+    onSuccess: () => setPendingAction(null),
   });
 
-  const refundMutation = useMutation({
+  const refundMutation = useMutationWithToast({
     mutationFn: () => refundPayment(payment.id, actionNotes),
+    successMessage: 'Payment refunded successfully',
+    invalidateKeys: [paymentQueryKey],
     onSuccess: () => {
-      invalidate();
+      setPendingAction(null);
       setShowRefundForm(false);
     },
   });
 
-  const reconcileMutation = useMutation({
+  const reconcileMutation = useMutationWithToast({
     mutationFn: () => reconcilePayment(payment.id),
-    onSuccess: invalidate,
+    successMessage: 'Payment reconciled successfully',
+    invalidateKeys: [paymentQueryKey],
+    onSuccess: () => setPendingAction(null),
   });
 
   const isProcessing =
@@ -61,6 +71,70 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
     failMutation.isPending ||
     refundMutation.isPending ||
     reconcileMutation.isPending;
+
+  const handleActionConfirm = () => {
+    switch (pendingAction) {
+      case 'confirm':
+        confirmMutation.mutate(undefined);
+        break;
+      case 'fail':
+        failMutation.mutate(undefined);
+        break;
+      case 'refund':
+        refundMutation.mutate(undefined);
+        break;
+      case 'reconcile':
+        reconcileMutation.mutate(undefined);
+        break;
+    }
+  };
+
+  const getDialogProps = (): {
+    title: string;
+    description: string;
+    variant: 'destructive' | 'warning' | 'info';
+    confirmLabel: string;
+  } => {
+    switch (pendingAction) {
+      case 'confirm':
+        return {
+          title: 'Confirm Payment',
+          description: `Confirm this ${formatCurrency(payment.amount_usd)} payment? This will mark it as verified and update the loan balance.`,
+          variant: 'warning',
+          confirmLabel: 'Confirm Payment',
+        };
+      case 'fail':
+        return {
+          title: 'Mark Payment as Failed',
+          description: `Mark this ${formatCurrency(payment.amount_usd)} payment as failed? This action should only be used when the payment could not be verified. Notes: "${actionNotes}"`,
+          variant: 'destructive',
+          confirmLabel: 'Mark as Failed',
+        };
+      case 'refund':
+        return {
+          title: 'Refund Payment',
+          description: `Refund ${formatCurrency(payment.amount_usd)} to the customer? This will reverse the payment and adjust the loan balance. Reason: "${actionNotes}"`,
+          variant: 'destructive',
+          confirmLabel: 'Confirm Refund',
+        };
+      case 'reconcile':
+        return {
+          title: 'Reconcile Payment',
+          description: `Mark this ${formatCurrency(payment.amount_usd)} payment as reconciled?`,
+          variant: 'info',
+          confirmLabel: 'Reconcile',
+        };
+      default:
+        return {
+          title: '',
+          description: '',
+          variant: 'info',
+          confirmLabel: 'Confirm',
+        };
+    }
+  };
+
+  const dialogProps = getDialogProps();
 
   return (
     <div className="space-y-6">
@@ -183,7 +257,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
           <div className="mt-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700">
-                Notes (optional)
+                Notes <span className="text-gray-400">(required for fail action)</span>
               </label>
               <textarea
                 value={actionNotes}
@@ -195,10 +269,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => {
-                  if (confirm('Confirm this payment?'))
-                    confirmMutation.mutate();
-                }}
+                onClick={() => setPendingAction('confirm')}
                 disabled={isProcessing}
                 className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
               >
@@ -209,12 +280,13 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
               <button
                 onClick={() => {
                   if (!actionNotes.trim()) {
-                    alert('Please provide a reason for marking as failed');
+                    setPendingAction(null);
                     return;
                   }
-                  failMutation.mutate();
+                  setPendingAction('fail');
                 }}
-                disabled={isProcessing}
+                disabled={isProcessing || !actionNotes.trim()}
+                title={!actionNotes.trim() ? 'Please add notes before marking as failed' : undefined}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
               >
                 {failMutation.isPending ? 'Processing...' : 'Mark as Failed'}
@@ -227,7 +299,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
           <div className="mt-4 flex gap-3">
             {!payment.reconciled && (
               <button
-                onClick={() => reconcileMutation.mutate()}
+                onClick={() => setPendingAction('reconcile')}
                 disabled={isProcessing}
                 className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
@@ -238,7 +310,8 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
             )}
             <button
               onClick={() => setShowRefundForm(!showRefundForm)}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              disabled={isProcessing}
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
             >
               Initiate Refund
             </button>
@@ -259,19 +332,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
             />
             <div className="mt-3 flex gap-3">
               <button
-                onClick={() => {
-                  if (!actionNotes.trim()) {
-                    alert('Refund reason is required');
-                    return;
-                  }
-                  if (
-                    confirm(
-                      `Refund ${formatCurrency(payment.amount_usd)} to customer?`
-                    )
-                  ) {
-                    refundMutation.mutate();
-                  }
-                }}
+                onClick={() => setPendingAction('refund')}
                 disabled={isProcessing || !actionNotes.trim()}
                 className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
               >
@@ -284,7 +345,8 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
                   setShowRefundForm(false);
                   setActionNotes('');
                 }}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                disabled={isProcessing}
+                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -306,6 +368,17 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
           </p>
         )}
       </div>
+
+      <ConfirmationDialog
+        open={pendingAction !== null}
+        onClose={() => setPendingAction(null)}
+        onConfirm={handleActionConfirm}
+        title={dialogProps.title}
+        description={dialogProps.description}
+        variant={dialogProps.variant}
+        confirmLabel={dialogProps.confirmLabel}
+        isLoading={isProcessing}
+      />
 
       {payment.notes && (
         <div className="rounded-lg bg-white p-6 shadow">

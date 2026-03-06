@@ -95,6 +95,7 @@ export interface AuditLogFilters {
   user_type?: 'admin' | 'customer' | 'system';
   action?: string;
   entity_type?: string;
+  search?: string;
   date_from?: string;
   date_to?: string;
   page?: number;
@@ -102,7 +103,7 @@ export interface AuditLogFilters {
 }
 
 export async function getAuditLogs(filters: AuditLogFilters = {}) {
-  const { user_type, action, entity_type, date_from, date_to, page = 1, limit: rawLimit = 25 } = filters;
+  const { user_type, action, entity_type, search, date_from, date_to, page = 1, limit: rawLimit = 25 } = filters;
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
 
   const params = new URLSearchParams();
@@ -111,6 +112,7 @@ export async function getAuditLogs(filters: AuditLogFilters = {}) {
   if (user_type) params.set('user_type', user_type);
   if (action) params.set('action', action);
   if (entity_type) params.set('entity_type', entity_type);
+  if (search) params.set('search', search);
   if (date_from) params.set('date_from', date_from);
   if (date_to) params.set('date_to', date_to);
 

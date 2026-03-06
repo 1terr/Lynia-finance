@@ -1,6 +1,19 @@
 import { useAuthStore } from '@/lib/store/auth-store';
 import type { AdminUser } from '@/types/auth';
 
+// Mock @lynia/auth
+jest.mock('@lynia/auth', () => ({
+  userPool: null,
+  CognitoUser: jest.fn(),
+  AuthenticationDetails: jest.fn(),
+  getSession: jest.fn(),
+  signOut: jest.fn(),
+  isCognitoConfigured: jest.fn(() => false),
+  forgotPassword: jest.fn(),
+  confirmForgotPassword: jest.fn(),
+  changePassword: jest.fn(),
+}));
+
 const mockSuperAdmin: AdminUser = {
   id: 'usr_001',
   email: 'admin@lynia.co.zw',
@@ -33,7 +46,7 @@ const mockKycReviewer: AdminUser = {
 
 describe('useAuthStore', () => {
   beforeEach(() => {
-    useAuthStore.setState({ user: null, isLoading: true });
+    useAuthStore.setState({ user: null, isLoading: true, challenge: null });
   });
 
   it('starts with null user and loading', () => {
@@ -102,6 +115,44 @@ describe('useAuthStore', () => {
         role: 'unknown_role' as AdminUser['role'],
       });
       expect(useAuthStore.getState().hasAnyPermission(['dashboard:view'])).toBe(false);
+    });
+  });
+
+  describe('signIn - Cognito not configured', () => {
+    it('returns clear error when Cognito is not configured', async () => {
+      const result = await useAuthStore.getState().signIn('test@test.com', 'password');
+      expect(result.error).toBe('Cognito is not configured. Contact your administrator.');
+    });
+  });
+
+  describe('forgotPassword - Cognito not configured', () => {
+    it('returns clear error when Cognito is not configured', async () => {
+      const result = await useAuthStore.getState().forgotPassword('test@test.com');
+      expect(result.error).toBe('Cognito is not configured. Contact your administrator.');
+    });
+  });
+
+  describe('confirmForgotPassword - Cognito not configured', () => {
+    it('returns clear error when Cognito is not configured', async () => {
+      const result = await useAuthStore.getState().confirmForgotPassword('test@test.com', '123456', 'newpass');
+      expect(result.error).toBe('Cognito is not configured. Contact your administrator.');
+    });
+  });
+
+  describe('changePassword - Cognito not configured', () => {
+    it('returns clear error when Cognito is not configured', async () => {
+      const result = await useAuthStore.getState().changePassword('oldpass', 'newpass');
+      expect(result.error).toBe('Cognito is not configured. Contact your administrator.');
+    });
+  });
+
+  describe('signOutUser', () => {
+    it('clears user state on sign out', () => {
+      useAuthStore.getState().setUser(mockSuperAdmin);
+      expect(useAuthStore.getState().user).not.toBeNull();
+
+      useAuthStore.getState().signOutUser();
+      expect(useAuthStore.getState().user).toBeNull();
     });
   });
 });

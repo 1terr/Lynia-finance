@@ -20,6 +20,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate, formatDateTime } from '@lynia/utils';
 import {
@@ -35,6 +36,9 @@ import {
   RotateCcw,
   Check,
   X,
+  AlertCircle,
+  Ban,
+  Power,
 } from 'lucide-react';
 import type {
   Distributor,
@@ -99,6 +103,7 @@ export default function DistributorDetailPage() {
   // ─── Top-level state ───
   const [activeTab, setActiveTab] = useState<TabKey>('inventory');
   const [editModal, setEditModal] = useState(false);
+  const [suspendConfirmOpen, setSuspendConfirmOpen] = useState(false);
 
   // ─── Inventory state ───
   const [invSearch, setInvSearch] = useState('');
@@ -135,7 +140,7 @@ export default function DistributorDetailPage() {
     enabled: !!id,
   });
 
-  const { data: inventoryData, isLoading: invLoading } = useQuery({
+  const { data: inventoryData, isLoading: invLoading, isError: invError } = useQuery({
     queryKey: ['distributor-inventory', id, invSearch, invStatus, invPage],
     queryFn: () =>
       getDistributorInventory(id, {
@@ -146,7 +151,7 @@ export default function DistributorDetailPage() {
     enabled: !!id && activeTab === 'inventory',
   });
 
-  const { data: handoverData, isLoading: hoLoading } = useQuery({
+  const { data: handoverData, isLoading: hoLoading, isError: hoError } = useQuery({
     queryKey: ['distributor-handovers', id, hoStatus, hoSearch, hoPage],
     queryFn: () =>
       getDistributorHandovers(id, {
@@ -157,7 +162,7 @@ export default function DistributorDetailPage() {
     enabled: !!id && activeTab === 'handovers',
   });
 
-  const { data: transferData, isLoading: trLoading } = useQuery({
+  const { data: transferData, isLoading: trLoading, isError: trError } = useQuery({
     queryKey: ['distributor-transfers', id, trStatus, trPage],
     queryFn: () =>
       getDistributorTransfers(id, {
@@ -167,7 +172,7 @@ export default function DistributorDetailPage() {
     enabled: !!id && activeTab === 'transfers',
   });
 
-  const { data: commissionData, isLoading: comLoading } = useQuery({
+  const { data: commissionData, isLoading: comLoading, isError: comError } = useQuery({
     queryKey: ['distributor-commissions', id, comPage],
     queryFn: () => getDistributorCommissions(id, { page: comPage }),
     enabled: !!id && activeTab === 'commissions',
@@ -183,6 +188,24 @@ export default function DistributorDetailPage() {
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to update distributor', description: error.message, variant: 'error' });
+    },
+  });
+
+  const suspendMutation = useMutation({
+    mutationFn: (newStatus: 'suspended' | 'active') => updateDistributor(id, { status: newStatus }),
+    onSuccess: (_data, newStatus) => {
+      queryClient.invalidateQueries({ queryKey: ['distributor', id] });
+      setSuspendConfirmOpen(false);
+      toast({
+        title: newStatus === 'suspended' ? 'Distributor suspended' : 'Distributor activated',
+        description: newStatus === 'suspended'
+          ? `${distributor?.business_name} has been suspended.`
+          : `${distributor?.business_name} has been activated.`,
+        variant: 'success',
+      });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update distributor status', description: error.message, variant: 'error' });
     },
   });
 
@@ -267,11 +290,19 @@ export default function DistributorDetailPage() {
   const bulkPayMutation = useMutation({
     mutationFn: () => bulkPayCommissions(id, selectedCommissions),
     onSuccess: () => {
+      const paidCount = selectedCommissions.length;
+      const paidTotal = commissionData?.data
+        ?.filter((c) => selectedCommissions.includes(c.id))
+        .reduce((sum, c) => sum + (c.commission_amount_usd || 0), 0) || 0;
       setSelectedCommissions([]);
       setConfirmBulkPay(false);
       queryClient.invalidateQueries({ queryKey: ['distributor-commissions', id] });
       queryClient.invalidateQueries({ queryKey: ['distributor', id] });
-      toast({ title: 'Commissions marked as paid', variant: 'success' });
+      toast({
+        title: 'Commissions paid successfully',
+        description: `Successfully paid ${paidCount} commission${paidCount !== 1 ? 's' : ''} totaling $${paidTotal.toFixed(2)}`,
+        variant: 'success',
+      });
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to pay commissions', description: error.message, variant: 'error' });
@@ -371,6 +402,40 @@ export default function DistributorDetailPage() {
         c.payment_status,
         c.created_at,
       ])
+    );
+  }
+
+  // ─── Tab error/skeleton helpers ───
+
+  function TabErrorBanner({ message }: { message: string }) {
+    return (
+      <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+        <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
+        <p className="text-sm text-red-800 dark:text-red-200">{message}</p>
+      </div>
+    );
+  }
+
+  function TabControlsSkeleton({ items = 3 }: { items?: number }) {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        {Array.from({ length: items }).map((_, i) => (
+          <div key={i} className="h-9 w-32 animate-pulse rounded-lg bg-gray-200" />
+        ))}
+      </div>
+    );
+  }
+
+  function CommissionSummarySkeleton() {
+    return (
+      <div className="grid gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-lg border border-gray-200 bg-white p-4">
+            <div className="h-3 w-20 animate-pulse rounded bg-gray-200 mb-2" />
+            <div className="h-7 w-24 animate-pulse rounded bg-gray-200" />
+          </div>
+        ))}
+      </div>
     );
   }
 
@@ -666,10 +731,23 @@ export default function DistributorDetailPage() {
           </div>
           <p className="text-sm text-gray-500 font-mono">{distributor.id}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setEditModal(true)}>
-          <Edit2 className="mr-1.5 h-4 w-4" />
-          Edit
-        </Button>
+        <div className="flex gap-2">
+          {distributor.status === 'active' ? (
+            <Button variant="outline" size="sm" onClick={() => setSuspendConfirmOpen(true)}>
+              <Ban className="mr-1.5 h-4 w-4 text-red-500" />
+              Suspend
+            </Button>
+          ) : distributor.status === 'suspended' ? (
+            <Button variant="outline" size="sm" onClick={() => suspendMutation.mutate('active')}>
+              <Power className="mr-1.5 h-4 w-4 text-green-500" />
+              Activate
+            </Button>
+          ) : null}
+          <Button variant="outline" size="sm" onClick={() => setEditModal(true)}>
+            <Edit2 className="mr-1.5 h-4 w-4" />
+            Edit
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -820,44 +898,49 @@ export default function DistributorDetailPage() {
         {/* ─── Inventory Tab ─── */}
         {activeTab === 'inventory' && (
           <div className="space-y-4">
-            {/* Controls */}
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={invSearch}
+            {invError && <TabErrorBanner message="Failed to load inventory. Please try again." />}
+
+            {invLoading ? (
+              <TabControlsSkeleton items={4} />
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={invSearch}
+                    onChange={(e) => {
+                      setInvSearch(e.target.value);
+                      setInvPage(1);
+                    }}
+                    placeholder="Search by IMEI..."
+                    className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <select
+                  value={invStatus}
                   onChange={(e) => {
-                    setInvSearch(e.target.value);
+                    setInvStatus(e.target.value);
                     setInvPage(1);
                   }}
-                  placeholder="Search by IMEI..."
-                  className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                />
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="available">Available</option>
+                  <option value="sold">Sold</option>
+                  <option value="returned">Returned</option>
+                  <option value="damaged">Damaged</option>
+                </select>
+                <Button onClick={() => setAllocateModal(true)}>
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Allocate Device
+                </Button>
+                <Button variant="outline" onClick={exportInventoryCSV}>
+                  <Download className="mr-1.5 h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
-              <select
-                value={invStatus}
-                onChange={(e) => {
-                  setInvStatus(e.target.value);
-                  setInvPage(1);
-                }}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="available">Available</option>
-                <option value="sold">Sold</option>
-                <option value="returned">Returned</option>
-                <option value="damaged">Damaged</option>
-              </select>
-              <Button onClick={() => setAllocateModal(true)}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                Allocate Device
-              </Button>
-              <Button variant="outline" onClick={exportInventoryCSV}>
-                <Download className="mr-1.5 h-4 w-4" />
-                Export CSV
-              </Button>
-            </div>
+            )}
 
             <DataTable
               columns={inventoryColumns}
@@ -882,42 +965,47 @@ export default function DistributorDetailPage() {
         {/* ─── Handovers Tab ─── */}
         {activeTab === 'handovers' && (
           <div className="space-y-4">
-            {/* Controls */}
-            <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={hoStatus}
-                onChange={(e) => {
-                  setHoStatus(e.target.value);
-                  setHoPage(1);
-                }}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="initiated">Initiated</option>
-                <option value="identity_verified">ID Verified</option>
-                <option value="deposit_verified">Deposit Verified</option>
-                <option value="device_inspected">Inspected</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  value={hoSearch}
+            {hoError && <TabErrorBanner message="Failed to load handovers. Please try again." />}
+
+            {hoLoading ? (
+              <TabControlsSkeleton items={3} />
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={hoStatus}
                   onChange={(e) => {
-                    setHoSearch(e.target.value);
+                    setHoStatus(e.target.value);
                     setHoPage(1);
                   }}
-                  placeholder="Search by customer or IMEI..."
-                  className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-                />
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="initiated">Initiated</option>
+                  <option value="identity_verified">ID Verified</option>
+                  <option value="deposit_verified">Deposit Verified</option>
+                  <option value="device_inspected">Inspected</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={hoSearch}
+                    onChange={(e) => {
+                      setHoSearch(e.target.value);
+                      setHoPage(1);
+                    }}
+                    placeholder="Search by customer or IMEI..."
+                    className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  />
+                </div>
+                <Button variant="outline" onClick={exportHandoversCSV}>
+                  <Download className="mr-1.5 h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
-              <Button variant="outline" onClick={exportHandoversCSV}>
-                <Download className="mr-1.5 h-4 w-4" />
-                Export CSV
-              </Button>
-            </div>
+            )}
 
             <DataTable
               columns={handoverColumns}
@@ -942,37 +1030,42 @@ export default function DistributorDetailPage() {
         {/* ─── Transfers Tab ─── */}
         {activeTab === 'transfers' && (
           <div className="space-y-4">
-            {/* Controls */}
-            <div className="flex flex-wrap items-center gap-3">
-              <select
-                value={trStatus}
-                onChange={(e) => {
-                  setTrStatus(e.target.value);
-                  setTrPage(1);
-                }}
-                className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
-              >
-                <option value="">All Statuses</option>
-                <option value="requested">Requested</option>
-                <option value="approved">Approved</option>
-                <option value="in_transit">In Transit</option>
-                <option value="received">Received</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
-              <div className="flex-1" />
-              <Button onClick={() => setNewTransferModal(true)}>
-                <Plus className="mr-1.5 h-4 w-4" />
-                New Transfer
-              </Button>
-              <Button variant="outline" onClick={() => setReturnModal(true)}>
-                <RotateCcw className="mr-1.5 h-4 w-4" />
-                Return to Warehouse
-              </Button>
-              <Button variant="outline" onClick={exportTransfersCSV}>
-                <Download className="mr-1.5 h-4 w-4" />
-                Export CSV
-              </Button>
-            </div>
+            {trError && <TabErrorBanner message="Failed to load transfers. Please try again." />}
+
+            {trLoading ? (
+              <TabControlsSkeleton items={4} />
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <select
+                  value={trStatus}
+                  onChange={(e) => {
+                    setTrStatus(e.target.value);
+                    setTrPage(1);
+                  }}
+                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="requested">Requested</option>
+                  <option value="approved">Approved</option>
+                  <option value="in_transit">In Transit</option>
+                  <option value="received">Received</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+                <div className="flex-1" />
+                <Button onClick={() => setNewTransferModal(true)}>
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  New Transfer
+                </Button>
+                <Button variant="outline" onClick={() => setReturnModal(true)}>
+                  <RotateCcw className="mr-1.5 h-4 w-4" />
+                  Return to Warehouse
+                </Button>
+                <Button variant="outline" onClick={exportTransfersCSV}>
+                  <Download className="mr-1.5 h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+            )}
 
             <DataTable
               columns={transferColumns}
@@ -997,8 +1090,12 @@ export default function DistributorDetailPage() {
         {/* ─── Commissions Tab ─── */}
         {activeTab === 'commissions' && (
           <div className="space-y-4">
+            {comError && <TabErrorBanner message="Failed to load commissions. Please try again." />}
+
             {/* Summary */}
-            {commissionData?.summary && (
+            {comLoading ? (
+              <CommissionSummarySkeleton />
+            ) : commissionData?.summary ? (
               <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-lg border border-gray-200 bg-white p-4">
                   <p className="text-xs text-gray-500">Total Earned</p>
@@ -1019,23 +1116,27 @@ export default function DistributorDetailPage() {
                   </p>
                 </div>
               </div>
-            )}
+            ) : null}
 
             {/* Controls */}
-            <div className="flex items-center gap-3">
-              <Button
-                onClick={() => setConfirmBulkPay(true)}
-                disabled={selectedCommissions.length === 0}
-              >
-                <Check className="mr-1.5 h-4 w-4" />
-                Mark Selected as Paid ({selectedCommissions.length})
-              </Button>
-              <div className="flex-1" />
-              <Button variant="outline" onClick={exportCommissionsCSV}>
-                <Download className="mr-1.5 h-4 w-4" />
-                Export CSV
-              </Button>
-            </div>
+            {comLoading ? (
+              <TabControlsSkeleton items={2} />
+            ) : (
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={() => setConfirmBulkPay(true)}
+                  disabled={selectedCommissions.length === 0}
+                >
+                  <Check className="mr-1.5 h-4 w-4" />
+                  Mark Selected as Paid ({selectedCommissions.length})
+                </Button>
+                <div className="flex-1" />
+                <Button variant="outline" onClick={exportCommissionsCSV}>
+                  <Download className="mr-1.5 h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+            )}
 
             <DataTable
               columns={commissionColumns}
@@ -1270,47 +1371,52 @@ export default function DistributorDetailPage() {
         </div>
       </Modal>
 
-      {/* Bulk Pay Commissions Confirmation Modal */}
-      <Modal
+      {/* Bulk Pay Commissions Confirmation */}
+      <ConfirmationDialog
         open={confirmBulkPay}
         onClose={() => setConfirmBulkPay(false)}
+        onConfirm={() => bulkPayMutation.mutate()}
         title="Confirm Commission Payment"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600">
-            Mark <strong>{selectedCommissions.length}</strong> commission{selectedCommissions.length !== 1 ? 's' : ''} as paid
-            for <strong>{distributor.business_name}</strong>?
-          </p>
-          {commissionData?.data && (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-500">Total Amount</span>
-                <span className="font-bold text-gray-900">
-                  ${commissionData.data
-                    .filter((c) => selectedCommissions.includes(c.id))
-                    .reduce((sum, c) => sum + (c.commission_amount_usd || 0), 0)
-                    .toFixed(2)}
-                </span>
+        description={
+          <div className="space-y-3 text-left">
+            <p>
+              Mark <strong>{selectedCommissions.length}</strong> commission{selectedCommissions.length !== 1 ? 's' : ''} as paid
+              for <strong>{distributor.business_name}</strong>?
+            </p>
+            {commissionData?.data && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 p-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Total Amount</span>
+                  <span className="font-bold text-foreground">
+                    ${commissionData.data
+                      .filter((c) => selectedCommissions.includes(c.id))
+                      .reduce((sum, c) => sum + (c.commission_amount_usd || 0), 0)
+                      .toFixed(2)}
+                  </span>
+                </div>
               </div>
-            </div>
-          )}
-          <p className="text-xs text-gray-500">
-            This action cannot be undone. Commissions will be permanently marked as paid.
-          </p>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setConfirmBulkPay(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={() => bulkPayMutation.mutate()}
-              disabled={bulkPayMutation.isPending}
-              isLoading={bulkPayMutation.isPending}
-            >
-              {bulkPayMutation.isPending ? 'Processing...' : 'Confirm Payment'}
-            </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              This action cannot be undone. Commissions will be permanently marked as paid.
+            </p>
           </div>
-        </div>
-      </Modal>
+        }
+        confirmLabel="Confirm Payment"
+        variant="warning"
+        isLoading={bulkPayMutation.isPending}
+      />
+
+      {/* Suspend Confirmation Dialog */}
+      <ConfirmationDialog
+        open={suspendConfirmOpen}
+        onClose={() => setSuspendConfirmOpen(false)}
+        onConfirm={() => suspendMutation.mutate('suspended')}
+        title="Suspend Distributor"
+        description={`Suspending ${distributor.business_name} will prevent login and freeze transactions. Are you sure you want to proceed?`}
+        confirmLabel="Suspend"
+        variant="destructive"
+        isLoading={suspendMutation.isPending}
+      />
 
       {/* Update Transfer Status Modal */}
       <Modal

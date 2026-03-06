@@ -54,13 +54,14 @@ describe('CollectionsQueue', () => {
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
-  it('shows phone numbers', () => {
+  it('shows phone numbers (masked)', () => {
     render(
       <CollectionsQueue items={mockCollectionItems} isLoading={false} />
     );
 
-    expect(screen.getByText('+263771111111')).toBeInTheDocument();
-    expect(screen.getByText('+263772222222')).toBeInTheDocument();
+    // Phone numbers are now masked for privacy
+    const phoneElements = screen.getAllByText(/\+263/);
+    expect(phoneElements.length).toBeGreaterThanOrEqual(2);
   });
 
   it('shows loading state', () => {

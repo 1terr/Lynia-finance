@@ -1,8 +1,13 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { recordManualPayment } from '@/lib/api/payments';
+import { useState } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
+import { useQuery } from '@tanstack/react-query';
+import { recordManualPayment, getPayments } from '@/lib/api/payments';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { formatCurrency } from '@lynia/utils';
 
 interface RecordPaymentFormData {
   loan_id: string;
@@ -20,10 +25,13 @@ interface RecordPaymentFormProps {
 }
 
 export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
-  const queryClient = useQueryClient();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingData, setPendingData] = useState<RecordPaymentFormData | null>(null);
+
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<RecordPaymentFormData>({
     defaultValues: {
@@ -33,23 +41,53 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
     },
   });
 
-  const mutation = useMutation({
+  const referenceNumber = useWatch({ control, name: 'reference_number' });
+  const debouncedRef = useDebouncedValue(referenceNumber?.trim() || '', 500);
+
+  const { data: duplicateCheck } = useQuery({
+    queryKey: ['payment-duplicate-check', debouncedRef],
+    queryFn: () => getPayments({ search: debouncedRef, limit: 1 }),
+    enabled: debouncedRef.length >= 3,
+  });
+
+  const hasDuplicate =
+    duplicateCheck &&
+    duplicateCheck.data.length > 0 &&
+    duplicateCheck.data.some(
+      (p) => p.reference_number?.toLowerCase() === debouncedRef.toLowerCase()
+    );
+
+  const mutation = useMutationWithToast({
     mutationFn: recordManualPayment,
+    successMessage: 'Payment recorded successfully',
+    errorMessage: 'Failed to record payment',
+    invalidateKeys: [['payments']],
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      setShowConfirm(false);
       onClose();
     },
   });
 
+  const onFormSubmit = (data: RecordPaymentFormData) => {
+    setPendingData({ ...data, amount_usd: Number(data.amount_usd) });
+    setShowConfirm(true);
+  };
+
+  const handleConfirm = () => {
+    if (pendingData) {
+      mutation.mutate(pendingData);
+    }
+  };
+
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
+    <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-900">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Record Manual Payment
         </h2>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600"
+          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -58,12 +96,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
       </div>
 
       <form
-        onSubmit={handleSubmit((data) =>
-          mutation.mutate({
-            ...data,
-            amount_usd: Number(data.amount_usd),
-          })
-        )}
+        onSubmit={handleSubmit(onFormSubmit)}
         className="mt-4 space-y-4"
       >
         <div className="grid grid-cols-2 gap-4">
@@ -182,6 +215,14 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
                 {errors.reference_number.message}
               </p>
             )}
+            {hasDuplicate && (
+              <p className="mt-1 flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                A payment with this reference number already exists. Please verify this is not a duplicate.
+              </p>
+            )}
           </div>
 
           <div className="col-span-2">
@@ -216,11 +257,39 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
         </div>
 
         {mutation.isError && (
-          <p className="text-sm text-red-600">
+          <p className="text-sm text-red-600 dark:text-red-400">
             Failed to record payment. Please try again.
           </p>
         )}
       </form>
+
+      <ConfirmationDialog
+        open={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={handleConfirm}
+        title="Confirm Payment Recording"
+        description={
+          pendingData ? (
+            <div className="space-y-1 text-left">
+              <p>
+                Record a <strong>{formatCurrency(pendingData.amount_usd)}</strong> {pendingData.payment_type.replace(/_/g, ' ')} payment via{' '}
+                <strong>{pendingData.payment_method.replace(/_/g, ' ')}</strong>?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Reference: {pendingData.reference_number}
+              </p>
+              {hasDuplicate && (
+                <p className="mt-2 text-xs font-medium text-yellow-600 dark:text-yellow-400">
+                  Warning: A payment with this reference number already exists.
+                </p>
+              )}
+            </div>
+          ) : ''
+        }
+        variant={hasDuplicate ? 'warning' : 'info'}
+        confirmLabel="Record Payment"
+        isLoading={mutation.isPending}
+      />
     </div>
   );
 }

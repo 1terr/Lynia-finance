@@ -1,27 +1,21 @@
 'use client';
 
-/**
- * Fineract Loan Approval Page (Phase 7 - T009)
- *
- * Displays pending loan applications from Fineract with approve/reject
- * actions that trigger Fineract state transitions and GL journal entries.
- */
-
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   getPendingApprovalLoans,
   approveFineractLoan,
-  disburseFineractLoan,
+  rejectFineractLoan,
 } from '@/lib/api/fineract';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { useAuthStore } from '@/lib/store/auth-store';
 import { formatCurrency, formatDate } from '@lynia/utils';
 import type { FineractLoanView } from '@/types/fineract';
 import { Pagination } from '@/components/ui/pagination';
-import { CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
 export default function FineractApprovalPage() {
-  const queryClient = useQueryClient();
   const canApprove = useAuthStore((s) => s.hasPermission('loans:approve'));
   const canReject = useAuthStore((s) => s.hasPermission('loans:reject'));
   const [page, setPage] = useState(1);
@@ -39,16 +33,28 @@ export default function FineractApprovalPage() {
     refetchInterval: 30000,
   });
 
-  const approveMutation = useMutation({
+  const approveMutation = useMutationWithToast({
     mutationFn: (loanId: string) =>
       approveFineractLoan(loanId, {
         approvedOnDate: new Date().toISOString().split('T')[0],
         note: note || undefined,
       }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['fineract-pending-loans'] });
-      closeModal();
-    },
+    successMessage: 'Loan approved successfully',
+    errorMessage: 'Failed to approve loan',
+    invalidateKeys: [['fineract-pending-loans'], ['fineract-loans']],
+    onSuccess: () => closeModal(),
+  });
+
+  const rejectMutation = useMutationWithToast({
+    mutationFn: (loanId: string) =>
+      rejectFineractLoan(loanId, {
+        rejectedOnDate: new Date().toISOString().split('T')[0],
+        note,
+      }),
+    successMessage: 'Loan rejected',
+    errorMessage: 'Failed to reject loan',
+    invalidateKeys: [['fineract-pending-loans'], ['fineract-loans']],
+    onSuccess: () => closeModal(),
   });
 
   function openModal(
@@ -66,19 +72,27 @@ export default function FineractApprovalPage() {
     setNote('');
   }
 
-  function handleConfirmApproval() {
+  function handleConfirm() {
     if (!selectedLoan) return;
-    approveMutation.mutate(selectedLoan.lyniaLoanId);
+    if (modalAction === 'reject' && !note.trim()) return;
+    if (modalAction === 'approve') {
+      approveMutation.mutate(selectedLoan.lyniaLoanId);
+    } else if (modalAction === 'reject') {
+      rejectMutation.mutate(selectedLoan.lyniaLoanId);
+    }
   }
+
+  const isActionPending = approveMutation.isPending || rejectMutation.isPending;
+  const isRejectNoteEmpty = modalAction === 'reject' && !note.trim();
 
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-64 animate-pulse rounded bg-gray-200" />
+        <div className="h-8 w-64 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-24 animate-pulse rounded-lg bg-gray-100"
+            className="h-24 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"
           />
         ))}
       </div>
@@ -91,10 +105,10 @@ export default function FineractApprovalPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
           Loan Approval Queue
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-gray-500 dark:text-gray-400">
           Review and approve pending loan applications from Fineract.
           {data && ` ${data.total} loans pending.`}
         </p>
@@ -102,9 +116,9 @@ export default function FineractApprovalPage() {
 
       {/* Empty State */}
       {loans.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 py-16">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 py-16 dark:border-gray-700">
           <CheckCircle className="h-12 w-12 text-green-400" />
-          <p className="mt-4 text-lg font-medium text-gray-600">
+          <p className="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300">
             No loans pending approval
           </p>
           <p className="mt-1 text-sm text-gray-400">
@@ -118,21 +132,21 @@ export default function FineractApprovalPage() {
         {loans.map((loan) => (
           <div
             key={loan.lyniaLoanId}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
+            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               {/* Customer Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-yellow-500" />
-                  <h3 className="font-semibold text-gray-900">
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
                     {loan.customerName}
                   </h3>
-                  <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+                  <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
                     Pending Approval
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   {loan.customerPhone} | Fineract #{loan.fineractLoanId}
                 </p>
               </div>
@@ -140,8 +154,8 @@ export default function FineractApprovalPage() {
               {/* Loan Details */}
               <div className="flex flex-wrap gap-6 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500">Product</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Product</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
                     {loan.productName.replace(
                       'Lynia Device Finance - ',
                       ''
@@ -149,34 +163,34 @@ export default function FineractApprovalPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Principal</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Principal</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
                     {formatCurrency(loan.principal)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Term</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Term</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
                     {loan.numberOfRepayments} months
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Rate</p>
-                  <p className="font-medium text-gray-900">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Rate</p>
+                  <p className="font-medium text-gray-900 dark:text-gray-100">
                     {loan.interestRatePerPeriod}%/mo
                   </p>
                 </div>
                 {loan.deviceBrand && (
                   <div>
-                    <p className="text-xs text-gray-500">Device</p>
-                    <p className="font-medium text-gray-900">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Device</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {loan.deviceBrand} {loan.deviceModel}
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Actions - gated by Cognito role permissions */}
+              {/* Actions */}
               {(canApprove || canReject) && (
                 <div className="flex gap-2">
                   {canApprove && (
@@ -191,7 +205,7 @@ export default function FineractApprovalPage() {
                   {canReject && (
                     <button
                       onClick={() => openModal(loan, 'reject')}
-                      className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"
                     >
                       <XCircle className="h-4 w-4" />
                       Reject
@@ -223,74 +237,66 @@ export default function FineractApprovalPage() {
         />
       )}
 
-      {/* Confirmation Modal */}
-      {modalAction && selectedLoan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <div className="flex items-center gap-3">
-              {modalAction === 'approve' ? (
-                <CheckCircle className="h-8 w-8 text-green-500" />
-              ) : (
-                <AlertTriangle className="h-8 w-8 text-red-500" />
-              )}
-              <h3 className="text-lg font-semibold text-gray-900">
+      {/* Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!modalAction && !!selectedLoan}
+        onClose={closeModal}
+        onConfirm={handleConfirm}
+        title={modalAction === 'approve' ? 'Approve Loan' : 'Reject Loan'}
+        variant={modalAction === 'reject' ? 'destructive' : 'warning'}
+        confirmLabel={modalAction === 'approve' ? 'Approve Loan' : 'Reject Loan'}
+        isLoading={isActionPending}
+        description={
+          selectedLoan ? (
+            <div className="space-y-3 text-left">
+              <div className="rounded-md border border-border bg-muted/50 p-3">
+                <dl className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Customer</dt>
+                    <dd className="font-medium text-foreground">{selectedLoan.customerName}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Amount</dt>
+                    <dd className="font-medium text-foreground">{formatCurrency(selectedLoan.principal)}</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Term</dt>
+                    <dd className="font-medium text-foreground">{selectedLoan.numberOfRepayments} months</dd>
+                  </div>
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">Rate</dt>
+                    <dd className="font-medium text-foreground">{selectedLoan.interestRatePerPeriod}%/mo</dd>
+                  </div>
+                </dl>
+              </div>
+              <p className="text-sm text-muted-foreground">
                 {modalAction === 'approve'
-                  ? 'Confirm Approval'
-                  : 'Confirm Rejection'}
-              </h3>
-            </div>
-
-            <div className="mt-4 space-y-3">
-              <p className="text-sm text-gray-600">
-                {modalAction === 'approve'
-                  ? `Approve loan of ${formatCurrency(selectedLoan.principal)} for ${selectedLoan.customerName}? This will transition the loan to "Approved" in Fineract.`
-                  : `Reject loan application for ${selectedLoan.customerName}? This action cannot be undone.`}
+                  ? 'This will transition the loan to "Approved" in Fineract.'
+                  : 'This action cannot be undone.'}
               </p>
-
               <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Note (optional)
+                <label className="block text-sm font-medium text-foreground">
+                  {modalAction === 'reject' ? 'Rejection reason (required)' : 'Note (optional)'}
                 </label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={2}
-                  className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   placeholder={
                     modalAction === 'approve'
                       ? 'Approval notes...'
-                      : 'Rejection reason...'
+                      : 'Enter reason for rejection...'
                   }
                 />
+                {isRejectNoteEmpty && (
+                  <p className="mt-1 text-xs text-red-500">A rejection reason is required.</p>
+                )}
               </div>
             </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                onClick={closeModal}
-                className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleConfirmApproval}
-                disabled={approveMutation.isPending}
-                className={`rounded-md px-4 py-2 text-sm font-medium text-white ${
-                  modalAction === 'approve'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                } disabled:opacity-50`}
-              >
-                {approveMutation.isPending
-                  ? 'Processing...'
-                  : modalAction === 'approve'
-                    ? 'Confirm Approval'
-                    : 'Confirm Rejection'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          ) : ''
+        }
+      />
     </div>
   );
 }

@@ -1,22 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
-import { getDeviceHandovers, type DeviceHandoverRow } from '@/lib/api/devices';
+import { getDeviceHandovers, updateHandoverStatus, type DeviceHandoverRow } from '@/lib/api/devices';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { formatDate, formatDateTime, truncateId } from '@lynia/utils';
+import { useToast } from '@/hooks/use-toast';
 import {
   Smartphone,
   Search,
   Filter,
-  CheckCircle,
-  Clock,
-  XCircle,
   Package,
   User,
+  ArrowRight,
 } from 'lucide-react';
 
 const statusConfig: Record<string, { label: string; variant: 'green' | 'yellow' | 'blue' | 'red' | 'gray' }> = {
@@ -28,15 +29,60 @@ const statusConfig: Record<string, { label: string; variant: 'green' | 'yellow' 
   cancelled: { label: 'Cancelled', variant: 'red' },
 };
 
+/** Valid status transitions for the handover workflow */
+const nextStatusMap: Record<string, { next: DeviceHandoverRow['status']; label: string; description: string }> = {
+  initiated: {
+    next: 'identity_verified',
+    label: 'Verify Identity',
+    description: 'Confirm that the customer\'s identity has been verified. This will advance the handover to the next step.',
+  },
+  identity_verified: {
+    next: 'deposit_verified',
+    label: 'Verify Deposit',
+    description: 'Confirm that the customer\'s deposit payment has been received and verified.',
+  },
+  deposit_verified: {
+    next: 'device_inspected',
+    label: 'Mark Inspected',
+    description: 'Confirm that the device has been physically inspected and is in good condition for handover.',
+  },
+  device_inspected: {
+    next: 'completed',
+    label: 'Complete Handover',
+    description: 'Mark this handover as completed. The device will be transferred to the customer.',
+  },
+};
+
 export default function HandoversPage() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [transitionTarget, setTransitionTarget] = useState<{
+    handover: DeviceHandoverRow;
+    nextStatus: DeviceHandoverRow['status'];
+    label: string;
+    description: string;
+  } | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['device-handovers', page, statusFilter, search],
     queryFn: () => getDeviceHandovers({ status: statusFilter || undefined, search: search || undefined, page }),
     refetchInterval: 30000,
+  });
+
+  const transitionMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: DeviceHandoverRow['status'] }) =>
+      updateHandoverStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['device-handovers'] });
+      toast({ title: 'Handover status updated', variant: 'success' });
+      setTransitionTarget(null);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to update handover', description: error.message, variant: 'error' });
+    },
   });
 
   const handovers = data?.data || [];
@@ -126,6 +172,7 @@ export default function HandoversPage() {
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Scheduled</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Created</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white">
@@ -134,6 +181,7 @@ export default function HandoversPage() {
                   const device = Array.isArray(h.device) ? h.device[0] : h.device;
                   const distributor = Array.isArray(h.distributor) ? h.distributor[0] : h.distributor;
                   const status = statusConfig[h.status] || statusConfig.initiated;
+                  const transition = nextStatusMap[h.status];
                   return (
                     <tr key={h.id} className="hover:bg-gray-50">
                       <td className="whitespace-nowrap px-6 py-4">
@@ -179,6 +227,23 @@ export default function HandoversPage() {
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {formatDateTime(h.created_at)}
                       </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-right">
+                        {transition ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setTransitionTarget({
+                              handover: h,
+                              nextStatus: transition.next,
+                              label: transition.label,
+                              description: transition.description,
+                            })}
+                          >
+                            {transition.label}
+                            <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                          </Button>
+                        ) : null}
+                      </td>
                     </tr>
                   );
                 })}
@@ -196,6 +261,25 @@ export default function HandoversPage() {
             onPageChange={setPage}
           />
         )}
+
+        {/* Status Transition Confirmation Dialog */}
+        <ConfirmationDialog
+          open={!!transitionTarget}
+          onClose={() => setTransitionTarget(null)}
+          onConfirm={() => {
+            if (transitionTarget) {
+              transitionMutation.mutate({
+                id: transitionTarget.handover.id,
+                status: transitionTarget.nextStatus,
+              });
+            }
+          }}
+          title={transitionTarget?.label || ''}
+          description={transitionTarget?.description || ''}
+          confirmLabel={transitionTarget?.label || 'Confirm'}
+          variant="warning"
+          isLoading={transitionMutation.isPending}
+        />
       </div>
     </ProtectedRoute>
   );
