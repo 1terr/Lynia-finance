@@ -31,37 +31,37 @@ export async function getDevices(filters: DeviceFilters = {}) {
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/devices?${params.toString()}`);
+  }>(`/admin/devices?${params.toString()}`);
 }
 
 export async function getDeviceById(id: string): Promise<Device | null> {
   try {
-    return await fetchAPI<Device>(`/api/v1/devices/${id}`);
+    return await fetchAPI<Device>(`/admin/devices/${id}`);
   } catch {
     return null;
   }
 }
 
 export async function getDeviceLockHistory(deviceId: string): Promise<DeviceLock[]> {
-  return fetchAPI<DeviceLock[]>(`/api/v1/devices/${deviceId}/lock-history`);
+  return fetchAPI<DeviceLock[]>(`/admin/devices/${deviceId}/lock-history`);
 }
 
 export async function lockDevice(deviceId: string, adminId: string, reason: string) {
-  return fetchAPI<void>(`/api/v1/devices/${deviceId}/lock`, {
+  return fetchAPI<void>(`/admin/devices/${deviceId}/lock`, {
     method: 'POST',
     body: JSON.stringify({ admin_id: adminId, reason }),
   });
 }
 
 export async function unlockDevice(deviceId: string, adminId: string, reason: string) {
-  return fetchAPI<void>(`/api/v1/devices/${deviceId}/unlock`, {
+  return fetchAPI<void>(`/admin/devices/${deviceId}/unlock`, {
     method: 'POST',
     body: JSON.stringify({ admin_id: adminId, reason }),
   });
 }
 
 export async function updateDeviceStatus(deviceId: string, status: DeviceStatus, adminId: string) {
-  return fetchAPI<void>(`/api/v1/devices/${deviceId}/status`, {
+  return fetchAPI<void>(`/admin/devices/${deviceId}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status, admin_id: adminId }),
   });
@@ -157,7 +157,7 @@ export async function getDeviceHandovers(filters: { status?: string; search?: st
     page: number;
     limit: number;
     total_pages: number;
-  }>(`/api/v1/devices/handovers?${params.toString()}`);
+  }>(`/admin/devices/handovers?${params.toString()}`);
 }
 
 export async function updateHandoverStatus(
@@ -165,14 +165,14 @@ export async function updateHandoverStatus(
   status: DeviceHandoverRow['status'],
   notes?: string
 ) {
-  return fetchAPI<{ message: string }>(`/api/v1/devices/handovers/${id}`, {
+  return fetchAPI<{ message: string }>(`/admin/devices/handovers/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ status, notes }),
   });
 }
 
 export async function getDeviceStats(): Promise<DeviceStats> {
-  return fetchAPI<DeviceStats>('/api/v1/devices/stats');
+  return fetchAPI<DeviceStats>('/admin/devices/stats');
 }
 
 // ─── Inventory Management ───
