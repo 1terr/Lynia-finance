@@ -29,13 +29,11 @@ describe('Commission Calculation - property tests', () => {
     // Call 2: db.from('devices').select(...).eq(...).single().execute()
     // Call 3: db.from('distributors').select(...).eq(...).single().execute()
 
-    let callCount = 0;
     mockFrom.mockImplementation((table: string) => {
       const chainSelect = jest.fn(() => {
         const chainEq = jest.fn(() => {
           const chainSingle = jest.fn(() => ({
             execute: jest.fn().mockResolvedValue((() => {
-              callCount++;
               if (table === 'loans') return { data: { principal }, error: null };
               if (table === 'devices') return { data: { retail_price: retailPrice, model }, error: null };
               if (table === 'distributors') {
@@ -138,23 +136,6 @@ describe('Commission Calculation - property tests', () => {
   });
 
   it('throws when device is not found', async () => {
-    let callNum = 0;
-    mockFrom.mockImplementation(() => ({
-      select: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(() => ({
-            execute: jest.fn().mockResolvedValue(() => {
-              callNum++;
-              if (callNum === 1) return { data: { principal: 500 }, error: null };
-              return { data: null, error: null };
-            })
-          }))
-        }))
-      }))
-    }));
-
-    // Set up: loan found, device not found
-    let call = 0;
     mockFrom.mockImplementation((table: string) => ({
       select: jest.fn(() => ({
         eq: jest.fn(() => ({
