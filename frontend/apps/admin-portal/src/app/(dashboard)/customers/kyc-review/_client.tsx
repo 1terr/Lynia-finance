@@ -4,9 +4,11 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getKYCPendingReview, approveKYC, rejectKYC } from '@/lib/api/customers';
 import { useAuth } from '@/lib/hooks/use-auth';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Modal } from '@/components/ui/modal';
 import { Pagination } from '@/components/ui/pagination';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -25,6 +27,7 @@ import {
   AlertTriangle,
   Eye,
   Image,
+  Search,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -49,17 +52,28 @@ function getSLAStatus(createdAt: string): { label: string; color: string } {
   return { label: `${Math.round(hours / 24)}d`, color: 'text-red-600' };
 }
 
+/** Common rejection reason templates for quick selection */
+const REJECTION_TEMPLATES = [
+  'Document illegible',
+  'Face mismatch with ID photo',
+  'ID document expired',
+  'Suspected fraud',
+] as const;
+
 export default function KYCReviewPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebouncedValue(searchQuery, 300);
   const [rejectModal, setRejectModal] = useState<KYCWithCustomer | null>(null);
   const [rejectReason, setRejectReason] = useState('');
+  const [approveConfirmSubmission, setApproveConfirmSubmission] = useState<KYCWithCustomer | null>(null);
   const [docViewerSubmission, setDocViewerSubmission] = useState<KYCWithCustomer | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['kyc-pending', page],
-    queryFn: () => getKYCPendingReview(page),
+    queryKey: ['kyc-pending', page, debouncedSearch],
+    queryFn: () => getKYCPendingReview(page, 25, debouncedSearch || undefined),
   });
 
   const { data: reviewHistory } = useQuery({
@@ -245,6 +259,29 @@ export default function KYCReviewPage() {
         </TabsList>
 
         <TabsContent value="queue">
+          {/* Search input */}
+          <div className="relative mb-4">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPage(1);
+              }}
+              placeholder="Search by customer name, phone, or submission number..."
+              className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => { setSearchQuery(''); setPage(1); }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
           {isLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
@@ -386,7 +423,7 @@ export default function KYCReviewPage() {
                           </Button>
                           <Button
                             size="sm"
-                            onClick={() => approveMutation.mutate(submission)}
+                            onClick={() => setApproveConfirmSubmission(submission)}
                             disabled={approveMutation.isPending}
                           >
                             <CheckCircle className="mr-1.5 h-4 w-4" />
@@ -531,6 +568,28 @@ export default function KYCReviewPage() {
         )}
       </Modal>
 
+      {/* Approve Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!approveConfirmSubmission}
+        onClose={() => setApproveConfirmSubmission(null)}
+        onConfirm={() => {
+          if (approveConfirmSubmission) {
+            approveMutation.mutate(approveConfirmSubmission);
+            setApproveConfirmSubmission(null);
+          }
+        }}
+        title="Approve KYC Submission"
+        description={`Approve KYC for ${
+          approveConfirmSubmission?.extracted_first_name
+            ? `${approveConfirmSubmission.extracted_first_name} ${approveConfirmSubmission.extracted_last_name || ''}`.trim()
+            : approveConfirmSubmission?.customer?.full_name || 'Unknown Customer'
+        }? This will verify their identity and update their KYC status. This action cannot be undone.`}
+        confirmLabel="Approve"
+        cancelLabel="Cancel"
+        variant="warning"
+        isLoading={approveMutation.isPending}
+      />
+
       {/* Reject Modal */}
       <Modal
         open={!!rejectModal}
@@ -557,6 +616,25 @@ export default function KYCReviewPage() {
               placeholder="e.g., ID photo blurry, face doesn't match..."
             />
           </div>
+
+          {/* Quick-select rejection reason templates */}
+          <div className="flex flex-wrap gap-1.5">
+            {REJECTION_TEMPLATES.map((template) => (
+              <button
+                key={template}
+                type="button"
+                onClick={() => {
+                  setRejectReason((prev) =>
+                    prev.trim() ? `${prev.trimEnd()}; ${template}` : template
+                  );
+                }}
+                className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+              >
+                {template}
+              </button>
+            ))}
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => { setRejectModal(null); setRejectReason(''); }}>
               Cancel

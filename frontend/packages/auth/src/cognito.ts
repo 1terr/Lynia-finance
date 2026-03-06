@@ -56,6 +56,39 @@ export function getSession(): Promise<CognitoUserSession | null> {
   });
 }
 
+/**
+ * Returns a valid session, auto-refreshing if the current token is expired
+ * or will expire within 60 seconds. Returns null if no user or refresh fails.
+ */
+export async function getValidSession(): Promise<CognitoUserSession | null> {
+  if (!userPool) return null;
+  const user = getCurrentUser();
+  if (!user) return null;
+
+  const session = await getSession();
+  if (!session) return null;
+
+  // Check if the ID token expires within 60 seconds
+  const expiresAt = session.getIdToken().getExpiration() * 1000;
+  const bufferMs = 60_000;
+
+  if (Date.now() + bufferMs < expiresAt) {
+    return session; // Still valid
+  }
+
+  // Token is expired or about to expire — refresh it
+  const refreshToken = session.getRefreshToken();
+  return new Promise((resolve) => {
+    user.refreshSession(refreshToken, (err: Error | null, refreshed: CognitoUserSession | null) => {
+      if (err || !refreshed) {
+        resolve(null); // Refresh failed — caller should redirect to login
+      } else {
+        resolve(refreshed);
+      }
+    });
+  });
+}
+
 export function signOut(): void {
   if (!userPool) return;
   const user = getCurrentUser();

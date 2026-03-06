@@ -34,6 +34,11 @@ export const handleGetAuditLogs: RouteHandler = async (event, _params, auth) => 
     whereClause += ` AND entity_type = $${params.length}`;
   }
 
+  if (qs.search) {
+    params.push(`%${qs.search}%`);
+    whereClause += ` AND (user_email ILIKE $${params.length} OR entity_id ILIKE $${params.length} OR description ILIKE $${params.length})`;
+  }
+
   if (qs.date_from) {
     params.push(qs.date_from);
     whereClause += ` AND created_at >= $${params.length}::timestamptz`;

@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { cn, formatRelativeTime } from '@lynia/utils';
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
 import type { ReconciliationResult } from '@/types/fineract';
@@ -8,9 +9,11 @@ import type { ReconciliationResult } from '@/types/fineract';
 interface FineractHealthProps {
   data: ReconciliationResult | undefined;
   isLoading: boolean;
+  error?: Error | null;
+  onRetry?: () => void;
 }
 
-export function FineractHealth({ data, isLoading }: FineractHealthProps) {
+export function FineractHealth({ data, isLoading, error, onRetry }: FineractHealthProps) {
   if (isLoading) {
     return (
       <Card>
@@ -35,9 +38,20 @@ export function FineractHealth({ data, isLoading }: FineractHealthProps) {
           <CardTitle>Core Banking System Health</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col items-center gap-2 py-4 text-gray-500">
-            <XCircle className="h-8 w-8 text-gray-400" />
-            <p className="text-sm">Unable to load system status</p>
+          <div className="flex flex-col items-center gap-3 py-4">
+            <XCircle className="h-8 w-8 text-red-400" />
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-700">Unable to load system status</p>
+              {error && (
+                <p className="mt-1 text-xs text-gray-500">{error.message}</p>
+              )}
+            </div>
+            {onRetry && (
+              <Button variant="outline" size="sm" onClick={onRetry}>
+                <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                Retry
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

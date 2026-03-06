@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getCustomers, type CustomerFilters } from '@/lib/api/customers';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
@@ -31,16 +32,17 @@ export default function CustomersPage() {
   const router = useRouter();
   const [filters, setFilters] = useState<CustomerFilters>({ page: 1, limit: 25 });
   const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
+
+  const queryFilters: CustomerFilters = {
+    ...filters,
+    search: debouncedSearch || undefined,
+  };
 
   const { data, isLoading } = useQuery({
-    queryKey: ['customers', filters],
-    queryFn: () => getCustomers(filters),
+    queryKey: ['customers', queryFilters],
+    queryFn: () => getCustomers(queryFilters),
   });
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    setFilters((f) => ({ ...f, search: searchInput || undefined, page: 1 }));
-  }
 
   const columns: Column<Customer>[] = [
     {
@@ -121,16 +123,19 @@ export default function CustomersPage() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
-        <form onSubmit={handleSearch} className="relative flex-1">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              setFilters((f) => ({ ...f, page: 1 }));
+            }}
             placeholder="Search by name, phone, or email..."
             className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
-        </form>
+        </div>
         <Select
           options={STATUS_OPTIONS}
           value={filters.status || ''}

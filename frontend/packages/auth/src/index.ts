@@ -6,6 +6,7 @@ export {
   isCognitoConfigured,
   getCurrentUser,
   getSession,
+  getValidSession,
   signOut,
   forgotPassword,
   confirmForgotPassword,

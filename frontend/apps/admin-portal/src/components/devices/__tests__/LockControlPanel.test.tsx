@@ -69,24 +69,22 @@ describe('LockControlPanel', () => {
     expect(onLock).toHaveBeenCalledWith('Overdue payment');
   });
 
-  it('calls onUnlock when Unlock Device is clicked', () => {
-    const onUnlock = jest.fn();
+  it('shows unlock confirmation dialog when Unlock Device is clicked', () => {
     render(
       <LockControlPanel
         {...defaultProps}
         assignment={mockLockedAssignment}
-        onUnlock={onUnlock}
       />
     );
-    fireEvent.click(screen.getByText('Unlock Device'));
-    expect(onUnlock).toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Unlock Device' }));
+    // Dialog opens with description text
+    expect(screen.getByText(/will be unlocked|regain full access/)).toBeInTheDocument();
   });
 
   it('shows permanent unlock confirmation', () => {
     render(<LockControlPanel {...defaultProps} />);
-    fireEvent.click(screen.getByText('Permanent Unlock'));
-    expect(screen.getByText(/Are you sure/)).toBeInTheDocument();
-    expect(screen.getByText('Confirm Permanent Unlock')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Permanent Unlock' }));
+    expect(screen.getByText(/This action cannot be undone/)).toBeInTheDocument();
   });
 
   it('displays lock history events', () => {

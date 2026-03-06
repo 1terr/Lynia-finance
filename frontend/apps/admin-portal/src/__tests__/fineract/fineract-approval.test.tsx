@@ -77,7 +77,7 @@ describe('FineractApprovalPage', () => {
     });
   });
 
-  it('shows confirmation modal on approve click', async () => {
+  it('shows confirmation dialog on approve click', async () => {
     mockedApi.getPendingApprovalLoans.mockResolvedValue({
       data: [createMockPendingLoan()],
       total: 1,
@@ -95,8 +95,8 @@ describe('FineractApprovalPage', () => {
     fireEvent.click(screen.getByText('Approve'));
 
     await waitFor(() => {
-      // "Confirm Approval" appears in both the <h3> title and <button> inside the modal
-      expect(screen.getAllByText('Confirm Approval').length).toBeGreaterThanOrEqual(1);
+      // ConfirmationDialog shows "Approve Loan" as the confirm action button
+      expect(screen.getByRole('button', { name: /Approve Loan/i })).toBeInTheDocument();
     });
   });
 
@@ -124,10 +124,11 @@ describe('FineractApprovalPage', () => {
     fireEvent.click(screen.getByText('Approve'));
 
     await waitFor(() => {
-      expect(screen.getAllByText('Confirm Approval').length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByRole('button', { name: /Approve Loan/i })).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /Confirm Approval/ }));
+    // Click the "Approve Loan" button in the ConfirmationDialog
+    fireEvent.click(screen.getByRole('button', { name: /Approve Loan/i }));
 
     await waitFor(() => {
       expect(mockedApi.approveFineractLoan).toHaveBeenCalledWith(

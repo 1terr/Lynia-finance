@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { emailSchema, phoneSchema } from '@/lib/validation/schemas';
 import type { Distributor, CreateDistributorInput, DistributorStatus } from '@/types';
 
 interface DistributorFormProps {
@@ -83,7 +84,19 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
     const newErrors: Record<string, string> = {};
     if (!businessName.trim()) newErrors.businessName = 'Business name is required';
     if (!contactPerson.trim()) newErrors.contactPerson = 'Contact person is required';
-    if (!phoneNumber.trim()) newErrors.phoneNumber = 'Phone number is required';
+
+    const phoneResult = phoneSchema.safeParse(phoneNumber);
+    if (!phoneResult.success) {
+      newErrors.phoneNumber = phoneResult.error.errors[0].message;
+    }
+
+    if (email.trim()) {
+      const emailResult = emailSchema.safeParse(email);
+      if (!emailResult.success) {
+        newErrors.email = emailResult.error.errors[0].message;
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -183,6 +196,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              error={errors.email}
               placeholder="email@example.com"
             />
           </div>

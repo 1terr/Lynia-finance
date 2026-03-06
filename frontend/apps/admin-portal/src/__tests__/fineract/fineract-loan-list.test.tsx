@@ -139,15 +139,15 @@ describe('FineractLoansPage', () => {
 
     const searchInput = screen.getByPlaceholderText(/Search by loan ID/);
     fireEvent.change(searchInput, { target: { value: 'Tendai' } });
-    fireEvent.submit(searchInput.closest('form')!);
 
+    // Search is now debounced (300ms) - wait for it to fire
     await waitFor(() => {
       expect(mockedApi.getFineractLoans).toHaveBeenCalledWith(
         expect.objectContaining({
           search: 'Tendai',
         })
       );
-    });
+    }, { timeout: 1000 });
   });
 
   it('shows empty state when no loans', async () => {

@@ -10,16 +10,16 @@ import {
   type CreateTransferRequest,
   type StockTransfer,
 } from '@/lib/api/devices';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { formatDateTime } from '@lynia/utils';
 import { useToast } from '@/hooks/use-toast';
 import { DeviceSearch } from '@/components/devices/DeviceSearch';
-import { ArrowLeft, Plus, ArrowRightLeft, Check, X, Truck, PackageCheck, Search } from 'lucide-react';
+import { ArrowLeft, Plus, Check, X, Truck, PackageCheck, Search } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -38,6 +38,23 @@ const STATUS_BADGE_MAP: Record<string, string> = {
   cancelled: 'failed',
 };
 
+/** Valid state transitions -- mirrors backend validTransitions map */
+const validTransitions: Record<string, string[]> = {
+  requested: ['approved', 'cancelled'],
+  approved: ['in_transit', 'cancelled'],
+  in_transit: ['received', 'cancelled'],
+  received: [],
+  cancelled: [],
+};
+
+interface TransferAction {
+  label: string;
+  value: string;
+  variant?: 'danger' | 'outline' | 'primary';
+  icon: React.ReactNode;
+  description: string;
+}
+
 export default function TransfersPage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -48,6 +65,10 @@ export default function TransfersPage() {
   const [createModal, setCreateModal] = useState(false);
   const [actionModal, setActionModal] = useState<StockTransfer | null>(null);
   const [cancelReason, setCancelReason] = useState('');
+  const [confirmAction, setConfirmAction] = useState<{
+    transfer: StockTransfer;
+    action: TransferAction;
+  } | null>(null);
 
   const [form, setForm] = useState<CreateTransferRequest>({
     device_id: '',
@@ -96,6 +117,7 @@ export default function TransfersPage() {
       queryClient.invalidateQueries({ queryKey: ['device-stats'] });
       setActionModal(null);
       setCancelReason('');
+      setConfirmAction(null);
       toast({ title: 'Transfer updated', variant: 'success' });
     },
     onError: (error: Error) => {
@@ -103,26 +125,47 @@ export default function TransfersPage() {
     },
   });
 
-  const getNextActions = (status: string): { label: string; value: string; variant?: 'danger' | 'outline'; icon: React.ReactNode }[] => {
-    switch (status) {
-      case 'requested':
-        return [
-          { label: 'Approve', value: 'approved', icon: <Check className="mr-1.5 h-4 w-4" /> },
-          { label: 'Cancel', value: 'cancelled', variant: 'danger', icon: <X className="mr-1.5 h-4 w-4" /> },
-        ];
-      case 'approved':
-        return [
-          { label: 'Mark In Transit', value: 'in_transit', icon: <Truck className="mr-1.5 h-4 w-4" /> },
-          { label: 'Cancel', value: 'cancelled', variant: 'danger', icon: <X className="mr-1.5 h-4 w-4" /> },
-        ];
-      case 'in_transit':
-        return [
-          { label: 'Mark Received', value: 'received', icon: <PackageCheck className="mr-1.5 h-4 w-4" /> },
-          { label: 'Cancel', value: 'cancelled', variant: 'danger', icon: <X className="mr-1.5 h-4 w-4" /> },
-        ];
-      default:
-        return [];
+  const getNextActions = (status: string): TransferAction[] => {
+    const allowed = validTransitions[status] || [];
+    const actions: TransferAction[] = [];
+
+    if (allowed.includes('approved')) {
+      actions.push({
+        label: 'Approve',
+        value: 'approved',
+        variant: 'primary',
+        icon: <Check className="mr-1.5 h-4 w-4" />,
+        description: 'Approve this transfer request. The device will be cleared for transit.',
+      });
     }
+    if (allowed.includes('in_transit')) {
+      actions.push({
+        label: 'Mark In Transit',
+        value: 'in_transit',
+        variant: 'primary',
+        icon: <Truck className="mr-1.5 h-4 w-4" />,
+        description: 'Mark this transfer as in transit. The device is on its way to the destination.',
+      });
+    }
+    if (allowed.includes('received')) {
+      actions.push({
+        label: 'Mark Received',
+        value: 'received',
+        variant: 'primary',
+        icon: <PackageCheck className="mr-1.5 h-4 w-4" />,
+        description: 'Confirm the device has been received at the destination. This completes the transfer.',
+      });
+    }
+    if (allowed.includes('cancelled')) {
+      actions.push({
+        label: 'Cancel',
+        value: 'cancelled',
+        variant: 'danger',
+        icon: <X className="mr-1.5 h-4 w-4" />,
+        description: 'Cancel this transfer. The device will remain at its current location.',
+      });
+    }
+    return actions;
   };
 
   const columns: Column<StockTransfer>[] = [
@@ -184,7 +227,9 @@ export default function TransfersPage() {
           <Button variant="outline" size="sm" onClick={() => setActionModal(row)}>
             Update
           </Button>
-        ) : null;
+        ) : (
+          <span className="text-xs text-gray-400 italic">No actions</span>
+        );
       },
     },
   ];
@@ -372,40 +417,62 @@ export default function TransfersPage() {
               </div>
             </dl>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Cancellation Reason (if cancelling)</label>
-              <textarea
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                rows={2}
-                className={inputClass + ' mt-1'}
-                placeholder="Required if cancelling..."
-              />
-            </div>
+            {/* Show cancel reason field only if cancel is a valid transition */}
+            {(validTransitions[actionModal.status] || []).includes('cancelled') && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Cancellation Reason (if cancelling)</label>
+                <textarea
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={2}
+                  className={inputClass + ' mt-1'}
+                  placeholder="Required if cancelling..."
+                />
+              </div>
+            )}
 
             <div className="flex justify-end gap-2">
-              {getNextActions(actionModal.status).map((action) => (
-                <Button
-                  key={action.value}
-                  variant={action.variant || 'primary'}
-                  onClick={() => updateMutation.mutate({
-                    id: actionModal.id,
-                    status: action.value,
-                    reason: action.value === 'cancelled' ? cancelReason : undefined,
-                  })}
-                  disabled={
-                    updateMutation.isPending ||
-                    (action.value === 'cancelled' && !cancelReason.trim())
-                  }
-                >
-                  {action.icon}
-                  {action.label}
-                </Button>
-              ))}
+              {getNextActions(actionModal.status).map((action) => {
+                const isDisabled =
+                  updateMutation.isPending ||
+                  (action.value === 'cancelled' && !cancelReason.trim());
+
+                return (
+                  <Button
+                    key={action.value}
+                    variant={action.variant || 'primary'}
+                    onClick={() => setConfirmAction({ transfer: actionModal, action })}
+                    disabled={isDisabled}
+                  >
+                    {action.icon}
+                    {action.label}
+                  </Button>
+                );
+              })}
             </div>
           </div>
         )}
       </Modal>
+
+      {/* Transfer Action Confirmation Dialog */}
+      <ConfirmationDialog
+        open={!!confirmAction}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (confirmAction) {
+            updateMutation.mutate({
+              id: confirmAction.transfer.id,
+              status: confirmAction.action.value,
+              reason: confirmAction.action.value === 'cancelled' ? cancelReason : undefined,
+            });
+          }
+        }}
+        title={confirmAction?.action.label || ''}
+        description={confirmAction?.action.description || ''}
+        confirmLabel={confirmAction?.action.label || 'Confirm'}
+        variant={confirmAction?.action.value === 'cancelled' ? 'destructive' : 'warning'}
+        isLoading={updateMutation.isPending}
+      />
     </div>
   );
 }

@@ -2,35 +2,39 @@
 
 import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import Link from 'next/link';
 import { fetchCustomerById, updateCustomer } from '@/lib/api/customers';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
+import { emailSchema, phoneSchema } from '@/lib/validation/schemas';
 import type { Customer } from '@/types/database';
 
-interface EditCustomerForm {
-  first_name: string;
-  last_name: string;
-  phone_number: string;
-  email: string;
-  whatsapp_number: string;
-  national_id: string;
-  date_of_birth: string;
-  gender: string;
-  province: string;
-  city: string;
-  address_line_1: string;
-  address_line_2: string;
-  postal_code: string;
-  employment_status: string;
-  employment_type: string;
-  monthly_income_usd: number | null;
-}
+const editCustomerSchema = z.object({
+  first_name: z.string().min(1, 'First name is required'),
+  last_name: z.string().min(1, 'Last name is required'),
+  phone_number: phoneSchema,
+  email: z.union([z.literal(''), emailSchema]).transform((v) => v || ''),
+  whatsapp_number: z.union([z.literal(''), phoneSchema]).transform((v) => v || ''),
+  national_id: z.string(),
+  date_of_birth: z.string(),
+  gender: z.string(),
+  province: z.string(),
+  city: z.string(),
+  address_line_1: z.string(),
+  address_line_2: z.string(),
+  postal_code: z.string(),
+  employment_status: z.string(),
+  employment_type: z.string(),
+  monthly_income_usd: z.number().nullable(),
+});
+
+type EditCustomerForm = z.infer<typeof editCustomerSchema>;
 
 export default function EditCustomerPage() {
   const params = useParams();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const customerId = params.id as string;
 
   const { data: customer, isLoading } = useQuery({
@@ -42,6 +46,7 @@ export default function EditCustomerPage() {
     register,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, isDirty },
   } = useForm<EditCustomerForm>();
 
@@ -68,7 +73,7 @@ export default function EditCustomerPage() {
     }
   }, [customer, reset]);
 
-  const updateMutation = useMutation({
+  const updateMutation = useMutationWithToast({
     mutationFn: (data: EditCustomerForm) => {
       const updates: Partial<Customer> = {};
       for (const [key, value] of Object.entries(data)) {
@@ -78,11 +83,23 @@ export default function EditCustomerPage() {
       }
       return updateCustomer(customerId, updates);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customer', customerId] });
-      router.push(`/dashboard/customers/${customerId}`);
-    },
+    successMessage: 'Customer updated successfully',
+    errorMessage: 'Failed to update customer',
+    invalidateKeys: [['customer', customerId], ['customers']],
+    onSuccess: () => router.push(`/dashboard/customers/${customerId}`),
   });
+
+  function onSubmit(data: EditCustomerForm) {
+    const result = editCustomerSchema.safeParse(data);
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0] as keyof EditCustomerForm;
+        setError(field, { message: issue.message });
+      }
+      return;
+    }
+    updateMutation.mutate(result.data);
+  }
 
   if (isLoading) {
     return (
@@ -131,7 +148,7 @@ export default function EditCustomerPage() {
       </div>
 
       <form
-        onSubmit={handleSubmit((data) => updateMutation.mutate(data))}
+        onSubmit={handleSubmit(onSubmit)}
         className="space-y-6"
       >
         {/* Personal Information */}
@@ -145,13 +162,13 @@ export default function EditCustomerPage() {
               error={errors.first_name?.message}
             >
               <input
-                {...register('first_name', { required: 'First name is required' })}
+                {...register('first_name')}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Last Name" error={errors.last_name?.message}>
               <input
-                {...register('last_name', { required: 'Last name is required' })}
+                {...register('last_name')}
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
@@ -190,17 +207,19 @@ export default function EditCustomerPage() {
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Phone Number" error={errors.phone_number?.message}>
               <input
-                {...register('phone_number', { required: 'Phone number is required' })}
+                {...register('phone_number')}
+                placeholder="+263XXXXXXXXX"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
-            <FormField label="WhatsApp Number">
+            <FormField label="WhatsApp Number" error={errors.whatsapp_number?.message}>
               <input
                 {...register('whatsapp_number')}
+                placeholder="+263XXXXXXXXX"
                 className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
-            <FormField label="Email" className="col-span-2">
+            <FormField label="Email" className="col-span-2" error={errors.email?.message}>
               <input
                 type="email"
                 {...register('email')}

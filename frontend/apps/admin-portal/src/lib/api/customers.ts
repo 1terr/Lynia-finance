@@ -93,12 +93,13 @@ export async function updateCustomerStatus(customerId: string, status: CustomerS
 
 // --- KYC Review ---
 
-export async function getKYCPendingReview(page = 1, rawLimit = 25) {
+export async function getKYCPendingReview(page = 1, rawLimit = 25, search?: string) {
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
 
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('limit', String(limit));
+  if (search) params.set('search', search);
 
   return fetchAPI<{
     data: (KYCSubmission & { customer: Pick<Customer, 'id' | 'full_name' | 'phone_number'> | null })[];

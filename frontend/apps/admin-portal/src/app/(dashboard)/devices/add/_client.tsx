@@ -10,7 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Plus, Upload, CheckCircle, AlertTriangle, Eye } from 'lucide-react';
+import { ArrowLeft, Plus, Upload, CheckCircle, AlertTriangle, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 
 type Tab = 'single' | 'bulk';
@@ -43,6 +43,7 @@ export default function AddDevicePage() {
   const [bulkResult, setBulkResult] = useState<BulkImportResult | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [parsedDevices, setParsedDevices] = useState<{ device: CreateDeviceRequest; errors: string[]; row: number }[]>([]);
+  const [showErrorDetails, setShowErrorDetails] = useState(false);
 
   const { data: deviceModels } = useQuery({
     queryKey: ['device-models-select'],
@@ -394,31 +395,75 @@ export default function AddDevicePage() {
           <CardContent>
             {bulkResult ? (
               <div className="space-y-4">
-                <div className="flex items-start gap-3 rounded-lg bg-green-50 p-4">
-                  <CheckCircle className="mt-0.5 h-5 w-5 text-green-600" />
+                {/* Summary Banner */}
+                <div className={`flex items-start gap-3 rounded-lg p-4 ${bulkResult.errors > 0 ? 'bg-yellow-50' : 'bg-green-50'}`}>
+                  <CheckCircle className={`mt-0.5 h-5 w-5 ${bulkResult.errors > 0 ? 'text-yellow-600' : 'text-green-600'}`} />
                   <div>
-                    <p className="font-medium text-green-800">Import Complete</p>
-                    <div className="mt-2 flex gap-4 text-sm text-green-700">
-                      <span>{bulkResult.inserted} inserted</span>
-                      <span>{bulkResult.skipped} skipped (duplicates)</span>
-                      <span>{bulkResult.errors} errors</span>
+                    <p className={`font-medium ${bulkResult.errors > 0 ? 'text-yellow-800' : 'text-green-800'}`}>
+                      Imported {bulkResult.inserted}/{bulkResult.total}{bulkResult.errors > 0 ? `, ${bulkResult.errors} error${bulkResult.errors !== 1 ? 's' : ''}` : ''}
+                    </p>
+                    <div className="mt-2 flex gap-4 text-sm text-gray-600">
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                        {bulkResult.inserted} inserted
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
+                        {bulkResult.skipped} skipped (duplicates)
+                      </span>
+                      {bulkResult.errors > 0 && (
+                        <span className="flex items-center gap-1">
+                          <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
+                          {bulkResult.errors} error{bulkResult.errors !== 1 ? 's' : ''}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
 
+                {/* Expandable Error Details Table */}
                 {bulkResult.error_details.length > 0 && (
-                  <div className="rounded-lg bg-red-50 p-4">
-                    <p className="text-sm font-medium text-red-800">Errors:</p>
-                    <ul className="mt-2 space-y-1 text-sm text-red-700">
-                      {bulkResult.error_details.map((e, i) => (
-                        <li key={i}>IMEI {e.imei}: {e.error}</li>
-                      ))}
-                    </ul>
+                  <div className="rounded-lg border border-red-200 bg-red-50">
+                    <button
+                      type="button"
+                      onClick={() => setShowErrorDetails((v) => !v)}
+                      className="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-red-800 hover:bg-red-100 rounded-lg transition-colors"
+                    >
+                      <span className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-red-600" />
+                        {bulkResult.error_details.length} device{bulkResult.error_details.length !== 1 ? 's' : ''} failed to import
+                      </span>
+                      {showErrorDetails ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </button>
+                    {showErrorDetails && (
+                      <div className="border-t border-red-200">
+                        <table className="min-w-full divide-y divide-red-200 text-sm">
+                          <thead className="bg-red-100">
+                            <tr>
+                              <th className="px-4 py-2 text-left font-medium text-red-800">IMEI</th>
+                              <th className="px-4 py-2 text-left font-medium text-red-800">Error</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-red-100">
+                            {bulkResult.error_details.map((e, i) => (
+                              <tr key={i}>
+                                <td className="px-4 py-2 font-mono text-red-900">{e.imei || '(empty)'}</td>
+                                <td className="px-4 py-2 text-red-700">{e.error}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
                   </div>
                 )}
 
                 <div className="flex gap-3">
-                  <Button variant="outline" onClick={() => { setBulkResult(null); setCsvText(''); }}>
+                  <Button variant="outline" onClick={() => { setBulkResult(null); setCsvText(''); setShowErrorDetails(false); }}>
                     Import More
                   </Button>
                   <Button onClick={() => router.push('/devices')}>

@@ -1,4 +1,4 @@
-import { getSession, signOut as cognitoSignOut } from '@lynia/auth';
+import { getValidSession, signOut as cognitoSignOut } from '@lynia/auth';
 import type { AdminUser, DashboardMetrics, PortfolioAtRisk, DailyTrend, LoansByStatus, RecentActivity } from '@/types';
 import type { ReconciliationResult } from '@/types/fineract';
 
@@ -7,12 +7,11 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 /**
  * Authenticated API client using Cognito JWT tokens.
  *
- * Extracts the ID token from the current Cognito session and attaches it
- * as a Bearer token to every request. On 401 responses (expired/invalid
- * token), clears the local Cognito session and redirects to login.
+ * Uses getValidSession() which auto-refreshes expired tokens before
+ * returning. On 401 responses, clears the session and redirects to login.
  */
 export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<T> {
-  const session = await getSession();
+  const session = await getValidSession();
 
   if (!session) {
     handleSessionExpired();
@@ -41,7 +40,9 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
   }
 
   if (!res.ok) {
-    throw new Error(`API error: ${res.status}`);
+    // Parse error response body for detailed error message
+    const errorMessage = await parseErrorResponse(res);
+    throw new Error(errorMessage);
   }
 
   const json = await res.json();
@@ -51,6 +52,20 @@ export async function fetchAPI<T>(path: string, options?: RequestInit): Promise<
     return json.data as T;
   }
   return json as T;
+}
+
+/** Extract a user-friendly error message from the API response body. */
+async function parseErrorResponse(res: Response): Promise<string> {
+  try {
+    const body = await res.json();
+    // Backend returns { success: false, error: "message" } or { error: { message: "..." } }
+    if (typeof body?.error === 'string') return body.error;
+    if (typeof body?.error?.message === 'string') return body.error.message;
+    if (typeof body?.message === 'string') return body.message;
+  } catch {
+    // Response body was not JSON
+  }
+  return `Request failed (${res.status})`;
 }
 
 /** Clear Cognito session and redirect to login on auth failure. */

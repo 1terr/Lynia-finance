@@ -14,6 +14,7 @@ import type { Device, DeviceStatus, LockStatus } from '@/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { exportDevicesToCSV } from '@/lib/api/devices';
 import { Search, Smartphone, Lock, Package, Plus, ArrowRightLeft, ClipboardList, Handshake, BarChart3, Download } from 'lucide-react';
 
@@ -42,6 +43,7 @@ export default function DevicesPage() {
   const { toast } = useToast();
   const [filters, setFilters] = useState<DeviceFilters>({ page: 1, limit: 25 });
   const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
 
   function handleExportCSV() {
     if (!data?.data?.length) {
@@ -59,20 +61,17 @@ export default function DevicesPage() {
     toast({ title: 'CSV exported successfully', variant: 'success' });
   }
 
+  const queryFilters = { ...filters, search: debouncedSearch || undefined };
+
   const { data, isLoading } = useQuery({
-    queryKey: ['devices', filters],
-    queryFn: () => getDevices(filters),
+    queryKey: ['devices', queryFilters],
+    queryFn: () => getDevices(queryFilters),
   });
 
   const { data: stats } = useQuery({
     queryKey: ['device-stats'],
     queryFn: () => getDeviceStats(),
   });
-
-  function handleSearch(e: React.FormEvent) {
-    e.preventDefault();
-    setFilters((f) => ({ ...f, search: searchInput || undefined, page: 1 }));
-  }
 
   const columns: Column<DeviceWithCustomer>[] = [
     {
@@ -249,16 +248,16 @@ export default function DevicesPage() {
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
-        <form onSubmit={handleSearch} className="relative flex-1">
+        <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={(e) => { setSearchInput(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
             placeholder="Search by IMEI, brand, or model..."
             className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
-        </form>
+        </div>
         <Select
           options={STATUS_OPTIONS}
           value={filters.status || ''}

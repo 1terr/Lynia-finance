@@ -16,6 +16,7 @@ export function useDashboardMetrics() {
     queryFn: getDashboardMetrics,
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -24,6 +25,8 @@ export function usePortfolioAtRisk() {
     queryKey: ['dashboard', 'par'],
     queryFn: getPortfolioAtRisk,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -32,6 +35,8 @@ export function useDailyTrends(days: number = 30) {
     queryKey: ['dashboard', 'trends', days],
     queryFn: () => getDailyTrends(days),
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -40,6 +45,8 @@ export function useLoansByStatus() {
     queryKey: ['dashboard', 'loans-by-status'],
     queryFn: getLoansByStatus,
     staleTime: 5 * 60 * 1000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -47,7 +54,8 @@ export function useRecentActivity(limit: number = 20) {
   return useQuery({
     queryKey: ['dashboard', 'activity', limit],
     queryFn: () => getRecentActivity(limit),
-    staleTime: 60 * 1000,
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -57,5 +65,6 @@ export function useFineractHealth() {
     queryFn: getFineractReconciliation,
     staleTime: 10 * 60 * 1000,
     retry: 1,
+    refetchOnWindowFocus: true,
   });
 }
