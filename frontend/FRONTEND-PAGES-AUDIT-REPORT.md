@@ -34,7 +34,13 @@
 | 21 | `/reports` | `(dashboard)/reports/page.tsx` + `_client.tsx` | Built |
 | 22 | `/settings` | `(dashboard)/settings/page.tsx` + `_client.tsx` | Built |
 
-**Supporting component directories:** `auth/`, `customers/`, `dashboard/`, `devices/`, `distributors/`, `kyc-review/`, `layout/`, `payments/`, `reports/`, `settings/`, `shared/`, `ui/`
+**Supporting component directories:** `auth/`, `customers/`, `dashboard/`, `devices/`, `distributors/`, `fineract/`, `kyc-review/`, `layout/`, `payments/`, `reports/`, `settings/`, `shared/`, `ui/`
+
+**Shared hooks:** `hooks/use-debounced-value.ts`, `hooks/use-mutation-with-toast.ts`
+
+**Shared validation:** `lib/validation/schemas.ts` (Zod schemas for email, phone, UUID, currency, pagination, IMEI, national ID)
+
+**Reusable UI components (added 2026-03-06):** `ui/confirmation-dialog.tsx` (destructive/warning/info variants with optional typed-input confirmation)
 
 ### Distributor Dashboard (`frontend/distributor-dashboard`) — 6 Routes
 

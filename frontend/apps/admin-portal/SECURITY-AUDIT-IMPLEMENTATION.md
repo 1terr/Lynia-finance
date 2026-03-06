@@ -79,10 +79,26 @@ Implemented 25 security audit findings from `frontend/admin-portal/SECURITY-AUDI
 
 | Priority | Item |
 |----------|------|
-| Short-term | Supabase RLS policies for all tables |
 | Short-term | Server-side permission validation in API functions |
-| Short-term | Wrap multi-table operations in Supabase RPC transactions |
 | Medium-term | Rate limiting on login |
 | Medium-term | WCAG 2.1 AA accessibility attributes |
 | Medium-term | Dashboard metric aggregations via database views/RPC |
 | Medium-term | Comprehensive audit logging on all mutations |
+
+---
+
+## Update: 2026-03-06 — Auth Security & UX Hardening (PR #389)
+
+Additional security and UX improvements implemented:
+
+| Category | Change | Files |
+|----------|--------|-------|
+| **Auth** | Removed demo mode entirely (was allowing bypass of Cognito auth) | `auth-store.ts`, `login/page.tsx` |
+| **Auth** | JWT auto-refresh via `getValidSession()` — tokens refresh within 60s of expiry | `packages/auth/src/cognito.ts` |
+| **Auth** | Session timeout warning toast 5 minutes before expiry | `use-session-timeout.ts` |
+| **Auth** | Cognito-specific login error messages (not generic "Invalid email or password") | `auth-store.ts` |
+| **API** | Better error parsing — extracts structured error from response body | `packages/api-client/src/client.ts`, `lib/api/client.ts` |
+| **UI** | Confirmation dialogs on all destructive actions (block, suspend, refund, write-off, lock/unlock) | 12+ page files |
+| **Validation** | Zod schema validation for email, phone, forms | `lib/validation/schemas.ts`, `distributor-form.tsx`, `customer edit` |
+| **Search** | Debounced search (300ms) prevents excessive API calls | `hooks/use-debounced-value.ts`, 6+ pages |
+| **Dark mode** | Modal component fixed for dark mode (was hardcoded white) | `components/ui/modal.tsx` |

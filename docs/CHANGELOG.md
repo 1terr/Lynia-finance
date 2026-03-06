@@ -4,6 +4,78 @@ All notable changes to Lynia Finance are documented in this file.
 
 ---
 
+## [2026-03-06] Comprehensive Admin Portal UX Improvements — 8 Domains
+
+### Summary
+
+Full UI/UX review and improvement across all 8 domains of the admin portal
+(admin.lyniafinance.com). Adds confirmation dialogs for destructive actions,
+toast feedback for mutations, form validation, debounced search, error
+surfacing, and auth security improvements. 57 files changed across frontend
+and backend.
+
+**PR:** [#389](https://github.com/1terr/Lynia-finance/pull/389)
+
+### Auth & Shared Utilities
+
+- **Demo mode removed** — login now requires real Cognito credentials; clear
+  error message when Cognito is not configured
+- **JWT auto-refresh** — `getValidSession()` in `@lynia/auth` auto-refreshes
+  tokens within 60s of expiry
+- **Session timeout warning** — toast notification 5 minutes before session
+  expires
+- **Better API error parsing** — `@lynia/api-client` extracts `message`/`error`
+  from response bodies instead of generic "API error: {status}"
+- **Login error messages** — maps Cognito error codes
+  (`NotAuthorizedException`, `UserNotConfirmedException`,
+  `TooManyRequestsException`, `PasswordResetRequiredException`) to user-friendly
+  messages
+- **Modal dark mode fix** — hardcoded `bg-white` → `bg-card text-card-foreground`
+- **Audit log search** — text search across admin email, entity ID, description
+
+### New Shared Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `ConfirmationDialog` | `components/ui/confirmation-dialog.tsx` | Reusable dialog with destructive/warning/info variants, optional typed-input confirmation, isLoading state |
+| `useMutationWithToast` | `hooks/use-mutation-with-toast.ts` | Wrapper around `useMutation` with auto success/error toasts and cache invalidation |
+| `useDebouncedValue` | `hooks/use-debounced-value.ts` | Debounce hook for search inputs (300ms default) |
+| Zod schemas | `lib/validation/schemas.ts` | `emailSchema`, `phoneSchema`, `uuidSchema`, `currencyAmountSchema`, `paginationSchema`, `imeiSchema`, `zimbabweNationalIdSchema` |
+
+### Domain Changes
+
+| Domain | Key Improvements |
+|--------|-----------------|
+| **Dashboard** | Degraded state banner when Fineract unavailable, skeleton loaders, auto-refresh (60s), empty chart placeholders, data source badges |
+| **Customers** | Block confirmation dialog, debounced search, Zod validation on edit form, mutation toasts |
+| **KYC Review** | Approval confirmation, rejection reason templates, queue search by name/phone, pulsing 48h SLA indicator |
+| **Loans/Fineract** | Fineract error parsing (`defaultUserMessage`), write-off with typed confirmation, close action, loan summary in approval dialog, debounced search |
+| **Payments** | Duplicate reference check, confirmation dialogs for refund/fail/confirm, reconciliation search+filters, priority-sorted collections queue |
+| **Devices** | Unlock confirmation (was missing), bulk import per-device error table, handover workflow status transitions, destructive status confirmations |
+| **Distributors** | Zod email/phone validation, suspend confirmation with impact warning, bulk commission payment count feedback, sub-tab loading/error states |
+
+### Backend Changes
+
+| File | Change |
+|------|--------|
+| `services/admin-service/src/handlers/audit-logs.ts` | ILIKE search on `user_email`, `entity_id`, `description` |
+| `services/admin-service/src/handlers/distributors.ts` | Email format validation on create, bulk commission pay returns `{ paid, total }` |
+
+### Tests
+
+- 410/420 tests passing (10 pre-existing failures unrelated to changes)
+- Updated test mocks for `getValidSession()` rename
+- Fixed test assertions for new ConfirmationDialog UI
+- New tests: validation-schemas (7 schemas), confirmation-dialog (10 tests), auth-store updates
+
+### Deployment
+
+- Deployed to production: 2026-03-06
+- Frontend: S3 + CloudFront via Deploy Frontend (Blue-Green) workflow
+- Backend: Lambda via Deploy to AWS workflow
+
+---
+
 ## [2026-03-05] Products & Devices Audit — 5 Bug Fixes + 3 Gap Closures
 
 ### Summary
