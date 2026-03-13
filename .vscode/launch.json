@@ -11,6 +11,15 @@
       "internalConsoleOptions": "neverOpen"
     },
     {
+      "name": "Debug All Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["test", "--", "--runInBand"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
       "name": "SAM Local Invoke",
       "type": "aws-sam",
       "request": "direct-invoke",
@@ -21,11 +30,32 @@
       }
     },
     {
+      "name": "Next.js Admin Portal",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/frontend/admin-portal",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["dev"],
+      "console": "integratedTerminal",
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://\\S+)",
+        "uriFormat": "%s",
+        "action": "openExternally"
+      }
+    },
+    {
       "name": "Attach to Node",
       "type": "node",
       "request": "attach",
       "port": 9229,
-      "restart": true
+      "restart": true,
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Full Stack (API + Frontend)",
+      "configurations": ["SAM Local Invoke", "Next.js Admin Portal"]
     }
   ]
 }
