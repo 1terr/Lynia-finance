@@ -1,0 +1,18 @@
+{
+  "recommendations": [
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "ms-vscode.vscode-typescript-next",
+    "amazonwebservices.aws-toolkit-vscode",
+    "github.vscode-github-actions",
+    "github.copilot",
+    "eamodio.gitlens",
+    "ms-azuretools.vscode-docker",
+    "humao.rest-client",
+    "streetsidesoftware.code-spell-checker",
+    "bradlc.vscode-tailwindcss",
+    "kddejong.vscode-cfn-lint",
+    "redhat.vscode-yaml"
+  ],
+  "unwantedRecommendations": []
+}
