@@ -1,18 +1,39 @@
 {
   "recommendations": [
+    // --- Claude Code (your main dev tool) ---
+    "anthropic.claude-code",
+
+    // --- GitHub Integration (no-local workflow) ---
+    "github.vscode-pull-request-github",
+    "github.vscode-github-actions",
+    "eamodio.gitlens",
+
+    // --- Code Quality ---
     "dbaeumer.vscode-eslint",
     "esbenp.prettier-vscode",
     "ms-vscode.vscode-typescript-next",
-    "amazonwebservices.aws-toolkit-vscode",
-    "github.vscode-github-actions",
-    "github.copilot",
-    "eamodio.gitlens",
-    "ms-azuretools.vscode-docker",
-    "humao.rest-client",
     "streetsidesoftware.code-spell-checker",
-    "bradlc.vscode-tailwindcss",
+    "sonarsource.sonarlint-vscode",
+
+    // --- AWS & Infrastructure ---
+    "amazonwebservices.aws-toolkit-vscode",
     "kddejong.vscode-cfn-lint",
-    "redhat.vscode-yaml"
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+
+    // --- Frontend (Next.js / React) ---
+    "bradlc.vscode-tailwindcss",
+    "dsznajder.es7-react-js-snippets",
+    "styled-components.vscode-styled-components",
+
+    // --- API Testing ---
+    "humao.rest-client",
+
+    // --- Productivity ---
+    "christian-kohler.path-intellisense",
+    "mikestead.dotenv",
+    "gruntfuggly.todo-tree",
+    "usernamehw.errorlens"
   ],
   "unwantedRecommendations": []
 }

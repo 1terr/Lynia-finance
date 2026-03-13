@@ -1,0 +1,122 @@
+{
+  "Lambda Handler": {
+    "scope": "typescript",
+    "prefix": "lynia-lambda",
+    "description": "Lynia Lambda function handler with logging",
+    "body": [
+      "import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';",
+      "import { Logger } from '../shared/utils/logger';",
+      "",
+      "const logger = new Logger('${1:service-name}');",
+      "",
+      "export const handler = async (",
+      "  event: APIGatewayProxyEvent",
+      "): Promise<APIGatewayProxyResult> => {",
+      "  const requestId = event.requestContext?.requestId || 'unknown';",
+      "  logger.info({ action: '${2:action}', status: 'started', requestId });",
+      "",
+      "  try {",
+      "    ${3:// Implementation}",
+      "",
+      "    logger.info({ action: '${2:action}', status: 'completed', requestId });",
+      "    return {",
+      "      statusCode: 200,",
+      "      headers: { 'Content-Type': 'application/json' },",
+      "      body: JSON.stringify({ success: true, data: ${4:result} }),",
+      "    };",
+      "  } catch (error) {",
+      "    logger.error({ action: '${2:action}', status: 'failed', requestId, error: (error as Error).message });",
+      "    return {",
+      "      statusCode: 500,",
+      "      headers: { 'Content-Type': 'application/json' },",
+      "      body: JSON.stringify({ success: false, error: { code: '${5:ERR_CODE}', message: 'Internal server error', requestId } }),",
+      "    };",
+      "  }",
+      "};"
+    ]
+  },
+  "Error Response": {
+    "scope": "typescript",
+    "prefix": "lynia-error",
+    "description": "Lynia standard error response",
+    "body": [
+      "return {",
+      "  statusCode: ${1:400},",
+      "  headers: { 'Content-Type': 'application/json' },",
+      "  body: JSON.stringify({",
+      "    success: false,",
+      "    error: {",
+      "      code: '${2:ERROR_CODE}',",
+      "      message: '${3:User-friendly message}',",
+      "      requestId,",
+      "      timestamp: new Date().toISOString(),",
+      "    },",
+      "  }),",
+      "};"
+    ]
+  },
+  "Success Response": {
+    "scope": "typescript",
+    "prefix": "lynia-success",
+    "description": "Lynia standard success response",
+    "body": [
+      "return {",
+      "  statusCode: ${1:200},",
+      "  headers: { 'Content-Type': 'application/json' },",
+      "  body: JSON.stringify({",
+      "    success: true,",
+      "    data: ${2:result},",
+      "  }),",
+      "};"
+    ]
+  },
+  "Jest Test Suite": {
+    "scope": "typescript",
+    "prefix": "lynia-test",
+    "description": "Lynia test file with standard setup",
+    "body": [
+      "describe('${1:module}', () => {",
+      "  beforeEach(() => {",
+      "    jest.clearAllMocks();",
+      "  });",
+      "",
+      "  describe('${2:function}', () => {",
+      "    it('should ${3:expected behavior}', async () => {",
+      "      // Arrange",
+      "      ${4}",
+      "",
+      "      // Act",
+      "      const result = await ${2}(${5});",
+      "",
+      "      // Assert",
+      "      expect(result).${6:toBeDefined}();",
+      "    });",
+      "  });",
+      "});"
+    ]
+  },
+  "Money Format": {
+    "scope": "typescript",
+    "prefix": "lynia-money",
+    "description": "Lynia Money type with currency",
+    "body": [
+      "const ${1:amount}: Money = {",
+      "  amount: ${2:0},  // in cents",
+      "  currency: '${3|USD,ZWL,ZAR|}',",
+      "};"
+    ]
+  },
+  "Logger Call": {
+    "scope": "typescript",
+    "prefix": "lynia-log",
+    "description": "Structured log entry",
+    "body": [
+      "logger.${1|info,warn,error|}({",
+      "  action: '${2:action.name}',",
+      "  status: '${3|started,completed,failed|}',",
+      "  requestId,",
+      "  ${4:metadata: { }}",
+      "});"
+    ]
+  }
+}

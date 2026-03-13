@@ -19,6 +19,8 @@ build
 !.vscode/extensions.json
 !.vscode/tasks.json
 !.vscode/launch.json
+!.vscode/keybindings.json
+!.vscode/lynia.code-snippets
 catalina.base_IS_UNDEFINED/
 keystore.jks
 bin/

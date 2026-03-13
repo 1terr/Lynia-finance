@@ -1,0 +1,40 @@
+[
+  // === Quick Actions ===
+  {
+    "key": "ctrl+shift+t",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Run Tests"
+  },
+  {
+    "key": "ctrl+shift+b",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Build All"
+  },
+  {
+    "key": "ctrl+shift+l",
+    "command": "workbench.action.tasks.runTask",
+    "args": "Lint"
+  },
+
+  // === Git Shortcuts ===
+  {
+    "key": "ctrl+shift+g ctrl+shift+p",
+    "command": "git.push"
+  },
+  {
+    "key": "ctrl+shift+g ctrl+shift+c",
+    "command": "git.commitAll"
+  },
+
+  // === Navigation ===
+  {
+    "key": "ctrl+shift+e",
+    "command": "workbench.view.explorer"
+  },
+
+  // === Terminal (Claude Code) ===
+  {
+    "key": "ctrl+`",
+    "command": "workbench.action.terminal.toggleTerminal"
+  }
+]
