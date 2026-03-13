@@ -13,7 +13,12 @@ build
 *.swp
 *.DS_Store
 .idea
-.vscode
+# VS Code - ignore personal settings, keep shared config
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+!.vscode/launch.json
 catalina.base_IS_UNDEFINED/
 keystore.jks
 bin/
