@@ -1,6 +1,6 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query, queryOne } from '../../../shared/clients/database';
-import { successResponse } from '../../../shared/utils/response';
+import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { getFineractClient } from '../../../shared/clients/fineract';
 import logger from '../../../shared/utils/logger';
 import { mapActionToEventType } from './helpers';
@@ -283,23 +283,34 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
  * Returns loan counts and total amounts grouped by status.
  */
 export const handleLoansByStatus: RouteHandler = async (event, _params, _auth) => {
-  const { data: rows } = await query<{ status: string; count: string; total_amount: string }>(
-    `SELECT
-      loan_status as status,
-      COUNT(*) as count,
-      COALESCE(SUM(loan_amount_usd), 0) as total_amount
-    FROM loans
-    GROUP BY loan_status
-    ORDER BY count DESC`
-  );
+  try {
+    const { data: rows, error } = await query<{ status: string; count: string; total_amount: string }>(
+      `SELECT
+        status,
+        COUNT(*) as count,
+        COALESCE(SUM(loan_amount_usd), 0) as total_amount
+      FROM loans
+      GROUP BY status
+      ORDER BY count DESC`
+    );
 
-  const result = rows.map((row) => ({
-    status: row.status,
-    count: parseInt(row.count),
-    total_amount: parseFloat(row.total_amount),
-  }));
+    if (error) throw error;
 
-  return successResponse(result, 200, event);
+    const result = rows.map((row) => ({
+      status: row.status,
+      count: parseInt(row.count),
+      total_amount: parseFloat(row.total_amount),
+    }));
+
+    return successResponse(result, 200, event);
+  } catch (err) {
+    logger.error('handleLoansByStatus failed', {
+      action: 'dashboard.loansByStatus',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to load loans by status', 500, undefined, event);
+  }
 };
 
 /**
@@ -307,34 +318,45 @@ export const handleLoansByStatus: RouteHandler = async (event, _params, _auth) =
  * Returns the most recent audit log entries for the activity feed.
  */
 export const handleRecentActivity: RouteHandler = async (event, _params, _auth) => {
-  const qs = event.queryStringParameters || {};
-  const limit = Math.min(Math.max(parseInt(qs.limit || '20'), 1), 100);
+  try {
+    const qs = event.queryStringParameters || {};
+    const limit = Math.min(Math.max(parseInt(qs.limit || '20'), 1), 100);
 
-  const { data: rows } = await query<{
-    id: string;
-    action: string;
-    entity_type: string;
-    entity_id: string;
-    description: string;
-    user_email: string;
-    created_at: string;
-  }>(
-    `SELECT id, action, entity_type, entity_id, description, user_email, created_at
-    FROM audit_log
-    ORDER BY created_at DESC
-    LIMIT $1`,
-    [limit]
-  );
+    const { data: rows, error } = await query<{
+      id: string;
+      action: string;
+      entity_type: string;
+      entity_id: string;
+      description: string;
+      user_email: string;
+      created_at: string;
+    }>(
+      `SELECT id, action, entity_type, entity_id, description, user_email, created_at
+      FROM audit_log
+      ORDER BY created_at DESC
+      LIMIT $1`,
+      [limit]
+    );
 
-  const result = rows.map((row) => ({
-    id: row.id,
-    event_type: mapActionToEventType(row.action),
-    description: row.description || `${row.action} on ${row.entity_type}`,
-    resource_type: row.entity_type,
-    resource_id: row.entity_id || '',
-    created_at: row.created_at,
-    admin_name: row.user_email ? row.user_email.split('@')[0] : undefined,
-  }));
+    if (error) throw error;
 
-  return successResponse(result, 200, event);
+    const result = rows.map((row) => ({
+      id: row.id,
+      event_type: mapActionToEventType(row.action || ''),
+      description: row.description || `${row.action || 'action'} on ${row.entity_type}`,
+      resource_type: row.entity_type,
+      resource_id: row.entity_id || '',
+      created_at: row.created_at,
+      admin_name: row.user_email ? row.user_email.split('@')[0] : undefined,
+    }));
+
+    return successResponse(result, 200, event);
+  } catch (err) {
+    logger.error('handleRecentActivity failed', {
+      action: 'dashboard.recentActivity',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to load recent activity', 500, undefined, event);
+  }
 };
