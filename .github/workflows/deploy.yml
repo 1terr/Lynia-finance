@@ -199,8 +199,9 @@ jobs:
           # sam validate runs cfn-lint internally; suppress known SAM false positives
           # E3004: circular dependency between API Gateway and Lambda (SAM resolves this)
           # W8001: unused conditions reserved for future use
+          # W1028: !If false-branch unreachable (false-positive for IsProduction conditional creds)
           sam validate 2>&1 || true
-          cfn-lint template.yaml -i E3004 W8001
+          cfn-lint template.yaml -i E3004 W8001 W1028
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -268,8 +269,9 @@ jobs:
           # sam validate runs cfn-lint internally; suppress known SAM false positives
           # E3004: circular dependency between API Gateway and Lambda (SAM resolves this)
           # W8001: unused conditions reserved for future use
+          # W1028: !If false-branch unreachable (false-positive for IsProduction conditional creds)
           sam validate 2>&1 || true
-          cfn-lint template.yaml -i E3004 W8001
+          cfn-lint template.yaml -i E3004 W8001 W1028
 
       - name: Validate database migrations
         run: |
@@ -560,8 +562,9 @@ jobs:
           # sam validate runs cfn-lint internally; suppress known SAM false positives
           # E3004: circular dependency between API Gateway and Lambda (SAM resolves this)
           # W8001: unused conditions reserved for future use
+          # W1028: !If false-branch unreachable (false-positive for IsProduction conditional creds)
           sam validate 2>&1 || true
-          cfn-lint template.yaml -i E3004 W8001
+          cfn-lint template.yaml -i E3004 W8001 W1028
 
       - name: Resolve VPC and Cognito configuration
         id: resolve-prod-infra
