@@ -257,6 +257,7 @@ export interface ReconciliationResult {
   discrepancies: ReconciliationDiscrepancy[];
   retriedSyncs: number;
   retrySuccessCount: number;
+  fineractReachable: boolean;
 }
 
 export interface ReconciliationDiscrepancy {

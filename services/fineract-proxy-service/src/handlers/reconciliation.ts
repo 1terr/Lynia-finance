@@ -8,6 +8,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { runReconciliation } from '../../../shared/clients/fineract-reconcile';
 import { db } from '../../../shared/clients/database';
+import { getFineractClient } from '../../../shared/clients/fineract';
 import logger from '../../../shared/utils/logger';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
 import type { AuthContext } from '../../../shared/middleware/authorization';
@@ -22,24 +23,50 @@ export async function handleGetReconciliation(
   _params: RouteParams,
   _auth: AuthContext
 ): Promise<APIGatewayProxyResult> {
-  // Query the most recent reconciliation log entries
-  const { data: recentLogs, error: logsError } = await db
-    .from('fineract_sync_log')
-    .select('id, entity_type, entity_id, fineract_id, operation, status, error_message, created_at')
-    .eq('operation', 'reconcile')
-    .order('created_at', { ascending: false })
-    .limit(100)
-    .execute();
+  // Run DB query and Fineract health check in parallel so the health check
+  // doesn't add latency on top of the DB round-trip.
+  const [dbResult, retryResult, fineractReachable] = await Promise.all([
+    db
+      .from('fineract_sync_log')
+      .select('id, entity_type, entity_id, fineract_id, operation, status, error_message, created_at')
+      .eq('operation', 'reconcile')
+      .order('created_at', { ascending: false })
+      .limit(100)
+      .execute(),
+    db
+      .from('fineract_sync_log')
+      .select('id, status')
+      .eq('status', 'retrying')
+      .execute(),
+    getFineractClient()
+      .then((f) => f.healthCheck())
+      .catch(() => false),
+  ]);
 
-  if (logsError) {
+  if (dbResult.error) {
     logger.error('Reconciliation query failed', {
       action: 'fineract.getReconciliation',
-      meta: { error: logsError.message },
+      meta: { error: dbResult.error.message },
     });
-    return err(500, 'Failed to query reconciliation data', event);
+    // Return a valid "not yet run" response — never 500 — so the frontend
+    // only shows the degraded banner based on fineractReachable, not on a
+    // DB connectivity issue.
+    return ok(
+      {
+        runAt: new Date().toISOString(),
+        totalLoansChecked: 0,
+        matchedCount: 0,
+        discrepancyCount: 0,
+        discrepancies: [],
+        retriedSyncs: 0,
+        retrySuccessCount: 0,
+        fineractReachable,
+      },
+      event
+    );
   }
 
-  const logs = (recentLogs as unknown as Array<{
+  const logs = (dbResult.data as unknown as Array<{
     entity_id: string;
     fineract_id: number;
     status: string;
@@ -66,23 +93,14 @@ export async function handleGetReconciliation(
       };
     });
 
-  // Count retried syncs
-  const { data: retryLogs, error: retryError } = await db
-    .from('fineract_sync_log')
-    .select('id, status')
-    .eq('status', 'retrying')
-    .execute();
-
-  if (retryError) {
+  if (retryResult.error) {
     logger.error('Retry query failed', {
       action: 'fineract.getReconciliation',
-      meta: { error: retryError.message },
+      meta: { error: retryResult.error.message },
     });
   }
 
-  const retryCount = Array.isArray(retryLogs) ? retryLogs.length : 0;
-
-  // Find the most recent reconciliation timestamp
+  const retryCount = Array.isArray(retryResult.data) ? retryResult.data.length : 0;
   const runAt = logs.length > 0 ? logs[0].created_at : new Date().toISOString();
 
   return ok(
@@ -94,6 +112,7 @@ export async function handleGetReconciliation(
       discrepancies,
       retriedSyncs: retryCount,
       retrySuccessCount: 0,
+      fineractReachable,
     },
     event
   );

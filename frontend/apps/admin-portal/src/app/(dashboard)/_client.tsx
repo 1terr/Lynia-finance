@@ -67,7 +67,7 @@ export default function DashboardPage() {
   } = useFineractHealth();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const fineractDegraded = !fineractLoading && !fineractHealth && fineractError != null;
+  const fineractDegraded = !fineractLoading && fineractHealth?.fineractReachable === false;
 
   const handleRefreshAll = async () => {
     setIsRefreshing(true);
