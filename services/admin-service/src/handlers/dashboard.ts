@@ -10,6 +10,7 @@ import { mapActionToEventType } from './helpers';
  * Main dashboard metrics — customers, loans, devices, KYC, Fineract-enriched data.
  */
 export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth) => {
+  try {
   // Run all DB queries in parallel for performance
   const [
     customersResult,
@@ -190,6 +191,14 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
   };
 
   return successResponse(metrics, 200, event);
+  } catch (err) {
+    logger.error('handleDashboardMetrics failed', {
+      action: 'dashboard.metrics',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to load dashboard metrics', 500, undefined, event);
+  }
 };
 
 /**
@@ -197,6 +206,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
  * Returns PAR aging buckets (0-30, 31-60, 61-90, 90+ days).
  */
 export const handlePortfolioAtRisk: RouteHandler = async (event, _params, _auth) => {
+  try {
   const { data: rows } = await query<{ bucket: string; total: string }>(
     `SELECT
       CASE
@@ -225,6 +235,14 @@ export const handlePortfolioAtRisk: RouteHandler = async (event, _params, _auth)
   }
 
   return successResponse(par, 200, event);
+  } catch (err) {
+    logger.error('handlePortfolioAtRisk failed', {
+      action: 'dashboard.portfolioAtRisk',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to load portfolio at risk', 500, undefined, event);
+  }
 };
 
 /**
@@ -232,6 +250,7 @@ export const handlePortfolioAtRisk: RouteHandler = async (event, _params, _auth)
  * Returns daily disbursement and collection amounts.
  */
 export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => {
+  try {
   const qs = event.queryStringParameters || {};
   const days = Math.min(Math.max(parseInt(qs.days || '30'), 1), 365);
 
@@ -276,6 +295,14 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
   }));
 
   return successResponse(result, 200, event);
+  } catch (err) {
+    logger.error('handleDailyTrends failed', {
+      action: 'dashboard.dailyTrends',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to load daily trends', 500, undefined, event);
+  }
 };
 
 /**

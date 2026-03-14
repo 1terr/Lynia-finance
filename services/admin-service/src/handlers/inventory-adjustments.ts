@@ -8,7 +8,7 @@ import { auditLog, COGNITO_ADMIN_ROLES } from './helpers';
 // ─── GET /admin/inventory/adjustments ───
 
 export const handleGetAdjustments: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -72,7 +72,7 @@ export const handleGetAdjustments: RouteHandler = async (event, _params, auth) =
 // ─── POST /admin/inventory/adjustments ───
 
 export const handleCreateAdjustment: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 

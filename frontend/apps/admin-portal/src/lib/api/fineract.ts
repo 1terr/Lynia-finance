@@ -34,15 +34,14 @@ async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise
   if (res.status === 403) throw new Error('You do not have permission to perform this action.');
 
   if (!res.ok) {
-    // Parse Fineract error response for detailed message
+    let message: string | undefined;
     try {
       const body = await res.json();
-      const message = body?.defaultUserMessage || body?.error || body?.message;
-      if (message) throw new Error(message);
-    } catch (e) {
-      if (e instanceof Error && e.message !== `API error: ${res.status}`) throw e;
+      message = body?.defaultUserMessage || body?.error || body?.message;
+    } catch {
+      // Response body is not JSON — fall through to generic message
     }
-    throw new Error(`Fineract request failed (${res.status})`);
+    throw new Error(message || `Fineract request failed (${res.status})`);
   }
 
   return res.json();

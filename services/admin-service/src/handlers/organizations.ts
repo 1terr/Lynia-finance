@@ -8,7 +8,7 @@ import { auditLog, hashNationalId, maskPhone } from './helpers';
 // ─── GET /admin/organizations ───
 
 export const handleGetOrganizations: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -59,7 +59,7 @@ export const handleGetOrganizations: RouteHandler = async (event, _params, auth)
 // ─── POST /admin/organizations ───
 
 export const handleCreateOrganization: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -122,7 +122,7 @@ export const handleCreateOrganization: RouteHandler = async (event, _params, aut
 export const handleGetOrganizationById: RouteHandler = async (event, params, auth) => {
   const orgId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -152,7 +152,7 @@ export const handleGetOrganizationById: RouteHandler = async (event, params, aut
 export const handleUpdateOrganization: RouteHandler = async (event, params, auth) => {
   const orgId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -197,7 +197,7 @@ export const handleUpdateOrganization: RouteHandler = async (event, params, auth
 export const handleImportOrgMembers: RouteHandler = async (event, params, auth) => {
   const orgId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -327,7 +327,7 @@ export const handleImportOrgMembers: RouteHandler = async (event, params, auth) 
 export const handleGetOrgMembers: RouteHandler = async (event, params, auth) => {
   const orgId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 

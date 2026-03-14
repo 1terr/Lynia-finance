@@ -11,7 +11,7 @@ const PRODUCT_CODE_REGEX = /^[A-Za-z0-9_]{1,50}$/;
 // ─── GET /admin/products ───
 
 export const handleGetProducts: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -66,7 +66,7 @@ export const handleGetProducts: RouteHandler = async (event, _params, auth) => {
 // ─── GET /admin/products/stats ───
 
 export const handleGetProductStats: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -109,7 +109,7 @@ export const handleGetProductStats: RouteHandler = async (event, _params, auth) 
 // ─── GET /admin/products/:id/loans-count ───
 
 export const handleGetProductLoansCount: RouteHandler = async (event, params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -128,7 +128,7 @@ export const handleGetProductLoansCount: RouteHandler = async (event, params, au
 export const handleGetProductById: RouteHandler = async (event, params, auth) => {
   const id = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -175,7 +175,7 @@ export const handleGetProductById: RouteHandler = async (event, params, auth) =>
 // ─── POST /admin/products ───
 
 export const handleCreateProduct: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -295,7 +295,7 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
 export const handleUpdateProduct: RouteHandler = async (event, params, auth) => {
   const id = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -350,7 +350,7 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 export const handleDeleteProduct: RouteHandler = async (event, params, auth) => {
   const id = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -393,7 +393,7 @@ export const handleDeleteProduct: RouteHandler = async (event, params, auth) => 
 // ─── GET /admin/products/:id/device-models ───
 
 export const handleGetProductDeviceModels: RouteHandler = async (event, params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -423,7 +423,7 @@ export const handleGetProductDeviceModels: RouteHandler = async (event, params, 
 // ─── POST /admin/products/:id/device-models ───
 
 export const handleLinkDeviceModel: RouteHandler = async (event, params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -476,7 +476,7 @@ export const handleLinkDeviceModel: RouteHandler = async (event, params, auth) =
 // ─── DELETE /admin/products/:id/device-models/:modelId ───
 
 export const handleUnlinkDeviceModel: RouteHandler = async (event, params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 

@@ -8,7 +8,7 @@ import { auditLog } from './helpers';
 // ─── GET /admin/distributors ───
 
 export const handleGetDistributors: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -54,7 +54,7 @@ export const handleGetDistributors: RouteHandler = async (event, _params, auth) 
 // ─── GET /admin/distributors/stats ───
 
 export const handleGetDistributorStats: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -90,7 +90,7 @@ export const handleGetDistributorStats: RouteHandler = async (event, _params, au
 // ─── POST /admin/distributors ───
 
 export const handleCreateDistributor: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -213,7 +213,7 @@ export const handleCreateDistributor: RouteHandler = async (event, _params, auth
 export const handleGetDistributorById: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -258,7 +258,7 @@ export const handleGetDistributorById: RouteHandler = async (event, params, auth
 export const handleUpdateDistributor: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -304,7 +304,7 @@ export const handleUpdateDistributor: RouteHandler = async (event, params, auth)
 export const handleGetDistributorInventory: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -358,7 +358,7 @@ export const handleGetDistributorInventory: RouteHandler = async (event, params,
 export const handleGetDistributorHandovers: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -421,7 +421,7 @@ export const handleGetDistributorHandovers: RouteHandler = async (event, params,
 export const handleGetDistributorTransfers: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -477,7 +477,7 @@ export const handleGetDistributorTransfers: RouteHandler = async (event, params,
 export const handleGetDistributorCommissions: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -546,7 +546,7 @@ export const handleGetDistributorCommissions: RouteHandler = async (event, param
 export const handleBulkPayCommissions: RouteHandler = async (event, params, auth) => {
   const distributorId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 

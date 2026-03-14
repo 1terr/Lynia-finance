@@ -8,7 +8,7 @@ import { auditLog } from './helpers';
 // ─── GET /admin/device-models ───
 
 export const handleGetDeviceModels: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -65,7 +65,7 @@ export const handleGetDeviceModels: RouteHandler = async (event, _params, auth) 
 export const handleGetDeviceModelById: RouteHandler = async (event, params, auth) => {
   const id = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -86,7 +86,7 @@ export const handleGetDeviceModelById: RouteHandler = async (event, params, auth
 // ─── POST /admin/device-models ───
 
 export const handleCreateDeviceModel: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -158,7 +158,7 @@ export const handleCreateDeviceModel: RouteHandler = async (event, _params, auth
 export const handleUpdateDeviceModel: RouteHandler = async (event, params, auth) => {
   const id = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -207,7 +207,7 @@ export const handleUpdateDeviceModel: RouteHandler = async (event, params, auth)
 export const handleDeleteDeviceModel: RouteHandler = async (event, params, auth) => {
   const id = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 

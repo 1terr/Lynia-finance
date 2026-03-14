@@ -8,7 +8,7 @@ import { auditLog } from './helpers';
 // ─── GET /admin/inventory/transfers ───
 
 export const handleGetTransfers: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -69,7 +69,7 @@ export const handleGetTransfers: RouteHandler = async (event, _params, auth) => 
 // ─── POST /admin/inventory/transfers ───
 
 export const handleCreateTransfer: RouteHandler = async (event, _params, auth) => {
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
@@ -170,7 +170,7 @@ export const handleCreateTransfer: RouteHandler = async (event, _params, auth) =
 export const handleUpdateTransfer: RouteHandler = async (event, params, auth) => {
   const transferId = params.id;
 
-  if (!isAdminOrManager(auth as never)) {
+  if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 

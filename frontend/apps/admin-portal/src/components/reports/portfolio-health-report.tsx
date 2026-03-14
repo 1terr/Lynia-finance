@@ -18,7 +18,10 @@ export function PortfolioHealthReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchPortfolioHealthReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchPortfolioHealthReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { /* data stays null — loading spinner replaced by null guard */ })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {
