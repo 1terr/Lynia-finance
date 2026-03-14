@@ -43,6 +43,11 @@ gradleExp/
 
 .windsurf/
 
+# Environment variables
+.env
+.env.*
+!.env.example
+
 # Node modules
 node_modules/
 
