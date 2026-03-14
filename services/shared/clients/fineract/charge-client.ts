@@ -218,6 +218,9 @@ export function createChargeOperations(
               },
               timeout: 5000,
               rejectUnauthorized: config.rejectUnauthorized,
+              ...(process.env.FINERACT_TLS_SERVERNAME && {
+                servername: process.env.FINERACT_TLS_SERVERNAME,
+              }),
             },
             (res) => {
               resolve(res.statusCode === 200);
