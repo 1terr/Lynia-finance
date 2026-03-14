@@ -12,7 +12,7 @@ import { getFineractClient } from '../../../shared/clients/fineract';
 import logger from '../../../shared/utils/logger';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
 import type { AuthContext } from '../../../shared/middleware/authorization';
-import { ok, err } from './helpers';
+import { ok } from './helpers';
 
 // ============================================================
 // GET /api/v1/fineract/reconciliation
