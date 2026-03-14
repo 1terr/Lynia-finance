@@ -39,9 +39,9 @@ async function getPool(): Promise<Pool> {
     user: secret.username,
     password: secret.password,
     ssl: { rejectUnauthorized: false },
-    max: 5,
+    max: 15,
     idleTimeoutMillis: 60000,
-    connectionTimeoutMillis: 5000,
+    connectionTimeoutMillis: 10000,
   };
 
   pool = new Pool(config);

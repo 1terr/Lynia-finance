@@ -871,7 +871,7 @@ Resources:
       Handler: fineract-proxy-service/src/index.handler
       Description: Fineract proxy API - merges Lynia DB with live Fineract data for admin portal
       MemorySize: 512
-      Timeout: 60
+      Timeout: 25
       Policies:
         - Version: "2012-10-17"
           Statement:
@@ -1016,6 +1016,7 @@ Resources:
       Handler: admin-service/src/index.handler
       Description: Admin portal management - users, system config, audit logs, dashboard metrics
       MemorySize: 512
+      Timeout: 25
       Policies:
         - Version: "2012-10-17"
           Statement:

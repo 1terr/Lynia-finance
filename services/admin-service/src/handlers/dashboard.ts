@@ -1,7 +1,6 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query, queryOne } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
-import { getFineractClient } from '../../../shared/clients/fineract';
 import logger from '../../../shared/utils/logger';
 import { mapActionToEventType } from './helpers';
 
@@ -95,73 +94,29 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
   const defaultRate = totalActiveDefaulted > 0 ? defaulted / totalActiveDefaulted : 0;
   const newCustomersThisMonth = parseInt(newCustomersResult.data?.count || '0');
 
-  // Try to get Fineract-enriched data (portfolio outstanding, PAR30)
-  let fineractOutstanding: number | null = null;
-  let par30Pct: number | null = null;
-  let fineractLastSync: string | null = null;
-  let fineractDiscrepancies = 0;
-  let disbursementsThisMonth = 0;
-
-  try {
-    const fineract = await getFineractClient();
-
-    // Get all active Fineract-synced loans for accurate outstanding
-    const { data: fLoans } = await query<{ fineract_loan_id: number; outstanding_balance_usd: number }>(
-      "SELECT fineract_loan_id, outstanding_balance_usd FROM loans WHERE loan_status = 'active' AND fineract_loan_id IS NOT NULL LIMIT 500"
-    );
-
-    if (fLoans.length > 0) {
-      let fTotal = 0;
-      let overdueTotal = 0;
-      for (const loan of fLoans.slice(0, 50)) {
-        try {
-          const fl = await fineract.getLoan(loan.fineract_loan_id);
-          fTotal += fl.summary?.totalOutstanding ?? loan.outstanding_balance_usd;
-          const overdue = fl.summary?.totalOverdue ?? 0;
-          if (overdue > 0) {
-            const overdueSince = fl.summary?.overdueSinceDate;
-            if (overdueSince) {
-              const days = Math.floor((Date.now() - new Date(overdueSince).getTime()) / 86400000);
-              if (days > 30) overdueTotal += fl.summary?.totalOutstanding ?? 0;
-            }
-          }
-        } catch {
-          fTotal += loan.outstanding_balance_usd;
-        }
-      }
-      fineractOutstanding = fTotal;
-      par30Pct = fTotal > 0 ? overdueTotal / fTotal : 0;
-    }
-
-    // Get last reconciliation data
-    const { data: reconcData } = await db.from('fineract_sync_log')
-      .select('created_at, status')
+  // Fineract-enriched fields: read from DB (kept in sync by reconciliation service).
+  // Live Fineract API calls are intentionally avoided here — they are serial and
+  // can easily exceed the API Gateway 29 s timeout when Fineract is slow or cold.
+  const [lastSyncResult, discrepResult, disbResult] = await Promise.all([
+    db.from('fineract_sync_log')
+      .select('created_at')
       .eq('operation', 'reconcile')
       .order('created_at', { ascending: false })
       .limit(1)
-      .execute();
-    if (reconcData && reconcData.length > 0) {
-      fineractLastSync = (reconcData[0] as Record<string, unknown>).created_at as string;
-    }
-
-    // Count discrepancies
-    const { data: discrepData } = await queryOne<{ count: string }>(
+      .execute(),
+    queryOne<{ count: string }>(
       "SELECT COUNT(*) as count FROM fineract_sync_log WHERE operation = 'reconcile' AND status = 'failed' AND created_at >= NOW() - INTERVAL '24 hours'"
-    );
-    fineractDiscrepancies = parseInt(discrepData?.count || '0');
-
-    // Disbursements this month from payments
-    const { data: disbData } = await queryOne<{ total: string }>(
+    ),
+    queryOne<{ total: string }>(
       "SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursement_date >= date_trunc('month', CURRENT_DATE)"
-    );
-    disbursementsThisMonth = parseFloat(disbData?.total || '0');
-  } catch (e) {
-    logger.warn('[dashboard] Fineract enrichment failed, using DB-only data', {
-      action: 'dashboard.metrics.fineract',
-      status: 'failed',
-      errorMessage: (e as Error).message,
-    });
-  }
+    ),
+  ]);
+
+  const fineractLastSync = lastSyncResult.data && lastSyncResult.data.length > 0
+    ? (lastSyncResult.data[0] as Record<string, unknown>).created_at as string
+    : null;
+  const fineractDiscrepancies = parseInt(discrepResult.data?.count || '0');
+  const disbursementsThisMonth = parseFloat(disbResult.data?.total || '0');
 
   const avgLoanSize = activeLoans > 0 ? outstandingBalance / activeLoans : 0;
 
@@ -181,9 +136,9 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     overdue_payments: parseInt(overdueResult.data?.count || '0'),
     overdue_amount_usd: parseFloat(overdueResult.data?.amount || '0'),
     new_customers_this_month: newCustomersThisMonth,
-    // Fineract-enriched fields
-    portfolio_outstanding_fineract: fineractOutstanding,
-    par_30_pct: par30Pct,
+    // Fineract-enriched fields (sourced from DB — kept in sync by reconciliation service)
+    portfolio_outstanding_fineract: outstandingBalance,
+    par_30_pct: null,
     avg_loan_size_usd: avgLoanSize,
     disbursements_this_month: disbursementsThisMonth,
     fineract_last_sync: fineractLastSync,
@@ -207,7 +162,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
  */
 export const handlePortfolioAtRisk: RouteHandler = async (event, _params, _auth) => {
   try {
-  const { data: rows } = await query<{ bucket: string; total: string }>(
+  const { data: rows, error } = await query<{ bucket: string; total: string }>(
     `SELECT
       CASE
         WHEN days_past_due BETWEEN 1 AND 30 THEN 'par_0_30'
@@ -220,6 +175,8 @@ export const handlePortfolioAtRisk: RouteHandler = async (event, _params, _auth)
     WHERE loan_status = 'active' AND days_past_due > 0
     GROUP BY bucket`
   );
+
+  if (error) throw error;
 
   const par: Record<string, number> = {
     par_0_30: 0,
@@ -254,7 +211,7 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
   const qs = event.queryStringParameters || {};
   const days = Math.min(Math.max(parseInt(qs.days || '30'), 1), 365);
 
-  const { data: trends } = await query<{
+  const { data: trends, error } = await query<{
     date: string;
     disbursements: string;
     collections: string;
@@ -286,6 +243,8 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
     ORDER BY dates.d ASC`,
     [days]
   );
+
+  if (error) throw error;
 
   const result = trends.map((row) => ({
     date: row.date,
