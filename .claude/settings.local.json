@@ -23,7 +23,12 @@
       "Bash(.claude/scripts/ensure-gh.sh)",
       "Bash(aws cloudformation describe-stack-events:*)",
       "Bash(python3:*)",
-      "Bash(aws cloudformation update-stack:*)"
+      "Bash(aws cloudformation update-stack:*)",
+      "Bash(curl:*)",
+      "Bash(unzip:*)",
+      "Bash(chmod:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)"
     ],
     "deny": [],
     "ask": []
