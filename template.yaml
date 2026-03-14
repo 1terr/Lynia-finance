@@ -20,6 +20,10 @@ Metadata:
         # stack creation. We break the cycle by using parameters for inter-service
         # URLs instead of !Ref LyniaApi in env vars.
         - E3004
+        # cfn-lint static analysis flags the !If [IsProduction, <secret_resolve>, ""]
+        # false-branch as unreachable when it evaluates with IsProduction=True.
+        # Both branches are valid at deploy time depending on the Environment param.
+        - W1028
 
 # Global configuration for all functions
 Globals:
