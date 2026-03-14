@@ -36,6 +36,16 @@ Globals:
       Variables:
         NODE_ENV: !Ref Environment
         DB_SECRET_NAME: !Sub "lynia/${Environment}/database"
+        # DB credentials injected at deploy time by CloudFormation so that
+        # Lambda functions never need to call Secrets Manager at runtime.
+        # This is required because the VPC has an orphaned Route53 private
+        # hosted zone for secretsmanager.us-east-1.amazonaws.com that returns
+        # dead IPs, causing getSecret() to hang until Lambda timeout (30s).
+        DB_HOST: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:host}}"
+        DB_PORT: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:port}}"
+        DB_NAME: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:database}}"
+        DB_USER: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:username}}"
+        DB_PASSWORD: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:password}}"
         FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
         FINERACT_TLS_SERVERNAME: api.lyniafinance.com
         FINERACT_SMARTPHONE_PRODUCT_ID: !Ref FineractSmartphoneProductId

@@ -25,26 +25,43 @@ interface DBSecret {
 async function getPool(): Promise<Pool> {
   if (pool) return pool;
 
-  const secretName = process.env.DB_SECRET_NAME;
-  if (!secretName) {
-    throw new Error('DB_SECRET_NAME environment variable is not set');
+  let config: PoolConfig;
+
+  // Prefer credentials injected at deploy time via CloudFormation dynamic
+  // references (DB_HOST, DB_USER, DB_PASSWORD). This avoids a runtime call
+  // to Secrets Manager, which hangs in VPCs with orphaned private hosted
+  // zones for secretsmanager.us-east-1.amazonaws.com.
+  if (process.env.DB_HOST && process.env.DB_PASSWORD) {
+    config = {
+      host: process.env.DB_HOST,
+      port: parseInt(process.env.DB_PORT || '5432'),
+      database: process.env.DB_NAME || 'lynia',
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    };
+  } else {
+    // Fall back to Secrets Manager (local dev / environments without injected creds)
+    const secretName = process.env.DB_SECRET_NAME;
+    if (!secretName) {
+      throw new Error('DB_SECRET_NAME environment variable is not set');
+    }
+    const secret = (await getSecret(secretName)) as unknown as DBSecret;
+    config = {
+      host: secret.host,
+      port: parseInt(secret.port || '5432'),
+      database: secret.database,
+      user: secret.username,
+      password: secret.password,
+    };
   }
 
-  const secret = (await getSecret(secretName)) as unknown as DBSecret;
-
-  const config: PoolConfig = {
-    host: secret.host,
-    port: parseInt(secret.port || '5432'),
-    database: secret.database,
-    user: secret.username,
-    password: secret.password,
+  pool = new Pool({
+    ...config,
     ssl: { rejectUnauthorized: false },
-    max: 15,
+    max: 10,
     idleTimeoutMillis: 60000,
     connectionTimeoutMillis: 10000,
-  };
-
-  pool = new Pool(config);
+  });
   return pool;
 }
 

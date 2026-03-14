@@ -21,14 +21,28 @@ async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise
   if (!session) throw new Error('Authentication required. Please sign in.');
   const token = session.getIdToken().getJwtToken();
 
-  const res = await fetch(`${FINERACT_API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options?.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 25000);
+
+  let res: Response;
+  try {
+    res = await fetch(`${FINERACT_API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...options?.headers,
+      },
+    });
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw new Error('Fineract request timed out');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (res.status === 401) throw new Error('Session expired. Redirecting to login.');
   if (res.status === 403) throw new Error('You do not have permission to perform this action.');
