@@ -41,12 +41,48 @@ Globals:
         # This is required because the VPC has an orphaned Route53 private
         # hosted zone for secretsmanager.us-east-1.amazonaws.com that returns
         # dead IPs, causing getSecret() to hang until Lambda timeout (30s).
-        DB_HOST: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:host}}"
-        DB_PORT: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:port}}"
-        DB_NAME: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:database}}"
-        DB_USER: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:username}}"
-        DB_PASSWORD: !Sub "{{resolve:secretsmanager:lynia/${Environment}/database:SecretString:password}}"
+        # Only injected for production (the secret exists only there).
+        # Non-production environments fall through to the Secrets Manager path
+        # in database.ts (which works because non-prod Lambdas are not in VPC).
+        DB_HOST: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:lynia/production/database:SecretString:host}}"
+          - ""
+        DB_PORT: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:lynia/production/database:SecretString:port}}"
+          - ""
+        DB_NAME: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:lynia/production/database:SecretString:database}}"
+          - ""
+        DB_USER: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:lynia/production/database:SecretString:username}}"
+          - ""
+        DB_PASSWORD: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:lynia/production/database:SecretString:password}}"
+          - ""
+        # Fineract credentials injected at deploy time for the same reason —
+        # runtime getSecret() hangs in VPC due to orphaned DNS hosted zones.
         FINERACT_SECRET_NAME: !Sub "${Environment}/lynia/fineract-api"
+        FINERACT_BASE_URL: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:production/lynia/fineract-api:SecretString:base_url}}"
+          - ""
+        FINERACT_USERNAME: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:production/lynia/fineract-api:SecretString:username}}"
+          - ""
+        FINERACT_PASSWORD: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:production/lynia/fineract-api:SecretString:password}}"
+          - ""
+        FINERACT_TENANT_ID: !If
+          - IsProduction
+          - "{{resolve:secretsmanager:production/lynia/fineract-api:SecretString:tenant_id}}"
+          - ""
         FINERACT_TLS_SERVERNAME: api.lyniafinance.com
         FINERACT_SMARTPHONE_PRODUCT_ID: !Ref FineractSmartphoneProductId
         LOG_LEVEL: info

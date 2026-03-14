@@ -40,6 +40,21 @@ let cachedConfig: FineractClientConfig | null = null;
 async function getConfig(): Promise<FineractClientConfig> {
   if (cachedConfig) return cachedConfig;
 
+  // Use credentials injected as env vars at deploy time (avoids runtime
+  // Secrets Manager call which hangs in VPC due to orphaned DNS hosted zones).
+  if (process.env.FINERACT_BASE_URL && process.env.FINERACT_PASSWORD) {
+    cachedConfig = {
+      baseUrl: process.env.FINERACT_BASE_URL,
+      username: process.env.FINERACT_USERNAME || '',
+      password: process.env.FINERACT_PASSWORD,
+      tenantId: process.env.FINERACT_TENANT_ID || 'default',
+      timeoutMs: DEFAULT_TIMEOUT_MS,
+      rejectUnauthorized: process.env.NODE_ENV === 'production',
+    };
+    return cachedConfig;
+  }
+
+  // Fall back to Secrets Manager (non-production environments not in VPC).
   if (!FINERACT_SECRET_NAME) {
     throw new Error('FINERACT_SECRET_NAME environment variable is not set');
   }
