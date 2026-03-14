@@ -139,26 +139,6 @@ describe('GET /api/v1/dashboard/metrics', () => {
   it('should return aggregated dashboard metrics with Fineract enrichment', async () => {
     setupDashboardQueryOneMocks();
 
-    // Fineract enrichment: query for active loans with fineract IDs
-    mockQuery.mockResolvedValueOnce({
-      data: [
-        { fineract_loan_id: 1, outstanding_balance_usd: 500 },
-      ],
-      error: null,
-    });
-
-    // Mock Fineract client
-    const mockFineractClient = {
-      getLoan: jest.fn().mockResolvedValue({
-        summary: {
-          totalOutstanding: 480,
-          totalOverdue: 0,
-          overdueSinceDate: null,
-        },
-      }),
-    };
-    mockGetFineractClient.mockResolvedValue(mockFineractClient);
-
     // Fineract sync log lookup (db.from chain)
     mockChain.execute.mockResolvedValueOnce({
       data: [{ created_at: '2024-01-15T10:00:00Z', status: 'completed' }],
@@ -197,15 +177,19 @@ describe('GET /api/v1/dashboard/metrics', () => {
     expect(body.data.outstanding_balance_usd).toBe(25000);
     expect(body.data.collection_rate).toBe(0.8);
     expect(body.data.devices_in_stock).toBe(30);
-    expect(body.data.portfolio_outstanding_fineract).toBe(480);
+    expect(body.data.portfolio_outstanding_fineract).toBe(25000);
     expect(body.data.fineract_last_sync).toBe('2024-01-15T10:00:00Z');
   });
 
   it('should return DB-only data when Fineract client fails', async () => {
     setupDashboardQueryOneMocks();
 
-    // Fineract enrichment throws an error
-    mockGetFineractClient.mockRejectedValue(new Error('Fineract unavailable'));
+    // Fineract sync log lookup — returns no rows (simulates no sync yet)
+    mockChain.execute.mockResolvedValueOnce({ data: null, error: null });
+    // Fineract discrepancy count
+    mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+    // Disbursements this month
+    mockQueryOne.mockResolvedValueOnce({ data: { total: '0' }, error: null });
 
     const event = createAPIGatewayEvent({
       httpMethod: 'GET',
@@ -218,7 +202,7 @@ describe('GET /api/v1/dashboard/metrics', () => {
       success: boolean;
       data: {
         total_customers: number;
-        portfolio_outstanding_fineract: null;
+        portfolio_outstanding_fineract: number;
         par_30_pct: null;
         fineract_last_sync: null;
         fineract_discrepancies: number;
@@ -227,8 +211,8 @@ describe('GET /api/v1/dashboard/metrics', () => {
 
     expect(body.success).toBe(true);
     expect(body.data.total_customers).toBe(100);
-    // Fineract fields should be null/0 when enrichment fails
-    expect(body.data.portfolio_outstanding_fineract).toBeNull();
+    // portfolio_outstanding_fineract is now always the DB outstanding balance
+    expect(body.data.portfolio_outstanding_fineract).toBe(25000);
     expect(body.data.par_30_pct).toBeNull();
     expect(body.data.fineract_last_sync).toBeNull();
     expect(body.data.fineract_discrepancies).toBe(0);
@@ -240,7 +224,10 @@ describe('GET /api/v1/dashboard/metrics', () => {
       mockQueryOne.mockResolvedValueOnce({ data: { count: '0', total: '0', outstanding: '0', collected: '0', expected: '1', defaulted: '0', total_active: '1', in_stock: '0', active: '0', locked: '0', amount: '0' }, error: null });
     }
 
-    mockGetFineractClient.mockRejectedValue(new Error('No Fineract'));
+    // Extra mocks for the new DB-sourced fineract fields
+    mockChain.execute.mockResolvedValueOnce({ data: null, error: null });
+    mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+    mockQueryOne.mockResolvedValueOnce({ data: { total: '0' }, error: null });
 
     const event = createAPIGatewayEvent({
       httpMethod: 'GET',
