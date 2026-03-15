@@ -139,9 +139,10 @@ describe('E2E-003: Device Lock/Unlock Flow', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required).toContain('device_id');
-      expect(body.required).toContain('reason');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('errors');
+      expect(body.errors).toHaveProperty('device_id');
+      expect(body.errors).toHaveProperty('reason');
     });
 
     it('should return 400 when reason is missing from lock request', async () => {
@@ -157,7 +158,7 @@ describe('E2E-003: Device Lock/Unlock Flow', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
+      expect(body).toHaveProperty('error', 'Validation Error');
     });
 
     it('should validate Trustonic lock success response structure', () => {
@@ -240,7 +241,7 @@ describe('E2E-003: Device Lock/Unlock Flow', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
+      expect(body).toHaveProperty('error', 'Validation Error');
     });
 
     it('should return 400 when reason is missing from unlock request', async () => {
@@ -256,7 +257,7 @@ describe('E2E-003: Device Lock/Unlock Flow', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
+      expect(body).toHaveProperty('error', 'Validation Error');
     });
 
     it('should validate Trustonic unlock success response structure', () => {

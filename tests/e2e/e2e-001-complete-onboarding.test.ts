@@ -692,7 +692,8 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'loan_id is required');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message', 'loan_id is required');
     });
 
     it('should return 400 when initiating handover without required fields', async () => {
@@ -706,9 +707,9 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required).toBeDefined();
-      expect((body.required as string[]).length).toBeGreaterThan(0);
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message', 'Missing required fields');
+      expect(body.errors).toBeDefined();
     });
 
     it('should return 400 when verifying identity without handover_id', async () => {
@@ -722,7 +723,8 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message', 'Missing required fields');
     });
 
     it('should return 400 when verifying deposit without handover_id', async () => {
@@ -736,7 +738,8 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'handover_id is required');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message', 'handover_id is required');
     });
 
     it('should return 400 when completing handover without handover_id', async () => {
@@ -750,7 +753,8 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'handover_id is required');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message', 'handover_id is required');
     });
 
     it('should return 404 for unknown lock-service route', async () => {

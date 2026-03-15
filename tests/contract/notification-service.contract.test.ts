@@ -55,6 +55,16 @@ jest.mock('../../services/notification-service/src/reminder-scheduler', () => ({
   handleReminderOptIn: mockHandleReminderOptIn,
 }));
 
+jest.mock('../../services/notification-service/src/sms-sender', () => ({
+  sendSMS: jest.fn().mockResolvedValue({ success: true, messageId: 'sns-mock-123' }),
+  SmsError: class SmsError extends Error {
+    constructor(message: string, public code: string, public details?: Record<string, unknown>) {
+      super(message);
+      this.name = 'SmsError';
+    }
+  },
+}));
+
 jest.mock('axios', () => ({
   __esModule: true,
   default: {

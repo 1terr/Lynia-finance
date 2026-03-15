@@ -775,10 +775,14 @@ Resources:
               Action:
                 - cloudwatch:PutMetricData
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource: "*"  # SNS Publish to phone numbers requires wildcard
       Environment:
         Variables:
-          SMS_PROVIDER: !Ref SmsProvider
-          SMS_API_KEY: !Ref SmsApiKey
+          SMS_PROVIDER: !Ref SmsProvider  # Legacy — SMS now uses AWS SNS (IAM auth)
+          SMS_API_KEY: !Ref SmsApiKey     # Legacy — kept for backward compatibility
           WHATSAPP_API_URL: !Ref WhatsAppApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:

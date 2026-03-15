@@ -310,7 +310,8 @@ describe('E2E-007: Full Loan Lifecycle Through Completion', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error', 'Missing required fields');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message', 'Missing required fields');
     });
 
     it('should validate lock handler returns 404 for unknown routes', async () => {

@@ -1,6 +1,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult, ScheduledEvent } from 'aws-lambda';
 import { db } from '../../shared/clients/database';
 import { processPaymentReminders, getReminderAnalytics, handleReminderOptOut, handleReminderOptIn } from './reminder-scheduler';
+import { sendSMS, SmsError } from './sms-sender';
 import { getSecurityHeaders } from '../../shared/utils/response';
 import logger from '../../shared/utils/logger';
 
@@ -139,8 +140,15 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
         message,
         templateName,
       });
+    } else if (channel === 'sms') {
+      const result = await sendSMS(customer.phone_number, message);
+      await db
+        .from('notifications')
+        .update({ metadata: { ...metadata, snsMessageId: result.messageId } })
+        .eq('id', notification.id)
+        .execute();
     }
-    // SMS and email channels to be implemented
+    // Email channel to be implemented
 
     await db
       .from('notifications')
@@ -159,6 +167,15 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
       .update({ status: 'failed' })
       .eq('id', notification.id)
       .execute();
+
+    if (error instanceof SmsError) {
+      const statusCode = error.code === 'RATE_LIMITED' ? 429 : error.code === 'INVALID_PHONE' ? 400 : 500;
+      return {
+        statusCode,
+        body: JSON.stringify({ error: error.message, code: error.code }),
+        headers: getSecurityHeaders(event)
+      };
+    }
 
     return {
       statusCode: 500,

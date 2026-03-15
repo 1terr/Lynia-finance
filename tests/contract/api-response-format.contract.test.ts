@@ -458,7 +458,7 @@ describe('Cross-Service API Response Format Contract Tests', () => {
       expect(body).toHaveProperty('required');
     });
 
-    it('lock-service: validation error includes required fields array', async () => {
+    it('lock-service: validation error includes error details', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/locks/lock',
@@ -469,8 +469,8 @@ describe('Cross-Service API Response Format Contract Tests', () => {
 
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error');
-      expect(body).toHaveProperty('required');
+      expect(body).toHaveProperty('error', 'Validation Error');
+      expect(body).toHaveProperty('message');
     });
 
     it('notification-service: validation error includes descriptive message', async () => {
