@@ -137,6 +137,7 @@ export default function CustomersPage() {
           />
         </div>
         <Select
+          aria-label="Customer status"
           options={STATUS_OPTIONS}
           value={filters.status || ''}
           onChange={(e) =>
@@ -149,6 +150,7 @@ export default function CustomersPage() {
           className="w-full sm:w-36"
         />
         <Select
+          aria-label="KYC status"
           options={KYC_OPTIONS}
           value={filters.kyc_status || ''}
           onChange={(e) =>

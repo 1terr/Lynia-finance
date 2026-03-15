@@ -66,7 +66,7 @@ describe('Sidebar', () => {
 
   it('hides items when hasPermission returns false', () => {
     (hasPermission as jest.Mock).mockImplementation(
-      (_role: string, permission: string) => permission !== 'reports:view'
+      (_role: string, resource: string, _action: string) => resource !== 'reports'
     );
     render(<Sidebar {...defaultProps} />);
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();

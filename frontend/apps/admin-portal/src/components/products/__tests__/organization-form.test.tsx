@@ -41,7 +41,7 @@ describe('OrganizationForm', () => {
       />
     );
 
-    expect(screen.getByText('Add Organization')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Add Organization' })).toBeInTheDocument();
   });
 
   it('renders edit form with pre-populated fields and title "Edit Organization"', () => {

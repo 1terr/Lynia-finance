@@ -20,7 +20,7 @@ describe('DashboardHeader', () => {
 
   it('renders notification bell button', () => {
     render(<DashboardHeader />);
-    const bellButton = screen.getByRole('button', { name: /notification/i });
+    const bellButton = screen.getByRole('button', { name: /notifications/i });
     expect(bellButton).toBeInTheDocument();
   });
 

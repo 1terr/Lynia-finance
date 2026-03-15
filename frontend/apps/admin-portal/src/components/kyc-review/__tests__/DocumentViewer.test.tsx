@@ -42,8 +42,8 @@ describe('DocumentViewer', () => {
   it('renders images with correct alt text', () => {
     render(<DocumentViewer {...defaultProps} />);
 
-    expect(screen.getByAlt('ID Document')).toBeInTheDocument();
-    expect(screen.getByAlt('Customer Selfie')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'ID Document' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Customer Selfie' })).toBeInTheDocument();
   });
 
   it('passes axe accessibility checks', async () => {

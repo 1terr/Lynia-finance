@@ -28,7 +28,7 @@ import LoginPage from '../page';
 describe('Login Page', () => {
   it('renders sign in heading', () => {
     render(<LoginPage />);
-    expect(screen.getByText(/sign in/i)).toBeInTheDocument();
+    expect(screen.getByText(/sign in to the admin portal/i)).toBeInTheDocument();
   });
 
   it('renders email input', () => {

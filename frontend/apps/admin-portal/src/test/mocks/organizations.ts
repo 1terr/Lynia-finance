@@ -12,6 +12,7 @@ export const mockOrganization: Organization = {
   contact_email: 'jane@csc.gov.zw',
   api_endpoint: undefined,
   is_active: true,
+  total_members: 150,
   created_at: '2025-01-01T00:00:00Z',
   updated_at: '2025-06-15T00:00:00Z',
 };

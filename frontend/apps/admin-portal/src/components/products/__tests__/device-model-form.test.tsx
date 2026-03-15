@@ -42,7 +42,7 @@ describe('DeviceModelForm', () => {
       />
     );
 
-    expect(screen.getByText('Add Phone Model')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Add Phone Model' })).toBeInTheDocument();
   });
 
   it('renders edit form with pre-populated fields', () => {
@@ -112,7 +112,7 @@ describe('DeviceModelForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/retail.*price.*greater|price.*must.*positive|price.*greater.*0/i)).toBeInTheDocument();
+      expect(screen.getByText(/valid retail price required/i)).toBeInTheDocument();
     });
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });

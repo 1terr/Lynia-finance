@@ -210,6 +210,7 @@ export default function PaymentsPage() {
           />
         </form>
         <Select
+          aria-label="Payment status"
           options={STATUS_OPTIONS}
           value={filters.status || ''}
           onChange={(e) =>
@@ -222,6 +223,7 @@ export default function PaymentsPage() {
           className="w-full sm:w-40"
         />
         <Select
+          aria-label="Payment method"
           options={METHOD_OPTIONS}
           value={filters.method || ''}
           onChange={(e) =>
@@ -234,6 +236,7 @@ export default function PaymentsPage() {
           className="w-full sm:w-40"
         />
         <Select
+          aria-label="Payment type"
           options={TYPE_OPTIONS}
           value={filters.type || ''}
           onChange={(e) =>
@@ -246,6 +249,7 @@ export default function PaymentsPage() {
           className="w-full sm:w-36"
         />
         <Select
+          aria-label="Reconciliation status"
           options={RECONCILED_OPTIONS}
           value={filters.reconciled === undefined ? '' : String(filters.reconciled)}
           onChange={(e) =>

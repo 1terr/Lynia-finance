@@ -66,9 +66,7 @@ describe('KYCReviewFilters', () => {
       />
     );
 
-    const statusSelect = screen.getByDisplayValue
-      ? screen.getByRole('combobox', { name: /status/i })
-      : screen.getAllByRole('combobox')[0];
+    const statusSelect = screen.getByRole('combobox', { name: /status/i });
 
     fireEvent.change(statusSelect, { target: { value: 'pending' } });
 
