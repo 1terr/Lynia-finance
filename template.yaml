@@ -1017,6 +1017,13 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/trial-balance
             Method: GET
+        # System Health
+        GetSystemHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/system-health
+            Method: GET
         # Reconciliation
         GetReconciliation:
           Type: Api
