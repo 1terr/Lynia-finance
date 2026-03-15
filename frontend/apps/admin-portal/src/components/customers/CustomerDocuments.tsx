@@ -61,9 +61,12 @@ export function CustomerDocuments({
                 </p>
                 <div
                   className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
+                  role="button"
+                  tabIndex={0}
                   onClick={() =>
                     setSelectedImage(submission.document_front_url)
                   }
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedImage(submission.document_front_url); } }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -81,9 +84,12 @@ export function CustomerDocuments({
                   </p>
                   <div
                     className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
+                    role="button"
+                    tabIndex={0}
                     onClick={() =>
                       setSelectedImage(submission.document_back_url!)
                     }
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedImage(submission.document_back_url!); } }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -102,9 +108,12 @@ export function CustomerDocuments({
                   </p>
                   <div
                     className="relative aspect-[3/2] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
+                    role="button"
+                    tabIndex={0}
                     onClick={() =>
                       setSelectedImage(submission.selfie_url!)
                     }
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedImage(submission.selfie_url!); } }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -167,6 +176,7 @@ export function CustomerDocuments({
       {selectedImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="presentation"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl">

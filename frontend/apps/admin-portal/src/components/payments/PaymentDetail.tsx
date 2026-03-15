@@ -256,10 +256,11 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
         {payment.status === 'pending' && (
           <div className="mt-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-foreground">
+              <label htmlFor="payment-action-notes" className="block text-sm font-medium text-foreground">
                 Notes <span className="text-muted-foreground">(required for fail action)</span>
               </label>
               <textarea
+                id="payment-action-notes"
                 value={actionNotes}
                 onChange={(e) => setActionNotes(e.target.value)}
                 rows={2}

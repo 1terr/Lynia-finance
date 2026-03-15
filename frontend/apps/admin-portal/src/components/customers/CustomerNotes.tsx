@@ -55,10 +55,11 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
       {isAdding && (
         <div className="mt-4 rounded-lg border border-border p-4">
           <div className="mb-3">
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="note-type" className="block text-sm font-medium text-foreground">
               Note Type
             </label>
             <select
+              id="note-type"
               value={noteType}
               onChange={(e) => setNoteType(e.target.value)}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -70,10 +71,11 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
             </select>
           </div>
           <div className="mb-3">
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="note-text" className="block text-sm font-medium text-foreground">
               Note
             </label>
             <textarea
+              id="note-text"
               value={noteText}
               onChange={(e) => setNoteText(e.target.value)}
               rows={3}

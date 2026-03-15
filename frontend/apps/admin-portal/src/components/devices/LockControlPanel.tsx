@@ -112,8 +112,9 @@ export function LockControlPanel({
         {/* Lock Form */}
         {showLockForm && (
           <div className="mt-4 p-3 bg-red-50 dark:bg-red-950 rounded-md border border-red-200">
-            <label className="block text-sm font-medium text-red-800 mb-1">Lock Reason</label>
+            <label htmlFor="lock-reason" className="block text-sm font-medium text-red-800 mb-1">Lock Reason</label>
             <textarea
+              id="lock-reason"
               value={lockReason}
               onChange={(e) => setLockReason(e.target.value)}
               placeholder="Enter reason for locking the device..."
@@ -153,10 +154,11 @@ export function LockControlPanel({
               </div>
             </div>
             <div className="mb-3">
-              <label className="block text-sm font-medium text-blue-800 mb-1">
+              <label htmlFor="permanent-unlock-confirm" className="block text-sm font-medium text-blue-800 mb-1">
                 Type <span className="font-mono font-bold">PERMANENTLY UNLOCK</span> to confirm
               </label>
               <input
+                id="permanent-unlock-confirm"
                 type="text"
                 value={permanentUnlockText}
                 onChange={(e) => setPermanentUnlockText(e.target.value)}

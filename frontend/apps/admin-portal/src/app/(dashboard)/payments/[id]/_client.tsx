@@ -305,8 +305,9 @@ export default function PaymentDetailPage() {
             <strong>{payment.customer?.full_name}</strong>?
           </p>
           <div>
-            <label className="block text-sm font-medium text-foreground">Refund Reason *</label>
+            <label htmlFor="refund-reason" className="block text-sm font-medium text-foreground">Refund Reason *</label>
             <textarea
+              id="refund-reason"
               value={refundReason}
               onChange={(e) => setRefundReason(e.target.value)}
               rows={3}

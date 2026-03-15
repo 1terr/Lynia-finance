@@ -114,4 +114,4 @@
 3. **i18n** — Shona and Ndebele translations for admin portal
 4. **Fineract interop (Mojaloop)** — Open banking integration
 5. **Cost monitoring** — Automated AWS cost anomaly alerts
-6. **Remaining ESLint a11y fixes** — ~40 `label-has-associated-control` and ~20 `click-events-have-key-events` warnings in page-level client components
+6. ~~**Remaining ESLint a11y fixes**~~ — **DONE** (all `label-has-associated-control`, `click-events-have-key-events`, `no-static-element-interactions`, and `alt-text` errors resolved across 20 files)

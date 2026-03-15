@@ -175,12 +175,13 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
         ) : (
           <>
             <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Upload CSV File</label>
+              <label htmlFor="csv-file-upload" className="block text-sm font-medium text-foreground mb-2">Upload CSV File</label>
               <div className="flex items-center gap-3">
                 <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:border-gray-400 hover:bg-accent">
                   <Upload className="h-4 w-4" />
                   <span>Choose CSV file</span>
                   <input
+                    id="csv-file-upload"
                     ref={fileRef}
                     type="file"
                     accept=".csv"

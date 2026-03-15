@@ -423,8 +423,9 @@ function AddUserModal({
         )}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">First Name</label>
+            <label htmlFor="admin-first-name" className="block text-sm font-medium text-foreground mb-1">First Name</label>
             <input
+              id="admin-first-name"
               type="text"
               required
               value={firstName}
@@ -433,8 +434,9 @@ function AddUserModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Last Name</label>
+            <label htmlFor="admin-last-name" className="block text-sm font-medium text-foreground mb-1">Last Name</label>
             <input
+              id="admin-last-name"
               type="text"
               required
               value={lastName}
@@ -444,8 +446,9 @@ function AddUserModal({
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Email</label>
+          <label htmlFor="admin-email" className="block text-sm font-medium text-foreground mb-1">Email</label>
           <input
+            id="admin-email"
             type="email"
             required
             value={email}
@@ -518,8 +521,8 @@ function EditUserModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Status</label>
-          <div className="flex items-center gap-3">
+          <span id="admin-status-label" className="block text-sm font-medium text-foreground mb-1">Status</span>
+          <div className="flex items-center gap-3" role="radiogroup" aria-labelledby="admin-status-label">
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="radio"

@@ -259,9 +259,10 @@ export default function AdjustmentsPage() {
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="New Inventory Adjustment">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground">Device *</label>
+            <label htmlFor="adjustment-device" className="block text-sm font-medium text-foreground">Device *</label>
             <div className="mt-1">
               <DeviceSearch
+                id="adjustment-device"
                 value={form.device_id}
                 onSelect={(d) => setForm((f) => ({ ...f, device_id: d.id }))}
                 placeholder="Search by IMEI to find device..."
@@ -269,8 +270,9 @@ export default function AdjustmentsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">Adjustment Type *</label>
+            <label htmlFor="adjustment-type" className="block text-sm font-medium text-foreground">Adjustment Type *</label>
             <select
+              id="adjustment-type"
               value={form.adjustment_type}
               onChange={(e) => {
                 const type = e.target.value as CreateAdjustmentRequest['adjustment_type'];
@@ -287,8 +289,9 @@ export default function AdjustmentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">New Device Status</label>
+            <label htmlFor="new-device-status" className="block text-sm font-medium text-foreground">New Device Status</label>
             <select
+              id="new-device-status"
               value={form.new_status || ''}
               onChange={(e) => setForm((f) => ({ ...f, new_status: e.target.value || undefined }))}
               className={inputClass + ' mt-1'}
@@ -302,8 +305,9 @@ export default function AdjustmentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">Reason *</label>
+            <label htmlFor="adjustment-reason" className="block text-sm font-medium text-foreground">Reason *</label>
             <textarea
+              id="adjustment-reason"
               value={form.reason}
               onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
               rows={3}
@@ -313,8 +317,9 @@ export default function AdjustmentsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">Notes</label>
+            <label htmlFor="adjustment-notes" className="block text-sm font-medium text-foreground">Notes</label>
             <textarea
+              id="adjustment-notes"
               value={form.notes || ''}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               rows={2}
@@ -363,8 +368,9 @@ export default function AdjustmentsPage() {
             </dl>
 
             <div>
-              <label className="block text-sm font-medium text-foreground">Rejection Reason (if rejecting)</label>
+              <label htmlFor="rejection-reason" className="block text-sm font-medium text-foreground">Rejection Reason (if rejecting)</label>
               <textarea
+                id="rejection-reason"
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}
                 rows={2}

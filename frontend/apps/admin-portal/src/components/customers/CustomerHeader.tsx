@@ -72,6 +72,7 @@ export function CustomerHeader({ customer, onBlock, onUnblock }: CustomerHeaderP
             <>
               <div
                 className="fixed inset-0 z-10"
+                role="presentation"
                 onClick={() => setMenuOpen(false)}
               />
               <div className="absolute right-0 z-20 mt-2 w-56 rounded-lg border bg-card shadow-lg">

@@ -431,8 +431,9 @@ export default function DeviceDetailPage() {
             Lock <strong>{device.manufacturer} {device.model}</strong> (IMEI: {device.imei})?
           </p>
           <div>
-            <label className="block text-sm font-medium text-foreground">Reason *</label>
+            <label htmlFor="lock-reason" className="block text-sm font-medium text-foreground">Reason *</label>
             <textarea
+              id="lock-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
@@ -464,8 +465,9 @@ export default function DeviceDetailPage() {
             The customer will regain full access to the device.
           </p>
           <div>
-            <label className="block text-sm font-medium text-foreground">Reason *</label>
+            <label htmlFor="unlock-reason" className="block text-sm font-medium text-foreground">Reason *</label>
             <textarea
+              id="unlock-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
@@ -494,8 +496,9 @@ export default function DeviceDetailPage() {
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground">Status</label>
+              <label htmlFor="edit-status" className="block text-sm font-medium text-foreground">Status</label>
               <select
+                id="edit-status"
                 value={editForm.status}
                 onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
                 className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -512,8 +515,9 @@ export default function DeviceDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground">Condition</label>
+              <label htmlFor="edit-condition" className="block text-sm font-medium text-foreground">Condition</label>
               <select
+                id="edit-condition"
                 value={editForm.condition}
                 onChange={(e) => setEditForm((f) => ({ ...f, condition: e.target.value }))}
                 className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -527,8 +531,9 @@ export default function DeviceDetailPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground">Purchase Price (USD)</label>
+              <label htmlFor="edit-purchase-price" className="block text-sm font-medium text-foreground">Purchase Price (USD)</label>
               <input
+                id="edit-purchase-price"
                 type="number"
                 step="0.01"
                 value={editForm.purchase_price_usd}
@@ -537,8 +542,9 @@ export default function DeviceDetailPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground">Retail Price (USD)</label>
+              <label htmlFor="edit-retail-price" className="block text-sm font-medium text-foreground">Retail Price (USD)</label>
               <input
+                id="edit-retail-price"
                 type="number"
                 step="0.01"
                 value={editForm.retail_price_usd}
@@ -549,8 +555,9 @@ export default function DeviceDetailPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground">Location</label>
+              <label htmlFor="edit-location" className="block text-sm font-medium text-foreground">Location</label>
               <input
+                id="edit-location"
                 type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
@@ -559,8 +566,9 @@ export default function DeviceDetailPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground">Color</label>
+              <label htmlFor="edit-color" className="block text-sm font-medium text-foreground">Color</label>
               <input
+                id="edit-color"
                 type="text"
                 value={editForm.color}
                 onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
@@ -569,8 +577,9 @@ export default function DeviceDetailPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">Storage (GB)</label>
+            <label htmlFor="edit-storage" className="block text-sm font-medium text-foreground">Storage (GB)</label>
             <input
+              id="edit-storage"
               type="number"
               value={editForm.storage_gb}
               onChange={(e) => setEditForm((f) => ({ ...f, storage_gb: e.target.value }))}

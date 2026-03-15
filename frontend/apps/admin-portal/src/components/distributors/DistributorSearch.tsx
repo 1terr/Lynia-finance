@@ -10,6 +10,7 @@ interface DistributorSearchProps {
   onSelect: (distributor: { id: string; business_name: string }) => void;
   placeholder?: string;
   disabled?: boolean;
+  id?: string;
 }
 
 export function DistributorSearch({
@@ -17,6 +18,7 @@ export function DistributorSearch({
   onSelect,
   placeholder = 'Search distributor...',
   disabled,
+  id,
 }: DistributorSearchProps) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
@@ -42,6 +44,7 @@ export function DistributorSearch({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          id={id}
           type="text"
           value={selectedLabel || query}
           onChange={(e) => {

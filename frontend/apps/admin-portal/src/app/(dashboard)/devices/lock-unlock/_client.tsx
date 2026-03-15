@@ -423,8 +423,9 @@ export default function LockUnlockPage() {
               The device will be remotely locked and unusable until unlocked.
             </p>
             <div>
-              <label className="block text-sm font-medium text-foreground">Reason *</label>
+              <label htmlFor="lock-device-reason" className="block text-sm font-medium text-foreground">Reason *</label>
               <textarea
+                id="lock-device-reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
@@ -459,8 +460,9 @@ export default function LockUnlockPage() {
               Unlock device <strong>{unlockModal ? `${unlockModal.manufacturer} ${unlockModal.model}` : ''}</strong>?
             </p>
             <div>
-              <label className="block text-sm font-medium text-foreground">Reason *</label>
+              <label htmlFor="unlock-device-reason" className="block text-sm font-medium text-foreground">Reason *</label>
               <textarea
+                id="unlock-device-reason"
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 rows={3}
@@ -535,8 +537,9 @@ export default function LockUnlockPage() {
                   </div>
                 )}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Reason *</label>
+                  <label htmlFor="batch-reason" className="block text-sm font-medium text-foreground">Reason *</label>
                   <textarea
+                    id="batch-reason"
                     value={batchReason}
                     onChange={(e) => setBatchReason(e.target.value)}
                     rows={3}

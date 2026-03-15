@@ -1466,10 +1466,11 @@ export default function DistributorDetailPage() {
             </dl>
 
             <div>
-              <label className="block text-sm font-medium text-foreground">
+              <label htmlFor="transfer-cancellation-reason" className="block text-sm font-medium text-foreground">
                 Cancellation Reason (if cancelling)
               </label>
               <textarea
+                id="transfer-cancellation-reason"
                 value={cancelReason}
                 onChange={(e) => setCancelReason(e.target.value)}
                 rows={2}

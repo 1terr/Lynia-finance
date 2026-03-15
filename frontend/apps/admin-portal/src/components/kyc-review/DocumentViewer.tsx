@@ -126,6 +126,7 @@ export function DocumentViewer({
           <div
             className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-lg bg-card/90 px-3 py-2 shadow-lg backdrop-blur z-10"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             role="toolbar"
           >
             <Button variant="ghost" size="sm" onClick={handleZoomIn}>
@@ -151,6 +152,7 @@ export function DocumentViewer({
           <div
             className="relative max-w-[90vw] max-h-[85vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
             role="toolbar"
           >
             <Image

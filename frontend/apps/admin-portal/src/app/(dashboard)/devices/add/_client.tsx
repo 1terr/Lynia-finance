@@ -209,10 +209,11 @@ export default function AddDevicePage() {
             <form onSubmit={handleSingleSubmit} className="space-y-6">
               {/* Device Model Selection */}
               <div>
-                <label className="block text-sm font-medium text-foreground">
+                <label htmlFor="device-model" className="block text-sm font-medium text-foreground">
                   Device Model (from catalog)
                 </label>
                 <select
+                  id="device-model"
                   value={form.device_model_id || ''}
                   onChange={(e) => handleModelSelect(e.target.value)}
                   className={inputClass + ' mt-1'}
@@ -232,10 +233,11 @@ export default function AddDevicePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* IMEI */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="device-imei" className="block text-sm font-medium text-foreground">
                     IMEI <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="device-imei"
                     type="text"
                     value={form.imei}
                     onChange={(e) => setForm((f) => ({ ...f, imei: e.target.value.replace(/\D/g, '').slice(0, 15) }))}
@@ -249,8 +251,9 @@ export default function AddDevicePage() {
 
                 {/* Serial Number */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Serial Number</label>
+                  <label htmlFor="device-serial-number" className="block text-sm font-medium text-foreground">Serial Number</label>
                   <input
+                    id="device-serial-number"
                     type="text"
                     value={form.serial_number || ''}
                     onChange={(e) => setForm((f) => ({ ...f, serial_number: e.target.value }))}
@@ -261,10 +264,11 @@ export default function AddDevicePage() {
 
                 {/* Manufacturer */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="device-manufacturer" className="block text-sm font-medium text-foreground">
                     Manufacturer <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="device-manufacturer"
                     type="text"
                     value={form.manufacturer}
                     onChange={(e) => setForm((f) => ({ ...f, manufacturer: e.target.value }))}
@@ -276,10 +280,11 @@ export default function AddDevicePage() {
 
                 {/* Model */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="device-model-name" className="block text-sm font-medium text-foreground">
                     Model <span className="text-red-500">*</span>
                   </label>
                   <input
+                    id="device-model-name"
                     type="text"
                     value={form.model}
                     onChange={(e) => setForm((f) => ({ ...f, model: e.target.value }))}
@@ -291,8 +296,9 @@ export default function AddDevicePage() {
 
                 {/* Storage */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Storage (GB)</label>
+                  <label htmlFor="device-storage" className="block text-sm font-medium text-foreground">Storage (GB)</label>
                   <input
+                    id="device-storage"
                     type="number"
                     value={form.storage_gb || ''}
                     onChange={(e) => setForm((f) => ({ ...f, storage_gb: e.target.value ? parseInt(e.target.value) : undefined }))}
@@ -303,8 +309,9 @@ export default function AddDevicePage() {
 
                 {/* Color */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Color</label>
+                  <label htmlFor="device-color" className="block text-sm font-medium text-foreground">Color</label>
                   <input
+                    id="device-color"
                     type="text"
                     value={form.color || ''}
                     onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
@@ -315,8 +322,9 @@ export default function AddDevicePage() {
 
                 {/* Condition */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Condition</label>
+                  <label htmlFor="device-condition" className="block text-sm font-medium text-foreground">Condition</label>
                   <select
+                    id="device-condition"
                     value={form.condition}
                     onChange={(e) => setForm((f) => ({ ...f, condition: e.target.value as CreateDeviceRequest['condition'] }))}
                     className={inputClass + ' mt-1'}
@@ -330,8 +338,9 @@ export default function AddDevicePage() {
 
                 {/* Location */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Location</label>
+                  <label htmlFor="device-location" className="block text-sm font-medium text-foreground">Location</label>
                   <input
+                    id="device-location"
                     type="text"
                     value={form.location || ''}
                     onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
@@ -342,8 +351,9 @@ export default function AddDevicePage() {
 
                 {/* Purchase Price */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Purchase Price (USD)</label>
+                  <label htmlFor="device-purchase-price" className="block text-sm font-medium text-foreground">Purchase Price (USD)</label>
                   <input
+                    id="device-purchase-price"
                     type="number"
                     step="0.01"
                     value={form.purchase_price_usd || ''}
@@ -355,8 +365,9 @@ export default function AddDevicePage() {
 
                 {/* Retail Price */}
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Retail Price (USD)</label>
+                  <label htmlFor="device-retail-price" className="block text-sm font-medium text-foreground">Retail Price (USD)</label>
                   <input
+                    id="device-retail-price"
                     type="number"
                     step="0.01"
                     value={form.retail_price_usd || ''}
@@ -527,8 +538,9 @@ export default function AddDevicePage() {
             ) : (
               <form onSubmit={handlePreviewSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground">Default Location</label>
+                  <label htmlFor="bulk-default-location" className="block text-sm font-medium text-foreground">Default Location</label>
                   <input
+                    id="bulk-default-location"
                     type="text"
                     value={bulkLocation}
                     onChange={(e) => setBulkLocation(e.target.value)}
@@ -537,13 +549,14 @@ export default function AddDevicePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-foreground">
+                  <label htmlFor="bulk-csv-data" className="block text-sm font-medium text-foreground">
                     CSV Data <span className="text-red-500">*</span>
                   </label>
                   <p className="mt-1 text-xs text-muted-foreground">
                     Required columns: imei, manufacturer, model. Optional: serial_number, storage_gb, color, condition, purchase_price_usd, retail_price_usd
                   </p>
                   <textarea
+                    id="bulk-csv-data"
                     value={csvText}
                     onChange={(e) => setCsvText(e.target.value)}
                     rows={12}

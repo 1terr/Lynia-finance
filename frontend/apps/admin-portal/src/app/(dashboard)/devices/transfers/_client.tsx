@@ -311,9 +311,10 @@ export default function TransfersPage() {
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="New Stock Transfer">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-foreground">Device *</label>
+            <label htmlFor="transfer-device" className="block text-sm font-medium text-foreground">Device *</label>
             <div className="mt-1">
               <DeviceSearch
+                id="transfer-device"
                 value={form.device_id}
                 onSelect={(d) => setForm((f) => ({ ...f, device_id: d.id }))}
                 placeholder="Search by IMEI to find device..."
@@ -322,9 +323,10 @@ export default function TransfersPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground">From Distributor</label>
+              <label htmlFor="transfer-from-distributor" className="block text-sm font-medium text-foreground">From Distributor</label>
               <div className="mt-1">
                 <DistributorSearch
+                  id="transfer-from-distributor"
                   value={form.from_distributor_id || undefined}
                   onSelect={(d) => setForm((f) => ({ ...f, from_distributor_id: d.id }))}
                   placeholder="Search distributor..."
@@ -332,9 +334,10 @@ export default function TransfersPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground">To Distributor</label>
+              <label htmlFor="transfer-to-distributor" className="block text-sm font-medium text-foreground">To Distributor</label>
               <div className="mt-1">
                 <DistributorSearch
+                  id="transfer-to-distributor"
                   value={form.to_distributor_id || undefined}
                   onSelect={(d) => setForm((f) => ({ ...f, to_distributor_id: d.id }))}
                   placeholder="Search distributor..."
@@ -344,8 +347,9 @@ export default function TransfersPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-foreground">From Location</label>
+              <label htmlFor="transfer-from-location" className="block text-sm font-medium text-foreground">From Location</label>
               <input
+                id="transfer-from-location"
                 type="text"
                 value={form.from_location || ''}
                 onChange={(e) => setForm((f) => ({ ...f, from_location: e.target.value }))}
@@ -354,8 +358,9 @@ export default function TransfersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-foreground">To Location</label>
+              <label htmlFor="transfer-to-location" className="block text-sm font-medium text-foreground">To Location</label>
               <input
+                id="transfer-to-location"
                 type="text"
                 value={form.to_location || ''}
                 onChange={(e) => setForm((f) => ({ ...f, to_location: e.target.value }))}
@@ -365,8 +370,9 @@ export default function TransfersPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">Notes</label>
+            <label htmlFor="transfer-notes" className="block text-sm font-medium text-foreground">Notes</label>
             <textarea
+              id="transfer-notes"
               value={form.notes || ''}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               rows={2}
@@ -421,8 +427,9 @@ export default function TransfersPage() {
             {/* Show cancel reason field only if cancel is a valid transition */}
             {(validTransitions[actionModal.status] || []).includes('cancelled') && (
               <div>
-                <label className="block text-sm font-medium text-foreground">Cancellation Reason (if cancelling)</label>
+                <label htmlFor="transfer-cancel-reason" className="block text-sm font-medium text-foreground">Cancellation Reason (if cancelling)</label>
                 <textarea
+                  id="transfer-cancel-reason"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
                   rows={2}

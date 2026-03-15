@@ -73,7 +73,10 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
           </p>
           <div
             className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
+            role="button"
+            tabIndex={0}
             onClick={() => setSelectedImage(submission.document_front_url)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedImage(submission.document_front_url); } }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -91,7 +94,10 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
             </p>
             <div
               className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedImage(submission.document_back_url!)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedImage(submission.document_back_url!); } }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -110,7 +116,10 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
             </p>
             <div
               className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
+              role="button"
+              tabIndex={0}
               onClick={() => setSelectedImage(submission.selfie_url!)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedImage(submission.selfie_url!); } }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -169,10 +178,11 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
 
       {/* Rejection Reason Input */}
       <div className="mt-6">
-        <label className="block text-sm font-medium text-foreground">
+        <label htmlFor="kyc-card-rejection-reason" className="block text-sm font-medium text-foreground">
           Rejection Reason (required to reject)
         </label>
         <textarea
+          id="kyc-card-rejection-reason"
           className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           rows={2}
           placeholder="Provide detailed reason for rejection..."
@@ -213,6 +223,7 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
       {selectedImage && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="presentation"
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-4xl">
