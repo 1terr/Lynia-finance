@@ -121,7 +121,7 @@ function HealthSkeleton() {
       <CardContent>
         <div className="space-y-4">
           <div className="h-9 animate-pulse rounded-lg bg-gray-100" />
-          <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="space-y-2">
                 <div className="h-3 w-20 animate-pulse rounded bg-gray-100" />
@@ -206,8 +206,8 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
             <span className={cn('text-sm font-medium', color)}>{label}</span>
           </div>
 
-          {/* Row 1: Infrastructure + Sync Pipeline */}
-          <div className="grid grid-cols-2 gap-x-6">
+          {/* All sections in a single row on large screens */}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4 lg:grid-cols-4">
             {/* Infrastructure */}
             <div>
               <SectionLabel>Infrastructure</SectionLabel>
@@ -248,12 +248,7 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
                 />
               </div>
             </div>
-          </div>
 
-          <div className="border-t border-gray-100" />
-
-          {/* Row 2: Data Integrity + Portfolio */}
-          <div className="grid grid-cols-2 gap-x-6">
             {/* Data Integrity */}
             <div>
               <SectionLabel>Data Integrity</SectionLabel>
@@ -295,10 +290,10 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
 
           <div className="border-t border-gray-100" />
 
-          {/* Row 3: Accounting (full width) */}
+          {/* Accounting */}
           <div>
             <SectionLabel>Accounting</SectionLabel>
-            <div className="grid grid-cols-2 gap-x-6">
+            <div className="grid grid-cols-2 gap-x-8 lg:grid-cols-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="flex items-center gap-2 text-gray-500">
                   <StatusDot status={accounting.trialBalanceBalanced ? 'ok' : 'warn'} />

@@ -208,15 +208,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Tier 3: Risk & Fineract Health */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <PARChart data={par || { par_0_30: 0, par_31_60: 0, par_61_90: 0, par_90_plus: 0 }} />
-        <CoreBankingHealth
-          data={fineractHealth}
-          isLoading={fineractLoading}
-          error={fineractError}
-          onRetry={() => refetchFineract()}
-        />
-      </div>
+      <PARChart data={par || { par_0_30: 0, par_31_60: 0, par_61_90: 0, par_90_plus: 0 }} />
+      <CoreBankingHealth
+        data={fineractHealth}
+        isLoading={fineractLoading}
+        error={fineractError}
+        onRetry={() => refetchFineract()}
+      />
 
       {/* Tier 4: Operations - Quick Actions, Alerts, Activity */}
       <div className="grid gap-6 lg:grid-cols-3">
