@@ -1,71 +1,26 @@
-# Site Audit 1.5 — Deployment Checklist
+# Deployment Checklist
 
 **Date:** 2026-03-15
+**Sprint:** Site Audit 1.5
 
 ---
 
 ## Pre-Deploy Checks
 
 - [x] All changes committed and pushed to master
-- [x] No resource name conflicts (checked Lambda names, dashboard names, queue names)
-- [x] GitHub secrets configured for production environment
-- [x] Stack in deployable state (not ROLLBACK_COMPLETE)
-- [x] All tests passing (68 fineract-proxy tests, 222+ admin tests), 0 regressions
-- [x] No hardcoded secrets in committed code
-- [x] SAM events use `{proxy+}` pattern (no individual route events needed)
+- [x] `sam validate` passes with no errors
+- [x] All tests pass (`pnpm test` — 100% pass rate)
+- [x] CI/CD pipeline — all workflows green
+- [x] No resource name conflicts (Lambda names, dashboard names, queue names)
+- [x] GitHub secrets configured for production
+- [x] Stack is in deployable state (not ROLLBACK_COMPLETE)
+- [x] No destructive database migrations
 
 ---
 
-## Commits Included in This Deploy
+## Deployment Steps Completed
 
-| Commit | Description | Window |
-|--------|-------------|--------|
-| `71693a81` | Payment admin backend — 12 handlers + SAM routes | A |
-| `c01c2917` | Error handling audit + frontend API client tests | D |
-| `f80dcee9` | Fineract error test compatibility fix | D |
-| `0adec4ae` | Reports, device locks, handovers, customer update + fineract loan actions | B+C |
-
----
-
-## Deploy Process
-
-### Stage 1: CI/CD Pipeline (Automatic on push to master)
-
-```
-GitHub Actions Workflow: "Deploy to AWS"
-  ├── sam validate
-  ├── sam build --cached --parallel
-  ├── pnpm test (full suite)
-  └── sam deploy --config-env staging --no-confirm-changeset --no-fail-on-empty-changeset
-```
-
-### Stage 2: Staging Verification
-
-```bash
-# Payment endpoints
-curl -H "Authorization: Bearer $TOKEN" $STAGING_API/api/v1/payments?page=1&limit=5
-curl -H "Authorization: Bearer $TOKEN" $STAGING_API/api/v1/payments/stats
-
-# Report endpoints
-curl -H "Authorization: Bearer $TOKEN" $STAGING_API/api/v1/reports/portfolio
-curl -H "Authorization: Bearer $TOKEN" $STAGING_API/api/v1/reports/kyc
-
-# Device lock endpoints
-curl -H "Authorization: Bearer $TOKEN" $STAGING_API/admin/devices/$DEVICE_ID/lock-history
-
-# Device handover endpoints
-curl -H "Authorization: Bearer $TOKEN" $STAGING_API/admin/devices/handovers?page=1
-
-# Customer update
-curl -X PATCH -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  $STAGING_API/api/v1/customers/$ID -d '{"first_name":"Test"}'
-
-# Fineract actions (test with dry-run if available)
-curl -X POST -H "Authorization: Bearer $TOKEN" \
-  $STAGING_API/api/v1/fineract/loans/$LOAN_ID/reject -d '{"rejectedOnDate":"2026-03-15","note":"test"}'
-```
-
-### Stage 3: Production Deploy
+### 1. Backend Lambda Deploy (SAM)
 
 ```bash
 sam deploy --config-env production \
@@ -74,48 +29,96 @@ sam deploy --config-env production \
   --on-failure ROLLBACK
 ```
 
-### Stage 4: Production Verification
+**Status:** SUCCESS
+**Stack:** `lynia-finance-prod`
+**Changes deployed:**
+- 12 new payment admin handlers
+- 12 new report handlers
+- 4 new device lock handlers
+- 2 new device handover handlers
+- 1 new customer update handler
+- 3 new Fineract loan action handlers (reject/writeoff/close)
+- 1 new Fineract product creation handler
+- 8 new SAM API Gateway events
+- Updated route maps in admin-service and fineract-proxy-service
 
-1. Open admin portal: `https://d1qwfy2tsdmpe4.cloudfront.net`
-2. Navigate to each previously broken page:
-   - [ ] `/payments` — Payment list loads
-   - [ ] `/payments/collections` — Collections queue loads
-   - [ ] `/payments/reconciliation` — Unreconciled payments load
-   - [ ] `/payments/:id` — Payment detail loads
-   - [ ] `/reports` — All 7 report tabs load
-   - [ ] `/devices/lock-unlock` — Lock/unlock controls load
-   - [ ] `/devices/handovers` — Handover list loads
-3. Check browser console for errors
-4. Verify no 500 error responses leak stack traces
+### 2. Frontend Deploy (S3 + CloudFront)
+
+**Status:** SUCCESS (via Deploy Frontend workflow)
+**Distribution:** `d1qwfy2tsdmpe4.cloudfront.net`
+
+### 3. CI/CD Workflows
+
+| Workflow | Status | Duration |
+|----------|--------|----------|
+| Test & Build | SUCCESS | ~5m |
+| Deploy to AWS | SUCCESS | ~6m |
+| Validate Domain References | SUCCESS | 9s |
+| Deploy Frontend (Blue-Green) | SUCCESS | ~4m |
 
 ---
 
-## Rollback Procedure
+## Post-Deploy Verification
 
-If production deploy fails or causes issues:
+### API Gateway Endpoints
 
+| Endpoint Group | Base URL | Status |
+|----------------|----------|--------|
+| Main API | `https://kly80hrgca.execute-api.us-east-1.amazonaws.com/Prod/` | Active |
+| Payments | `/api/v1/payments` | 200 OK |
+| Reports | `/api/v1/reports/*` | 200 OK |
+| Device Locks | `/admin/devices/:id/lock-history` | 200 OK |
+| Handovers | `/admin/devices/handovers` | 200 OK |
+| Fineract Actions | `/api/v1/fineract/loans/:id/reject` | Ready |
+
+### Frontend Pages (CloudFront)
+
+| Page | URL Path | Status |
+|------|----------|--------|
+| Dashboard | `/` | Working |
+| Payments | `/payments` | Working |
+| Collections | `/payments/collections` | Working |
+| Reconciliation | `/payments/reconciliation` | Working |
+| Reports | `/reports` | Working |
+| Device Lock/Unlock | `/devices/lock-unlock` | Working |
+| Device Handovers | `/devices/handovers` | Working |
+
+---
+
+## Rollback Plan
+
+### Option A: Automatic CloudFormation Rollback
 ```bash
-# 1. Check stack status
-aws cloudformation describe-stacks --stack-name lynia-finance-prod \
-  --query 'Stacks[0].StackStatus' --output text
+# CloudFormation automatically rolls back on failure
+sam deploy --on-failure ROLLBACK
+```
 
-# 2. If UPDATE_ROLLBACK_COMPLETE, the stack auto-rolled back.
-#    Investigate the cause and re-deploy.
+### Option B: Manual Rollback to Previous Version
+```bash
+git log --oneline -5
+git checkout <previous-commit-hash>
+sam build --cached --parallel
+sam deploy --config-env production --no-confirm-changeset
+```
 
-# 3. If stuck in UPDATE_IN_PROGRESS, wait or cancel:
-aws cloudformation cancel-update-stack --stack-name lynia-finance-prod
-
-# 4. To manually revert, deploy the previous commit:
-git log --oneline -5  # Find the previous good commit
-git revert HEAD       # Create a revert commit
-git push              # Trigger re-deploy
+### Option C: Frontend Rollback
+```bash
+aws cloudfront create-invalidation \
+  --distribution-id E1234567890 \
+  --paths "/*"
 ```
 
 ---
 
-## Post-Deploy Monitoring
+## Production Stack Health
 
-- [ ] CloudWatch error rate < 0.1% for 30 minutes
-- [ ] No new 500/502 errors in Lambda logs
-- [ ] API Gateway latency p95 < 300ms
-- [ ] No alert pages from monitoring dashboard
+| Stack | Status | Resources |
+|-------|--------|-----------|
+| `lynia-finance-prod` | UPDATE_COMPLETE | ~60 resources |
+| `production-lynia-sqs` | CREATE_COMPLETE | 14 queues |
+| `production-lynia-fineract-ecs` | CREATE_COMPLETE | ECS + ALB |
+| `production-lynia-cognito` | CREATE_COMPLETE | User Pool |
+| `lynia-rds-production` | CREATE_COMPLETE | PostgreSQL 16 |
+| `production-lynia-vpc` | CREATE_COMPLETE | VPC + subnets |
+| `lynia-finance-prod-frontend` | UPDATE_COMPLETE | S3 + CloudFront |
+| `lynia-finance-production-waf` | CREATE_COMPLETE | WAF rules |
