@@ -26,11 +26,11 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 shadow-sm hover:bg-gray-50"
+        className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm hover:bg-accent"
       >
-        <Calendar className="h-4 w-4 text-gray-400" />
+        <Calendar className="h-4 w-4 text-muted-foreground" />
         {selected?.label || 'Select range'}
-        <ChevronDown className="h-4 w-4 text-gray-400" />
+        <ChevronDown className="h-4 w-4 text-muted-foreground" />
       </button>
 
       {open && (
@@ -39,7 +39,7 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
             className="fixed inset-0 z-10"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
+          <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-border bg-card py-1 shadow-lg">
             {RANGE_OPTIONS.map((option) => (
               <button
                 key={option.value}
@@ -48,10 +48,10 @@ export function DateRangePicker({ value, onChange }: DateRangePickerProps) {
                   setOpen(false);
                 }}
                 className={cn(
-                  'block w-full px-4 py-2 text-left text-sm hover:bg-gray-50',
+                  'block w-full px-4 py-2 text-left text-sm hover:bg-accent',
                   value === option.value
                     ? 'bg-brand-50 text-brand-700 font-medium'
-                    : 'text-gray-700'
+                    : 'text-foreground'
                 )}
               >
                 {option.label}

@@ -118,7 +118,7 @@ export default function ProductsPage() {
       return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-64 animate-pulse rounded-lg border bg-gray-100" />
+            <div key={i} className="h-64 animate-pulse rounded-lg border bg-muted" />
           ))}
         </div>
       );
@@ -126,8 +126,8 @@ export default function ProductsPage() {
 
     if (products.length === 0) {
       return (
-        <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
-          <p className="text-sm text-gray-500">No products found. Create your first product to get started.</p>
+        <div className="rounded-lg border border-dashed border-border py-12 text-center">
+          <p className="text-sm text-muted-foreground">No products found. Create your first product to get started.</p>
         </div>
       );
     }
@@ -150,8 +150,8 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Loan Products</h1>
-          <p className="text-sm text-gray-500">Manage loan products, phone catalog, and organizations.</p>
+          <h1 className="text-2xl font-bold text-foreground">Loan Products</h1>
+          <p className="text-sm text-muted-foreground">Manage loan products, phone catalog, and organizations.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => router.push('/products/device-models')}>
@@ -168,19 +168,19 @@ export default function ProductsPage() {
 
       {/* Search */}
       <form onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); }} className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search by product name or code..."
-          className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-10 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="block w-full rounded-md border border-border py-2 pl-10 pr-10 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
         {searchInput && (
           <button
             type="button"
             onClick={() => { setSearchInput(''); setSearch(''); }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
           >
             <X className="h-4 w-4" />
           </button>
@@ -218,9 +218,9 @@ export default function ProductsPage() {
       <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Product" size="sm">
         <div className="space-y-4">
           {loadingLoansCount ? (
-            <div className="h-8 animate-pulse rounded bg-gray-100" />
+            <div className="h-8 animate-pulse rounded bg-muted" />
           ) : deleteLoansData && deleteLoansData.active_loans > 0 ? (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+            <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950 p-3">
               <p className="text-sm font-medium text-red-800">
                 This product has {deleteLoansData.active_loans} active loan{deleteLoansData.active_loans !== 1 ? 's' : ''}.
               </p>
@@ -229,7 +229,7 @@ export default function ProductsPage() {
               </p>
             </div>
           ) : (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Are you sure you want to delete <span className="font-medium">{deleteTarget?.product_name}</span>?
               This action cannot be undone.
             </p>

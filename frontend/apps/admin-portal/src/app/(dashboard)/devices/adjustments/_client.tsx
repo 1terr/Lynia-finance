@@ -122,7 +122,7 @@ export default function AdjustmentsPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.manufacturer} {row.device_model}</p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei}</p>
+          <p className="font-mono text-xs text-muted-foreground">{row.device_imei}</p>
         </div>
       ),
     },
@@ -138,7 +138,7 @@ export default function AdjustmentsPage() {
     {
       key: 'reason',
       header: 'Reason',
-      render: (row) => <span className="text-sm text-gray-600">{row.reason}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.reason}</span>,
     },
     {
       key: 'approval_status',
@@ -155,12 +155,12 @@ export default function AdjustmentsPage() {
     {
       key: 'requested_by_name',
       header: 'Requested By',
-      render: (row) => <span className="text-sm text-gray-600">{row.requested_by_name || '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.requested_by_name || '-'}</span>,
     },
     {
       key: 'created_at',
       header: 'Date',
-      render: (row) => <span className="text-sm text-gray-500">{formatDateTime(row.created_at)}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
     {
       key: 'id',
@@ -175,19 +175,19 @@ export default function AdjustmentsPage() {
   ];
 
   const inputClass =
-    'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
+    'block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/devices" className="rounded-md p-1 hover:bg-gray-100">
-            <ArrowLeft className="h-5 w-5 text-gray-500" />
+          <Link href="/devices" className="rounded-md p-1 hover:bg-accent">
+            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inventory Adjustments</h1>
-            <p className="text-sm text-gray-500">Record and approve stock changes</p>
+            <h1 className="text-2xl font-bold text-foreground">Inventory Adjustments</h1>
+            <p className="text-sm text-muted-foreground">Record and approve stock changes</p>
           </div>
         </div>
         <Button onClick={() => setCreateModal(true)}>
@@ -202,16 +202,16 @@ export default function AdjustmentsPage() {
           onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); setPage(1); }}
           className="relative flex-1 max-w-sm"
         >
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by IMEI, device, or reason..."
-            className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-lg border border-border py-2 pl-10 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           {searchInput && (
-            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground">
               <X className="h-4 w-4" />
             </button>
           )}
@@ -219,7 +219,7 @@ export default function AdjustmentsPage() {
         <select
           value={typeFilter}
           onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-border px-3 py-2 text-sm"
         >
           {ADJUSTMENT_TYPE_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -228,7 +228,7 @@ export default function AdjustmentsPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-border px-3 py-2 text-sm"
         >
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -259,7 +259,7 @@ export default function AdjustmentsPage() {
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="New Inventory Adjustment">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Device *</label>
+            <label className="block text-sm font-medium text-foreground">Device *</label>
             <div className="mt-1">
               <DeviceSearch
                 value={form.device_id}
@@ -269,7 +269,7 @@ export default function AdjustmentsPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Adjustment Type *</label>
+            <label className="block text-sm font-medium text-foreground">Adjustment Type *</label>
             <select
               value={form.adjustment_type}
               onChange={(e) => {
@@ -287,7 +287,7 @@ export default function AdjustmentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">New Device Status</label>
+            <label className="block text-sm font-medium text-foreground">New Device Status</label>
             <select
               value={form.new_status || ''}
               onChange={(e) => setForm((f) => ({ ...f, new_status: e.target.value || undefined }))}
@@ -302,7 +302,7 @@ export default function AdjustmentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Reason *</label>
+            <label className="block text-sm font-medium text-foreground">Reason *</label>
             <textarea
               value={form.reason}
               onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))}
@@ -313,7 +313,7 @@ export default function AdjustmentsPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Notes</label>
+            <label className="block text-sm font-medium text-foreground">Notes</label>
             <textarea
               value={form.notes || ''}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -341,29 +341,29 @@ export default function AdjustmentsPage() {
           <div className="space-y-4">
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-gray-500">Device</dt>
+                <dt className="text-muted-foreground">Device</dt>
                 <dd className="font-medium">{approveModal.manufacturer} {approveModal.device_model}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">IMEI</dt>
+                <dt className="text-muted-foreground">IMEI</dt>
                 <dd className="font-mono">{approveModal.device_imei}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Type</dt>
+                <dt className="text-muted-foreground">Type</dt>
                 <dd className="capitalize">{approveModal.adjustment_type.replace(/_/g, ' ')}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Status Change</dt>
+                <dt className="text-muted-foreground">Status Change</dt>
                 <dd>{approveModal.previous_status} &rarr; {approveModal.new_status || 'No change'}</dd>
               </div>
               <div>
-                <dt className="text-gray-500">Reason</dt>
+                <dt className="text-muted-foreground">Reason</dt>
                 <dd className="mt-1">{approveModal.reason}</dd>
               </div>
             </dl>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Rejection Reason (if rejecting)</label>
+              <label className="block text-sm font-medium text-foreground">Rejection Reason (if rejecting)</label>
               <textarea
                 value={rejectReason}
                 onChange={(e) => setRejectReason(e.target.value)}

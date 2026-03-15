@@ -45,8 +45,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Loan ID</label>
+          <label htmlFor="handover-loan-id" className="block text-sm font-medium text-foreground mb-1">Loan ID</label>
           <input
+            id="handover-loan-id"
             type="text"
             value={formData.loan_id}
             onChange={(e) => handleChange('loan_id', e.target.value)}
@@ -56,8 +57,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Customer ID</label>
+          <label htmlFor="handover-customer-id" className="block text-sm font-medium text-foreground mb-1">Customer ID</label>
           <input
+            id="handover-customer-id"
             type="text"
             value={formData.customer_id}
             onChange={(e) => handleChange('customer_id', e.target.value)}
@@ -67,8 +69,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Device ID</label>
+          <label htmlFor="handover-device-id" className="block text-sm font-medium text-foreground mb-1">Device ID</label>
           <input
+            id="handover-device-id"
             type="text"
             value={formData.device_id}
             onChange={(e) => handleChange('device_id', e.target.value)}
@@ -78,8 +81,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Distributor ID</label>
+          <label htmlFor="handover-distributor-id" className="block text-sm font-medium text-foreground mb-1">Distributor ID</label>
           <input
+            id="handover-distributor-id"
             type="text"
             value={formData.distributor_id}
             onChange={(e) => handleChange('distributor_id', e.target.value)}
@@ -89,8 +93,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Scheduled Date</label>
+          <label htmlFor="handover-scheduled-date" className="block text-sm font-medium text-foreground mb-1">Scheduled Date</label>
           <input
+            id="handover-scheduled-date"
             type="date"
             value={formData.scheduled_date}
             onChange={(e) => handleChange('scheduled_date', e.target.value)}
@@ -99,8 +104,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-foreground mb-1">Scheduled Time</label>
+          <label htmlFor="handover-scheduled-time" className="block text-sm font-medium text-foreground mb-1">Scheduled Time</label>
           <input
+            id="handover-scheduled-time"
             type="time"
             value={formData.scheduled_time}
             onChange={(e) => handleChange('scheduled_time', e.target.value)}
@@ -111,8 +117,9 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-foreground mb-1">Notes (optional)</label>
+        <label htmlFor="handover-notes" className="block text-sm font-medium text-foreground mb-1">Notes (optional)</label>
         <textarea
+          id="handover-notes"
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
           placeholder="Additional notes..."

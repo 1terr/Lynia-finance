@@ -132,7 +132,7 @@ export function OrganizationForm({ open, onClose, onSubmit, organization }: Orga
         </div>
 
         <div>
-          <label htmlFor="trustLevel" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="trustLevel" className="block text-sm font-medium text-foreground mb-1">
             Trust Level: {trustLevel}
           </label>
           <input
@@ -144,7 +144,7 @@ export function OrganizationForm({ open, onClose, onSubmit, organization }: Orga
             onChange={(e) => setTrustLevel(e.target.value)}
             className="w-full"
           />
-          <div className="flex justify-between text-xs text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-muted-foreground mt-1">
             <span>0</span>
             <span>50</span>
             <span>100</span>
@@ -162,7 +162,7 @@ export function OrganizationForm({ open, onClose, onSubmit, organization }: Orga
           <Input label="Contact Email" id="contactEmail" type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+        <div className="flex justify-end gap-3 border-t border-border pt-4">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" isLoading={submitting}>{isEditing ? 'Update Organization' : 'Add Organization'}</Button>
         </div>

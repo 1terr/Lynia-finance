@@ -79,10 +79,10 @@ export default function DevicesPage() {
       header: 'Device',
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">
+          <p className="font-medium text-foreground">
             {row.manufacturer} {row.model}
           </p>
-          <p className="font-mono text-xs text-gray-500">{row.imei}</p>
+          <p className="font-mono text-xs text-muted-foreground">{row.imei}</p>
         </div>
       ),
     },
@@ -126,14 +126,14 @@ export default function DevicesPage() {
             {row.customer.full_name}
           </Link>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground">-</span>
         ),
     },
     {
       key: 'created_at',
       header: 'Added',
       sortable: true,
-      render: (row) => <span className="text-gray-500">{formatDate(row.created_at)}</span>,
+      render: (row) => <span className="text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
   ];
 
@@ -142,14 +142,14 @@ export default function DevicesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Devices</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Devices</h1>
+          <p className="text-sm text-muted-foreground">
             Manage device inventory, lock status, and assignments.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {data && (
-            <p className="mr-2 text-sm text-gray-500">{data.total} total</p>
+            <p className="mr-2 text-sm text-muted-foreground">{data.total} total</p>
           )}
           <Button variant="outline" size="sm" onClick={handleExportCSV}>
             <Download className="mr-1.5 h-4 w-4" />
@@ -202,44 +202,44 @@ export default function DevicesPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-50 p-2">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-2">
               <Package className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">In Stock</p>
+              <p className="text-sm text-muted-foreground">In Stock</p>
               <p className="text-lg font-semibold">{stats?.in_stock ?? 0}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-50 p-2">
+            <div className="rounded-lg bg-green-50 dark:bg-green-950 p-2">
               <Smartphone className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Sold/Active</p>
+              <p className="text-sm text-muted-foreground">Sold/Active</p>
               <p className="text-lg font-semibold">{stats?.sold ?? 0}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-red-50 p-2">
+            <div className="rounded-lg bg-red-50 dark:bg-red-950 p-2">
               <Lock className="h-5 w-5 text-red-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Locked</p>
+              <p className="text-sm text-muted-foreground">Locked</p>
               <p className="text-lg font-semibold">{stats?.locked ?? 0}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-gray-50 p-2">
-              <Package className="h-5 w-5 text-gray-600" />
+            <div className="rounded-lg bg-muted p-2">
+              <Package className="h-5 w-5 text-muted-foreground" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Returned</p>
+              <p className="text-sm text-muted-foreground">Returned</p>
               <p className="text-lg font-semibold">{stats?.returned ?? 0}</p>
             </div>
           </div>
@@ -249,13 +249,13 @@ export default function DevicesPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => { setSearchInput(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
             placeholder="Search by IMEI, brand, model, or customer..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
         <Select

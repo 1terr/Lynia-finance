@@ -88,11 +88,11 @@ export default function FineractApprovalPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-64 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-8 w-64 animate-pulse rounded bg-muted" />
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="h-24 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800"
+            className="h-24 animate-pulse rounded-lg bg-muted"
           />
         ))}
       </div>
@@ -105,10 +105,10 @@ export default function FineractApprovalPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+        <h1 className="text-2xl font-bold text-foreground">
           Loan Approval Queue
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-muted-foreground">
           Review and approve pending loan applications.
           {data && ` ${data.total} loans pending.`}
         </p>
@@ -116,12 +116,12 @@ export default function FineractApprovalPage() {
 
       {/* Empty State */}
       {loans.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 py-16 dark:border-gray-700">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16">
           <CheckCircle className="h-12 w-12 text-green-400" />
-          <p className="mt-4 text-lg font-medium text-gray-600 dark:text-gray-300">
+          <p className="mt-4 text-lg font-medium text-muted-foreground">
             No loans pending approval
           </p>
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-muted-foreground">
             All caught up! New applications will appear here.
           </p>
         </div>
@@ -132,21 +132,21 @@ export default function FineractApprovalPage() {
         {loans.map((loan) => (
           <div
             key={loan.lyniaLoanId}
-            className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-700 dark:bg-gray-800"
+            className="rounded-lg border border-border bg-card p-6 shadow-sm"
           >
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               {/* Customer Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-yellow-500" />
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                  <h3 className="font-semibold text-foreground">
                     {loan.customerName}
                   </h3>
-                  <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                  <span className="inline-flex items-center rounded-full bg-yellow-100 dark:bg-yellow-900 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:text-yellow-200">
                     Pending Approval
                   </span>
                 </div>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {loan.customerPhone} | Loan #{loan.fineractLoanId}
                 </p>
               </div>
@@ -154,8 +154,8 @@ export default function FineractApprovalPage() {
               {/* Loan Details */}
               <div className="flex flex-wrap gap-6 text-sm">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Product</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-xs text-muted-foreground">Product</p>
+                  <p className="font-medium text-foreground">
                     {loan.productName.replace(
                       'Lynia Device Finance - ',
                       ''
@@ -163,27 +163,27 @@ export default function FineractApprovalPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Principal</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-xs text-muted-foreground">Principal</p>
+                  <p className="font-medium text-foreground">
                     {formatCurrency(loan.principal)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Term</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-xs text-muted-foreground">Term</p>
+                  <p className="font-medium text-foreground">
                     {loan.numberOfRepayments} months
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Rate</p>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">
+                  <p className="text-xs text-muted-foreground">Rate</p>
+                  <p className="font-medium text-foreground">
                     {loan.interestRatePerPeriod}%/mo
                   </p>
                 </div>
                 {loan.deviceBrand && (
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Device</p>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                    <p className="text-xs text-muted-foreground">Device</p>
+                    <p className="font-medium text-foreground">
                       {loan.deviceBrand} {loan.deviceModel}
                     </p>
                   </div>
@@ -205,7 +205,7 @@ export default function FineractApprovalPage() {
                   {canReject && (
                     <button
                       onClick={() => openModal(loan, 'reject')}
-                      className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"
+                      className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-card px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:bg-red-950 dark:text-red-400"
                     >
                       <XCircle className="h-4 w-4" />
                       Reject
@@ -216,7 +216,7 @@ export default function FineractApprovalPage() {
             </div>
 
             {/* Submitted date */}
-            <p className="mt-3 text-xs text-gray-400">
+            <p className="mt-3 text-xs text-muted-foreground">
               Submitted{' '}
               {loan.submittedOnDate
                 ? formatDate(loan.submittedOnDate)

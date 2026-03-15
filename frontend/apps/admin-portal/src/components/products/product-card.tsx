@@ -31,31 +31,31 @@ export function ProductCard({ product, onEdit, onViewDetails }: ProductCardProps
       <div className="flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-gray-900">{product.product_name}</h3>
+            <h3 className="text-base font-semibold text-foreground">{product.product_name}</h3>
             <Badge variant={STATUS_VARIANTS[product.status] || 'gray'}>
               {STATUS_LABELS[product.status] || product.status}
             </Badge>
           </div>
-          <p className="mt-0.5 text-xs font-mono text-gray-500">{product.product_code}</p>
+          <p className="mt-0.5 text-xs font-mono text-muted-foreground">{product.product_code}</p>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div>
-          <p className="text-gray-500">Amount Range</p>
+          <p className="text-muted-foreground">Amount Range</p>
           <p className="font-medium">{formatCurrency(product.min_amount_usd)} - {formatCurrency(product.max_amount_usd)}</p>
         </div>
         <div>
-          <p className="text-gray-500">Interest Rate</p>
+          <p className="text-muted-foreground">Interest Rate</p>
           <p className="font-medium">{product.interest_rate_monthly}%/mo ({product.interest_rate_annual}%/yr)</p>
         </div>
         <div>
-          <p className="text-gray-500">Tenure</p>
+          <p className="text-muted-foreground">Tenure</p>
           <p className="font-medium">{product.min_term_months} - {product.max_term_months} months</p>
         </div>
         {product.product_category === 'smartphone' && (
           <div>
-            <p className="text-gray-500">Deposit</p>
+            <p className="text-muted-foreground">Deposit</p>
             <p className="font-medium">{product.deposit_percentage}%</p>
           </div>
         )}
@@ -63,7 +63,7 @@ export function ProductCard({ product, onEdit, onViewDetails }: ProductCardProps
 
       <div className="mt-3 flex flex-wrap gap-2">
         {product.requires_device && (
-          <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-700">
+          <span className="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950 px-2 py-0.5 text-xs text-blue-700">
             <Smartphone className="h-3 w-3" /> Requires Device
           </span>
         )}
@@ -74,7 +74,7 @@ export function ProductCard({ product, onEdit, onViewDetails }: ProductCardProps
         )}
       </div>
 
-      <div className="mt-4 flex gap-2 border-t border-gray-100 pt-3">
+      <div className="mt-4 flex gap-2 border-t border-border pt-3">
         <Button variant="secondary" size="sm" onClick={() => onEdit(product)}>
           <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
         </Button>

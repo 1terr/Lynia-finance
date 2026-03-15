@@ -143,8 +143,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="text-sm text-muted-foreground">
           System configuration, user management, and audit logs.
         </p>
       </div>
@@ -252,8 +252,8 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
       header: 'Name',
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.first_name} {row.last_name}</p>
-          <p className="text-xs text-gray-500">{row.email}</p>
+          <p className="font-medium text-foreground">{row.first_name} {row.last_name}</p>
+          <p className="text-xs text-muted-foreground">{row.email}</p>
         </div>
       ),
     },
@@ -279,7 +279,7 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
       key: 'last_login_at',
       header: 'Last Login',
       render: (row) => (
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-muted-foreground">
           {row.last_login_at ? formatDateTime(row.last_login_at) : 'Never'}
         </span>
       ),
@@ -287,7 +287,7 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
     {
       key: 'created_at',
       header: 'Created',
-      render: (row) => <span className="text-sm text-gray-500">{formatDateTime(row.created_at)}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
   ];
 
@@ -319,7 +319,7 @@ function UsersTab({ canWrite, currentUserId }: { canWrite: boolean; currentUserI
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by name or email..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border py-2 pl-3 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </form>
         <div className="flex gap-2">
@@ -417,40 +417,40 @@ function AddUserModal({
     <Modal open={open} onClose={onClose} title="Add Admin User" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
-          <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          <div className="rounded-md bg-red-50 dark:bg-red-950 p-3 text-sm text-red-700">
             {error}
           </div>
         )}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1">First Name</label>
             <input
               type="text"
               required
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+            <label className="block text-sm font-medium text-foreground mb-1">Last Name</label>
             <input
               type="text"
               required
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
         <div>
@@ -505,9 +505,9 @@ function EditUserModal({
   return (
     <Modal open={open} onClose={onClose} title="Edit Admin User" size="md">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="rounded-lg bg-gray-50 p-3">
-          <p className="text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</p>
-          <p className="text-xs text-gray-500">{user.email}</p>
+        <div className="rounded-lg bg-muted p-3">
+          <p className="text-sm font-medium text-foreground">{user.first_name} {user.last_name}</p>
+          <p className="text-xs text-muted-foreground">{user.email}</p>
         </div>
         <div>
           <Select
@@ -518,7 +518,7 @@ function EditUserModal({
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Status</label>
           <div className="flex items-center gap-3">
             <label className="flex items-center gap-2 text-sm">
               <input
@@ -598,7 +598,7 @@ function SystemConfigTab({ canWrite, adminId }: { canWrite: boolean; adminId?: s
       ) : (
         <Card>
           <CardContent className="flex items-center justify-center py-12">
-            <p className="text-sm text-gray-500">No system configurations found.</p>
+            <p className="text-sm text-muted-foreground">No system configurations found.</p>
           </CardContent>
         </Card>
       )}
@@ -645,11 +645,11 @@ function ConfigCard({
           <div>
             <CardTitle className="text-base">{config.config_key}</CardTitle>
             {config.description && (
-              <p className="mt-1 text-xs text-gray-500">{config.description}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{config.description}</p>
             )}
           </div>
           {config.updated_at && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               Updated {formatDateTime(config.updated_at)}
             </span>
           )}
@@ -665,7 +665,7 @@ function ConfigCard({
                 setParseError(null);
               }}
               rows={8}
-              className="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 font-mono text-xs shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="block w-full rounded-md border border-border bg-muted px-3 py-2 font-mono text-xs shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             {parseError && (
               <p className="text-xs text-red-600">{parseError}</p>
@@ -681,7 +681,7 @@ function ConfigCard({
           </div>
         ) : (
           <div className="space-y-3">
-            <pre className="overflow-x-auto rounded-md bg-gray-50 p-3 text-xs text-gray-700">
+            <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs text-foreground">
               {JSON.stringify(config.config_value, null, 2)}
             </pre>
             {canWrite && (
@@ -719,7 +719,7 @@ function AuditLogTab() {
       key: 'created_at',
       header: 'Time',
       render: (row) => (
-        <span className="text-xs text-gray-500 whitespace-nowrap">{formatDateTime(row.created_at)}</span>
+        <span className="text-xs text-muted-foreground whitespace-nowrap">{formatDateTime(row.created_at)}</span>
       ),
     },
     {
@@ -727,8 +727,8 @@ function AuditLogTab() {
       header: 'User',
       render: (row) => (
         <div>
-          <p className="text-sm text-gray-900">{row.user_email || 'System'}</p>
-          <p className="text-xs text-gray-500">{row.user_type}</p>
+          <p className="text-sm text-foreground">{row.user_email || 'System'}</p>
+          <p className="text-xs text-muted-foreground">{row.user_type}</p>
         </div>
       ),
     },
@@ -746,9 +746,9 @@ function AuditLogTab() {
       header: 'Entity',
       render: (row) => (
         <div>
-          <p className="text-sm text-gray-900 capitalize">{row.entity_type.replace(/_/g, ' ')}</p>
+          <p className="text-sm text-foreground capitalize">{row.entity_type.replace(/_/g, ' ')}</p>
           {row.entity_id && (
-            <p className="font-mono text-xs text-gray-500">{row.entity_id.slice(0, 8)}...</p>
+            <p className="font-mono text-xs text-muted-foreground">{row.entity_id.slice(0, 8)}...</p>
           )}
         </div>
       ),
@@ -757,7 +757,7 @@ function AuditLogTab() {
       key: 'description',
       header: 'Description',
       render: (row) => (
-        <span className="text-sm text-gray-600">{row.description || '-'}</span>
+        <span className="text-sm text-muted-foreground">{row.description || '-'}</span>
       ),
     },
   ];
@@ -814,7 +814,7 @@ function AuditLogTab() {
             onChange={(e) =>
               setFilters((f) => ({ ...f, date_from: e.target.value || undefined, page: 1 }))
             }
-            className="block rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             placeholder="From"
           />
           <input
@@ -823,7 +823,7 @@ function AuditLogTab() {
             onChange={(e) =>
               setFilters((f) => ({ ...f, date_to: e.target.value || undefined, page: 1 }))
             }
-            className="block rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             placeholder="To"
           />
         </div>
@@ -864,30 +864,30 @@ function RolesTab() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-muted-foreground">
         Role-based permission mapping. This is a read-only view of the access control matrix.
       </p>
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="sticky left-0 bg-gray-50 px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+              <th className="sticky left-0 bg-muted px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Role
               </th>
               {PERMISSION_CATEGORIES.map((cat) => (
                 <th
                   key={cat.key}
-                  className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-gray-500"
+                  className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground"
                 >
                   {cat.label}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {roles.map((role) => (
-              <tr key={role} className="hover:bg-gray-50">
-                <td className="sticky left-0 bg-white px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+              <tr key={role} className="hover:bg-accent">
+                <td className="sticky left-0 bg-card px-4 py-3 text-sm font-medium text-foreground whitespace-nowrap">
                   {ROLE_LABELS[role]}
                 </td>
                 {PERMISSION_CATEGORIES.map((cat) => {
@@ -923,7 +923,7 @@ function RolesTab() {
           </tbody>
         </table>
       </div>
-      <div className="flex items-center gap-4 text-xs text-gray-500">
+      <div className="flex items-center gap-4 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <span className="inline-block rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">R</span>
           Read access
@@ -1022,18 +1022,18 @@ function SecurityTab() {
           {!isDemoMode && (
             <form onSubmit={handleChangePassword} className="space-y-4">
               {error && (
-                <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
+                <div className="rounded-md bg-red-50 dark:bg-red-950 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300">
+                <div className="rounded-md bg-green-50 dark:bg-green-950 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300">
                   {success}
                 </div>
               )}
 
               <div className="space-y-1">
-                <label htmlFor="currentPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="currentPassword" className="text-sm font-medium text-foreground dark:text-gray-300">
                   Current Password
                 </label>
                 <input
@@ -1043,12 +1043,12 @@ function SecurityTab() {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="secNewPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="secNewPassword" className="text-sm font-medium text-foreground dark:text-gray-300">
                   New Password
                 </label>
                 <input
@@ -1059,12 +1059,12 @@ function SecurityTab() {
                   required
                   autoComplete="new-password"
                   placeholder="At least 12 characters"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="secConfirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="secConfirmPassword" className="text-sm font-medium text-foreground dark:text-gray-300">
                   Confirm New Password
                 </label>
                 <input
@@ -1075,11 +1075,11 @@ function SecurityTab() {
                   required
                   autoComplete="new-password"
                   placeholder="Re-enter your new password"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
 
-              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+              <div className="text-xs text-muted-foreground dark:text-muted-foreground space-y-1">
                 <p>Password requirements:</p>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>At least 12 characters</li>

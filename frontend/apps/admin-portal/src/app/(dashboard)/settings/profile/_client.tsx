@@ -91,8 +91,8 @@ export default function ProfilePage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Profile</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-foreground dark:text-gray-100">Profile</h1>
+          <p className="text-sm text-muted-foreground dark:text-muted-foreground">
             View your account information and manage your password.
           </p>
         </div>
@@ -108,7 +108,7 @@ export default function ProfilePage() {
             <Avatar initials={initials} size="lg" />
             <div className="space-y-4 flex-1">
               <div>
-                <p className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                <p className="text-xl font-semibold text-foreground dark:text-gray-100">
                   {user?.first_name} {user?.last_name}
                 </p>
                 <Badge variant="info" className="mt-1">
@@ -117,23 +117,23 @@ export default function ProfilePage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                  <Mail className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
                   <span>{user?.email}</span>
                 </div>
                 {user?.department && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <Building2 className="h-4 w-4 text-gray-400" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
                     <span>{user.department}</span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                  <Shield className="h-4 w-4 text-gray-400" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground dark:text-gray-300">
+                  <Shield className="h-4 w-4 text-muted-foreground" />
                   <span>{roleLabel}</span>
                 </div>
               </div>
 
-              <p className="text-xs text-gray-400 dark:text-gray-500">
+              <p className="text-xs text-muted-foreground dark:text-muted-foreground">
                 Profile details are managed by your administrator. Contact them to update your name or email.
               </p>
             </div>
@@ -159,18 +159,18 @@ export default function ProfilePage() {
           {!isDemoMode && (
             <form onSubmit={handleChangePassword} className="max-w-md space-y-4">
               {error && (
-                <div className="rounded-md bg-red-50 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
+                <div className="rounded-md bg-red-50 dark:bg-red-950 dark:bg-red-900/20 p-3 text-sm text-red-700 dark:text-red-300">
                   {error}
                 </div>
               )}
               {success && (
-                <div className="rounded-md bg-green-50 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300">
+                <div className="rounded-md bg-green-50 dark:bg-green-950 dark:bg-green-900/20 p-3 text-sm text-green-700 dark:text-green-300">
                   {success}
                 </div>
               )}
 
               <div className="space-y-1">
-                <label htmlFor="profCurrentPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="profCurrentPassword" className="text-sm font-medium text-foreground dark:text-gray-300">
                   Current Password
                 </label>
                 <input
@@ -180,12 +180,12 @@ export default function ProfilePage() {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="profNewPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="profNewPassword" className="text-sm font-medium text-foreground dark:text-gray-300">
                   New Password
                 </label>
                 <input
@@ -196,12 +196,12 @@ export default function ProfilePage() {
                   required
                   autoComplete="new-password"
                   placeholder="At least 12 characters"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
 
               <div className="space-y-1">
-                <label htmlFor="profConfirmPassword" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="profConfirmPassword" className="text-sm font-medium text-foreground dark:text-gray-300">
                   Confirm New Password
                 </label>
                 <input
@@ -212,11 +212,11 @@ export default function ProfilePage() {
                   required
                   autoComplete="new-password"
                   placeholder="Re-enter your new password"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
+                  className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
 
-              <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+              <div className="text-xs text-muted-foreground dark:text-muted-foreground space-y-1">
                 <p>Password requirements:</p>
                 <ul className="list-disc list-inside space-y-0.5">
                   <li>At least 12 characters</li>

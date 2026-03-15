@@ -107,9 +107,9 @@ export default function OrganizationDetailPage() {
   if (loadingOrg) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="h-48 animate-pulse rounded-lg bg-gray-100" />
-        <div className="h-96 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-48 animate-pulse rounded-lg bg-muted" />
+        <div className="h-96 animate-pulse rounded-lg bg-muted" />
       </div>
     );
   }
@@ -120,8 +120,8 @@ export default function OrganizationDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => router.push('/products/organizations')}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Organizations
         </Button>
-        <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
-          <p className="text-gray-500">Organization not found.</p>
+        <div className="rounded-lg border border-dashed border-border py-12 text-center">
+          <p className="text-muted-foreground">Organization not found.</p>
         </div>
       </div>
     );
@@ -135,7 +135,7 @@ export default function OrganizationDetailPage() {
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{org.org_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{org.org_name}</h1>
             <Badge variant={ORG_TYPE_VARIANTS[org.org_type] || 'gray'}>
               {org.org_type.charAt(0).toUpperCase() + org.org_type.slice(1)}
             </Badge>
@@ -143,7 +143,7 @@ export default function OrganizationDetailPage() {
               {org.is_active ? 'Active' : 'Inactive'}
             </Badge>
           </div>
-          <p className="text-sm font-mono text-gray-500">{org.org_code}</p>
+          <p className="text-sm font-mono text-muted-foreground">{org.org_code}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
@@ -157,25 +157,25 @@ export default function OrganizationDetailPage() {
 
       <div className="grid gap-4 sm:grid-cols-4">
         <Card className="p-4 text-center">
-          <p className="text-sm text-gray-500">Trust Level</p>
+          <p className="text-sm text-muted-foreground">Trust Level</p>
           <p className="text-2xl font-bold">{org.scoring_trust_level}</p>
         </Card>
         <Card className="p-4 text-center">
-          <p className="text-sm text-gray-500">Total Members</p>
+          <p className="text-sm text-muted-foreground">Total Members</p>
           <p className="text-2xl font-bold">{org.member_count ?? org.total_members}</p>
         </Card>
         <Card className="p-4 text-center">
-          <p className="text-sm text-gray-500">Verification</p>
+          <p className="text-sm text-muted-foreground">Verification</p>
           <p className="text-lg font-semibold capitalize">{org.verification_method.replace(/_/g, ' ')}</p>
         </Card>
         <Card className="p-4 text-center">
-          <p className="text-sm text-gray-500">Last Import</p>
+          <p className="text-sm text-muted-foreground">Last Import</p>
           <p className="text-lg font-semibold">{org.last_data_import_at ? formatDate(org.last_data_import_at) : 'Never'}</p>
         </Card>
       </div>
 
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Members</h2>
+        <h2 className="text-lg font-semibold text-foreground mb-4">Members</h2>
         <DataTable
           columns={memberColumns}
           data={membersData?.data || []}

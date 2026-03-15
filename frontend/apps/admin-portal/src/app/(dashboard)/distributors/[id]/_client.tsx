@@ -409,7 +409,7 @@ export default function DistributorDetailPage() {
 
   function TabErrorBanner({ message }: { message: string }) {
     return (
-      <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950">
+      <div className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950 p-4 dark:border-red-800 dark:bg-red-950">
         <AlertCircle className="h-5 w-5 shrink-0 text-red-600" />
         <p className="text-sm text-red-800 dark:text-red-200">{message}</p>
       </div>
@@ -420,7 +420,7 @@ export default function DistributorDetailPage() {
     return (
       <div className="flex flex-wrap items-center gap-3">
         {Array.from({ length: items }).map((_, i) => (
-          <div key={i} className="h-9 w-32 animate-pulse rounded-lg bg-gray-200" />
+          <div key={i} className="h-9 w-32 animate-pulse rounded-lg bg-muted" />
         ))}
       </div>
     );
@@ -430,9 +430,9 @@ export default function DistributorDetailPage() {
     return (
       <div className="grid gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="rounded-lg border border-gray-200 bg-white p-4">
-            <div className="h-3 w-20 animate-pulse rounded bg-gray-200 mb-2" />
-            <div className="h-7 w-24 animate-pulse rounded bg-gray-200" />
+          <div key={i} className="rounded-lg border border-border bg-card p-4">
+            <div className="h-3 w-20 animate-pulse rounded bg-muted mb-2" />
+            <div className="h-7 w-24 animate-pulse rounded bg-muted" />
           </div>
         ))}
       </div>
@@ -490,12 +490,12 @@ export default function DistributorDetailPage() {
     {
       key: 'assigned_date',
       header: 'Assigned Date',
-      render: (row) => <span className="text-sm text-gray-500">{row.assigned_date ? formatDate(row.assigned_date) : '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.assigned_date ? formatDate(row.assigned_date) : '-'}</span>,
     },
     {
       key: 'sold_date',
       header: 'Sold Date',
-      render: (row) => <span className="text-sm text-gray-500">{row.sold_date ? formatDate(row.sold_date) : '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.sold_date ? formatDate(row.sold_date) : '-'}</span>,
     },
   ];
 
@@ -506,7 +506,7 @@ export default function DistributorDetailPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.customer_name}</p>
-          <p className="text-xs text-gray-500">{row.customer_phone}</p>
+          <p className="text-xs text-muted-foreground">{row.customer_phone}</p>
         </div>
       ),
     },
@@ -516,7 +516,7 @@ export default function DistributorDetailPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.device_model}</p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei}</p>
+          <p className="font-mono text-xs text-muted-foreground">{row.device_imei}</p>
         </div>
       ),
     },
@@ -535,17 +535,17 @@ export default function DistributorDetailPage() {
     {
       key: 'scheduled_date',
       header: 'Scheduled Date',
-      render: (row) => <span className="text-sm text-gray-500">{row.scheduled_date ? formatDate(row.scheduled_date) : '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.scheduled_date ? formatDate(row.scheduled_date) : '-'}</span>,
     },
     {
       key: 'completed_at',
       header: 'Completed At',
-      render: (row) => <span className="text-sm text-gray-500">{row.completed_at ? formatDateTime(row.completed_at) : '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.completed_at ? formatDateTime(row.completed_at) : '-'}</span>,
     },
     {
       key: 'created_at',
       header: 'Created',
-      render: (row) => <span className="text-sm text-gray-500">{formatDate(row.created_at)}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
   ];
 
@@ -556,7 +556,7 @@ export default function DistributorDetailPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.manufacturer} {row.device_model}</p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei}</p>
+          <p className="font-mono text-xs text-muted-foreground">{row.device_imei}</p>
         </div>
       ),
     },
@@ -566,7 +566,7 @@ export default function DistributorDetailPage() {
       render: (row) => (
         <div className="text-sm">
           <p className="font-medium">{row.from_distributor_name || '-'}</p>
-          {row.from_location && <p className="text-xs text-gray-500">{row.from_location}</p>}
+          {row.from_location && <p className="text-xs text-muted-foreground">{row.from_location}</p>}
         </div>
       ),
     },
@@ -576,7 +576,7 @@ export default function DistributorDetailPage() {
       render: (row) => (
         <div className="text-sm">
           <p className="font-medium">{row.to_distributor_name || '-'}</p>
-          {row.to_location && <p className="text-xs text-gray-500">{row.to_location}</p>}
+          {row.to_location && <p className="text-xs text-muted-foreground">{row.to_location}</p>}
         </div>
       ),
     },
@@ -592,12 +592,12 @@ export default function DistributorDetailPage() {
     {
       key: 'requested_by_name',
       header: 'Requested By',
-      render: (row) => <span className="text-sm text-gray-600">{row.requested_by_name || '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.requested_by_name || '-'}</span>,
     },
     {
       key: 'created_at',
       header: 'Date',
-      render: (row) => <span className="text-sm text-gray-500">{formatDateTime(row.created_at)}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
     {
       key: 'id',
@@ -630,7 +630,7 @@ export default function DistributorDetailPage() {
                 setSelectedCommissions((prev) => prev.filter((cid) => cid !== row.id));
               }
             }}
-            className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+            className="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500"
           />
         ) : null,
     },
@@ -640,7 +640,7 @@ export default function DistributorDetailPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.device_model || '-'}</p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei || '-'}</p>
+          <p className="font-mono text-xs text-muted-foreground">{row.device_imei || '-'}</p>
         </div>
       ),
     },
@@ -678,7 +678,7 @@ export default function DistributorDetailPage() {
     {
       key: 'created_at',
       header: 'Date',
-      render: (row) => <span className="text-sm text-gray-500">{formatDate(row.created_at)}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
   ];
 
@@ -695,7 +695,7 @@ export default function DistributorDetailPage() {
   if (!distributor) {
     return (
       <div className="text-center py-20">
-        <p className="text-lg text-gray-500">Distributor not found</p>
+        <p className="text-lg text-muted-foreground">Distributor not found</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/distributors')}>
           Back to Distributors
         </Button>
@@ -708,7 +708,7 @@ export default function DistributorDetailPage() {
   const availableInventory = inventoryData?.data?.filter((item) => item.status === 'available') || [];
 
   const inputClass =
-    'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
+    'block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
   // ─── Render ───
 
@@ -718,18 +718,18 @@ export default function DistributorDetailPage() {
       <div className="flex items-start gap-4">
         <button
           onClick={() => router.push('/distributors')}
-          className="mt-1 rounded-md p-1 hover:bg-gray-100"
+          className="mt-1 rounded-md p-1 hover:bg-accent"
         >
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{distributor.business_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{distributor.business_name}</h1>
             <Badge variant="status" status={distributor.status}>
               {distributor.status}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500 font-mono">{distributor.id}</p>
+          <p className="text-sm text-muted-foreground font-mono">{distributor.id}</p>
         </div>
         <div className="flex gap-2">
           {distributor.status === 'active' ? (
@@ -752,53 +752,53 @@ export default function DistributorDetailPage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 dark:bg-blue-950">
               <Package className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Devices Sold</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xs text-muted-foreground">Total Devices Sold</p>
+              <p className="text-xl font-bold text-foreground">
                 {distributor.total_devices_distributed || 0}
               </p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-50 dark:bg-green-950">
               <DollarSign className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Total Revenue</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xs text-muted-foreground">Total Revenue</p>
+              <p className="text-xl font-bold text-foreground">
                 ${(distributor.total_commissions_earned || 0).toFixed(2)}
               </p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-50">
               <Package className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Inventory Count</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xs text-muted-foreground">Inventory Count</p>
+              <p className="text-xl font-bold text-foreground">
                 {distributor.current_inventory_count || 0}
               </p>
             </div>
           </div>
         </div>
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
+        <div className="rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-yellow-50 dark:bg-yellow-950">
               <HandCoins className="h-5 w-5 text-yellow-600" />
             </div>
             <div>
-              <p className="text-xs text-gray-500">Pending Commissions</p>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xs text-muted-foreground">Pending Commissions</p>
+              <p className="text-xl font-bold text-foreground">
                 ${(distributor.pending_commissions || 0).toFixed(2)}
               </p>
             </div>
@@ -807,66 +807,66 @@ export default function DistributorDetailPage() {
       </div>
 
       {/* Profile Card */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Profile</h2>
+      <div className="rounded-lg border border-border bg-card p-6">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Profile</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {/* Contact */}
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Contact</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Contact</h3>
             <dl className="space-y-2">
               <div>
-                <dt className="text-xs text-gray-500">Contact Person</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.name || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Contact Person</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.name || '-'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-500">Phone</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.phone_number || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Phone</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.phone_number || '-'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-500">Email</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.email || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Email</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.email || '-'}</dd>
               </div>
             </dl>
           </div>
           {/* Address */}
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Address</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Address</h3>
             <dl className="space-y-2">
               <div>
-                <dt className="text-xs text-gray-500">Address</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.address || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Address</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.address || '-'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-500">City</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.city || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">City</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.city || '-'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-500">Province</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.province || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Province</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.province || '-'}</dd>
               </div>
             </dl>
           </div>
           {/* Bank */}
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Bank</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Bank</h3>
             <dl className="space-y-2">
               <div>
-                <dt className="text-xs text-gray-500">Bank Name</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.bank_name || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Bank Name</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.bank_name || '-'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-gray-500">Account Number</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.account_number || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">Account Number</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.account_number || '-'}</dd>
               </div>
             </dl>
           </div>
           {/* Mobile Money */}
           <div>
-            <h3 className="text-xs font-medium uppercase tracking-wider text-gray-400 mb-2">Mobile Money</h3>
+            <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">Mobile Money</h3>
             <dl className="space-y-2">
               <div>
-                <dt className="text-xs text-gray-500">EcoCash</dt>
-                <dd className="text-sm font-medium text-gray-900">{distributor.mobile_money_number || '-'}</dd>
+                <dt className="text-xs text-muted-foreground">EcoCash</dt>
+                <dd className="text-sm font-medium text-foreground">{distributor.mobile_money_number || '-'}</dd>
               </div>
             </dl>
           </div>
@@ -874,7 +874,7 @@ export default function DistributorDetailPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <div className="flex">
           {TABS.map((tab) => (
             <button
@@ -883,7 +883,7 @@ export default function DistributorDetailPage() {
               className={`flex items-center px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
                 activeTab === tab.key
                   ? 'border-brand-500 text-brand-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
               }`}
             >
               {tab.icon}
@@ -905,7 +905,7 @@ export default function DistributorDetailPage() {
             ) : (
               <div className="flex flex-wrap items-center gap-3">
                 <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     value={invSearch}
@@ -914,7 +914,7 @@ export default function DistributorDetailPage() {
                       setInvPage(1);
                     }}
                     placeholder="Search by IMEI..."
-                    className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="block w-full rounded-lg border border-border py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
                 <select
@@ -923,7 +923,7 @@ export default function DistributorDetailPage() {
                     setInvStatus(e.target.value);
                     setInvPage(1);
                   }}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <option value="">All Statuses</option>
                   <option value="available">Available</option>
@@ -977,7 +977,7 @@ export default function DistributorDetailPage() {
                     setHoStatus(e.target.value);
                     setHoPage(1);
                   }}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <option value="">All Statuses</option>
                   <option value="initiated">Initiated</option>
@@ -988,7 +988,7 @@ export default function DistributorDetailPage() {
                   <option value="cancelled">Cancelled</option>
                 </select>
                 <div className="relative flex-1 max-w-sm">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
                     type="text"
                     value={hoSearch}
@@ -997,7 +997,7 @@ export default function DistributorDetailPage() {
                       setHoPage(1);
                     }}
                     placeholder="Search by customer or IMEI..."
-                    className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    className="block w-full rounded-lg border border-border py-2 pl-10 pr-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
                   />
                 </div>
                 <Button variant="outline" onClick={exportHandoversCSV}>
@@ -1042,7 +1042,7 @@ export default function DistributorDetailPage() {
                     setTrStatus(e.target.value);
                     setTrPage(1);
                   }}
-                  className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  className="rounded-lg border border-border px-3 py-2 text-sm"
                 >
                   <option value="">All Statuses</option>
                   <option value="requested">Requested</option>
@@ -1097,20 +1097,20 @@ export default function DistributorDetailPage() {
               <CommissionSummarySkeleton />
             ) : commissionData?.summary ? (
               <div className="grid gap-4 sm:grid-cols-3">
-                <div className="rounded-lg border border-gray-200 bg-white p-4">
-                  <p className="text-xs text-gray-500">Total Earned</p>
-                  <p className="text-xl font-bold text-gray-900">
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Earned</p>
+                  <p className="text-xl font-bold text-foreground">
                     ${(commissionData.summary.total_earned || 0).toFixed(2)}
                   </p>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-4">
-                  <p className="text-xs text-gray-500">Total Paid</p>
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Paid</p>
                   <p className="text-xl font-bold text-green-600">
                     ${(commissionData.summary.total_paid || 0).toFixed(2)}
                   </p>
                 </div>
-                <div className="rounded-lg border border-gray-200 bg-white p-4">
-                  <p className="text-xs text-gray-500">Pending</p>
+                <div className="rounded-lg border border-border bg-card p-4">
+                  <p className="text-xs text-muted-foreground">Pending</p>
                   <p className="text-xl font-bold text-yellow-600">
                     ${(commissionData.summary.pending || 0).toFixed(2)}
                   </p>
@@ -1180,7 +1180,7 @@ export default function DistributorDetailPage() {
         <div className="space-y-4">
           {!pendingAllocateDevice ? (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Search for a device by IMEI to allocate it to <strong>{distributor.business_name}</strong>.
               </p>
               <DeviceSearch
@@ -1195,21 +1195,21 @@ export default function DistributorDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Allocate this device to <strong>{distributor.business_name}</strong>?
                 The device will be immediately assigned to their inventory.
               </p>
-              <dl className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
+              <dl className="rounded-lg border border-border bg-muted p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">IMEI</dt>
+                  <dt className="text-muted-foreground">IMEI</dt>
                   <dd className="font-mono font-medium">{pendingAllocateDevice.imei}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Model</dt>
+                  <dt className="text-muted-foreground">Model</dt>
                   <dd className="font-medium">{pendingAllocateDevice.model_name}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Distributor</dt>
+                  <dt className="text-muted-foreground">Distributor</dt>
                   <dd className="font-medium">{distributor.business_name}</dd>
                 </div>
               </dl>
@@ -1239,7 +1239,7 @@ export default function DistributorDetailPage() {
         <div className="space-y-4">
           {!pendingTransferDevice ? (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Search for a device by IMEI to transfer to <strong>{distributor.business_name}</strong>.
               </p>
               <DeviceSearch
@@ -1254,21 +1254,21 @@ export default function DistributorDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Transfer this device to <strong>{distributor.business_name}</strong>?
                 The device will be immediately assigned to their inventory.
               </p>
-              <dl className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
+              <dl className="rounded-lg border border-border bg-muted p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">IMEI</dt>
+                  <dt className="text-muted-foreground">IMEI</dt>
                   <dd className="font-mono font-medium">{pendingTransferDevice.imei}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Model</dt>
+                  <dt className="text-muted-foreground">Model</dt>
                   <dd className="font-medium">{pendingTransferDevice.model_name}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Distributor</dt>
+                  <dt className="text-muted-foreground">Distributor</dt>
                   <dd className="font-medium">{distributor.business_name}</dd>
                 </div>
               </dl>
@@ -1299,30 +1299,30 @@ export default function DistributorDetailPage() {
         <div className="space-y-4">
           {!pendingReturnDevice ? (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Select a device currently assigned to <strong>{distributor.business_name}</strong> to return
                 to the warehouse.
               </p>
               {availableInventory.length === 0 ? (
-                <p className="text-sm text-gray-500 py-4 text-center">
+                <p className="text-sm text-muted-foreground py-4 text-center">
                   No available devices in this distributor&apos;s inventory.
                 </p>
               ) : (
-                <div className="max-h-64 overflow-y-auto rounded-md border border-gray-200">
+                <div className="max-h-64 overflow-y-auto rounded-md border border-border">
                   {availableInventory.map((item) => (
                     <button
                       key={item.id}
                       type="button"
-                      className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0"
+                      className="w-full flex items-center justify-between px-4 py-3 text-sm hover:bg-accent border-b border-border last:border-0"
                       onClick={() => setPendingReturnDevice(item)}
                     >
                       <div className="text-left">
                         <p className="font-medium">
                           {item.manufacturer} {item.model}
                         </p>
-                        <p className="font-mono text-xs text-gray-500">{item.imei}</p>
+                        <p className="font-mono text-xs text-muted-foreground">{item.imei}</p>
                       </div>
-                      <span className="text-xs text-gray-400">
+                      <span className="text-xs text-muted-foreground">
                         ${(item.retail_price_usd || 0).toFixed(2)}
                       </span>
                     </button>
@@ -1337,20 +1337,20 @@ export default function DistributorDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-muted-foreground">
                 Return this device from <strong>{distributor.business_name}</strong> to the warehouse?
               </p>
-              <dl className="rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-2 text-sm">
+              <dl className="rounded-lg border border-border bg-muted p-4 space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">IMEI</dt>
+                  <dt className="text-muted-foreground">IMEI</dt>
                   <dd className="font-mono font-medium">{pendingReturnDevice.imei}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Model</dt>
+                  <dt className="text-muted-foreground">Model</dt>
                   <dd className="font-medium">{pendingReturnDevice.manufacturer} {pendingReturnDevice.model}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-gray-500">Retail Price</dt>
+                  <dt className="text-muted-foreground">Retail Price</dt>
                   <dd className="font-medium">${(pendingReturnDevice.retail_price_usd || 0).toFixed(2)}</dd>
                 </div>
               </dl>
@@ -1384,7 +1384,7 @@ export default function DistributorDetailPage() {
               for <strong>{distributor.business_name}</strong>?
             </p>
             {commissionData?.data && (
-              <div className="rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800 p-3 text-sm">
+              <div className="rounded-lg border border-border bg-muted dark:border-gray-700 dark:bg-gray-800 p-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total Amount</span>
                   <span className="font-bold text-foreground">
@@ -1431,29 +1431,29 @@ export default function DistributorDetailPage() {
           <div className="space-y-4">
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-gray-500">Device</dt>
+                <dt className="text-muted-foreground">Device</dt>
                 <dd className="font-medium">
                   {actionTransfer.manufacturer} {actionTransfer.device_model}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">IMEI</dt>
+                <dt className="text-muted-foreground">IMEI</dt>
                 <dd className="font-mono">{actionTransfer.device_imei}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">From</dt>
+                <dt className="text-muted-foreground">From</dt>
                 <dd>
                   {actionTransfer.from_distributor_name || actionTransfer.from_location || '-'}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">To</dt>
+                <dt className="text-muted-foreground">To</dt>
                 <dd>
                   {actionTransfer.to_distributor_name || actionTransfer.to_location || '-'}
                 </dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Current Status</dt>
+                <dt className="text-muted-foreground">Current Status</dt>
                 <dd>
                   <Badge
                     variant="status"
@@ -1466,7 +1466,7 @@ export default function DistributorDetailPage() {
             </dl>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-foreground">
                 Cancellation Reason (if cancelling)
               </label>
               <textarea

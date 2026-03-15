@@ -40,7 +40,7 @@ export function DistributorSearch({
   return (
     <div ref={ref} className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           value={selectedLabel || query}
@@ -52,16 +52,16 @@ export function DistributorSearch({
           onFocus={() => query.length >= 2 && setOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+          className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 disabled:bg-muted disabled:cursor-not-allowed"
         />
       </div>
       {open && data?.data && data.data.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-card shadow-lg max-h-48 overflow-auto">
           {data.data.map((d) => (
             <button
               key={d.id}
               type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0"
+              className="w-full px-3 py-2 text-left text-sm hover:bg-accent border-b border-border last:border-0"
               onClick={() => {
                 onSelect({ id: d.id, business_name: d.business_name });
                 setSelectedLabel(d.business_name + (d.city ? ` — ${d.city}` : ''));
@@ -69,16 +69,16 @@ export function DistributorSearch({
                 setOpen(false);
               }}
             >
-              <span className="font-medium text-gray-900">{d.business_name}</span>
+              <span className="font-medium text-foreground">{d.business_name}</span>
               {d.city && (
-                <span className="ml-2 text-gray-500">{d.city}{d.province ? `, ${d.province}` : ''}</span>
+                <span className="ml-2 text-muted-foreground">{d.city}{d.province ? `, ${d.province}` : ''}</span>
               )}
             </button>
           ))}
         </div>
       )}
       {open && data?.data && data.data.length === 0 && query.length >= 2 && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg px-3 py-2 text-sm text-gray-500">
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-card shadow-lg px-3 py-2 text-sm text-muted-foreground">
           No distributors found
         </div>
       )}

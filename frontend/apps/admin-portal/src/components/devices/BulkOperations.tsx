@@ -46,7 +46,7 @@ export function BulkOperations({
       <select
         value={bulkAction}
         onChange={(e) => { setBulkAction(e.target.value); setBulkDistributor(''); }}
-        className="rounded-md border border-primary-300 px-3 py-1.5 text-sm bg-white"
+        className="rounded-md border border-primary-300 px-3 py-1.5 text-sm bg-card"
         aria-label="Bulk action"
       >
         <option value="">Select action...</option>
@@ -61,7 +61,7 @@ export function BulkOperations({
         <select
           value={bulkDistributor}
           onChange={(e) => setBulkDistributor(e.target.value)}
-          className="rounded-md border border-primary-300 px-3 py-1.5 text-sm bg-white"
+          className="rounded-md border border-primary-300 px-3 py-1.5 text-sm bg-card"
           aria-label="Select distributor for bulk assignment"
         >
           <option value="">Select distributor...</option>

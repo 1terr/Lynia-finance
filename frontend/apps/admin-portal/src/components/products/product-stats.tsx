@@ -54,7 +54,7 @@ export function ProductStats({ activeProducts, totalLoans, totalVolume, avgInter
                 <Icon className={`h-5 w-5 ${stat.iconColor}`} />
               </div>
               <div>
-                <p className="text-sm text-gray-500">{stat.label}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
                 <p className="text-lg font-semibold">{stat.value}</p>
               </div>
             </div>

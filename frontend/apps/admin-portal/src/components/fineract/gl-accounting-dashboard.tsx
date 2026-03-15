@@ -52,16 +52,16 @@ export default function GLAccountingDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-2xl font-bold text-foreground">
           General Ledger
         </h1>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-muted-foreground">
           Fineract accounting entries for RBZ regulatory reporting.
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border">
         <nav className="-mb-px flex gap-6">
           {TABS.map((tab) => (
             <button
@@ -70,7 +70,7 @@ export default function GLAccountingDashboard() {
               className={`inline-flex items-center gap-2 border-b-2 pb-3 text-sm font-medium ${
                 activeTab === tab.id
                   ? 'border-brand-500 text-brand-600'
-                  : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
               }`}
             >
               {tab.icon}
@@ -82,10 +82,10 @@ export default function GLAccountingDashboard() {
 
       {/* GL Accounts Tab */}
       {activeTab === 'accounts' && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
+              <tr className="border-b border-border bg-muted text-left text-xs font-medium uppercase text-muted-foreground">
                 <th className="px-4 py-3">Code</th>
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Type</th>
@@ -93,9 +93,9 @@ export default function GLAccountingDashboard() {
                 <th className="px-4 py-3">Description</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {(accounts || []).map((acct) => (
-                <tr key={acct.id} className="text-gray-700">
+                <tr key={acct.id} className="text-foreground">
                   <td className="px-4 py-3 font-mono text-xs font-medium">
                     {acct.glCode}
                   </td>
@@ -111,16 +111,16 @@ export default function GLAccountingDashboard() {
                               ? 'bg-green-100 text-green-800'
                               : acct.type === 'EXPENSE'
                                 ? 'bg-red-100 text-red-800'
-                                : 'bg-gray-100 text-gray-800'
+                                : 'bg-muted text-foreground'
                       }`}
                     >
                       {acct.type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
                     {acct.usage}
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-500">
+                  <td className="px-4 py-3 text-xs text-muted-foreground">
                     {acct.description || '-'}
                   </td>
                 </tr>
@@ -136,7 +136,7 @@ export default function GLAccountingDashboard() {
           {/* Date Filters */}
           <div className="flex gap-4">
             <div>
-              <label htmlFor="journal-from-date" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="journal-from-date" className="block text-sm font-medium text-foreground">
                 From Date
               </label>
               <input
@@ -150,11 +150,11 @@ export default function GLAccountingDashboard() {
                     page: 1,
                   }))
                 }
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label htmlFor="journal-to-date" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="journal-to-date" className="block text-sm font-medium text-foreground">
                 To Date
               </label>
               <input
@@ -168,19 +168,19 @@ export default function GLAccountingDashboard() {
                     page: 1,
                   }))
                 }
-                className="mt-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           </div>
 
           {/* Journal Table */}
-          <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-            <h2 className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
+          <div className="overflow-x-auto rounded-lg border border-border bg-card">
+            <h2 className="border-b border-border bg-muted px-4 py-3 text-sm font-semibold text-foreground">
               Journal Entries
             </h2>
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                <tr className="border-b border-border text-left text-xs font-medium uppercase text-muted-foreground">
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Account</th>
                   <th className="px-4 py-3">Code</th>
@@ -190,9 +190,9 @@ export default function GLAccountingDashboard() {
                   <th className="px-4 py-3">Txn ID</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {(journalData?.data || []).map((entry) => (
-                  <tr key={entry.id} className="text-gray-700">
+                  <tr key={entry.id} className="text-foreground">
                     <td className="px-4 py-3">
                       {formatDate(entry.transactionDate)}
                     </td>
@@ -216,10 +216,10 @@ export default function GLAccountingDashboard() {
                     <td className="px-4 py-3 text-right font-medium">
                       {formatCurrency(entry.amount)}
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
+                    <td className="px-4 py-3 text-xs text-muted-foreground">
                       {entry.entityType} #{entry.entityId}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-500">
+                    <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                       {entry.transactionId}
                     </td>
                   </tr>
@@ -232,13 +232,13 @@ export default function GLAccountingDashboard() {
 
       {/* Trial Balance Tab */}
       {activeTab === 'trial-balance' && (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-          <h2 className="border-b border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-700">
+        <div className="overflow-x-auto rounded-lg border border-border bg-card">
+          <h2 className="border-b border-border bg-muted px-4 py-3 text-sm font-semibold text-foreground">
             Trial Balance
           </h2>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+              <tr className="border-b border-border text-left text-xs font-medium uppercase text-muted-foreground">
                 <th className="px-4 py-3">Code</th>
                 <th className="px-4 py-3">Account</th>
                 <th className="px-4 py-3">Type</th>
@@ -247,9 +247,9 @@ export default function GLAccountingDashboard() {
                 <th className="px-4 py-3 text-right">Balance</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-border">
               {(trialBalance || []).map((entry) => (
-                <tr key={entry.glAccountId} className="text-gray-700">
+                <tr key={entry.glAccountId} className="text-foreground">
                   <td className="px-4 py-3 font-mono text-xs font-medium">
                     {entry.glAccountCode}
                   </td>
@@ -263,7 +263,7 @@ export default function GLAccountingDashboard() {
                           ? 'bg-blue-100 text-blue-800'
                           : entry.glAccountType === 'INCOME'
                             ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-800'
+                            : 'bg-muted text-foreground'
                       }`}
                     >
                       {entry.glAccountType}
@@ -277,7 +277,7 @@ export default function GLAccountingDashboard() {
                   </td>
                   <td
                     className={`px-4 py-3 text-right font-medium ${
-                      entry.balance < 0 ? 'text-red-600' : 'text-gray-900'
+                      entry.balance < 0 ? 'text-red-600' : 'text-foreground'
                     }`}
                   >
                     {formatCurrency(Math.abs(entry.balance))}
@@ -287,7 +287,7 @@ export default function GLAccountingDashboard() {
               ))}
             </tbody>
             <tfoot>
-              <tr className="border-t-2 border-gray-300 bg-gray-50 font-semibold text-gray-900">
+              <tr className="border-t-2 border-border bg-muted font-semibold text-foreground">
                 <td className="px-4 py-3" colSpan={3}>
                   Total
                 </td>

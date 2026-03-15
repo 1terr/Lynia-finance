@@ -21,6 +21,7 @@ export function KYCReviewFilters({
       <div className="flex items-center gap-1.5">
         <Filter className="h-4 w-4 text-muted-foreground" />
         <select
+          aria-label="Filter by status"
           value={filters.status || ''}
           onChange={(e) =>
             onFilterChange({
@@ -39,6 +40,7 @@ export function KYCReviewFilters({
 
       {/* Confidence Range Filter */}
       <select
+        aria-label="Filter by confidence"
         value={filters.confidenceRange || ''}
         onChange={(e) =>
           onFilterChange({
@@ -57,6 +59,7 @@ export function KYCReviewFilters({
       <div className="flex items-center gap-1.5">
         <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
         <select
+          aria-label="Sort order"
           value={`${filters.sortBy || 'submitted_at'}_${filters.sortOrder || 'asc'}`}
           onChange={(e) => {
             const [sortBy, sortOrder] = e.target.value.split('_') as [

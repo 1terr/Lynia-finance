@@ -153,19 +153,19 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
             <div className="grid grid-cols-4 gap-4">
               <div className="rounded-lg border p-3 text-center">
                 <p className="text-2xl font-bold">{result.total}</p>
-                <p className="text-xs text-gray-500">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
-              <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
+              <div className="rounded-lg border border-green-200 bg-green-50 dark:bg-green-950 p-3 text-center">
                 <p className="text-2xl font-bold text-green-700">{result.inserted}</p>
-                <p className="text-xs text-gray-500">Inserted</p>
+                <p className="text-xs text-muted-foreground">Inserted</p>
               </div>
-              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-center">
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:bg-yellow-950 p-3 text-center">
                 <p className="text-2xl font-bold text-yellow-700">{result.skipped}</p>
-                <p className="text-xs text-gray-500">Skipped</p>
+                <p className="text-xs text-muted-foreground">Skipped</p>
               </div>
-              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-center">
+              <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950 p-3 text-center">
                 <p className="text-2xl font-bold text-red-700">{result.errors}</p>
-                <p className="text-xs text-gray-500">Errors</p>
+                <p className="text-xs text-muted-foreground">Errors</p>
               </div>
             </div>
             <div className="flex justify-end">
@@ -175,9 +175,9 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
         ) : (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Upload CSV File</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Upload CSV File</label>
               <div className="flex items-center gap-3">
-                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50">
+                <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:border-gray-400 hover:bg-accent">
                   <Upload className="h-4 w-4" />
                   <span>Choose CSV file</span>
                   <input
@@ -189,12 +189,12 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
                   />
                 </label>
                 {parsedRows.length > 0 && (
-                  <span className="text-sm text-gray-500">{parsedRows.length} rows found</span>
+                  <span className="text-sm text-muted-foreground">{parsedRows.length} rows found</span>
                 )}
               </div>
             </div>
 
-            <div className="text-xs text-gray-500">
+            <div className="text-xs text-muted-foreground">
               <p className="font-medium mb-1">Required columns:</p>
               <div className="flex flex-wrap gap-1">
                 {ALL_COLUMNS.map((col) => (
@@ -206,14 +206,14 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
             </div>
 
             {parseError && (
-              <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="flex items-center gap-2 rounded-md bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 {parseError}
               </div>
             )}
 
             {missingColumns.length > 0 && (
-              <div className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+              <div className="flex items-center gap-2 rounded-md bg-red-50 dark:bg-red-950 px-3 py-2 text-sm text-red-700">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 Missing required columns: {missingColumns.join(', ')}
               </div>
@@ -221,21 +221,21 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
 
             {previewRows.length > 0 && missingColumns.length === 0 && (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">Preview (first {previewRows.length} rows)</p>
+                <p className="text-sm font-medium text-foreground mb-2">Preview (first {previewRows.length} rows)</p>
                 <div className="overflow-x-auto rounded-lg border">
-                  <table className="min-w-full divide-y divide-gray-200 text-xs">
-                    <thead className="bg-gray-50">
+                  <table className="min-w-full divide-y divide-border text-xs">
+                    <thead className="bg-muted">
                       <tr>
                         {headers.filter((h) => ALL_COLUMNS.includes(h)).map((h) => (
-                          <th key={h} className="px-3 py-2 text-left font-medium uppercase text-gray-500">{h}</th>
+                          <th key={h} className="px-3 py-2 text-left font-medium uppercase text-muted-foreground">{h}</th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="divide-y divide-border">
                       {previewRows.map((row, i) => (
                         <tr key={i}>
                           {headers.filter((h) => ALL_COLUMNS.includes(h)).map((h) => (
-                            <td key={h} className="px-3 py-2 text-gray-700">
+                            <td key={h} className="px-3 py-2 text-foreground">
                               {h === 'phone_number' ? maskPhone(row[h] || '') :
                                h === 'national_id' ? maskId(row[h] || '') :
                                row[h] || '-'}
@@ -249,7 +249,7 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
               </div>
             )}
 
-            <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+            <div className="flex justify-end gap-3 border-t border-border pt-4">
               <Button variant="secondary" type="button" onClick={handleClose}>Cancel</Button>
               <Button
                 onClick={handleImport}

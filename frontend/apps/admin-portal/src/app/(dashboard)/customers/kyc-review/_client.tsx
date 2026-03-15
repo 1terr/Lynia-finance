@@ -132,15 +132,15 @@ export default function KYCReviewPage() {
     {
       key: 'updated_at',
       header: 'Reviewed',
-      render: (row) => <span className="text-gray-500">{formatRelativeTime(row.updated_at)}</span>,
+      render: (row) => <span className="text-muted-foreground">{formatRelativeTime(row.updated_at)}</span>,
     },
     {
       key: 'customer',
       header: 'Customer',
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.customer?.full_name || '-'}</p>
-          <p className="text-xs text-gray-500">{row.customer?.phone_number}</p>
+          <p className="font-medium text-foreground">{row.customer?.full_name || '-'}</p>
+          <p className="text-xs text-muted-foreground">{row.customer?.phone_number}</p>
         </div>
       ),
     },
@@ -156,7 +156,7 @@ export default function KYCReviewPage() {
     {
       key: 'created_at',
       header: 'Submitted',
-      render: (row) => <span className="text-gray-500">{formatDateTime(row.created_at)}</span>,
+      render: (row) => <span className="text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
     {
       key: 'id',
@@ -164,7 +164,7 @@ export default function KYCReviewPage() {
       render: (row) => {
         const hours = (new Date(row.updated_at).getTime() - new Date(row.created_at).getTime()) / 3600000;
         return (
-          <span className={hours > 24 ? 'text-red-600 font-medium' : 'text-gray-500'}>
+          <span className={hours > 24 ? 'text-red-600 font-medium' : 'text-muted-foreground'}>
             {hours < 1 ? `${Math.round(hours * 60)}m` : hours < 24 ? `${Math.round(hours)}h` : `${Math.round(hours / 24)}d`}
           </span>
         );
@@ -176,13 +176,13 @@ export default function KYCReviewPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">KYC Review Queue</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">KYC Review Queue</h1>
+          <p className="text-sm text-muted-foreground">
             Review and approve customer identity verification submissions.
           </p>
         </div>
         {data && (
-          <div className="flex items-center gap-2 rounded-lg bg-yellow-50 px-3 py-2">
+          <div className="flex items-center gap-2 rounded-lg bg-yellow-50 dark:bg-yellow-950 px-3 py-2">
             <Clock className="h-4 w-4 text-yellow-600" />
             <span className="text-sm font-medium text-yellow-800">
               {data.total} pending review
@@ -193,7 +193,7 @@ export default function KYCReviewPage() {
 
       {/* Error Banner */}
       {mutationError && (
-        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="flex items-center gap-2 rounded-lg bg-red-50 dark:bg-red-950 px-4 py-3 text-sm text-red-800">
           <AlertTriangle className="h-4 w-4 flex-shrink-0" />
           <span>{mutationError}</span>
           <button onClick={() => setMutationError(null)} className="ml-auto text-red-600 hover:text-red-800">
@@ -207,11 +207,11 @@ export default function KYCReviewPage() {
         <div className="grid gap-4 sm:grid-cols-4">
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-blue-50 p-2">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-2">
                 <Clock className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Pending</p>
+                <p className="text-sm text-muted-foreground">Total Pending</p>
                 <p className="text-lg font-semibold">{slaStats.total}</p>
               </div>
             </div>
@@ -222,29 +222,29 @@ export default function KYCReviewPage() {
                 <CheckCircle className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">&lt; 4 hours</p>
+                <p className="text-sm text-muted-foreground">&lt; 4 hours</p>
                 <p className="text-lg font-semibold text-green-600">{slaStats.within4h}</p>
               </div>
             </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-yellow-50 p-2">
+              <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950 p-2">
                 <AlertTriangle className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">4-24 hours</p>
+                <p className="text-sm text-muted-foreground">4-24 hours</p>
                 <p className="text-lg font-semibold text-yellow-600">{slaStats.within24h}</p>
               </div>
             </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-red-50 p-2">
+              <div className="rounded-lg bg-red-50 dark:bg-red-950 p-2">
                 <XCircle className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">&gt; 24 hours (SLA breach)</p>
+                <p className="text-sm text-muted-foreground">&gt; 24 hours (SLA breach)</p>
                 <p className="text-lg font-semibold text-red-600">{slaStats.over24h}</p>
               </div>
             </div>
@@ -261,7 +261,7 @@ export default function KYCReviewPage() {
         <TabsContent value="queue">
           {/* Search input */}
           <div className="relative mb-4">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
@@ -270,12 +270,12 @@ export default function KYCReviewPage() {
                 setPage(1);
               }}
               placeholder="Search by customer name, phone, or submission number..."
-              className="w-full rounded-md border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-md border border-border bg-card py-2 pl-9 pr-3 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             {searchQuery && (
               <button
                 onClick={() => { setSearchQuery(''); setPage(1); }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground"
               >
                 <XCircle className="h-4 w-4" />
               </button>
@@ -285,15 +285,15 @@ export default function KYCReviewPage() {
           {isLoading ? (
             <div className="space-y-4">
               {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="h-48 animate-pulse rounded-lg bg-gray-200" />
+                <div key={i} className="h-48 animate-pulse rounded-lg bg-muted" />
               ))}
             </div>
           ) : !data?.data?.length ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-16">
                 <ShieldCheck className="h-12 w-12 text-green-300 mb-4" />
-                <p className="text-lg font-medium text-gray-500">All caught up!</p>
-                <p className="text-sm text-gray-400 mt-1">No KYC submissions pending review.</p>
+                <p className="text-lg font-medium text-muted-foreground">All caught up!</p>
+                <p className="text-sm text-muted-foreground mt-1">No KYC submissions pending review.</p>
               </CardContent>
             </Card>
           ) : (
@@ -319,7 +319,7 @@ export default function KYCReviewPage() {
                                 {submission.customer ? (
                                   <Link
                                     href={`/customers/${submission.customer.id}`}
-                                    className="text-base font-semibold text-gray-900 hover:text-brand-600"
+                                    className="text-base font-semibold text-foreground hover:text-brand-600"
                                   >
                                     {displayName}
                                   </Link>
@@ -334,7 +334,7 @@ export default function KYCReviewPage() {
                                   {sla.label} waiting
                                 </span>
                               </div>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-sm text-muted-foreground">
                                 {submission.customer?.phone_number || `No linked customer (ID: ${submission.customer_id})`}
                               </p>
                             </div>
@@ -343,20 +343,20 @@ export default function KYCReviewPage() {
                           <div className="grid gap-2 sm:grid-cols-2">
                             {extractedName && submission.customer?.full_name && extractedName !== submission.customer.full_name && (
                               <div className="text-sm">
-                                <span className="text-gray-500">Registered as: </span>
-                                <span className="font-medium text-gray-600">
+                                <span className="text-muted-foreground">Registered as: </span>
+                                <span className="font-medium text-muted-foreground">
                                   {submission.customer.full_name}
                                 </span>
                               </div>
                             )}
                             {submission.extracted_date_of_birth && (
                               <div className="text-sm">
-                                <span className="text-gray-500">DOB: </span>
+                                <span className="text-muted-foreground">DOB: </span>
                                 <span className="font-medium">{formatDate(submission.extracted_date_of_birth)}</span>
                               </div>
                             )}
                             <div className="text-sm">
-                              <span className="text-gray-500">Submitted: </span>
+                              <span className="text-muted-foreground">Submitted: </span>
                               <span className="font-medium">{formatDateTime(submission.created_at)}</span>
                             </div>
                           </div>
@@ -366,7 +366,7 @@ export default function KYCReviewPage() {
                             {submission.id_document_front_url && (
                               <button
                                 onClick={() => setDocViewerSubmission(submission)}
-                                className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                                className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
                               >
                                 <FileText className="h-3.5 w-3.5" />
                                 ID Front
@@ -375,7 +375,7 @@ export default function KYCReviewPage() {
                             {submission.id_document_back_url && (
                               <button
                                 onClick={() => setDocViewerSubmission(submission)}
-                                className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                                className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
                               >
                                 <FileText className="h-3.5 w-3.5" />
                                 ID Back
@@ -384,25 +384,25 @@ export default function KYCReviewPage() {
                             {submission.selfie_url && (
                               <button
                                 onClick={() => setDocViewerSubmission(submission)}
-                                className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100"
+                                className="flex items-center gap-1.5 rounded-md border border-border bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-accent"
                               >
                                 <Camera className="h-3.5 w-3.5" />
                                 Selfie
                               </button>
                             )}
                             {!submission.id_document_front_url && !submission.selfie_url && (
-                              <span className="text-xs text-gray-400 italic">No documents uploaded</span>
+                              <span className="text-xs text-muted-foreground italic">No documents uploaded</span>
                             )}
                           </div>
 
                           {/* DIDIT Provider Results */}
                           {submission.provider_response && (
-                            <div className="rounded-md bg-gray-50 p-3">
-                              <p className="text-xs font-medium text-gray-600 mb-1">DIDIT Verification Results</p>
+                            <div className="rounded-md bg-muted p-3">
+                              <p className="text-xs font-medium text-muted-foreground mb-1">DIDIT Verification Results</p>
                               <div className="flex flex-wrap gap-3 text-xs">
                                 {Object.entries(submission.provider_response).slice(0, 4).map(([key, value]) => (
-                                  <span key={key} className="text-gray-600">
-                                    <span className="text-gray-400">{key}: </span>
+                                  <span key={key} className="text-muted-foreground">
+                                    <span className="text-muted-foreground">{key}: </span>
                                     {String(value)}
                                   </span>
                                 ))}
@@ -483,28 +483,28 @@ export default function KYCReviewPage() {
       >
         {docViewerSubmission && (
           <div className="space-y-6">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <User className="h-4 w-4" />
               <span className="font-medium">
                 {docViewerSubmission.extracted_first_name
                   ? `${docViewerSubmission.extracted_first_name} ${docViewerSubmission.extracted_last_name || ''}`.trim()
                   : docViewerSubmission.customer?.full_name || 'Unknown Customer'}
               </span>
-              <span className="text-gray-400">|</span>
+              <span className="text-muted-foreground">|</span>
               <span>{docViewerSubmission.customer?.phone_number || 'N/A'}</span>
             </div>
 
             <div className="space-y-4">
               {docViewerSubmission.id_document_front_url && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                  <p className="text-sm font-medium text-foreground mb-2">
                     <FileText className="mr-1 inline h-4 w-4" />
                     ID Document - Front
                   </p>
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-8">
+                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-8">
                     <div className="text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
-                      <p className="mt-2 text-xs text-gray-500 font-mono break-all">
+                      <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
                         {docViewerSubmission.id_document_front_url}
                       </p>
                     </div>
@@ -514,14 +514,14 @@ export default function KYCReviewPage() {
 
               {docViewerSubmission.id_document_back_url && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                  <p className="text-sm font-medium text-foreground mb-2">
                     <FileText className="mr-1 inline h-4 w-4" />
                     ID Document - Back
                   </p>
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-8">
+                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-8">
                     <div className="text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
-                      <p className="mt-2 text-xs text-gray-500 font-mono break-all">
+                      <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
                         {docViewerSubmission.id_document_back_url}
                       </p>
                     </div>
@@ -531,14 +531,14 @@ export default function KYCReviewPage() {
 
               {docViewerSubmission.selfie_url && (
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">
+                  <p className="text-sm font-medium text-foreground mb-2">
                     <Camera className="mr-1 inline h-4 w-4" />
                     Selfie Photo
                   </p>
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 p-8">
+                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-8">
                     <div className="text-center">
                       <Image className="mx-auto h-10 w-10 text-gray-300" />
-                      <p className="mt-2 text-xs text-gray-500 font-mono break-all">
+                      <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
                         {docViewerSubmission.selfie_url}
                       </p>
                     </div>
@@ -551,15 +551,15 @@ export default function KYCReviewPage() {
                 !docViewerSubmission.selfie_url && (
                   <div className="text-center py-8">
                     <Image className="mx-auto h-12 w-12 text-gray-300" />
-                    <p className="mt-2 text-sm text-gray-500">No documents uploaded for this submission.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">No documents uploaded for this submission.</p>
                   </div>
                 )}
             </div>
 
             {docViewerSubmission.provider_response && (
               <div>
-                <p className="text-sm font-medium text-gray-700 mb-2">DIDIT Verification</p>
-                <pre className="rounded-md bg-gray-50 p-3 text-xs text-gray-600 overflow-auto max-h-48">
+                <p className="text-sm font-medium text-foreground mb-2">DIDIT Verification</p>
+                <pre className="rounded-md bg-muted p-3 text-xs text-muted-foreground overflow-auto max-h-48">
                   {JSON.stringify(docViewerSubmission.provider_response, null, 2)}
                 </pre>
               </div>
@@ -597,7 +597,7 @@ export default function KYCReviewPage() {
         title="Reject KYC Submission"
       >
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Reject KYC for <strong>{
               rejectModal?.extracted_first_name
                 ? `${rejectModal.extracted_first_name} ${rejectModal.extracted_last_name || ''}`.trim()
@@ -606,13 +606,13 @@ export default function KYCReviewPage() {
             The customer will be notified and can resubmit.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Rejection Reason *</label>
+            <label className="block text-sm font-medium text-foreground">Rejection Reason *</label>
             <textarea
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
               rows={3}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="e.g., ID photo blurry, face doesn't match..."
             />
           </div>
@@ -628,7 +628,7 @@ export default function KYCReviewPage() {
                     prev.trim() ? `${prev.trimEnd()}; ${template}` : template
                   );
                 }}
-                className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:border-border transition-colors"
               >
                 {template}
               </button>

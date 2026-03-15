@@ -337,7 +337,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
         {category === 'digital' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Disbursement Methods</label>
+              <label className="block text-sm font-medium text-foreground mb-2">Disbursement Methods</label>
               <div className="flex gap-3">
                 {DISBURSEMENT_OPTIONS.map((method) => (
                   <label key={method} className="flex items-center gap-2 text-sm">
@@ -345,7 +345,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
                       type="checkbox"
                       checked={disbursementMethods.includes(method)}
                       onChange={() => toggleDisbursement(method)}
-                      className="rounded border-gray-300"
+                      className="rounded border-border"
                     />
                     <span className="capitalize">{method}</span>
                   </label>
@@ -357,7 +357,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
                 type="checkbox"
                 checked={requiresOrgVerification}
                 onChange={(e) => setRequiresOrgVerification(e.target.checked)}
-                className="rounded border-gray-300"
+                className="rounded border-border"
               />
               <span>Requires Organization Verification</span>
             </label>
@@ -376,14 +376,14 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
         </div>
 
         <div>
-          <label htmlFor="fineractProductId" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="fineractProductId" className="block text-sm font-medium text-foreground mb-1">
             Core Banking Product
           </label>
           <select
             id="fineractProductId"
             value={fineractProductId}
             onChange={(e) => setFineractProductId(e.target.value)}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           >
             <option value="">Not linked</option>
             {fineractProducts?.map((fp) => (
@@ -392,13 +392,13 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
               </option>
             ))}
           </select>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             Link to a core banking loan product for sync.
           </p>
         </div>
 
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          <label htmlFor="description" className="block text-sm font-medium text-foreground mb-1">
             Description
           </label>
           <textarea
@@ -406,12 +406,12 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={3}
-            className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             placeholder="Product description..."
           />
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+        <div className="flex justify-end gap-3 border-t border-border pt-4">
           <Button variant="secondary" type="button" onClick={onClose}>
             Cancel
           </Button>

@@ -69,15 +69,15 @@ export default function PaymentsPage() {
       key: 'payment_date',
       header: 'Date',
       sortable: true,
-      render: (row) => <span className="text-gray-500">{formatDate(row.payment_date)}</span>,
+      render: (row) => <span className="text-muted-foreground">{formatDate(row.payment_date)}</span>,
     },
     {
       key: 'customer',
       header: 'Customer',
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.customer?.full_name || 'Unknown'}</p>
-          <p className="text-xs text-gray-500">{row.customer?.phone_number}</p>
+          <p className="font-medium text-foreground">{row.customer?.full_name || 'Unknown'}</p>
+          <p className="text-xs text-muted-foreground">{row.customer?.phone_number}</p>
         </div>
       ),
     },
@@ -126,7 +126,7 @@ export default function PaymentsPage() {
       key: 'reference_number',
       header: 'Reference',
       render: (row) => (
-        <span className="font-mono text-xs text-gray-500">
+        <span className="font-mono text-xs text-muted-foreground">
           {row.reference_number || row.transaction_reference || '-'}
         </span>
       ),
@@ -137,13 +137,13 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Payments</h1>
+          <p className="text-sm text-muted-foreground">
             Track payments, reconciliation, and refunds.
           </p>
         </div>
         {data && (
-          <p className="text-sm text-gray-500">{data.total} total payments</p>
+          <p className="text-sm text-muted-foreground">{data.total} total payments</p>
         )}
       </div>
 
@@ -152,44 +152,44 @@ export default function PaymentsPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-green-50 p-2">
+              <div className="rounded-lg bg-green-50 dark:bg-green-950 p-2">
                 <DollarSign className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Collected</p>
+                <p className="text-sm text-muted-foreground">Total Collected</p>
                 <p className="text-lg font-semibold">{formatCurrencyDetailed(stats.total_collected)}</p>
               </div>
             </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-yellow-50 p-2">
+              <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950 p-2">
                 <Clock className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Pending</p>
+                <p className="text-sm text-muted-foreground">Pending</p>
                 <p className="text-lg font-semibold">{stats.pending_count}</p>
               </div>
             </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-red-50 p-2">
+              <div className="rounded-lg bg-red-50 dark:bg-red-950 p-2">
                 <XCircle className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Failed</p>
+                <p className="text-sm text-muted-foreground">Failed</p>
                 <p className="text-lg font-semibold">{stats.failed_count}</p>
               </div>
             </div>
           </Card>
           <Card className="p-4">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-blue-50 p-2">
+              <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-2">
                 <CheckCircle className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Unreconciled</p>
+                <p className="text-sm text-muted-foreground">Unreconciled</p>
                 <p className="text-lg font-semibold">{stats.unreconciled_count}</p>
               </div>
             </div>
@@ -200,13 +200,13 @@ export default function PaymentsPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <form onSubmit={handleSearch} className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by reference number..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </form>
         <Select

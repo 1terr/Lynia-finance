@@ -153,7 +153,7 @@ export default function DeviceDetailPage() {
       key: 'created_at',
       header: 'Date',
       render: (row) => (
-        <span className="text-sm text-gray-500">{formatDateTime(row.created_at)}</span>
+        <span className="text-sm text-muted-foreground">{formatDateTime(row.created_at)}</span>
       ),
     },
     {
@@ -176,7 +176,7 @@ export default function DeviceDetailPage() {
       key: 'reason',
       header: 'Reason',
       render: (row) => (
-        <span className="text-sm text-gray-600">{row.reason || '-'}</span>
+        <span className="text-sm text-muted-foreground">{row.reason || '-'}</span>
       ),
     },
     {
@@ -192,7 +192,7 @@ export default function DeviceDetailPage() {
       key: 'executed_by',
       header: 'Executed By',
       render: (row) => (
-        <span className="font-mono text-xs text-gray-500">
+        <span className="font-mono text-xs text-muted-foreground">
           {row.executed_by ? `${row.executed_by.slice(0, 8)}...` : '-'}
         </span>
       ),
@@ -210,7 +210,7 @@ export default function DeviceDetailPage() {
   if (!device) {
     return (
       <div className="text-center py-20">
-        <p className="text-lg text-gray-500">Device not found</p>
+        <p className="text-lg text-muted-foreground">Device not found</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/devices')}>
           Back to Devices
         </Button>
@@ -222,12 +222,12 @@ export default function DeviceDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={() => router.push('/devices')} className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+        <button onClick={() => router.push('/devices')} className="rounded-md p-1 hover:bg-accent">
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Device Details</h1>
+            <h1 className="text-2xl font-bold text-foreground">Device Details</h1>
             <Badge variant="status" status={device.status}>
               {device.status.replace(/_/g, ' ')}
             </Badge>
@@ -235,7 +235,7 @@ export default function DeviceDetailPage() {
               {device.lock_status}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500 font-mono">{device.id}</p>
+          <p className="text-sm text-muted-foreground font-mono">{device.id}</p>
         </div>
         <div className="flex items-center gap-2">
           {canEdit && (
@@ -266,22 +266,22 @@ export default function DeviceDetailPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-50 p-2">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-2">
               <Smartphone className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Value</p>
+              <p className="text-sm text-muted-foreground">Value</p>
               <p className="text-lg font-semibold">{formatCurrency(device.retail_price_usd)}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-50 p-2">
+            <div className="rounded-lg bg-green-50 dark:bg-green-950 p-2">
               <Smartphone className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Brand & Model</p>
+              <p className="text-sm text-muted-foreground">Brand & Model</p>
               <p className="text-lg font-semibold">{device.manufacturer} {device.model}</p>
             </div>
           </div>
@@ -292,7 +292,7 @@ export default function DeviceDetailPage() {
               <AlertTriangle className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">IMEI</p>
+              <p className="text-sm text-muted-foreground">IMEI</p>
               <p className="text-lg font-semibold font-mono">{device.imei}</p>
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function DeviceDetailPage() {
               <Smartphone className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Condition</p>
+              <p className="text-sm text-muted-foreground">Condition</p>
               <p className="text-lg font-semibold capitalize">{device.condition.replace(/_/g, ' ')}</p>
             </div>
           </div>
@@ -331,8 +331,8 @@ export default function DeviceDetailPage() {
                 ['Updated', formatDateTime(device.updated_at)],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between">
-                  <dt className="text-sm text-gray-500">{label}</dt>
-                  <dd className="text-sm font-medium text-gray-900">{value}</dd>
+                  <dt className="text-sm text-muted-foreground">{label}</dt>
+                  <dd className="text-sm font-medium text-foreground">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -350,7 +350,7 @@ export default function DeviceDetailPage() {
                 {device.customer && (
                   <>
                     <div className="flex justify-between">
-                      <dt className="text-sm text-gray-500">Customer</dt>
+                      <dt className="text-sm text-muted-foreground">Customer</dt>
                       <dd className="text-sm font-medium">
                         <Link
                           href={`/customers/${device.customer.id}`}
@@ -361,14 +361,14 @@ export default function DeviceDetailPage() {
                       </dd>
                     </div>
                     <div className="flex justify-between">
-                      <dt className="text-sm text-gray-500">Phone</dt>
-                      <dd className="text-sm font-medium text-gray-900">{device.customer.phone_number}</dd>
+                      <dt className="text-sm text-muted-foreground">Phone</dt>
+                      <dd className="text-sm font-medium text-foreground">{device.customer.phone_number}</dd>
                     </div>
                   </>
                 )}
                 {device.loan && (
                   <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">Loan</dt>
+                    <dt className="text-sm text-muted-foreground">Loan</dt>
                     <dd className="text-sm font-medium">
                       <Link
                         href={`/loans/${device.loan.id}`}
@@ -376,7 +376,7 @@ export default function DeviceDetailPage() {
                       >
                         {device.loan.id.slice(0, 8)}...
                       </Link>
-                      <span className="ml-2 text-gray-500">
+                      <span className="ml-2 text-muted-foreground">
                         ({formatCurrency(device.loan.loan_amount_usd)})
                       </span>
                     </dd>
@@ -384,15 +384,15 @@ export default function DeviceDetailPage() {
                 )}
                 {device.assigned_at && (
                   <div className="flex justify-between">
-                    <dt className="text-sm text-gray-500">Assigned Date</dt>
-                    <dd className="text-sm font-medium text-gray-900">{formatDateTime(device.assigned_at)}</dd>
+                    <dt className="text-sm text-muted-foreground">Assigned Date</dt>
+                    <dd className="text-sm font-medium text-foreground">{formatDateTime(device.assigned_at)}</dd>
                   </div>
                 )}
               </dl>
             ) : (
               <div className="flex flex-col items-center justify-center py-8">
                 <Smartphone className="h-10 w-10 text-gray-300 mb-2" />
-                <p className="text-sm text-gray-500">Not assigned</p>
+                <p className="text-sm text-muted-foreground">Not assigned</p>
               </div>
             )}
           </CardContent>
@@ -417,7 +417,7 @@ export default function DeviceDetailPage() {
       {/* Lock Modal */}
       <Modal open={lockModal} onClose={() => setLockModal(false)} title="Lock Device">
         <div className="space-y-4">
-          <div className="flex items-start gap-3 rounded-lg bg-red-50 p-3">
+          <div className="flex items-start gap-3 rounded-lg bg-red-50 dark:bg-red-950 p-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 text-red-600" />
             <div>
               <p className="text-sm font-medium text-red-800">Warning</p>
@@ -427,17 +427,17 @@ export default function DeviceDetailPage() {
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Lock <strong>{device.manufacturer} {device.model}</strong> (IMEI: {device.imei})?
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Reason *</label>
+            <label className="block text-sm font-medium text-foreground">Reason *</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="Provide reason for locking this device..."
             />
           </div>
@@ -459,18 +459,18 @@ export default function DeviceDetailPage() {
       {/* Unlock Modal */}
       <Modal open={unlockModal} onClose={() => setUnlockModal(false)} title="Unlock Device">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Unlock <strong>{device.manufacturer} {device.model}</strong> (IMEI: {device.imei})?
             The customer will regain full access to the device.
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Reason *</label>
+            <label className="block text-sm font-medium text-foreground">Reason *</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="Provide reason for unlocking this device..."
             />
           </div>
@@ -494,11 +494,11 @@ export default function DeviceDetailPage() {
         <form onSubmit={handleEditSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Status</label>
+              <label className="block text-sm font-medium text-foreground">Status</label>
               <select
                 value={editForm.status}
                 onChange={(e) => setEditForm((f) => ({ ...f, status: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               >
                 <option value="in_stock">In Stock</option>
                 <option value="assigned">Assigned</option>
@@ -512,11 +512,11 @@ export default function DeviceDetailPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Condition</label>
+              <label className="block text-sm font-medium text-foreground">Condition</label>
               <select
                 value={editForm.condition}
                 onChange={(e) => setEditForm((f) => ({ ...f, condition: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               >
                 <option value="new">New</option>
                 <option value="grade_a">Grade A</option>
@@ -527,57 +527,57 @@ export default function DeviceDetailPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Purchase Price (USD)</label>
+              <label className="block text-sm font-medium text-foreground">Purchase Price (USD)</label>
               <input
                 type="number"
                 step="0.01"
                 value={editForm.purchase_price_usd}
                 onChange={(e) => setEditForm((f) => ({ ...f, purchase_price_usd: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Retail Price (USD)</label>
+              <label className="block text-sm font-medium text-foreground">Retail Price (USD)</label>
               <input
                 type="number"
                 step="0.01"
                 value={editForm.retail_price_usd}
                 onChange={(e) => setEditForm((f) => ({ ...f, retail_price_usd: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Location</label>
+              <label className="block text-sm font-medium text-foreground">Location</label>
               <input
                 type="text"
                 value={editForm.location}
                 onChange={(e) => setEditForm((f) => ({ ...f, location: e.target.value }))}
                 placeholder="e.g. Warehouse, Harare Office"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Color</label>
+              <label className="block text-sm font-medium text-foreground">Color</label>
               <input
                 type="text"
                 value={editForm.color}
                 onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Storage (GB)</label>
+            <label className="block text-sm font-medium text-foreground">Storage (GB)</label>
             <input
               type="number"
               value={editForm.storage_gb}
               onChange={(e) => setEditForm((f) => ({ ...f, storage_gb: e.target.value }))}
-              className="mt-1 block w-full max-w-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full max-w-[200px] rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
-          <div className="flex justify-end gap-2 border-t border-gray-200 pt-4">
+          <div className="flex justify-end gap-2 border-t border-border pt-4">
             <Button variant="outline" type="button" onClick={() => setEditModal(false)}>Cancel</Button>
             <Button type="submit" disabled={editMutation.isPending}>
               {editMutation.isPending ? 'Saving...' : 'Save Changes'}

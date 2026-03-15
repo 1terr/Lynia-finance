@@ -66,21 +66,21 @@ export default function CollectionsPage() {
             <div className="flex items-center gap-3">
               <Link
                 href="/payments"
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="text-sm text-muted-foreground hover:text-foreground"
               >
                 Payments
               </Link>
               <span className="text-gray-300">/</span>
-              <span className="text-sm text-gray-700">Collections</span>
+              <span className="text-sm text-foreground">Collections</span>
             </div>
-            <h1 className="mt-2 text-2xl font-bold text-gray-900">Collections Queue</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="mt-2 text-2xl font-bold text-foreground">Collections Queue</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Manage overdue payment collections
             </p>
           </div>
           <button
             onClick={handleExportCSV}
-            className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -89,46 +89,46 @@ export default function CollectionsPage() {
 
         {/* Summary cards */}
         <div className="grid gap-4 sm:grid-cols-4">
-          <div className="rounded-lg bg-white p-4 shadow">
+          <div className="rounded-lg bg-card p-4 shadow">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-red-50 p-2">
+              <div className="rounded-lg bg-red-50 dark:bg-red-950 p-2">
                 <CreditCard className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Total Overdue</p>
+                <p className="text-sm text-muted-foreground">Total Overdue</p>
                 <p className="text-lg font-semibold text-red-600">{formatCurrency(totalOverdue)}</p>
               </div>
             </div>
           </div>
-          <div className="rounded-lg bg-white p-4 shadow">
+          <div className="rounded-lg bg-card p-4 shadow">
             <div className="flex items-center gap-3">
               <div className="rounded-lg bg-orange-50 p-2">
                 <AlertTriangle className="h-5 w-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Overdue Loans</p>
+                <p className="text-sm text-muted-foreground">Overdue Loans</p>
                 <p className="text-lg font-semibold">{items.length}</p>
               </div>
             </div>
           </div>
-          <div className="rounded-lg bg-white p-4 shadow">
+          <div className="rounded-lg bg-card p-4 shadow">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-red-50 p-2">
+              <div className="rounded-lg bg-red-50 dark:bg-red-950 p-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">Critical</p>
+                <p className="text-sm text-muted-foreground">Critical</p>
                 <p className="text-lg font-semibold text-red-600">{criticalCount}</p>
               </div>
             </div>
           </div>
-          <div className="rounded-lg bg-white p-4 shadow">
+          <div className="rounded-lg bg-card p-4 shadow">
             <div className="flex items-center gap-3">
-              <div className="rounded-lg bg-yellow-50 p-2">
+              <div className="rounded-lg bg-yellow-50 dark:bg-yellow-950 p-2">
                 <AlertTriangle className="h-5 w-5 text-yellow-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-500">High Priority</p>
+                <p className="text-sm text-muted-foreground">High Priority</p>
                 <p className="text-lg font-semibold text-yellow-600">{highCount}</p>
               </div>
             </div>
@@ -138,21 +138,21 @@ export default function CollectionsPage() {
         {/* Filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by customer name or phone..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg border border-border py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value as PriorityFilter)}
-              className="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-border py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="all">All Priorities</option>
               <option value="critical">Critical (60+ days)</option>

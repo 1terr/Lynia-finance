@@ -51,8 +51,8 @@ export default function CustomersPage() {
       sortable: true,
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.full_name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Unnamed'}</p>
-          <p className="text-xs text-gray-500">{row.phone_number}</p>
+          <p className="font-medium text-foreground">{row.full_name || `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Unnamed'}</p>
+          <p className="text-xs text-muted-foreground">{row.phone_number}</p>
         </div>
       ),
     },
@@ -60,7 +60,7 @@ export default function CustomersPage() {
       key: 'email',
       header: 'Email',
       render: (row) => (
-        <span className="text-gray-500">{row.email || '-'}</span>
+        <span className="text-muted-foreground">{row.email || '-'}</span>
       ),
     },
     {
@@ -77,7 +77,7 @@ export default function CustomersPage() {
       header: 'Credit Score',
       sortable: true,
       render: (row) => (
-        <span className={row.credit_score ? 'font-medium' : 'text-gray-400'}>
+        <span className={row.credit_score ? 'font-medium' : 'text-muted-foreground'}>
           {row.credit_score || '-'}
         </span>
       ),
@@ -103,7 +103,7 @@ export default function CustomersPage() {
       key: 'created_at',
       header: 'Joined',
       sortable: true,
-      render: (row) => <span className="text-gray-500">{formatDate(row.created_at)}</span>,
+      render: (row) => <span className="text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
   ];
 
@@ -111,20 +111,20 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Customers</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Customers</h1>
+          <p className="text-sm text-muted-foreground">
             Manage customer profiles, KYC status, and credit history.
           </p>
         </div>
         {data && (
-          <p className="text-sm text-gray-500">{data.total} total customers</p>
+          <p className="text-sm text-muted-foreground">{data.total} total customers</p>
         )}
       </div>
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
@@ -133,7 +133,7 @@ export default function CustomersPage() {
               setFilters((f) => ({ ...f, page: 1 }));
             }}
             placeholder="Search by name, phone, or email..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
         <Select

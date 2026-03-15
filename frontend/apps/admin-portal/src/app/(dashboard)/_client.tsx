@@ -38,11 +38,11 @@ function MetricCardSkeleton() {
     <Card className="p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1 space-y-2">
-          <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
-          <div className="h-7 w-32 animate-pulse rounded bg-gray-200" />
-          <div className="h-3.5 w-20 animate-pulse rounded bg-gray-100" />
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-7 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-3.5 w-20 animate-pulse rounded bg-muted" />
         </div>
-        <div className="h-10 w-10 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-10 w-10 animate-pulse rounded-lg bg-muted" />
       </div>
     </Card>
   );
@@ -80,13 +80,13 @@ export default function DashboardPage() {
     <div className="space-y-6">
       {/* Degraded state banner */}
       {fineractDegraded && (
-        <div className="flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 px-4 py-3">
+        <div className="flex items-center gap-3 rounded-lg border border-yellow-300 bg-yellow-50 dark:bg-yellow-950 dark:border-yellow-700 px-4 py-3">
           <AlertTriangle className="h-5 w-5 flex-shrink-0 text-yellow-600" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-yellow-800">
+            <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">
               Dashboard running in degraded mode
             </p>
-            <p className="text-xs text-yellow-700">
+            <p className="text-xs text-yellow-700 dark:text-yellow-400">
               Core banking system is unreachable. Metrics are showing Lynia DB data only.
             </p>
           </div>
@@ -100,14 +100,14 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
             Welcome back, {user?.first_name || 'Admin'}. Here&apos;s your portfolio overview.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {metricsUpdatedAt > 0 && (
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               Updated {formatRelativeTime(new Date(metricsUpdatedAt).toISOString())}
             </span>
           )}

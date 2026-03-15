@@ -85,8 +85,8 @@ export default function DeviceModelsPage() {
       header: 'Model',
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.model_name}</p>
-          <p className="text-xs font-mono text-gray-500">{row.model_code}</p>
+          <p className="font-medium text-foreground">{row.model_name}</p>
+          <p className="text-xs font-mono text-muted-foreground">{row.model_code}</p>
         </div>
       ),
     },
@@ -150,8 +150,8 @@ export default function DeviceModelsPage() {
             <ArrowLeft className="mr-1 h-4 w-4" /> Loan Products
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Phone Catalog</h1>
-            <p className="text-sm text-gray-500">Manage phone models available for smartphone financing.</p>
+            <h1 className="text-2xl font-bold text-foreground">Phone Catalog</h1>
+            <p className="text-sm text-muted-foreground">Manage phone models available for smartphone financing.</p>
           </div>
         </div>
         <Button size="sm" onClick={() => { setEditingModel(null); setFormOpen(true); }}>
@@ -161,13 +161,13 @@ export default function DeviceModelsPage() {
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <form onSubmit={handleSearch} className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by brand or model name..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </form>
         <Select
@@ -205,7 +205,7 @@ export default function DeviceModelsPage() {
 
       <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Phone Model" size="sm">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Are you sure you want to delete <span className="font-medium">{deleteTarget?.brand} {deleteTarget?.model_name}</span>?
           </p>
           <div className="flex justify-end gap-3">

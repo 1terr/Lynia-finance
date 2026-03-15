@@ -521,7 +521,7 @@ function MetricCard({ title, value, subtitle, icon, variant }: {
   variant?: 'default' | 'destructive';
 }) {
   return (
-    <Card className={variant === 'destructive' ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950' : ''}>
+    <Card className={variant === 'destructive' ? 'border-red-200 bg-red-50 dark:bg-red-950 dark:border-red-900 dark:bg-red-950' : ''}>
       <CardContent className="pt-4">
         <div className="flex items-center justify-between">
           <p className="text-xs text-muted-foreground">{title}</p>

@@ -32,24 +32,24 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
   const isProcessing = approveMutation.isPending || rejectMutation.isPending;
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
+    <div className="rounded-lg bg-card p-6 shadow">
       <div className="flex items-start justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-semibold text-foreground">
             {submission.customers.first_name} {submission.customers.last_name}
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Submitted {formatDate(submission.submitted_at)} | Attempt #
             {submission.attempt_number}
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Phone: {maskPhone(submission.customers.phone_number)}
           </p>
         </div>
 
         {submission.confidence_score !== null && (
           <div className="text-right">
-            <div className="text-sm text-gray-500">KYC Confidence</div>
+            <div className="text-sm text-muted-foreground">KYC Confidence</div>
             <div
               className={`text-2xl font-bold ${
                 submission.confidence_score >= 85
@@ -68,11 +68,11 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
       {/* Document Images */}
       <div className="mt-6 grid grid-cols-3 gap-4">
         <div>
-          <p className="mb-2 text-sm font-medium text-gray-700">
+          <p className="mb-2 text-sm font-medium text-foreground">
             ID Front
           </p>
           <div
-            className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-gray-100 hover:opacity-90"
+            className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
             onClick={() => setSelectedImage(submission.document_front_url)}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -86,11 +86,11 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
 
         {submission.document_back_url && (
           <div>
-            <p className="mb-2 text-sm font-medium text-gray-700">
+            <p className="mb-2 text-sm font-medium text-foreground">
               ID Back
             </p>
             <div
-              className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-gray-100 hover:opacity-90"
+              className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
               onClick={() => setSelectedImage(submission.document_back_url!)}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -105,11 +105,11 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
 
         {submission.selfie_url && (
           <div>
-            <p className="mb-2 text-sm font-medium text-gray-700">
+            <p className="mb-2 text-sm font-medium text-foreground">
               Selfie
             </p>
             <div
-              className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-gray-100 hover:opacity-90"
+              className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
               onClick={() => setSelectedImage(submission.selfie_url!)}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -124,13 +124,13 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
       </div>
 
       {/* Extracted Info */}
-      <div className="mt-6 grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 rounded-lg bg-muted p-4">
         <div>
-          <p className="text-sm text-gray-500">Document Number</p>
+          <p className="text-sm text-muted-foreground">Document Number</p>
           <p className="mt-1 font-medium">{submission.document_number}</p>
         </div>
         <div>
-          <p className="text-sm text-gray-500">Document Type</p>
+          <p className="text-sm text-muted-foreground">Document Type</p>
           <p className="mt-1 font-medium capitalize">
             {submission.document_type.replace(/_/g, ' ')}
           </p>
@@ -141,7 +141,7 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
       <div className="mt-4 grid grid-cols-3 gap-4">
         {submission.liveness_passed !== null && (
           <div className="rounded-lg border p-3">
-            <p className="text-xs text-gray-500">Liveness</p>
+            <p className="text-xs text-muted-foreground">Liveness</p>
             <p
               className={`font-medium ${submission.liveness_passed ? 'text-green-600' : 'text-red-600'}`}
             >
@@ -151,13 +151,13 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
         )}
         {submission.image_quality_score !== null && (
           <div className="rounded-lg border p-3">
-            <p className="text-xs text-gray-500">Image Quality</p>
+            <p className="text-xs text-muted-foreground">Image Quality</p>
             <p className="font-medium">{submission.image_quality_score}%</p>
           </div>
         )}
         {submission.document_readable !== null && (
           <div className="rounded-lg border p-3">
-            <p className="text-xs text-gray-500">Document Readable</p>
+            <p className="text-xs text-muted-foreground">Document Readable</p>
             <p
               className={`font-medium ${submission.document_readable ? 'text-green-600' : 'text-red-600'}`}
             >
@@ -169,11 +169,11 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
 
       {/* Rejection Reason Input */}
       <div className="mt-6">
-        <label className="block text-sm font-medium text-gray-700">
+        <label className="block text-sm font-medium text-foreground">
           Rejection Reason (required to reject)
         </label>
         <textarea
-          className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
           rows={2}
           placeholder="Provide detailed reason for rejection..."
           value={rejectionReason}
@@ -224,7 +224,7 @@ export function KYCReviewCard({ submission }: KYCReviewCardProps) {
             />
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute right-4 top-4 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow"
+              className="absolute right-4 top-4 rounded-lg bg-card px-4 py-2 text-sm font-medium shadow"
             >
               Close
             </button>

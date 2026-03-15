@@ -55,7 +55,7 @@ export default function InventoryReportsPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.manufacturer} {row.model_name}</p>
-          <p className="text-xs text-gray-500">{row.total_units} total units</p>
+          <p className="text-xs text-muted-foreground">{row.total_units} total units</p>
         </div>
       ),
     },
@@ -113,7 +113,7 @@ export default function InventoryReportsPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.manufacturer} {row.model_name}</p>
-          <p className="text-xs text-gray-500">{formatCurrency(row.retail_price_usd)} retail</p>
+          <p className="text-xs text-muted-foreground">{formatCurrency(row.retail_price_usd)} retail</p>
         </div>
       ),
     },
@@ -144,7 +144,7 @@ export default function InventoryReportsPage() {
       key: 'lead_time_days',
       header: 'Lead Time',
       render: (row) => (
-        <span className="text-sm text-gray-600">
+        <span className="text-sm text-muted-foreground">
           {row.lead_time_days ? `${row.lead_time_days} days` : '-'}
         </span>
       ),
@@ -171,25 +171,25 @@ export default function InventoryReportsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/devices" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+        <Link href="/devices" className="rounded-md p-1 hover:bg-accent">
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory Reports</h1>
-          <p className="text-sm text-gray-500">Stock levels, movements, and low-stock alerts</p>
+          <h1 className="text-2xl font-bold text-foreground">Inventory Reports</h1>
+          <p className="text-sm text-muted-foreground">Stock levels, movements, and low-stock alerts</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+      <div className="flex gap-1 rounded-lg bg-muted p-1">
         {tabs.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
               activeTab === tab.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.icon}
@@ -206,22 +206,22 @@ export default function InventoryReportsPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-blue-50 p-2">
+                  <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-2">
                     <Package className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Total Devices</p>
+                    <p className="text-sm text-muted-foreground">Total Devices</p>
                     <p className="text-lg font-semibold">{report.totals.total_devices}</p>
                   </div>
                 </div>
               </Card>
               <Card className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-lg bg-green-50 p-2">
+                  <div className="rounded-lg bg-green-50 dark:bg-green-950 p-2">
                     <Package className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">In Stock</p>
+                    <p className="text-sm text-muted-foreground">In Stock</p>
                     <p className="text-lg font-semibold">{report.totals.total_in_stock}</p>
                   </div>
                 </div>
@@ -232,7 +232,7 @@ export default function InventoryReportsPage() {
                     <TrendingUp className="h-5 w-5 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Available Value</p>
+                    <p className="text-sm text-muted-foreground">Available Value</p>
                     <p className="text-lg font-semibold">{formatCurrency(report.totals.available_inventory_value)}</p>
                   </div>
                 </div>
@@ -243,7 +243,7 @@ export default function InventoryReportsPage() {
                     <AlertTriangle className="h-5 w-5 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Damaged/Lost</p>
+                    <p className="text-sm text-muted-foreground">Damaged/Lost</p>
                     <p className="text-lg font-semibold text-orange-600">
                       {(report.totals.total_damaged || 0) + (report.totals.total_lost || 0)}
                     </p>
@@ -266,9 +266,9 @@ export default function InventoryReportsPage() {
                 <div className="grid gap-3 sm:grid-cols-4">
                   {report.aging.map((bucket) => (
                     <div key={bucket.age_bracket} className="rounded-lg border p-3">
-                      <p className="text-sm font-medium text-gray-700">{bucket.age_bracket}</p>
+                      <p className="text-sm font-medium text-foreground">{bucket.age_bracket}</p>
                       <p className="text-lg font-semibold">{bucket.count} units</p>
-                      <p className="text-xs text-gray-500">{formatCurrency(bucket.value)}</p>
+                      <p className="text-xs text-muted-foreground">{formatCurrency(bucket.value)}</p>
                     </div>
                   ))}
                 </div>
@@ -298,7 +298,7 @@ export default function InventoryReportsPage() {
       {activeTab === 'movements' && (
         <div className="space-y-6">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-500">Period:</span>
+            <span className="text-sm text-muted-foreground">Period:</span>
             {[7, 30, 60, 90].map((d) => (
               <button
                 key={d}
@@ -306,7 +306,7 @@ export default function InventoryReportsPage() {
                 className={`rounded-md px-3 py-1 text-sm ${
                   movementDays === d
                     ? 'bg-brand-100 text-brand-700 font-medium'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    : 'text-muted-foreground hover:bg-accent'
                 }`}
               >
                 {d} days
@@ -319,7 +319,7 @@ export default function InventoryReportsPage() {
             <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {movements.by_type.map((entry) => (
                 <Card key={entry.movement_type} className="p-4">
-                  <p className="text-sm capitalize text-gray-600">
+                  <p className="text-sm capitalize text-muted-foreground">
                     {entry.movement_type.replace(/_/g, ' ')}
                   </p>
                   <p className="mt-1 text-2xl font-semibold">{entry.count}</p>
@@ -337,7 +337,7 @@ export default function InventoryReportsPage() {
               {movementsLoading ? (
                 <div className="space-y-3">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="h-12 animate-pulse rounded-lg bg-gray-200" />
+                    <div key={i} className="h-12 animate-pulse rounded-lg bg-muted" />
                   ))}
                 </div>
               ) : movements?.recent && movements.recent.length > 0 ? (
@@ -350,22 +350,22 @@ export default function InventoryReportsPage() {
                         </Badge>
                         <div>
                           <p className="text-sm font-medium">{m.manufacturer} {m.device_model}</p>
-                          <p className="font-mono text-xs text-gray-500">{m.device_imei}</p>
+                          <p className="font-mono text-xs text-muted-foreground">{m.device_imei}</p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           {m.from_status && m.to_status
                             ? `${m.from_status} → ${m.to_status}`
                             : m.to_status || '-'}
                         </p>
-                        <p className="text-xs text-gray-400">{formatDateTime(m.created_at)}</p>
+                        <p className="text-xs text-muted-foreground">{formatDateTime(m.created_at)}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="py-8 text-center text-sm text-gray-500">No movements in this period</p>
+                <p className="py-8 text-center text-sm text-muted-foreground">No movements in this period</p>
               )}
             </CardContent>
           </Card>
@@ -386,7 +386,7 @@ export default function InventoryReportsPage() {
                 </div>
               </div>
             </Card>
-            <Card className="border-red-200 bg-red-50 p-4">
+            <Card className="border-red-200 bg-red-50 dark:bg-red-950 p-4">
               <div className="flex items-center gap-3">
                 <XCircle className="h-6 w-6 text-red-600" />
                 <div>
@@ -428,7 +428,7 @@ export default function InventoryReportsPage() {
                     <div key={model.id} className="flex items-center justify-between py-3">
                       <div>
                         <p className="text-sm font-medium">{model.manufacturer} {model.model_name}</p>
-                        <p className="text-xs text-gray-500">{formatCurrency(model.retail_price_usd)} retail</p>
+                        <p className="text-xs text-muted-foreground">{formatCurrency(model.retail_price_usd)} retail</p>
                       </div>
                       <Badge variant="status" status="failed">Out of Stock</Badge>
                     </div>

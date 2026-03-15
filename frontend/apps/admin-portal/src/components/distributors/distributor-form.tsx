@@ -138,7 +138,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
       <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto pr-1">
         {/* Cognito account creation notice */}
         {!isEditing && (
-          <div className="flex items-start gap-3 rounded-lg bg-blue-50 p-3">
+          <div className="flex items-start gap-3 rounded-lg bg-blue-50 dark:bg-blue-950 p-3">
             <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
             <div>
               <p className="text-sm font-medium text-blue-800">Account Creation</p>
@@ -152,7 +152,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
 
         {/* Business Info */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Business Information</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Business Information</h3>
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Business Name"
@@ -184,7 +184,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
 
         {/* Contact */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Contact Details</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Contact Details</h3>
           <div className="grid grid-cols-2 gap-4">
             <Input
               label="Phone Number"
@@ -208,7 +208,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
 
         {/* Address */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Address</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Address</h3>
           <div className="space-y-4">
             <Input
               label="Address Line 1"
@@ -238,7 +238,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
 
         {/* Payment */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Payment Details</h3>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Payment Details</h3>
           <div className="grid grid-cols-3 gap-4">
             <Input
               label="Bank Name"
@@ -285,14 +285,14 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
               onChange={(e) => setCommissionRate(e.target.value)}
               placeholder="e.g. 5.0"
             />
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Percentage of device retail price paid as commission
             </p>
           </div>
         </div>
 
         {/* Actions */}
-        <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+        <div className="flex justify-end gap-3 border-t border-border pt-4">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" isLoading={submitting}>
             {submitting

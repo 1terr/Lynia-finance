@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import 'jest-axe/extend-expect';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({

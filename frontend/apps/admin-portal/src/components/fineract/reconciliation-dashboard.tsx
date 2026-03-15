@@ -65,12 +65,12 @@ export default function ReconciliationDashboard() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-24 animate-pulse rounded-lg bg-gray-100"
+              className="h-24 animate-pulse rounded-lg bg-muted"
             />
           ))}
         </div>
@@ -85,13 +85,13 @@ export default function ReconciliationDashboard() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reconciliation</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Reconciliation</h1>
+          <p className="text-sm text-muted-foreground">
             Lynia Database vs Core Banking Engine
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Last run: {formatDateTime(data.runAt)}
           </p>
           {canReconcile && (
@@ -140,14 +140,14 @@ export default function ReconciliationDashboard() {
 
       {/* Discrepancy Table */}
       {data.discrepancies.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Discrepancies
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+                <tr className="border-b border-border text-left text-xs font-medium uppercase text-muted-foreground">
                   <th className="pb-3 pr-4">Customer</th>
                   <th className="pb-3 pr-4">Core Banking Loan</th>
                   <th className="pb-3 pr-4 text-right">Lynia Balance</th>
@@ -159,15 +159,15 @@ export default function ReconciliationDashboard() {
                   <th className="pb-3">Last Synced</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-border">
                 {data.discrepancies.map((d) => {
                   const sev = SEVERITY_STYLES[d.severity] || SEVERITY_STYLES.low;
                   return (
-                    <tr key={d.lyniaLoanId} className="text-gray-700">
+                    <tr key={d.lyniaLoanId} className="text-foreground">
                       <td className="py-3 pr-4 font-medium">
                         {d.customerName}
                       </td>
-                      <td className="py-3 pr-4 font-mono text-xs text-gray-500">
+                      <td className="py-3 pr-4 font-mono text-xs text-muted-foreground">
                         #{d.fineractLoanId}
                       </td>
                       <td className="py-3 pr-4 text-right">
@@ -187,7 +187,7 @@ export default function ReconciliationDashboard() {
                           {d.severity}
                         </span>
                       </td>
-                      <td className="py-3 text-xs text-gray-500">
+                      <td className="py-3 text-xs text-muted-foreground">
                         {formatDateTime(d.lastSyncedAt)}
                       </td>
                     </tr>
@@ -201,7 +201,7 @@ export default function ReconciliationDashboard() {
 
       {/* All matched */}
       {data.discrepancies.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-green-200 bg-green-50 py-12">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-green-200 bg-green-50 dark:bg-green-950 py-12">
           <CheckCircle className="h-12 w-12 text-green-400" />
           <p className="mt-4 text-lg font-medium text-green-700">
             All Balanced
@@ -229,24 +229,24 @@ function SummaryCard({
   highlight?: 'green' | 'orange' | 'red';
 }) {
   const borderColors = {
-    green: 'border-green-200 bg-green-50',
-    orange: 'border-orange-200 bg-orange-50',
-    red: 'border-red-200 bg-red-50',
+    green: 'border-green-200 bg-green-50 dark:bg-green-950',
+    orange: 'border-orange-200 bg-orange-50 dark:bg-orange-950',
+    red: 'border-red-200 bg-red-50 dark:bg-red-950',
   };
 
   return (
     <div
       className={`rounded-lg border p-4 ${
-        highlight ? borderColors[highlight] : 'border-gray-200 bg-white'
+        highlight ? borderColors[highlight] : 'border-border bg-card'
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500">{label}</span>
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
         {icon}
       </div>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
+      <p className="mt-2 text-3xl font-bold text-foreground">{value}</p>
       {subtitle && (
-        <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
       )}
     </div>
   );

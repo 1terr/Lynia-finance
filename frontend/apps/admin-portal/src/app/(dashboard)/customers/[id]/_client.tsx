@@ -176,7 +176,7 @@ export default function CustomerDetailPage() {
   if (!customer) {
     return (
       <div className="text-center py-20">
-        <p className="text-lg text-gray-500">Customer not found</p>
+        <p className="text-lg text-muted-foreground">Customer not found</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/customers')}>
           Back to Customers
         </Button>
@@ -192,16 +192,16 @@ export default function CustomerDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-start gap-4">
-        <button onClick={() => router.push('/customers')} className="mt-1 rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+        <button onClick={() => router.push('/customers')} className="mt-1 rounded-md p-1 hover:bg-accent">
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{customerName}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{customerName}</h1>
             <Badge variant="status" status={customer.status}>{customer.status}</Badge>
             <Badge variant="status" status={customer.kyc_status}>KYC: {customer.kyc_status}</Badge>
           </div>
-          <p className="text-sm text-gray-500 font-mono">{customer.id}</p>
+          <p className="text-sm text-muted-foreground font-mono">{customer.id}</p>
         </div>
         {canWrite && (
           <div>
@@ -250,27 +250,27 @@ export default function CustomerDetailPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <Phone className="h-5 w-5 text-gray-400" />
+            <Phone className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="text-xs text-gray-500">Phone</p>
+              <p className="text-xs text-muted-foreground">Phone</p>
               <p className="text-sm font-medium">{customer.phone_number}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <Mail className="h-5 w-5 text-gray-400" />
+            <Mail className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="text-xs text-gray-500">Email</p>
+              <p className="text-xs text-muted-foreground">Email</p>
               <p className="text-sm font-medium">{customer.email || 'Not provided'}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <Briefcase className="h-5 w-5 text-gray-400" />
+            <Briefcase className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="text-xs text-gray-500">Employment</p>
+              <p className="text-xs text-muted-foreground">Employment</p>
               <p className="text-sm font-medium capitalize">
                 {customer.employment_status?.replace(/_/g, ' ') || 'Unknown'}
               </p>
@@ -279,9 +279,9 @@ export default function CustomerDetailPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <DollarSign className="h-5 w-5 text-gray-400" />
+            <DollarSign className="h-5 w-5 text-muted-foreground" />
             <div>
-              <p className="text-xs text-gray-500">Monthly Income</p>
+              <p className="text-xs text-muted-foreground">Monthly Income</p>
               <p className="text-sm font-medium">
                 {customer.monthly_income_usd ? formatCurrency(customer.monthly_income_usd) : 'Unknown'}
               </p>
@@ -299,9 +299,9 @@ export default function CustomerDetailPage() {
           <CardContent>
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
               <div className="text-center">
-                <p className="text-4xl font-bold text-gray-900">{creditScore.scaled_score}</p>
-                <p className="text-sm text-gray-500">{creditScore.tier} - {creditScore.decision}</p>
-                <p className="text-xs text-gray-400">Limit: {formatCurrency(creditScore.credit_limit)}</p>
+                <p className="text-4xl font-bold text-foreground">{creditScore.scaled_score}</p>
+                <p className="text-sm text-muted-foreground">{creditScore.tier} - {creditScore.decision}</p>
+                <p className="text-xs text-muted-foreground">Limit: {formatCurrency(creditScore.credit_limit)}</p>
               </div>
               <div className="flex-1 space-y-2">
                 {[
@@ -312,14 +312,14 @@ export default function CustomerDetailPage() {
                   { label: 'KYC Verification', value: creditScore.components.kyc_verification, max: 100 },
                 ].map((component) => (
                   <div key={component.label} className="flex items-center gap-3">
-                    <span className="w-28 text-xs text-gray-500">{component.label}</span>
-                    <div className="flex-1 h-2 rounded-full bg-gray-200">
+                    <span className="w-28 text-xs text-muted-foreground">{component.label}</span>
+                    <div className="flex-1 h-2 rounded-full bg-muted">
                       <div
                         className="h-2 rounded-full bg-brand-500"
                         style={{ width: `${(component.value / component.max) * 100}%` }}
                       />
                     </div>
-                    <span className="w-12 text-xs text-right text-gray-600">
+                    <span className="w-12 text-xs text-right text-muted-foreground">
                       {component.value}/{component.max}
                     </span>
                   </div>
@@ -369,11 +369,11 @@ export default function CustomerDetailPage() {
                           <Badge variant="status" status={submission.status}>
                             {submission.status.replace(/_/g, ' ')}
                           </Badge>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-muted-foreground">
                             Submitted {formatDateTime(submission.created_at)}
                           </span>
                         </div>
-                        <div className="mt-2 space-y-1 text-sm text-gray-600">
+                        <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                           {submission.extracted_first_name && (
                             <p>Name: {submission.extracted_first_name} {submission.extracted_last_name}</p>
                           )}
@@ -392,7 +392,7 @@ export default function CustomerDetailPage() {
               ))}
             </div>
           ) : (
-            <div className="py-8 text-center text-sm text-gray-500">No KYC submissions</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">No KYC submissions</div>
           )}
         </TabsContent>
 
@@ -413,8 +413,8 @@ export default function CustomerDetailPage() {
                   ['Last Updated', formatDateTime(customer.updated_at)],
                 ].map(([label, value]) => (
                   <div key={label}>
-                    <dt className="text-sm text-gray-500">{label}</dt>
-                    <dd className="mt-1 text-sm font-medium text-gray-900 capitalize">{value}</dd>
+                    <dt className="text-sm text-muted-foreground">{label}</dt>
+                    <dd className="mt-1 text-sm font-medium text-foreground capitalize">{value}</dd>
                   </div>
                 ))}
               </dl>

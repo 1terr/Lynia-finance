@@ -47,8 +47,8 @@ export default function OverdueLoansPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Overdue Loans</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Overdue Loans</h1>
+        <p className="text-sm text-muted-foreground">
           Portfolio aging analysis and delinquency tracking.
         </p>
       </div>
@@ -57,7 +57,7 @@ export default function OverdueLoansPage() {
       {aging && (
         <>
           {/* Total Overdue Banner */}
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <TrendingDown className="h-6 w-6 text-red-500" />
@@ -110,10 +110,10 @@ export default function OverdueLoansPage() {
       )}
 
       {/* Overdue Loans Table */}
-      <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-lg border border-border bg-card">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
+            <tr className="border-b border-border bg-muted text-left text-xs font-medium uppercase text-muted-foreground">
               <th className="px-4 py-3">Customer</th>
               <th className="px-4 py-3">Product</th>
               <th className="px-4 py-3 text-right">Outstanding</th>
@@ -124,28 +124,28 @@ export default function OverdueLoansPage() {
               <th className="px-4 py-3">Device Lock</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {isLoading &&
               [1, 2, 3].map((i) => (
                 <tr key={i}>
                   <td colSpan={8} className="px-4 py-4">
-                    <div className="h-4 animate-pulse rounded bg-gray-200" />
+                    <div className="h-4 animate-pulse rounded bg-muted" />
                   </td>
                 </tr>
               ))}
             {(overdueData?.data || []).map((loan) => (
               <tr
                 key={loan.lyniaLoanId}
-                className="cursor-pointer text-gray-700 hover:bg-gray-50"
+                className="cursor-pointer text-foreground hover:bg-muted"
                 onClick={() =>
                   router.push(`/loans/${loan.lyniaLoanId}/fineract`)
                 }
               >
                 <td className="px-4 py-3">
-                  <p className="font-medium text-gray-900">
+                  <p className="font-medium text-foreground">
                     {loan.customerName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {loan.customerPhone}
                   </p>
                 </td>
@@ -174,13 +174,13 @@ export default function OverdueLoansPage() {
                         {formatDate(loan.lastPaymentDate)}
                       </p>
                       {loan.lastPaymentAmount && (
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {formatCurrency(loan.lastPaymentAmount)}
                         </p>
                       )}
                     </div>
                   ) : (
-                    <span className="text-xs text-gray-400">Never</span>
+                    <span className="text-xs text-muted-foreground">Never</span>
                   )}
                 </td>
                 <td className="px-4 py-3">
@@ -194,7 +194,7 @@ export default function OverdueLoansPage() {
         {overdueData && overdueData.data.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center py-12">
             <Clock className="h-10 w-10 text-green-400" />
-            <p className="mt-3 text-sm font-medium text-gray-600">
+            <p className="mt-3 text-sm font-medium text-muted-foreground">
               No overdue loans
             </p>
           </div>
@@ -238,7 +238,7 @@ function AgingBucketCard({
         <span className={`text-sm font-medium ${colors.text}`}>{label}</span>
         <AlertTriangle className={`h-4 w-4 ${colors.text}`} />
       </div>
-      <p className="mt-2 text-2xl font-bold text-gray-900">{count}</p>
+      <p className="mt-2 text-2xl font-bold text-foreground">{count}</p>
       <p className={`mt-1 text-sm font-medium ${colors.text}`}>
         {formatCurrency(amount)}
       </p>
@@ -283,7 +283,7 @@ function LockStatusBadge({
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
       <Unlock className="h-3 w-3" />
       unlocked
     </span>

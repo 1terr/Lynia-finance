@@ -87,7 +87,7 @@ export default function PaymentDetailPage() {
   if (!payment) {
     return (
       <div className="text-center py-20">
-        <p className="text-lg text-gray-500">Payment not found</p>
+        <p className="text-lg text-muted-foreground">Payment not found</p>
         <Button variant="outline" className="mt-4" onClick={() => router.push('/payments')}>
           Back to Payments
         </Button>
@@ -99,17 +99,17 @@ export default function PaymentDetailPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <button onClick={() => router.push('/payments')} className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+        <button onClick={() => router.push('/payments')} className="rounded-md p-1 hover:bg-accent">
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">Payment Details</h1>
+            <h1 className="text-2xl font-bold text-foreground">Payment Details</h1>
             <Badge variant="status" status={payment.payment_status}>
               {payment.payment_status}
             </Badge>
           </div>
-          <p className="text-sm text-gray-500 font-mono">{payment.id}</p>
+          <p className="text-sm text-muted-foreground font-mono">{payment.id}</p>
         </div>
         <div className="flex gap-2">
           {canReconcile && (
@@ -145,22 +145,22 @@ export default function PaymentDetailPage() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-green-50 p-2">
+            <div className="rounded-lg bg-green-50 dark:bg-green-950 p-2">
               <DollarSign className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Amount</p>
+              <p className="text-sm text-muted-foreground">Amount</p>
               <p className="text-lg font-semibold">{formatCurrencyDetailed(payment.payment_amount_usd)}</p>
             </div>
           </div>
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-blue-50 p-2">
+            <div className="rounded-lg bg-blue-50 dark:bg-blue-950 p-2">
               <CheckCircle className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Method</p>
+              <p className="text-sm text-muted-foreground">Method</p>
               <p className="text-lg font-semibold capitalize">{payment.payment_method.replace(/_/g, ' ')}</p>
             </div>
           </div>
@@ -171,7 +171,7 @@ export default function PaymentDetailPage() {
               <DollarSign className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Type</p>
+              <p className="text-sm text-muted-foreground">Type</p>
               <p className="text-lg font-semibold capitalize">{payment.payment_type.replace(/_/g, ' ')}</p>
             </div>
           </div>
@@ -182,7 +182,7 @@ export default function PaymentDetailPage() {
               <AlertTriangle className="h-5 w-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Date</p>
+              <p className="text-sm text-muted-foreground">Date</p>
               <p className="text-lg font-semibold">{formatDate(payment.payment_date)}</p>
             </div>
           </div>
@@ -209,8 +209,8 @@ export default function PaymentDetailPage() {
                 ['Updated', formatDateTime(payment.updated_at)],
               ].map(([label, value]) => (
                 <div key={label} className="flex justify-between">
-                  <dt className="text-sm text-gray-500">{label}</dt>
-                  <dd className="text-sm font-medium text-gray-900">{value}</dd>
+                  <dt className="text-sm text-muted-foreground">{label}</dt>
+                  <dd className="text-sm font-medium text-foreground">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -225,7 +225,7 @@ export default function PaymentDetailPage() {
           <CardContent>
             <div className="space-y-4">
               <div>
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Customer</h4>
+                <h4 className="text-sm font-medium text-foreground mb-2">Customer</h4>
                 {payment.customer ? (
                   <dl className="space-y-2">
                     {[
@@ -234,8 +234,8 @@ export default function PaymentDetailPage() {
                       ['Email', payment.customer.email || 'N/A'],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between">
-                        <dt className="text-sm text-gray-500">{label}</dt>
-                        <dd className="text-sm font-medium text-gray-900">{value}</dd>
+                        <dt className="text-sm text-muted-foreground">{label}</dt>
+                        <dd className="text-sm font-medium text-foreground">{value}</dd>
                       </div>
                     ))}
                     <div className="pt-1">
@@ -248,12 +248,12 @@ export default function PaymentDetailPage() {
                     </div>
                   </dl>
                 ) : (
-                  <p className="text-sm text-gray-500">Customer information unavailable</p>
+                  <p className="text-sm text-muted-foreground">Customer information unavailable</p>
                 )}
               </div>
 
-              <div className="border-t border-gray-200 pt-4">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">Loan</h4>
+              <div className="border-t border-border pt-4">
+                <h4 className="text-sm font-medium text-foreground mb-2">Loan</h4>
                 {payment.loan ? (
                   <dl className="space-y-2">
                     {[
@@ -261,8 +261,8 @@ export default function PaymentDetailPage() {
                       ['Loan Status', payment.loan.loan_status],
                     ].map(([label, value]) => (
                       <div key={label} className="flex justify-between">
-                        <dt className="text-sm text-gray-500">{label}</dt>
-                        <dd className="text-sm font-medium text-gray-900">{value}</dd>
+                        <dt className="text-sm text-muted-foreground">{label}</dt>
+                        <dd className="text-sm font-medium text-foreground">{value}</dd>
                       </div>
                     ))}
                     <div className="pt-1">
@@ -275,7 +275,7 @@ export default function PaymentDetailPage() {
                     </div>
                   </dl>
                 ) : (
-                  <p className="text-sm text-gray-500">Loan information unavailable</p>
+                  <p className="text-sm text-muted-foreground">Loan information unavailable</p>
                 )}
               </div>
             </div>
@@ -290,7 +290,7 @@ export default function PaymentDetailPage() {
             <CardTitle>Provider Response</CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="overflow-x-auto rounded-lg bg-gray-50 p-4 text-xs text-gray-700">
+            <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs text-foreground">
               <code>{JSON.stringify(payment.provider_response, null, 2)}</code>
             </pre>
           </CardContent>
@@ -300,18 +300,18 @@ export default function PaymentDetailPage() {
       {/* Refund Modal */}
       <Modal open={refundModal} onClose={() => setRefundModal(false)} title="Refund Payment">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Refund payment of {formatCurrencyDetailed(payment.payment_amount_usd)} for{' '}
             <strong>{payment.customer?.full_name}</strong>?
           </p>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Refund Reason *</label>
+            <label className="block text-sm font-medium text-foreground">Refund Reason *</label>
             <textarea
               value={refundReason}
               onChange={(e) => setRefundReason(e.target.value)}
               rows={3}
               required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               placeholder="Provide reason for refund..."
             />
           </div>

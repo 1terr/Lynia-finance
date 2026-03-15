@@ -14,9 +14,9 @@ import type { FineractLoanProductView } from '@/types/fineract';
 import { Package, TrendingUp, Shield, CreditCard } from 'lucide-react';
 
 const TIER_COLORS: Record<string, { border: string; bg: string; text: string }> = {
-  'Tier 1': { border: 'border-blue-200', bg: 'bg-blue-50', text: 'text-blue-700' },
-  'Tier 2': { border: 'border-green-200', bg: 'bg-green-50', text: 'text-green-700' },
-  'Tier 3': { border: 'border-purple-200', bg: 'bg-purple-50', text: 'text-purple-700' },
+  'Tier 1': { border: 'border-blue-200', bg: 'bg-blue-50 dark:bg-blue-950', text: 'text-blue-700' },
+  'Tier 2': { border: 'border-green-200', bg: 'bg-green-50 dark:bg-green-950', text: 'text-green-700' },
+  'Tier 3': { border: 'border-purple-200', bg: 'bg-purple-50 dark:bg-purple-950', text: 'text-purple-700' },
 };
 
 export default function LoanProductsPage() {
@@ -28,10 +28,10 @@ export default function LoanProductsPage() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-64 animate-pulse rounded-lg bg-gray-100" />
+            <div key={i} className="h-64 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
       </div>
@@ -42,8 +42,8 @@ export default function LoanProductsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Loan Products</h1>
-        <p className="text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Loan Products</h1>
+        <p className="text-sm text-muted-foreground">
           Fineract loan product configuration for device financing tiers.
         </p>
       </div>
@@ -63,7 +63,7 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
   const colors = TIER_COLORS[tier] || TIER_COLORS['Tier 1'];
 
   return (
-    <div className={`rounded-lg border-2 ${colors.border} bg-white shadow-sm`}>
+    <div className={`rounded-lg border-2 ${colors.border} bg-card shadow-sm`}>
       {/* Header */}
       <div className={`rounded-t-lg ${colors.bg} p-4`}>
         <div className="flex items-center justify-between">
@@ -74,25 +74,25 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
           </span>
           <Package className={`h-5 w-5 ${colors.text}`} />
         </div>
-        <h3 className="mt-2 text-lg font-bold text-gray-900">
+        <h3 className="mt-2 text-lg font-bold text-foreground">
           {product.name.replace('Lynia Device Finance - ', '')}
         </h3>
-        <p className="mt-1 text-sm text-gray-600">{product.description}</p>
+        <p className="mt-1 text-sm text-muted-foreground">{product.description}</p>
       </div>
 
       {/* Details */}
       <div className="space-y-4 p-4">
         {/* Principal Range */}
         <div className="flex items-start gap-3">
-          <CreditCard className="mt-0.5 h-4 w-4 text-gray-400" />
+          <CreditCard className="mt-0.5 h-4 w-4 text-muted-foreground" />
           <div>
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p className="text-xs font-medium uppercase text-muted-foreground">
               Principal Range
             </p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-foreground">
               {formatCurrency(product.minPrincipal)} - {formatCurrency(product.maxPrincipal)}
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Default: {formatCurrency(product.principal)}
             </p>
           </div>
@@ -100,15 +100,15 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
 
         {/* Interest Rate */}
         <div className="flex items-start gap-3">
-          <TrendingUp className="mt-0.5 h-4 w-4 text-gray-400" />
+          <TrendingUp className="mt-0.5 h-4 w-4 text-muted-foreground" />
           <div>
-            <p className="text-xs font-medium uppercase text-gray-500">
+            <p className="text-xs font-medium uppercase text-muted-foreground">
               Interest Rate
             </p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-sm font-semibold text-foreground">
               {product.interestRatePerPeriod}% per month
             </p>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               {formatPercent(product.annualInterestRate)} annual |{' '}
               {product.interestType}
             </p>
@@ -118,12 +118,12 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
         {/* Credit Score Range */}
         {product.minCreditScore && product.maxCreditScore && (
           <div className="flex items-start gap-3">
-            <Shield className="mt-0.5 h-4 w-4 text-gray-400" />
+            <Shield className="mt-0.5 h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-xs font-medium uppercase text-gray-500">
+              <p className="text-xs font-medium uppercase text-muted-foreground">
                 Credit Score
               </p>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-sm font-semibold text-foreground">
                 {product.minCreditScore} - {product.maxCreditScore}
               </p>
             </div>
@@ -131,23 +131,23 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
         )}
 
         {/* Term & Down Payment */}
-        <div className="grid grid-cols-2 gap-4 rounded-md bg-gray-50 p-3">
+        <div className="grid grid-cols-2 gap-4 rounded-md bg-muted p-3">
           <div>
-            <p className="text-xs text-gray-500">Term</p>
-            <p className="text-sm font-semibold text-gray-900">
+            <p className="text-xs text-muted-foreground">Term</p>
+            <p className="text-sm font-semibold text-foreground">
               {product.numberOfRepayments} months
             </p>
             {product.minNumberOfRepayments &&
               product.maxNumberOfRepayments && (
-                <p className="text-xs text-gray-400">
+                <p className="text-xs text-muted-foreground">
                   {product.minNumberOfRepayments}-{product.maxNumberOfRepayments} range
                 </p>
               )}
           </div>
           {product.downPaymentPercentage !== undefined && (
             <div>
-              <p className="text-xs text-gray-500">Down Payment</p>
-              <p className="text-sm font-semibold text-gray-900">
+              <p className="text-xs text-muted-foreground">Down Payment</p>
+              <p className="text-sm font-semibold text-foreground">
                 {product.downPaymentPercentage}%
               </p>
             </div>
@@ -155,9 +155,9 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
         </div>
 
         {/* Accounting Rule */}
-        <div className="border-t border-gray-100 pt-3">
-          <p className="text-xs text-gray-500">Accounting</p>
-          <p className="text-sm font-medium text-gray-700">
+        <div className="border-t border-border pt-3">
+          <p className="text-xs text-muted-foreground">Accounting</p>
+          <p className="text-sm font-medium text-foreground">
             {product.accountingRule}
           </p>
         </div>

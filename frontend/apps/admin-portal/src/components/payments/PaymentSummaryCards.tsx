@@ -37,7 +37,7 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
       amount: summary.total_confirmed,
       count: summary.count_confirmed,
       color: 'text-green-600',
-      bg: 'bg-green-50',
+      bg: 'bg-green-50 dark:bg-green-950',
       border: 'border-green-200',
     },
     {
@@ -45,7 +45,7 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
       amount: summary.total_pending,
       count: summary.count_pending,
       color: 'text-yellow-600',
-      bg: 'bg-yellow-50',
+      bg: 'bg-yellow-50 dark:bg-yellow-950',
       border: 'border-yellow-200',
     },
     {
@@ -53,7 +53,7 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
       amount: summary.total_failed,
       count: summary.count_failed,
       color: 'text-red-600',
-      bg: 'bg-red-50',
+      bg: 'bg-red-50 dark:bg-red-950',
       border: 'border-red-200',
     },
     {
@@ -61,7 +61,7 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
       amount: summary.total_refunded,
       count: summary.count_refunded,
       color: 'text-muted-foreground',
-      bg: 'bg-gray-50',
+      bg: 'bg-muted',
       border: 'border-border',
     },
   ];

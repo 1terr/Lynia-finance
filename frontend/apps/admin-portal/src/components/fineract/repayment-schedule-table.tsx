@@ -33,8 +33,8 @@ export default function RepaymentScheduleTable({ schedule }: Props) {
   return (
     <div className="space-y-4">
       {/* Schedule Summary */}
-      <div className="rounded-md bg-gray-50 p-4">
-        <h3 className="mb-2 text-sm font-semibold text-gray-700">
+      <div className="rounded-md bg-muted p-4">
+        <h3 className="mb-2 text-sm font-semibold text-foreground">
           Schedule Summary
         </h3>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -61,7 +61,7 @@ export default function RepaymentScheduleTable({ schedule }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
+            <tr className="border-b border-border text-left text-xs font-medium uppercase text-muted-foreground">
               <th className="pb-3 pr-4">#</th>
               <th className="pb-3 pr-4">Due Date</th>
               <th className="pb-3 pr-4">Status</th>
@@ -72,7 +72,7 @@ export default function RepaymentScheduleTable({ schedule }: Props) {
               <th className="pb-3 text-right">Balance</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border">
             {schedule.periods.map((period) => {
               const status = getPeriodStatus(period);
               const isOverdue =
@@ -82,14 +82,14 @@ export default function RepaymentScheduleTable({ schedule }: Props) {
                 <tr
                   key={period.period}
                   className={`${
-                    isOverdue ? 'bg-red-50' : ''
-                  } text-gray-700`}
+                    isOverdue ? 'bg-red-50 dark:bg-red-950' : ''
+                  } text-foreground`}
                 >
                   <td className="py-3 pr-4 font-medium">{period.period}</td>
                   <td className="py-3 pr-4">
                     {formatDate(period.dueDate)}
                     {period.paidDate && (
-                      <div className="text-xs text-gray-400">
+                      <div className="text-xs text-muted-foreground">
                         Paid {formatDate(period.paidDate)}
                       </div>
                     )}
@@ -129,8 +129,8 @@ export default function RepaymentScheduleTable({ schedule }: Props) {
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-semibold text-gray-900">{value}</p>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
 }

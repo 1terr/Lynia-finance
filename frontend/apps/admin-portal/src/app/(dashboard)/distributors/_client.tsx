@@ -53,14 +53,14 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon, iconBg }: StatCardProps) {
   return (
-    <div className="rounded-lg bg-white p-4 shadow-sm">
+    <div className="rounded-lg bg-card p-4 shadow-sm">
       <div className="flex items-center gap-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-full ${iconBg}`}>
           {icon}
         </div>
         <div>
-          <p className="text-2xl font-semibold text-gray-900">{value}</p>
-          <p className="text-xs text-gray-500">{label}</p>
+          <p className="text-2xl font-semibold text-foreground">{value}</p>
+          <p className="text-xs text-muted-foreground">{label}</p>
         </div>
       </div>
     </div>
@@ -151,22 +151,22 @@ export default function DistributorsPage() {
       sortable: true,
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.business_name}</p>
-          <p className="text-xs text-gray-500">{row.contact_person || row.name || '-'}</p>
+          <p className="font-medium text-foreground">{row.business_name}</p>
+          <p className="text-xs text-muted-foreground">{row.contact_person || row.name || '-'}</p>
         </div>
       ),
     },
     {
       key: 'phone_number',
       header: 'Phone',
-      render: (row) => <span className="text-gray-700">{row.phone_number}</span>,
+      render: (row) => <span className="text-foreground">{row.phone_number}</span>,
     },
     {
       key: 'city',
       header: 'Location',
       render: (row) => {
         const parts = [row.city, row.province].filter(Boolean);
-        return <span className="text-gray-600">{parts.length > 0 ? parts.join(', ') : '-'}</span>;
+        return <span className="text-muted-foreground">{parts.length > 0 ? parts.join(', ') : '-'}</span>;
       },
     },
     {
@@ -183,7 +183,7 @@ export default function DistributorsPage() {
       header: 'Devices Sold',
       sortable: true,
       render: (row) => (
-        <span className="text-gray-700">
+        <span className="text-foreground">
           {row.total_devices_sold ?? row.total_devices_distributed ?? 0}
         </span>
       ),
@@ -193,7 +193,7 @@ export default function DistributorsPage() {
       header: 'Revenue',
       sortable: true,
       render: (row) => (
-        <span className="font-medium text-gray-900">
+        <span className="font-medium text-foreground">
           {formatMoney(row.total_revenue_usd ?? row.total_commissions_earned)}
         </span>
       ),
@@ -202,7 +202,7 @@ export default function DistributorsPage() {
       key: 'created_at',
       header: 'Created',
       sortable: true,
-      render: (row) => <span className="text-gray-500">{formatDate(row.created_at)}</span>,
+      render: (row) => <span className="text-muted-foreground">{formatDate(row.created_at)}</span>,
     },
   ];
 
@@ -215,8 +215,8 @@ export default function DistributorsPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Distributors</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Distributors</h1>
+          <p className="text-sm text-muted-foreground">
             Manage distributor network, inventory assignments, and commissions.
           </p>
         </div>
@@ -256,13 +256,13 @@ export default function DistributorsPage() {
       {/* Search + Filter */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <form onSubmit={handleSearch} className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by business name, phone, or contact..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </form>
         <Select

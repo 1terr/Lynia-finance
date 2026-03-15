@@ -319,7 +319,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
         )}
 
         {showRefundForm && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4">
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950 p-4">
             <h4 className="text-sm font-medium text-red-900">
               Refund Payment
             </h4>
@@ -421,4 +421,7 @@ function AllocField({
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-foreground">
         {amount !== null ? formatCurrency(amount) : '-'}
-      </p>
+      </p>
+    </div>
+  );
+}

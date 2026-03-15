@@ -158,7 +158,7 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
                   <tr
                     key={item.id}
                     className={`hover:bg-accent ${
-                      item.priority === 'critical' ? 'bg-red-50' : ''
+                      item.priority === 'critical' ? 'bg-red-50 dark:bg-red-950' : ''
                     }`}
                   >
                     <td className="whitespace-nowrap px-6 py-4">

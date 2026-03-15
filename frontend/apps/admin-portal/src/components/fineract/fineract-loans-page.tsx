@@ -59,10 +59,10 @@ export default function FineractLoansPage() {
       header: 'Account',
       render: (row) => (
         <div>
-          <span className="font-mono text-xs text-gray-500">
+          <span className="font-mono text-xs text-muted-foreground">
             {row.fineractAccountNo}
           </span>
-          <div className="flex items-center gap-1 text-xs text-gray-400">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Building2 className="h-3 w-3" />
             <span>Loan #{row.fineractLoanId}</span>
           </div>
@@ -74,8 +74,8 @@ export default function FineractLoansPage() {
       header: 'Customer',
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.customerName}</p>
-          <p className="text-xs text-gray-500">{row.customerPhone}</p>
+          <p className="font-medium text-foreground">{row.customerName}</p>
+          <p className="text-xs text-muted-foreground">{row.customerPhone}</p>
         </div>
       ),
     },
@@ -83,7 +83,7 @@ export default function FineractLoansPage() {
       key: 'productName',
       header: 'Product',
       render: (row) => (
-        <span className="text-sm text-gray-700">
+        <span className="text-sm text-foreground">
           {row.productName.replace('Lynia Device Finance - ', '')}
         </span>
       ),
@@ -95,7 +95,7 @@ export default function FineractLoansPage() {
       render: (row) => (
         <div>
           <p className="font-medium">{formatCurrency(row.principal)}</p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             {row.numberOfRepayments}mo @ {row.interestRatePerPeriod}%
           </p>
         </div>
@@ -139,7 +139,7 @@ export default function FineractLoansPage() {
             {row.deviceBrand} {row.deviceModel}
           </span>
         ) : (
-          <span className="text-gray-400">-</span>
+          <span className="text-muted-foreground">-</span>
         ),
     },
     {
@@ -147,7 +147,7 @@ export default function FineractLoansPage() {
       header: 'Date',
       sortable: true,
       render: (row) => (
-        <span className="text-gray-500">
+        <span className="text-muted-foreground">
           {row.submittedOnDate ? formatDate(row.submittedOnDate) : '-'}
         </span>
       ),
@@ -182,19 +182,19 @@ export default function FineractLoansPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Loan Portfolio</h1>
-          <p className="text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Loan Portfolio</h1>
+          <p className="text-sm text-muted-foreground">
             Real-time loan portfolio data.
           </p>
         </div>
         <div className="flex items-center gap-3">
           {data && (
-            <p className="text-sm text-gray-500">{data.total} total loans</p>
+            <p className="text-sm text-muted-foreground">{data.total} total loans</p>
           )}
           <button
             onClick={() => exportCsv(data?.data || [])}
             disabled={!data?.data?.length}
-            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             Export CSV
@@ -205,7 +205,7 @@ export default function FineractLoansPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
@@ -214,12 +214,12 @@ export default function FineractLoansPage() {
               setPage(1);
             }}
             placeholder="Search by name, phone, or loan ID..."
-            className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-8 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-8 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-border dark:bg-card dark:text-foreground"
           />
           {searchInput && (
             <button
               onClick={() => setSearchInput('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
             >
               <X className="h-4 w-4" />
             </button>
@@ -256,7 +256,7 @@ export default function FineractLoansPage() {
           </button>
           <button
             onClick={() => setSelectedKeys(new Set())}
-            className="text-xs text-gray-500 hover:text-gray-700"
+            className="text-xs text-muted-foreground hover:text-foreground"
           >
             Clear
           </button>

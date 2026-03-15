@@ -93,19 +93,19 @@ export default function HandoversPage() {
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <Link href="/devices" className="text-sm text-gray-500 hover:text-gray-700">
+              <Link href="/devices" className="text-sm text-muted-foreground hover:text-foreground">
                 Devices
               </Link>
               <span className="text-gray-300">/</span>
-              <span className="text-sm text-gray-700">Handovers</span>
+              <span className="text-sm text-foreground">Handovers</span>
             </div>
-            <h1 className="mt-2 text-2xl font-bold text-gray-900">Device Handovers</h1>
-            <p className="mt-1 text-sm text-gray-500">
+            <h1 className="mt-2 text-2xl font-bold text-foreground">Device Handovers</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Schedule and track device handovers to customers
             </p>
           </div>
           {data && (
-            <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg bg-blue-50 dark:bg-blue-950 px-3 py-2">
               <Package className="h-4 w-4 text-blue-600" />
               <span className="text-sm font-medium text-blue-800">
                 {data.total} total
@@ -117,21 +117,21 @@ export default function HandoversPage() {
         {/* Filters */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by customer name or IMEI..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full rounded-lg border border-border py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-400" />
+            <Filter className="h-4 w-4 text-muted-foreground" />
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-              className="rounded-lg border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="rounded-lg border border-border py-2 pl-3 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
               <option value="">All Statuses</option>
               <option value="initiated">Initiated</option>
@@ -148,34 +148,34 @@ export default function HandoversPage() {
         {isLoading ? (
           <div className="space-y-4">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="h-16 animate-pulse rounded-lg bg-gray-200" />
+              <div key={i} className="h-16 animate-pulse rounded-lg bg-muted" />
             ))}
           </div>
         ) : handovers.length === 0 ? (
-          <div className="rounded-lg bg-white p-12 text-center shadow">
+          <div className="rounded-lg bg-card p-12 text-center shadow">
             <Smartphone className="mx-auto h-12 w-12 text-gray-300" />
-            <p className="mt-4 text-lg font-medium text-gray-500">No handovers found</p>
-            <p className="mt-1 text-sm text-gray-400">
+            <p className="mt-4 text-lg font-medium text-muted-foreground">No handovers found</p>
+            <p className="mt-1 text-sm text-muted-foreground">
               {statusFilter || search
                 ? 'Try adjusting your filters.'
                 : 'No device handovers have been initiated yet.'}
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg bg-white shadow">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+          <div className="overflow-hidden rounded-lg bg-card shadow">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Customer</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Device</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Distributor</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Scheduled</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Created</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">Action</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Customer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Device</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Distributor</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Scheduled</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">Created</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 bg-white">
+              <tbody className="divide-y divide-border bg-card">
                 {handovers.map((h: DeviceHandoverRow) => {
                   const customer = Array.isArray(h.customer) ? h.customer[0] : h.customer;
                   const device = Array.isArray(h.device) ? h.device[0] : h.device;
@@ -183,18 +183,18 @@ export default function HandoversPage() {
                   const status = statusConfig[h.status] || statusConfig.initiated;
                   const transition = nextStatusMap[h.status];
                   return (
-                    <tr key={h.id} className="hover:bg-gray-50">
+                    <tr key={h.id} className="hover:bg-accent">
                       <td className="whitespace-nowrap px-6 py-4">
                         <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-gray-400" />
+                          <User className="h-4 w-4 text-muted-foreground" />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-foreground">
                               {customer
                                 ? `${(customer as Record<string, string>).first_name} ${(customer as Record<string, string>).last_name}`
                                 : truncateId(h.customer_id)}
                             </p>
                             {customer && (
-                              <p className="text-xs text-gray-500">{(customer as Record<string, string>).phone_number}</p>
+                              <p className="text-xs text-muted-foreground">{(customer as Record<string, string>).phone_number}</p>
                             )}
                           </div>
                         </div>
@@ -202,16 +202,16 @@ export default function HandoversPage() {
                       <td className="whitespace-nowrap px-6 py-4">
                         {device ? (
                           <div>
-                            <p className="text-sm text-gray-900">
+                            <p className="text-sm text-foreground">
                               {(device as Record<string, string>).brand} {(device as Record<string, string>).model}
                             </p>
-                            <p className="text-xs text-gray-500">{(device as Record<string, string>).imei || 'No IMEI'}</p>
+                            <p className="text-xs text-muted-foreground">{(device as Record<string, string>).imei || 'No IMEI'}</p>
                           </div>
                         ) : (
-                          <span className="text-sm text-gray-400">{truncateId(h.device_id)}</span>
+                          <span className="text-sm text-muted-foreground">{truncateId(h.device_id)}</span>
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                         {distributor
                           ? (distributor as Record<string, string>).business_name
                           : truncateId(h.distributor_id)}
@@ -219,12 +219,12 @@ export default function HandoversPage() {
                       <td className="whitespace-nowrap px-6 py-4">
                         <Badge variant={status.variant}>{status.label}</Badge>
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                         {h.scheduled_date
                           ? `${formatDate(h.scheduled_date)}${h.scheduled_time ? ` ${h.scheduled_time}` : ''}`
                           : 'Not scheduled'}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                         {formatDateTime(h.created_at)}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right">

@@ -80,10 +80,10 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-700" />
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-32 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+            <div key={i} className="h-32 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
   if (!loan) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <p className="text-lg font-medium text-gray-600 dark:text-gray-300">Loan not found</p>
+        <p className="text-lg font-medium text-muted-foreground">Loan not found</p>
         <button
           onClick={() => router.back()}
           className="mt-4 text-sm text-brand-600 hover:underline"
@@ -114,13 +114,13 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
       <div className="flex items-center gap-4">
         <button
           onClick={() => router.back()}
-          className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700"
+          className="rounded-md p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-bold text-foreground">
               {loan.lyniaCustomerId ? (
                 <Link href={`/customers/${loan.lyniaCustomerId}`} className="hover:text-brand-600 transition-colors">
                   {loan.customerName}
@@ -133,7 +133,7 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
               {statusDisplay.label}
             </span>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Fineract Account: {loan.fineractAccountNo} | Product:{' '}
             {loan.productName.replace('Lynia Device Finance - ', '')}
           </p>
@@ -166,14 +166,14 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
             <>
               <button
                 onClick={() => setActiveAction('writeoff')}
-                className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:border-red-700 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-card px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:bg-red-950 dark:text-red-400"
               >
                 <XOctagon className="h-4 w-4" />
                 Write Off
               </button>
               <button
                 onClick={() => setActiveAction('close')}
-                className="inline-flex items-center gap-1 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
               >
                 <Ban className="h-4 w-4" />
                 Close
@@ -217,20 +217,20 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
 
       {/* Repayment Progress */}
       {loan.totalExpectedRepayment > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Repayment Progress
           </h2>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-500 dark:text-gray-400">
+              <span className="text-muted-foreground">
                 {formatCurrency(loan.totalRepayment)} paid
               </span>
-              <span className="font-medium text-gray-900 dark:text-gray-100">
+              <span className="font-medium text-foreground">
                 {((loan.totalRepayment / loan.totalExpectedRepayment) * 100).toFixed(1)}%
               </span>
             </div>
-            <div className="h-3 w-full rounded-full bg-gray-200 dark:bg-gray-700">
+            <div className="h-3 w-full rounded-full bg-muted">
               <div
                 className="h-3 rounded-full bg-brand-600 transition-all"
                 style={{
@@ -238,7 +238,7 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
                 }}
               />
             </div>
-            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex justify-between text-xs text-muted-foreground">
               <span>Total: {formatCurrency(loan.totalExpectedRepayment)}</span>
               <span>Remaining: {formatCurrency(loan.totalOutstanding)}</span>
             </div>
@@ -249,8 +249,8 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
       {/* Loan Details Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Loan Info */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Loan Details
           </h2>
           <dl className="space-y-3">
@@ -272,8 +272,8 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
         </div>
 
         {/* Timeline */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Loan Timeline
           </h2>
           <div className="space-y-4">
@@ -308,8 +308,8 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
         </div>
 
         {/* Device Info */}
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
             <Smartphone className="h-5 w-5" />
             Device
           </h2>
@@ -320,8 +320,8 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
                 value={`${loan.deviceBrand} ${loan.deviceModel}`}
               />
               {loan.deviceImei && (
-                <div className="flex items-center justify-between border-b border-gray-100 py-2 dark:border-gray-700">
-                  <dt className="text-sm text-gray-500 dark:text-gray-400">IMEI</dt>
+                <div className="flex items-center justify-between border-b border-border py-2">
+                  <dt className="text-sm text-muted-foreground">IMEI</dt>
                   <dd className="text-sm font-medium">
                     <Link href={`/devices?search=${loan.deviceImei}`} className="font-mono text-brand-600 hover:text-brand-700 hover:underline">
                       {loan.deviceImei}
@@ -331,15 +331,15 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
               )}
             </dl>
           ) : (
-            <p className="text-sm text-gray-400">No device assigned</p>
+            <p className="text-sm text-muted-foreground">No device assigned</p>
           )}
         </div>
       </div>
 
       {/* Repayment Schedule */}
       {loan.repaymentSchedule && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Repayment Schedule
           </h2>
           <RepaymentScheduleTable schedule={loan.repaymentSchedule} />
@@ -348,14 +348,14 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
 
       {/* Transaction History */}
       {loan.transactions && loan.transactions.length > 0 && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-700 dark:bg-gray-800">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Transaction History
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500 dark:border-gray-700 dark:text-gray-400">
+                <tr className="border-b border-border text-left text-xs font-medium uppercase text-muted-foreground">
                   <th className="pb-3 pr-4">Date</th>
                   <th className="pb-3 pr-4">Type</th>
                   <th className="pb-3 pr-4 text-right">Amount</th>
@@ -364,9 +364,9 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
                   <th className="pb-3 text-right">Balance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-border">
                 {loan.transactions.map((tx) => (
-                  <tr key={tx.id} className="text-gray-700 dark:text-gray-300">
+                  <tr key={tx.id} className="text-foreground">
                     <td className="py-3 pr-4">{formatDate(tx.date)}</td>
                     <td className="py-3 pr-4">
                       <span
@@ -407,7 +407,7 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
       {/* Payment Form Modal */}
       {showPaymentForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+          <div className="w-full max-w-md rounded-lg bg-card p-6 shadow-xl">
             <RecordPaymentForm
               lyniaLoanId={loan.lyniaLoanId}
               outstandingBalance={loan.totalOutstanding}
@@ -522,23 +522,23 @@ function BalanceCard({
       className={`rounded-lg border p-4 ${
         highlight
           ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'
-          : 'border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800'
+          : 'border-border bg-card'
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium text-gray-500 dark:text-gray-400">{label}</span>
-        <span className={highlight ? 'text-red-400' : 'text-gray-400'}>
+        <span className="text-sm font-medium text-muted-foreground">{label}</span>
+        <span className={highlight ? 'text-red-400' : 'text-muted-foreground'}>
           {icon}
         </span>
       </div>
       <p
         className={`mt-2 text-2xl font-bold ${
-          highlight ? 'text-red-700 dark:text-red-400' : 'text-gray-900 dark:text-gray-100'
+          highlight ? 'text-red-700 dark:text-red-400' : 'text-foreground'
         }`}
       >
         {formatCurrency(amount)}
       </p>
-      <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{subtitle}</p>
+      <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
     </div>
   );
 }
@@ -546,8 +546,8 @@ function BalanceCard({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
-      <dt className="text-sm text-gray-500 dark:text-gray-400">{label}</dt>
-      <dd className="text-sm font-medium text-gray-900 dark:text-gray-100">{value}</dd>
+      <dt className="text-sm text-muted-foreground">{label}</dt>
+      <dd className="text-sm font-medium text-foreground">{value}</dd>
     </div>
   );
 }
@@ -567,7 +567,7 @@ function TimelineEntry({
         className={`flex h-8 w-8 items-center justify-center rounded-full ${
           done
             ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400'
-            : 'bg-gray-100 text-gray-400 dark:bg-gray-700'
+            : 'bg-muted text-muted-foreground'
         }`}
       >
         {done ? (
@@ -577,8 +577,8 @@ function TimelineEntry({
         )}
       </div>
       <div>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{label}</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400">
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="text-xs text-muted-foreground">
           {date ? formatDate(date) : 'Pending'}
         </p>
       </div>

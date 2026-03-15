@@ -82,8 +82,8 @@ function AccessDenied() {
           />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-gray-900">Access Denied</h2>
-      <p className="max-w-md text-sm text-gray-500">
+      <h2 className="text-xl font-semibold text-foreground">Access Denied</h2>
+      <p className="max-w-md text-sm text-muted-foreground">
         You don&apos;t have permission to access this page. Contact your
         administrator if you believe this is an error.
       </p>

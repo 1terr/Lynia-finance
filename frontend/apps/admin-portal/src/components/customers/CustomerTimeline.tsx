@@ -103,8 +103,8 @@ const eventConfigs: Record<string, EventConfig> = {
 const defaultConfig: EventConfig = {
   title: 'Event',
   description: () => '',
-  iconBg: 'bg-gray-100',
-  iconText: 'text-gray-600',
+  iconBg: 'bg-muted',
+  iconText: 'text-muted-foreground',
 };
 
 export function CustomerTimeline({ customerId }: CustomerTimelineProps) {
@@ -115,9 +115,9 @@ export function CustomerTimeline({ customerId }: CustomerTimelineProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-card p-6 shadow">
         <div className="flex h-48 items-center justify-center">
-          <p className="text-sm text-gray-500">Loading timeline...</p>
+          <p className="text-sm text-muted-foreground">Loading timeline...</p>
         </div>
       </div>
     );
@@ -125,20 +125,20 @@ export function CustomerTimeline({ customerId }: CustomerTimelineProps) {
 
   if (!events || events.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold text-gray-900">
+      <div className="rounded-lg bg-card p-6 shadow">
+        <h2 className="text-lg font-semibold text-foreground">
           Customer Timeline
         </h2>
         <div className="mt-4 flex h-32 items-center justify-center">
-          <p className="text-sm text-gray-500">No timeline events found</p>
+          <p className="text-sm text-muted-foreground">No timeline events found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h2 className="mb-6 text-lg font-semibold text-gray-900">
+    <div className="rounded-lg bg-card p-6 shadow">
+      <h2 className="mb-6 text-lg font-semibold text-foreground">
         Customer Timeline
       </h2>
 
@@ -170,7 +170,7 @@ function TimelineItem({
   return (
     <div className="relative">
       {!isLast && (
-        <div className="absolute bottom-0 left-4 top-8 w-0.5 bg-gray-200" />
+        <div className="absolute bottom-0 left-4 top-8 w-0.5 bg-muted" />
       )}
 
       <div className="flex gap-4">
@@ -185,20 +185,20 @@ function TimelineItem({
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-foreground">
                 {config.title}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {config.description(event.details || {})}
               </p>
             </div>
-            <time className="text-xs text-gray-400">
+            <time className="text-xs text-muted-foreground">
               {formatDateTime(event.created_at)}
             </time>
           </div>
 
           {event.admin_id && (
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               by {event.admin_id}
             </p>
           )}

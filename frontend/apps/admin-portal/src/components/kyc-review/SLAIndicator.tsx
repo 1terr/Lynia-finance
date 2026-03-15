@@ -124,6 +124,11 @@ export function SLAIndicator({ deadline, className, compact = false }: SLAIndica
       </div>
       <div className="h-1.5 w-full rounded-full bg-muted">
         <div
+          role="progressbar"
+          aria-valuenow={Math.round(progressPercent)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label="SLA progress"
           className={cn(
             'h-1.5 rounded-full transition-all',
             styles.progress,

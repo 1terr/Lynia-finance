@@ -158,18 +158,18 @@ export default function AddDevicePage() {
   }
 
   const inputClass =
-    'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
+    'block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/devices" className="rounded-md p-1 hover:bg-gray-100">
-          <ArrowLeft className="h-5 w-5 text-gray-500" />
+        <Link href="/devices" className="rounded-md p-1 hover:bg-accent">
+          <ArrowLeft className="h-5 w-5 text-muted-foreground" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Add Devices</h1>
-          <p className="text-sm text-gray-500">Register new devices into inventory</p>
+          <h1 className="text-2xl font-bold text-foreground">Add Devices</h1>
+          <p className="text-sm text-muted-foreground">Register new devices into inventory</p>
         </div>
       </div>
 
@@ -180,7 +180,7 @@ export default function AddDevicePage() {
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
             tab === 'single'
               ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-200'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              : 'bg-card text-muted-foreground hover:bg-accent'
           }`}
         >
           <Plus className="h-4 w-4" />
@@ -191,7 +191,7 @@ export default function AddDevicePage() {
           className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium ${
             tab === 'bulk'
               ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-200'
-              : 'bg-white text-gray-600 hover:bg-gray-50'
+              : 'bg-card text-muted-foreground hover:bg-accent'
           }`}
         >
           <Upload className="h-4 w-4" />
@@ -209,7 +209,7 @@ export default function AddDevicePage() {
             <form onSubmit={handleSingleSubmit} className="space-y-6">
               {/* Device Model Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-foreground">
                   Device Model (from catalog)
                 </label>
                 <select
@@ -224,7 +224,7 @@ export default function AddDevicePage() {
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-xs text-gray-400">
+                <p className="mt-1 text-xs text-muted-foreground">
                   Selecting a catalog model auto-fills brand, model, storage, and price
                 </p>
               </div>
@@ -232,7 +232,7 @@ export default function AddDevicePage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 {/* IMEI */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     IMEI <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -249,7 +249,7 @@ export default function AddDevicePage() {
 
                 {/* Serial Number */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Serial Number</label>
+                  <label className="block text-sm font-medium text-foreground">Serial Number</label>
                   <input
                     type="text"
                     value={form.serial_number || ''}
@@ -261,7 +261,7 @@ export default function AddDevicePage() {
 
                 {/* Manufacturer */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Manufacturer <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -276,7 +276,7 @@ export default function AddDevicePage() {
 
                 {/* Model */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     Model <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -291,7 +291,7 @@ export default function AddDevicePage() {
 
                 {/* Storage */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Storage (GB)</label>
+                  <label className="block text-sm font-medium text-foreground">Storage (GB)</label>
                   <input
                     type="number"
                     value={form.storage_gb || ''}
@@ -303,7 +303,7 @@ export default function AddDevicePage() {
 
                 {/* Color */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Color</label>
+                  <label className="block text-sm font-medium text-foreground">Color</label>
                   <input
                     type="text"
                     value={form.color || ''}
@@ -315,7 +315,7 @@ export default function AddDevicePage() {
 
                 {/* Condition */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Condition</label>
+                  <label className="block text-sm font-medium text-foreground">Condition</label>
                   <select
                     value={form.condition}
                     onChange={(e) => setForm((f) => ({ ...f, condition: e.target.value as CreateDeviceRequest['condition'] }))}
@@ -330,7 +330,7 @@ export default function AddDevicePage() {
 
                 {/* Location */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Location</label>
+                  <label className="block text-sm font-medium text-foreground">Location</label>
                   <input
                     type="text"
                     value={form.location || ''}
@@ -342,7 +342,7 @@ export default function AddDevicePage() {
 
                 {/* Purchase Price */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Purchase Price (USD)</label>
+                  <label className="block text-sm font-medium text-foreground">Purchase Price (USD)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -355,7 +355,7 @@ export default function AddDevicePage() {
 
                 {/* Retail Price */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Retail Price (USD)</label>
+                  <label className="block text-sm font-medium text-foreground">Retail Price (USD)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -368,7 +368,7 @@ export default function AddDevicePage() {
               </div>
 
               {createMutation.isError && (
-                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                <div className="rounded-lg bg-red-50 dark:bg-red-950 p-3 text-sm text-red-700">
                   {(createMutation.error as Error).message || 'Failed to create device'}
                 </div>
               )}
@@ -402,7 +402,7 @@ export default function AddDevicePage() {
                     <p className={`font-medium ${bulkResult.errors > 0 ? 'text-yellow-800' : 'text-green-800'}`}>
                       Imported {bulkResult.inserted}/{bulkResult.total}{bulkResult.errors > 0 ? `, ${bulkResult.errors} error${bulkResult.errors !== 1 ? 's' : ''}` : ''}
                     </p>
-                    <div className="mt-2 flex gap-4 text-sm text-gray-600">
+                    <div className="mt-2 flex gap-4 text-sm text-muted-foreground">
                       <span className="flex items-center gap-1">
                         <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
                         {bulkResult.inserted} inserted
@@ -423,7 +423,7 @@ export default function AddDevicePage() {
 
                 {/* Expandable Error Details Table */}
                 {bulkResult.error_details.length > 0 && (
-                  <div className="rounded-lg border border-red-200 bg-red-50">
+                  <div className="rounded-lg border border-red-200 bg-red-50 dark:bg-red-950">
                     <button
                       type="button"
                       onClick={() => setShowErrorDetails((v) => !v)}
@@ -474,27 +474,27 @@ export default function AddDevicePage() {
             ) : showPreview ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-medium text-gray-900">
+                  <h3 className="text-sm font-medium text-foreground">
                     Preview: {parsedDevices.length} rows — {parsedDevices.filter((p) => p.errors.length === 0).length} valid, {parsedDevices.filter((p) => p.errors.length > 0).length} with errors
                   </h3>
                 </div>
-                <div className="max-h-80 overflow-auto rounded-md border border-gray-200">
-                  <table className="min-w-full divide-y divide-gray-200 text-xs">
-                    <thead className="bg-gray-50 sticky top-0">
+                <div className="max-h-80 overflow-auto rounded-md border border-border">
+                  <table className="min-w-full divide-y divide-border text-xs">
+                    <thead className="bg-muted sticky top-0">
                       <tr>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Row</th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">IMEI</th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Brand</th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Model</th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Condition</th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Price</th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-500">Status</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Row</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">IMEI</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Brand</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Model</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Condition</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Price</th>
+                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                       {parsedDevices.map((p, i) => (
                         <tr key={i} className={p.errors.length > 0 ? 'bg-red-50' : ''}>
-                          <td className="px-3 py-1.5 text-gray-500">{p.row}</td>
+                          <td className="px-3 py-1.5 text-muted-foreground">{p.row}</td>
                           <td className="px-3 py-1.5 font-mono">{p.device.imei || '—'}</td>
                           <td className="px-3 py-1.5">{p.device.manufacturer || '—'}</td>
                           <td className="px-3 py-1.5">{p.device.model || '—'}</td>
@@ -527,7 +527,7 @@ export default function AddDevicePage() {
             ) : (
               <form onSubmit={handlePreviewSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Default Location</label>
+                  <label className="block text-sm font-medium text-foreground">Default Location</label>
                   <input
                     type="text"
                     value={bulkLocation}
@@ -537,10 +537,10 @@ export default function AddDevicePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">
+                  <label className="block text-sm font-medium text-foreground">
                     CSV Data <span className="text-red-500">*</span>
                   </label>
-                  <p className="mt-1 text-xs text-gray-500">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Required columns: imei, manufacturer, model. Optional: serial_number, storage_gb, color, condition, purchase_price_usd, retail_price_usd
                   </p>
                   <textarea
@@ -553,7 +553,7 @@ export default function AddDevicePage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2 rounded-lg bg-yellow-50 p-3">
+                <div className="flex items-center gap-2 rounded-lg bg-yellow-50 dark:bg-yellow-950 p-3">
                   <AlertTriangle className="h-4 w-4 text-yellow-600" />
                   <p className="text-sm text-yellow-700">
                     Maximum 500 devices per import. Duplicate IMEIs will be skipped.
@@ -561,7 +561,7 @@ export default function AddDevicePage() {
                 </div>
 
                 {bulkMutation.isError && (
-                  <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  <div className="rounded-lg bg-red-50 dark:bg-red-950 p-3 text-sm text-red-700">
                     {(bulkMutation.error as Error).message || 'Import failed'}
                   </div>
                 )}

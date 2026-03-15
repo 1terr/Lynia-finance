@@ -87,6 +87,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
         </h2>
         <button
           onClick={onClose}
+          aria-label="Close"
           className="text-muted-foreground hover:text-foreground"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -98,13 +99,15 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
       <form
         onSubmit={handleSubmit(onFormSubmit)}
         className="mt-4 space-y-4"
+        aria-label="Record manual payment"
       >
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="loan_id" className="block text-sm font-medium text-foreground">
               Loan ID *
             </label>
             <input
+              id="loan_id"
               {...register('loan_id', { required: 'Loan ID is required' })}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Enter loan UUID"
@@ -117,10 +120,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="customer_id" className="block text-sm font-medium text-foreground">
               Customer ID *
             </label>
             <input
+              id="customer_id"
               {...register('customer_id', {
                 required: 'Customer ID is required',
               })}
@@ -135,10 +139,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="amount_usd" className="block text-sm font-medium text-foreground">
               Amount (USD) *
             </label>
             <input
+              id="amount_usd"
               type="number"
               step="0.01"
               min="0.01"
@@ -157,10 +162,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="payment_date" className="block text-sm font-medium text-foreground">
               Payment Date *
             </label>
             <input
+              id="payment_date"
               type="date"
               {...register('payment_date', {
                 required: 'Payment date is required',
@@ -170,10 +176,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="payment_method" className="block text-sm font-medium text-foreground">
               Payment Method *
             </label>
             <select
+              id="payment_method"
               {...register('payment_method')}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
@@ -185,10 +192,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="payment_type" className="block text-sm font-medium text-foreground">
               Payment Type *
             </label>
             <select
+              id="payment_type"
               {...register('payment_type')}
               className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
@@ -200,10 +208,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="reference_number" className="block text-sm font-medium text-foreground">
               Reference Number *
             </label>
             <input
+              id="reference_number"
               {...register('reference_number', {
                 required: 'Reference number is required',
               })}
@@ -226,10 +235,11 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-foreground">
+            <label htmlFor="notes" className="block text-sm font-medium text-foreground">
               Notes
             </label>
             <textarea
+              id="notes"
               {...register('notes')}
               rows={2}
               maxLength={1000}

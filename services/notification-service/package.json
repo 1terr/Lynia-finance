@@ -11,6 +11,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.1009.0",
     "axios": "^1.13.4"
   },
   "devDependencies": {

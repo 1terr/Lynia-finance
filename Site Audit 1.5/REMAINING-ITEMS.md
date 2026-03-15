@@ -26,15 +26,17 @@
 
 **Total tests: 2644 passing across 114 test suites**
 
+### Error Handling Gaps Fixed (2026-03-15)
+
+- [x] **`gl-accounts.ts` try/catch** — Added FineractApiError handling with 502/504/500 responses + logging to all 3 handlers (9 tests)
+- [x] **`inventory-adjustments.ts` DB failure checks** — All 3 `.execute()` calls in approve/reject flow now check for errors and return 500 with logging (3 tests)
+- [x] **Payment service requestId** — Replaced manual error responses with `errorResponse()` + requestId across 7 files (initiate-payment, get-payment-status, reconcile-payments, webhook-ecocash/innbucks/onemoney/omari) (9 tests)
+
+**Total tests: 2665 passing across 117 test suites**
+
 ---
 
 ## Known Issues (Not Sprint Scoped)
-
-### Error Handling Gaps
-
-1. **`gl-accounts.ts` missing try/catch** — Fineract API calls without error handling can cause 502
-2. **`inventory-adjustments.ts` silent DB failures** — `.execute()` results not checked
-3. **Missing requestId in payment error responses** — Non-breaking but makes debugging harder
 
 ### Architecture Debt
 
@@ -66,7 +68,7 @@
 | Item | Impact | Effort | Priority | Status |
 |------|--------|--------|----------|--------|
 | SMS notification channel | HIGH | MEDIUM | P1 | **DONE** |
-| Error handling fixes (gl-accounts, inventory) | MEDIUM | LOW | P1 | Open |
+| Error handling fixes (gl-accounts, inventory, payment requestId) | MEDIUM | LOW | P1 | **DONE** |
 | Frontend hook tests | MEDIUM | MEDIUM | P2 | **DONE** |
 | Lock-service router migration | LOW | LOW | P2 | **DONE** |
 | Email notification channel | MEDIUM | MEDIUM | P2 | Open |
@@ -80,9 +82,8 @@
 
 ## Next Sprint Recommendations
 
-1. **Fix remaining error handling gaps** — gl-accounts try/catch, inventory error checks
-2. **Add requestId to all error responses** — Standardize across all services
-3. **Begin loan restructuring/early payoff** — Critical for customer financial flexibility
-4. **Deploy RDS Proxy** — Prevent connection exhaustion under load
-5. **Email notification channel** — SES integration for admin alerts and receipts
-6. **Component-level frontend tests** — Pages and form unit tests
+1. **Begin loan restructuring/early payoff** — Critical for customer financial flexibility
+2. **Deploy RDS Proxy** — Prevent connection exhaustion under load
+3. **Email notification channel** — SES integration for admin alerts and receipts
+4. **Component-level frontend tests** — Pages and form unit tests
+5. **Accessibility audit** — WCAG 2.1 AA compliance verification

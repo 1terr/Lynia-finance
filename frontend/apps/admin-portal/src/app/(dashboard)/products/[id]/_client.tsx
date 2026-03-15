@@ -137,8 +137,8 @@ export default function ProductDetailPage() {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="h-8 w-48 animate-pulse rounded bg-gray-200" />
-        <div className="h-96 animate-pulse rounded-lg bg-gray-100" />
+        <div className="h-8 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-96 animate-pulse rounded-lg bg-muted" />
       </div>
     );
   }
@@ -149,8 +149,8 @@ export default function ProductDetailPage() {
         <Button variant="ghost" size="sm" onClick={() => router.push('/products')}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Products
         </Button>
-        <div className="rounded-lg border border-dashed border-gray-300 py-12 text-center">
-          <p className="text-gray-500">Product not found.</p>
+        <div className="rounded-lg border border-dashed border-border py-12 text-center">
+          <p className="text-muted-foreground">Product not found.</p>
         </div>
       </div>
     );
@@ -180,12 +180,12 @@ export default function ProductDetailPage() {
         </Button>
         <div className="flex-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{product.product_name}</h1>
+            <h1 className="text-2xl font-bold text-foreground">{product.product_name}</h1>
             <Badge variant={STATUS_VARIANTS[product.status] || 'gray'}>
               {product.status.replace(/_/g, ' ')}
             </Badge>
           </div>
-          <p className="text-sm font-mono text-gray-500">{product.product_code}</p>
+          <p className="text-sm font-mono text-muted-foreground">{product.product_code}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
@@ -200,7 +200,7 @@ export default function ProductDetailPage() {
       {/* Setup Checklist */}
       <Card className={`p-4 ${allComplete ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-gray-900">
+          <h3 className="text-sm font-semibold text-foreground">
             Product Setup {allComplete ? '- Ready' : `- ${completedCount}/${checklistItems.length} complete`}
           </h3>
           <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${allComplete ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
@@ -215,7 +215,7 @@ export default function ProductDetailPage() {
               ) : (
                 <Circle className="h-4 w-4 text-gray-300" />
               )}
-              <span className={item.done ? 'text-green-700' : 'text-gray-500'}>
+              <span className={item.done ? 'text-green-700' : 'text-muted-foreground'}>
                 {item.label}
               </span>
             </div>
@@ -231,7 +231,7 @@ export default function ProductDetailPage() {
             >
               <DatabaseIcon className="mr-1 h-3.5 w-3.5" /> Create in Core Banking
             </Button>
-            <span className="ml-2 text-xs text-gray-500">
+            <span className="ml-2 text-xs text-muted-foreground">
               Auto-creates a matching loan product in core banking.
             </span>
           </div>
@@ -240,7 +240,7 @@ export default function ProductDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Product Configuration</h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Product Configuration</h2>
           <dl className="space-y-3 text-sm">
             <Row label="Product Type" value={product.product_type.replace(/_/g, ' ')} />
             <Row label="Category" value={product.product_category} />
@@ -254,7 +254,7 @@ export default function ProductDetailPage() {
         </Card>
 
         <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          <h2 className="text-lg font-semibold text-foreground mb-4">
             {isSmartphone ? 'Smartphone Details' : 'Digital Loan Details'}
           </h2>
           <dl className="space-y-3 text-sm">
@@ -289,8 +289,8 @@ export default function ProductDetailPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Compatible Phone Models</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-foreground">Compatible Phone Models</h2>
+              <p className="text-sm text-muted-foreground">
                 Only these phone models will be available for customers applying under this product.
               </p>
             </div>
@@ -300,10 +300,10 @@ export default function ProductDetailPage() {
           </div>
 
           {linkedModels.length === 0 ? (
-            <div className="rounded-lg border-2 border-dashed border-gray-200 py-8 text-center">
+            <div className="rounded-lg border-2 border-dashed border-border py-8 text-center">
               <Smartphone className="mx-auto h-8 w-8 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">No phone models linked yet.</p>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-sm text-muted-foreground">No phone models linked yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">
                 Without linked models, customers will see ALL active models during loan application.
               </p>
               <Button size="sm" variant="secondary" className="mt-3" onClick={() => setLinkModalOpen(true)}>
@@ -313,17 +313,17 @@ export default function ProductDetailPage() {
           ) : (
             <div className="space-y-2">
               {linkedModels.map((model) => (
-                <div key={model.device_model_id} className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3">
+                <div key={model.device_model_id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100">
-                      <Smartphone className="h-4 w-4 text-gray-500" />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                      <Smartphone className="h-4 w-4 text-muted-foreground" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {model.brand} {model.model_name}
                         {model.storage_gb ? ` (${model.storage_gb}GB)` : ''}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         <span className="font-mono">{model.model_code}</span>
                         {' \u00b7 '}
                         Retail: {formatCurrency(model.retail_price_usd)}
@@ -342,12 +342,12 @@ export default function ProductDetailPage() {
                       onClick={() => unlinkMutation.mutate(model.device_model_id)}
                       disabled={unlinkMutation.isPending}
                     >
-                      <X className="h-4 w-4 text-gray-400 hover:text-red-500" />
+                      <X className="h-4 w-4 text-muted-foreground hover:text-red-500" />
                     </Button>
                   </div>
                 </div>
               ))}
-              <p className="text-xs text-gray-400 pt-1">
+              <p className="text-xs text-muted-foreground pt-1">
                 {linkedModels.length} model{linkedModels.length !== 1 ? 's' : ''} linked
                 {' \u00b7 '}
                 {inStockCount} device{inStockCount !== 1 ? 's' : ''} in stock
@@ -360,12 +360,12 @@ export default function ProductDetailPage() {
       {/* Link Device Models Modal */}
       <Modal open={linkModalOpen} onClose={() => { setLinkModalOpen(false); setSelectedModels([]); }} title="Link Phone Models" size="lg">
         <div className="space-y-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             Select phone models to make available under this loan product.
           </p>
           <div className="max-h-[50vh] overflow-y-auto space-y-1">
             {availableModels.length === 0 ? (
-              <p className="py-8 text-center text-sm text-gray-500">
+              <p className="py-8 text-center text-sm text-muted-foreground">
                 All active phone models are already linked to this product.
               </p>
             ) : (
@@ -377,15 +377,15 @@ export default function ProductDetailPage() {
                     type="button"
                     onClick={() => toggleModelSelection(model.id)}
                     className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
-                      selected ? 'border-brand-500 bg-brand-50' : 'border-gray-200 hover:bg-gray-50'
+                      selected ? 'border-brand-500 bg-brand-50' : 'border-border hover:bg-accent'
                     }`}
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {model.brand} {model.model_name}
                         {model.storage_gb ? ` (${model.storage_gb}GB)` : ''}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         Retail: {formatCurrency(model.retail_price_usd)}
                         {' \u00b7 '}
                         Wholesale: {formatCurrency(model.wholesale_price_usd)}
@@ -394,7 +394,7 @@ export default function ProductDetailPage() {
                       </p>
                     </div>
                     <div className={`flex h-5 w-5 items-center justify-center rounded border ${
-                      selected ? 'border-brand-500 bg-brand-500' : 'border-gray-300'
+                      selected ? 'border-brand-500 bg-brand-500' : 'border-border'
                     }`}>
                       {selected && <Check className="h-3 w-3 text-white" />}
                     </div>
@@ -403,8 +403,8 @@ export default function ProductDetailPage() {
               })
             )}
           </div>
-          <div className="flex justify-between items-center border-t border-gray-200 pt-4">
-            <span className="text-sm text-gray-500">
+          <div className="flex justify-between items-center border-t border-border pt-4">
+            <span className="text-sm text-muted-foreground">
               {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''} selected
             </span>
             <div className="flex gap-3">
@@ -433,9 +433,9 @@ export default function ProductDetailPage() {
       <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Product" size="sm">
         <div className="space-y-4">
           {loadingLoansCount ? (
-            <div className="h-8 animate-pulse rounded bg-gray-100" />
+            <div className="h-8 animate-pulse rounded bg-muted" />
           ) : loansCountData && loansCountData.active_loans > 0 ? (
-            <div className="rounded-md border border-red-200 bg-red-50 p-3">
+            <div className="rounded-md border border-red-200 bg-red-50 dark:bg-red-950 p-3">
               <p className="text-sm font-medium text-red-800">
                 This product has {loansCountData.active_loans} active loan{loansCountData.active_loans !== 1 ? 's' : ''}.
               </p>
@@ -444,7 +444,7 @@ export default function ProductDetailPage() {
               </p>
             </div>
           ) : (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Are you sure you want to delete <span className="font-medium">{product.product_name}</span>?
               This action cannot be undone.
             </p>
@@ -468,9 +468,9 @@ export default function ProductDetailPage() {
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between border-b border-gray-100 pb-2">
-      <dt className="text-gray-500">{label}</dt>
-      <dd className="font-medium text-gray-900 capitalize">{value}</dd>
+    <div className="flex justify-between border-b border-border pb-2">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium text-foreground capitalize">{value}</dd>
     </div>
   );
 }

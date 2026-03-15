@@ -176,7 +176,7 @@ export default function TransfersPage() {
       render: (row) => (
         <div>
           <p className="text-sm font-medium">{row.manufacturer} {row.device_model}</p>
-          <p className="font-mono text-xs text-gray-500">{row.device_imei}</p>
+          <p className="font-mono text-xs text-muted-foreground">{row.device_imei}</p>
         </div>
       ),
     },
@@ -186,7 +186,7 @@ export default function TransfersPage() {
       render: (row) => (
         <div className="text-sm">
           <p className="font-medium">{row.from_distributor_name || '-'}</p>
-          {row.from_location && <p className="text-xs text-gray-500">{row.from_location}</p>}
+          {row.from_location && <p className="text-xs text-muted-foreground">{row.from_location}</p>}
         </div>
       ),
     },
@@ -196,7 +196,7 @@ export default function TransfersPage() {
       render: (row) => (
         <div className="text-sm">
           <p className="font-medium">{row.to_distributor_name || '-'}</p>
-          {row.to_location && <p className="text-xs text-gray-500">{row.to_location}</p>}
+          {row.to_location && <p className="text-xs text-muted-foreground">{row.to_location}</p>}
         </div>
       ),
     },
@@ -212,12 +212,12 @@ export default function TransfersPage() {
     {
       key: 'requested_by_name',
       header: 'Requested By',
-      render: (row) => <span className="text-sm text-gray-600">{row.requested_by_name || '-'}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{row.requested_by_name || '-'}</span>,
     },
     {
       key: 'created_at',
       header: 'Date',
-      render: (row) => <span className="text-sm text-gray-500">{formatDateTime(row.created_at)}</span>,
+      render: (row) => <span className="text-sm text-muted-foreground">{formatDateTime(row.created_at)}</span>,
     },
     {
       key: 'id',
@@ -229,26 +229,26 @@ export default function TransfersPage() {
             Update
           </Button>
         ) : (
-          <span className="text-xs text-gray-400 italic">No actions</span>
+          <span className="text-xs text-muted-foreground italic">No actions</span>
         );
       },
     },
   ];
 
   const inputClass =
-    'block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
+    'block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500';
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/devices" className="rounded-md p-1 hover:bg-gray-100">
-            <ArrowLeft className="h-5 w-5 text-gray-500" />
+          <Link href="/devices" className="rounded-md p-1 hover:bg-accent">
+            <ArrowLeft className="h-5 w-5 text-muted-foreground" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Stock Transfers</h1>
-            <p className="text-sm text-gray-500">Transfer devices between distributors and locations</p>
+            <h1 className="text-2xl font-bold text-foreground">Stock Transfers</h1>
+            <p className="text-sm text-muted-foreground">Transfer devices between distributors and locations</p>
           </div>
         </div>
         <Button onClick={() => setCreateModal(true)}>
@@ -263,16 +263,16 @@ export default function TransfersPage() {
           onSubmit={(e) => { e.preventDefault(); setSearch(searchInput); setPage(1); }}
           className="relative flex-1 max-w-sm"
         >
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="text"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Search by IMEI, device, or distributor..."
-            className="block w-full rounded-lg border border-gray-300 py-2 pl-10 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="block w-full rounded-lg border border-border py-2 pl-10 pr-8 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           {searchInput && (
-            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+            <button type="button" onClick={() => { setSearchInput(''); setSearch(''); setPage(1); }} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-muted-foreground">
               <X className="h-4 w-4" />
             </button>
           )}
@@ -280,7 +280,7 @@ export default function TransfersPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="rounded-lg border border-border px-3 py-2 text-sm"
         >
           {STATUS_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -311,7 +311,7 @@ export default function TransfersPage() {
       <Modal open={createModal} onClose={() => setCreateModal(false)} title="New Stock Transfer">
         <form onSubmit={(e) => { e.preventDefault(); createMutation.mutate(); }} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Device *</label>
+            <label className="block text-sm font-medium text-foreground">Device *</label>
             <div className="mt-1">
               <DeviceSearch
                 value={form.device_id}
@@ -322,7 +322,7 @@ export default function TransfersPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">From Distributor</label>
+              <label className="block text-sm font-medium text-foreground">From Distributor</label>
               <div className="mt-1">
                 <DistributorSearch
                   value={form.from_distributor_id || undefined}
@@ -332,7 +332,7 @@ export default function TransfersPage() {
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">To Distributor</label>
+              <label className="block text-sm font-medium text-foreground">To Distributor</label>
               <div className="mt-1">
                 <DistributorSearch
                   value={form.to_distributor_id || undefined}
@@ -344,7 +344,7 @@ export default function TransfersPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">From Location</label>
+              <label className="block text-sm font-medium text-foreground">From Location</label>
               <input
                 type="text"
                 value={form.from_location || ''}
@@ -354,7 +354,7 @@ export default function TransfersPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">To Location</label>
+              <label className="block text-sm font-medium text-foreground">To Location</label>
               <input
                 type="text"
                 value={form.to_location || ''}
@@ -365,7 +365,7 @@ export default function TransfersPage() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Notes</label>
+            <label className="block text-sm font-medium text-foreground">Notes</label>
             <textarea
               value={form.notes || ''}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
@@ -393,23 +393,23 @@ export default function TransfersPage() {
           <div className="space-y-4">
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-gray-500">Device</dt>
+                <dt className="text-muted-foreground">Device</dt>
                 <dd className="font-medium">{actionModal.manufacturer} {actionModal.device_model}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">IMEI</dt>
+                <dt className="text-muted-foreground">IMEI</dt>
                 <dd className="font-mono">{actionModal.device_imei}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">From</dt>
+                <dt className="text-muted-foreground">From</dt>
                 <dd>{actionModal.from_distributor_name || actionModal.from_location || '-'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">To</dt>
+                <dt className="text-muted-foreground">To</dt>
                 <dd>{actionModal.to_distributor_name || actionModal.to_location || '-'}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-gray-500">Current Status</dt>
+                <dt className="text-muted-foreground">Current Status</dt>
                 <dd>
                   <Badge variant="status" status={STATUS_BADGE_MAP[actionModal.status] || actionModal.status}>
                     {actionModal.status.replace(/_/g, ' ')}
@@ -421,7 +421,7 @@ export default function TransfersPage() {
             {/* Show cancel reason field only if cancel is a valid transition */}
             {(validTransitions[actionModal.status] || []).includes('cancelled') && (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Cancellation Reason (if cancelling)</label>
+                <label className="block text-sm font-medium text-foreground">Cancellation Reason (if cancelling)</label>
                 <textarea
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}

@@ -104,7 +104,7 @@ export default function EditCustomerPage() {
   if (isLoading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <p className="text-gray-500">Loading customer...</p>
+        <p className="text-muted-foreground">Loading customer...</p>
       </div>
     );
   }
@@ -122,7 +122,7 @@ export default function EditCustomerPage() {
       <div>
         <Link
           href={`/dashboard/customers/${customerId}`}
-          className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <svg
             className="mr-1 h-4 w-4"
@@ -139,10 +139,10 @@ export default function EditCustomerPage() {
           </svg>
           Back to Customer
         </Link>
-        <h1 className="mt-2 text-3xl font-bold text-gray-900">
+        <h1 className="mt-2 text-3xl font-bold text-foreground">
           Edit Customer
         </h1>
-        <p className="mt-1 text-gray-600">
+        <p className="mt-1 text-muted-foreground">
           {customer.first_name} {customer.last_name}
         </p>
       </div>
@@ -152,8 +152,8 @@ export default function EditCustomerPage() {
         className="space-y-6"
       >
         {/* Personal Information */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Personal Information
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -163,26 +163,26 @@ export default function EditCustomerPage() {
             >
               <input
                 {...register('first_name')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Last Name" error={errors.last_name?.message}>
               <input
                 {...register('last_name')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Date of Birth">
               <input
                 type="date"
                 {...register('date_of_birth')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Gender">
               <select
                 {...register('gender')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               >
                 <option value="">Select</option>
                 <option value="male">Male</option>
@@ -193,15 +193,15 @@ export default function EditCustomerPage() {
             <FormField label="National ID">
               <input
                 {...register('national_id')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
           </div>
         </div>
 
         {/* Contact */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Contact Information
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -209,75 +209,75 @@ export default function EditCustomerPage() {
               <input
                 {...register('phone_number')}
                 placeholder="+263XXXXXXXXX"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="WhatsApp Number" error={errors.whatsapp_number?.message}>
               <input
                 {...register('whatsapp_number')}
                 placeholder="+263XXXXXXXXX"
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Email" className="col-span-2" error={errors.email?.message}>
               <input
                 type="email"
                 {...register('email')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
           </div>
         </div>
 
         {/* Address */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Address
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Address Line 1" className="col-span-2">
               <input
                 {...register('address_line_1')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Address Line 2" className="col-span-2">
               <input
                 {...register('address_line_2')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="City">
               <input
                 {...register('city')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Province">
               <input
                 {...register('province')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Postal Code">
               <input
                 {...register('postal_code')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
           </div>
         </div>
 
         {/* Employment */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             Employment
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <FormField label="Employment Status">
               <select
                 {...register('employment_status')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               >
                 <option value="">Select</option>
                 <option value="employed">Employed</option>
@@ -289,7 +289,7 @@ export default function EditCustomerPage() {
             <FormField label="Employment Type">
               <input
                 {...register('employment_type')}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
             <FormField label="Monthly Income (USD)">
@@ -297,7 +297,7 @@ export default function EditCustomerPage() {
                 type="number"
                 step="0.01"
                 {...register('monthly_income_usd', { valueAsNumber: true })}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               />
             </FormField>
           </div>
@@ -307,7 +307,7 @@ export default function EditCustomerPage() {
         <div className="flex justify-end gap-3">
           <Link
             href={`/dashboard/customers/${customerId}`}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
           >
             Cancel
           </Link>
@@ -321,7 +321,7 @@ export default function EditCustomerPage() {
         </div>
 
         {updateMutation.isError && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-700">
+          <div className="rounded-lg bg-red-50 dark:bg-red-950 p-4 text-sm text-red-700">
             Failed to save changes. Please try again.
           </div>
         )}
@@ -343,7 +343,7 @@ function FormField({
 }) {
   return (
     <div className={className}>
-      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <label className="block text-sm font-medium text-foreground">{label}</label>
       {children}
       {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
     </div>

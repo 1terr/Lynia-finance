@@ -11,6 +11,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
   return (
     <div className="flex flex-wrap gap-3">
       <select
+        aria-label="Payment status"
         value={filters.status || ''}
         onChange={(e) =>
           onChange({
@@ -27,6 +28,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
       </select>
 
       <select
+        aria-label="Payment method"
         value={filters.payment_method || ''}
         onChange={(e) =>
           onChange({
@@ -43,6 +45,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
       </select>
 
       <select
+        aria-label="Payment type"
         value={filters.payment_type || ''}
         onChange={(e) =>
           onChange({
@@ -60,6 +63,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
 
       <input
         type="date"
+        aria-label="From date"
         value={filters.date_from || ''}
         onChange={(e) => onChange({ date_from: e.target.value || undefined })}
         className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
@@ -68,6 +72,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
 
       <input
         type="date"
+        aria-label="To date"
         value={filters.date_to || ''}
         onChange={(e) => onChange({ date_to: e.target.value || undefined })}
         className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"

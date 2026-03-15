@@ -54,8 +54,8 @@ export default function OrganizationsPage() {
       sortable: true,
       render: (row) => (
         <div>
-          <p className="font-medium text-gray-900">{row.org_name}</p>
-          <p className="text-xs font-mono text-gray-500">{row.org_code}</p>
+          <p className="font-medium text-foreground">{row.org_name}</p>
+          <p className="text-xs font-mono text-muted-foreground">{row.org_code}</p>
         </div>
       ),
     },
@@ -74,7 +74,7 @@ export default function OrganizationsPage() {
       sortable: true,
       render: (row) => (
         <div className="flex items-center gap-2">
-          <div className="h-2 w-16 rounded-full bg-gray-200">
+          <div className="h-2 w-16 rounded-full bg-muted">
             <div
               className="h-2 rounded-full bg-blue-500"
               style={{ width: `${row.scoring_trust_level}%` }}
@@ -93,7 +93,7 @@ export default function OrganizationsPage() {
     {
       key: 'last_data_import_at',
       header: 'Last Import',
-      render: (row) => row.last_data_import_at ? formatDate(row.last_data_import_at) : <span className="text-gray-400">Never</span>,
+      render: (row) => row.last_data_import_at ? formatDate(row.last_data_import_at) : <span className="text-muted-foreground">Never</span>,
     },
     {
       key: 'is_active',
@@ -114,8 +114,8 @@ export default function OrganizationsPage() {
             <ArrowLeft className="mr-1 h-4 w-4" /> Products
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Organizations</h1>
-            <p className="text-sm text-gray-500">Manage partner organizations for digital loan verification.</p>
+            <h1 className="text-2xl font-bold text-foreground">Organizations</h1>
+            <p className="text-sm text-muted-foreground">Manage partner organizations for digital loan verification.</p>
           </div>
         </div>
         <Button size="sm" onClick={() => setFormOpen(true)}>
@@ -124,13 +124,13 @@ export default function OrganizationsPage() {
       </div>
 
       <form onSubmit={handleSearch} className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search organizations..."
-          className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
       </form>
 

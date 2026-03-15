@@ -123,7 +123,7 @@ export function DeviceModelForm({ open, onClose, onSubmit, deviceModel, productD
         </div>
 
         {retail > 0 && wholesale > 0 && margin > 0 && (
-          <div className="rounded-md bg-green-50 px-4 py-2 text-sm text-green-800">
+          <div className="rounded-md bg-green-50 dark:bg-green-950 px-4 py-2 text-sm text-green-800">
             Margin: {formatCurrency(margin)} ({marginPct.toFixed(1)}%)
           </div>
         )}
@@ -151,7 +151,7 @@ export function DeviceModelForm({ open, onClose, onSubmit, deviceModel, productD
           />
         </div>
 
-        <div className="flex justify-end gap-3 border-t border-gray-200 pt-4">
+        <div className="flex justify-end gap-3 border-t border-border pt-4">
           <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
           <Button type="submit" isLoading={submitting}>{isEditing ? 'Update Phone Model' : 'Add Phone Model'}</Button>
         </div>
