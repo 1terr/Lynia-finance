@@ -15,9 +15,13 @@
 | Pages partial | 5 | 0 |
 | New pages added | — | +6 |
 | Backend handlers | ~55 | 133 |
-| New handlers this sprint | 0 | 38 |
-| Unit test files | ~80 | 129+ |
+| New handlers this sprint | 0 | 44 |
+| Unit test files | ~80 | 148+ |
+| Frontend test suites | 60 | 79 |
+| Frontend tests passing | 544 | 666 |
 | Error handling standardized | No | Yes |
+| Accessibility (WCAG 2.1 AA) | Not audited | eslint-plugin-jsx-a11y + jest-axe |
+| Component a11y fixes | 0 | 15 components |
 
 ---
 

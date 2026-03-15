@@ -1,8 +1,8 @@
 # Site Audit 1.5 — Progress Report
 
 **Date:** 2026-03-15
-**Status:** ALL PHASES COMPLETE — Production deploy confirmed @ 14:16 UTC
-**Stack:** `lynia-finance-prod` → `UPDATE_COMPLETE` | **Tests:** 2700/2700 | **Suites:** 121
+**Status:** ALL PHASES COMPLETE — Production deploy confirmed @ 14:38 UTC
+**Stack:** `lynia-finance-prod` → `UPDATE_COMPLETE` | **Backend Tests:** 2700+ | **Frontend Tests:** 666/666 (79 suites)
 
 ---
 
@@ -322,3 +322,102 @@ Executed using **4 parallel agents** to maximize throughput, with zero file conf
 | Production deploys | 1 | 1 | 1 | 1 | **4** |
 
 **Sprint outcome:** All P1, P2, and P3 items complete. Email notification channel, loan restructuring, and early payoff all shipped. Zero open error handling gaps. Production stack healthy.
+
+---
+
+## Phase 6: Frontend Gaps — Component Tests + Accessibility Audit — COMPLETE
+
+Executed using **4 parallel agents** to write 19 new test files, plus a fix agent for iteration.
+
+### Accessibility Tooling Installed
+
+| Item | Status |
+|------|--------|
+| `jest-axe` + `@types/jest-axe` — axe-core a11y checks in tests | Done |
+| `eslint-plugin-jsx-a11y` — lint-time a11y enforcement | Done |
+| `.eslintrc.json` — extended with `plugin:jsx-a11y/recommended` | Done |
+| `jest.setup.ts` — added `jest-axe/extend-expect` | Done |
+
+### New Test Files (19 files, 122 tests)
+
+| File | Tests | Category |
+|------|-------|----------|
+| `components/products/__tests__/organization-form.test.tsx` | 11 | Form validation, create/edit, a11y |
+| `components/products/__tests__/device-model-form.test.tsx` | 9 | Form validation, margins, a11y |
+| `components/products/__tests__/product-form.test.tsx` | 10 | Validation, rate calc, categories, a11y |
+| `components/payments/__tests__/RecordPaymentForm.test.tsx` | 7 | Form fields, validation, a11y |
+| `components/devices/__tests__/HandoverScheduleForm.test.tsx` | 8 | Form validation, submit/cancel, a11y |
+| `components/kyc-review/__tests__/KYCReviewCard.test.tsx` | 13 | Expand/collapse, approve/reject flow, a11y |
+| `components/kyc-review/__tests__/KYCQueueStats.test.tsx` | 4 | Stat cards, a11y |
+| `components/kyc-review/__tests__/KYCReviewFilters.test.tsx` | 6 | Filter dropdowns, callbacks, a11y |
+| `components/kyc-review/__tests__/SLAIndicator.test.tsx` | 5 | Full/compact mode, critical badge, a11y |
+| `components/kyc-review/__tests__/ReviewHistory.test.tsx` | 8 | Empty state, entries, reviewer, a11y |
+| `components/kyc-review/__tests__/DocumentViewer.test.tsx` | 5 | Image sections, alt text, a11y |
+| `components/dashboard/__tests__/Sidebar.test.tsx` | 8 | Nav items, permissions, user info, a11y |
+| `components/dashboard/__tests__/DashboardHeader.test.tsx` | 5 | Heading, bell button, avatar, a11y |
+| `components/payments/__tests__/PaymentSummaryCards.test.tsx` | 4 | Loading skeleton, cards, counts, a11y |
+| `components/payments/__tests__/PaymentFilters.test.tsx` | 7 | Filter controls, onChange, a11y |
+| `app/(dashboard)/__tests__/dashboard-page.test.tsx` | 2 | Smoke test + a11y |
+| `app/(dashboard)/customers/__tests__/customers-page.test.tsx` | 3 | Smoke + search + a11y |
+| `app/(dashboard)/payments/__tests__/payments-page.test.tsx` | 3 | Smoke + search + a11y |
+| `app/(auth)/login/__tests__/login-page.test.tsx` | 4 | Form fields, sign in, a11y |
+
+### Component A11y Fixes (~15 components)
+
+| Component | Fix |
+|-----------|-----|
+| `HandoverScheduleForm.tsx` | Added `htmlFor`/`id` to all 7 form labels |
+| `RecordPaymentForm.tsx` | Added `htmlFor`/`id` to 8 labels, `aria-label` to close button |
+| `PaymentFilters.tsx` | Added `aria-label` to 3 selects + 2 date inputs |
+| `KYCReviewFilters.tsx` | Added `aria-label` to 3 select elements |
+| `KYCReviewCard.tsx` | Added `htmlFor`/`id` to approval notes + rejection reason textareas |
+| `DashboardHeader.tsx` | Added `aria-label="Notifications"` to bell button |
+| `SLAIndicator.tsx` | Added `role="progressbar"` with ARIA value attributes |
+| `modal.tsx` | Added `role="presentation"` + `onKeyDown` to overlay, `aria-label` to close |
+| `card.tsx` | Fixed heading-has-content for `CardTitle` |
+| `Sidebar.tsx` | Added `role="presentation"` to mobile overlay |
+| `DocumentViewer.tsx` | Added `role="button"` + keyboard handlers to clickable image containers |
+| `product-form.tsx` | Replaced label+div with `fieldset`+`legend` for disbursement checkboxes |
+| `customers/kyc-review/_client.tsx` | Added `aria-hidden` to decorative icons |
+| `customers/_client.tsx` | Added `aria-label` to filter selects |
+| `payments/_client.tsx` | Added `aria-label` to filter selects |
+
+### Pre-existing Test Fixes (6 suites)
+
+| Test File | Fix |
+|-----------|-----|
+| `CustomerTable.test.tsx` | Updated phone assertions for masked format (`+263****567`) |
+| `PaymentTable.test.tsx` | Updated phone assertions for masked format |
+| `CustomerHeader.test.tsx` | Updated phone + national ID assertions for masked format |
+| `HandoverTracking.test.tsx` | Added `window.confirm` mock for cancel button |
+| `utils.test.ts` | Updated `truncateId` expected output to include `...` suffix |
+| `auth.test.ts` | Updated super_admin permission count (26 → 28) |
+
+### Shared Test Infrastructure Created
+
+| File | Purpose |
+|------|---------|
+| `src/test/helpers.tsx` | `renderWithProviders()` wrapper with QueryClient |
+| `src/test/mocks/kyc.ts` | KYC submission + manual review mocks |
+| `src/test/mocks/organizations.ts` | Organization mocks for form tests |
+
+### Phase 6 Deployment
+
+| Environment | Status | Run |
+|-------------|--------|-----|
+| Test & Build | ALL GREEN | Run 23112388884 |
+| Deploy to AWS (Staging) | ALL GREEN | Run 23112388893 |
+| Deploy Frontend (Production) | ALL GREEN | Run 23112388903 |
+
+### Updated Cumulative Sprint Metrics
+
+| Metric | Phase 1-2 | Phase 3 | Phase 4 | Phase 5 | Phase 6 | **Total** |
+|--------|-----------|---------|---------|---------|---------|-----------|
+| Backend handlers | 38 | 1 | 3 | 2 | 0 | **44** |
+| SAM events | 8 | 0 | 0 | 2 | 0 | **10** |
+| New tests | 222 | 74 | 21 | 44 | 122 | **483** |
+| Component a11y fixes | 0 | 0 | 0 | 0 | 15 | **15** |
+| Pre-existing test fixes | 0 | 0 | 0 | 0 | 6 | **6** |
+| Frontend test suites | 60 | 60 | 60 | 60 | 79 | **79** |
+| Frontend tests passing | 544 | 544 | 544 | 544 | 666 | **666** |
+| Production deploys | 1 | 1 | 1 | 1 | 1 | **5** |
