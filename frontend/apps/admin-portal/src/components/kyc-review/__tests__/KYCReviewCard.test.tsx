@@ -206,19 +206,12 @@ describe('KYCReviewCard', () => {
     const rejectButton = screen.getByRole('button', { name: /Reject/i });
     await user.click(rejectButton);
 
-    // Find and click a template button
-    const templateButtons = screen.getAllByRole('button').filter(
-      (btn) =>
-        btn.textContent &&
-        !btn.textContent.match(/^(Approve|Reject|Cancel|Confirm)/i)
-    );
+    // Click a specific template button by its exact text
+    const templateButton = screen.getByRole('button', { name: 'Document illegible' });
+    await user.click(templateButton);
 
-    if (templateButtons.length > 0) {
-      await user.click(templateButtons[0]);
-
-      const textarea = screen.getByRole('textbox');
-      expect((textarea as HTMLTextAreaElement).value).not.toBe('');
-    }
+    const textarea = screen.getByRole('textbox');
+    expect((textarea as HTMLTextAreaElement).value).toBe('Document illegible');
   });
 
   it('Confirm Rejection button is disabled when reason is empty', async () => {

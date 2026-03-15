@@ -87,8 +87,8 @@ describe('RecordPaymentForm', () => {
     const user = userEvent.setup();
     renderWithProviders(<RecordPaymentForm {...defaultProps} />);
 
-    const closeButton = screen.getByRole('button', { name: /close|cancel/i });
-    await user.click(closeButton);
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    await user.click(cancelButton);
 
     expect(defaultProps.onClose).toHaveBeenCalledTimes(1);
   });

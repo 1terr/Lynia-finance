@@ -106,7 +106,7 @@ describe('DeviceModelForm', () => {
 
     const wholesaleInput = screen.getByLabelText(/wholesale.*price/i);
     await user.clear(wholesaleInput);
-    await user.type(wholesaleInput, '-5');
+    await user.type(wholesaleInput, '0');
 
     const submitButton = screen.getByRole('button', { name: /save|submit|create|add/i });
     await user.click(submitButton);
