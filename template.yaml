@@ -1129,6 +1129,18 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/kyc/submissions/{proxy+}
             Method: ANY
+        PaymentsAdminRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/payments
+            Method: ANY
+        PaymentsAdminProxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/payments/{proxy+}
+            Method: ANY
         CustomersRoot:
           Type: Api
           Properties:

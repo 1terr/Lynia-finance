@@ -48,6 +48,9 @@ import { handleGetKYCPending, handleGetKYCReviewHistory, handleGetKYCSLAStats, h
 // ─── Customers ───
 import { handleGetCustomers, handleGetCustomerById, handleUpdateCustomerStatus, handleGetCustomerLoans, handleGetCustomerPayments, handleGetCustomerCreditScore, handleGetCreditScoreHistory, handleGetCustomerKYC, handleGetCustomerTimeline, handleAddCustomerNote } from './handlers/customers';
 
+// ─── Payments Admin ───
+import { handleGetPayments, handleGetPaymentStats, handleGetUnreconciledPayments, handleGetOverdueCollections, handleGetPaymentSummary, handleRecordManualPayment, handleGetPaymentById, handleConfirmPayment, handleFailPayment, handleRetryPayment, handleRefundPayment, handleReconcilePayment } from './handlers/payments';
+
 // ─── Route Map ───
 // Static paths MUST come before parameterized paths of the same segment
 // length so the router matches exact segments first.
@@ -143,6 +146,20 @@ export const handler = createRouter({
   'GET /api/v1/kyc/submissions/sla-stats':        handleGetKYCSLAStats,
   'POST /api/v1/kyc/submissions/:id/approve':     handleApproveKYC,
   'POST /api/v1/kyc/submissions/:id/reject':      handleRejectKYC,
+
+  // Payments Admin (static before parameterized)
+  'GET /api/v1/payments/stats':               handleGetPaymentStats,
+  'GET /api/v1/payments/unreconciled':        handleGetUnreconciledPayments,
+  'GET /api/v1/payments/overdue-collections': handleGetOverdueCollections,
+  'GET /api/v1/payments/summary':             handleGetPaymentSummary,
+  'POST /api/v1/payments/manual':             handleRecordManualPayment,
+  'GET /api/v1/payments':                     handleGetPayments,
+  'POST /api/v1/payments/:id/confirm':        handleConfirmPayment,
+  'POST /api/v1/payments/:id/fail':           handleFailPayment,
+  'POST /api/v1/payments/:id/retry':          handleRetryPayment,
+  'POST /api/v1/payments/:id/refund':         handleRefundPayment,
+  'POST /api/v1/payments/:id/reconcile':      handleReconcilePayment,
+  'GET /api/v1/payments/:id':                 handleGetPaymentById,
 
   // Customers (sub-routes before single-ID routes)
   'GET /api/v1/customers':                              handleGetCustomers,
