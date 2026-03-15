@@ -14,7 +14,7 @@ import logger from '../../../shared/utils/logger';
 
 // ─── Shared filter builder ───
 
-function buildDateFilters(qs: Record<string, string | undefined>, paramIdx: number) {
+function _buildDateFilters(qs: Record<string, string | undefined>, paramIdx: number) {
   const conditions: string[] = [];
   const values: unknown[] = [];
   let idx = paramIdx;
