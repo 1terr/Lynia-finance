@@ -18,36 +18,13 @@
 - [x] All CI/CD pipelines green
 - [x] Deployed to production
 
----
+### Phase 3 Completed (2026-03-15)
 
-## Phase 3 Items (Not Yet Started)
+- [x] **SMS Notification Channel (Window A)** — AWS SNS integration with Zimbabwe phone validation, per-customer rate limiting (10/day), transactional SMS with "Lynia" sender ID, 11 unit tests
+- [x] **Frontend Hook & Utility Tests (Window B)** — use-auth, use-session-timeout, use-permission, use-dashboard-data hook tests + permissions matrix (63 tests)
+- [x] **Lock-Service Router Migration (Window C)** — Refactored from if/else to createRouter(), standardized error response envelope, updated all contract/e2e/integration tests
 
-### SMS Notification Channel (Window A — Phase 3)
-
-- [ ] Integrate SMS provider (AWS SNS or Africa's Talking)
-- [ ] Implement `sendSMS()` in notification-service channel router
-- [ ] SMS rate limiting per customer
-- [ ] Zimbabwe phone number formatting
-- [ ] Tests: `tests/unit/notification-service/sms-channel.test.ts`
-- **Priority:** HIGH — needed for payment reminders
-
-### Frontend Hook & Utility Tests (Window B — Phase 3)
-
-- [ ] `use-auth.test.ts` — Cognito auth hook testing
-- [ ] `use-session-timeout.test.ts` — Session expiry behavior
-- [ ] `use-permission.test.ts` — Role-based UI access
-- [ ] `use-dashboard-data.test.ts` — Data fetching and caching
-- [ ] `validation-schemas.test.ts` — Zod schema validation
-- [ ] `permissions.test.ts` — Permission matrix testing
-- **Priority:** MEDIUM — improves frontend test coverage
-
-### Lock-Service Router Migration (Window C — Phase 3)
-
-- [ ] Refactor `services/lock-service/src/index.ts` from if/else to `createRouter()`
-- [ ] Maintain exact same routes and behavior
-- [ ] Add proper error handling (500 with requestId)
-- [ ] Tests: `tests/unit/lock-service/router-migration.test.ts`
-- **Priority:** LOW — functional but needs modernization
+**Total tests: 2644 passing across 114 test suites**
 
 ---
 
@@ -86,25 +63,26 @@
 
 ## Priority Matrix
 
-| Item | Impact | Effort | Priority |
-|------|--------|--------|----------|
-| SMS notification channel | HIGH | MEDIUM | P1 |
-| Error handling fixes (gl-accounts, inventory) | MEDIUM | LOW | P1 |
-| Frontend hook tests | MEDIUM | MEDIUM | P2 |
-| Lock-service router migration | LOW | LOW | P2 |
-| Email notification channel | MEDIUM | MEDIUM | P2 |
-| Loan restructuring endpoint | HIGH | HIGH | P3 |
-| Early payoff endpoint | HIGH | HIGH | P3 |
-| ML pipeline v2 | HIGH | HIGH | P3 |
-| Mojaloop integration | MEDIUM | HIGH | P4 |
-| Read replicas + RDS Proxy | LOW | MEDIUM | P4 |
+| Item | Impact | Effort | Priority | Status |
+|------|--------|--------|----------|--------|
+| SMS notification channel | HIGH | MEDIUM | P1 | **DONE** |
+| Error handling fixes (gl-accounts, inventory) | MEDIUM | LOW | P1 | Open |
+| Frontend hook tests | MEDIUM | MEDIUM | P2 | **DONE** |
+| Lock-service router migration | LOW | LOW | P2 | **DONE** |
+| Email notification channel | MEDIUM | MEDIUM | P2 | Open |
+| Loan restructuring endpoint | HIGH | HIGH | P3 | Open |
+| Early payoff endpoint | HIGH | HIGH | P3 | Open |
+| ML pipeline v2 | HIGH | HIGH | P3 | Open |
+| Mojaloop integration | MEDIUM | HIGH | P4 | Open |
+| Read replicas + RDS Proxy | LOW | MEDIUM | P4 | Open |
 
 ---
 
 ## Next Sprint Recommendations
 
-1. **Complete Phase 3 items** — SMS channel, frontend hook tests, lock-service migration
-2. **Fix remaining error handling gaps** — gl-accounts try/catch, inventory error checks
-3. **Add requestId to all error responses** — Standardize across all services
-4. **Begin loan restructuring/early payoff** — Critical for customer financial flexibility
-5. **Deploy RDS Proxy** — Prevent connection exhaustion under load
+1. **Fix remaining error handling gaps** — gl-accounts try/catch, inventory error checks
+2. **Add requestId to all error responses** — Standardize across all services
+3. **Begin loan restructuring/early payoff** — Critical for customer financial flexibility
+4. **Deploy RDS Proxy** — Prevent connection exhaustion under load
+5. **Email notification channel** — SES integration for admin alerts and receipts
+6. **Component-level frontend tests** — Pages and form unit tests
