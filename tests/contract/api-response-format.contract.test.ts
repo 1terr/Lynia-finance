@@ -424,8 +424,9 @@ describe('Cross-Service API Response Format Contract Tests', () => {
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error');
-      expect(body).toHaveProperty('required');
-      expect(Array.isArray((body as Record<string, unknown>).required)).toBe(true);
+      const details = (body as Record<string, unknown>).details as Record<string, unknown> | undefined;
+      expect(details).toHaveProperty('required');
+      expect(Array.isArray(details!.required)).toBe(true);
     });
 
     it('scoring-service: validation error includes descriptive message', async () => {
