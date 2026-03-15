@@ -75,9 +75,9 @@ describe('PaymentTable', () => {
   it('shows customer phone numbers', () => {
     render(<PaymentTable {...defaultProps} />);
 
-    // Phone appears multiple times for same customer across payments
-    expect(screen.getAllByText('+263771234567').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('+263779876543')).toBeInTheDocument();
+    // Phone numbers are masked for privacy
+    expect(screen.getAllByText('+263****567').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('+263****543')).toBeInTheDocument();
   });
 
   it('calls onPageChange when clicking pagination', () => {

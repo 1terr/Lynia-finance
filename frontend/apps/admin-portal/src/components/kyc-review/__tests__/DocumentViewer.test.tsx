@@ -5,8 +5,8 @@ import { DocumentViewer } from '@/components/kyc-review/DocumentViewer';
 jest.mock('next/image', () => ({
   __esModule: true,
   default: (props: Record<string, unknown>) => {
-    const { fill, ...rest } = props;
-    return <img {...rest} data-fill={fill ? 'true' : undefined} />;
+    const { fill, alt, ...rest } = props;
+    return <img {...rest} alt={(alt as string) || ''} data-fill={fill ? 'true' : undefined} />;
   },
 }));
 

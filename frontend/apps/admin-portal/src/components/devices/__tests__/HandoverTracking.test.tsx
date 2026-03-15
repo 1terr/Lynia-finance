@@ -58,12 +58,14 @@ describe('HandoverTracking', () => {
     expect(onUpdateStatus).toHaveBeenCalledWith('ho-001', 'identity_verified');
   });
 
-  it('calls onCancel when cancel is clicked', () => {
+  it('calls onCancel when cancel is clicked and confirmed', () => {
     const onCancel = jest.fn();
+    jest.spyOn(window, 'confirm').mockReturnValue(true);
     render(<HandoverTracking {...defaultProps} onCancel={onCancel} />);
     const cancelButtons = screen.getAllByText('Cancel');
     fireEvent.click(cancelButtons[0]);
     expect(onCancel).toHaveBeenCalledWith('ho-001');
+    (window.confirm as jest.Mock).mockRestore();
   });
 
   it('shows empty state when no handovers', () => {

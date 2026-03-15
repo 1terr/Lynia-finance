@@ -33,15 +33,15 @@ describe('CustomerHeader', () => {
   it('shows contact information', () => {
     render(<CustomerHeader customer={mockCustomerWithRelations} />);
 
-    // Phone appears in both Phone and WhatsApp fields
-    expect(screen.getAllByText('+263771234567').length).toBeGreaterThanOrEqual(1);
+    // Phone numbers are masked for privacy
+    expect(screen.getAllByText('+263****567').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('john.moyo@example.com')).toBeInTheDocument();
   });
 
-  it('shows national ID', () => {
+  it('shows national ID (masked)', () => {
     render(<CustomerHeader customer={mockCustomerWithRelations} />);
 
-    expect(screen.getByText('63-1234567-A-01')).toBeInTheDocument();
+    expect(screen.getByText('63******01')).toBeInTheDocument();
   });
 
   it('shows blocked badge when customer is blocked', () => {

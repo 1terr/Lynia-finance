@@ -122,9 +122,9 @@
 | Severity | Issue | Service | Status |
 |----------|-------|---------|--------|
 | HIGH | Raw `e.message` leaked to client | fineract-proxy (loan-actions) | FIXED — `handleFineractError()` added |
-| HIGH | Missing try/catch on Fineract calls | fineract-proxy (gl-accounts) | Documented |
-| HIGH | DB operations without error checks | admin-service (inventory-adjustments) | Documented |
-| MEDIUM | Missing `requestId` in 500 responses | admin-service (all payment handlers) | Documented — non-breaking |
+| HIGH | Missing try/catch on Fineract calls | fineract-proxy (gl-accounts) | FIXED — try/catch + FineractApiError + 502/504/500 (9 tests) |
+| HIGH | DB operations without error checks | admin-service (inventory-adjustments) | FIXED — `.execute()` error checks on all 3 DB writes (3 tests) |
+| MEDIUM | Missing `requestId` in 500 responses | payment-service (7 handler files) | FIXED — `errorResponse()` + requestId across all handlers (9 tests) |
 | MEDIUM | Error logging without PII sanitization | Multiple services | Documented |
 
 ### Error Response Standards (Enforced)

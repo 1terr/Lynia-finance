@@ -69,6 +69,9 @@ export function DocumentViewer({
           <div
             className="relative aspect-[1.6/1] overflow-hidden rounded-lg border border-border bg-muted cursor-pointer group"
             onClick={() => openFullscreen(idDocumentUrl)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFullscreen(idDocumentUrl); } }}
           >
             <Image
               src={idDocumentUrl}
@@ -94,6 +97,9 @@ export function DocumentViewer({
           <div
             className="relative aspect-square max-w-[200px] overflow-hidden rounded-lg border border-border bg-muted cursor-pointer group"
             onClick={() => openFullscreen(selfieUrl)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openFullscreen(selfieUrl); } }}
           >
             <Image
               src={selfieUrl}
@@ -114,11 +120,13 @@ export function DocumentViewer({
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/80"
           onClick={closeFullscreen}
+          role="presentation"
         >
           {/* Toolbar */}
           <div
             className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-lg bg-card/90 px-3 py-2 shadow-lg backdrop-blur z-10"
             onClick={(e) => e.stopPropagation()}
+            role="toolbar"
           >
             <Button variant="ghost" size="sm" onClick={handleZoomIn}>
               <ZoomIn className="h-4 w-4" />
@@ -143,6 +151,7 @@ export function DocumentViewer({
           <div
             className="relative max-w-[90vw] max-h-[85vh] overflow-auto"
             onClick={(e) => e.stopPropagation()}
+            role="toolbar"
           >
             <Image
               src={fullscreenImage}

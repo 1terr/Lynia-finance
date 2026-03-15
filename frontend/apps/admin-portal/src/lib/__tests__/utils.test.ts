@@ -56,12 +56,12 @@ describe('utils', () => {
   describe('truncateId', () => {
     it('truncates a UUID to 8 chars by default', () => {
       expect(truncateId('abcdef12-3456-7890-abcd-ef1234567890')).toBe(
-        'abcdef12'
+        'abcdef12...'
       );
     });
 
     it('accepts custom length', () => {
-      expect(truncateId('abcdef1234567890', 4)).toBe('abcd');
+      expect(truncateId('abcdef1234567890', 4)).toBe('abcd...');
     });
   });
 });

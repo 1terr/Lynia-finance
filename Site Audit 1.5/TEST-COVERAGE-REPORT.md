@@ -102,9 +102,48 @@ Deploy:      SUCCESS (staging + production)
 
 ---
 
-## Gaps Identified
+### Error Handling Gap Fixes (Phase 4)
 
-1. **Frontend component tests** — UI components (pages, forms, tables) lack unit tests. Only API client layer is tested.
-2. **Frontend hook tests** — `useAuth`, `useSessionTimeout`, `usePermission`, `useDashboardData` need tests (Phase 3 Window B task).
-3. **Lock-service router migration tests** — Planned for Phase 3 Window C.
-4. **SMS notification channel tests** — Planned for Phase 3 Window A.
+| File | Tests | Coverage Area |
+|------|-------|---------------|
+| `tests/unit/fineract-proxy/gl-accounts-error-handling.test.ts` | 9 | FineractApiError → 502, generic Error → 500, no stack trace leaks |
+| `tests/unit/admin/inventory-management.test.ts` (+3) | 3 | DB failure on device update, approval update, rejection update → 500 |
+| `tests/unit/payment-service/error-responses.test.ts` | 9 | requestId in 500/400 responses for all 7 payment handlers |
+
+### Phase 3 — SMS, Hooks, Lock-Service, Frontend Components
+
+| File | Tests | Coverage Area |
+|------|-------|---------------|
+| `tests/unit/notification/sms-channel.test.ts` | 11 | AWS SNS, Zimbabwe phone validation, rate limiting |
+| `frontend/.../__tests__/hooks/*.test.ts` | 63 | useAuth, useSessionTimeout, usePermission, useDashboardData, permissions matrix |
+| `tests/unit/lock-service/router-migration.test.ts` | ~15 | createRouter() migration, error envelope, 404 unknown routes |
+| `tests/unit/notification/email-channel.test.ts` | varies | Email channel placeholder tests |
+| `frontend/.../components/__tests__/*.test.ts` | varies | DashboardHeader, Sidebar, payment/KYC/product forms |
+
+---
+
+## Updated Test Suite Totals
+
+### All Tests Added in Site Audit 1.5
+
+| Category | Files | Tests |
+|----------|-------|-------|
+| Backend unit tests (Phase 1-2) | 7 | ~156 |
+| Frontend API tests (Phase 1-2) | 4 | 61 |
+| Backend error audit (Phase 1-2) | 1 | 30 |
+| Phase 3 — SMS, hooks, lock-service | 4+ | ~89 |
+| Phase 4 — Error handling fixes | 3 | 21 |
+| Frontend component tests | 15+ | varies |
+| **Total new** | **34+** | **~357+** |
+
+### Full Test Suite (Post-Sprint)
+
+**2665 tests passing across 117 test suites**
+
+---
+
+## Remaining Gaps
+
+1. **Frontend component tests** — Many pages and forms still lack unit tests. Coverage improving but not complete.
+2. **Accessibility audit** — WCAG 2.1 AA compliance not verified.
+3. **i18n tests** — No Shona/Ndebele translation tests (translations not yet implemented).

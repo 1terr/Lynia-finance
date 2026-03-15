@@ -336,8 +336,8 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
 
         {category === 'digital' && (
           <>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">Disbursement Methods</label>
+            <fieldset>
+              <legend className="block text-sm font-medium text-foreground mb-2">Disbursement Methods</legend>
               <div className="flex gap-3">
                 {DISBURSEMENT_OPTIONS.map((method) => (
                   <label key={method} className="flex items-center gap-2 text-sm">
@@ -351,7 +351,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
                   </label>
                 ))}
               </div>
-            </div>
+            </fieldset>
             <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"

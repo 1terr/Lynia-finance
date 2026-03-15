@@ -503,7 +503,7 @@ export default function KYCReviewPage() {
                   </p>
                   <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-8">
                     <div className="text-center">
-                      <Image className="mx-auto h-10 w-10 text-gray-300" />
+                      <Image className="mx-auto h-10 w-10 text-gray-300" aria-hidden="true" />
                       <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
                         {docViewerSubmission.id_document_front_url}
                       </p>
@@ -520,7 +520,7 @@ export default function KYCReviewPage() {
                   </p>
                   <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-8">
                     <div className="text-center">
-                      <Image className="mx-auto h-10 w-10 text-gray-300" />
+                      <Image className="mx-auto h-10 w-10 text-gray-300" aria-hidden="true" />
                       <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
                         {docViewerSubmission.id_document_back_url}
                       </p>
@@ -537,7 +537,7 @@ export default function KYCReviewPage() {
                   </p>
                   <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted p-8">
                     <div className="text-center">
-                      <Image className="mx-auto h-10 w-10 text-gray-300" />
+                      <Image className="mx-auto h-10 w-10 text-gray-300" aria-hidden="true" />
                       <p className="mt-2 text-xs text-muted-foreground font-mono break-all">
                         {docViewerSubmission.selfie_url}
                       </p>
@@ -550,7 +550,7 @@ export default function KYCReviewPage() {
                 !docViewerSubmission.id_document_back_url &&
                 !docViewerSubmission.selfie_url && (
                   <div className="text-center py-8">
-                    <Image className="mx-auto h-12 w-12 text-gray-300" />
+                    <Image className="mx-auto h-12 w-12 text-gray-300" aria-hidden="true" />
                     <p className="mt-2 text-sm text-muted-foreground">No documents uploaded for this submission.</p>
                   </div>
                 )}

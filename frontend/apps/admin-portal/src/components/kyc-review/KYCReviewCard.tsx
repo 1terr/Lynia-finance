@@ -266,10 +266,11 @@ export function KYCReviewCard({
                   <>
                     {/* Approval Notes */}
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label htmlFor="kyc-approval-notes" className="block text-xs font-medium text-muted-foreground mb-1">
                         Notes (optional)
                       </label>
                       <textarea
+                        id="kyc-approval-notes"
                         rows={2}
                         maxLength={1000}
                         value={approvalNotes}
@@ -318,10 +319,11 @@ export function KYCReviewCard({
                   <>
                     {/* Rejection Reason */}
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1">
+                      <label htmlFor="kyc-rejection-reason" className="block text-xs font-medium text-muted-foreground mb-1">
                         Rejection Reason <span className="text-red-500">*</span>
                       </label>
                       <textarea
+                        id="kyc-rejection-reason"
                         rows={3}
                         maxLength={1000}
                         value={rejectionReason}

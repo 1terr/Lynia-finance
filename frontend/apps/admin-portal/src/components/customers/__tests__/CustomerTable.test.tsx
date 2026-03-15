@@ -23,8 +23,8 @@ describe('CustomerTable', () => {
   it('displays customer phone numbers', () => {
     render(<CustomerTable {...defaultProps} />);
 
-    expect(screen.getByText('+263771234567')).toBeInTheDocument();
-    expect(screen.getByText('+263779876543')).toBeInTheDocument();
+    expect(screen.getByText('+263****567')).toBeInTheDocument();
+    expect(screen.getByText('+263****543')).toBeInTheDocument();
   });
 
   it('shows KYC status badges', () => {
