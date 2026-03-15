@@ -63,9 +63,9 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-white shadow">
+      <div className="rounded-lg bg-card shadow">
         <div className="flex h-64 items-center justify-center">
-          <p className="text-sm text-gray-500">Loading collections queue...</p>
+          <p className="text-sm text-muted-foreground">Loading collections queue...</p>
         </div>
       </div>
     );
@@ -73,12 +73,12 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-12 text-center shadow">
+      <div className="rounded-lg bg-card p-12 text-center shadow">
         <div className="text-4xl">&#10003;</div>
-        <p className="mt-4 text-lg font-medium text-gray-900">
+        <p className="mt-4 text-lg font-medium text-foreground">
           No overdue loans
         </p>
-        <p className="mt-1 text-gray-500">
+        <p className="mt-1 text-muted-foreground">
           All active loans are current on payments
         </p>
       </div>
@@ -93,10 +93,10 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by customer name or phone..."
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:w-72"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:w-72"
         />
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">Sort by:</span>
+          <span className="text-xs text-muted-foreground">Sort by:</span>
           {([
             { key: 'priority' as const, label: 'Priority' },
             { key: 'days_overdue' as const, label: 'Days Overdue' },
@@ -108,7 +108,7 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
               className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
                 sortBy === key
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-muted text-muted-foreground hover:bg-accent'
               }`}
             >
               {label}
@@ -118,46 +118,46 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
       </div>
 
       {processedItems.length === 0 ? (
-        <div className="rounded-lg bg-white p-8 text-center shadow">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-lg bg-card p-8 text-center shadow">
+          <p className="text-sm text-muted-foreground">
             No collections match your search.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-hidden rounded-lg bg-card shadow">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Priority
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Amount Due
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Days Overdue
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Missed
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Last Payment
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {processedItems.map((item) => {
                 const priorityInfo = priorityMap[item.priority] || priorityMap.low;
                 return (
                   <tr
                     key={item.id}
-                    className={`hover:bg-gray-50 ${
+                    className={`hover:bg-accent ${
                       item.priority === 'critical' ? 'bg-red-50' : ''
                     }`}
                   >
@@ -178,7 +178,7 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
                       >
                         {item.customer_name}
                       </Link>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {maskPhone(item.customer_phone)}
                       </div>
                     </td>
@@ -192,16 +192,16 @@ export function CollectionsQueue({ items, isLoading }: CollectionsQueueProps) {
                             ? 'text-red-600'
                             : item.days_overdue >= 30
                               ? 'text-yellow-600'
-                              : 'text-gray-900'
+                              : 'text-foreground'
                         }`}
                       >
                         {item.days_overdue} days
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-foreground">
                       {item.missed_payments}
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                       {item.last_payment_date
                         ? formatDate(item.last_payment_date)
                         : 'Never'}

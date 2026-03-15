@@ -42,8 +42,8 @@ export function DeviceTable({
   return (
     <div>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
               {onSelectDevice && (
                 <th className="px-4 py-3 w-10">
@@ -51,59 +51,59 @@ export function DeviceTable({
                     type="checkbox"
                     checked={allSelected}
                     onChange={onSelectAll}
-                    className="rounded border-gray-300"
+                    className="rounded border-border"
                     aria-label="Select all devices"
                   />
                 </th>
               )}
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Device</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">SKU / IMEI</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lock</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Distributor</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Device</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">SKU / IMEI</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Price</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Lock</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Distributor</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-card divide-y divide-border">
             {devices.map((device) => {
               const statusInfo = statusConfig[device.status] || { label: device.status, variant: 'gray' as const };
               return (
-                <tr key={device.id} className="hover:bg-gray-50">
+                <tr key={device.id} className="hover:bg-accent">
                   {onSelectDevice && (
                     <td className="px-4 py-3">
                       <input
                         type="checkbox"
                         checked={selectedDevices.includes(device.id)}
                         onChange={() => onSelectDevice(device.id)}
-                        className="rounded border-gray-300"
+                        className="rounded border-border"
                         aria-label={`Select ${device.brand} ${device.model}`}
                       />
                     </td>
                   )}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                      <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-xs font-medium text-muted-foreground">
                         {device.brand.slice(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{device.brand} {device.model}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium text-foreground">{device.brand} {device.model}</p>
+                        <p className="text-xs text-muted-foreground">
                           {device.storage_gb ? `${device.storage_gb}GB` : ''}{device.ram_gb ? ` / ${device.ram_gb}GB RAM` : ''}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-sm text-gray-900">{device.sku}</p>
-                    <p className="text-xs text-gray-500">{device.imei || 'No IMEI'}</p>
+                    <p className="text-sm text-foreground">{device.sku}</p>
+                    <p className="text-xs text-muted-foreground">{device.imei || 'No IMEI'}</p>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-sm font-medium text-gray-900">{formatCurrency(device.financing_price)}</p>
-                    <p className="text-xs text-gray-500">Retail: {formatCurrency(device.retail_price)}</p>
+                    <p className="text-sm font-medium text-foreground">{formatCurrency(device.financing_price)}</p>
+                    <p className="text-xs text-muted-foreground">Retail: {formatCurrency(device.retail_price)}</p>
                   </td>
                   <td className="px-4 py-3">
                     {device.lock_enabled ? (
@@ -112,15 +112,15 @@ export function DeviceTable({
                         Enabled
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                        <span className="w-2 h-2 rounded-full bg-gray-300" />
+                      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <span className="w-2 h-2 rounded-full bg-muted" />
                         Disabled
                       </span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <p className="text-sm text-gray-900">{device.distributors?.business_name || '—'}</p>
-                    <p className="text-xs text-gray-500">{device.warehouse_location || ''}</p>
+                    <p className="text-sm text-foreground">{device.distributors?.business_name || '—'}</p>
+                    <p className="text-xs text-muted-foreground">{device.warehouse_location || ''}</p>
                   </td>
                   <td className="px-4 py-3">
                     <Link
@@ -135,7 +135,7 @@ export function DeviceTable({
             })}
             {devices.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
                   No devices found
                 </td>
               </tr>

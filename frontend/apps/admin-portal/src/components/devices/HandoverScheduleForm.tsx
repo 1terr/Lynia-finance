@@ -40,83 +40,83 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
     formData.distributor_id && formData.scheduled_date && formData.scheduled_time;
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">Schedule Device Handover</h3>
+    <form onSubmit={handleSubmit} className="bg-card rounded-lg border border-border p-4 space-y-4">
+      <h3 className="text-sm font-semibold text-foreground">Schedule Device Handover</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Loan ID</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Loan ID</label>
           <input
             type="text"
             value={formData.loan_id}
             onChange={(e) => handleChange('loan_id', e.target.value)}
             placeholder="Enter loan ID"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Customer ID</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Customer ID</label>
           <input
             type="text"
             value={formData.customer_id}
             onChange={(e) => handleChange('customer_id', e.target.value)}
             placeholder="Enter customer ID"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Device ID</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Device ID</label>
           <input
             type="text"
             value={formData.device_id}
             onChange={(e) => handleChange('device_id', e.target.value)}
             placeholder="Enter device ID"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Distributor ID</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Distributor ID</label>
           <input
             type="text"
             value={formData.distributor_id}
             onChange={(e) => handleChange('distributor_id', e.target.value)}
             placeholder="Enter distributor ID"
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Date</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Scheduled Date</label>
           <input
             type="date"
             value={formData.scheduled_date}
             onChange={(e) => handleChange('scheduled_date', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             required
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Scheduled Time</label>
+          <label className="block text-sm font-medium text-foreground mb-1">Scheduled Time</label>
           <input
             type="time"
             value={formData.scheduled_time}
             onChange={(e) => handleChange('scheduled_time', e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             required
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+        <label className="block text-sm font-medium text-foreground mb-1">Notes (optional)</label>
         <textarea
           value={formData.notes}
           onChange={(e) => handleChange('notes', e.target.value)}
           placeholder="Additional notes..."
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm"
           rows={2}
           maxLength={1000}
         />
@@ -133,7 +133,7 @@ export function HandoverScheduleForm({ onSubmit, onCancel, isLoading }: Handover
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 bg-white text-gray-700 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+          className="px-4 py-2 bg-card text-foreground text-sm rounded-md border border-border hover:bg-accent"
         >
           Cancel
         </button>

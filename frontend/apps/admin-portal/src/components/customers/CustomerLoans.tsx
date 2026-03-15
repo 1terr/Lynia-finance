@@ -25,78 +25,78 @@ const loanStatusMap: Record<string, { variant: 'green' | 'yellow' | 'blue' | 're
 export function CustomerLoans({ loans, detailed = false }: CustomerLoansProps) {
   if (!loans || loans.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold text-gray-900">Loan History</h2>
+      <div className="rounded-lg bg-card p-6 shadow">
+        <h2 className="text-lg font-semibold text-foreground">Loan History</h2>
         <div className="mt-4 flex h-32 items-center justify-center">
-          <p className="text-sm text-gray-500">No loans found</p>
+          <p className="text-sm text-muted-foreground">No loans found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h2 className="text-lg font-semibold text-gray-900">
+    <div className="rounded-lg bg-card p-6 shadow">
+      <h2 className="text-lg font-semibold text-foreground">
         Loan History ({loans.length})
       </h2>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Loan ID
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Principal
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Monthly
               </th>
               {detailed && (
                 <>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                     Outstanding
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                     Paid
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                     Missed
                   </th>
                 </>
               )}
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Created
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {loans.map((loan) => {
               const statusInfo = loanStatusMap[loan.status] || loanStatusMap.draft;
               return (
-                <tr key={loan.id} className="hover:bg-gray-50">
+                <tr key={loan.id} className="hover:bg-accent">
                   <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-primary-600">
                     {loan.id.slice(0, 8)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                     {formatCurrency(loan.principal)}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
                     <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                     {formatCurrency(loan.monthly_payment)}
                   </td>
                   {detailed && (
                     <>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                         {formatCurrency(loan.outstanding_principal + loan.outstanding_interest)}
                       </td>
-                      <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                      <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                         {formatCurrency(loan.total_paid)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm">
@@ -104,7 +104,7 @@ export function CustomerLoans({ loans, detailed = false }: CustomerLoansProps) {
                           className={
                             loan.missed_payments > 0
                               ? 'font-medium text-red-600'
-                              : 'text-gray-900'
+                              : 'text-foreground'
                           }
                         >
                           {loan.missed_payments}
@@ -112,7 +112,7 @@ export function CustomerLoans({ loans, detailed = false }: CustomerLoansProps) {
                       </td>
                     </>
                   )}
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {formatDate(loan.created_at)}
                   </td>
                 </tr>

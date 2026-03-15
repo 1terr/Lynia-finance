@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { formatCurrency } from '@lynia/utils';
+import { useChartTheme } from '@/hooks/use-chart-theme';
 import { BarChart3 } from 'lucide-react';
 import type { DailyTrend } from '@/types';
 
@@ -21,6 +22,7 @@ interface TrendChartProps {
 }
 
 export function TrendChart({ data, title = 'Disbursements & Collections' }: TrendChartProps) {
+  const chart = useChartTheme();
   const formattedData = data.map((item) => ({
     ...item,
     date: new Date(item.date).toLocaleDateString('en-US', {
@@ -37,10 +39,10 @@ export function TrendChart({ data, title = 'Disbursements & Collections' }: Tren
       <CardContent>
         {data.length === 0 ? (
           <div className="flex h-[300px] flex-col items-center justify-center gap-3 text-center">
-            <BarChart3 className="h-10 w-10 text-gray-300" />
+            <BarChart3 className="h-10 w-10 text-muted-foreground" />
             <div>
-              <p className="text-sm font-medium text-gray-500">No data available</p>
-              <p className="mt-1 text-xs text-gray-400">
+              <p className="text-sm font-medium text-muted-foreground">No data available</p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Trend data will appear here once disbursements or collections are recorded.
               </p>
             </div>
@@ -62,15 +64,15 @@ export function TrendChart({ data, title = 'Disbursements & Collections' }: Tren
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.grid} />
                 <XAxis
                   dataKey="date"
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  tick={{ fontSize: 12, fill: chart.axis }}
                   tickLine={false}
-                  axisLine={{ stroke: '#e5e7eb' }}
+                  axisLine={{ stroke: chart.grid }}
                 />
                 <YAxis
-                  tick={{ fontSize: 12, fill: '#6b7280' }}
+                  tick={{ fontSize: 12, fill: chart.axis }}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `$${value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}`}
@@ -80,10 +82,11 @@ export function TrendChart({ data, title = 'Disbursements & Collections' }: Tren
                     formatCurrency(value),
                     name === 'disbursements' ? 'Disbursements' : 'Collections',
                   ]}
-                  labelStyle={{ color: '#374151' }}
+                  labelStyle={{ color: chart.tooltipText }}
                   contentStyle={{
                     borderRadius: '8px',
-                    border: '1px solid #e5e7eb',
+                    border: `1px solid ${chart.tooltipBorder}`,
+                    backgroundColor: chart.tooltipBg,
                     boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                   }}
                 />

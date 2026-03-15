@@ -17,7 +17,7 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
             status: (e.target.value || undefined) as CustomerListParams['status'],
           })
         }
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All Statuses</option>
         <option value="active">Active</option>
@@ -32,7 +32,7 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
             kyc_status: (e.target.value || undefined) as CustomerListParams['kyc_status'],
           })
         }
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All KYC</option>
         <option value="pending">Pending</option>
@@ -48,7 +48,7 @@ export function CustomerFilters({ filters, onChange }: CustomerFiltersProps) {
             credit_tier: e.target.value ? Number(e.target.value) : undefined,
           })
         }
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All Tiers</option>
         <option value="1">Tier 1</option>

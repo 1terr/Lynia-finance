@@ -61,9 +61,9 @@ export function ReconciliationTable({
 
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-white shadow">
+      <div className="rounded-lg bg-card shadow">
         <div className="flex h-64 items-center justify-center">
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Loading unreconciled payments...
           </p>
         </div>
@@ -73,12 +73,12 @@ export function ReconciliationTable({
 
   if (payments.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-12 text-center shadow">
+      <div className="rounded-lg bg-card p-12 text-center shadow">
         <div className="text-4xl">&#10003;</div>
-        <p className="mt-4 text-lg font-medium text-gray-900">
+        <p className="mt-4 text-lg font-medium text-foreground">
           All payments reconciled
         </p>
-        <p className="mt-1 text-gray-500">
+        <p className="mt-1 text-muted-foreground">
           No unreconciled confirmed payments found
         </p>
       </div>
@@ -93,7 +93,7 @@ export function ReconciliationTable({
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by reference or customer..."
-          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:w-72"
+          className="w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:w-72"
         />
         <div className="flex gap-2">
           {(['all', 'confirmed', 'failed'] as const).map((status) => (
@@ -103,7 +103,7 @@ export function ReconciliationTable({
               className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                 statusFilter === status
                   ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-muted text-muted-foreground hover:bg-accent'
               }`}
             >
               {status}
@@ -113,72 +113,72 @@ export function ReconciliationTable({
       </div>
 
       {filteredPayments.length === 0 ? (
-        <div className="rounded-lg bg-white p-8 text-center shadow">
-          <p className="text-sm text-gray-500">
+        <div className="rounded-lg bg-card p-8 text-center shadow">
+          <p className="text-sm text-muted-foreground">
             No payments match your search criteria.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+        <div className="overflow-hidden rounded-lg bg-card shadow">
+          <table className="min-w-full divide-y divide-border">
+            <thead className="bg-muted">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Payment
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Method
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Reference
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Status
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+                <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                   Action
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
+            <tbody className="divide-y divide-border bg-card">
               {filteredPayments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                <tr key={payment.id} className="hover:bg-accent">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">
                     {truncateId(payment.id)}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <div className="text-sm text-gray-900">
+                    <div className="text-sm text-foreground">
                       {payment.customers
                         ? `${payment.customers.first_name} ${payment.customers.last_name}`
                         : truncateId(payment.customer_id)}
                     </div>
                     {payment.customers && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {maskPhone(payment.customers.phone_number)}
                       </div>
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">
                     {formatCurrency(payment.amount_usd)}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                    <span className="text-sm capitalize text-gray-700">
+                    <span className="text-sm capitalize text-foreground">
                       {payment.payment_method.replace(/_/g, ' ')}
                     </span>
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                     {formatDate(payment.payment_date)}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                     {payment.reference_number || payment.transaction_id || '-'}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">

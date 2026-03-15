@@ -4,7 +4,7 @@
  */
 
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { getSecurityHeaders } from '../../../shared/utils/response';
+import { errorResponse, getSecurityHeaders } from '../../../shared/utils/response';
 import { PaymentService } from '../payment-service';
 import logger from '../../../shared/utils/logger';
 
@@ -27,14 +27,8 @@ export const handleReconcilePayments: RouteHandler = async (event, _params, _aut
     };
 
   } catch (error) {
-    logger.error('Error reconciling payments', { action: 'payment.reconcile', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: 'Reconciliation failed',
-        message: 'An unexpected error occurred. Please try again later.'
-      }),
-      headers: getSecurityHeaders(event)
-    };
+    const requestId = event.requestContext?.requestId || 'unknown';
+    logger.error('Error reconciling payments', { action: 'payment.reconcile', status: 'failed', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    return errorResponse('Reconciliation failed', 500, { requestId }, event);
   }
 };

@@ -17,7 +17,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
             status: (e.target.value || undefined) as PaymentListParams['status'],
           })
         }
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All Statuses</option>
         <option value="confirmed">Confirmed</option>
@@ -33,7 +33,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
             payment_method: (e.target.value || undefined) as PaymentListParams['payment_method'],
           })
         }
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All Methods</option>
         <option value="ecocash">EcoCash</option>
@@ -49,7 +49,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
             payment_type: (e.target.value || undefined) as PaymentListParams['payment_type'],
           })
         }
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All Types</option>
         <option value="deposit">Deposit</option>
@@ -62,7 +62,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
         type="date"
         value={filters.date_from || ''}
         onChange={(e) => onChange({ date_from: e.target.value || undefined })}
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         placeholder="From date"
       />
 
@@ -70,7 +70,7 @@ export function PaymentFilters({ filters, onChange }: PaymentFiltersProps) {
         type="date"
         value={filters.date_to || ''}
         onChange={(e) => onChange({ date_to: e.target.value || undefined })}
-        className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-lg border border-border bg-card px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         placeholder="To date"
       />
     </div>

@@ -51,7 +51,7 @@ export function PortfolioChart({ data }: PortfolioChartProps) {
       </CardHeader>
       <CardContent>
         {chartData.length === 0 ? (
-          <div className="flex h-[280px] items-center justify-center text-sm text-gray-500">
+          <div className="flex h-[280px] items-center justify-center text-sm text-muted-foreground">
             No loan data available
           </div>
         ) : (
@@ -89,13 +89,13 @@ export function PortfolioChart({ data }: PortfolioChartProps) {
                       className="h-3 w-3 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm text-gray-600">{item.name}</span>
+                    <span className="text-sm text-muted-foreground">{item.name}</span>
                   </div>
                   <div className="text-right">
-                    <span className="text-sm font-medium text-gray-900">
+                    <span className="text-sm font-medium text-foreground">
                       {item.value}
                     </span>
-                    <span className="text-sm text-gray-400 ml-1">
+                    <span className="text-sm text-muted-foreground ml-1">
                       ({total > 0 ? ((item.value / total) * 100).toFixed(0) : 0}%)
                     </span>
                   </div>

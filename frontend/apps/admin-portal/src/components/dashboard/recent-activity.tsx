@@ -19,14 +19,14 @@ interface RecentActivityProps {
 }
 
 const ACTIVITY_ICONS: Record<string, { icon: typeof UserPlus; color: string; bg: string }> = {
-  create: { icon: UserPlus, color: 'text-green-600', bg: 'bg-green-50' },
-  approve: { icon: FileCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
-  reject: { icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50' },
-  payment: { icon: CreditCard, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  lock: { icon: Lock, color: 'text-red-600', bg: 'bg-red-50' },
-  unlock: { icon: Unlock, color: 'text-green-600', bg: 'bg-green-50' },
-  login: { icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  update: { icon: Smartphone, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+  create: { icon: UserPlus, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950' },
+  approve: { icon: FileCheck, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-950' },
+  reject: { icon: AlertTriangle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950' },
+  payment: { icon: CreditCard, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-950' },
+  lock: { icon: Lock, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950' },
+  unlock: { icon: Unlock, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950' },
+  login: { icon: ShieldCheck, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-950' },
+  update: { icon: Smartphone, color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-950' },
 };
 
 export function RecentActivityFeed({ activities }: RecentActivityProps) {
@@ -37,7 +37,7 @@ export function RecentActivityFeed({ activities }: RecentActivityProps) {
       </CardHeader>
       <CardContent>
         {activities.length === 0 ? (
-          <p className="text-sm text-gray-500 text-center py-8">No recent activity</p>
+          <p className="text-sm text-muted-foreground text-center py-8">No recent activity</p>
         ) : (
           <div className="space-y-3">
             {activities.slice(0, 10).map((activity) => {
@@ -49,10 +49,10 @@ export function RecentActivityFeed({ activities }: RecentActivityProps) {
                     <Icon className={`h-4 w-4 ${config.color}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900 truncate">
+                    <p className="text-sm text-foreground truncate">
                       {activity.description}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-muted-foreground">
                       {formatRelativeTime(activity.created_at)}
                     </p>
                   </div>

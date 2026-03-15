@@ -25,10 +25,10 @@ export function CustomerDocuments({
 
   if (!kycSubmissions || kycSubmissions.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold text-gray-900">Documents</h2>
+      <div className="rounded-lg bg-card p-6 shadow">
+        <h2 className="text-lg font-semibold text-foreground">Documents</h2>
         <div className="mt-4 flex h-32 items-center justify-center">
-          <p className="text-sm text-gray-500">No KYC submissions found</p>
+          <p className="text-sm text-muted-foreground">No KYC submissions found</p>
         </div>
       </div>
     );
@@ -40,13 +40,13 @@ export function CustomerDocuments({
         const statusInfo = kycStatusMap[submission.status] || kycStatusMap.pending;
 
         return (
-          <div key={submission.id} className="rounded-lg bg-white p-6 shadow">
+          <div key={submission.id} className="rounded-lg bg-card p-6 shadow">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-foreground">
                   KYC Submission #{submission.attempt_number}
                 </h3>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Submitted {formatDate(submission.submitted_at)}
                 </p>
               </div>
@@ -56,11 +56,11 @@ export function CustomerDocuments({
             {/* Document Images */}
             <div className="mt-4 grid grid-cols-2 gap-4">
               <div>
-                <p className="mb-2 text-sm font-medium text-gray-700">
+                <p className="mb-2 text-sm font-medium text-foreground">
                   ID Document (Front)
                 </p>
                 <div
-                  className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-gray-100 hover:opacity-90"
+                  className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
                   onClick={() =>
                     setSelectedImage(submission.document_front_url)
                   }
@@ -76,11 +76,11 @@ export function CustomerDocuments({
 
               {submission.document_back_url && (
                 <div>
-                  <p className="mb-2 text-sm font-medium text-gray-700">
+                  <p className="mb-2 text-sm font-medium text-foreground">
                     ID Document (Back)
                   </p>
                   <div
-                    className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-gray-100 hover:opacity-90"
+                    className="relative aspect-[1.6/1] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
                     onClick={() =>
                       setSelectedImage(submission.document_back_url!)
                     }
@@ -97,11 +97,11 @@ export function CustomerDocuments({
 
               {submission.selfie_url && (
                 <div className="col-span-2 max-w-md">
-                  <p className="mb-2 text-sm font-medium text-gray-700">
+                  <p className="mb-2 text-sm font-medium text-foreground">
                     Selfie
                   </p>
                   <div
-                    className="relative aspect-[3/2] cursor-pointer overflow-hidden rounded-lg bg-gray-100 hover:opacity-90"
+                    className="relative aspect-[3/2] cursor-pointer overflow-hidden rounded-lg bg-muted hover:opacity-90"
                     onClick={() =>
                       setSelectedImage(submission.selfie_url!)
                     }
@@ -118,31 +118,31 @@ export function CustomerDocuments({
             </div>
 
             {/* Extracted Info */}
-            <div className="mt-4 grid grid-cols-2 gap-4 rounded-lg bg-gray-50 p-4">
+            <div className="mt-4 grid grid-cols-2 gap-4 rounded-lg bg-muted p-4">
               <div>
-                <p className="text-sm text-gray-500">Document Type</p>
-                <p className="mt-1 text-sm font-medium capitalize text-gray-900">
+                <p className="text-sm text-muted-foreground">Document Type</p>
+                <p className="mt-1 text-sm font-medium capitalize text-foreground">
                   {submission.document_type.replace(/_/g, ' ')}
                 </p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Document Number</p>
-                <p className="mt-1 text-sm font-medium text-gray-900">
+                <p className="text-sm text-muted-foreground">Document Number</p>
+                <p className="mt-1 text-sm font-medium text-foreground">
                   {maskId(submission.document_number)}
                 </p>
               </div>
               {submission.image_quality_score !== null && (
                 <div>
-                  <p className="text-sm text-gray-500">Image Quality</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900">
+                  <p className="text-sm text-muted-foreground">Image Quality</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
                     {submission.image_quality_score}%
                   </p>
                 </div>
               )}
               {submission.liveness_score !== null && (
                 <div>
-                  <p className="text-sm text-gray-500">Liveness Score</p>
-                  <p className="mt-1 text-sm font-medium text-gray-900">
+                  <p className="text-sm text-muted-foreground">Liveness Score</p>
+                  <p className="mt-1 text-sm font-medium text-foreground">
                     {submission.liveness_score}%
                   </p>
                 </div>
@@ -150,7 +150,7 @@ export function CustomerDocuments({
             </div>
 
             {submission.rejection_reason && (
-              <div className="mt-4 rounded-lg bg-red-50 p-4">
+              <div className="mt-4 rounded-lg bg-red-50 dark:bg-red-950 p-4">
                 <p className="text-sm font-medium text-red-900">
                   Rejection Reason
                 </p>
@@ -178,7 +178,7 @@ export function CustomerDocuments({
             />
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute right-4 top-4 rounded-lg bg-white px-4 py-2 text-sm font-medium shadow"
+              className="absolute right-4 top-4 rounded-lg bg-card px-4 py-2 text-sm font-medium shadow"
             >
               Close
             </button>

@@ -39,9 +39,9 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
   });
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
+    <div className="rounded-lg bg-card p-6 shadow">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-foreground">
           Notes ({notes?.length || 0})
         </h2>
         <button
@@ -53,15 +53,15 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
       </div>
 
       {isAdding && (
-        <div className="mt-4 rounded-lg border border-gray-200 p-4">
+        <div className="mt-4 rounded-lg border border-border p-4">
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Note Type
             </label>
             <select
               value={noteType}
               onChange={(e) => setNoteType(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="general">General</option>
               <option value="support">Support</option>
@@ -70,7 +70,7 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
             </select>
           </div>
           <div className="mb-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Note
             </label>
             <textarea
@@ -78,7 +78,7 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
               onChange={(e) => setNoteText(e.target.value)}
               rows={3}
               maxLength={2000}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Enter your note..."
             />
           </div>
@@ -95,7 +95,7 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
       <div className="mt-4 space-y-4">
         {(!notes || notes.length === 0) && !isAdding && (
           <div className="flex h-32 items-center justify-center">
-            <p className="text-sm text-gray-500">No notes yet</p>
+            <p className="text-sm text-muted-foreground">No notes yet</p>
           </div>
         )}
 
@@ -103,18 +103,18 @@ export function CustomerNotes({ customerId, notes }: CustomerNotesProps) {
           <div
             key={note.note_id}
             className={`rounded-lg border p-4 ${
-              note.is_important ? 'border-yellow-300 bg-yellow-50' : 'border-gray-200'
+              note.is_important ? 'border-yellow-300 bg-yellow-50 dark:bg-yellow-950' : 'border-border'
             }`}
           >
             <div className="flex items-start justify-between">
               <Badge variant={noteTypeColors[note.note_type] || 'gray'}>
                 {note.note_type.replace(/_/g, ' ')}
               </Badge>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 {formatDateTime(note.created_at)}
               </span>
             </div>
-            <p className="mt-2 text-sm text-gray-700">{note.note_text}</p>
+            <p className="mt-2 text-sm text-foreground">{note.note_text}</p>
           </div>
         ))}
       </div>

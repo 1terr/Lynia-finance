@@ -9,13 +9,13 @@ interface CustomerOverviewProps {
 
 export function CustomerOverview({ customer }: CustomerOverviewProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h2 className="text-lg font-semibold text-gray-900">Overview</h2>
+    <div className="rounded-lg bg-card p-6 shadow">
+      <h2 className="text-lg font-semibold text-foreground">Overview</h2>
 
       <div className="mt-4 grid grid-cols-2 gap-6">
         {/* Personal Information */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-500">
+          <h3 className="text-sm font-medium text-muted-foreground">
             Personal Information
           </h3>
           <InfoRow label="Date of Birth" value={customer.date_of_birth || 'N/A'} />
@@ -32,7 +32,7 @@ export function CustomerOverview({ customer }: CustomerOverviewProps) {
 
         {/* Employment */}
         <div className="space-y-3">
-          <h3 className="text-sm font-medium text-gray-500">Employment</h3>
+          <h3 className="text-sm font-medium text-muted-foreground">Employment</h3>
           <InfoRow
             label="Status"
             value={customer.employment_status?.replace(/_/g, ' ') || 'N/A'}
@@ -69,17 +69,17 @@ export function CustomerOverview({ customer }: CustomerOverviewProps) {
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
-      <span className="text-sm text-gray-500">{label}</span>
-      <span className="text-sm font-medium text-gray-900">{value}</span>
+      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-sm font-medium text-foreground">{value}</span>
     </div>
   );
 }
 
 function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-lg bg-gray-50 p-4">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-semibold text-gray-900">{value}</p>
+    <div className="rounded-lg bg-muted p-4">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-foreground">{value}</p>
     </div>
   );
 }

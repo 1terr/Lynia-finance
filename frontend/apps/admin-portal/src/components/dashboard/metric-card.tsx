@@ -38,7 +38,7 @@ export function MetricCard({
 
   const trendColor =
     change === undefined || change === 0
-      ? 'text-gray-500'
+      ? 'text-muted-foreground'
       : change > 0
         ? 'text-green-600'
         : 'text-red-600';
@@ -47,10 +47,10 @@ export function MetricCard({
     <Card className="p-5">
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-500 truncate">{title}</p>
-          <p className="mt-1 text-2xl font-semibold text-gray-900">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground truncate">{title}</p>
+          <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
           {subtitle && (
-            <p className="mt-0.5 text-sm text-gray-500">{subtitle}</p>
+            <p className="mt-0.5 text-sm text-muted-foreground">{subtitle}</p>
           )}
           {dataSource && (
             <div className="mt-1.5 flex items-center gap-1">
@@ -81,7 +81,7 @@ export function MetricCard({
             {change.toFixed(1)}%
           </span>
           {changeLabel && (
-            <span className="text-sm text-gray-500">
+            <span className="text-sm text-muted-foreground">
               {changeLabel}
             </span>
           )}

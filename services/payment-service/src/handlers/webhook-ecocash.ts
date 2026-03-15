@@ -4,6 +4,7 @@
  */
 
 import { RouteHandler } from '../../../shared/utils/lambda-router';
+import { errorResponse } from '../../../shared/utils/response';
 import { PaymentService } from '../payment-service';
 import { EcoCashProvider, EcoCashWebhook } from '../ecocash-provider';
 import { PaymentEventLogger } from '../payment-event-logger';
@@ -113,11 +114,8 @@ export const handleEcoCashWebhook: RouteHandler = async (event, _params, _auth) 
     };
 
   } catch (error) {
-    logger.error('Error processing EcoCash webhook', { action: 'ecocash.webhook', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Webhook processing failed' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+    const requestId = event.requestContext?.requestId || 'unknown';
+    logger.error('Error processing EcoCash webhook', { action: 'ecocash.webhook', status: 'failed', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    return errorResponse('Webhook processing failed', 500, { requestId }, event);
   }
 };

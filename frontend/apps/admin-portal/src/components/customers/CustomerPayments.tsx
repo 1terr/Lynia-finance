@@ -18,10 +18,10 @@ const paymentStatusMap: Record<string, { variant: 'green' | 'yellow' | 'red' | '
 export function CustomerPayments({ payments }: CustomerPaymentsProps) {
   if (!payments || payments.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-semibold text-gray-900">Payment History</h2>
+      <div className="rounded-lg bg-card p-6 shadow">
+        <h2 className="text-lg font-semibold text-foreground">Payment History</h2>
         <div className="mt-4 flex h-32 items-center justify-center">
-          <p className="text-sm text-gray-500">No payments found</p>
+          <p className="text-sm text-muted-foreground">No payments found</p>
         </div>
       </div>
     );
@@ -32,13 +32,13 @@ export function CustomerPayments({ payments }: CustomerPaymentsProps) {
     .reduce((sum, p) => sum + p.amount_usd, 0);
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
+    <div className="rounded-lg bg-card p-6 shadow">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
+        <h2 className="text-lg font-semibold text-foreground">
           Payment History ({payments.length})
         </h2>
         <div className="text-right">
-          <p className="text-sm text-gray-500">Total Confirmed</p>
+          <p className="text-sm text-muted-foreground">Total Confirmed</p>
           <p className="text-lg font-semibold text-green-600">
             {formatCurrency(totalConfirmed)}
           </p>
@@ -46,45 +46,45 @@ export function CustomerPayments({ payments }: CustomerPaymentsProps) {
       </div>
 
       <div className="mt-4 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Date
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Amount
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Type
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Method
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Status
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-gray-500">
+              <th className="px-4 py-3 text-left text-xs font-medium uppercase text-muted-foreground">
                 Reference
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {payments.map((payment) => {
               const statusInfo =
                 paymentStatusMap[payment.status] || paymentStatusMap.pending;
               return (
-                <tr key={payment.id} className="hover:bg-gray-50">
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-900">
+                <tr key={payment.id} className="hover:bg-accent">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-foreground">
                     {formatDate(payment.payment_date)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-foreground">
                     {formatCurrency(payment.amount_usd)}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-foreground">
                     {payment.payment_type.replace(/_/g, ' ')}
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-gray-900">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-foreground">
                     {payment.payment_method.replace(/_/g, ' ')}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3">
@@ -92,7 +92,7 @@ export function CustomerPayments({ payments }: CustomerPaymentsProps) {
                       {statusInfo.label}
                     </Badge>
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500">
+                  <td className="whitespace-nowrap px-4 py-3 text-sm text-muted-foreground">
                     {payment.reference_number || payment.transaction_id || '-'}
                   </td>
                 </tr>

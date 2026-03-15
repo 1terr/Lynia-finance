@@ -28,7 +28,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       badge: pendingKyc,
       permission: 'kyc:read' as const,
       color: 'text-purple-600',
-      bg: 'bg-purple-50 hover:bg-purple-100',
+      bg: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-950 dark:hover:bg-purple-900',
     },
     {
       label: 'Loan Approvals',
@@ -37,7 +37,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       badge: pendingApprovals,
       permission: 'loans:approve' as const,
       color: 'text-blue-600',
-      bg: 'bg-blue-50 hover:bg-blue-100',
+      bg: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900',
     },
     {
       label: 'Device Inventory',
@@ -45,7 +45,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       icon: Smartphone,
       permission: 'devices:read' as const,
       color: 'text-green-600',
-      bg: 'bg-green-50 hover:bg-green-100',
+      bg: 'bg-green-50 hover:bg-green-100 dark:bg-green-950 dark:hover:bg-green-900',
     },
     {
       label: 'Payments',
@@ -53,7 +53,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       icon: CreditCard,
       permission: 'payments:read' as const,
       color: 'text-emerald-600',
-      bg: 'bg-emerald-50 hover:bg-emerald-100',
+      bg: 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950 dark:hover:bg-emerald-900',
     },
     {
       label: 'Customers',
@@ -61,7 +61,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       icon: Users,
       permission: 'customers:read' as const,
       color: 'text-orange-600',
-      bg: 'bg-orange-50 hover:bg-orange-100',
+      bg: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-950 dark:hover:bg-orange-900',
     },
     {
       label: 'Reports',
@@ -69,7 +69,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
       icon: BarChart3,
       permission: 'reports:read' as const,
       color: 'text-indigo-600',
-      bg: 'bg-indigo-50 hover:bg-indigo-100',
+      bg: 'bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950 dark:hover:bg-indigo-900',
     },
   ];
 
@@ -93,7 +93,7 @@ export function QuickActions({ role, pendingKyc, pendingApprovals }: QuickAction
                 className={`relative flex flex-col items-center gap-2 rounded-lg p-4 transition-colors ${action.bg}`}
               >
                 <Icon className={`h-6 w-6 ${action.color}`} />
-                <span className="text-sm font-medium text-gray-700">
+                <span className="text-sm font-medium text-foreground">
                   {action.label}
                 </span>
                 {action.badge !== undefined && action.badge > 0 && (

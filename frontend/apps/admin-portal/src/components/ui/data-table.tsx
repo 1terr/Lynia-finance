@@ -91,9 +91,9 @@ export function DataTable<T>({
     : data;
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-gray-200 bg-white">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-x-auto rounded-lg border border-border bg-card">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted">
           <tr>
             {selectable && (
               <th className="w-10 px-3 py-3">
@@ -102,7 +102,7 @@ export function DataTable<T>({
                   checked={!!allSelected}
                   ref={(el) => { if (el) el.indeterminate = !!someSelected; }}
                   onChange={handleSelectAll}
-                  className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                  className="h-4 w-4 rounded border-input text-brand-600 focus:ring-ring"
                 />
               </th>
             )}
@@ -110,8 +110,8 @@ export function DataTable<T>({
               <th
                 key={col.key}
                 className={cn(
-                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500',
-                  col.sortable && 'cursor-pointer select-none hover:text-gray-700',
+                  'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground',
+                  col.sortable && 'cursor-pointer select-none hover:text-foreground',
                   col.className
                 )}
                 onClick={col.sortable ? () => handleSort(col.key) : undefined}
@@ -119,7 +119,7 @@ export function DataTable<T>({
                 <div className="flex items-center gap-1">
                   {col.header}
                   {col.sortable && (
-                    <span className="text-gray-400">
+                    <span className="text-muted-foreground">
                       {sortKey === col.key && sortDir === 'asc' ? (
                         <ChevronUp className="h-3.5 w-3.5" />
                       ) : sortKey === col.key && sortDir === 'desc' ? (
@@ -134,25 +134,25 @@ export function DataTable<T>({
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody className="divide-y divide-border">
           {loading ? (
             Array.from({ length: 5 }).map((_, i) => (
               <tr key={i}>
                 {selectable && (
                   <td className="w-10 px-3 py-3">
-                    <div className="h-4 w-4 animate-pulse rounded bg-gray-200" />
+                    <div className="h-4 w-4 animate-pulse rounded bg-muted" />
                   </td>
                 )}
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
-                    <div className="h-4 w-24 animate-pulse rounded bg-gray-200" />
+                    <div className="h-4 w-24 animate-pulse rounded bg-muted" />
                   </td>
                 ))}
               </tr>
             ))
           ) : sortedData.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center text-sm text-gray-500">
+              <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-4 py-12 text-center text-sm text-muted-foreground">
                 {emptyMessage}
               </td>
             </tr>
@@ -166,7 +166,7 @@ export function DataTable<T>({
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={cn(
                     'transition-colors',
-                    onRowClick && 'cursor-pointer hover:bg-gray-50',
+                    onRowClick && 'cursor-pointer hover:bg-accent',
                     isSelected && 'bg-brand-50'
                   )}
                 >
@@ -177,12 +177,12 @@ export function DataTable<T>({
                         checked={!!isSelected}
                         onChange={() => handleSelectRow(rowKey)}
                         onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        className="h-4 w-4 rounded border-input text-brand-600 focus:ring-ring"
                       />
                     </td>
                   )}
                   {columns.map((col) => (
-                    <td key={col.key} className={cn('px-4 py-3 text-sm text-gray-900', col.className)}>
+                    <td key={col.key} className={cn('px-4 py-3 text-sm text-foreground', col.className)}>
                       {col.render(row)}
                     </td>
                   ))}

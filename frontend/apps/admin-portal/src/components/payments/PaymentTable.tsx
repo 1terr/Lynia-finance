@@ -32,9 +32,9 @@ export function PaymentTable({
 }: PaymentTableProps) {
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-white shadow">
+      <div className="rounded-lg bg-card shadow">
         <div className="flex h-64 items-center justify-center">
-          <p className="text-sm text-gray-500">Loading payments...</p>
+          <p className="text-sm text-muted-foreground">Loading payments...</p>
         </div>
       </div>
     );
@@ -42,11 +42,11 @@ export function PaymentTable({
 
   if (payments.length === 0) {
     return (
-      <div className="rounded-lg bg-white shadow">
+      <div className="rounded-lg bg-card shadow">
         <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <p className="text-sm text-gray-500">No payments found</p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="text-sm text-muted-foreground">No payments found</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               Try adjusting your search or filters
             </p>
           </div>
@@ -56,43 +56,43 @@ export function PaymentTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg bg-white shadow">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-hidden rounded-lg bg-card shadow">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Payment
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Customer
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Amount
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Method
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Date
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
+        <tbody className="divide-y divide-border bg-card">
           {payments.map((payment) => {
             const statusInfo = statusMap[payment.status] || statusMap.pending;
             return (
-              <tr key={payment.id} className="hover:bg-gray-50">
+              <tr key={payment.id} className="hover:bg-accent">
                 <td className="whitespace-nowrap px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="text-sm font-medium text-foreground">
                     {truncateId(payment.id)}
                   </div>
-                  <div className="text-xs capitalize text-gray-500">
+                  <div className="text-xs capitalize text-muted-foreground">
                     {payment.payment_type.replace(/_/g, ' ')}
                   </div>
                 </td>
@@ -106,21 +106,21 @@ export function PaymentTable({
                         {payment.customers.first_name}{' '}
                         {payment.customers.last_name}
                       </Link>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {maskPhone(payment.customers.phone_number)}
                       </div>
                     </div>
                   ) : (
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       {truncateId(payment.customer_id)}
                     </span>
                   )}
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-gray-900">
+                <td className="whitespace-nowrap px-6 py-4 text-sm font-medium text-foreground">
                   {formatCurrency(payment.amount_usd)}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
-                  <span className="text-sm capitalize text-gray-700">
+                  <span className="text-sm capitalize text-foreground">
                     {payment.payment_method.replace(/_/g, ' ')}
                   </span>
                 </td>
@@ -129,7 +129,7 @@ export function PaymentTable({
                     {statusInfo.label}
                   </Badge>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                   {formatDate(payment.payment_date)}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">

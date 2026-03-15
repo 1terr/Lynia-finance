@@ -21,10 +21,10 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="animate-pulse rounded-lg bg-white p-6 shadow"
+            className="animate-pulse rounded-lg bg-card p-6 shadow"
           >
-            <div className="h-4 w-24 rounded bg-gray-200" />
-            <div className="mt-2 h-8 w-32 rounded bg-gray-200" />
+            <div className="h-4 w-24 rounded bg-muted" />
+            <div className="mt-2 h-8 w-32 rounded bg-muted" />
           </div>
         ))}
       </div>
@@ -60,9 +60,9 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
       label: 'Refunded',
       amount: summary.total_refunded,
       count: summary.count_refunded,
-      color: 'text-gray-600',
+      color: 'text-muted-foreground',
       bg: 'bg-gray-50',
-      border: 'border-gray-200',
+      border: 'border-border',
     },
   ];
 
@@ -73,11 +73,11 @@ export function PaymentSummaryCards({ dateFrom, dateTo }: PaymentSummaryCardsPro
           key={card.label}
           className={`rounded-lg border ${card.border} ${card.bg} p-6`}
         >
-          <p className="text-sm font-medium text-gray-500">{card.label}</p>
+          <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
           <p className={`mt-1 text-2xl font-bold ${card.color}`}>
             {formatCurrency(card.amount)}
           </p>
-          <p className="mt-1 text-xs text-gray-400">
+          <p className="mt-1 text-xs text-muted-foreground">
             {card.count} payment{card.count !== 1 ? 's' : ''}
           </p>
         </div>

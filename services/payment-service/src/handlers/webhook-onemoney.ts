@@ -4,6 +4,7 @@
  */
 
 import { RouteHandler } from '../../../shared/utils/lambda-router';
+import { errorResponse } from '../../../shared/utils/response';
 import { PaymentService } from '../payment-service';
 import { OneMoneyProvider, OneMoneyWebhook } from '../onemoney-provider';
 import { PaymentEventLogger } from '../payment-event-logger';
@@ -108,11 +109,8 @@ export const handleOneMoneyWebhook: RouteHandler = async (event, _params, _auth)
     };
 
   } catch (error) {
-    logger.error('Error processing OneMoney webhook', { action: 'onemoney.webhook', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Webhook processing failed' }),
-      headers: { 'Content-Type': 'application/json' }
-    };
+    const requestId = event.requestContext?.requestId || 'unknown';
+    logger.error('Error processing OneMoney webhook', { action: 'onemoney.webhook', status: 'failed', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    return errorResponse('Webhook processing failed', 500, { requestId }, event);
   }
 };

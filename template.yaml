@@ -1007,6 +1007,18 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/loans/{loanId}/close
             Method: POST
+        RescheduleLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/reschedule
+            Method: POST
+        EarlyPayoff:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/early-payoff
+            Method: POST
         # Loan Products
         CreateFineractProduct:
           Type: Api

@@ -15,8 +15,8 @@ export function Pagination({ page, limit, total, onPageChange }: PaginationProps
   if (total === 0) return null;
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-6 py-3">
-      <div className="text-sm text-gray-700">
+    <div className="flex items-center justify-between border-t border-border bg-muted px-6 py-3">
+      <div className="text-sm text-muted-foreground">
         Showing <span className="font-medium">{from}</span> to{' '}
         <span className="font-medium">{to}</span> of{' '}
         <span className="font-medium">{total}</span> results
@@ -25,7 +25,7 @@ export function Pagination({ page, limit, total, onPageChange }: PaginationProps
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="rounded border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded border border-border px-3 py-1 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           Previous
         </button>
@@ -36,8 +36,8 @@ export function Pagination({ page, limit, total, onPageChange }: PaginationProps
               onClick={() => onPageChange(p)}
               className={`rounded border px-3 py-1 text-sm font-medium ${
                 p === page
-                  ? 'border-primary-500 bg-primary-50 text-primary-600'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-foreground hover:bg-accent'
               }`}
             >
               {p}
@@ -46,7 +46,7 @@ export function Pagination({ page, limit, total, onPageChange }: PaginationProps
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="rounded border border-gray-300 px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded border border-border px-3 py-1 text-sm font-medium text-foreground hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
         >
           Next
         </button>

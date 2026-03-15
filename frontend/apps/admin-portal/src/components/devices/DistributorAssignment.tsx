@@ -38,16 +38,16 @@ export function DistributorAssignment({
   const hasChanged = selectedDistributor !== (device.distributor_id || '');
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Distributor Assignment</h3>
+    <div className="bg-card rounded-lg border border-border p-4">
+      <h3 className="text-sm font-semibold text-foreground mb-3">Distributor Assignment</h3>
 
       {currentDistributor && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-md">
-          <p className="text-sm font-medium text-gray-900">Current: {currentDistributor.business_name}</p>
-          <p className="text-xs text-gray-500">
+        <div className="mb-4 p-3 bg-muted rounded-md">
+          <p className="text-sm font-medium text-foreground">Current: {currentDistributor.business_name}</p>
+          <p className="text-xs text-muted-foreground">
             {currentDistributor.contact_person} &middot; {currentDistributor.phone_number}
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-muted-foreground">
             {currentDistributor.city}, {currentDistributor.province}
           </p>
         </div>
@@ -55,13 +55,13 @@ export function DistributorAssignment({
 
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-foreground mb-1">
             {currentDistributor ? 'Reassign to' : 'Assign to'}
           </label>
           <select
             value={selectedDistributor}
             onChange={(e) => setSelectedDistributor(e.target.value)}
-            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded-md border border-border px-3 py-2 text-sm"
             aria-label="Select distributor"
           >
             <option value="">Select distributor...</option>
@@ -74,7 +74,7 @@ export function DistributorAssignment({
         </div>
 
         {selectedDist && hasChanged && (
-          <div className="p-3 bg-blue-50 rounded-md text-sm">
+          <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-md text-sm">
             <p className="font-medium text-blue-900">{selectedDist.business_name}</p>
             <p className="text-blue-700 text-xs">
               {selectedDist.contact_person} &middot; {selectedDist.phone_number}

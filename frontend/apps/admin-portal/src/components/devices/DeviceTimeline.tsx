@@ -81,7 +81,7 @@ export function DeviceTimeline({ lockEvents, assignments }: DeviceTimelineProps)
 
   if (timeline.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
+      <div className="text-center py-8 text-muted-foreground">
         No history events found for this device
       </div>
     );
@@ -97,17 +97,17 @@ export function DeviceTimeline({ lockEvents, assignments }: DeviceTimelineProps)
               item.variant === 'green' ? 'bg-green-500' :
               item.variant === 'blue' ? 'bg-blue-500' :
               item.variant === 'yellow' ? 'bg-yellow-500' :
-              'bg-gray-400'
+              'bg-muted-foreground'
             }`} />
-            <div className="w-0.5 flex-1 bg-gray-200 mt-1" />
+            <div className="w-0.5 flex-1 bg-muted mt-1" />
           </div>
           <div className="flex-1 pb-4">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-gray-900">{item.title}</span>
+              <span className="text-sm font-medium text-foreground">{item.title}</span>
               <Badge variant={item.variant}>{item.type}</Badge>
             </div>
-            <p className="text-sm text-gray-600 mt-0.5">{item.description}</p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-sm text-muted-foreground mt-0.5">{item.description}</p>
+            <p className="text-xs text-muted-foreground mt-1">
               {formatDateTime(item.timestamp)} &middot; by {item.actor}
             </p>
           </div>

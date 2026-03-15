@@ -17,7 +17,7 @@ import { auditLog } from './helpers';
 
 export const handleGetPayments: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -116,7 +116,7 @@ export const handleGetPayments: RouteHandler = async (event, _params, auth) => {
       action: 'payment.list', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -124,7 +124,7 @@ export const handleGetPayments: RouteHandler = async (event, _params, auth) => {
 
 export const handleGetPaymentStats: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -154,7 +154,7 @@ export const handleGetPaymentStats: RouteHandler = async (event, _params, auth) 
       action: 'payment.stats', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -162,7 +162,7 @@ export const handleGetPaymentStats: RouteHandler = async (event, _params, auth) 
 
 export const handleGetUnreconciledPayments: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -189,7 +189,7 @@ export const handleGetUnreconciledPayments: RouteHandler = async (event, _params
       action: 'payment.unreconciled', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -197,7 +197,7 @@ export const handleGetUnreconciledPayments: RouteHandler = async (event, _params
 
 export const handleGetOverdueCollections: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -232,7 +232,7 @@ export const handleGetOverdueCollections: RouteHandler = async (event, _params, 
       action: 'payment.overdue-collections', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -240,7 +240,7 @@ export const handleGetOverdueCollections: RouteHandler = async (event, _params, 
 
 export const handleGetPaymentSummary: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -295,7 +295,7 @@ export const handleGetPaymentSummary: RouteHandler = async (event, _params, auth
       action: 'payment.summary', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -303,7 +303,7 @@ export const handleGetPaymentSummary: RouteHandler = async (event, _params, auth
 
 export const handleRecordManualPayment: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -311,11 +311,11 @@ export const handleRecordManualPayment: RouteHandler = async (event, _params, au
     const { loan_id, customer_id, amount_usd, payment_method, payment_type, reference_number, payment_date, notes } = body;
 
     if (!loan_id || !customer_id || !amount_usd || !payment_method || !payment_type) {
-      return errorResponse('Missing required fields: loan_id, customer_id, amount_usd, payment_method, payment_type', 400, {}, event);
+      return errorResponse('Missing required fields: loan_id, customer_id, amount_usd, payment_method, payment_type', 400, { requestId: event.requestContext?.requestId }, event);
     }
 
     if (typeof amount_usd !== 'number' || amount_usd <= 0) {
-      return errorResponse('amount_usd must be a positive number', 400, {}, event);
+      return errorResponse('amount_usd must be a positive number', 400, { requestId: event.requestContext?.requestId }, event);
     }
 
     const result = await queryOne(
@@ -341,7 +341,7 @@ export const handleRecordManualPayment: RouteHandler = async (event, _params, au
       action: 'payment.manual', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -349,7 +349,7 @@ export const handleRecordManualPayment: RouteHandler = async (event, _params, au
 
 export const handleGetPaymentById: RouteHandler = async (event, params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -375,7 +375,7 @@ export const handleGetPaymentById: RouteHandler = async (event, params, auth) =>
       action: 'payment.get', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -383,7 +383,7 @@ export const handleGetPaymentById: RouteHandler = async (event, params, auth) =>
 
 export const handleConfirmPayment: RouteHandler = async (event, params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -394,7 +394,7 @@ export const handleConfirmPayment: RouteHandler = async (event, params, auth) =>
     );
     if (!existing.data) return notFoundResponse('Payment', event);
     if (existing.data.status === 'confirmed') {
-      return errorResponse('Payment is already confirmed', 409, {}, event);
+      return errorResponse('Payment is already confirmed', 409, { requestId: event.requestContext?.requestId }, event);
     }
 
     const result = await queryOne(
@@ -414,7 +414,7 @@ export const handleConfirmPayment: RouteHandler = async (event, params, auth) =>
       action: 'payment.confirm', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -422,7 +422,7 @@ export const handleConfirmPayment: RouteHandler = async (event, params, auth) =>
 
 export const handleFailPayment: RouteHandler = async (event, params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -449,7 +449,7 @@ export const handleFailPayment: RouteHandler = async (event, params, auth) => {
       action: 'payment.fail', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -457,7 +457,7 @@ export const handleFailPayment: RouteHandler = async (event, params, auth) => {
 
 export const handleRetryPayment: RouteHandler = async (event, params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -482,7 +482,7 @@ export const handleRetryPayment: RouteHandler = async (event, params, auth) => {
       action: 'payment.retry', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -490,7 +490,7 @@ export const handleRetryPayment: RouteHandler = async (event, params, auth) => {
 
 export const handleRefundPayment: RouteHandler = async (event, params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -501,7 +501,7 @@ export const handleRefundPayment: RouteHandler = async (event, params, auth) => 
     );
     if (!existing.data) return notFoundResponse('Payment', event);
     if (existing.data.status === 'refunded') {
-      return errorResponse('Payment is already refunded', 409, {}, event);
+      return errorResponse('Payment is already refunded', 409, { requestId: event.requestContext?.requestId }, event);
     }
 
     const result = await queryOne(
@@ -519,7 +519,7 @@ export const handleRefundPayment: RouteHandler = async (event, params, auth) => 
       action: 'payment.refund', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };
 
@@ -527,7 +527,7 @@ export const handleRefundPayment: RouteHandler = async (event, params, auth) => 
 
 export const handleReconcilePayment: RouteHandler = async (event, params, auth) => {
   if (!isAdminOrManager(auth)) {
-    return errorResponse('Forbidden', 403, {}, event);
+    return errorResponse('Forbidden', 403, { requestId: event.requestContext?.requestId }, event);
   }
 
   try {
@@ -552,6 +552,6 @@ export const handleReconcilePayment: RouteHandler = async (event, params, auth) 
       action: 'payment.reconcile', status: 'failed',
       errorMessage: error instanceof Error ? error.message : String(error),
     });
-    return errorResponse('An unexpected error occurred', 500, {}, event);
+    return errorResponse('An unexpected error occurred', 500, { requestId: event.requestContext?.requestId }, event);
   }
 };

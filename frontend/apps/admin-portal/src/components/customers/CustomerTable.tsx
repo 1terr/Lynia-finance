@@ -39,9 +39,9 @@ export function CustomerTable({
 }: CustomerTableProps) {
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-white shadow">
+      <div className="rounded-lg bg-card shadow">
         <div className="flex h-64 items-center justify-center">
-          <div className="text-sm text-gray-500">Loading customers...</div>
+          <div className="text-sm text-muted-foreground">Loading customers...</div>
         </div>
       </div>
     );
@@ -49,11 +49,11 @@ export function CustomerTable({
 
   if (customers.length === 0) {
     return (
-      <div className="rounded-lg bg-white shadow">
+      <div className="rounded-lg bg-card shadow">
         <div className="flex h-64 items-center justify-center">
           <div className="text-center">
-            <p className="text-sm text-gray-500">No customers found</p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="text-sm text-muted-foreground">No customers found</p>
+            <p className="mt-1 text-xs text-muted-foreground">
               Try adjusting your search or filters
             </p>
           </div>
@@ -63,38 +63,38 @@ export function CustomerTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg bg-white shadow">
-      <table className="min-w-full divide-y divide-gray-200">
-        <thead className="bg-gray-50">
+    <div className="overflow-hidden rounded-lg bg-card shadow">
+      <table className="min-w-full divide-y divide-border">
+        <thead className="bg-muted">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Customer
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Contact
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               KYC Status
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Credit Tier
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Loans
             </th>
-            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Joined
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
+            <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200 bg-white">
+        <tbody className="divide-y divide-border bg-card">
           {customers.map((customer) => {
             const kycInfo = kycStatusMap[customer.kyc_status] || kycStatusMap.pending;
             return (
-              <tr key={customer.id} className="hover:bg-gray-50">
+              <tr key={customer.id} className="hover:bg-accent">
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex items-center">
                     <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-100">
@@ -104,21 +104,21 @@ export function CustomerTable({
                       </span>
                     </div>
                     <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-foreground">
                         {customer.first_name} {customer.last_name}
                       </div>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         ID: {truncateId(customer.id)}
                       </div>
                     </div>
                   </div>
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
-                  <div className="text-sm text-gray-900">
+                  <div className="text-sm text-foreground">
                     {maskPhone(customer.phone_number)}
                   </div>
                   {customer.email && (
-                    <div className="text-xs text-gray-500">{customer.email}</div>
+                    <div className="text-xs text-muted-foreground">{customer.email}</div>
                   )}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
@@ -128,14 +128,14 @@ export function CustomerTable({
                   <Badge variant={tierColors[customer.credit_tier] || 'gray'}>
                     Tier {customer.credit_tier}
                   </Badge>
-                  <div className="mt-1 text-xs text-gray-500">
+                  <div className="mt-1 text-xs text-muted-foreground">
                     {formatCurrency(customer.credit_limit)} limit
                   </div>
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-foreground">
                   {customer.active_loans} active
                 </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-muted-foreground">
                   {formatDate(customer.created_at)}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">

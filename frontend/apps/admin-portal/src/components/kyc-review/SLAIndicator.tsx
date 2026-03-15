@@ -12,31 +12,31 @@ interface SLAIndicatorProps {
 
 const colorStyles = {
   red: {
-    bg: 'bg-red-50',
+    bg: 'bg-red-50 dark:bg-red-950',
     text: 'text-red-700',
     icon: 'text-red-500',
     border: 'border-red-200',
     progress: 'bg-red-500',
   },
   yellow: {
-    bg: 'bg-yellow-50',
+    bg: 'bg-yellow-50 dark:bg-yellow-950',
     text: 'text-yellow-700',
     icon: 'text-yellow-500',
     border: 'border-yellow-200',
     progress: 'bg-yellow-500',
   },
   green: {
-    bg: 'bg-green-50',
+    bg: 'bg-green-50 dark:bg-green-950',
     text: 'text-green-700',
     icon: 'text-green-500',
     border: 'border-green-200',
     progress: 'bg-green-500',
   },
   gray: {
-    bg: 'bg-gray-50',
-    text: 'text-gray-700',
-    icon: 'text-gray-500',
-    border: 'border-gray-200',
+    bg: 'bg-muted',
+    text: 'text-foreground',
+    icon: 'text-muted-foreground',
+    border: 'border-border',
     progress: 'bg-gray-500',
   },
 };
@@ -122,7 +122,7 @@ export function SLAIndicator({ deadline, className, compact = false }: SLAIndica
           )}
         </div>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-gray-200">
+      <div className="h-1.5 w-full rounded-full bg-muted">
         <div
           className={cn(
             'h-1.5 rounded-full transition-all',

@@ -44,7 +44,7 @@ export function SearchBar({
     <div className="relative">
       <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
         <svg
-          className="h-5 w-5 text-gray-400"
+          className="h-5 w-5 text-muted-foreground"
           viewBox="0 0 20 20"
           fill="currentColor"
           aria-hidden="true"
@@ -58,7 +58,7 @@ export function SearchBar({
       </div>
       <input
         type="text"
-        className="block w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-3 text-sm placeholder-gray-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="block w-full rounded-lg border border-input bg-background py-2 pl-10 pr-3 text-sm placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-ring"
         placeholder={placeholder}
         value={value}
         onChange={handleChange}

@@ -47,9 +47,9 @@ export function LockControlPanel({
   };
 
   const lockStatusConfig: Record<string, { label: string; color: string }> = {
-    unlocked: { label: 'Unlocked', color: 'text-green-700 bg-green-50' },
-    locked: { label: 'Locked', color: 'text-orange-700 bg-orange-50' },
-    permanent_unlock: { label: 'Permanently Unlocked', color: 'text-blue-700 bg-blue-50' },
+    unlocked: { label: 'Unlocked', color: 'text-green-700 bg-green-50 dark:bg-green-950' },
+    locked: { label: 'Locked', color: 'text-orange-700 bg-orange-50 dark:bg-orange-950' },
+    permanent_unlock: { label: 'Permanently Unlocked', color: 'text-blue-700 bg-blue-50 dark:bg-blue-950' },
   };
 
   const statusInfo = lockStatusConfig[assignment.lock_status] || lockStatusConfig.unlocked;
@@ -57,19 +57,19 @@ export function LockControlPanel({
   return (
     <div className="space-y-4">
       {/* Current Status */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Device Lock Status</h3>
+      <div className="bg-card rounded-lg border border-border p-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Device Lock Status</h3>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <span className={`px-3 py-1.5 rounded-full text-sm font-medium ${statusInfo.color}`}>
               {statusInfo.label}
             </span>
             {assignment.lock_status === 'locked' && assignment.locked_reason && (
-              <span className="text-sm text-gray-500">Reason: {assignment.locked_reason}</span>
+              <span className="text-sm text-muted-foreground">Reason: {assignment.locked_reason}</span>
             )}
           </div>
           {assignment.grace_period_ends_at && assignment.lock_status !== 'locked' && (
-            <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+            <span className="text-xs text-yellow-600 bg-yellow-50 dark:bg-yellow-950 px-2 py-1 rounded">
               Grace period ends: {formatDateTime(assignment.grace_period_ends_at)}
             </span>
           )}
@@ -105,13 +105,13 @@ export function LockControlPanel({
             </button>
           )}
           {assignment.lock_status === 'permanent_unlock' && (
-            <p className="text-sm text-gray-500">This device has been permanently unlocked and cannot be re-locked.</p>
+            <p className="text-sm text-muted-foreground">This device has been permanently unlocked and cannot be re-locked.</p>
           )}
         </div>
 
         {/* Lock Form */}
         {showLockForm && (
-          <div className="mt-4 p-3 bg-red-50 rounded-md border border-red-200">
+          <div className="mt-4 p-3 bg-red-50 dark:bg-red-950 rounded-md border border-red-200">
             <label className="block text-sm font-medium text-red-800 mb-1">Lock Reason</label>
             <textarea
               value={lockReason}
@@ -131,7 +131,7 @@ export function LockControlPanel({
               </button>
               <button
                 onClick={() => { setShowLockForm(false); setLockReason(''); }}
-                className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                className="px-3 py-1.5 bg-card text-foreground text-sm rounded-md border border-border hover:bg-accent"
               >
                 Cancel
               </button>
@@ -174,7 +174,7 @@ export function LockControlPanel({
               </button>
               <button
                 onClick={() => { setShowConfirmPermanent(false); setPermanentUnlockText(''); }}
-                className="px-3 py-1.5 bg-white text-gray-700 text-sm rounded-md border border-gray-300 hover:bg-gray-50"
+                className="px-3 py-1.5 bg-card text-foreground text-sm rounded-md border border-border hover:bg-accent"
               >
                 Cancel
               </button>
@@ -185,17 +185,17 @@ export function LockControlPanel({
 
       {/* Lock History */}
       {lockHistory.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Lock History</h3>
+        <div className="bg-card rounded-lg border border-border p-4">
+          <h3 className="text-sm font-semibold text-foreground mb-3">Lock History</h3>
           <div className="space-y-3">
             {lockHistory.map((event) => (
               <div key={event.id} className="flex items-start gap-3 text-sm">
                 <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${
-                  event.action === 'lock' ? 'bg-red-500' : 'bg-green-500'
+                  event.action === 'lock' ? 'bg-red-50 dark:bg-red-9500' : 'bg-green-500'
                 }`} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-foreground">
                       {event.action === 'lock' ? 'Locked' : 'Unlocked'}
                     </span>
                     <Badge variant={
@@ -208,8 +208,8 @@ export function LockControlPanel({
                       {event.trustonic_status}
                     </Badge>
                   </div>
-                  <p className="text-gray-600 mt-0.5">{event.reason}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
+                  <p className="text-muted-foreground mt-0.5">{event.reason}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
                     {formatDateTime(event.performed_at)} by {event.triggered_by}
                   </p>
                 </div>

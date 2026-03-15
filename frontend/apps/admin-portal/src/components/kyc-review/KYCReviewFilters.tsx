@@ -19,7 +19,7 @@ export function KYCReviewFilters({
     <div className={cn('flex flex-wrap items-center gap-3', className)}>
       {/* Status Filter */}
       <div className="flex items-center gap-1.5">
-        <Filter className="h-4 w-4 text-gray-400" />
+        <Filter className="h-4 w-4 text-muted-foreground" />
         <select
           value={filters.status || ''}
           onChange={(e) =>
@@ -27,7 +27,7 @@ export function KYCReviewFilters({
               status: (e.target.value || undefined) as FilterType['status'],
             })
           }
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         >
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
@@ -45,7 +45,7 @@ export function KYCReviewFilters({
             confidenceRange: (e.target.value || undefined) as FilterType['confidenceRange'],
           })
         }
-        className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+        className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
       >
         <option value="">All Confidence</option>
         <option value="high">High (85%+)</option>
@@ -55,7 +55,7 @@ export function KYCReviewFilters({
 
       {/* Sort Control */}
       <div className="flex items-center gap-1.5">
-        <ArrowUpDown className="h-4 w-4 text-gray-400" />
+        <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
         <select
           value={`${filters.sortBy || 'submitted_at'}_${filters.sortOrder || 'asc'}`}
           onChange={(e) => {
@@ -65,7 +65,7 @@ export function KYCReviewFilters({
             ];
             onFilterChange({ sortBy, sortOrder });
           }}
-          className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+          className="rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
         >
           <option value="submitted_at_asc">Oldest First</option>
           <option value="submitted_at_desc">Newest First</option>

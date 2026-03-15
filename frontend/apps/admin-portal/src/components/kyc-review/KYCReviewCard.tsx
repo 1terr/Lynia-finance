@@ -81,9 +81,9 @@ export function KYCReviewCard({
   }, [submission.id, rejectionReason, rejectMutation]);
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm">
+    <div className="rounded-lg border border-border bg-card shadow-sm">
       {/* Card Header */}
-      <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+      <div className="flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-4">
           {/* Customer avatar */}
           <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary-100">
@@ -94,14 +94,14 @@ export function KYCReviewCard({
           </div>
 
           <div>
-            <h3 className="text-base font-semibold text-gray-900">
+            <h3 className="text-base font-semibold text-foreground">
               {customer?.first_name} {customer?.last_name}
             </h3>
             <div className="flex items-center gap-3 mt-0.5">
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 #{submission.submission_number}
               </span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground">
                 Attempt {submission.attempt_number}/3
               </span>
             </div>
@@ -112,7 +112,7 @@ export function KYCReviewCard({
           {/* Confidence Score */}
           {submission.confidence_score !== null && (
             <div className="text-right">
-              <div className="text-xs text-gray-500">Confidence</div>
+              <div className="text-xs text-muted-foreground">Confidence</div>
               <div className="flex items-center gap-1.5">
                 <Badge variant={confidence.color}>
                   {submission.confidence_score}%
@@ -152,8 +152,8 @@ export function KYCReviewCard({
             {/* Middle Column: Customer & Verification Details */}
             <div className="lg:col-span-1 space-y-4">
               {/* Customer Information */}
-              <div className="rounded-lg border border-gray-200 p-4">
-                <h4 className="text-sm font-medium text-gray-900 mb-3">
+              <div className="rounded-lg border border-border p-4">
+                <h4 className="text-sm font-medium text-foreground mb-3">
                   Customer Information
                 </h4>
                 <div className="space-y-2.5">
@@ -170,7 +170,7 @@ export function KYCReviewCard({
 
               {/* Extracted Data */}
               {(submission.extracted_name || submission.extracted_id_number) && (
-                <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
+                <div className="rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-950 p-4">
                   <h4 className="text-sm font-medium text-blue-900 mb-3">
                     Extracted from Document
                   </h4>
@@ -205,9 +205,9 @@ export function KYCReviewCard({
 
               {/* KYC Provider Results (provider-agnostic) */}
               {(providerResult || submission.verification_confidence != null) && (
-                <div className="rounded-lg border border-gray-200 p-4">
+                <div className="rounded-lg border border-border p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <h4 className="text-sm font-medium text-gray-900">
+                    <h4 className="text-sm font-medium text-foreground">
                       Verification Checks
                     </h4>
                     <Badge variant="outline" className="text-xs">
@@ -227,9 +227,9 @@ export function KYCReviewCard({
                       label="ID Validation"
                       passed={!!(providerResult?.id_validation) || submission.verification_decision === 'APPROVED'}
                     />
-                    <div className="pt-2 border-t border-gray-100">
+                    <div className="pt-2 border-t border-border">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           Overall Confidence
                         </span>
                         <span
@@ -257,8 +257,8 @@ export function KYCReviewCard({
               <SLAIndicator deadline={slaDeadline} />
 
               {/* Action Buttons */}
-              <div className="rounded-lg border border-gray-200 p-4 space-y-3">
-                <h4 className="text-sm font-medium text-gray-900">
+              <div className="rounded-lg border border-border p-4 space-y-3">
+                <h4 className="text-sm font-medium text-foreground">
                   Review Decision
                 </h4>
 
@@ -266,7 +266,7 @@ export function KYCReviewCard({
                   <>
                     {/* Approval Notes */}
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
                         Notes (optional)
                       </label>
                       <textarea
@@ -275,7 +275,7 @@ export function KYCReviewCard({
                         value={approvalNotes}
                         onChange={(e) => setApprovalNotes(e.target.value)}
                         placeholder="Add any notes about this review..."
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                        className="w-full rounded-md border border-border px-3 py-2 text-sm placeholder-muted-foreground focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                       />
                     </div>
 
@@ -318,7 +318,7 @@ export function KYCReviewCard({
                   <>
                     {/* Rejection Reason */}
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                      <label className="block text-xs font-medium text-muted-foreground mb-1">
                         Rejection Reason <span className="text-red-500">*</span>
                       </label>
                       <textarea
@@ -327,7 +327,7 @@ export function KYCReviewCard({
                         value={rejectionReason}
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="Provide a detailed reason for rejection..."
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm placeholder-gray-400 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        className="w-full rounded-md border border-border px-3 py-2 text-sm placeholder-muted-foreground focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
                         autoFocus
                       />
                     </div>
@@ -343,7 +343,7 @@ export function KYCReviewCard({
                               prev.trim() ? `${prev.trimEnd()}; ${template}` : template
                             );
                           }}
-                          className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 hover:border-gray-300 transition-colors"
+                          className="rounded-full border border-border bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-accent hover:border-border transition-colors"
                         >
                           {template}
                         </button>
@@ -400,9 +400,9 @@ function InfoRow({
 }) {
   return (
     <div className="flex items-center gap-2">
-      <Icon className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
-      <span className="text-xs text-gray-500 min-w-[60px]">{label}</span>
-      <span className="text-sm text-gray-900 truncate">{value}</span>
+      <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+      <span className="text-xs text-muted-foreground min-w-[60px]">{label}</span>
+      <span className="text-sm text-foreground truncate">{value}</span>
     </div>
   );
 }
@@ -418,7 +418,7 @@ function VerificationCheck({
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-2">
         <Shield className={cn('h-4 w-4', passed ? 'text-green-500' : 'text-red-500')} />
-        <span className="text-sm text-gray-700">{label}</span>
+        <span className="text-sm text-foreground">{label}</span>
       </div>
       <Badge variant={passed ? 'green' : 'red'}>
         {passed ? 'Pass' : 'Fail'}

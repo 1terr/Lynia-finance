@@ -139,13 +139,13 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-card p-6 shadow">
         <div className="flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-foreground">
               Payment Details
             </h2>
-            <p className="mt-1 text-sm text-gray-500">ID: {payment.id}</p>
+            <p className="mt-1 text-sm text-muted-foreground">ID: {payment.id}</p>
           </div>
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
         </div>
@@ -190,7 +190,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
         {/* Payment Allocation */}
         {(payment.principal_amount || payment.interest_amount) && (
           <div className="mt-6">
-            <h3 className="text-sm font-medium text-gray-700">
+            <h3 className="text-sm font-medium text-foreground">
               Payment Allocation
             </h3>
             <div className="mt-2 grid grid-cols-4 gap-4">
@@ -211,8 +211,8 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
 
       {/* Customer & Loan Info */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-semibold text-gray-900">Customer</h3>
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h3 className="text-sm font-semibold text-foreground">Customer</h3>
           {payment.customers ? (
             <div className="mt-3 space-y-2">
               <p className="text-sm">
@@ -223,47 +223,47 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
                   {payment.customers.first_name} {payment.customers.last_name}
                 </Link>
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 {maskPhone(payment.customers.phone_number)}
               </p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-gray-500">{payment.customer_id}</p>
+            <p className="mt-3 text-sm text-muted-foreground">{payment.customer_id}</p>
           )}
         </div>
 
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-semibold text-gray-900">Loan</h3>
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h3 className="text-sm font-semibold text-foreground">Loan</h3>
           {payment.loans ? (
             <div className="mt-3 space-y-2">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-foreground">
                 {formatCurrency((payment.loans as any).principal)} loan
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Status: {(payment.loans as any).status}
               </p>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-gray-500">{payment.loan_id}</p>
+            <p className="mt-3 text-sm text-muted-foreground">{payment.loan_id}</p>
           )}
         </div>
       </div>
 
       {/* Actions */}
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h3 className="text-sm font-semibold text-gray-900">Actions</h3>
+      <div className="rounded-lg bg-card p-6 shadow">
+        <h3 className="text-sm font-semibold text-foreground">Actions</h3>
 
         {payment.status === 'pending' && (
           <div className="mt-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">
-                Notes <span className="text-gray-400">(required for fail action)</span>
+              <label className="block text-sm font-medium text-foreground">
+                Notes <span className="text-muted-foreground">(required for fail action)</span>
               </label>
               <textarea
                 value={actionNotes}
                 onChange={(e) => setActionNotes(e.target.value)}
                 rows={2}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
                 placeholder="Add notes for this action..."
               />
             </div>
@@ -311,7 +311,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
             <button
               onClick={() => setShowRefundForm(!showRefundForm)}
               disabled={isProcessing}
-              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+              className="rounded-lg border border-red-300 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950 disabled:opacity-50"
             >
               Initiate Refund
             </button>
@@ -327,7 +327,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
               value={actionNotes}
               onChange={(e) => setActionNotes(e.target.value)}
               rows={2}
-              className="mt-2 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-2 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Reason for refund (required)..."
             />
             <div className="mt-3 flex gap-3">
@@ -346,7 +346,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
                   setActionNotes('');
                 }}
                 disabled={isProcessing}
-                className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -355,7 +355,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
         )}
 
         {payment.status === 'failed' && (
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-muted-foreground">
             This payment has failed.{' '}
             {payment.failure_reason &&
               `Reason: ${payment.failure_reason}`}
@@ -363,7 +363,7 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
         )}
 
         {payment.status === 'refunded' && (
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-muted-foreground">
             This payment has been refunded.
           </p>
         )}
@@ -381,9 +381,9 @@ export function PaymentDetail({ payment }: PaymentDetailProps) {
       />
 
       {payment.notes && (
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h3 className="text-sm font-semibold text-gray-900">Notes</h3>
-          <p className="mt-2 text-sm text-gray-700">{payment.notes}</p>
+        <div className="rounded-lg bg-card p-6 shadow">
+          <h3 className="text-sm font-semibold text-foreground">Notes</h3>
+          <p className="mt-2 text-sm text-foreground">{payment.notes}</p>
         </div>
       )}
     </div>
@@ -401,8 +401,8 @@ function InfoField({
 }) {
   return (
     <div className={className}>
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-1 text-sm font-medium capitalize text-gray-900">
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-medium capitalize text-foreground">
         {value}
       </p>
     </div>
@@ -417,11 +417,8 @@ function AllocField({
   amount: number | null;
 }) {
   return (
-    <div className="rounded-lg bg-gray-50 p-3">
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="mt-1 text-sm font-medium text-gray-900">
+    <div className="rounded-lg bg-muted p-3">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-medium text-foreground">
         {amount !== null ? formatCurrency(amount) : '-'}
-      </p>
-    </div>
-  );
-}
+      </p>

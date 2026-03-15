@@ -30,11 +30,11 @@ export function Pagination({
   return (
     <div
       className={cn(
-        'flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3',
+        'flex items-center justify-between border-t border-border bg-card px-4 py-3',
         className
       )}
     >
-      <div className="text-sm text-gray-700">
+      <div className="text-sm text-muted-foreground">
         Showing <span className="font-medium">{from}</span> to{' '}
         <span className="font-medium">{to}</span> of{' '}
         <span className="font-medium">{total}</span> results
@@ -55,7 +55,7 @@ export function Pagination({
         <div className="hidden sm:flex items-center gap-1">
           {getPageNumbers(page, totalPages).map((pageNum, index) =>
             pageNum === null ? (
-              <span key={`dots-${index}`} className="px-2 text-gray-400">
+              <span key={`dots-${index}`} className="px-2 text-muted-foreground">
                 ...
               </span>
             ) : (
@@ -66,7 +66,7 @@ export function Pagination({
                   'h-8 min-w-[2rem] rounded text-sm font-medium',
                   pageNum === page
                     ? 'bg-primary-600 text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    : 'text-foreground hover:bg-accent'
                 )}
               >
                 {pageNum}

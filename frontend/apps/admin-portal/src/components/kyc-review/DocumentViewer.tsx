@@ -61,13 +61,13 @@ export function DocumentViewer({
         {/* ID Document */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <CreditCard className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               {idDocumentType}
             </span>
           </div>
           <div
-            className="relative aspect-[1.6/1] overflow-hidden rounded-lg border border-gray-200 bg-gray-100 cursor-pointer group"
+            className="relative aspect-[1.6/1] overflow-hidden rounded-lg border border-border bg-muted cursor-pointer group"
             onClick={() => openFullscreen(idDocumentUrl)}
           >
             <Image
@@ -86,13 +86,13 @@ export function DocumentViewer({
         {/* Selfie */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <User className="h-4 w-4 text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-foreground">
               Live Selfie
             </span>
           </div>
           <div
-            className="relative aspect-square max-w-[200px] overflow-hidden rounded-lg border border-gray-200 bg-gray-100 cursor-pointer group"
+            className="relative aspect-square max-w-[200px] overflow-hidden rounded-lg border border-border bg-muted cursor-pointer group"
             onClick={() => openFullscreen(selfieUrl)}
           >
             <Image
@@ -123,17 +123,17 @@ export function DocumentViewer({
             <Button variant="ghost" size="sm" onClick={handleZoomIn}>
               <ZoomIn className="h-4 w-4" />
             </Button>
-            <span className="text-xs font-medium text-gray-600 min-w-[3rem] text-center">
+            <span className="text-xs font-medium text-muted-foreground min-w-[3rem] text-center">
               {Math.round(zoom * 100)}%
             </span>
             <Button variant="ghost" size="sm" onClick={handleZoomOut}>
               <ZoomOut className="h-4 w-4" />
             </Button>
-            <div className="h-4 w-px bg-gray-300" />
+            <div className="h-4 w-px bg-border" />
             <Button variant="ghost" size="sm" onClick={handleRotate}>
               <RotateCw className="h-4 w-4" />
             </Button>
-            <div className="h-4 w-px bg-gray-300" />
+            <div className="h-4 w-px bg-border" />
             <Button variant="ghost" size="sm" onClick={closeFullscreen}>
               <X className="h-4 w-4" />
             </Button>

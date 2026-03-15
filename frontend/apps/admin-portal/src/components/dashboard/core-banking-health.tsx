@@ -44,9 +44,9 @@ const HEALTH_CONFIG: Record<HealthLevel, {
   color: string;
   bg: string;
 }> = {
-  healthy: { label: 'All Systems Healthy', Icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50' },
-  warning: { label: 'Minor Issues Detected', Icon: AlertTriangle, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  critical: { label: 'Issues Detected', Icon: XCircle, color: 'text-red-600', bg: 'bg-red-50' },
+  healthy: { label: 'All Systems Healthy', Icon: CheckCircle2, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950' },
+  warning: { label: 'Minor Issues Detected', Icon: AlertTriangle, color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-950' },
+  critical: { label: 'Issues Detected', Icon: XCircle, color: 'text-red-600', bg: 'bg-red-50 dark:bg-red-950' },
 };
 
 // ============================================================
@@ -55,7 +55,7 @@ const HEALTH_CONFIG: Record<HealthLevel, {
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+    <p className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {children}
     </p>
   );
@@ -72,8 +72,8 @@ function StatRow({
 }) {
   return (
     <div className="flex items-center justify-between text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className={cn('font-medium tabular-nums', warn ? 'text-red-600' : 'text-gray-900')}>
+      <span className="text-muted-foreground">{label}</span>
+      <span className={cn('font-medium tabular-nums', warn ? 'text-red-600' : 'text-foreground')}>
         {value}
       </span>
     </div>
@@ -96,11 +96,11 @@ function InfraRow({
 }) {
   return (
     <div className="flex items-center justify-between text-sm">
-      <span className="flex items-center gap-2 text-gray-500">
+      <span className="flex items-center gap-2 text-muted-foreground">
         <StatusDot status={status} />
         {label}
       </span>
-      <span className="font-medium text-gray-900">{value}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
@@ -114,24 +114,24 @@ function HealthSkeleton() {
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <Activity className="h-4 w-4 text-gray-400" />
+          <Activity className="h-4 w-4 text-muted-foreground" />
           Core Banking System Health
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="h-9 animate-pulse rounded-lg bg-gray-100" />
+          <div className="h-9 animate-pulse rounded-lg bg-muted" />
           <div className="grid grid-cols-2 gap-x-8 gap-y-4 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="space-y-2">
-                <div className="h-3 w-20 animate-pulse rounded bg-gray-100" />
-                <div className="h-4 animate-pulse rounded bg-gray-200" />
-                <div className="h-4 animate-pulse rounded bg-gray-200" />
-                <div className="h-4 animate-pulse rounded bg-gray-200" />
+                <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                <div className="h-4 animate-pulse rounded bg-muted" />
+                <div className="h-4 animate-pulse rounded bg-muted" />
+                <div className="h-4 animate-pulse rounded bg-muted" />
               </div>
             ))}
           </div>
-          <div className="h-4 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 animate-pulse rounded bg-muted" />
         </div>
       </CardContent>
     </Card>
@@ -150,7 +150,7 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-gray-400" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
             Core Banking System Health
           </CardTitle>
         </CardHeader>
@@ -158,8 +158,8 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
           <div className="flex flex-col items-center gap-3 py-4">
             <XCircle className="h-8 w-8 text-red-400" />
             <div className="text-center">
-              <p className="text-sm font-medium text-gray-700">Unable to load system status</p>
-              {error && <p className="mt-1 text-xs text-gray-500">{error.message}</p>}
+              <p className="text-sm font-medium text-foreground">Unable to load system status</p>
+              {error && <p className="mt-1 text-xs text-muted-foreground">{error.message}</p>}
             </div>
             {onRetry && (
               <Button variant="outline" size="sm" onClick={onRetry}>
@@ -188,12 +188,12 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-gray-400" />
+            <Activity className="h-4 w-4 text-muted-foreground" />
             Core Banking System Health
           </CardTitle>
           {onRetry && (
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onRetry}>
-              <RefreshCw className="h-3.5 w-3.5 text-gray-400" />
+              <RefreshCw className="h-3.5 w-3.5 text-muted-foreground" />
             </Button>
           )}
         </div>
@@ -257,15 +257,15 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
                 <StatRow label="Unsynced Loans" value={integrity.unsyncedLoans} warn={integrity.unsyncedLoans > 0} />
                 <StatRow label="Unsynced Payments" value={integrity.unsyncedPayments} warn={integrity.unsyncedPayments > 0} />
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Discrepancies</span>
+                  <span className="text-muted-foreground">Discrepancies</span>
                   <span className="flex items-center gap-1.5 font-medium tabular-nums">
-                    <span className={cn(integrity.discrepancies.high > 0 ? 'text-red-600' : 'text-gray-400')}>
+                    <span className={cn(integrity.discrepancies.high > 0 ? 'text-red-600' : 'text-muted-foreground')}>
                       {integrity.discrepancies.high}H
                     </span>
-                    <span className={cn(integrity.discrepancies.medium > 0 ? 'text-yellow-600' : 'text-gray-400')}>
+                    <span className={cn(integrity.discrepancies.medium > 0 ? 'text-yellow-600' : 'text-muted-foreground')}>
                       {integrity.discrepancies.medium}M
                     </span>
-                    <span className="text-gray-400">
+                    <span className="text-muted-foreground">
                       {integrity.discrepancies.low}L
                     </span>
                   </span>
@@ -288,14 +288,14 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
             </div>
           </div>
 
-          <div className="border-t border-gray-100" />
+          <div className="border-t border-border" />
 
           {/* Accounting */}
           <div>
             <SectionLabel>Accounting</SectionLabel>
             <div className="grid grid-cols-2 gap-x-8 lg:grid-cols-4">
               <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-gray-500">
+                <span className="flex items-center gap-2 text-muted-foreground">
                   <StatusDot status={accounting.trialBalanceBalanced ? 'ok' : 'warn'} />
                   Trial Balance
                 </span>

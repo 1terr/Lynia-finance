@@ -26,7 +26,7 @@ export function DeviceFilters({
       <select
         value={status}
         onChange={(e) => onStatusChange(e.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        className="rounded-md border border-border px-3 py-2 text-sm"
         aria-label="Filter by status"
       >
         <option value="">All Statuses</option>
@@ -41,7 +41,7 @@ export function DeviceFilters({
       <select
         value={brand}
         onChange={(e) => onBrandChange(e.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        className="rounded-md border border-border px-3 py-2 text-sm"
         aria-label="Filter by brand"
       >
         <option value="">All Brands</option>
@@ -53,7 +53,7 @@ export function DeviceFilters({
       <select
         value={lockEnabled}
         onChange={(e) => onLockEnabledChange(e.target.value)}
-        className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        className="rounded-md border border-border px-3 py-2 text-sm"
         aria-label="Filter by lock status"
       >
         <option value="">All Lock States</option>

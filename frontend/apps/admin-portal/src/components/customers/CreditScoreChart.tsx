@@ -16,9 +16,9 @@ export function CreditScoreChart({ customerId }: CreditScoreChartProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
+      <div className="rounded-lg bg-card p-6 shadow">
         <div className="flex h-48 items-center justify-center">
-          <p className="text-sm text-gray-500">Loading credit history...</p>
+          <p className="text-sm text-muted-foreground">Loading credit history...</p>
         </div>
       </div>
     );
@@ -26,12 +26,12 @@ export function CreditScoreChart({ customerId }: CreditScoreChartProps) {
 
   if (!history || history.length === 0) {
     return (
-      <div className="rounded-lg bg-white p-6 shadow">
-        <h3 className="text-lg font-semibold text-gray-900">
+      <div className="rounded-lg bg-card p-6 shadow">
+        <h3 className="text-lg font-semibold text-foreground">
           Credit Score History
         </h3>
         <div className="mt-4 flex h-48 items-center justify-center">
-          <p className="text-sm text-gray-500">No credit score history available</p>
+          <p className="text-sm text-muted-foreground">No credit score history available</p>
         </div>
       </div>
     );
@@ -57,8 +57,8 @@ export function CreditScoreChart({ customerId }: CreditScoreChartProps) {
     .join(' ');
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h3 className="text-lg font-semibold text-gray-900">
+    <div className="rounded-lg bg-card p-6 shadow">
+      <h3 className="text-lg font-semibold text-foreground">
         Credit Score History
       </h3>
 
@@ -135,34 +135,34 @@ export function CreditScoreChart({ customerId }: CreditScoreChartProps) {
 
       {/* History table */}
       <div className="mt-4 max-h-64 overflow-y-auto">
-        <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border text-sm">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">
                 Date
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">
                 Score
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">
                 Tier
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">
+              <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground">
                 Reason
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-border">
             {[...history].reverse().map((entry) => (
               <tr key={entry.id}>
-                <td className="px-4 py-2 text-gray-900">
+                <td className="px-4 py-2 text-foreground">
                   {formatDate(entry.created_at)}
                 </td>
-                <td className="px-4 py-2 font-medium text-gray-900">
+                <td className="px-4 py-2 font-medium text-foreground">
                   {entry.score}
                 </td>
-                <td className="px-4 py-2 text-gray-900">Tier {entry.tier}</td>
-                <td className="px-4 py-2 text-gray-500">
+                <td className="px-4 py-2 text-foreground">Tier {entry.tier}</td>
+                <td className="px-4 py-2 text-muted-foreground">
                   {entry.reason || '-'}
                 </td>
               </tr>

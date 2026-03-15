@@ -173,6 +173,106 @@ function handleFineractError(
 }
 
 // ============================================================
+// POST /api/v1/fineract/loans/:loanId/reschedule
+// ============================================================
+
+export async function handleLoanReschedule(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const result = await lookupFineractLoan(event, params.loanId);
+  if ('error' in result) return result.error;
+
+  const { rescheduleFromDate, rescheduleReasonCodeValueId } = result.body;
+  if (!rescheduleFromDate) {
+    return err(400, 'rescheduleFromDate is required', event);
+  }
+  if (rescheduleReasonCodeValueId === undefined || rescheduleReasonCodeValueId === null) {
+    return err(400, 'rescheduleReasonCodeValueId is required', event);
+  }
+
+  const fineract = await getFineractClient();
+
+  try {
+    const response = await fineract.restructureLoan(result.fineractLoanId, {
+      rescheduleFromDate: rescheduleFromDate as string,
+      rescheduleReasonCodeValueId: rescheduleReasonCodeValueId as number,
+      adjustedDueDate: result.body.adjustedDueDate as string | undefined,
+      graceOnPrincipal: result.body.graceOnPrincipal as number | undefined,
+      graceOnInterest: result.body.graceOnInterest as number | undefined,
+      extraTerms: result.body.extraTerms as number | undefined,
+      newInterestRate: result.body.newInterestRate as number | undefined,
+      rescheduleReasonComment: result.body.rescheduleReasonComment as string | undefined,
+      submittedOnDate: result.body.submittedOnDate as string | undefined,
+    });
+
+    // Update loan status in Lynia DB
+    await db
+      .from('loans')
+      .update({ status: 'restructured' })
+      .eq('id', params.loanId)
+      .execute();
+
+    return ok(
+      { success: true, resourceId: response.resourceId, loanId: response.loanId },
+      event
+    );
+  } catch (e) {
+    return handleFineractError(e, 'loanReschedule', params.loanId, event);
+  }
+}
+
+// ============================================================
+// POST /api/v1/fineract/loans/:loanId/early-payoff
+// ============================================================
+
+export async function handleEarlyPayoff(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const result = await lookupFineractLoan(event, params.loanId);
+  if ('error' in result) return result.error;
+
+  const fineract = await getFineractClient();
+
+  try {
+    // Get the full loan with schedule to determine outstanding balance
+    const loanData = await fineract.calculateEarlyPayoff(result.fineractLoanId);
+    const outstanding = loanData?.summary?.totalOutstanding ?? 0;
+
+    if (outstanding <= 0) {
+      return err(400, 'Loan has no outstanding balance', event);
+    }
+
+    // Process full balance repayment
+    const today = new Date().toISOString().split('T')[0];
+    const response = await fineract.processEarlyPayoff({
+      loanId: result.fineractLoanId,
+      amount: outstanding,
+      transactionDate: today,
+      paymentTypeId: result.body.paymentTypeId as number | undefined,
+      note: result.body.note as string | undefined,
+    });
+
+    // Update Lynia DB
+    await db
+      .from('loans')
+      .update({ status: 'closed', outstanding_balance: 0 })
+      .eq('id', params.loanId)
+      .execute();
+
+    return ok(
+      { success: true, resourceId: response.resourceId, amountPaid: outstanding },
+      event
+    );
+  } catch (e) {
+    return handleFineractError(e, 'earlyPayoff', params.loanId, event);
+  }
+}
+
+// ============================================================
 // POST /api/v1/fineract/loans/:loanId/reject
 // ============================================================
 

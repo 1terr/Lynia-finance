@@ -4,7 +4,7 @@
  */
 
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { getSecurityHeaders } from '../../../shared/utils/response';
+import { errorResponse, getSecurityHeaders } from '../../../shared/utils/response';
 import { PaymentService } from '../payment-service';
 import logger from '../../../shared/utils/logger';
 
@@ -14,12 +14,9 @@ export const handleGetPaymentStatus: RouteHandler = async (event, params, _auth)
   try {
     const paymentId = params.paymentId;
 
+    const requestId = event.requestContext?.requestId || 'unknown';
     if (!paymentId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Payment ID required' }),
-        headers: getSecurityHeaders(event)
-      };
+      return errorResponse('Payment ID required', 400, { requestId }, event);
     }
 
     const payment = await paymentService.checkPaymentStatus(paymentId);
@@ -43,14 +40,8 @@ export const handleGetPaymentStatus: RouteHandler = async (event, params, _auth)
     };
 
   } catch (error) {
-    logger.error('Error fetching payment status', { action: 'payment.get_status', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: 'Failed to fetch payment status',
-        message: 'An unexpected error occurred. Please try again later.'
-      }),
-      headers: getSecurityHeaders(event)
-    };
+    const requestId = event.requestContext?.requestId || 'unknown';
+    logger.error('Error fetching payment status', { action: 'payment.get_status', status: 'failed', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    return errorResponse('Failed to fetch payment status', 500, { requestId }, event);
   }
 };

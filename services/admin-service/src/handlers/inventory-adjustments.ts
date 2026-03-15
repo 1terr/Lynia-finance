@@ -94,12 +94,21 @@ export const handleCreateAdjustment: RouteHandler = async (event, _params, auth)
   }
 
   // Get current device status
-  const { data: device } = await db.from('devices')
+  const { data: device, error: deviceError } = await db.from('devices')
     .select('id, status')
     .eq('id', body.device_id)
     .is('deleted_at', null)
     .maybeSingle()
     .execute();
+
+  if (deviceError) {
+    logger.error('Error looking up device', {
+      action: 'inventory.adjustments.create',
+      status: 'failed',
+      errorMessage: deviceError.message,
+    });
+    return errorResponse('Failed to look up device', 500, {}, event);
+  }
 
   if (!device) {
     return errorResponse('Device not found', 404, {}, event);
@@ -157,12 +166,21 @@ export const handleApproveAdjustment: RouteHandler = async (event, params, auth)
   }
 
   // Get adjustment
-  const { data: adj } = await db.from('inventory_adjustments')
+  const { data: adj, error: adjError } = await db.from('inventory_adjustments')
     .select('*')
     .eq('id', adjustmentId)
     .eq('approval_status', 'pending')
     .maybeSingle()
     .execute();
+
+  if (adjError) {
+    logger.error('Error fetching adjustment', {
+      action: 'inventory.adjustments.approve',
+      status: 'failed',
+      errorMessage: adjError.message,
+    });
+    return errorResponse('Failed to fetch adjustment', 500, {}, event);
+  }
 
   if (!adj) {
     return errorResponse('Pending adjustment not found', 404, {}, event);
@@ -173,16 +191,23 @@ export const handleApproveAdjustment: RouteHandler = async (event, params, auth)
   if (action === 'approve') {
     // Apply the adjustment to the device
     if (adjRecord.new_status) {
-      await db.from('devices')
+      const { error: deviceErr } = await db.from('devices')
         .update({
           status: adjRecord.new_status,
           updated_at: new Date().toISOString(),
         })
         .eq('id', adjRecord.device_id as string)
         .execute();
+      if (deviceErr) {
+        logger.error('Failed to update device status', {
+          action: 'inventory.adjustment.approve', status: 'failed',
+          errorMessage: deviceErr.message,
+        });
+        return errorResponse('Failed to update device status', 500, {}, event);
+      }
     }
 
-    await db.from('inventory_adjustments')
+    const { error: approveErr } = await db.from('inventory_adjustments')
       .update({
         approval_status: 'approved',
         approved_by: auth.userId,
@@ -191,8 +216,15 @@ export const handleApproveAdjustment: RouteHandler = async (event, params, auth)
       })
       .eq('id', adjustmentId)
       .execute();
+    if (approveErr) {
+      logger.error('Failed to approve adjustment', {
+        action: 'inventory.adjustment.approve', status: 'failed',
+        errorMessage: approveErr.message,
+      });
+      return errorResponse('Failed to approve adjustment', 500, {}, event);
+    }
   } else {
-    await db.from('inventory_adjustments')
+    const { error: rejectErr } = await db.from('inventory_adjustments')
       .update({
         approval_status: 'rejected',
         approved_by: auth.userId,
@@ -202,6 +234,13 @@ export const handleApproveAdjustment: RouteHandler = async (event, params, auth)
       })
       .eq('id', adjustmentId)
       .execute();
+    if (rejectErr) {
+      logger.error('Failed to reject adjustment', {
+        action: 'inventory.adjustment.reject', status: 'failed',
+        errorMessage: rejectErr.message,
+      });
+      return errorResponse('Failed to reject adjustment', 500, {}, event);
+    }
   }
 
   await auditLog(auth, `inventory.adjustment.${action}`, 'inventory_adjustment', adjustmentId,

@@ -34,7 +34,7 @@ export function DeviceSearch({ value, onSelect, placeholder = 'Search by IMEI...
   return (
     <div ref={ref} className="relative">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
           type="text"
           value={selectedLabel || query}
@@ -45,16 +45,16 @@ export function DeviceSearch({ value, onSelect, placeholder = 'Search by IMEI...
           }}
           onFocus={() => query.length >= 3 && setOpen(true)}
           placeholder={placeholder}
-          className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
         />
       </div>
       {open && data?.data && data.data.length > 0 && (
-        <div className="absolute z-20 mt-1 w-full rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-auto">
+        <div className="absolute z-20 mt-1 w-full rounded-md border border-border bg-card shadow-lg max-h-48 overflow-auto">
           {data.data.map((d) => (
             <button
               key={d.id}
               type="button"
-              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50 border-b border-gray-100 last:border-0"
+              className="w-full px-3 py-2 text-left text-sm hover:bg-accent border-b border-border last:border-0"
               onClick={() => {
                 onSelect({ id: d.id, imei: d.imei || '', model_name: `${d.manufacturer} ${d.model}` });
                 setSelectedLabel(`${d.imei} — ${d.manufacturer} ${d.model}`);
@@ -62,8 +62,8 @@ export function DeviceSearch({ value, onSelect, placeholder = 'Search by IMEI...
                 setOpen(false);
               }}
             >
-              <span className="font-mono text-gray-700">{d.imei}</span>
-              <span className="ml-2 text-gray-500">{d.manufacturer} {d.model}</span>
+              <span className="font-mono text-foreground">{d.imei}</span>
+              <span className="ml-2 text-muted-foreground">{d.manufacturer} {d.model}</span>
             </button>
           ))}
         </div>

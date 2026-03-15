@@ -30,12 +30,12 @@ export function Header({ onToggleSidebar }: HeaderProps) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 flex h-[var(--header-height)] items-center justify-between border-b border-gray-200 bg-white px-4 lg:px-6">
+    <header className="sticky top-0 z-20 flex h-[var(--header-height)] items-center justify-between border-b border-border bg-card px-4 lg:px-6">
       {/* Left side */}
       <div className="flex items-center gap-4">
         <button
           onClick={onToggleSidebar}
-          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden"
+          className="rounded-lg p-2 text-muted-foreground hover:bg-accent lg:hidden"
           aria-label="Toggle sidebar"
         >
           <Menu className="h-5 w-5" />
@@ -46,7 +46,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
       <div className="flex items-center gap-3">
         {/* Notifications */}
         <button
-          className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100"
+          className="relative rounded-lg p-2 text-muted-foreground hover:bg-accent"
           aria-label="Notifications"
         >
           <Bell className="h-5 w-5" />
@@ -57,7 +57,7 @@ export function Header({ onToggleSidebar }: HeaderProps) {
         <div className="relative" ref={profileRef}>
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100"
+            className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-600 text-sm font-medium text-white">
               {user?.full_name
@@ -68,39 +68,39 @@ export function Header({ onToggleSidebar }: HeaderProps) {
                 .slice(0, 2) ?? 'A'}
             </div>
             <div className="hidden text-left md:block">
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-sm font-medium text-foreground">
                 {user?.full_name ?? 'Admin'}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-muted-foreground">
                 {user ? getRoleDisplayName(user.role) : ''}
               </p>
             </div>
-            <ChevronDown className="hidden h-4 w-4 text-gray-400 md:block" />
+            <ChevronDown className="hidden h-4 w-4 text-muted-foreground md:block" />
           </button>
 
           {/* Dropdown menu */}
           <div
             className={cn(
-              'absolute right-0 top-full mt-1 w-56 rounded-xl border border-gray-200 bg-white py-1 shadow-lg transition-all',
+              'absolute right-0 top-full mt-1 w-56 rounded-xl border border-border bg-card py-1 shadow-lg transition-all',
               isProfileOpen
                 ? 'visible scale-100 opacity-100'
                 : 'invisible scale-95 opacity-0'
             )}
           >
-            <div className="border-b border-gray-100 px-4 py-3">
-              <p className="text-sm font-medium text-gray-900">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-medium text-foreground">
                 {user?.full_name}
               </p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+              <p className="text-xs text-muted-foreground">{user?.email}</p>
             </div>
             <div className="py-1">
-              <button className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              <button className="flex w-full items-center gap-2 px-4 py-2 text-sm text-foreground hover:bg-accent">
                 <User className="h-4 w-4" />
                 Profile Settings
               </button>
               <button
                 onClick={signOut}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
               >
                 <LogOut className="h-4 w-4" />
                 Sign Out

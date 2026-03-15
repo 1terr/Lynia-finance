@@ -741,6 +741,67 @@ describe('POST /admin/inventory/adjustments/:id/approve', () => {
     const result = await handler(event);
     expect(result.statusCode).toBe(404);
   });
+
+  it('should return 500 when device status update fails during approval', async () => {
+    mockChain.execute
+      .mockResolvedValueOnce({                                                                // adj lookup
+        data: { id: 'ad00000000000001', device_id: 'de00000000000001', new_status: 'damaged', approval_status: 'pending' },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: { message: 'Connection reset' } });        // device update fails
+
+    const event = createAPIGatewayEvent({
+      httpMethod: 'POST',
+      path: '/admin/inventory/adjustments/ad00000000000001/approve',
+      body: JSON.stringify({ action: 'approve' }),
+    });
+    const result = await handler(event);
+    expect(result.statusCode).toBe(500);
+
+    const body = parseResponseBody<{ error: string }>(result);
+    expect(body.error).toContain('device status');
+  });
+
+  it('should return 500 when adjustment approval update fails', async () => {
+    mockChain.execute
+      .mockResolvedValueOnce({                                                                // adj lookup
+        data: { id: 'ad00000000000001', device_id: 'de00000000000001', new_status: 'damaged', approval_status: 'pending' },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: [], error: null })                                       // device update succeeds
+      .mockResolvedValueOnce({ data: null, error: { message: 'Deadlock detected' } });       // adj update fails
+
+    const event = createAPIGatewayEvent({
+      httpMethod: 'POST',
+      path: '/admin/inventory/adjustments/ad00000000000001/approve',
+      body: JSON.stringify({ action: 'approve' }),
+    });
+    const result = await handler(event);
+    expect(result.statusCode).toBe(500);
+
+    const body = parseResponseBody<{ error: string }>(result);
+    expect(body.error).toContain('approve');
+  });
+
+  it('should return 500 when adjustment rejection update fails', async () => {
+    mockChain.execute
+      .mockResolvedValueOnce({                                                                // adj lookup
+        data: { id: 'ad00000000000002', device_id: 'de00000000000002', approval_status: 'pending' },
+        error: null,
+      })
+      .mockResolvedValueOnce({ data: null, error: { message: 'Write conflict' } });          // rejection update fails
+
+    const event = createAPIGatewayEvent({
+      httpMethod: 'POST',
+      path: '/admin/inventory/adjustments/ad00000000000002/approve',
+      body: JSON.stringify({ action: 'reject', rejection_reason: 'Duplicate' }),
+    });
+    const result = await handler(event);
+    expect(result.statusCode).toBe(500);
+
+    const body = parseResponseBody<{ error: string }>(result);
+    expect(body.error).toContain('reject');
+  });
 });
 
 // =====================================================================

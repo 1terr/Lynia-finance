@@ -254,5 +254,80 @@ export function createLoanOperations(request: RequestFn, formatDate: (d: Date) =
 
       return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=close`, body);
     },
+
+    /**
+     * Restructure (reschedule) a loan.
+     * Submits a reschedule request to Fineract with optional grace periods,
+     * extra terms, or a new interest rate.
+     */
+    async restructureLoan(loanId: number, params: {
+      rescheduleFromDate: string;
+      adjustedDueDate?: string;
+      graceOnPrincipal?: number;
+      graceOnInterest?: number;
+      extraTerms?: number;
+      newInterestRate?: number;
+      rescheduleReasonCodeValueId: number;
+      rescheduleReasonComment?: string;
+      submittedOnDate?: string;
+    }): Promise<FineractCommandResponse> {
+      const body: Record<string, unknown> = {
+        loanId,
+        rescheduleFromDate: params.rescheduleFromDate,
+        rescheduleReasonCodeValueId: params.rescheduleReasonCodeValueId,
+        submittedOnDate: params.submittedOnDate || formatDate(new Date()),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      if (params.adjustedDueDate) body.adjustedDueDate = params.adjustedDueDate;
+      if (params.graceOnPrincipal !== undefined) body.graceOnPrincipal = params.graceOnPrincipal;
+      if (params.graceOnInterest !== undefined) body.graceOnInterest = params.graceOnInterest;
+      if (params.extraTerms !== undefined) body.extraTerms = params.extraTerms;
+      if (params.newInterestRate !== undefined) body.newInterestRate = params.newInterestRate;
+      if (params.rescheduleReasonComment) body.rescheduleReasonComment = params.rescheduleReasonComment;
+
+      return request<FineractCommandResponse>('POST', '/rescheduleloans', body);
+    },
+
+    /**
+     * Calculate early payoff amount for a loan.
+     * Returns the full loan object with repaymentSchedule and transactions
+     * so the caller can read summary.totalOutstanding.
+     */
+    async calculateEarlyPayoff(loanId: number): Promise<FineractLoan> {
+      return request<FineractLoan>(
+        'GET',
+        `/loans/${loanId}?associations=repaymentSchedule,transactions`
+      );
+    },
+
+    /**
+     * Process an early (full balance) payoff for a loan.
+     * Posts a repayment transaction for the entire outstanding amount.
+     */
+    async processEarlyPayoff(params: {
+      loanId: number;
+      amount: number;
+      transactionDate: string;
+      paymentTypeId?: number;
+      note?: string;
+    }): Promise<FineractCommandResponse> {
+      const body: Record<string, unknown> = {
+        transactionDate: params.transactionDate,
+        transactionAmount: params.amount,
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      if (params.paymentTypeId) body.paymentTypeId = params.paymentTypeId;
+      if (params.note) body.note = params.note;
+
+      return request<FineractCommandResponse>(
+        'POST',
+        `/loans/${params.loanId}/transactions?command=repayment`,
+        body
+      );
+    },
   };
 }

@@ -9,8 +9,8 @@ interface CreditScoreCardProps {
 
 export function CreditScoreCard({ customer }: CreditScoreCardProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h3 className="text-lg font-semibold text-gray-900">Credit Score</h3>
+    <div className="rounded-lg bg-card p-6 shadow">
+      <h3 className="text-lg font-semibold text-foreground">Credit Score</h3>
 
       <div className="mt-4 flex items-center justify-center">
         <div className="relative h-32 w-32">
@@ -38,36 +38,36 @@ export function CreditScoreCard({ customer }: CreditScoreCardProps) {
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-2xl font-bold text-gray-900">
+            <span className="text-2xl font-bold text-foreground">
               {customer.credit_score || 0}
             </span>
-            <span className="text-xs text-gray-500">/ 1000</span>
+            <span className="text-xs text-muted-foreground">/ 1000</span>
           </div>
         </div>
       </div>
 
       <div className="mt-4 space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Credit Tier</span>
-          <span className="font-medium text-gray-900">
+          <span className="text-muted-foreground">Credit Tier</span>
+          <span className="font-medium text-foreground">
             Tier {customer.credit_tier}
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Credit Limit</span>
-          <span className="font-medium text-gray-900">
+          <span className="text-muted-foreground">Credit Limit</span>
+          <span className="font-medium text-foreground">
             {formatCurrency(customer.credit_limit)}
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Completed Loans</span>
-          <span className="font-medium text-gray-900">
+          <span className="text-muted-foreground">Completed Loans</span>
+          <span className="font-medium text-foreground">
             {customer.completed_loans}
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-gray-500">Defaulted Loans</span>
-          <span className="font-medium text-gray-900">
+          <span className="text-muted-foreground">Defaulted Loans</span>
+          <span className="font-medium text-foreground">
             {customer.defaulted_loans}
           </span>
         </div>

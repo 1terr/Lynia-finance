@@ -91,7 +91,7 @@ export function BulkOperations({
           </button>
           <button
             onClick={() => setShowConfirm(false)}
-            className="px-3 py-1.5 bg-white text-gray-700 text-xs rounded-md border border-gray-300 hover:bg-gray-50"
+            className="px-3 py-1.5 bg-card text-foreground text-xs rounded-md border border-border hover:bg-accent"
           >
             No
           </button>

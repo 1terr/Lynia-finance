@@ -80,14 +80,14 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
   };
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow dark:bg-gray-900">
+    <div className="rounded-lg bg-card p-6 shadow">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-lg font-semibold text-foreground">
           Record Manual Payment
         </h2>
         <button
           onClick={onClose}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+          className="text-muted-foreground hover:text-foreground"
         >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -101,12 +101,12 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
       >
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Loan ID *
             </label>
             <input
               {...register('loan_id', { required: 'Loan ID is required' })}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Enter loan UUID"
             />
             {errors.loan_id && (
@@ -117,14 +117,14 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Customer ID *
             </label>
             <input
               {...register('customer_id', {
                 required: 'Customer ID is required',
               })}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Enter customer UUID"
             />
             {errors.customer_id && (
@@ -135,7 +135,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Amount (USD) *
             </label>
             <input
@@ -146,7 +146,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
                 required: 'Amount is required',
                 min: { value: 0.01, message: 'Must be greater than 0' },
               })}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="0.00"
             />
             {errors.amount_usd && (
@@ -157,7 +157,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Payment Date *
             </label>
             <input
@@ -165,17 +165,17 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
               {...register('payment_date', {
                 required: 'Payment date is required',
               })}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Payment Method *
             </label>
             <select
               {...register('payment_method')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="ecocash">EcoCash</option>
               <option value="onemoney">OneMoney</option>
@@ -185,12 +185,12 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Payment Type *
             </label>
             <select
               {...register('payment_type')}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="installment">Installment</option>
               <option value="deposit">Deposit</option>
@@ -200,14 +200,14 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Reference Number *
             </label>
             <input
               {...register('reference_number', {
                 required: 'Reference number is required',
               })}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Transaction/receipt reference"
             />
             {errors.reference_number && (
@@ -226,14 +226,14 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           </div>
 
           <div className="col-span-2">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-medium text-foreground">
               Notes
             </label>
             <textarea
               {...register('notes')}
               rows={2}
               maxLength={1000}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+              className="mt-1 block w-full rounded-md border border-border px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
               placeholder="Additional notes..."
             />
           </div>
@@ -243,7 +243,7 @@ export function RecordPaymentForm({ onClose }: RecordPaymentFormProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
           >
             Cancel
           </button>

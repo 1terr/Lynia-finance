@@ -29,7 +29,7 @@ export function Tabs({
 
 export function TabsList({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn('flex border-b border-gray-200', className)}>
+    <div className={cn('flex border-b border-border', className)}>
       {children}
     </div>
   );
@@ -54,7 +54,7 @@ export function TabsTrigger({
         'px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px',
         isActive
           ? 'border-brand-600 text-brand-600'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+          : 'border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground',
         className
       )}
     >

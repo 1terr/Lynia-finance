@@ -2,6 +2,7 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult, ScheduledEvent } from 'aws
 import { db } from '../../shared/clients/database';
 import { processPaymentReminders, getReminderAnalytics, handleReminderOptOut, handleReminderOptIn } from './reminder-scheduler';
 import { sendSMS, SmsError } from './sms-sender';
+import { EmailError } from './email-sender';
 import { getSecurityHeaders } from '../../shared/utils/response';
 import logger from '../../shared/utils/logger';
 
@@ -93,7 +94,7 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
   // Get customer phone number
   const { data: customer } = await db
     .from('customers')
-    .select('phone_number, first_name')
+    .select('phone_number, first_name, email')
     .eq('id', customerId)
     .single()
     .execute();
@@ -147,8 +148,14 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
         .update({ metadata: { ...metadata, snsMessageId: result.messageId } })
         .eq('id', notification.id)
         .execute();
+    } else if (channel === 'email') {
+      const { sendEmail } = await import('./email-sender');
+      const result = await sendEmail(customer.email, body.subject || 'Lynia Finance', message, body.htmlBody);
+      await db.from('notifications')
+        .update({ metadata: { ...metadata, sesMessageId: result.messageId } })
+        .eq('id', notification.id)
+        .execute();
     }
-    // Email channel to be implemented
 
     await db
       .from('notifications')
@@ -170,6 +177,15 @@ async function sendNotification(event: APIGatewayProxyEvent): Promise<APIGateway
 
     if (error instanceof SmsError) {
       const statusCode = error.code === 'RATE_LIMITED' ? 429 : error.code === 'INVALID_PHONE' ? 400 : 500;
+      return {
+        statusCode,
+        body: JSON.stringify({ error: error.message, code: error.code }),
+        headers: getSecurityHeaders(event)
+      };
+    }
+
+    if (error instanceof EmailError) {
+      const statusCode = error.code === 'RATE_LIMITED' ? 429 : error.code === 'INVALID_EMAIL' ? 400 : 500;
       return {
         statusCode,
         body: JSON.stringify({ error: error.message, code: error.code }),

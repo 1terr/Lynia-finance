@@ -35,7 +35,7 @@ export function AlertsPanel({ metrics, fineractDiscrepancies }: AlertsPanelProps
         <CardContent>
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-10 animate-pulse rounded bg-gray-200" />
+              <div key={i} className="h-10 animate-pulse rounded bg-muted" />
             ))}
           </div>
         </CardContent>
@@ -88,20 +88,20 @@ export function AlertsPanel({ metrics, fineractDiscrepancies }: AlertsPanelProps
 
   const severityStyles = {
     critical: {
-      bg: 'bg-red-50 hover:bg-red-100',
-      text: 'text-red-700',
+      bg: 'bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900',
+      text: 'text-red-700 dark:text-red-300',
       badge: 'bg-red-500',
       icon: 'text-red-500',
     },
     warning: {
-      bg: 'bg-yellow-50 hover:bg-yellow-100',
-      text: 'text-yellow-800',
+      bg: 'bg-yellow-50 hover:bg-yellow-100 dark:bg-yellow-950 dark:hover:bg-yellow-900',
+      text: 'text-yellow-800 dark:text-yellow-300',
       badge: 'bg-yellow-500',
       icon: 'text-yellow-500',
     },
     info: {
-      bg: 'bg-blue-50 hover:bg-blue-100',
-      text: 'text-blue-700',
+      bg: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950 dark:hover:bg-blue-900',
+      text: 'text-blue-700 dark:text-blue-300',
       badge: 'bg-blue-500',
       icon: 'text-blue-500',
     },
@@ -111,7 +111,7 @@ export function AlertsPanel({ metrics, fineractDiscrepancies }: AlertsPanelProps
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-gray-400" />
+          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           Today&apos;s Alerts
           {activeAlerts.length > 0 && (
             <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-xs font-medium text-white">
@@ -122,7 +122,7 @@ export function AlertsPanel({ metrics, fineractDiscrepancies }: AlertsPanelProps
       </CardHeader>
       <CardContent>
         {activeAlerts.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-4 text-gray-500">
+          <div className="flex flex-col items-center gap-2 py-4 text-muted-foreground">
             <span className="text-2xl">&#10003;</span>
             <p className="text-sm">All clear - no urgent items</p>
           </div>
