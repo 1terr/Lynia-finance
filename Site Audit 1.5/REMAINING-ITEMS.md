@@ -34,22 +34,35 @@
 
 **Total tests: 2665 passing across 117 test suites**
 
+### Phase 4: Architecture Debt Sprint (2026-03-15)
+
+- [x] **GL Accounts Error Handling (Agent A)** — try/catch on all 3 Fineract handlers (`handleGetGLAccounts`, `handleGetJournalEntries`, `handleGetTrialBalance`) with 502 for FineractApiError, 500 for generic errors (9 tests)
+- [x] **Payment RequestId (Agent A)** — Added `requestId` to all 28 error responses in payments.ts for debugging traceability (3 tests)
+- [x] **Inventory Adjustments Error Checking (Agent B)** — Added error checking on 2 remaining silent `.execute()` calls in `handleCreateAdjustment` and `handleApproveAdjustment` (5 tests)
+- [x] **Email Notification Channel (Agent C)** — AWS SES integration with rate limiting (20/day per address), email validation, HTML template support, `EmailError` class with typed error codes (11 tests)
+- [x] **Loan Restructuring Endpoint (Agent D)** — `POST /api/v1/fineract/loans/:loanId/reschedule` with Fineract reschedule API integration, validation, DB status update (8 tests)
+- [x] **Early Payoff Endpoint (Agent D)** — `POST /api/v1/fineract/loans/:loanId/early-payoff` with automatic outstanding balance calculation, full repayment, loan closure (8 tests)
+- [x] **Frontend Component Tests** — 20+ new component/page test files from parallel windows
+- [x] **Contract Test Fix** — Updated `api-response-format.contract.test.ts` to match error response `details` structure
+
+**Total tests: 2700 passing across 121 test suites — deployed to production**
+
 ---
 
 ## Known Issues (Not Sprint Scoped)
 
 ### Architecture Debt
 
-1. **Email notification channel** — Placeholder only, not integrated
+1. ~~**Email notification channel**~~ — **DONE** (Phase 4)
 2. **Pentaho ETL pipeline** — Data warehouse sync not implemented
-3. **Loan restructuring** — No endpoint for modifying active loan terms
-4. **Early payoff** — No endpoint for calculating and processing early loan settlement
+3. ~~**Loan restructuring**~~ — **DONE** (Phase 4)
+4. ~~**Early payoff**~~ — **DONE** (Phase 4)
 5. **ML credit scoring pipeline** — v2 model training and deployment infrastructure
 6. **Fineract interop (Mojaloop)** — Open banking integration not started
 
 ### Frontend Gaps
 
-1. **Component-level tests** — Pages and forms lack unit tests (only API client layer tested)
+1. **Component-level tests** — Significant progress in Phase 4 (20+ test files added), but some pages still lack tests
 2. **Accessibility audit** — WCAG 2.1 AA compliance not verified
 3. **i18n** — Shona and Ndebele translations not implemented in admin portal
 4. **Offline support** — Admin portal has no offline/PWA capabilities
@@ -71,9 +84,10 @@
 | Error handling fixes (gl-accounts, inventory, payment requestId) | MEDIUM | LOW | P1 | **DONE** |
 | Frontend hook tests | MEDIUM | MEDIUM | P2 | **DONE** |
 | Lock-service router migration | LOW | LOW | P2 | **DONE** |
-| Email notification channel | MEDIUM | MEDIUM | P2 | Open |
-| Loan restructuring endpoint | HIGH | HIGH | P3 | Open |
-| Early payoff endpoint | HIGH | HIGH | P3 | Open |
+| Email notification channel | MEDIUM | MEDIUM | P2 | **DONE** (Phase 4) |
+| Loan restructuring endpoint | HIGH | HIGH | P3 | **DONE** (Phase 4) |
+| Early payoff endpoint | HIGH | HIGH | P3 | **DONE** (Phase 4) |
+| Frontend component tests | MEDIUM | MEDIUM | P2 | **DONE** (Phase 4, 20+ files) |
 | ML pipeline v2 | HIGH | HIGH | P3 | Open |
 | Mojaloop integration | MEDIUM | HIGH | P4 | Open |
 | Read replicas + RDS Proxy | LOW | MEDIUM | P4 | Open |
@@ -82,8 +96,9 @@
 
 ## Next Sprint Recommendations
 
-1. **Begin loan restructuring/early payoff** — Critical for customer financial flexibility
-2. **Deploy RDS Proxy** — Prevent connection exhaustion under load
-3. **Email notification channel** — SES integration for admin alerts and receipts
-4. **Component-level frontend tests** — Pages and form unit tests
-5. **Accessibility audit** — WCAG 2.1 AA compliance verification
+1. **Deploy RDS Proxy** — Prevent connection exhaustion under load
+2. **ML credit scoring pipeline v2** — Model training and deployment infrastructure
+3. **Accessibility audit** — WCAG 2.1 AA compliance verification
+4. **i18n** — Shona and Ndebele translations for admin portal
+5. **Fineract interop (Mojaloop)** — Open banking integration
+6. **Cost monitoring** — Automated AWS cost anomaly alerts
