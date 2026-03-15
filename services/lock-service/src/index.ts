@@ -8,7 +8,7 @@
  */
 
 import { createRouter, RouteHandler } from '../../shared/utils/lambda-router';
-import { successResponse, errorResponse, validationErrorResponse, getSecurityHeaders } from '../../shared/utils/response';
+import { successResponse, validationErrorResponse, getSecurityHeaders } from '../../shared/utils/response';
 import { HandoverService, InitiateHandoverRequest } from './handover-service';
 import { LockManagementService } from './lock-management-service';
 import logger from '../../shared/utils/logger';
