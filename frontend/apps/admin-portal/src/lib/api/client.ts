@@ -1,6 +1,6 @@
 import { getValidSession, signOut as cognitoSignOut } from '@lynia/auth';
 import type { AdminUser, DashboardMetrics, PortfolioAtRisk, DailyTrend, LoansByStatus, RecentActivity } from '@/types';
-import type { ReconciliationResult } from '@/types/fineract';
+import type { ReconciliationResult, CoreBankingHealthResult } from '@/types/fineract';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 
@@ -129,4 +129,8 @@ export async function getRecentActivity(limit: number = 20): Promise<RecentActiv
 
 export async function getFineractReconciliation(): Promise<ReconciliationResult> {
   return fetchAPI<ReconciliationResult>('/api/v1/fineract/reconciliation');
+}
+
+export async function getCoreBankingHealth(): Promise<CoreBankingHealthResult> {
+  return fetchAPI<CoreBankingHealthResult>('/api/v1/fineract/system-health');
 }

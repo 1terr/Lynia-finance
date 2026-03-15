@@ -16,6 +16,7 @@ import { handleGetLoanProducts, handleGetLoanProduct, handleCreateFineractProduc
 import { handleGetGLAccounts, handleGetJournalEntries, handleGetTrialBalance } from './handlers/gl-accounts';
 import { handleGetReconciliation, handleRunReconciliation } from './handlers/reconciliation';
 import { handleGetReports, handleRunReport } from './handlers/reports';
+import { handleGetSystemHealth } from './handlers/system-health';
 
 export const handler = createRouter({
   // Static paths FIRST to avoid false matches with :loanId
@@ -33,6 +34,7 @@ export const handler = createRouter({
   'GET /api/v1/fineract/gl-accounts':               handleGetGLAccounts,
   'GET /api/v1/fineract/journal-entries':            handleGetJournalEntries,
   'GET /api/v1/fineract/trial-balance':              handleGetTrialBalance,
+  'GET /api/v1/fineract/system-health':               handleGetSystemHealth,
   'GET /api/v1/fineract/reconciliation':             handleGetReconciliation,
   'POST /api/v1/fineract/reconciliation/run':        handleRunReconciliation,
   'GET /api/v1/fineract/reports':                    handleGetReports,

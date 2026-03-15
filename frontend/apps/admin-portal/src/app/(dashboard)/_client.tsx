@@ -9,7 +9,7 @@ import {
   useDailyTrends,
   useLoansByStatus,
   useRecentActivity,
-  useFineractHealth,
+  useCoreBankingHealth,
 } from '@/lib/hooks/use-dashboard-data';
 import { MetricCard } from '@/components/dashboard/metric-card';
 import { PortfolioChart } from '@/components/dashboard/portfolio-chart';
@@ -17,7 +17,7 @@ import { TrendChart } from '@/components/dashboard/trend-chart';
 import { PARChart } from '@/components/dashboard/par-chart';
 import { RecentActivityFeed } from '@/components/dashboard/recent-activity';
 import { QuickActions } from '@/components/dashboard/quick-actions';
-import { FineractHealth } from '@/components/dashboard/fineract-health';
+import { CoreBankingHealth } from '@/components/dashboard/core-banking-health';
 import { AlertsPanel } from '@/components/dashboard/alerts-panel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,10 +64,10 @@ export default function DashboardPage() {
     isLoading: fineractLoading,
     error: fineractError,
     refetch: refetchFineract,
-  } = useFineractHealth();
+  } = useCoreBankingHealth();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const fineractDegraded = !fineractLoading && fineractHealth?.fineractReachable === false;
+  const fineractDegraded = !fineractLoading && fineractHealth?.infrastructure.fineractReachable === false;
 
   const handleRefreshAll = async () => {
     setIsRefreshing(true);
@@ -210,7 +210,7 @@ export default function DashboardPage() {
       {/* Tier 3: Risk & Fineract Health */}
       <div className="grid gap-6 lg:grid-cols-2">
         <PARChart data={par || { par_0_30: 0, par_31_60: 0, par_61_90: 0, par_90_plus: 0 }} />
-        <FineractHealth
+        <CoreBankingHealth
           data={fineractHealth}
           isLoading={fineractLoading}
           error={fineractError}

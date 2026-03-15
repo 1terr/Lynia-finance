@@ -388,3 +388,43 @@ export function getFineractStatusDisplay(code: FineractLoanStatusCode) {
     bgColor: 'bg-gray-100',
   };
 }
+
+// ============================================================
+// CORE BANKING SYSTEM HEALTH TYPES
+// ============================================================
+
+export interface CoreBankingHealthResult {
+  timestamp: string;
+  infrastructure: {
+    fineractReachable: boolean;
+    circuitBreakerState: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
+    apiResponseMs: number;
+  };
+  syncPipeline: {
+    pendingCount: number;
+    failedCount: number;
+    exhaustedCount: number;
+    successRate24h: number;
+    totalSyncs24h: number;
+    lastSyncAt: string | null;
+  };
+  dataIntegrity: {
+    unsyncedCustomers: number;
+    unsyncedLoans: number;
+    unsyncedPayments: number;
+    discrepancies: { high: number; medium: number; low: number };
+  };
+  portfolio: {
+    totalLoansChecked: number;
+    matchedCount: number;
+    discrepancyCount: number;
+    lastReconciliationAt: string | null;
+  };
+  accounting: {
+    trialBalanceBalanced: boolean;
+    totalDebit: number;
+    totalCredit: number;
+    imbalance: number;
+    lastJournalEntryAt: string | null;
+  };
+}

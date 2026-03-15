@@ -8,6 +8,7 @@ import {
   getLoansByStatus,
   getRecentActivity,
   getFineractReconciliation,
+  getCoreBankingHealth,
 } from '@/lib/api/client';
 
 export function useDashboardMetrics() {
@@ -63,6 +64,16 @@ export function useFineractHealth() {
   return useQuery({
     queryKey: ['fineract', 'reconciliation'],
     queryFn: getFineractReconciliation,
+    staleTime: 10 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: true,
+  });
+}
+
+export function useCoreBankingHealth() {
+  return useQuery({
+    queryKey: ['fineract', 'system-health'],
+    queryFn: getCoreBankingHealth,
     staleTime: 10 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: true,
