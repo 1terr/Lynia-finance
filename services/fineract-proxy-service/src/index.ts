@@ -11,7 +11,7 @@
 
 import { createRouter } from '../../shared/utils/lambda-router';
 import { handleGetLoans, handleGetPendingLoans, handleGetOverdueLoans, handleGetAgingSummary, handleGetLoanDetail } from './handlers/loans';
-import { handleLoanApprove, handleLoanDisburse, handleLoanRepayment } from './handlers/loan-actions';
+import { handleLoanApprove, handleLoanDisburse, handleLoanRepayment, handleLoanReject, handleLoanWriteOff, handleLoanClose } from './handlers/loan-actions';
 import { handleGetLoanProducts, handleGetLoanProduct, handleCreateFineractProduct } from './handlers/loan-products';
 import { handleGetGLAccounts, handleGetJournalEntries, handleGetTrialBalance } from './handlers/gl-accounts';
 import { handleGetReconciliation, handleRunReconciliation } from './handlers/reconciliation';
@@ -28,6 +28,9 @@ export const handler = createRouter({
   'POST /api/v1/fineract/loans/:loanId/approve':    handleLoanApprove,
   'POST /api/v1/fineract/loans/:loanId/disburse':   handleLoanDisburse,
   'POST /api/v1/fineract/loans/:loanId/repayment':  handleLoanRepayment,
+  'POST /api/v1/fineract/loans/:loanId/reject':     handleLoanReject,
+  'POST /api/v1/fineract/loans/:loanId/writeoff':   handleLoanWriteOff,
+  'POST /api/v1/fineract/loans/:loanId/close':      handleLoanClose,
   'POST /api/v1/fineract/loan-products/create-from-lynia': handleCreateFineractProduct,
   'GET /api/v1/fineract/loan-products':             handleGetLoanProducts,
   'GET /api/v1/fineract/loan-products/:id':         handleGetLoanProduct,

@@ -985,7 +985,31 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/loans/{loanId}/repayment
             Method: POST
+        RejectLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/reject
+            Method: POST
+        WriteOffLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/writeoff
+            Method: POST
+        CloseLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/close
+            Method: POST
         # Loan Products
+        CreateFineractProduct:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loan-products/create-from-lynia
+            Method: POST
         GetLoanProducts:
           Type: Api
           Properties:
@@ -1140,6 +1164,18 @@ Resources:
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/payments/{proxy+}
+            Method: ANY
+        ReportsRoot:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/reports
+            Method: ANY
+        ReportsProxy:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/reports/{proxy+}
             Method: ANY
         CustomersRoot:
           Type: Api

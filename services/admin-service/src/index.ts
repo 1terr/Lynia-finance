@@ -46,7 +46,16 @@ import { handleDashboardMetrics, handlePortfolioAtRisk, handleDailyTrends, handl
 import { handleGetKYCPending, handleGetKYCReviewHistory, handleGetKYCSLAStats, handleApproveKYC, handleRejectKYC } from './handlers/kyc-review';
 
 // ─── Customers ───
-import { handleGetCustomers, handleGetCustomerById, handleUpdateCustomerStatus, handleGetCustomerLoans, handleGetCustomerPayments, handleGetCustomerCreditScore, handleGetCreditScoreHistory, handleGetCustomerKYC, handleGetCustomerTimeline, handleAddCustomerNote } from './handlers/customers';
+import { handleGetCustomers, handleGetCustomerById, handleUpdateCustomer, handleUpdateCustomerStatus, handleGetCustomerLoans, handleGetCustomerPayments, handleGetCustomerCreditScore, handleGetCreditScoreHistory, handleGetCustomerKYC, handleGetCustomerTimeline, handleAddCustomerNote } from './handlers/customers';
+
+// ─── Reports ───
+import { handleGetPortfolioReport, handleGetPortfolioHealthReport, handleGetDisbursementReport, handleGetCollectionReport, handleGetCollectionDetailedReport, handleGetKYCReport, handleGetKYCDetailedReport, handleGetDefaultReport, handleGetDefaultSummaryReport, handleGetAcquisitionReport, handleGetRevenueReport, handleGetLoanApprovalReport } from './handlers/reports';
+
+// ─── Device Locks ───
+import { handleGetDeviceLockHistory, handleLockDevice, handleUnlockDevice, handleUpdateDeviceLockStatus } from './handlers/device-locks';
+
+// ─── Device Handovers ───
+import { handleGetDeviceHandovers, handleUpdateHandoverStatus } from './handlers/device-handovers';
 
 // ─── Payments Admin ───
 import { handleGetPayments, handleGetPaymentStats, handleGetUnreconciledPayments, handleGetOverdueCollections, handleGetPaymentSummary, handleRecordManualPayment, handleGetPaymentById, handleConfirmPayment, handleFailPayment, handleRetryPayment, handleRefundPayment, handleReconcilePayment } from './handlers/payments';
@@ -109,11 +118,20 @@ export const handler = createRouter({
   'GET /admin/distributors/:id':                      handleGetDistributorById,
   'PATCH /admin/distributors/:id':                    handleUpdateDistributor,
 
+  // Device Handovers (BEFORE /admin/devices/:id to avoid param capture)
+  'GET /admin/devices/handovers':            handleGetDeviceHandovers,
+  'PATCH /admin/devices/handovers/:id':      handleUpdateHandoverStatus,
+
   // Inventory: Devices (static before parameterized)
   'GET /admin/devices':                     handleGetDevices,
   'POST /admin/devices':                    handleCreateDevice,
   'POST /admin/devices/bulk-import':        handleBulkImportDevices,
   'GET /admin/devices/stats':               handleGetDeviceInventoryStats,
+  // Device Locks (sub-routes before single-ID routes)
+  'GET /admin/devices/:id/lock-history':    handleGetDeviceLockHistory,
+  'POST /admin/devices/:id/lock':           handleLockDevice,
+  'POST /admin/devices/:id/unlock':         handleUnlockDevice,
+  'PATCH /admin/devices/:id/status':        handleUpdateDeviceLockStatus,
   'GET /admin/devices/:id/movements':       handleGetDeviceMovements,
   'GET /admin/devices/:id':                 handleGetDeviceById,
   'PATCH /admin/devices/:id':               handleUpdateDevice,
@@ -161,6 +179,20 @@ export const handler = createRouter({
   'POST /api/v1/payments/:id/reconcile':      handleReconcilePayment,
   'GET /api/v1/payments/:id':                 handleGetPaymentById,
 
+  // Reports (all read-only aggregation endpoints)
+  'GET /api/v1/reports/portfolio/health':       handleGetPortfolioHealthReport,
+  'GET /api/v1/reports/portfolio':              handleGetPortfolioReport,
+  'GET /api/v1/reports/disbursements':          handleGetDisbursementReport,
+  'GET /api/v1/reports/collections/detailed':   handleGetCollectionDetailedReport,
+  'GET /api/v1/reports/collections':            handleGetCollectionReport,
+  'GET /api/v1/reports/kyc/detailed':           handleGetKYCDetailedReport,
+  'GET /api/v1/reports/kyc':                    handleGetKYCReport,
+  'GET /api/v1/reports/defaults/summary':       handleGetDefaultSummaryReport,
+  'GET /api/v1/reports/defaults':               handleGetDefaultReport,
+  'GET /api/v1/reports/acquisition':            handleGetAcquisitionReport,
+  'GET /api/v1/reports/revenue':                handleGetRevenueReport,
+  'GET /api/v1/reports/loan-approvals':         handleGetLoanApprovalReport,
+
   // Customers (sub-routes before single-ID routes)
   'GET /api/v1/customers':                              handleGetCustomers,
   'GET /api/v1/customers/:id/loans':                    handleGetCustomerLoans,
@@ -171,5 +203,6 @@ export const handler = createRouter({
   'GET /api/v1/customers/:id/timeline':                 handleGetCustomerTimeline,
   'POST /api/v1/customers/:id/notes':                   handleAddCustomerNote,
   'PATCH /api/v1/customers/:id/status':                 handleUpdateCustomerStatus,
+  'PATCH /api/v1/customers/:id':                        handleUpdateCustomer,
   'GET /api/v1/customers/:id':                          handleGetCustomerById,
 }, { serviceName: 'admin-service' });

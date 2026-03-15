@@ -378,6 +378,82 @@ export const handleGetCustomerTimeline: RouteHandler = async (event, params, aut
   return successResponse(data, 200, event);
 };
 
+// ─── PATCH /api/v1/customers/:id ───
+
+const ALLOWED_UPDATE_FIELDS = [
+  'first_name', 'last_name', 'email', 'phone_number', 'whatsapp_number',
+  'date_of_birth', 'gender', 'physical_address', 'province', 'city',
+  'address_line_1', 'address_line_2', 'postal_code',
+  'employment_status', 'employment_type', 'monthly_income_usd',
+];
+
+const DISALLOWED_FIELDS = ['id', 'credit_score', 'kyc_status', 'status', 'created_at', 'deleted_at'];
+
+export const handleUpdateCustomer: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Forbidden', 403, {}, event);
+  }
+
+  try {
+    const body = JSON.parse(event.body || '{}');
+
+    // Remove disallowed fields silently
+    for (const field of DISALLOWED_FIELDS) {
+      delete body[field];
+    }
+    // Remove admin_id if sent by frontend
+    delete body.admin_id;
+
+    // Filter to only allowed fields that have values
+    const updates: Record<string, unknown> = {};
+    for (const field of ALLOWED_UPDATE_FIELDS) {
+      if (body[field] !== undefined) {
+        updates[field] = body[field];
+      }
+    }
+
+    if (Object.keys(updates).length === 0) {
+      return errorResponse('No valid fields to update', 400, {}, event);
+    }
+
+    // Build SET clause
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+    let paramIdx = 1;
+
+    for (const [key, value] of Object.entries(updates)) {
+      setClauses.push(`${key} = $${paramIdx++}`);
+      values.push(value);
+    }
+    setClauses.push(`updated_at = $${paramIdx++}`);
+    values.push(new Date().toISOString());
+
+    values.push(params.id);
+
+    const result = await query(
+      `UPDATE customers SET ${setClauses.join(', ')}
+       WHERE id = $${paramIdx} AND deleted_at IS NULL
+       RETURNING id`,
+      values
+    );
+
+    if (!result.data || result.data.length === 0) {
+      return notFoundResponse('Customer', event);
+    }
+
+    await auditLog(auth, 'customer.update', 'customer', params.id,
+      `Customer profile updated`, updates);
+
+    return successResponse({ message: 'Customer updated successfully' }, 200, event);
+  } catch (error) {
+    logger.error('Failed to update customer', {
+      action: 'customer.update', status: 'failed',
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+    return errorResponse('An unexpected error occurred', 500, {}, event);
+  }
+};
+
 // ─── POST /api/v1/customers/:id/notes ───
 
 export const handleAddCustomerNote: RouteHandler = async (event, params, auth) => {

@@ -15,11 +15,25 @@ set -euo pipefail
 
 TOKEN="${1:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}"
 
+# ── Ensure local bin dir is on PATH ────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GH_BIN_DIR="$SCRIPT_DIR/../bin"
+export PATH="$GH_BIN_DIR:$PATH"
+
 # ── Install gh if missing ───────────────────────────────────────────
 if ! command -v gh &>/dev/null; then
   echo "[setup-gh] gh CLI not found. Installing..."
   if command -v apt-get &>/dev/null; then
     apt-get update -qq && apt-get install -y -qq gh 2>/dev/null
+  elif command -v curl &>/dev/null; then
+    GH_VERSION="2.88.1"
+    mkdir -p "$GH_BIN_DIR"
+    ZIP_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_windows_amd64.zip"
+    TMP_ZIP="$(mktemp).zip"
+    curl -fsSL -o "$TMP_ZIP" "$ZIP_URL"
+    unzip -p "$TMP_ZIP" "bin/gh.exe" > "$GH_BIN_DIR/gh"
+    chmod +x "$GH_BIN_DIR/gh"
+    rm -f "$TMP_ZIP"
   else
     echo "[setup-gh] ERROR: Cannot install gh — no supported package manager."
     exit 1

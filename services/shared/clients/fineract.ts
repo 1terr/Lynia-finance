@@ -259,6 +259,9 @@ export class FineractClient {
   disburseLoan = this._loanOps.disburseLoan;
   postRepayment = this._loanOps.postRepayment;
   getLoanTransaction = this._loanOps.getLoanTransaction;
+  rejectLoan = this._loanOps.rejectLoan;
+  writeOffLoan = this._loanOps.writeOffLoan;
+  closeLoan = this._loanOps.closeLoan;
 
   // -- GL/Accounting operations --
   listGLAccounts = this._chargeOps.listGLAccounts;

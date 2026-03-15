@@ -7,7 +7,7 @@
  */
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { getFineractClient } from '../../../shared/clients/fineract';
+import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import { db } from '../../../shared/clients/database';
 import { parseBody } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
@@ -73,11 +73,7 @@ export async function handleLoanApprove(
       event
     );
   } catch (e) {
-    logger.error('Loan approve failed', {
-      action: 'fineract.loanApprove',
-      meta: { loanId: params.loanId, error: e instanceof Error ? e.message : 'Unknown' },
-    });
-    return err(500, `Failed to approve loan: ${e instanceof Error ? e.message : 'unknown error'}`, event);
+    return handleFineractError(e, 'loanApprove', params.loanId, event);
   }
 }
 
@@ -108,11 +104,7 @@ export async function handleLoanDisburse(
       event
     );
   } catch (e) {
-    logger.error('Loan disburse failed', {
-      action: 'fineract.loanDisburse',
-      meta: { loanId: params.loanId, error: e instanceof Error ? e.message : 'Unknown' },
-    });
-    return err(500, `Failed to disburse loan: ${e instanceof Error ? e.message : 'unknown error'}`, event);
+    return handleFineractError(e, 'loanDisburse', params.loanId, event);
   }
 }
 
@@ -143,10 +135,143 @@ export async function handleLoanRepayment(
       event
     );
   } catch (e) {
-    logger.error('Loan repayment failed', {
-      action: 'fineract.loanRepayment',
-      meta: { loanId: params.loanId, error: e instanceof Error ? e.message : 'Unknown' },
+    return handleFineractError(e, 'loanRepayment', params.loanId, event);
+  }
+}
+
+// ============================================================
+// Fineract error → 502 helper
+// ============================================================
+
+function handleFineractError(
+  e: unknown,
+  action: string,
+  loanId: string,
+  event: APIGatewayProxyEvent
+): APIGatewayProxyResult {
+  if (e instanceof FineractApiError) {
+    logger.error(`Fineract API error during ${action}`, {
+      action: `fineract.${action}`,
+      meta: {
+        loanId,
+        fineractStatus: e.statusCode,
+        errorMessage: e.errorBody?.defaultUserMessage || e.message,
+      },
     });
-    return err(500, `Failed to repayment loan: ${e instanceof Error ? e.message : 'unknown error'}`, event);
+    return err(
+      502,
+      e.errorBody?.defaultUserMessage || 'Core banking system error',
+      event
+    );
+  }
+
+  logger.error(`${action} failed`, {
+    action: `fineract.${action}`,
+    meta: { loanId, error: e instanceof Error ? e.message : 'Unknown' },
+  });
+  return err(500, 'An unexpected error occurred', event);
+}
+
+// ============================================================
+// POST /api/v1/fineract/loans/:loanId/reject
+// ============================================================
+
+export async function handleLoanReject(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const result = await lookupFineractLoan(event, params.loanId);
+  if ('error' in result) return result.error;
+
+  const { rejectedOnDate, note } = result.body;
+  if (!rejectedOnDate) {
+    return err(400, 'rejectedOnDate is required', event);
+  }
+  if (!note) {
+    return err(400, 'note is required when rejecting a loan', event);
+  }
+
+  const fineract = await getFineractClient();
+
+  try {
+    const response = await fineract.rejectLoan(
+      result.fineractLoanId,
+      new Date(rejectedOnDate as string),
+      note as string
+    );
+    return ok(
+      { success: true, resourceId: response.resourceId, loanId: response.loanId },
+      event
+    );
+  } catch (e) {
+    return handleFineractError(e, 'loanReject', params.loanId, event);
+  }
+}
+
+// ============================================================
+// POST /api/v1/fineract/loans/:loanId/writeoff
+// ============================================================
+
+export async function handleLoanWriteOff(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const result = await lookupFineractLoan(event, params.loanId);
+  if ('error' in result) return result.error;
+
+  const { transactionDate, note } = result.body;
+  if (!transactionDate) {
+    return err(400, 'transactionDate is required', event);
+  }
+
+  const fineract = await getFineractClient();
+
+  try {
+    const response = await fineract.writeOffLoan(
+      result.fineractLoanId,
+      new Date(transactionDate as string),
+      note as string | undefined
+    );
+    return ok(
+      { success: true, resourceId: response.resourceId, loanId: response.loanId },
+      event
+    );
+  } catch (e) {
+    return handleFineractError(e, 'loanWriteOff', params.loanId, event);
+  }
+}
+
+// ============================================================
+// POST /api/v1/fineract/loans/:loanId/close
+// ============================================================
+
+export async function handleLoanClose(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const result = await lookupFineractLoan(event, params.loanId);
+  if ('error' in result) return result.error;
+
+  const { closedOnDate } = result.body;
+  if (!closedOnDate) {
+    return err(400, 'closedOnDate is required', event);
+  }
+
+  const fineract = await getFineractClient();
+
+  try {
+    const response = await fineract.closeLoan(
+      result.fineractLoanId,
+      new Date(closedOnDate as string)
+    );
+    return ok(
+      { success: true, resourceId: response.resourceId, loanId: response.loanId },
+      event
+    );
+  } catch (e) {
+    return handleFineractError(e, 'loanClose', params.loanId, event);
   }
 }

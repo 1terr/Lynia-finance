@@ -191,5 +191,68 @@ export function createLoanOperations(request: RequestFn, formatDate: (d: Date) =
         `/loans/${loanId}/transactions/${transactionId}`
       );
     },
+
+    /**
+     * Reject a loan application.
+     * Transitions: submittedAndPendingApproval -> rejected
+     */
+    async rejectLoan(
+      loanId: number,
+      rejectedOnDate: Date,
+      note: string
+    ): Promise<FineractCommandResponse> {
+      const body = {
+        rejectedOnDate: formatDate(rejectedOnDate),
+        note,
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=reject`, body);
+    },
+
+    /**
+     * Write off a loan.
+     * Transitions: active (overdue) -> closedWrittenOff
+     * Creates GL journal entries (debit provisions, credit loan portfolio).
+     */
+    async writeOffLoan(
+      loanId: number,
+      transactionDate: Date,
+      note?: string
+    ): Promise<FineractCommandResponse> {
+      const body: Record<string, unknown> = {
+        transactionDate: formatDate(transactionDate),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      if (note) {
+        body.note = note;
+      }
+
+      return request<FineractCommandResponse>(
+        'POST',
+        `/loans/${loanId}/transactions?command=writeoff`,
+        body
+      );
+    },
+
+    /**
+     * Close a fully-paid loan.
+     * Transitions: active (zero balance) -> closedObligationsMet
+     */
+    async closeLoan(
+      loanId: number,
+      closedOnDate: Date
+    ): Promise<FineractCommandResponse> {
+      const body = {
+        transactionDate: formatDate(closedOnDate),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=close`, body);
+    },
   };
 }
