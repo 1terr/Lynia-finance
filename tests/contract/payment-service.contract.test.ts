@@ -135,8 +135,9 @@ describe('Payment Service Contract Tests', () => {
       expectErrorResponse(response, 400);
       const parsed = parseResponseBody(response);
       expect(parsed).toHaveProperty('error', 'Missing required fields');
-      expect(parsed).toHaveProperty('required');
-      expect((parsed as Record<string, unknown>).required).toEqual(
+      const required = (parsed as Record<string, unknown>).required ||
+        ((parsed as Record<string, unknown>).details as Record<string, unknown>)?.required;
+      expect(required).toEqual(
         expect.arrayContaining(['loan_id', 'customer_id', 'amount', 'customer_phone', 'payment_type']),
       );
     });

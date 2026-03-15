@@ -62,6 +62,16 @@ jest.mock('../../services/notification-service/src/sms-sender', () => ({
   },
 }));
 
+jest.mock('../../services/notification-service/src/email-sender', () => ({
+  sendEmail: jest.fn().mockResolvedValue({ success: true, messageId: 'ses-mock-123' }),
+  EmailError: class EmailError extends Error {
+    constructor(message: string, public code: string, public details?: Record<string, unknown>) {
+      super(message);
+      this.name = 'EmailError';
+    }
+  },
+}));
+
 // Mock the reminder-scheduler module
 jest.mock('../../services/notification-service/src/reminder-scheduler', () => ({
   processPaymentReminders: jest.fn().mockResolvedValue({ sent: 5, failed: 0, skipped: 2 }),

@@ -101,7 +101,9 @@ describe('E2E-002: Payment Collection Flow', () => {
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required).toContain('loan_id');
+      const required1 = (body as Record<string, unknown>).required ||
+        ((body as Record<string, unknown>).details as Record<string, unknown>)?.required;
+      expect(required1).toContain('loan_id');
     });
 
     it('should return 400 when amount is missing', async () => {
@@ -121,7 +123,9 @@ describe('E2E-002: Payment Collection Flow', () => {
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required).toContain('amount');
+      const required2 = (body as Record<string, unknown>).required ||
+        ((body as Record<string, unknown>).details as Record<string, unknown>)?.required;
+      expect(required2).toContain('amount');
     });
 
     it('should validate that payment amount matches the monthly installment', () => {

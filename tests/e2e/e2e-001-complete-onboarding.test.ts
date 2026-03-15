@@ -631,10 +631,12 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       expect(response.statusCode).toBe(400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'Missing required fields');
-      expect(body.required as string[]).toContain('customer_id');
-      expect(body.required as string[]).toContain('amount');
-      expect(body.required as string[]).toContain('customer_phone');
-      expect(body.required as string[]).toContain('payment_type');
+      const required = (body as Record<string, unknown>).required ||
+        ((body as Record<string, unknown>).details as Record<string, unknown>)?.required;
+      expect(required as string[]).toContain('customer_id');
+      expect(required as string[]).toContain('amount');
+      expect(required as string[]).toContain('customer_phone');
+      expect(required as string[]).toContain('payment_type');
     });
 
     it('should return 405 for wrong method on known path pattern', async () => {

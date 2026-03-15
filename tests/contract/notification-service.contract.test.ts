@@ -65,6 +65,16 @@ jest.mock('../../services/notification-service/src/sms-sender', () => ({
   },
 }));
 
+jest.mock('../../services/notification-service/src/email-sender', () => ({
+  sendEmail: jest.fn().mockResolvedValue({ success: true, messageId: 'ses-mock-123' }),
+  EmailError: class EmailError extends Error {
+    constructor(message: string, public code: string, public details?: Record<string, unknown>) {
+      super(message);
+      this.name = 'EmailError';
+    }
+  },
+}));
+
 jest.mock('axios', () => ({
   __esModule: true,
   default: {
@@ -256,11 +266,19 @@ describe('Notification Service Contract Tests', () => {
     it('should accept email channel', async () => {
       mockQueryBuilder.execute
         .mockResolvedValueOnce({
-          data: { phone_number: '+263771234567', first_name: 'John' },
+          data: { phone_number: '+263771234567', first_name: 'John', email: 'john@example.com' },
           error: null,
         })
         .mockResolvedValueOnce({
           data: { id: 'notif_003' },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: null,
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: null,
           error: null,
         });
 
