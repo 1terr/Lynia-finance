@@ -12,8 +12,8 @@ jest.mock('@/lib/api/devices', () => ({
   }),
   getDeviceStats: jest.fn().mockResolvedValue({
     in_stock: 10,
-    allocated: 5,
-    active: 20,
+    assigned: 5,
+    sold: 20,
     locked: 3,
     returned: 2,
     damaged: 1,
@@ -64,7 +64,7 @@ describe('LockUnlockPage', () => {
 
   it('renders search input', () => {
     renderWithProviders(<LockUnlockPage />);
-    expect(screen.getByPlaceholderText('Search by IMEI, brand, or model...')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Search by IMEI, brand, model, or customer phone...')).toBeInTheDocument();
   });
 
   it('renders lock status filter', () => {
@@ -75,17 +75,17 @@ describe('LockUnlockPage', () => {
   it('renders device stats cards', async () => {
     renderWithProviders(<LockUnlockPage />);
     expect(await screen.findByText('Locked Devices')).toBeInTheDocument();
-    expect(screen.getByText('Active Devices')).toBeInTheDocument();
-    expect(screen.getByText('Total Allocated')).toBeInTheDocument();
+    expect(screen.getByText('Sold/Active Devices')).toBeInTheDocument();
+    expect(screen.getByText('Total Assigned')).toBeInTheDocument();
   });
 
   it('displays stats values', async () => {
     renderWithProviders(<LockUnlockPage />);
     // 3 locked devices from mock
     expect(await screen.findByText('3')).toBeInTheDocument();
-    // 20 active devices
+    // 20 sold devices
     expect(screen.getByText('20')).toBeInTheDocument();
-    // 25 total allocated (5 allocated + 20 active)
+    // 25 total assigned (5 assigned + 20 sold)
     expect(screen.getByText('25')).toBeInTheDocument();
   });
 });

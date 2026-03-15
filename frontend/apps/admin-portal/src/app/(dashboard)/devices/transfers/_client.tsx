@@ -19,6 +19,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { formatDateTime } from '@lynia/utils';
 import { useToast } from '@/hooks/use-toast';
 import { DeviceSearch } from '@/components/devices/DeviceSearch';
+import { DistributorSearch } from '@/components/distributors/DistributorSearch';
 import { ArrowLeft, Plus, Check, X, Truck, PackageCheck, Search } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -321,24 +322,24 @@ export default function TransfersPage() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">From Distributor ID</label>
-              <input
-                type="text"
-                value={form.from_distributor_id || ''}
-                onChange={(e) => setForm((f) => ({ ...f, from_distributor_id: e.target.value }))}
-                placeholder="Distributor UUID"
-                className={inputClass + ' mt-1 font-mono'}
-              />
+              <label className="block text-sm font-medium text-gray-700">From Distributor</label>
+              <div className="mt-1">
+                <DistributorSearch
+                  value={form.from_distributor_id || undefined}
+                  onSelect={(d) => setForm((f) => ({ ...f, from_distributor_id: d.id }))}
+                  placeholder="Search distributor..."
+                />
+              </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">To Distributor ID</label>
-              <input
-                type="text"
-                value={form.to_distributor_id || ''}
-                onChange={(e) => setForm((f) => ({ ...f, to_distributor_id: e.target.value }))}
-                placeholder="Distributor UUID"
-                className={inputClass + ' mt-1 font-mono'}
-              />
+              <label className="block text-sm font-medium text-gray-700">To Distributor</label>
+              <div className="mt-1">
+                <DistributorSearch
+                  value={form.to_distributor_id || undefined}
+                  onSelect={(d) => setForm((f) => ({ ...f, to_distributor_id: d.id }))}
+                  placeholder="Search distributor..."
+                />
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">

@@ -87,7 +87,7 @@ export default function DashboardPage() {
               Dashboard running in degraded mode
             </p>
             <p className="text-xs text-yellow-700">
-              Fineract core banking is unreachable. Metrics are showing Lynia DB data only.
+              Core banking system is unreachable. Metrics are showing Lynia DB data only.
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={() => refetchFineract()}>
@@ -140,7 +140,7 @@ export default function DashboardPage() {
               value={formatCurrency(
                 metrics.portfolio_outstanding_fineract ?? metrics.outstanding_balance_usd
               )}
-              subtitle={metrics.portfolio_outstanding_fineract !== null ? 'Fineract source' : 'Lynia DB'}
+              subtitle={metrics.portfolio_outstanding_fineract !== null ? 'Core banking' : 'Lynia DB'}
               icon={DollarSign}
               iconColor="text-blue-600"
               iconBg="bg-blue-50"

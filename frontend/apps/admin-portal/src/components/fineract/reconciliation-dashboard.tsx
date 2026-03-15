@@ -87,7 +87,7 @@ export default function ReconciliationDashboard() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Reconciliation</h1>
           <p className="text-sm text-gray-500">
-            Lynia Database vs Fineract Core Banking Engine
+            Lynia Database vs Core Banking Engine
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -149,10 +149,10 @@ export default function ReconciliationDashboard() {
               <thead>
                 <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                   <th className="pb-3 pr-4">Customer</th>
-                  <th className="pb-3 pr-4">Fineract Loan</th>
+                  <th className="pb-3 pr-4">Core Banking Loan</th>
                   <th className="pb-3 pr-4 text-right">Lynia Balance</th>
                   <th className="pb-3 pr-4 text-right">
-                    Fineract Balance
+                    Core Banking Balance
                   </th>
                   <th className="pb-3 pr-4 text-right">Difference</th>
                   <th className="pb-3 pr-4">Severity</th>
@@ -207,7 +207,7 @@ export default function ReconciliationDashboard() {
             All Balanced
           </p>
           <p className="mt-1 text-sm text-green-500">
-            Lynia and Fineract balances are in sync.
+            Lynia and core banking balances are in sync.
           </p>
         </div>
       )}

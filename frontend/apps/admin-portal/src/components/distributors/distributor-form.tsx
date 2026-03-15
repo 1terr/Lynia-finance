@@ -46,6 +46,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
   const [accountName, setAccountName] = useState('');
   const [ecocashNumber, setEcocashNumber] = useState('');
   const [onemoneyNumber, setOnemoneyNumber] = useState('');
+  const [commissionRate, setCommissionRate] = useState('5');
 
   useEffect(() => {
     if (initialData) {
@@ -62,6 +63,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
       setAccountName('');
       setEcocashNumber(initialData.mobile_money_number || '');
       setOnemoneyNumber('');
+      setCommissionRate(String(initialData.commission_rate ?? 5));
     } else {
       setBusinessName('');
       setContactPerson('');
@@ -76,6 +78,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
       setAccountName('');
       setEcocashNumber('');
       setOnemoneyNumber('');
+      setCommissionRate('5');
     }
     setErrors({});
   }, [initialData, open]);
@@ -120,6 +123,7 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
         account_name: accountName || undefined,
         ecocash_number: ecocashNumber || undefined,
         onemoney_number: onemoneyNumber || undefined,
+        commission_rate: parseFloat(commissionRate) || 5,
         status: status,
       };
       await onSubmit(data);
@@ -271,6 +275,19 @@ export function DistributorForm({ open, onClose, onSubmit, initialData }: Distri
               onChange={(e) => setOnemoneyNumber(e.target.value)}
               placeholder="+263..."
             />
+          </div>
+          <div className="mt-4">
+            <Input
+              label="Commission Rate (%)"
+              id="commissionRate"
+              type="number"
+              value={commissionRate}
+              onChange={(e) => setCommissionRate(e.target.value)}
+              placeholder="e.g. 5.0"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Percentage of device retail price paid as commission
+            </p>
           </div>
         </div>
 

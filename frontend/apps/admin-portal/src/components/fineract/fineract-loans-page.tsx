@@ -7,7 +7,7 @@
  * Replaces the legacy loans page with Fineract-sourced data.
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getFineractLoans, type FineractLoanFilters } from '@/lib/api/fineract';
@@ -17,7 +17,7 @@ import { Pagination } from '@/components/ui/pagination';
 import { Select } from '@/components/ui/select';
 import { formatCurrency, formatDate } from '@lynia/utils';
 import { getFineractStatusDisplay, type FineractLoanView, type FineractLoanStatusCode } from '@/types/fineract';
-import { Search, Building2, X } from 'lucide-react';
+import { Search, Building2, X, Download } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: '', label: 'All Statuses' },
@@ -34,6 +34,7 @@ export default function FineractLoansPage() {
   const [status, setStatus] = useState<FineractLoanStatusCode | undefined>();
   const [page, setPage] = useState(1);
   const [searchInput, setSearchInput] = useState('');
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const debouncedSearch = useDebouncedValue(searchInput);
 
   const filters = useMemo<FineractLoanFilters>(
@@ -63,7 +64,7 @@ export default function FineractLoansPage() {
           </span>
           <div className="flex items-center gap-1 text-xs text-gray-400">
             <Building2 className="h-3 w-3" />
-            <span>Fineract #{row.fineractLoanId}</span>
+            <span>Loan #{row.fineractLoanId}</span>
           </div>
         </div>
       ),
@@ -153,18 +154,52 @@ export default function FineractLoansPage() {
     },
   ];
 
+  const exportCsv = useCallback((loans: FineractLoanView[]) => {
+    const headers = ['Account', 'Customer', 'Phone', 'Product', 'Principal', 'Outstanding', 'Overdue', 'Status', 'Device', 'Date'];
+    const rows = loans.map((row) => [
+      row.fineractAccountNo,
+      row.customerName,
+      row.customerPhone || '',
+      row.productName.replace('Lynia Device Finance - ', ''),
+      row.principal,
+      row.totalOutstanding,
+      row.totalOverdue,
+      getFineractStatusDisplay(row.status.code).label,
+      row.deviceBrand ? `${row.deviceBrand} ${row.deviceModel}` : '',
+      row.submittedOnDate || '',
+    ]);
+    const csv = [headers, ...rows].map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `loans-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Loan Portfolio</h1>
           <p className="text-sm text-gray-500">
-            Real-time loan data from Fineract core banking engine.
+            Real-time loan portfolio data.
           </p>
         </div>
-        {data && (
-          <p className="text-sm text-gray-500">{data.total} total loans</p>
-        )}
+        <div className="flex items-center gap-3">
+          {data && (
+            <p className="text-sm text-gray-500">{data.total} total loans</p>
+          )}
+          <button
+            onClick={() => exportCsv(data?.data || [])}
+            disabled={!data?.data?.length}
+            className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -178,7 +213,7 @@ export default function FineractLoansPage() {
               setSearchInput(e.target.value);
               setPage(1);
             }}
-            placeholder="Search by loan ID or customer name..."
+            placeholder="Search by name, phone, or loan ID..."
             className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-8 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
           />
           {searchInput && (
@@ -203,6 +238,31 @@ export default function FineractLoansPage() {
         />
       </div>
 
+      {/* Selection toolbar */}
+      {selectedKeys.size > 0 && (
+        <div className="flex items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2">
+          <span className="text-sm font-medium text-brand-700">
+            {selectedKeys.size} selected
+          </span>
+          <button
+            onClick={() => {
+              const selected = (data?.data || []).filter((r) => selectedKeys.has(r.lyniaLoanId));
+              exportCsv(selected);
+            }}
+            className="inline-flex items-center gap-1 rounded-md bg-brand-600 px-3 py-1 text-xs font-medium text-white hover:bg-brand-700"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Export Selected
+          </button>
+          <button
+            onClick={() => setSelectedKeys(new Set())}
+            className="text-xs text-gray-500 hover:text-gray-700"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       {/* Table */}
       <DataTable
         columns={columns}
@@ -211,6 +271,9 @@ export default function FineractLoansPage() {
         onRowClick={(row) => router.push(`/loans/${row.lyniaLoanId}/fineract`)}
         loading={isLoading}
         emptyMessage="No loans found"
+        selectable
+        selectedKeys={selectedKeys}
+        onSelectionChange={setSelectedKeys}
       />
 
       {/* Pagination */}

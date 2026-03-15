@@ -377,7 +377,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
 
         <div>
           <label htmlFor="fineractProductId" className="block text-sm font-medium text-gray-700 mb-1">
-            Fineract Product (Core Banking)
+            Core Banking Product
           </label>
           <select
             id="fineractProductId"
@@ -393,7 +393,7 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
             ))}
           </select>
           <p className="mt-1 text-xs text-gray-400">
-            Link to a Fineract loan product for core banking sync.
+            Link to a core banking loan product for sync.
           </p>
         </div>
 

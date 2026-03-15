@@ -57,7 +57,7 @@ export function MetricCard({
               {dataSource === 'fineract_verified' ? (
                 <>
                   <CheckCircle2 className="h-3 w-3 text-green-600" />
-                  <span className="text-xs text-green-700">Fineract verified</span>
+                  <span className="text-xs text-green-700">Verified</span>
                 </>
               ) : (
                 <>

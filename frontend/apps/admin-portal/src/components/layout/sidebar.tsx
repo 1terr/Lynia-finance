@@ -21,6 +21,9 @@ import {
   Building2,
   Database,
   Store,
+  Clock,
+  AlertTriangle,
+  Scale,
 } from 'lucide-react';
 import { cn } from '@lynia/utils';
 import { useAuthStore } from '@/lib/store/auth-store';
@@ -50,7 +53,9 @@ const navSections: NavSection[] = [
     title: 'Lending',
     items: [
       { label: 'Loan Products', href: '/products', icon: Package, requiredPermissions: ['settings:read'] },
-      { label: 'Active Loans', href: '/fineract/loans', icon: CreditCard, requiredPermissions: ['loans:read'] },
+      { label: 'Loan Portfolio', href: '/fineract/loans', icon: CreditCard, requiredPermissions: ['loans:read'] },
+      { label: 'Approvals', href: '/fineract/approval', icon: Clock, requiredPermissions: ['loans:approve'] },
+      { label: 'Overdue Loans', href: '/fineract/overdue', icon: AlertTriangle, requiredPermissions: ['loans:read'] },
       { label: 'Handovers', href: '/devices/handovers', icon: HandCoins, requiredPermissions: ['devices:read'] },
     ],
   },
@@ -66,7 +71,9 @@ const navSections: NavSection[] = [
     title: 'Finance',
     items: [
       { label: 'Payments', href: '/payments', icon: Wallet, requiredPermissions: ['payments:read'] },
-      { label: 'Fineract', href: '/fineract/products', icon: Database, requiredPermissions: ['loans:read'] },
+      { label: 'Loan Config', href: '/fineract/products', icon: Database, requiredPermissions: ['loans:read'] },
+      { label: 'Accounting', href: '/fineract/accounting', icon: Scale, requiredPermissions: ['payments:read'] },
+      { label: 'Reconciliation', href: '/fineract/reconciliation', icon: FileCheck, requiredPermissions: ['payments:read'] },
     ],
   },
   {
@@ -105,6 +112,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
     if (item.href === '/products/organizations') return pathname.startsWith('/products/organizations');
     if (item.href === '/products') return pathname === '/products' || (pathname.startsWith('/products/') && !pathname.startsWith('/products/device-models') && !pathname.startsWith('/products/organizations'));
     if (item.href === '/distributors') return pathname.startsWith('/distributors');
+    if (item.href === '/fineract/approval') return pathname === '/fineract/approval';
+    if (item.href === '/fineract/overdue') return pathname === '/fineract/overdue';
+    if (item.href === '/fineract/accounting') return pathname === '/fineract/accounting';
+    if (item.href === '/fineract/reconciliation') return pathname === '/fineract/reconciliation';
+    if (item.href === '/fineract/loans') return pathname === '/fineract/loans' || pathname.startsWith('/loans/');
+    if (item.href === '/fineract/products') return pathname === '/fineract/products';
     return pathname.startsWith(item.href);
   }
 

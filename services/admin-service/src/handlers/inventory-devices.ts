@@ -26,32 +26,32 @@ export const handleGetDevices: RouteHandler = async (event, _params, auth) => {
   const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
   const offset = (page - 1) * limit;
 
-  let whereClause = 'deleted_at IS NULL';
+  let whereClause = 'd.deleted_at IS NULL';
   const params: unknown[] = [];
 
   if (qs.status) {
     params.push(qs.status);
-    whereClause += ` AND status = $${params.length}`;
+    whereClause += ` AND d.status = $${params.length}`;
   }
 
   if (qs.lock_status) {
     params.push(qs.lock_status);
-    whereClause += ` AND lock_status = $${params.length}`;
+    whereClause += ` AND d.lock_status = $${params.length}`;
   }
 
   if (qs.device_model_id) {
     params.push(qs.device_model_id);
-    whereClause += ` AND device_model_id = $${params.length}`;
+    whereClause += ` AND d.device_model_id = $${params.length}`;
   }
 
   if (qs.search) {
     params.push(`%${qs.search}%`);
     const idx = params.length;
-    whereClause += ` AND (imei ILIKE $${idx} OR manufacturer ILIKE $${idx} OR model ILIKE $${idx} OR serial_number ILIKE $${idx})`;
+    whereClause += ` AND (d.imei ILIKE $${idx} OR d.manufacturer ILIKE $${idx} OR d.model ILIKE $${idx} OR d.serial_number ILIKE $${idx} OR c.phone_number ILIKE $${idx} OR c.first_name ILIKE $${idx} OR c.last_name ILIKE $${idx})`;
   }
 
   const { data: countRows } = await query<{ count: string }>(
-    `SELECT COUNT(*) as count FROM devices WHERE ${whereClause}`,
+    `SELECT COUNT(*) as count FROM devices d LEFT JOIN customers c ON d.customer_id = c.id WHERE ${whereClause}`,
     params
   );
   const total = parseInt(countRows[0]?.count || '0');
@@ -61,7 +61,7 @@ export const handleGetDevices: RouteHandler = async (event, _params, auth) => {
     `SELECT d.*, CONCAT(c.first_name, ' ', c.last_name) as customer_name, c.phone_number as customer_phone
      FROM devices d
      LEFT JOIN customers c ON d.customer_id = c.id
-     WHERE d.${whereClause}
+     WHERE ${whereClause}
      ORDER BY d.created_at DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params

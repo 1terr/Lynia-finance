@@ -297,6 +297,7 @@ export interface CreateDistributorInput {
   account_name?: string;
   ecocash_number?: string;
   onemoney_number?: string;
+  commission_rate?: number;
   status?: DistributorStatus;
 }
 

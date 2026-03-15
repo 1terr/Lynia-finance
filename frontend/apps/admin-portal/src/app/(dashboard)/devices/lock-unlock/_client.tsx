@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { getDevices, lockDevice, unlockDevice, getDeviceStats, type DeviceWithCustomer, type DeviceStats } from '@/lib/api/devices';
@@ -20,6 +20,7 @@ import {
   Shield,
   ShieldOff,
   Smartphone,
+  X,
 } from 'lucide-react';
 
 export default function LockUnlockPage() {
@@ -32,6 +33,12 @@ export default function LockUnlockPage() {
   const [lockModal, setLockModal] = useState<DeviceWithCustomer | null>(null);
   const [unlockModal, setUnlockModal] = useState<DeviceWithCustomer | null>(null);
   const [reason, setReason] = useState('');
+
+  // Batch selection state
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [batchAction, setBatchAction] = useState<'lock' | 'unlock' | null>(null);
+  const [batchReason, setBatchReason] = useState('');
+  const [batchProgress, setBatchProgress] = useState<{ current: number; total: number; failed: number } | null>(null);
 
   const { data: stats } = useQuery<DeviceStats>({
     queryKey: ['device-stats'],
@@ -83,6 +90,81 @@ export default function LockUnlockPage() {
   });
 
   const devices = data?.data || [];
+
+  // Selection helpers
+  const toggleSelection = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    const pageIds = devices.map((d) => d.id);
+    setSelectedIds((prev) => {
+      const allSelected = pageIds.every((id) => prev.has(id));
+      const next = new Set(prev);
+      if (allSelected) {
+        pageIds.forEach((id) => next.delete(id));
+      } else {
+        pageIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  }, [devices]);
+
+  const selectedDevices = devices.filter((d) => selectedIds.has(d.id));
+  const selectedLocked = selectedDevices.filter((d) => d.lock_status === 'locked');
+  const selectedUnlocked = selectedDevices.filter((d) => d.lock_status !== 'locked');
+  const allPageSelected = devices.length > 0 && devices.every((d) => selectedIds.has(d.id));
+  const somePageSelected = !allPageSelected && devices.some((d) => selectedIds.has(d.id));
+
+  // Batch execution
+  const executeBatch = useCallback(async () => {
+    if (!user || !batchAction || !batchReason.trim()) return;
+    const targets = batchAction === 'lock' ? selectedUnlocked : selectedLocked;
+    const total = targets.length;
+    let failed = 0;
+    const failedIds = new Set<string>();
+
+    setBatchProgress({ current: 0, total, failed: 0 });
+
+    for (let i = 0; i < targets.length; i++) {
+      try {
+        if (batchAction === 'lock') {
+          await lockDevice(targets[i].id, user.id, batchReason);
+        } else {
+          await unlockDevice(targets[i].id, user.id, batchReason);
+        }
+      } catch {
+        failed++;
+        failedIds.add(targets[i].id);
+      }
+      setBatchProgress({ current: i + 1, total, failed });
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['devices-lock'] });
+    queryClient.invalidateQueries({ queryKey: ['device-stats'] });
+
+    const succeeded = total - failed;
+    const action = batchAction === 'lock' ? 'locked' : 'unlocked';
+    if (failed === 0) {
+      toast({ title: `Successfully ${action} ${succeeded} device${succeeded > 1 ? 's' : ''}`, variant: 'success' });
+      setSelectedIds(new Set());
+    } else {
+      toast({
+        title: `${action.charAt(0).toUpperCase() + action.slice(1)} ${succeeded}/${total} devices. ${failed} failed.`,
+        variant: 'error',
+      });
+      setSelectedIds(failedIds);
+    }
+
+    setBatchAction(null);
+    setBatchReason('');
+    setBatchProgress(null);
+  }, [user, batchAction, batchReason, selectedLocked, selectedUnlocked, queryClient, toast]);
 
   return (
     <ProtectedRoute requiredPermission={{ resource: 'devices', action: 'lock' }}>
@@ -146,7 +228,7 @@ export default function LockUnlockPage() {
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by IMEI, brand, or model..."
+              placeholder="Search by IMEI, brand, model, or customer phone..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
               className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-4 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -166,6 +248,41 @@ export default function LockUnlockPage() {
             </select>
           </div>
         </div>
+
+        {/* Batch action toolbar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 rounded-lg border border-brand-200 bg-brand-50 px-4 py-2.5">
+            <span className="text-sm font-medium text-brand-700">
+              {selectedIds.size} selected
+            </span>
+            {selectedUnlocked.length > 0 && (
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => setBatchAction('lock')}
+              >
+                <Lock className="mr-1.5 h-3.5 w-3.5" />
+                Lock {selectedUnlocked.length} Device{selectedUnlocked.length > 1 ? 's' : ''}
+              </Button>
+            )}
+            {selectedLocked.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBatchAction('unlock')}
+              >
+                <Unlock className="mr-1.5 h-3.5 w-3.5" />
+                Unlock {selectedLocked.length} Device{selectedLocked.length > 1 ? 's' : ''}
+              </Button>
+            )}
+            <button
+              onClick={() => setSelectedIds(new Set())}
+              className="ml-auto text-xs text-gray-500 hover:text-gray-700"
+            >
+              Clear
+            </button>
+          </div>
+        )}
 
         {/* Device Table */}
         {isLoading ? (
@@ -187,6 +304,15 @@ export default function LockUnlockPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="w-10 px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={allPageSelected}
+                      ref={(el) => { if (el) el.indeterminate = somePageSelected; }}
+                      onChange={toggleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Device</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">IMEI</th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Customer</th>
@@ -199,8 +325,17 @@ export default function LockUnlockPage() {
                 {devices.map((device: DeviceWithCustomer) => {
                   const customer = Array.isArray(device.customer) ? device.customer[0] : device.customer;
                   const isLocked = device.lock_status === 'locked';
+                  const isSelected = selectedIds.has(device.id);
                   return (
-                    <tr key={device.id} className="hover:bg-gray-50">
+                    <tr key={device.id} className={isSelected ? 'bg-brand-50' : 'hover:bg-gray-50'}>
+                      <td className="w-10 px-3 py-4">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelection(device.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+                        />
+                      </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         <Link href={`/devices/${device.id}`} className="text-sm font-medium text-brand-600 hover:underline">
                           {device.manufacturer} {device.model}
@@ -276,7 +411,7 @@ export default function LockUnlockPage() {
           />
         )}
 
-        {/* Lock Modal */}
+        {/* Single Lock Modal */}
         <Modal
           open={!!lockModal}
           onClose={() => { setLockModal(null); setReason(''); }}
@@ -313,7 +448,7 @@ export default function LockUnlockPage() {
           </div>
         </Modal>
 
-        {/* Unlock Modal */}
+        {/* Single Unlock Modal */}
         <Modal
           open={!!unlockModal}
           onClose={() => { setUnlockModal(null); setReason(''); }}
@@ -345,6 +480,91 @@ export default function LockUnlockPage() {
                 {unlockMutation.isPending ? 'Unlocking...' : 'Confirm Unlock'}
               </Button>
             </div>
+          </div>
+        </Modal>
+
+        {/* Batch Lock/Unlock Modal */}
+        <Modal
+          open={!!batchAction}
+          onClose={() => { if (!batchProgress) { setBatchAction(null); setBatchReason(''); } }}
+          title={batchAction === 'lock' ? 'Batch Lock Devices' : 'Batch Unlock Devices'}
+        >
+          <div className="space-y-4">
+            {batchProgress ? (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  {batchAction === 'lock' ? 'Locking' : 'Unlocking'} device {batchProgress.current} of {batchProgress.total}...
+                </p>
+                <div className="h-2 w-full overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className="h-full rounded-full bg-brand-600 transition-all duration-300"
+                    style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
+                  />
+                </div>
+                {batchProgress.failed > 0 && (
+                  <p className="text-xs text-red-600">{batchProgress.failed} failed so far</p>
+                )}
+              </div>
+            ) : (
+              <>
+                <div className="rounded-lg bg-gray-50 p-3">
+                  <p className="text-sm font-medium text-gray-900">
+                    {batchAction === 'lock'
+                      ? `${selectedUnlocked.length} device${selectedUnlocked.length > 1 ? 's' : ''} will be locked`
+                      : `${selectedLocked.length} device${selectedLocked.length > 1 ? 's' : ''} will be unlocked`
+                    }
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {(batchAction === 'lock' ? selectedUnlocked : selectedLocked).slice(0, 5).map((d) => (
+                      <li key={d.id} className="text-xs text-gray-600">
+                        <span className="font-mono">{d.imei}</span> — {d.manufacturer} {d.model}
+                      </li>
+                    ))}
+                    {(batchAction === 'lock' ? selectedUnlocked.length : selectedLocked.length) > 5 && (
+                      <li className="text-xs text-gray-400">
+                        and {(batchAction === 'lock' ? selectedUnlocked.length : selectedLocked.length) - 5} more...
+                      </li>
+                    )}
+                  </ul>
+                </div>
+                {batchAction === 'lock' && (
+                  <div className="rounded-lg bg-red-50 p-3">
+                    <p className="text-xs text-red-700">
+                      These devices will be remotely locked and unusable until unlocked.
+                    </p>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reason *</label>
+                  <textarea
+                    value={batchReason}
+                    onChange={(e) => setBatchReason(e.target.value)}
+                    rows={3}
+                    required
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    placeholder={batchAction === 'lock'
+                      ? 'e.g., Batch lock for missed payments...'
+                      : 'e.g., Batch unlock — payments received...'
+                    }
+                  />
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => { setBatchAction(null); setBatchReason(''); }}>
+                    Cancel
+                  </Button>
+                  <Button
+                    variant={batchAction === 'lock' ? 'danger' : 'primary'}
+                    onClick={executeBatch}
+                    disabled={!batchReason.trim()}
+                  >
+                    {batchAction === 'lock'
+                      ? `Lock ${selectedUnlocked.length} Device${selectedUnlocked.length > 1 ? 's' : ''}`
+                      : `Unlock ${selectedLocked.length} Device${selectedLocked.length > 1 ? 's' : ''}`
+                    }
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </Modal>
       </div>

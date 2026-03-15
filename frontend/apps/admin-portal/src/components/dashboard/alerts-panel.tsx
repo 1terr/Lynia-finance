@@ -76,7 +76,7 @@ export function AlertsPanel({ metrics, fineractDiscrepancies }: AlertsPanelProps
 
   if (fineractDiscrepancies !== undefined && fineractDiscrepancies > 0) {
     alerts.push({
-      label: 'Fineract Discrepancies',
+      label: 'Banking Discrepancies',
       count: fineractDiscrepancies,
       href: '/fineract/reconciliation',
       icon: RefreshCw,

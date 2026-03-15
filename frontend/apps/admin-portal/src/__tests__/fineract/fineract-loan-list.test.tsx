@@ -46,7 +46,7 @@ describe('FineractLoansPage', () => {
 
     expect(screen.getByText('Loan Portfolio')).toBeInTheDocument();
     expect(
-      screen.getByText(/Real-time loan data from Fineract/)
+      screen.getByText(/Real-time loan portfolio data/)
     ).toBeInTheDocument();
   });
 
@@ -137,7 +137,7 @@ describe('FineractLoansPage', () => {
 
     render(<FineractLoansPage />, { wrapper: createWrapper() });
 
-    const searchInput = screen.getByPlaceholderText(/Search by loan ID/);
+    const searchInput = screen.getByPlaceholderText(/Search by name, phone/);
     fireEvent.change(searchInput, { target: { value: 'Tendai' } });
 
     // Search is now debounced (300ms) - wait for it to fire

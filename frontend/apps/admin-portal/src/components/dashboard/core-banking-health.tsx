@@ -213,7 +213,7 @@ export function CoreBankingHealth({ data, isLoading, error, onRetry }: CoreBanki
               <SectionLabel>Infrastructure</SectionLabel>
               <div className="space-y-1.5">
                 <InfraRow
-                  label="Fineract"
+                  label="Core Banking"
                   value={infra.fineractReachable ? 'Connected' : 'Unreachable'}
                   status={infra.fineractReachable ? 'ok' : 'error'}
                 />

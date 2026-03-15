@@ -77,12 +77,17 @@ export async function handleGetLoans(
     })
   );
 
-  // Apply search filter client-side (customer name / loan number)
+  // Apply search filter client-side (customer name / phone / loan number)
   const filtered = search
     ? items.filter(
-        (item) =>
-          String(item.customerName || '').toLowerCase().includes(search.toLowerCase()) ||
-          String(item.fineractAccountNo || '').toLowerCase().includes(search.toLowerCase())
+        (item) => {
+          const s = search.toLowerCase();
+          return (
+            String(item.customerName || '').toLowerCase().includes(s) ||
+            String(item.customerPhone || '').toLowerCase().includes(s) ||
+            String(item.fineractAccountNo || '').toLowerCase().includes(s)
+          );
+        }
       )
     : items;
 

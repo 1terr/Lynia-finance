@@ -109,7 +109,7 @@ export default function FineractApprovalPage() {
           Loan Approval Queue
         </h1>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          Review and approve pending loan applications from Fineract.
+          Review and approve pending loan applications.
           {data && ` ${data.total} loans pending.`}
         </p>
       </div>
@@ -147,7 +147,7 @@ export default function FineractApprovalPage() {
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                  {loan.customerPhone} | Fineract #{loan.fineractLoanId}
+                  {loan.customerPhone} | Loan #{loan.fineractLoanId}
                 </p>
               </div>
 
@@ -271,7 +271,7 @@ export default function FineractApprovalPage() {
               </div>
               <p className="text-sm text-muted-foreground">
                 {modalAction === 'approve'
-                  ? 'This will transition the loan to "Approved" in Fineract.'
+                  ? 'This will approve the loan application.'
                   : 'This action cannot be undone.'}
               </p>
               <div>

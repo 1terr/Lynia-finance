@@ -102,10 +102,10 @@ export default function ProductDetailPage() {
     mutationFn: () => createFineractProductFromLynia(id),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['product', id] });
-      toast({ title: `Fineract product created (ID: ${data.fineract_product_id})`, variant: 'success' });
+      toast({ title: `Core banking product created (ID: ${data.fineract_product_id})`, variant: 'success' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Failed to create Fineract product', description: error.message, variant: 'error' });
+      toast({ title: 'Failed to create core banking product', description: error.message, variant: 'error' });
     },
   });
 
@@ -163,7 +163,7 @@ export default function ProductDetailPage() {
 
   const checklistItems = [
     { label: 'Product created', done: true },
-    { label: 'Fineract product linked', done: product.fineract_product_id != null },
+    { label: 'Core banking product linked', done: product.fineract_product_id != null },
     ...(isSmartphone ? [
       { label: 'Phone models assigned', done: linkedModels.length > 0 },
       { label: 'Physical devices in stock', done: inStockCount > 0 },
@@ -229,10 +229,10 @@ export default function ProductDetailPage() {
               onClick={() => fineractCreateMutation.mutate()}
               isLoading={fineractCreateMutation.isPending}
             >
-              <DatabaseIcon className="mr-1 h-3.5 w-3.5" /> Create in Fineract
+              <DatabaseIcon className="mr-1 h-3.5 w-3.5" /> Create in Core Banking
             </Button>
             <span className="ml-2 text-xs text-gray-500">
-              Auto-creates a matching loan product in Fineract core banking.
+              Auto-creates a matching loan product in core banking.
             </span>
           </div>
         )}
@@ -277,7 +277,7 @@ export default function ProductDetailPage() {
             )}
             <Row label="Display Order" value={String(product.display_order)} />
             <Row
-              label="Fineract Product"
+              label="Core Banking Product"
               value={product.fineract_product_id != null ? `Linked (ID: ${product.fineract_product_id})` : 'Not linked'}
             />
           </dl>

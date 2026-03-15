@@ -254,7 +254,7 @@ export default function DevicesPage() {
             type="text"
             value={searchInput}
             onChange={(e) => { setSearchInput(e.target.value); setFilters((f) => ({ ...f, page: 1 })); }}
-            placeholder="Search by IMEI, brand, or model..."
+            placeholder="Search by IMEI, brand, model, or customer..."
             className="block w-full rounded-md border border-gray-300 py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-gray-400 focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>
