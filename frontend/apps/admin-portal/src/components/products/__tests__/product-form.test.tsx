@@ -34,7 +34,7 @@ describe('ProductForm', () => {
       />
     );
 
-    expect(screen.getByText('Create Product')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Create Product' })).toBeInTheDocument();
   });
 
   it('validates required fields (name, code)', async () => {
@@ -121,14 +121,14 @@ describe('ProductForm', () => {
       />
     );
 
-    await user.type(screen.getByLabelText(/name/i), 'Test Product');
-    await user.type(screen.getByLabelText(/code/i), 'TEST_PROD');
+    await user.type(screen.getByLabelText(/product name/i), 'Test Product');
+    await user.type(screen.getByLabelText(/product code/i), 'TEST_PROD');
 
-    const minTermInput = screen.getByLabelText(/min.*term/i);
+    const minTermInput = screen.getByLabelText(/min tenure/i);
     await user.clear(minTermInput);
     await user.type(minTermInput, '24');
 
-    const maxTermInput = screen.getByLabelText(/max.*term/i);
+    const maxTermInput = screen.getByLabelText(/max tenure/i);
     await user.clear(maxTermInput);
     await user.type(maxTermInput, '6');
 
@@ -136,13 +136,12 @@ describe('ProductForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(screen.getByText(/min.*term.*less.*max|min.*term.*cannot.*exceed|term.*must.*lower/i)).toBeInTheDocument();
+      expect(screen.getByText(/min tenure must be less than max tenure/i)).toBeInTheDocument();
     });
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
   it('shows deposit fields for smartphone category', async () => {
-    const user = userEvent.setup();
     renderWithProviders(
       <ProductForm
         open={true}
@@ -151,19 +150,16 @@ describe('ProductForm', () => {
       />
     );
 
+    // Default category is 'smartphone', so deposit fields should already be visible
     const categorySelect = screen.getByLabelText(/category/i);
-    await user.click(categorySelect);
-
-    const smartphoneOption = await screen.findByRole('option', { name: /smartphone/i });
-    await user.click(smartphoneOption);
+    fireEvent.change(categorySelect, { target: { value: 'smartphone' } });
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/deposit/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/deposit percentage/i)).toBeInTheDocument();
     });
   });
 
   it('shows disbursement methods for digital category', async () => {
-    const user = userEvent.setup();
     renderWithProviders(
       <ProductForm
         open={true}
@@ -173,10 +169,7 @@ describe('ProductForm', () => {
     );
 
     const categorySelect = screen.getByLabelText(/category/i);
-    await user.click(categorySelect);
-
-    const digitalOption = await screen.findByRole('option', { name: /digital/i });
-    await user.click(digitalOption);
+    fireEvent.change(categorySelect, { target: { value: 'digital' } });
 
     await waitFor(() => {
       expect(screen.getByText(/disbursement/i)).toBeInTheDocument();
@@ -193,12 +186,12 @@ describe('ProductForm', () => {
       />
     );
 
-    const monthlyRateInput = screen.getByLabelText(/monthly.*rate/i);
+    const monthlyRateInput = screen.getByLabelText(/interest rate.*month/i);
     await user.clear(monthlyRateInput);
     await user.type(monthlyRateInput, '5');
 
     await waitFor(() => {
-      const annualRateInput = screen.getByLabelText(/annual.*rate/i);
+      const annualRateInput = screen.getByLabelText(/interest rate.*year/i);
       // 5% monthly * 12 = 60% annual
       expect(annualRateInput).toHaveValue(60);
     });
@@ -214,26 +207,26 @@ describe('ProductForm', () => {
       />
     );
 
-    await user.type(screen.getByLabelText(/name/i), 'Smartphone Loan');
-    await user.type(screen.getByLabelText(/code/i), 'SMART_LOAN_01');
+    await user.type(screen.getByLabelText(/product name/i), 'Smartphone Loan');
+    await user.type(screen.getByLabelText(/product code/i), 'SMART_LOAN_01');
 
-    const monthlyRateInput = screen.getByLabelText(/monthly.*rate/i);
+    const monthlyRateInput = screen.getByLabelText(/interest rate.*month/i);
     await user.clear(monthlyRateInput);
     await user.type(monthlyRateInput, '5');
 
-    const minAmountInput = screen.getByLabelText(/min.*amount/i);
+    const minAmountInput = screen.getByLabelText(/min amount/i);
     await user.clear(minAmountInput);
     await user.type(minAmountInput, '50');
 
-    const maxAmountInput = screen.getByLabelText(/max.*amount/i);
+    const maxAmountInput = screen.getByLabelText(/max amount/i);
     await user.clear(maxAmountInput);
     await user.type(maxAmountInput, '500');
 
-    const minTermInput = screen.getByLabelText(/min.*term/i);
+    const minTermInput = screen.getByLabelText(/min tenure/i);
     await user.clear(minTermInput);
     await user.type(minTermInput, '3');
 
-    const maxTermInput = screen.getByLabelText(/max.*term/i);
+    const maxTermInput = screen.getByLabelText(/max tenure/i);
     await user.clear(maxTermInput);
     await user.type(maxTermInput, '12');
 
@@ -246,13 +239,13 @@ describe('ProductForm', () => {
 
     const submittedData = mockOnSubmit.mock.calls[0][0];
     expect(submittedData).toMatchObject({
-      name: 'Smartphone Loan',
-      code: 'SMART_LOAN_01',
-      monthly_rate: 5,
-      min_amount: 50,
-      max_amount: 500,
-      min_term: 3,
-      max_term: 12,
+      product_name: 'Smartphone Loan',
+      product_code: 'SMART_LOAN_01',
+      interest_rate_monthly: 5,
+      min_amount_usd: 50,
+      max_amount_usd: 500,
+      min_term_months: 3,
+      max_term_months: 12,
     });
 
     await waitFor(() => {

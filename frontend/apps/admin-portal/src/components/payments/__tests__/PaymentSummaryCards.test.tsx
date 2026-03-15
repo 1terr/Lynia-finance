@@ -54,11 +54,11 @@ describe('PaymentSummaryCards', () => {
     renderWithProviders(<PaymentSummaryCards />);
 
     await waitFor(() => {
-      expect(screen.getByText('22')).toBeInTheDocument();
+      expect(screen.getByText('22 payments')).toBeInTheDocument();
     });
-    expect(screen.getByText('6')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('0')).toBeInTheDocument();
+    expect(screen.getByText('6 payments')).toBeInTheDocument();
+    expect(screen.getByText('1 payment')).toBeInTheDocument();
+    expect(screen.getByText('0 payments')).toBeInTheDocument();
   });
 
   it('passes axe accessibility checks', async () => {

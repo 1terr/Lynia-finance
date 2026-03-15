@@ -18,17 +18,17 @@ jest.mock('@/lib/hooks/useKYCReview', () => ({
   }),
 }));
 
-jest.mock('./DocumentViewer', () => ({
+jest.mock('@/components/kyc-review/DocumentViewer', () => ({
   DocumentViewer: () => <div data-testid="document-viewer">DocumentViewer</div>,
 }));
 
-jest.mock('./SLAIndicator', () => ({
+jest.mock('@/components/kyc-review/SLAIndicator', () => ({
   SLAIndicator: ({ compact }: { compact?: boolean }) => (
     <div data-testid={compact ? 'sla-compact' : 'sla-full'}>SLA</div>
   ),
 }));
 
-jest.mock('./ReviewHistory', () => ({
+jest.mock('@/components/kyc-review/ReviewHistory', () => ({
   ReviewHistory: () => <div data-testid="review-history">ReviewHistory</div>,
 }));
 

@@ -45,7 +45,7 @@ describe('RecordPaymentForm', () => {
 
     expect(screen.getByLabelText(/loan id/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/customer id/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/amount/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/amount \(usd\)/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/payment date/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/payment method/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/payment type/i)).toBeInTheDocument();
@@ -59,37 +59,28 @@ describe('RecordPaymentForm', () => {
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+      expect(screen.getByText(/loan id is required/i)).toBeInTheDocument();
     });
   });
 
-  it('renders payment method dropdown with options', async () => {
-    const user = userEvent.setup();
+  it('renders payment method dropdown with options', () => {
     renderWithProviders(<RecordPaymentForm {...defaultProps} />);
 
     const methodSelect = screen.getByLabelText(/payment method/i);
-    await user.click(methodSelect);
+    const options = methodSelect.querySelectorAll('option');
+    const optionTexts = Array.from(options).map((o) => o.textContent);
 
-    await waitFor(() => {
-      expect(screen.getByText(/ecocash/i)).toBeInTheDocument();
-      expect(screen.getByText(/onemoney/i)).toBeInTheDocument();
-      expect(screen.getByText(/bank transfer/i)).toBeInTheDocument();
-      expect(screen.getByText(/cash/i)).toBeInTheDocument();
-    });
+    expect(optionTexts).toEqual(
+      expect.arrayContaining(['EcoCash', 'OneMoney', 'Bank Transfer', 'Cash'])
+    );
   });
 
-  it('renders payment type dropdown with options', async () => {
-    const user = userEvent.setup();
+  it('renders payment type dropdown with options', () => {
     renderWithProviders(<RecordPaymentForm {...defaultProps} />);
 
     const typeSelect = screen.getByLabelText(/payment type/i);
-    await user.click(typeSelect);
-
-    await waitFor(() => {
-      expect(
-        screen.getAllByRole('option').length
-      ).toBeGreaterThan(0);
-    });
+    const options = typeSelect.querySelectorAll('option');
+    expect(options.length).toBeGreaterThan(0);
   });
 
   it('shows close button that calls onClose', async () => {

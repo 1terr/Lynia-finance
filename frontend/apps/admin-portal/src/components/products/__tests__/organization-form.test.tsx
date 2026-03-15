@@ -104,7 +104,6 @@ describe('OrganizationForm', () => {
   });
 
   it('shows API endpoint field only when verification method is "api"', async () => {
-    const user = userEvent.setup();
     render(
       <OrganizationForm
         open={true}
@@ -116,10 +115,7 @@ describe('OrganizationForm', () => {
     expect(screen.queryByLabelText(/api.*endpoint/i)).not.toBeInTheDocument();
 
     const verificationSelect = screen.getByLabelText(/verification.*method/i);
-    await user.click(verificationSelect);
-
-    const apiOption = await screen.findByRole('option', { name: /api/i });
-    await user.click(apiOption);
+    fireEvent.change(verificationSelect, { target: { value: 'api' } });
 
     await waitFor(() => {
       expect(screen.getByLabelText(/api.*endpoint/i)).toBeInTheDocument();
@@ -137,10 +133,7 @@ describe('OrganizationForm', () => {
     );
 
     const verificationSelect = screen.getByLabelText(/verification.*method/i);
-    await user.click(verificationSelect);
-
-    const apiOption = await screen.findByRole('option', { name: /api/i });
-    await user.click(apiOption);
+    fireEvent.change(verificationSelect, { target: { value: 'api' } });
 
     const orgCodeInput = screen.getByLabelText(/org.*code|code/i);
     await user.type(orgCodeInput, 'TEST_CODE');
@@ -158,7 +151,6 @@ describe('OrganizationForm', () => {
   });
 
   it('changing org type updates default trust level in create mode', async () => {
-    const user = userEvent.setup();
     render(
       <OrganizationForm
         open={true}
@@ -168,18 +160,11 @@ describe('OrganizationForm', () => {
     );
 
     const orgTypeSelect = screen.getByLabelText(/org.*type|type/i);
-    await user.click(orgTypeSelect);
 
-    const governmentOption = await screen.findByRole('option', { name: /government/i });
-    await user.click(governmentOption);
+    // Default is government, trust level 90
+    expect(screen.getByDisplayValue('90')).toBeInTheDocument();
 
-    await waitFor(() => {
-      expect(screen.getByDisplayValue('90')).toBeInTheDocument();
-    });
-
-    await user.click(orgTypeSelect);
-    const cooperativeOption = await screen.findByRole('option', { name: /cooperative/i });
-    await user.click(cooperativeOption);
+    fireEvent.change(orgTypeSelect, { target: { value: 'cooperative' } });
 
     await waitFor(() => {
       expect(screen.getByDisplayValue('50')).toBeInTheDocument();
@@ -237,9 +222,7 @@ describe('OrganizationForm', () => {
     await user.type(screen.getByLabelText(/org.*name|name/i), 'New Organization');
 
     const orgTypeSelect = screen.getByLabelText(/org.*type|type/i);
-    await user.click(orgTypeSelect);
-    const corpOption = await screen.findByRole('option', { name: /corporate/i });
-    await user.click(corpOption);
+    fireEvent.change(orgTypeSelect, { target: { value: 'corporate' } });
 
     await user.type(screen.getByLabelText(/contact.*person/i), 'John Doe');
     await user.type(screen.getByLabelText(/contact.*phone/i), '+263770000000');
