@@ -34,7 +34,8 @@ const mockOrder = jest.fn(() => ({
   limit: mockLimit,
   range: mockRange,
 }));
-const mockIn = jest.fn(() => ({ execute: mockExecute }));
+const mockIs = jest.fn(() => ({ execute: mockExecute }));
+const mockIn = jest.fn(() => ({ execute: mockExecute, is: mockIs }));
 const mockEq = jest.fn(() => ({
   execute: mockExecute,
   single: mockSingle,
