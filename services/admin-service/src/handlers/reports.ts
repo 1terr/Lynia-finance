@@ -47,12 +47,12 @@ export const handleGetPortfolioReport: RouteHandler = async (event, _params, aut
       par_90_plus: string;
       total_loans: string;
     }>(`SELECT
-      COALESCE(SUM(remaining_balance_usd), 0) AS total_outstanding,
-      COALESCE(SUM(CASE WHEN days_past_due = 0 OR days_past_due IS NULL THEN remaining_balance_usd ELSE 0 END), 0) AS current,
-      COALESCE(SUM(CASE WHEN days_past_due BETWEEN 1 AND 30 THEN remaining_balance_usd ELSE 0 END), 0) AS par_30,
-      COALESCE(SUM(CASE WHEN days_past_due BETWEEN 31 AND 60 THEN remaining_balance_usd ELSE 0 END), 0) AS par_60,
-      COALESCE(SUM(CASE WHEN days_past_due BETWEEN 61 AND 90 THEN remaining_balance_usd ELSE 0 END), 0) AS par_90,
-      COALESCE(SUM(CASE WHEN days_past_due > 90 THEN remaining_balance_usd ELSE 0 END), 0) AS par_90_plus,
+      COALESCE(SUM(outstanding_balance_usd), 0) AS total_outstanding,
+      COALESCE(SUM(CASE WHEN days_past_due = 0 OR days_past_due IS NULL THEN outstanding_balance_usd ELSE 0 END), 0) AS current,
+      COALESCE(SUM(CASE WHEN days_past_due BETWEEN 1 AND 30 THEN outstanding_balance_usd ELSE 0 END), 0) AS par_30,
+      COALESCE(SUM(CASE WHEN days_past_due BETWEEN 31 AND 60 THEN outstanding_balance_usd ELSE 0 END), 0) AS par_60,
+      COALESCE(SUM(CASE WHEN days_past_due BETWEEN 61 AND 90 THEN outstanding_balance_usd ELSE 0 END), 0) AS par_90,
+      COALESCE(SUM(CASE WHEN days_past_due > 90 THEN outstanding_balance_usd ELSE 0 END), 0) AS par_90_plus,
       COUNT(*) AS total_loans
     FROM loans
     WHERE status IN ('active', 'disbursed') AND deleted_at IS NULL`);
@@ -105,12 +105,12 @@ export const handleGetPortfolioHealthReport: RouteHandler = async (event, _param
     const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     const result = await queryOne<Record<string, string>>(`SELECT
-      COALESCE(SUM(l.remaining_balance_usd), 0) AS total_outstanding,
+      COALESCE(SUM(l.outstanding_balance_usd), 0) AS total_outstanding,
       COALESCE(SUM(l.loan_amount_usd), 0) AS total_disbursed,
-      COALESCE(SUM(CASE WHEN l.days_past_due BETWEEN 1 AND 30 THEN l.remaining_balance_usd ELSE 0 END), 0) AS par_1_30,
-      COALESCE(SUM(CASE WHEN l.days_past_due BETWEEN 31 AND 60 THEN l.remaining_balance_usd ELSE 0 END), 0) AS par_31_60,
-      COALESCE(SUM(CASE WHEN l.days_past_due BETWEEN 61 AND 90 THEN l.remaining_balance_usd ELSE 0 END), 0) AS par_61_90,
-      COALESCE(SUM(CASE WHEN l.days_past_due > 90 THEN l.remaining_balance_usd ELSE 0 END), 0) AS par_90_plus,
+      COALESCE(SUM(CASE WHEN l.days_past_due BETWEEN 1 AND 30 THEN l.outstanding_balance_usd ELSE 0 END), 0) AS par_1_30,
+      COALESCE(SUM(CASE WHEN l.days_past_due BETWEEN 31 AND 60 THEN l.outstanding_balance_usd ELSE 0 END), 0) AS par_31_60,
+      COALESCE(SUM(CASE WHEN l.days_past_due BETWEEN 61 AND 90 THEN l.outstanding_balance_usd ELSE 0 END), 0) AS par_61_90,
+      COALESCE(SUM(CASE WHEN l.days_past_due > 90 THEN l.outstanding_balance_usd ELSE 0 END), 0) AS par_90_plus,
       COUNT(*) AS total_loans,
       COUNT(*) FILTER (WHERE l.days_past_due > 0) AS delinquent_loans
     FROM loans l
@@ -427,11 +427,10 @@ export const handleGetDefaultReport: RouteHandler = async (event, _params, auth)
         CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
         c.phone_number AS customer_phone,
         l.loan_amount_usd,
-        l.remaining_balance_usd,
+        l.outstanding_balance_usd,
         l.days_past_due,
-        l.last_payment_date,
-        l.next_payment_date,
-        l.created_at AS loan_date
+        l.disbursed_at AS disbursement_date,
+        NULL::date AS maturity_date
       FROM loans l
       JOIN customers c ON c.id = l.customer_id
       WHERE l.days_past_due > 0
@@ -488,8 +487,8 @@ export const handleGetDefaultSummaryReport: RouteHandler = async (event, _params
       COUNT(*) FILTER (WHERE days_past_due > 30) AS par_30_count,
       COUNT(*) FILTER (WHERE days_past_due > 60) AS par_60_count,
       COUNT(*) FILTER (WHERE days_past_due > 90) AS par_90_count,
-      COALESCE(SUM(remaining_balance_usd), 0) AS total_outstanding,
-      COALESCE(SUM(CASE WHEN days_past_due > 0 THEN remaining_balance_usd ELSE 0 END), 0) AS total_at_risk
+      COALESCE(SUM(outstanding_balance_usd), 0) AS total_outstanding,
+      COALESCE(SUM(CASE WHEN days_past_due > 0 THEN outstanding_balance_usd ELSE 0 END), 0) AS total_at_risk
     FROM loans l ${whereClause}`, values);
 
     const d = result.data || {};
@@ -652,7 +651,7 @@ export const handleGetLoanApprovalReport: RouteHandler = async (event, _params, 
       COUNT(*) FILTER (WHERE status IN ('approved', 'disbursed', 'active', 'closed', 'completed')) AS approved,
       COUNT(*) FILTER (WHERE status = 'rejected') AS rejected,
       COUNT(*) FILTER (WHERE status = 'pending') AS pending,
-      COUNT(*) FILTER (WHERE auto_approved = true) AS auto_approved
+      COUNT(*) FILTER (WHERE approval_status = 'auto_approved') AS auto_approved
     FROM loans ${whereClause}`, values);
 
     const d = result.data || {};

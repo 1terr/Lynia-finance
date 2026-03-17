@@ -110,7 +110,7 @@ function SummaryKPIBar({ dateRange }: { dateRange: DateRange }) {
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <MetricCard
         label="Loans Approved"
-        value={loans ? loans.approved.toLocaleString() : '0'}
+        value={loans?.approved?.toLocaleString() ?? '0'}
         subtitle="this period"
       />
       <MetricCard
@@ -125,7 +125,7 @@ function SummaryKPIBar({ dateRange }: { dateRange: DateRange }) {
       />
       <MetricCard
         label="Active Defaults"
-        value={defaults ? defaults.length.toLocaleString() : '0'}
+        value={defaults?.length?.toLocaleString() ?? '0'}
         subtitle="defaulted loans"
       />
     </div>
