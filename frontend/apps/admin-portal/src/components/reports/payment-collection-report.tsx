@@ -18,7 +18,10 @@ export function PaymentCollectionReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchPaymentCollectionReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchPaymentCollectionReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { setData(null); })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {

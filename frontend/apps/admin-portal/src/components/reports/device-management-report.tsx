@@ -18,7 +18,10 @@ export function DeviceManagementReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchDeviceManagementReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchDeviceManagementReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { setData(null); })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {

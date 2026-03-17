@@ -19,7 +19,10 @@ export function CustomerAcquisitionReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchCustomerAcquisitionReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchCustomerAcquisitionReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { setData(null); })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {

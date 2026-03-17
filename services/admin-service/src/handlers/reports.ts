@@ -93,10 +93,6 @@ export const handleGetPortfolioHealthReport: RouteHandler = async (event, _param
       conditions.push(`l.product_id = $${paramIdx++}`);
       values.push(qs.product);
     }
-    if (qs.distributor) {
-      conditions.push(`l.distributor_id = $${paramIdx++}`);
-      values.push(qs.distributor);
-    }
     if (qs.tier) {
       conditions.push(`cs.tier = $${paramIdx++}`);
       values.push(qs.tier);

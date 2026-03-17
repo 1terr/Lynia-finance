@@ -18,7 +18,10 @@ export function DefaultRateReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchDefaultRateReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchDefaultRateReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { setData(null); })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {

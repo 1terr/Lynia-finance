@@ -17,7 +17,10 @@ export function LoanDisbursementReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchLoanDisbursementReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchLoanDisbursementReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { setData(null); })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {

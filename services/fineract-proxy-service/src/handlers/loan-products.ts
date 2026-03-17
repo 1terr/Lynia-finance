@@ -21,13 +21,16 @@ export async function handleGetLoanProducts(
   _params: RouteParams,
   _auth: AuthContext
 ): Promise<APIGatewayProxyResult> {
+  // Try Fineract first, fall back to Lynia products if unreachable
+  let fineractProducts: Array<Record<string, unknown>> | null = null;
+
   try {
     const fineract = await getFineractClient();
     const products = await fineract.listLoanProducts();
 
     // Fetch Lynia loan products linked to Fineract for enrichment
     const fineractIds = products.map((p) => p.id);
-    let lyniaProducts: Array<{
+    let lyniaEnrichment: Array<{
       fineract_product_id: number;
       deposit_percentage: number | null;
       min_term_months: number | null;
@@ -41,16 +44,15 @@ export async function handleGetLoanProducts(
         .in('fineract_product_id', fineractIds)
         .is('deleted_at', null)
         .execute();
-      lyniaProducts = data || [];
+      lyniaEnrichment = data || [];
     }
 
     const lyniaByFineractId = new Map(
-      lyniaProducts.map((lp) => [lp.fineract_product_id, lp])
+      lyniaEnrichment.map((lp) => [lp.fineract_product_id, lp])
     );
 
-    const mapped = products.map((p) => {
+    fineractProducts = products.map((p) => {
       const lynia = lyniaByFineractId.get(p.id);
-      // Derive tier from product name or default
       let lyniaTier = 'Tier 1';
       const nameLower = p.name.toLowerCase();
       if (nameLower.includes('tier 3') || nameLower.includes('premium')) {
@@ -89,12 +91,53 @@ export async function handleGetLoanProducts(
         downPaymentPercentage: lynia?.deposit_percentage ?? undefined,
       };
     });
-
-    return ok(mapped, event);
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Unknown error';
-    console.error('Failed to fetch Fineract loan products:', message);
-    return err(502, `Failed to fetch loan products from Fineract: ${message}`, event);
+    console.warn('Fineract unreachable, falling back to Lynia products:', message);
+  }
+
+  // If Fineract returned products, use them
+  if (fineractProducts && fineractProducts.length > 0) {
+    return ok(fineractProducts, event);
+  }
+
+  // Fallback: return Lynia loan products formatted for the tier view
+  try {
+    const { data: lyniaProducts } = await db
+      .from('loan_products')
+      .select('*')
+      .is('deleted_at', null)
+      .execute();
+
+    const tiers = ['Tier 1', 'Tier 2', 'Tier 3'];
+    const mapped = (lyniaProducts || []).map((p: Record<string, unknown>, i: number) => ({
+      id: p.id,
+      name: p.product_name as string,
+      shortName: ((p.product_code as string) || '').substring(0, 4),
+      description: (p.description as string) || '',
+      currency: { code: 'USD', name: 'US Dollar', decimalPlaces: 2, displaySymbol: '$', displayLabel: 'US Dollar ($)' },
+      principal: Math.round((((p.min_amount_usd as number) || 0) + ((p.max_amount_usd as number) || 0)) / 2),
+      minPrincipal: (p.min_amount_usd as number) || 0,
+      maxPrincipal: (p.max_amount_usd as number) || 0,
+      numberOfRepayments: (p.loan_term_months as number) || 6,
+      minNumberOfRepayments: (p.min_term_months as number) || undefined,
+      maxNumberOfRepayments: (p.max_term_months as number) || undefined,
+      repaymentEvery: 1,
+      repaymentFrequency: 'Months',
+      interestRatePerPeriod: (p.interest_rate_monthly as number) || ((p.interest_rate_annual as number) || 12) / 12,
+      annualInterestRate: (p.interest_rate_annual as number) || 12,
+      interestType: 'Declining Balance',
+      amortizationType: 'Equal Installments',
+      accountingRule: 'None',
+      lyniaTier: tiers[i % tiers.length],
+      downPaymentPercentage: (p.deposit_percentage as number) || undefined,
+    }));
+
+    return ok(mapped, event);
+  } catch (dbErr: unknown) {
+    const message = dbErr instanceof Error ? dbErr.message : 'Unknown error';
+    console.error('Failed to fetch Lynia loan products fallback:', message);
+    return err(502, `Unable to load loan products: ${message}`, event);
   }
 }
 

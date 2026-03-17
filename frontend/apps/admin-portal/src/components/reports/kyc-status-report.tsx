@@ -19,7 +19,10 @@ export function KycStatusReport({ filters }: Props) {
 
   useEffect(() => {
     setLoading(true);
-    fetchKycStatusReport(filters).then((d) => { setData(d); setLoading(false); });
+    fetchKycStatusReport(filters)
+      .then((d) => { setData(d); })
+      .catch(() => { setData(null); })
+      .finally(() => { setLoading(false); });
   }, [filters]);
 
   if (loading || !data) {

@@ -60,6 +60,7 @@ const mockSelect = jest.fn(() => ({
   eq: mockEq,
   not: mockNot,
   in: mockIn,
+  is: mockIs,
   order: mockOrder,
   lt: mockLt,
 }));

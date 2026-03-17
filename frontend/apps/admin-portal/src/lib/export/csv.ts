@@ -33,13 +33,16 @@ export function exportToCsv(
 }
 
 export function formatCurrency(value: number): string {
-  return `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const n = Number(value) || 0;
+  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function formatPct(value: number): string {
-  return `${value.toFixed(1)}%`;
+  const n = Number(value) || 0;
+  return `${n.toFixed(1)}%`;
 }
 
 export function formatNumber(value: number): string {
-  return value.toLocaleString('en-US');
+  const n = Number(value) || 0;
+  return n.toLocaleString('en-US');
 }
