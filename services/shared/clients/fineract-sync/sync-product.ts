@@ -76,6 +76,7 @@ export function generateUniqueShortName(productCode: string, takenShortNames: Se
 export async function syncProductToFineract(lyniaProductId: string): Promise<SyncProductResult> {
   const startTime = Date.now();
 
+  try {
   // Fetch the Lynia loan product
   const { data: product } = await db
     .from('loan_products')
@@ -245,5 +246,12 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       fineract_status: apiError?.statusCode,
       error_details: validationErrors?.length ? { validation_errors: validationErrors } : undefined,
     };
+  }
+
+  } catch (outerError) {
+    // Master catch-all: DB errors, config failures, generateUniqueShortName, logSync, etc.
+    const errorMessage = outerError instanceof Error ? outerError.message : String(outerError);
+    console.error(`[fineract-sync] Unexpected error syncing product ${lyniaProductId}:`, outerError);
+    return { success: false, error: errorMessage };
   }
 }

@@ -52,6 +52,16 @@ async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise
     try {
       const body = await res.json();
       message = body?.defaultUserMessage || body?.error || body?.message;
+      // Append field-level validation errors if present
+      const validationErrors = body?.details?.validation_errors;
+      if (Array.isArray(validationErrors) && validationErrors.length) {
+        const fieldErrors = validationErrors
+          .map((e: { field?: string; message?: string }) =>
+            e.field ? `${e.field}: ${e.message}` : e.message,
+          )
+          .join('; ');
+        message = message ? `${message} — ${fieldErrors}` : fieldErrors;
+      }
     } catch {
       // Response body is not JSON — fall through to generic message
     }

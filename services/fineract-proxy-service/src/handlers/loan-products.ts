@@ -208,7 +208,13 @@ export async function handleCreateFineractProduct(
     return err(400, 'lynia_product_id is required', event);
   }
 
-  const result = await syncProductToFineract(lynia_product_id);
+  let result: Awaited<ReturnType<typeof syncProductToFineract>>;
+  try {
+    result = await syncProductToFineract(lynia_product_id);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Unexpected sync error';
+    return err(500, msg, event);
+  }
 
   if (!result.success) {
     const statusCode = result.fineract_status && result.fineract_status >= 400 && result.fineract_status < 500
