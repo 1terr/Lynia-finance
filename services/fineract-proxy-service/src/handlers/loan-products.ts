@@ -214,7 +214,7 @@ export async function handleCreateFineractProduct(
     const statusCode = result.fineract_status && result.fineract_status >= 400 && result.fineract_status < 500
       ? result.fineract_status
       : 500;
-    return err(statusCode, result.error || 'Failed to create Fineract product', event);
+    return err(statusCode, result.error || 'Failed to create Fineract product', event, result.error_details);
   }
 
   return ok({

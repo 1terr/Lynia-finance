@@ -179,11 +179,17 @@ async function request<T>(
               // Response is not JSON
             }
 
-            reject(new FineractApiError(
-              `Fineract API error ${statusCode}: ${errorBody?.defaultUserMessage || data.substring(0, 200)}`,
-              statusCode,
-              errorBody
-            ));
+            let errorMessage: string;
+            if (errorBody?.errors?.length) {
+              const fieldErrors = errorBody.errors
+                .map((e) => e.defaultUserMessage)
+                .join('; ');
+              errorMessage = `Fineract API error ${statusCode}: ${fieldErrors}`;
+            } else {
+              errorMessage = `Fineract API error ${statusCode}: ${errorBody?.defaultUserMessage || data.substring(0, 200)}`;
+            }
+
+            reject(new FineractApiError(errorMessage, statusCode, errorBody));
           }
         });
       });

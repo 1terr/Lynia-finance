@@ -64,8 +64,10 @@ export function ok(data: unknown, event: APIGatewayProxyEvent): APIGatewayProxyR
   return { statusCode: 200, body: JSON.stringify(data), headers: getSecurityHeaders(event) };
 }
 
-export function err(status: number, message: string, event: APIGatewayProxyEvent): APIGatewayProxyResult {
-  return { statusCode: status, body: JSON.stringify({ success: false, error: message }), headers: getSecurityHeaders(event) };
+export function err(status: number, message: string, event: APIGatewayProxyEvent, details?: unknown): APIGatewayProxyResult {
+  const body: Record<string, unknown> = { success: false, error: message };
+  if (details) body.details = details;
+  return { statusCode: status, body: JSON.stringify(body), headers: getSecurityHeaders(event) };
 }
 
 export function getAgingBucket(daysPastDue: number): '1-30' | '31-60' | '61-90' | '90+' {
