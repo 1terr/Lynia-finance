@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatCurrency } from '@lynia/utils';
-import { Pencil, Eye, Smartphone } from 'lucide-react';
+import { Pencil, Eye, Smartphone, CheckCircle, AlertCircle } from 'lucide-react';
 import type { LoanProduct } from '@/types';
 
 interface ProductCardProps {
@@ -62,6 +62,15 @@ export function ProductCard({ product, onEdit, onViewDetails }: ProductCardProps
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
+        {product.fineract_product_id ? (
+          <span className="inline-flex items-center gap-1 rounded bg-green-50 dark:bg-green-950 px-2 py-0.5 text-xs text-green-700 dark:text-green-400">
+            <CheckCircle className="h-3 w-3" /> Fineract #{product.fineract_product_id}
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">
+            <AlertCircle className="h-3 w-3" /> Not synced to Fineract
+          </span>
+        )}
         {product.requires_device && (
           <span className="inline-flex items-center gap-1 rounded bg-blue-50 dark:bg-blue-950 px-2 py-0.5 text-xs text-blue-700">
             <Smartphone className="h-3 w-3" /> Requires Device
