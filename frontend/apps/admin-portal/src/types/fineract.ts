@@ -193,6 +193,8 @@ export interface FineractLoanProductView {
   minCreditScore?: number;
   maxCreditScore?: number;
   downPaymentPercentage?: number;
+  // Data source: 'fineract' if from core banking, 'lynia' if from local DB fallback
+  source?: 'fineract' | 'lynia';
   // GL account mappings
   accountingMappings?: Record<string, { id: number; name: string; glCode: string }>;
 }

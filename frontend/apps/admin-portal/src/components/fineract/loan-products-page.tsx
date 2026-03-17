@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFineractLoanProducts } from '@/lib/api/fineract';
 import { formatCurrency, formatPercent } from '@lynia/utils';
 import type { FineractLoanProductView } from '@/types/fineract';
-import { AlertTriangle, Package, TrendingUp, Shield, CreditCard } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Database, Package, TrendingUp, Shield, CreditCard } from 'lucide-react';
 
 const TIER_COLORS: Record<string, { border: string; bg: string; text: string }> = {
   'Tier 1': { border: 'border-blue-200', bg: 'bg-blue-50 dark:bg-blue-950', text: 'text-blue-700' },
@@ -195,6 +195,19 @@ function ProductCard({ product }: { product: FineractLoanProductView }) {
           <p className="text-sm font-medium text-foreground">
             {product.accountingRule}
           </p>
+        </div>
+
+        {/* Source Indicator */}
+        <div className="border-t border-border pt-3">
+          {product.source === 'fineract' ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-950 px-3 py-1 text-xs font-medium text-green-700 dark:text-green-400">
+              <CheckCircle className="h-3.5 w-3.5" /> Synced from Fineract
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-950 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-400">
+              <Database className="h-3.5 w-3.5" /> Lynia only — not synced to Fineract
+            </span>
+          )}
         </div>
       </div>
     </div>

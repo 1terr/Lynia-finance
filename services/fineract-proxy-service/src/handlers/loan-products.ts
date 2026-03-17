@@ -89,6 +89,7 @@ export async function handleGetLoanProducts(
         accountingMappings: p.accountingMappings,
         lyniaTier,
         downPaymentPercentage: lynia?.deposit_percentage ?? undefined,
+        source: 'fineract',
       };
     });
   } catch (e: unknown) {
@@ -131,6 +132,7 @@ export async function handleGetLoanProducts(
       accountingRule: 'None',
       lyniaTier: tiers[i % tiers.length],
       downPaymentPercentage: (p.deposit_percentage as number) || undefined,
+      source: 'lynia',
     }));
 
     return ok(mapped, event);
