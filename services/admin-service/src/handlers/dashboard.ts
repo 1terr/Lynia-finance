@@ -25,7 +25,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     overdueResult,
   ] = await Promise.all([
     // Total active customers
-    queryOne<{ count: string }>('SELECT COUNT(*) as count FROM customers WHERE status = $1', ['active']),
+    queryOne<{ count: string }>('SELECT COUNT(*) as count FROM customers WHERE onboarding_status = $1', ['completed']),
     // Active loans and outstanding balance
     queryOne<{ count: string; outstanding: string }>(
       "SELECT COUNT(*) as count, COALESCE(SUM(outstanding_balance_usd), 0) as outstanding FROM loans WHERE status = 'active'"
@@ -36,12 +36,12 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     ),
     // Monthly revenue (completed payments this month)
     queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(amount_usd), 0) as total FROM payments WHERE status = 'completed' AND payment_date >= date_trunc('month', CURRENT_DATE)"
+      "SELECT COALESCE(SUM(amount_usd), 0) as total FROM payments WHERE status = 'confirmed' AND payment_date >= date_trunc('month', CURRENT_DATE)"
     ),
     // Collection rate: completed payments / total expected installments this month
     queryOne<{ collected: string; expected: string }>(
       `SELECT
-        COALESCE(SUM(CASE WHEN status = 'completed' THEN amount_usd ELSE 0 END), 0) as collected,
+        COALESCE(SUM(CASE WHEN status = 'confirmed' THEN amount_usd ELSE 0 END), 0) as collected,
         COALESCE(SUM(amount_usd), 1) as expected
       FROM payments
       WHERE payment_date >= date_trunc('month', CURRENT_DATE)`
@@ -219,7 +219,7 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
   }>(
     `WITH dates AS (
       SELECT generate_series(
-        CURRENT_DATE - $1 * INTERVAL '1 day',
+        CURRENT_DATE - ($1::integer) * INTERVAL '1 day',
         CURRENT_DATE,
         '1 day'
       )::date as d
@@ -230,7 +230,7 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
       COALESCE((
         SELECT SUM(p.amount_usd)
         FROM payments p
-        WHERE p.status = 'completed' AND p.payment_date::date = dates.d
+        WHERE p.status = 'confirmed' AND p.payment_date::date = dates.d
       ), 0) as collections,
       COALESCE((
         SELECT COUNT(*)

@@ -68,14 +68,26 @@ export async function handleGetLoans(
   const customerIds = [...new Set(loanRows.map((l) => l.customer_id))];
   const customerMap = await getCustomerMap(customerIds);
 
-  // Enrich with Fineract data
-  const fineract = await getFineractClient();
-  const items = await Promise.all(
-    loanRows.map(async (loan) => {
+  // Enrich with Fineract data (gracefully degrade if Fineract unavailable)
+  let items: Record<string, unknown>[];
+  try {
+    const fineract = await getFineractClient();
+    items = await Promise.all(
+      loanRows.map(async (loan) => {
+        const customer = customerMap.get(loan.customer_id);
+        return buildLoanView(loan, customer || null, fineract);
+      })
+    );
+  } catch (e) {
+    logger.error('Fineract unavailable, returning DB-only data', {
+      action: 'fineract.getLoans',
+      meta: { error: e instanceof Error ? e.message : 'Unknown' },
+    });
+    items = loanRows.map((loan) => {
       const customer = customerMap.get(loan.customer_id);
-      return buildLoanView(loan, customer || null, fineract);
-    })
-  );
+      return buildLoanViewFromFineract(loan, customer || null, null);
+    });
+  }
 
   // Apply search filter client-side (customer name / phone / loan number)
   const filtered = search
@@ -136,14 +148,26 @@ export async function handleGetPendingLoans(
   const loanRows = loans as unknown as LyniaLoanRow[];
   const customerIds = [...new Set(loanRows.map((l) => l.customer_id))];
   const customerMap = await getCustomerMap(customerIds);
-  const fineract = await getFineractClient();
 
-  const items = await Promise.all(
-    loanRows.map(async (loan) => {
+  let items: Record<string, unknown>[];
+  try {
+    const fineract = await getFineractClient();
+    items = await Promise.all(
+      loanRows.map(async (loan) => {
+        const customer = customerMap.get(loan.customer_id);
+        return buildLoanView(loan, customer || null, fineract);
+      })
+    );
+  } catch (e) {
+    logger.error('Fineract unavailable, returning DB-only data', {
+      action: 'fineract.getPendingLoans',
+      meta: { error: e instanceof Error ? e.message : 'Unknown' },
+    });
+    items = loanRows.map((loan) => {
       const customer = customerMap.get(loan.customer_id);
-      return buildLoanView(loan, customer || null, fineract);
-    })
-  );
+      return buildLoanViewFromFineract(loan, customer || null, null);
+    });
+  }
 
   return ok(
     {
@@ -186,7 +210,17 @@ export async function handleGetOverdueLoans(
   const loanRows = loans as unknown as LyniaLoanRow[];
   const customerIds = [...new Set(loanRows.map((l) => l.customer_id))];
   const customerMap = await getCustomerMap(customerIds);
-  const fineract = await getFineractClient();
+
+  let fineract: Awaited<ReturnType<typeof getFineractClient>> | null = null;
+  try {
+    fineract = await getFineractClient();
+  } catch (e) {
+    logger.error('Fineract unavailable for overdue check', {
+      action: 'fineract.getOverdueLoans',
+      meta: { error: e instanceof Error ? e.message : 'Unknown' },
+    });
+    return ok({ data: [], pagination: { page, limit, total: 0, totalPages: 0 } }, event);
+  }
 
   const overdueItems = [];
   for (const loan of loanRows) {
@@ -259,7 +293,12 @@ export async function handleGetAgingSummary(
 
   if (!loans) return ok(summary, event);
 
-  const fineract = await getFineractClient();
+  let fineract: Awaited<ReturnType<typeof getFineractClient>>;
+  try {
+    fineract = await getFineractClient();
+  } catch {
+    return ok(summary, event);
+  }
   const loanRows = loans as unknown as Array<{ id: string; fineract_loan_id: number }>;
 
   for (const loan of loanRows) {
@@ -327,7 +366,17 @@ export async function handleGetLoanDetail(
     .execute();
 
   const customer = custData as unknown as import('./helpers').CustomerRow | null;
-  const fineract = await getFineractClient();
+  let fineract: Awaited<ReturnType<typeof getFineractClient>>;
+  try {
+    fineract = await getFineractClient();
+  } catch (e) {
+    logger.error('Fineract unavailable for loan detail', {
+      action: 'fineract.getLoanDetail',
+      meta: { error: e instanceof Error ? e.message : 'Unknown' },
+    });
+    const view = buildLoanViewFromFineract(loan, customer, null);
+    return ok({ ...view, repaymentSchedule: null, transactions: [] }, event);
+  }
 
   let fLoan: FineractLoan | null = null;
   try {
