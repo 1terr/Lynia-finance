@@ -39,7 +39,7 @@ export async function handleGetLoans(
   // Query Lynia DB for loans that have been synced to Fineract
   let query = db
     .from('loans')
-    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance, total_paid_usd, status, device_brand, device_model, device_imei, created_at')
+    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance_usd, total_paid_usd, status, created_at')
     .not('fineract_loan_id', 'is', null)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
@@ -122,7 +122,7 @@ export async function handleGetPendingLoans(
 
   const { data: loans, error } = await db
     .from('loans')
-    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance, total_paid_usd, status, device_brand, device_model, device_imei, created_at')
+    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance_usd, total_paid_usd, status, created_at')
     .not('fineract_loan_id', 'is', null)
     .eq('status', 'pending_approval')
     .order('created_at', { ascending: false })
@@ -172,7 +172,7 @@ export async function handleGetOverdueLoans(
   // Query loans that are active and have a Fineract ID
   const { data: loans, error } = await db
     .from('loans')
-    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance, total_paid_usd, status, device_brand, device_model, device_imei, created_at')
+    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance_usd, total_paid_usd, status, created_at')
     .not('fineract_loan_id', 'is', null)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -243,7 +243,7 @@ export async function handleGetAgingSummary(
   // Query all active Fineract-synced loans
   const { data: loans } = await db
     .from('loans')
-    .select('id, fineract_loan_id, outstanding_balance')
+    .select('id, fineract_loan_id, outstanding_balance_usd')
     .not('fineract_loan_id', 'is', null)
     .eq('status', 'active')
     .execute();
@@ -305,7 +305,7 @@ export async function handleGetLoanDetail(
 
   const { data: loanData, error } = await db
     .from('loans')
-    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance, total_paid_usd, status, device_brand, device_model, device_imei, created_at')
+    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance_usd, total_paid_usd, status, created_at')
     .eq('id', lyniaLoanId)
     .single()
     .execute();

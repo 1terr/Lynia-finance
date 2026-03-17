@@ -27,12 +27,9 @@ export interface LyniaLoanRow {
   loan_number: string;
   fineract_loan_id: number | null;
   fineract_product_id: number | null;
-  outstanding_balance: number;
+  outstanding_balance_usd: number;
   total_paid_usd: number;
   status: string;
-  device_brand: string | null;
-  device_model: string | null;
-  device_imei: string | null;
   created_at: string;
 }
 

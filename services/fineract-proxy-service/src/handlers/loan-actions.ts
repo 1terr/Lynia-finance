@@ -259,7 +259,7 @@ export async function handleEarlyPayoff(
     // Update Lynia DB
     await db
       .from('loans')
-      .update({ status: 'closed', outstanding_balance: 0 })
+      .update({ status: 'closed', outstanding_balance_usd: 0 })
       .eq('id', params.loanId)
       .execute();
 

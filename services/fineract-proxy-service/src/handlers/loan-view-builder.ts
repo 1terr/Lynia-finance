@@ -77,7 +77,7 @@ export function buildLoanViewFromFineract(
     fineractClientId: fLoan?.clientId ?? customer?.fineract_client_id ?? 0,
     productName: fLoan?.loanProductName ?? '',
     productId: fLoan?.loanProductId ?? loan.fineract_product_id ?? 0,
-    principal: fLoan?.principal?.amount ?? loan.outstanding_balance ?? 0,
+    principal: fLoan?.principal?.amount ?? loan.outstanding_balance_usd ?? 0,
     approvedPrincipal: fLoan?.approvedPrincipal?.amount ?? 0,
     currency: fLoan?.currency
       ? {
@@ -104,7 +104,7 @@ export function buildLoanViewFromFineract(
     closedOnDate: fmtDate(tl?.closedOnDate ?? null),
     principalDisbursed: s?.principalDisbursed ?? 0,
     principalPaid: s?.principalPaid ?? 0,
-    principalOutstanding: s?.principalOutstanding ?? loan.outstanding_balance ?? 0,
+    principalOutstanding: s?.principalOutstanding ?? loan.outstanding_balance_usd ?? 0,
     principalOverdue: s?.principalOverdue ?? 0,
     interestCharged: s?.interestCharged ?? 0,
     interestPaid: s?.interestPaid ?? 0,
@@ -118,12 +118,12 @@ export function buildLoanViewFromFineract(
     penaltyChargesOutstanding: s?.penaltyChargesOutstanding ?? 0,
     totalExpectedRepayment: s?.totalExpectedRepayment ?? 0,
     totalRepayment: s?.totalRepayment ?? loan.total_paid_usd ?? 0,
-    totalOutstanding: s?.totalOutstanding ?? loan.outstanding_balance ?? 0,
+    totalOutstanding: s?.totalOutstanding ?? loan.outstanding_balance_usd ?? 0,
     totalOverdue: s?.totalOverdue ?? 0,
     overdueSinceDate: fmtDate(s?.overdueSinceDate ?? null),
-    deviceBrand: loan.device_brand,
-    deviceModel: loan.device_model,
-    deviceImei: loan.device_imei,
+    deviceBrand: null,
+    deviceModel: null,
+    deviceImei: null,
   };
 }
 

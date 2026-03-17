@@ -28,31 +28,31 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     queryOne<{ count: string }>('SELECT COUNT(*) as count FROM customers WHERE status = $1', ['active']),
     // Active loans and outstanding balance
     queryOne<{ count: string; outstanding: string }>(
-      "SELECT COUNT(*) as count, COALESCE(SUM(outstanding_balance_usd), 0) as outstanding FROM loans WHERE loan_status = 'active'"
+      "SELECT COUNT(*) as count, COALESCE(SUM(outstanding_balance_usd), 0) as outstanding FROM loans WHERE status = 'active'"
     ),
     // Total disbursed
     queryOne<{ total: string }>(
-      'SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursement_date IS NOT NULL'
+      'SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursed_at IS NOT NULL'
     ),
     // Monthly revenue (completed payments this month)
     queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(payment_amount_usd), 0) as total FROM payments WHERE payment_status = 'completed' AND payment_date >= date_trunc('month', CURRENT_DATE)"
+      "SELECT COALESCE(SUM(amount_usd), 0) as total FROM payments WHERE status = 'completed' AND payment_date >= date_trunc('month', CURRENT_DATE)"
     ),
     // Collection rate: completed payments / total expected installments this month
     queryOne<{ collected: string; expected: string }>(
       `SELECT
-        COALESCE(SUM(CASE WHEN payment_status = 'completed' THEN payment_amount_usd ELSE 0 END), 0) as collected,
-        COALESCE(SUM(payment_amount_usd), 1) as expected
+        COALESCE(SUM(CASE WHEN status = 'completed' THEN amount_usd ELSE 0 END), 0) as collected,
+        COALESCE(SUM(amount_usd), 1) as expected
       FROM payments
       WHERE payment_date >= date_trunc('month', CURRENT_DATE)`
     ),
     // Default rate: defaulted / (active + defaulted)
     queryOne<{ defaulted: string; total_active: string }>(
       `SELECT
-        COALESCE(SUM(CASE WHEN loan_status = 'defaulted' THEN 1 ELSE 0 END), 0) as defaulted,
+        COALESCE(SUM(CASE WHEN status = 'defaulted' THEN 1 ELSE 0 END), 0) as defaulted,
         COALESCE(COUNT(*), 1) as total_active
       FROM loans
-      WHERE loan_status IN ('active', 'defaulted')`
+      WHERE status IN ('active', 'defaulted')`
     ),
     // Device counts
     queryOne<{ in_stock: string; active: string; locked: string }>(
@@ -68,7 +68,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     ),
     // Pending loan approvals
     queryOne<{ count: string }>(
-      "SELECT COUNT(*) as count FROM loans WHERE loan_status = 'pending'"
+      "SELECT COUNT(*) as count FROM loans WHERE status = 'pending'"
     ),
     // New customers this month
     queryOne<{ count: string }>(
@@ -77,7 +77,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     // Overdue payments
     queryOne<{ count: string; amount: string }>(
       `SELECT COUNT(*) as count, COALESCE(SUM(outstanding_balance_usd), 0) as amount
-      FROM loans WHERE loan_status = 'active' AND days_past_due > 0`
+      FROM loans WHERE status = 'active' AND days_past_due > 0`
     ),
   ]);
 
@@ -108,7 +108,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
       "SELECT COUNT(*) as count FROM fineract_sync_log WHERE operation = 'reconcile' AND status = 'failed' AND created_at >= NOW() - INTERVAL '24 hours'"
     ),
     queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursement_date >= date_trunc('month', CURRENT_DATE)"
+      "SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursed_at >= date_trunc('month', CURRENT_DATE)"
     ),
   ]);
 
@@ -172,7 +172,7 @@ export const handlePortfolioAtRisk: RouteHandler = async (event, _params, _auth)
       END as bucket,
       COALESCE(SUM(outstanding_balance_usd), 0) as total
     FROM loans
-    WHERE loan_status = 'active' AND days_past_due > 0
+    WHERE status = 'active' AND days_past_due > 0
     GROUP BY bucket`
   );
 
@@ -226,11 +226,11 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
     )
     SELECT
       dates.d as date,
-      COALESCE(SUM(CASE WHEN l.disbursement_date = dates.d THEN l.loan_amount_usd ELSE 0 END), 0) as disbursements,
+      COALESCE(SUM(CASE WHEN l.disbursed_at::date = dates.d THEN l.loan_amount_usd ELSE 0 END), 0) as disbursements,
       COALESCE((
-        SELECT SUM(p.payment_amount_usd)
+        SELECT SUM(p.amount_usd)
         FROM payments p
-        WHERE p.payment_status = 'completed' AND p.payment_date::date = dates.d
+        WHERE p.status = 'completed' AND p.payment_date::date = dates.d
       ), 0) as collections,
       COALESCE((
         SELECT COUNT(*)
@@ -238,7 +238,7 @@ export const handleDailyTrends: RouteHandler = async (event, _params, _auth) => 
         WHERE c.created_at::date = dates.d
       ), 0) as new_customers
     FROM dates
-    LEFT JOIN loans l ON l.disbursement_date = dates.d
+    LEFT JOIN loans l ON l.disbursed_at::date = dates.d
     GROUP BY dates.d
     ORDER BY dates.d ASC`,
     [days]
