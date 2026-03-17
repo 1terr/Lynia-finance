@@ -33,7 +33,7 @@ import { createChargeOperations } from './fineract/charge-client';
 // ============================================================
 
 const FINERACT_SECRET_NAME = process.env.FINERACT_SECRET_NAME || '';
-const DEFAULT_TIMEOUT_MS = 30000;
+const DEFAULT_TIMEOUT_MS = 20000;
 
 let cachedConfig: FineractClientConfig | null = null;
 

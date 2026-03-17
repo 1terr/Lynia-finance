@@ -22,7 +22,7 @@ async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise
   const token = session.getIdToken().getJwtToken();
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 25000);
+  const timeoutId = setTimeout(() => controller.abort(), 35000);
 
   let res: Response;
   try {
