@@ -33,20 +33,12 @@ import {
   FileSpreadsheet,
   RefreshCw,
 } from 'lucide-react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
+import { fetchAPI } from '@/lib/api/client';
+import { getValidSession } from '@lynia/auth';
 
 async function fetchInvestorData(endpoint: string, params?: Record<string, string>) {
-  const url = new URL(`${API_BASE}/api/v1/investor/${endpoint}`);
-  if (params) {
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  }
-  const res = await fetch(url.toString(), {
-    headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
-  });
-  if (!res.ok) throw new Error(`API error: ${res.status}`);
-  const json = await res.json();
-  return json.data;
+  const query = params ? '?' + new URLSearchParams(params).toString() : '';
+  return fetchAPI<any>(`/api/v1/investor/${endpoint}${query}`);
 }
 
 const PAR_COLORS = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#991b1b'];
@@ -592,9 +584,13 @@ function NoDataMessage() {
 }
 
 async function downloadLoanTape() {
+  const session = await getValidSession();
+  if (!session) return;
+  const token = session.getIdToken().getJwtToken();
+  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
   try {
-    const res = await fetch(`${API_BASE}/api/v1/investor/loan-tape?format=csv`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+    const res = await fetch(`${apiBase}/api/v1/investor/loan-tape?format=csv`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) throw new Error('Download failed');
     const blob = await res.blob();
