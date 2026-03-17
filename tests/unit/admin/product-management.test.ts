@@ -35,6 +35,10 @@ jest.mock('../../../services/shared/clients/fineract', () => ({
   getFineractClient: jest.fn(),
 }));
 
+jest.mock('../../../services/shared/clients/fineract-sync', () => ({
+  syncProductToFineract: jest.fn().mockResolvedValue({ success: true, fineract_product_id: 42 }),
+}));
+
 jest.mock('../../../services/shared/utils/response', () => {
   const actual = jest.requireActual('../../../services/shared/utils/response');
   return {
