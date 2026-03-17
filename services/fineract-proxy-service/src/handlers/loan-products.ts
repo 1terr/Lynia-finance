@@ -21,36 +21,81 @@ export async function handleGetLoanProducts(
   _params: RouteParams,
   _auth: AuthContext
 ): Promise<APIGatewayProxyResult> {
-  const fineract = await getFineractClient();
-  const products = await fineract.listLoanProducts();
+  try {
+    const fineract = await getFineractClient();
+    const products = await fineract.listLoanProducts();
 
-  const mapped = products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    shortName: p.shortName,
-    description: p.description || '',
-    currency: {
-      code: p.currency.code,
-      name: p.currency.name,
-      decimalPlaces: p.currency.decimalPlaces,
-      displaySymbol: p.currency.displaySymbol,
-      displayLabel: p.currency.displayLabel,
-    },
-    principal: p.principal,
-    minPrincipal: p.minPrincipal,
-    maxPrincipal: p.maxPrincipal,
-    numberOfRepayments: p.numberOfRepayments,
-    repaymentEvery: p.repaymentEvery,
-    repaymentFrequency: p.repaymentFrequencyType?.value || 'Months',
-    interestRatePerPeriod: p.interestRatePerPeriod,
-    annualInterestRate: p.annualInterestRate,
-    interestType: p.interestType?.value || 'Declining Balance',
-    amortizationType: p.amortizationType?.value || 'Equal Installments',
-    accountingRule: p.accountingRule?.value || 'None',
-    accountingMappings: p.accountingMappings,
-  }));
+    // Fetch Lynia loan products linked to Fineract for enrichment
+    const fineractIds = products.map((p) => p.id);
+    let lyniaProducts: Array<{
+      fineract_product_id: number;
+      deposit_percentage: number | null;
+      min_term_months: number | null;
+      max_term_months: number | null;
+    }> = [];
 
-  return ok(mapped, event);
+    if (fineractIds.length > 0) {
+      const { data } = await db
+        .from('loan_products')
+        .select('fineract_product_id, deposit_percentage, min_term_months, max_term_months')
+        .in('fineract_product_id', fineractIds)
+        .is('deleted_at', null)
+        .execute();
+      lyniaProducts = data || [];
+    }
+
+    const lyniaByFineractId = new Map(
+      lyniaProducts.map((lp) => [lp.fineract_product_id, lp])
+    );
+
+    const mapped = products.map((p) => {
+      const lynia = lyniaByFineractId.get(p.id);
+      // Derive tier from product name or default
+      let lyniaTier = 'Tier 1';
+      const nameLower = p.name.toLowerCase();
+      if (nameLower.includes('tier 3') || nameLower.includes('premium')) {
+        lyniaTier = 'Tier 3';
+      } else if (nameLower.includes('tier 2') || nameLower.includes('standard')) {
+        lyniaTier = 'Tier 2';
+      }
+
+      return {
+        id: p.id,
+        name: p.name,
+        shortName: p.shortName,
+        description: p.description || '',
+        currency: {
+          code: p.currency.code,
+          name: p.currency.name,
+          decimalPlaces: p.currency.decimalPlaces,
+          displaySymbol: p.currency.displaySymbol,
+          displayLabel: p.currency.displayLabel,
+        },
+        principal: p.principal,
+        minPrincipal: p.minPrincipal,
+        maxPrincipal: p.maxPrincipal,
+        numberOfRepayments: p.numberOfRepayments,
+        minNumberOfRepayments: lynia?.min_term_months ?? undefined,
+        maxNumberOfRepayments: lynia?.max_term_months ?? undefined,
+        repaymentEvery: p.repaymentEvery,
+        repaymentFrequency: p.repaymentFrequencyType?.value || 'Months',
+        interestRatePerPeriod: p.interestRatePerPeriod,
+        annualInterestRate: p.annualInterestRate,
+        interestType: p.interestType?.value || 'Declining Balance',
+        amortizationType: p.amortizationType?.value || 'Equal Installments',
+        accountingRule: p.accountingRule?.value || 'None',
+        accountingMappings: p.accountingMappings,
+        lyniaTier,
+        downPaymentPercentage: lynia?.deposit_percentage ?? undefined,
+      };
+    });
+
+    return ok(mapped, event);
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    console.error('Failed to fetch Fineract loan products:', message);
+    return err(502, `Failed to fetch loan products from Fineract: ${message}`, event);
+  }
 }
 
 // ============================================================

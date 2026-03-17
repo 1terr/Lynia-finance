@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getFineractLoanProducts } from '@/lib/api/fineract';
 import { formatCurrency, formatPercent } from '@lynia/utils';
 import type { FineractLoanProductView } from '@/types/fineract';
-import { Package, TrendingUp, Shield, CreditCard } from 'lucide-react';
+import { AlertTriangle, Package, TrendingUp, Shield, CreditCard } from 'lucide-react';
 
 const TIER_COLORS: Record<string, { border: string; bg: string; text: string }> = {
   'Tier 1': { border: 'border-blue-200', bg: 'bg-blue-50 dark:bg-blue-950', text: 'text-blue-700' },
@@ -20,7 +20,7 @@ const TIER_COLORS: Record<string, { border: string; bg: string; text: string }> 
 };
 
 export default function LoanProductsPage() {
-  const { data: products, isLoading } = useQuery({
+  const { data: products, isLoading, isError, error } = useQuery({
     queryKey: ['fineract-loan-products'],
     queryFn: getFineractLoanProducts,
   });
@@ -48,12 +48,47 @@ export default function LoanProductsPage() {
         </p>
       </div>
 
+      {/* Error State */}
+      {isError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-950">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-red-600 dark:text-red-400" />
+            <div>
+              <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">
+                Unable to load Fineract products
+              </h3>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                {error instanceof Error
+                  ? error.message
+                  : 'Could not connect to the Fineract core banking service. Please check that the service is running.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isError && products && products.length === 0 && (
+        <div className="rounded-lg border border-border bg-muted/50 p-12 text-center">
+          <Package className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-4 text-lg font-semibold text-foreground">
+            No Fineract loan products configured
+          </h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Loan products need to be created in the Fineract core banking system
+            before they appear here.
+          </p>
+        </div>
+      )}
+
       {/* Product Cards */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {(products || []).map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
-      </div>
+      {products && products.length > 0 && (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
