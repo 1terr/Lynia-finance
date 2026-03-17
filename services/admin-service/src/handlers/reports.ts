@@ -55,7 +55,7 @@ export const handleGetPortfolioReport: RouteHandler = async (event, _params, aut
       COALESCE(SUM(CASE WHEN days_past_due > 90 THEN outstanding_balance_usd ELSE 0 END), 0) AS par_90_plus,
       COUNT(*) AS total_loans
     FROM loans
-    WHERE status IN ('active', 'disbursed') AND deleted_at IS NULL`);
+    WHERE status IN ('active', 'disbursed')`);
 
     return successResponse({
       total_outstanding: parseFloat(result.data?.total_outstanding || '0'),
@@ -85,7 +85,7 @@ export const handleGetPortfolioHealthReport: RouteHandler = async (event, _param
   try {
     const qs = event.queryStringParameters || {};
 
-    const conditions: string[] = ['l.deleted_at IS NULL', "l.status IN ('active', 'disbursed')"];
+    const conditions: string[] = ["l.status IN ('active', 'disbursed')"];
     const values: unknown[] = [];
     let paramIdx = 1;
 
@@ -153,7 +153,7 @@ export const handleGetDisbursementReport: RouteHandler = async (event, _params, 
 
   try {
     const qs = event.queryStringParameters || {};
-    const conditions: string[] = ['l.deleted_at IS NULL'];
+    const conditions: string[] = [];
     const values: unknown[] = [];
     let paramIdx = 1;
 
@@ -435,7 +435,6 @@ export const handleGetDefaultReport: RouteHandler = async (event, _params, auth)
       JOIN customers c ON c.id = l.customer_id
       WHERE l.days_past_due > 0
         AND l.status IN ('active', 'disbursed')
-        AND l.deleted_at IS NULL
       ORDER BY l.days_past_due DESC
       LIMIT 500`
     );
@@ -467,7 +466,7 @@ export const handleGetDefaultSummaryReport: RouteHandler = async (event, _params
 
   try {
     const qs = event.queryStringParameters || {};
-    const conditions: string[] = ['l.deleted_at IS NULL', "l.status IN ('active', 'disbursed')"];
+    const conditions: string[] = ["l.status IN ('active', 'disbursed')"];
     const values: unknown[] = [];
     let paramIdx = 1;
 
@@ -631,7 +630,7 @@ export const handleGetLoanApprovalReport: RouteHandler = async (event, _params, 
 
   try {
     const qs = event.queryStringParameters || {};
-    const conditions: string[] = ['deleted_at IS NULL'];
+    const conditions: string[] = [];
     const values: unknown[] = [];
     let paramIdx = 1;
 
@@ -644,7 +643,7 @@ export const handleGetLoanApprovalReport: RouteHandler = async (event, _params, 
       values.push(qs.date_to);
     }
 
-    const whereClause = `WHERE ${conditions.join(' AND ')}`;
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     const result = await queryOne<Record<string, string>>(`SELECT
       COUNT(*) AS total,
