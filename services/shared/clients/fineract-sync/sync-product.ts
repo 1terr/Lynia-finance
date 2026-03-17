@@ -15,6 +15,7 @@ export interface SyncProductResult {
   success: boolean;
   fineract_product_id?: number;
   error?: string;
+  fineract_status?: number;
 }
 
 /**
@@ -52,13 +53,60 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     };
   }
 
+  const fineract = await getFineractClient();
+  const expectedName = `Lynia - ${product.product_name}`;
+
+  // Recovery: check if a product was created in Fineract but linkage failed
+  // (e.g. Lambda was killed by timeout after Fineract accepted the request)
+  try {
+    const existingProducts = await fineract.listLoanProducts();
+    const existing = existingProducts.find((p) => p.name === expectedName);
+
+    if (existing) {
+      await db
+        .from('loan_products')
+        .update({
+          fineract_product_id: existing.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', lyniaProductId)
+        .execute();
+
+      await logSync({
+        entity_type: 'loan_product',
+        entity_id: lyniaProductId,
+        fineract_id: existing.id,
+        operation: 'link_existing',
+        direction: 'outbound',
+        status: 'success',
+        request_payload: null,
+        response_payload: { recovered: true, fineract_id: existing.id },
+        duration_ms: Date.now() - startTime,
+      });
+
+      console.log(
+        `[fineract-sync] Recovered orphaned link: ${lyniaProductId} -> Fineract product ${existing.id}`
+      );
+
+      return { success: true, fineract_product_id: existing.id };
+    }
+  } catch (listError) {
+    // Non-fatal — proceed to create if listing fails
+    console.warn('[fineract-sync] Could not check for existing products:', listError);
+  }
+
   // Map Lynia product fields to Fineract product create request
-  const shortName = (product.product_code as string).substring(0, 4).toUpperCase();
-  const maxRepayments = product.max_term_months as number;
-  const minRepayments = product.min_term_months as number;
+  // Generate unique 4-char shortName: first 2 chars + last 2 chars of alphanumeric code
+  const rawCode = (product.product_code as string).replace(/[^A-Za-z0-9]/g, '');
+  const shortName = rawCode.length <= 4
+    ? rawCode.toUpperCase()
+    : (rawCode.substring(0, 2) + rawCode.slice(-2)).toUpperCase();
+  const maxRepayments = (product.max_term_months as number) || (product.loan_term_months as number) || 12;
+  const minRepayments = (product.min_term_months as number) || 1;
+  const interestRate = (product.interest_rate_monthly as number) ?? ((product.interest_rate_annual as number) / 12);
 
   const fineractPayload: FineractLoanProductCreateRequest = {
-    name: `Lynia - ${product.product_name}`,
+    name: expectedName,
     shortName,
     description:
       (product.description as string) ||
@@ -76,7 +124,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     maxNumberOfRepayments: maxRepayments,
     repaymentEvery: 1,
     repaymentFrequencyType: 2, // months
-    interestRatePerPeriod: product.interest_rate_monthly as number,
+    interestRatePerPeriod: interestRate,
     interestRateFrequencyType: 2, // per month
     amortizationType: 0, // equal installments
     interestType: 0, // declining balance
@@ -88,7 +136,6 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
   };
 
   try {
-    const fineract = await getFineractClient();
     const result = await fineract.createLoanProduct(fineractPayload);
 
     // Link the Fineract product back to Lynia
@@ -144,6 +191,6 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       errorMessage,
     });
 
-    return { success: false, error: errorMessage };
+    return { success: false, error: errorMessage, fineract_status: apiError?.statusCode };
   }
 }

@@ -211,7 +211,10 @@ export async function handleCreateFineractProduct(
   const result = await syncProductToFineract(lynia_product_id);
 
   if (!result.success) {
-    return err(500, `Failed to create Fineract product: ${result.error}`, event);
+    const statusCode = result.fineract_status && result.fineract_status >= 400 && result.fineract_status < 500
+      ? result.fineract_status
+      : 500;
+    return err(statusCode, result.error || 'Failed to create Fineract product', event);
   }
 
   return ok({
