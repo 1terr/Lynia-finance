@@ -259,7 +259,7 @@ describe('handleEarlyPayoff', () => {
     await handleEarlyPayoff(event, { loanId: MOCK_LOAN_ID }, {} as any);
 
     expect(db.from).toHaveBeenCalledWith('loans');
-    expect(mockUpdate).toHaveBeenCalledWith({ status: 'closed', outstanding_balance: 0 });
+    expect(mockUpdate).toHaveBeenCalledWith({ status: 'closed', outstanding_balance_usd: 0 });
     expect(mockEq).toHaveBeenCalledWith('id', MOCK_LOAN_ID);
   });
 });

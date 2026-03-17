@@ -228,12 +228,9 @@ const SAMPLE_LYNIA_LOAN = {
   loan_number: 'LN-001',
   fineract_loan_id: 42,
   fineract_product_id: 2,
-  outstanding_balance: 170,
+  outstanding_balance_usd: 170,
   total_paid_usd: 60,
   status: 'active',
-  device_brand: 'Samsung',
-  device_model: 'Galaxy A15',
-  device_imei: '123456789012345',
   created_at: '2026-01-15T10:00:00Z',
 };
 
@@ -355,7 +352,7 @@ describe('Fineract Proxy Service', () => {
       expect(body.data[0].customerName).toBe('John Doe');
       expect(body.data[0].fineractLoanId).toBe(42);
       expect(body.data[0].totalOutstanding).toBe(170);
-      expect(body.data[0].deviceBrand).toBe('Samsung');
+      expect(body.data[0].deviceBrand).toBeNull();
     });
 
     it('should handle pagination parameters', async () => {
@@ -1019,8 +1016,8 @@ describe('Fineract Proxy Service', () => {
     it('should return aging bucket summary', async () => {
       mockExecute.mockResolvedValueOnce({
         data: [
-          { id: 'l1', fineract_loan_id: 42, outstanding_balance: 100 },
-          { id: 'l2', fineract_loan_id: 43, outstanding_balance: 200 },
+          { id: 'l1', fineract_loan_id: 42, outstanding_balance_usd: 100 },
+          { id: 'l2', fineract_loan_id: 43, outstanding_balance_usd: 200 },
         ],
         error: null,
       });
