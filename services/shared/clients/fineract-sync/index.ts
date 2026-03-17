@@ -20,3 +20,8 @@ export {
   getFineractLoanBalance,
   getFineractRepaymentSchedule,
 } from './conflict-resolver';
+
+export {
+  syncProductToFineract,
+  type SyncProductResult,
+} from './sync-product';

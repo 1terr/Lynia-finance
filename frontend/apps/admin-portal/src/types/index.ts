@@ -423,6 +423,7 @@ export interface LoanProduct {
   description?: string;
   scoring_config?: Record<string, unknown>;
   fineract_product_id?: number | null;
+  fineract_sync_error?: string;
   created_at: string;
   updated_at: string;
   deleted_at?: string;

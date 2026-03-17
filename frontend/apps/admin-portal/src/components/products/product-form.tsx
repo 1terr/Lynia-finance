@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { getFineractLoanProducts } from '@/lib/api/fineract';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 import type { LoanProduct, CreateProductInput, ProductCategory, ProductStatus } from '@/types';
 
 interface ProductFormProps {
@@ -58,13 +57,6 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
   const [description, setDescription] = useState('');
   const [requiresOrgVerification, setRequiresOrgVerification] = useState(false);
   const [disbursementMethods, setDisbursementMethods] = useState<string[]>([]);
-  const [fineractProductId, setFineractProductId] = useState('');
-
-  const { data: fineractProducts } = useQuery({
-    queryKey: ['fineract-loan-products'],
-    queryFn: () => getFineractLoanProducts(),
-    staleTime: 5 * 60 * 1000,
-  });
 
   useEffect(() => {
     if (product) {
@@ -84,7 +76,6 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
       setDescription(product.description || '');
       setRequiresOrgVerification(product.requires_organization_verification);
       setDisbursementMethods(product.allowed_disbursement_methods || []);
-      setFineractProductId(product.fineract_product_id != null ? String(product.fineract_product_id) : '');
     } else {
       resetForm();
     }
@@ -107,7 +98,6 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
     setDescription('');
     setRequiresOrgVerification(false);
     setDisbursementMethods([]);
-    setFineractProductId('');
     setErrors({});
   }
 
@@ -188,7 +178,6 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
         allowed_disbursement_methods: category === 'digital' ? disbursementMethods : [],
         max_active_loans: parseInt(maxActiveLoans) || 1,
         description: description || undefined,
-        fineract_product_id: fineractProductId ? parseInt(fineractProductId) : null,
       };
       await onSubmit(data);
       onClose();
@@ -375,27 +364,30 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
           />
         </div>
 
-        <div>
-          <label htmlFor="fineractProductId" className="block text-sm font-medium text-foreground mb-1">
-            Core Banking Product
-          </label>
-          <select
-            id="fineractProductId"
-            value={fineractProductId}
-            onChange={(e) => setFineractProductId(e.target.value)}
-            className="block w-full rounded-md border border-border px-3 py-2 text-sm shadow-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
-          >
-            <option value="">Not linked</option>
-            {fineractProducts?.map((fp) => (
-              <option key={fp.id} value={String(fp.id)}>
-                {fp.name} (ID: {fp.id})
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Link to a core banking loan product for sync.
+        {isEditing && product && (
+          <div className={`flex items-center gap-2 rounded-md border px-3 py-2 text-sm ${
+            product.fineract_product_id
+              ? 'border-green-200 bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400'
+              : 'border-amber-200 bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-400'
+          }`}>
+            {product.fineract_product_id ? (
+              <>
+                <CheckCircle className="h-4 w-4 flex-shrink-0" />
+                <span>Synced to Fineract (Product #{product.fineract_product_id})</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span>Not yet synced to Fineract. Saving will attempt auto-sync.</span>
+              </>
+            )}
+          </div>
+        )}
+        {!isEditing && (
+          <p className="rounded-md border border-blue-200 bg-blue-50 dark:bg-blue-950 px-3 py-2 text-sm text-blue-700 dark:text-blue-400">
+            A corresponding Fineract core banking product will be created automatically on save.
           </p>
-        </div>
+        )}
 
         <div>
           <label htmlFor="description" className="block text-sm font-medium text-foreground mb-1">

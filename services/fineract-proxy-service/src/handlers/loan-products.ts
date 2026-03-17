@@ -7,9 +7,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getFineractClient } from '../../../shared/clients/fineract';
 import { db } from '../../../shared/clients/database';
+import { syncProductToFineract } from '../../../shared/clients/fineract-sync';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
 import type { AuthContext } from '../../../shared/middleware/authorization';
-import type { FineractLoanProductCreateRequest } from '../../../shared/types/fineract';
 import { ok, err } from './helpers';
 
 // ============================================================
@@ -208,73 +208,15 @@ export async function handleCreateFineractProduct(
     return err(400, 'lynia_product_id is required', event);
   }
 
-  // Fetch the Lynia loan product
-  const { data: product } = await db.from('loan_products')
-    .select('*')
-    .eq('id', lynia_product_id)
-    .is('deleted_at', null)
-    .maybeSingle()
-    .execute();
+  const result = await syncProductToFineract(lynia_product_id);
 
-  if (!product) {
-    return err(404, 'Lynia loan product not found', event);
+  if (!result.success) {
+    return err(500, `Failed to create Fineract product: ${result.error}`, event);
   }
 
-  if (product.fineract_product_id) {
-    return err(409, `Product already linked to Fineract product ID ${product.fineract_product_id}`, event);
-  }
-
-  // Map Lynia product fields to Fineract product create request
-  const shortName = (product.product_code as string).substring(0, 4).toUpperCase();
-  const maxRepayments = product.max_term_months as number;
-  const minRepayments = product.min_term_months as number;
-
-  const fineractPayload: FineractLoanProductCreateRequest = {
-    name: `Lynia - ${product.product_name}`,
-    shortName,
-    description: (product.description as string) || `Auto-created from Lynia product ${product.product_code}`,
-    currencyCode: 'USD',
-    digitsAfterDecimal: 2,
-    inMultiplesOf: 1,
-    principal: Math.round(((product.min_amount_usd as number) + (product.max_amount_usd as number)) / 2),
-    minPrincipal: product.min_amount_usd as number,
-    maxPrincipal: product.max_amount_usd as number,
-    numberOfRepayments: maxRepayments,
-    minNumberOfRepayments: minRepayments,
-    maxNumberOfRepayments: maxRepayments,
-    repaymentEvery: 1,
-    repaymentFrequencyType: 2, // months
-    interestRatePerPeriod: product.interest_rate_monthly as number,
-    interestRateFrequencyType: 2, // per month
-    amortizationType: 0, // equal installments
-    interestType: 0, // declining balance
-    interestCalculationPeriodType: 1, // same as repayment period
-    transactionProcessingStrategyCode: 'mifos-standard-strategy',
-    locale: 'en',
-    dateFormat: 'dd MMMM yyyy',
-    accountingRule: 1, // none (simplest setup)
-  };
-
-  try {
-    const fineract = await getFineractClient();
-    const result = await fineract.createLoanProduct(fineractPayload);
-
-    // Link the Fineract product back to Lynia
-    await db.from('loan_products')
-      .update({
-        fineract_product_id: result.resourceId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', lynia_product_id)
-      .execute();
-
-    return ok({
-      message: 'Fineract product created and linked',
-      fineract_product_id: result.resourceId,
-      lynia_product_id,
-    }, event);
-  } catch (e: unknown) {
-    const message = e instanceof Error ? e.message : 'Unknown error';
-    return err(500, `Failed to create Fineract product: ${message}`, event);
-  }
+  return ok({
+    message: 'Fineract product created and linked',
+    fineract_product_id: result.fineract_product_id,
+    lynia_product_id,
+  }, event);
 }

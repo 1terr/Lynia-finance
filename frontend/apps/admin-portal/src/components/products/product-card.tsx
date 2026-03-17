@@ -1,10 +1,14 @@
 'use client';
 
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { createFineractProductFromLynia } from '@/lib/api/fineract';
 import { formatCurrency } from '@lynia/utils';
-import { Pencil, Eye, Smartphone, CheckCircle, AlertCircle } from 'lucide-react';
+import { Pencil, Eye, Smartphone, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import type { LoanProduct } from '@/types';
 
 interface ProductCardProps {
@@ -26,6 +30,31 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function ProductCard({ product, onEdit, onViewDetails }: ProductCardProps) {
+  const [syncing, setSyncing] = useState(false);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  async function handleSyncNow() {
+    setSyncing(true);
+    try {
+      const result = await createFineractProductFromLynia(product.id);
+      toast({
+        title: 'Synced to Fineract',
+        description: `Linked to Fineract product #${result.fineract_product_id}`,
+        variant: 'success',
+      });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+    } catch (error) {
+      toast({
+        title: 'Fineract sync failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'error',
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between">
@@ -68,7 +97,16 @@ export function ProductCard({ product, onEdit, onViewDetails }: ProductCardProps
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 rounded bg-amber-50 dark:bg-amber-950 px-2 py-0.5 text-xs text-amber-700 dark:text-amber-400">
-            <AlertCircle className="h-3 w-3" /> Not synced to Fineract
+            <AlertCircle className="h-3 w-3" /> Not synced
+            <button
+              type="button"
+              onClick={handleSyncNow}
+              disabled={syncing}
+              className="ml-1 inline-flex items-center gap-0.5 rounded bg-amber-100 dark:bg-amber-900 px-1.5 py-0.5 text-xs font-medium hover:bg-amber-200 dark:hover:bg-amber-800 disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Syncing...' : 'Sync Now'}
+            </button>
           </span>
         )}
         {product.requires_device && (

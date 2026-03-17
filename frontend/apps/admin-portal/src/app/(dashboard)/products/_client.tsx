@@ -47,9 +47,17 @@ export default function ProductsPage() {
 
   const createMutation = useMutation({
     mutationFn: (data: CreateProductInput) => createProduct(data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Product created successfully', variant: 'success' });
+      if (result.fineract_sync_error) {
+        toast({
+          title: 'Product created, but Fineract sync failed',
+          description: `${result.fineract_sync_error}. Use "Sync Now" to retry.`,
+          variant: 'warning',
+        });
+      } else {
+        toast({ title: 'Product created and synced to Fineract', variant: 'success' });
+      }
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to create product', description: error.message, variant: 'error' });
@@ -58,9 +66,17 @@ export default function ProductsPage() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<LoanProduct> }) => updateProduct(id, data),
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Product updated successfully', variant: 'success' });
+      if (result.fineract_sync_error) {
+        toast({
+          title: 'Product updated, but Fineract sync failed',
+          description: `${result.fineract_sync_error}. Use "Sync Now" to retry.`,
+          variant: 'warning',
+        });
+      } else {
+        toast({ title: 'Product updated successfully', variant: 'success' });
+      }
     },
     onError: (error: Error) => {
       toast({ title: 'Failed to update product', description: error.message, variant: 'error' });

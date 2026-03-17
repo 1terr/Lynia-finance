@@ -2,6 +2,7 @@ import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
+import { syncProductToFineract } from '../../../shared/clients/fineract-sync';
 import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 
@@ -287,7 +288,27 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     product_category: body.product_category,
   });
 
-  return successResponse(row, 201, event);
+  // Auto-sync to Fineract (non-blocking — product is created even if sync fails)
+  let fineractSyncError: string | undefined;
+  if (!row.fineract_product_id) {
+    const syncResult = await syncProductToFineract(row.id as string);
+    if (syncResult.success) {
+      row.fineract_product_id = syncResult.fineract_product_id;
+    } else {
+      fineractSyncError = syncResult.error;
+      logger.warn('Fineract product sync failed after create', {
+        action: 'admin.products.fineract-sync',
+        status: 'failed',
+        metadata: { productId: row.id, error: syncResult.error },
+      });
+    }
+  }
+
+  return successResponse(
+    { ...row, ...(fineractSyncError ? { fineract_sync_error: fineractSyncError } : {}) },
+    201,
+    event
+  );
 };
 
 // ─── PATCH /admin/products/:id ───
@@ -342,7 +363,27 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.update', 'loan_product', id, `Updated product: ${id}`, updates);
 
-  return successResponse(row, 200, event);
+  // Auto-sync to Fineract if not already linked (Fineract products are immutable once created)
+  let fineractSyncError: string | undefined;
+  if (!row.fineract_product_id) {
+    const syncResult = await syncProductToFineract(id);
+    if (syncResult.success) {
+      row.fineract_product_id = syncResult.fineract_product_id;
+    } else {
+      fineractSyncError = syncResult.error;
+      logger.warn('Fineract product sync failed after update', {
+        action: 'admin.products.fineract-sync',
+        status: 'failed',
+        metadata: { productId: id, error: syncResult.error },
+      });
+    }
+  }
+
+  return successResponse(
+    { ...row, ...(fineractSyncError ? { fineract_sync_error: fineractSyncError } : {}) },
+    200,
+    event
+  );
 };
 
 // ─── DELETE /admin/products/:id ───
