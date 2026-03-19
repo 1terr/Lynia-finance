@@ -142,25 +142,29 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     return { success: true, fineract_product_id: existing.id };
   }
 
-  // Map Lynia product fields to Fineract product create request
-  // Generate collision-safe 4-char shortName by checking existing Fineract products
+  // Build Fineract payload from stored DB columns (migration 038+).
+  // For legacy products (pre-038) that lack explicit Fineract params,
+  // fall back to derived values from original Lynia fields.
   const takenShortNames = new Set(existingProducts.map((p) => p.shortName.toUpperCase()));
-  const shortName = generateUniqueShortName(product.product_code as string, takenShortNames);
+  const shortName = (product.short_name as string | null)
+    || generateUniqueShortName(product.product_code as string, takenShortNames);
 
-  // Null-safe numeric extraction with sensible defaults
-  // (interest_rate_monthly was added in migration 028 with no default — can be null)
+  // Interest rate: prefer stored monthly rate, fall back to annual/12
   const rawMonthly = product.interest_rate_monthly as number | null;
   const rawAnnual = product.interest_rate_annual as number | null;
   const interestRate =
     rawMonthly != null && Number.isFinite(rawMonthly) ? rawMonthly
     : rawAnnual != null && Number.isFinite(rawAnnual) ? rawAnnual / 12
-    : 1.0; // safe default: 1% per month = 12% annual
+    : 1.0;
 
   const minAmount = Number.isFinite(product.min_amount_usd as number) ? (product.min_amount_usd as number) : 50;
   const maxAmount = Number.isFinite(product.max_amount_usd as number) ? (product.max_amount_usd as number) : 500;
-  const maxRepayments =
-    Number.isFinite(product.max_term_months as number) ? (product.max_term_months as number)
-    : Number.isFinite(product.loan_term_months as number) ? (product.loan_term_months as number)
+  const defaultPrincipal = Number.isFinite(product.default_principal as number)
+    ? (product.default_principal as number)
+    : Math.round((minAmount + maxAmount) / 2);
+  const maxRepayments = Number.isFinite(product.number_of_repayments as number)
+    ? (product.number_of_repayments as number)
+    : Number.isFinite(product.max_term_months as number) ? (product.max_term_months as number)
     : 12;
   const minRepayments = Number.isFinite(product.min_term_months as number) ? (product.min_term_months as number) : 1;
 
@@ -170,27 +174,47 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     description:
       (product.description as string) ||
       `Auto-created from Lynia product ${product.product_code}`,
-    currencyCode: 'USD',
-    digitsAfterDecimal: 2,
-    inMultiplesOf: 1,
-    principal: Math.round((minAmount + maxAmount) / 2),
+    currencyCode: (product.currency_code as string) || 'USD',
+    digitsAfterDecimal: (product.digits_after_decimal as number) ?? 2,
+    inMultiplesOf: (product.in_multiples_of as number) ?? 1,
+    principal: defaultPrincipal,
     minPrincipal: minAmount,
     maxPrincipal: maxAmount,
     numberOfRepayments: maxRepayments,
     minNumberOfRepayments: minRepayments,
-    maxNumberOfRepayments: maxRepayments,
-    repaymentEvery: 1,
-    repaymentFrequencyType: 2, // months
+    maxNumberOfRepayments: Number.isFinite(product.max_term_months as number) ? (product.max_term_months as number) : maxRepayments,
+    repaymentEvery: (product.repayment_every as number) ?? 1,
+    repaymentFrequencyType: (product.repayment_frequency_type as number) ?? 2,
     interestRatePerPeriod: interestRate,
-    interestRateFrequencyType: 2, // per month
-    amortizationType: 0, // equal installments
-    interestType: 0, // declining balance
-    interestCalculationPeriodType: 1, // same as repayment period
-    transactionProcessingStrategyCode: 'mifos-standard-strategy',
+    minInterestRatePerPeriod: (product.min_interest_rate as number | null) ?? undefined,
+    maxInterestRatePerPeriod: (product.max_interest_rate as number | null) ?? undefined,
+    interestRateFrequencyType: (product.interest_rate_frequency_type as number) ?? 2,
+    amortizationType: (product.amortization_type as number) ?? 0,
+    interestType: (product.interest_type as number) ?? 0,
+    interestCalculationPeriodType: (product.interest_calculation_period_type as number) ?? 1,
+    transactionProcessingStrategyCode: (product.transaction_processing_strategy as string) || 'mifos-standard-strategy',
     locale: 'en',
     dateFormat: 'dd MMMM yyyy',
-    accountingRule: 1, // none (simplest setup)
+    accountingRule: (product.accounting_rule as number) ?? 1,
   };
+
+  // Add GL account mappings from stored columns (when accounting is enabled)
+  const acctRule = fineractPayload.accountingRule;
+  if (acctRule > 1) {
+    if (product.fund_source_account_id) fineractPayload.fundSourceAccountId = product.fund_source_account_id as number;
+    if (product.loan_portfolio_account_id) fineractPayload.loanPortfolioAccountId = product.loan_portfolio_account_id as number;
+    if (product.transfers_in_suspense_account_id) fineractPayload.transfersInSuspenseAccountId = product.transfers_in_suspense_account_id as number;
+    if (product.interest_on_loan_account_id) fineractPayload.interestOnLoanAccountId = product.interest_on_loan_account_id as number;
+    if (product.income_from_fee_account_id) fineractPayload.incomeFromFeeAccountId = product.income_from_fee_account_id as number;
+    if (product.income_from_penalty_account_id) fineractPayload.incomeFromPenaltyAccountId = product.income_from_penalty_account_id as number;
+    if (product.write_off_account_id) fineractPayload.writeOffAccountId = product.write_off_account_id as number;
+    if (product.overpayment_liability_account_id) fineractPayload.overpaymentLiabilityAccountId = product.overpayment_liability_account_id as number;
+  }
+  if (acctRule >= 3) {
+    if (product.receivable_interest_account_id) fineractPayload.receivableInterestAccountId = product.receivable_interest_account_id as number;
+    if (product.receivable_fee_account_id) fineractPayload.receivableFeeAccountId = product.receivable_fee_account_id as number;
+    if (product.receivable_penalty_account_id) fineractPayload.receivablePenaltyAccountId = product.receivable_penalty_account_id as number;
+  }
 
   // Guard against NaN/Infinity in the payload before sending to Fineract
   for (const [key, value] of Object.entries(fineractPayload)) {

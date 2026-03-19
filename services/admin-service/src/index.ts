@@ -16,7 +16,7 @@ import { handleGetConfigs, handleUpdateConfig } from './handlers/configuration';
 import { handleGetAuditLogs } from './handlers/audit-logs';
 
 // ─── Products ───
-import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel } from './handlers/products';
+import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel, handleGetFineractDefaults, handleGetGLAccounts } from './handlers/products';
 
 // ─── Device Models ───
 import { handleGetDeviceModels, handleCreateDeviceModel, handleGetDeviceModelById, handleUpdateDeviceModel, handleDeleteDeviceModel } from './handlers/device-models';
@@ -80,9 +80,11 @@ export const handler = createRouter({
   'GET /admin/audit-logs':        handleGetAuditLogs,
 
   // Products (static routes before parameterized)
-  'GET /admin/products/stats':           handleGetProductStats,
-  'GET /admin/products':                 handleGetProducts,
-  'POST /admin/products':                handleCreateProduct,
+  'GET /admin/products/fineract-defaults':     handleGetFineractDefaults,
+  'GET /admin/products/gl-accounts':           handleGetGLAccounts,
+  'GET /admin/products/stats':                 handleGetProductStats,
+  'GET /admin/products':                       handleGetProducts,
+  'POST /admin/products':                      handleCreateProduct,
   'GET /admin/products/:id/loans-count':            handleGetProductLoansCount,
   'GET /admin/products/:id/device-models':          handleGetProductDeviceModels,
   'POST /admin/products/:id/device-models':         handleLinkDeviceModel,

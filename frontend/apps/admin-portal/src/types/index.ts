@@ -399,6 +399,60 @@ export type ProductType = 'asset_financing' | 'digital_credit';
 export type ProductCategory = 'smartphone' | 'digital';
 export type ProductStatus = 'active' | 'inactive' | 'launching_soon';
 
+/** Fineract amortization method */
+export const AMORTIZATION_TYPES = [
+  { value: 0, label: 'Equal Installments' },
+  { value: 1, label: 'Equal Principal Payments' },
+] as const;
+
+/** Fineract interest calculation method */
+export const INTEREST_TYPES = [
+  { value: 0, label: 'Declining Balance' },
+  { value: 1, label: 'Flat' },
+] as const;
+
+/** Fineract repayment/interest frequency */
+export const FREQUENCY_TYPES = [
+  { value: 0, label: 'Days' },
+  { value: 1, label: 'Weeks' },
+  { value: 2, label: 'Months' },
+  { value: 3, label: 'Years' },
+] as const;
+
+/** Fineract interest calculation period */
+export const INTEREST_CALCULATION_PERIOD_TYPES = [
+  { value: 0, label: 'Daily' },
+  { value: 1, label: 'Same as Repayment Period' },
+] as const;
+
+/** Fineract accounting rule */
+export const ACCOUNTING_RULES = [
+  { value: 1, label: 'None' },
+  { value: 2, label: 'Cash Based' },
+  { value: 3, label: 'Accrual (Periodic)' },
+  { value: 4, label: 'Upfront Accrual' },
+] as const;
+
+/** Fineract transaction processing strategies */
+export const TRANSACTION_STRATEGIES = [
+  { value: 'mifos-standard-strategy', label: 'Mifos Standard (Penalties, Fees, Interest, Principal)' },
+  { value: 'heavensfamily-strategy', label: 'Heavens Family (Principal, Interest, Penalties, Fees)' },
+  { value: 'creocore-strategy', label: 'Creocore (Principal, Interest, Penalties, Fees)' },
+  { value: 'rbi-india-strategy', label: 'RBI India (Principal, Interest, Penalties, Fees)' },
+  { value: 'due-penalty-fee-interest-principal-in-advance-principal-penalty-fee-interest-strategy', label: 'Advanced Penalty Strategy' },
+  { value: 'due-penalty-interest-principal-fee-in-advance-penalty-interest-principal-fee-strategy', label: 'Penalty Interest First Strategy' },
+] as const;
+
+/** Fineract GL account (for dropdown population) */
+export interface GLAccount {
+  id: number;
+  name: string;
+  glCode: string;
+  type: { id: number; value: string }; // 1=Asset, 2=Liability, 4=Income, 5=Expense
+  usage: { id: number; value: string }; // 1=Header, 2=Detail
+  disabled: boolean;
+}
+
 export interface LoanProduct {
   id: string;
   product_code: string;
@@ -406,6 +460,7 @@ export interface LoanProduct {
   product_type: ProductType;
   product_category: ProductCategory;
   status: ProductStatus;
+  // Lynia-specific fields
   min_amount_usd: number;
   max_amount_usd: number;
   loan_term_months: number;
@@ -422,26 +477,51 @@ export interface LoanProduct {
   display_order: number;
   description?: string;
   scoring_config?: Record<string, unknown>;
+  // Fineract integration
   fineract_product_id?: number | null;
   fineract_sync_error?: string;
+  // Fineract core parameters
+  short_name?: string | null;
+  currency_code: string;
+  digits_after_decimal: number;
+  in_multiples_of: number;
+  default_principal?: number | null;
+  number_of_repayments?: number | null;
+  repayment_every: number;
+  repayment_frequency_type: number;
+  amortization_type: number;
+  interest_type: number;
+  interest_calculation_period_type: number;
+  interest_rate_frequency_type: number;
+  transaction_processing_strategy: string;
+  accounting_rule: number;
+  min_interest_rate?: number | null;
+  max_interest_rate?: number | null;
+  // GL account mapping IDs
+  fund_source_account_id?: number | null;
+  loan_portfolio_account_id?: number | null;
+  transfers_in_suspense_account_id?: number | null;
+  interest_on_loan_account_id?: number | null;
+  income_from_fee_account_id?: number | null;
+  income_from_penalty_account_id?: number | null;
+  write_off_account_id?: number | null;
+  overpayment_liability_account_id?: number | null;
+  receivable_interest_account_id?: number | null;
+  receivable_fee_account_id?: number | null;
+  receivable_penalty_account_id?: number | null;
+  // Timestamps
   created_at: string;
   updated_at: string;
   deleted_at?: string;
 }
 
 export interface CreateProductInput {
+  // Lynia-specific
   product_code: string;
   product_name: string;
   product_type: ProductType;
   product_category: ProductCategory;
   status?: ProductStatus;
-  min_amount_usd: number;
-  max_amount_usd: number;
-  loan_term_months?: number;
-  min_term_months: number;
-  max_term_months: number;
-  interest_rate_annual: number;
-  interest_rate_monthly: number;
   deposit_percentage?: number;
   min_deposit_usd?: number;
   requires_device?: boolean;
@@ -450,7 +530,68 @@ export interface CreateProductInput {
   max_active_loans?: number;
   display_order?: number;
   description?: string;
-  fineract_product_id?: number | null;
+  // Fineract core parameters
+  short_name: string;
+  currency_code?: string;
+  digits_after_decimal?: number;
+  in_multiples_of?: number;
+  default_principal: number;
+  min_amount_usd: number;
+  max_amount_usd: number;
+  number_of_repayments: number;
+  min_term_months: number;
+  max_term_months: number;
+  repayment_every?: number;
+  repayment_frequency_type?: number;
+  interest_rate_monthly: number;
+  interest_rate_annual: number;
+  min_interest_rate?: number;
+  max_interest_rate?: number;
+  interest_rate_frequency_type?: number;
+  amortization_type?: number;
+  interest_type?: number;
+  interest_calculation_period_type?: number;
+  transaction_processing_strategy?: string;
+  accounting_rule?: number;
+  // GL account mappings
+  fund_source_account_id?: number | null;
+  loan_portfolio_account_id?: number | null;
+  transfers_in_suspense_account_id?: number | null;
+  interest_on_loan_account_id?: number | null;
+  income_from_fee_account_id?: number | null;
+  income_from_penalty_account_id?: number | null;
+  write_off_account_id?: number | null;
+  overpayment_liability_account_id?: number | null;
+  receivable_interest_account_id?: number | null;
+  receivable_fee_account_id?: number | null;
+  receivable_penalty_account_id?: number | null;
+}
+
+/** Default values returned by GET /admin/products/fineract-defaults */
+export interface FineractProductDefaults {
+  currency_code: string;
+  digits_after_decimal: number;
+  in_multiples_of: number;
+  repayment_every: number;
+  repayment_frequency_type: number;
+  interest_rate_frequency_type: number;
+  amortization_type: number;
+  interest_type: number;
+  interest_calculation_period_type: number;
+  transaction_processing_strategy: string;
+  accounting_rule: number;
+  // Pre-populated GL account IDs from Fineract
+  fund_source_account_id?: number;
+  loan_portfolio_account_id?: number;
+  transfers_in_suspense_account_id?: number;
+  interest_on_loan_account_id?: number;
+  income_from_fee_account_id?: number;
+  income_from_penalty_account_id?: number;
+  write_off_account_id?: number;
+  overpayment_liability_account_id?: number;
+  receivable_interest_account_id?: number;
+  receivable_fee_account_id?: number;
+  receivable_penalty_account_id?: number;
 }
 
 // --- Device Models ---

@@ -3,23 +3,20 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProducts, createProduct, updateProduct, deleteProduct, getProductStats, getProductLoansCount } from '@/lib/api/products';
+import { getProducts, deleteProduct, getProductStats, getProductLoansCount } from '@/lib/api/products';
 import { ProductCard } from '@/components/products/product-card';
-import { ProductForm } from '@/components/products/product-form';
 import { ProductStats } from '@/components/products/product-stats';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Modal } from '@/components/ui/modal';
 import { Plus, Search, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { LoanProduct, CreateProductInput, ProductCategory } from '@/types';
+import type { LoanProduct, ProductCategory } from '@/types';
 
 export default function ProductsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [formOpen, setFormOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<LoanProduct | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<LoanProduct | null>(null);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -45,44 +42,6 @@ export default function ProductsPage() {
     enabled: !!deleteTarget,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: CreateProductInput) => createProduct(data),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      if (result.fineract_sync_error) {
-        toast({
-          title: 'Product created, but Fineract sync failed',
-          description: `${result.fineract_sync_error}. Use "Sync Now" to retry.`,
-          variant: 'warning',
-        });
-      } else {
-        toast({ title: 'Product created and synced to Fineract', variant: 'success' });
-      }
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Failed to create product', description: error.message, variant: 'error' });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<LoanProduct> }) => updateProduct(id, data),
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      if (result.fineract_sync_error) {
-        toast({
-          title: 'Product updated, but Fineract sync failed',
-          description: `${result.fineract_sync_error}. Use "Sync Now" to retry.`,
-          variant: 'warning',
-        });
-      } else {
-        toast({ title: 'Product updated successfully', variant: 'success' });
-      }
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Failed to update product', description: error.message, variant: 'error' });
-    },
-  });
-
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteProduct(id),
     onSuccess: () => {
@@ -96,21 +55,11 @@ export default function ProductsPage() {
   });
 
   function handleEdit(product: LoanProduct) {
-    setEditingProduct(product);
-    setFormOpen(true);
+    router.push(`/products/${product.id}/edit`);
   }
 
   function handleCreate() {
-    setEditingProduct(null);
-    setFormOpen(true);
-  }
-
-  async function handleFormSubmit(data: CreateProductInput) {
-    if (editingProduct) {
-      await updateMutation.mutateAsync({ id: editingProduct.id, data });
-    } else {
-      await createMutation.mutateAsync(data);
-    }
+    router.push('/products/new');
   }
 
   function getStats(category: ProductCategory) {
@@ -223,13 +172,6 @@ export default function ProductsPage() {
           </div>
         </TabsContent>
       </Tabs>
-
-      <ProductForm
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        onSubmit={handleFormSubmit}
-        product={editingProduct}
-      />
 
       <Modal open={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Delete Product" size="sm">
         <div className="space-y-4">

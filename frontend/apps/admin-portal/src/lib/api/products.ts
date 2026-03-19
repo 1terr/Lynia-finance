@@ -3,6 +3,8 @@ import { MAX_PAGE_SIZE } from '@lynia/utils';
 import type {
   LoanProduct,
   CreateProductInput,
+  FineractProductDefaults,
+  GLAccount,
   ProductCategory,
   ProductStatus,
   DeviceModel,
@@ -81,6 +83,19 @@ export async function getProductStats(): Promise<Record<string, { totalLoans: nu
 
 export async function getProductLoansCount(id: string): Promise<{ active_loans: number }> {
   return fetchAPI<{ active_loans: number }>(`/admin/products/${id}/loans-count`);
+}
+
+// ─── Fineract Defaults & GL Accounts ───
+
+export async function getProductFineractDefaults(): Promise<FineractProductDefaults> {
+  return fetchAPI<FineractProductDefaults>('/admin/products/fineract-defaults');
+}
+
+export async function getGLAccounts(): Promise<{
+  accounts: GLAccount[];
+  grouped: Record<string, GLAccount[]>;
+}> {
+  return fetchAPI<{ accounts: GLAccount[]; grouped: Record<string, GLAccount[]> }>('/admin/products/gl-accounts');
 }
 
 // ─── Product-Device Model Linking ───

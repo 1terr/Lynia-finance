@@ -45,6 +45,14 @@ export function createLoanOperations(request: RequestFn, formatDate: (d: Date) =
       return request<FineractCommandResponse>('POST', '/loanproducts', product);
     },
 
+    /** Update an existing loan product */
+    async updateLoanProduct(
+      productId: number,
+      product: Partial<FineractLoanProductCreateRequest>
+    ): Promise<FineractCommandResponse> {
+      return request<FineractCommandResponse>('PUT', `/loanproducts/${productId}`, product);
+    },
+
     // ----------------------------------------------------------
     // LOANS
     // ----------------------------------------------------------

@@ -4,9 +4,12 @@ import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
 import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
+import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
+import type { FineractLoanProductCreateRequest } from '../../../shared/types/fineract';
 
 const VALID_PRODUCT_CATEGORIES = ['smartphone', 'digital'] as const;
 const PRODUCT_CODE_REGEX = /^[A-Za-z0-9_]{1,50}$/;
+const SHORT_NAME_REGEX = /^[A-Za-z0-9]{1,4}$/;
 
 // ─── GET /admin/products ───
 
@@ -173,6 +176,8 @@ export const handleGetProductById: RouteHandler = async (event, params, auth) =>
 };
 
 // ─── POST /admin/products ───
+// Fineract-first: create in Fineract synchronously, then store in Lynia DB.
+// If Fineract fails, the product is NOT saved — no orphaned Lynia products.
 
 export const handleCreateProduct: RouteHandler = async (event, _params, auth) => {
   if (!isAdminOrManager(auth)) {
@@ -182,7 +187,12 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
   const body = JSON.parse(event.body || '{}');
 
   // Validate required fields
-  const requiredFields = ['product_code', 'product_name', 'product_category', 'product_type', 'min_amount_usd', 'max_amount_usd', 'min_term_months', 'max_term_months', 'interest_rate_monthly', 'interest_rate_annual'];
+  const requiredFields = [
+    'product_code', 'product_name', 'product_category', 'product_type',
+    'short_name', 'default_principal', 'min_amount_usd', 'max_amount_usd',
+    'number_of_repayments', 'min_term_months', 'max_term_months',
+    'interest_rate_monthly', 'interest_rate_annual',
+  ];
   for (const field of requiredFields) {
     if (body[field] === undefined || body[field] === null || body[field] === '') {
       return errorResponse(`Missing required field: ${field}`, 400, { code: 'VAL_REQ_001' }, event);
@@ -194,9 +204,42 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     return errorResponse('product_code must be alphanumeric with underscores, max 50 chars', 400, { code: 'VAL_FMT_001' }, event);
   }
 
+  // Validate short_name (Fineract requires 1-4 alphanumeric chars)
+  if (!SHORT_NAME_REGEX.test(body.short_name)) {
+    return errorResponse('short_name must be 1-4 alphanumeric characters', 400, { code: 'VAL_FMT_001' }, event);
+  }
+
   // Validate product_category
   if (!VALID_PRODUCT_CATEGORIES.includes(body.product_category)) {
     return errorResponse('product_category must be smartphone or digital', 400, { code: 'VAL_FMT_001' }, event);
+  }
+
+  // Validate accounting_rule
+  const accountingRule = body.accounting_rule ?? 3;
+  if (![1, 2, 3, 4].includes(accountingRule)) {
+    return errorResponse('accounting_rule must be 1 (none), 2 (cash), 3 (accrual), or 4 (upfront accrual)', 400, { code: 'VAL_RNG_001' }, event);
+  }
+
+  // GL accounts required when accounting_rule > 1
+  if (accountingRule > 1) {
+    const requiredGLFields = [
+      'fund_source_account_id', 'loan_portfolio_account_id',
+      'interest_on_loan_account_id', 'income_from_fee_account_id',
+      'income_from_penalty_account_id', 'write_off_account_id',
+      'overpayment_liability_account_id', 'transfers_in_suspense_account_id',
+    ];
+    // Accrual (3 and 4) additionally requires receivable accounts
+    if (accountingRule >= 3) {
+      requiredGLFields.push(
+        'receivable_interest_account_id', 'receivable_fee_account_id',
+        'receivable_penalty_account_id'
+      );
+    }
+    for (const field of requiredGLFields) {
+      if (!body[field]) {
+        return errorResponse(`GL account mapping "${field}" is required when accounting_rule > 1`, 400, { code: 'VAL_REQ_001' }, event);
+      }
+    }
   }
 
   // Category-specific validations
@@ -228,9 +271,6 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
   if (body.interest_rate_monthly <= 0) {
     return errorResponse('interest_rate_monthly must be greater than 0', 400, { code: 'VAL_RNG_001' }, event);
   }
-  if (body.interest_rate_annual <= 0) {
-    return errorResponse('interest_rate_annual must be greater than 0', 400, { code: 'VAL_RNG_001' }, event);
-  }
 
   // Check uniqueness
   const { data: existing } = await db.from('loan_products')
@@ -243,7 +283,116 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     return errorResponse('A product with this product_code already exists', 409, {}, event);
   }
 
+  // ─── Build Fineract payload from request body ───
+  const fineractName = `Lynia - ${body.product_name}`;
+  const fineractPayload: FineractLoanProductCreateRequest = {
+    name: fineractName,
+    shortName: body.short_name.toUpperCase(),
+    description: body.description || `Lynia product ${body.product_code}`,
+    currencyCode: body.currency_code || 'USD',
+    digitsAfterDecimal: body.digits_after_decimal ?? 2,
+    inMultiplesOf: body.in_multiples_of ?? 1,
+    principal: body.default_principal,
+    minPrincipal: body.min_amount_usd,
+    maxPrincipal: body.max_amount_usd,
+    numberOfRepayments: body.number_of_repayments,
+    minNumberOfRepayments: body.min_term_months,
+    maxNumberOfRepayments: body.max_term_months,
+    repaymentEvery: body.repayment_every ?? 1,
+    repaymentFrequencyType: body.repayment_frequency_type ?? 2,
+    interestRatePerPeriod: body.interest_rate_monthly,
+    minInterestRatePerPeriod: body.min_interest_rate,
+    maxInterestRatePerPeriod: body.max_interest_rate,
+    interestRateFrequencyType: body.interest_rate_frequency_type ?? 2,
+    amortizationType: body.amortization_type ?? 0,
+    interestType: body.interest_type ?? 0,
+    interestCalculationPeriodType: body.interest_calculation_period_type ?? 1,
+    transactionProcessingStrategyCode: body.transaction_processing_strategy || 'mifos-standard-strategy',
+    locale: 'en',
+    dateFormat: 'dd MMMM yyyy',
+    accountingRule,
+  };
+
+  // Add GL account mappings when accounting is enabled
+  if (accountingRule > 1) {
+    fineractPayload.fundSourceAccountId = body.fund_source_account_id;
+    fineractPayload.loanPortfolioAccountId = body.loan_portfolio_account_id;
+    fineractPayload.transfersInSuspenseAccountId = body.transfers_in_suspense_account_id;
+    fineractPayload.interestOnLoanAccountId = body.interest_on_loan_account_id;
+    fineractPayload.incomeFromFeeAccountId = body.income_from_fee_account_id;
+    fineractPayload.incomeFromPenaltyAccountId = body.income_from_penalty_account_id;
+    fineractPayload.writeOffAccountId = body.write_off_account_id;
+    fineractPayload.overpaymentLiabilityAccountId = body.overpayment_liability_account_id;
+  }
+  if (accountingRule >= 3) {
+    fineractPayload.receivableInterestAccountId = body.receivable_interest_account_id;
+    fineractPayload.receivableFeeAccountId = body.receivable_fee_account_id;
+    fineractPayload.receivablePenaltyAccountId = body.receivable_penalty_account_id;
+  }
+
+  // ─── Create in Fineract FIRST ───
+  let fineractProductId: number;
+  try {
+    const fineract = await getFineractClient();
+    const result = await fineract.createLoanProduct(fineractPayload);
+    fineractProductId = result.resourceId;
+
+    logger.info('Fineract product created', {
+      action: 'admin.products.fineract-create',
+      status: 'completed',
+      metadata: { fineractProductId, productCode: body.product_code },
+    });
+  } catch (error) {
+    const apiError = error instanceof FineractApiError ? error : null;
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
+    // Orphan recovery: if Fineract says duplicate name, find and link it
+    if (apiError?.statusCode === 409 || (apiError?.errorBody?.errors?.some(
+      (e) => e.defaultUserMessage?.includes('duplicate') || e.defaultUserMessage?.includes('already exists')
+    ))) {
+      try {
+        const fineract = await getFineractClient();
+        const allProducts = await fineract.listLoanProducts();
+        const orphan = allProducts.find((p) => p.name === fineractName);
+        if (orphan) {
+          fineractProductId = orphan.id;
+          logger.info('Recovered orphaned Fineract product', {
+            action: 'admin.products.fineract-orphan-recovery',
+            status: 'completed',
+            metadata: { fineractProductId: orphan.id, productCode: body.product_code },
+          });
+          // Fall through to DB insert below
+        } else {
+          return errorResponse(`Fineract reports duplicate but product not found: ${errorMessage}`, 502, { code: 'PAY_PROV_001' }, event);
+        }
+      } catch (recoveryError) {
+        return errorResponse(`Fineract creation failed and orphan recovery failed: ${errorMessage}`, 502, { code: 'PAY_PROV_001' }, event);
+      }
+    } else {
+      const validationErrors = apiError?.errorBody?.errors?.map((e) => ({
+        field: e.parameterName,
+        message: e.defaultUserMessage,
+      }));
+
+      logger.error('Fineract product creation failed', {
+        action: 'admin.products.fineract-create',
+        status: 'failed',
+        errorMessage,
+        metadata: { statusCode: apiError?.statusCode, productCode: body.product_code },
+      });
+
+      return errorResponse(
+        `Failed to create product in Fineract: ${errorMessage}`,
+        apiError?.statusCode && apiError.statusCode >= 400 && apiError.statusCode < 500 ? 400 : 502,
+        { code: 'PAY_PROV_001', validation_errors: validationErrors },
+        event
+      );
+    }
+  }
+
+  // ─── Fineract succeeded — now save to Lynia DB ───
   const insertData: Record<string, unknown> = {
+    // Lynia-specific
     product_code: body.product_code,
     product_name: body.product_name,
     product_type: body.product_type,
@@ -251,20 +400,51 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     status: body.status || 'active',
     min_amount_usd: body.min_amount_usd,
     max_amount_usd: body.max_amount_usd,
-    loan_term_months: body.loan_term_months || body.max_term_months,
+    loan_term_months: body.max_term_months,
     interest_rate_annual: body.interest_rate_annual,
+    interest_rate_monthly: body.interest_rate_monthly,
     deposit_percentage: body.deposit_percentage || 0,
     min_deposit_usd: body.min_deposit_usd || 0,
     min_term_months: body.min_term_months,
     max_term_months: body.max_term_months,
-    interest_rate_monthly: body.interest_rate_monthly,
     requires_device: body.requires_device || false,
     requires_organization_verification: body.requires_organization_verification || false,
     allowed_disbursement_methods: body.allowed_disbursement_methods ? JSON.stringify(body.allowed_disbursement_methods) : '["ecocash"]',
     max_active_loans: body.max_active_loans || 1,
     display_order: body.display_order || 0,
     description: body.description || null,
-    fineract_product_id: body.fineract_product_id || null,
+    // Fineract link
+    fineract_product_id: fineractProductId!,
+    // Fineract core parameters
+    short_name: body.short_name.toUpperCase(),
+    currency_code: body.currency_code || 'USD',
+    digits_after_decimal: body.digits_after_decimal ?? 2,
+    in_multiples_of: body.in_multiples_of ?? 1,
+    default_principal: body.default_principal,
+    number_of_repayments: body.number_of_repayments,
+    repayment_every: body.repayment_every ?? 1,
+    repayment_frequency_type: body.repayment_frequency_type ?? 2,
+    amortization_type: body.amortization_type ?? 0,
+    interest_type: body.interest_type ?? 0,
+    interest_calculation_period_type: body.interest_calculation_period_type ?? 1,
+    interest_rate_frequency_type: body.interest_rate_frequency_type ?? 2,
+    transaction_processing_strategy: body.transaction_processing_strategy || 'mifos-standard-strategy',
+    accounting_rule: accountingRule,
+    min_interest_rate: body.min_interest_rate || null,
+    max_interest_rate: body.max_interest_rate || null,
+    // GL account mappings
+    fund_source_account_id: body.fund_source_account_id || null,
+    loan_portfolio_account_id: body.loan_portfolio_account_id || null,
+    transfers_in_suspense_account_id: body.transfers_in_suspense_account_id || null,
+    interest_on_loan_account_id: body.interest_on_loan_account_id || null,
+    income_from_fee_account_id: body.income_from_fee_account_id || null,
+    income_from_penalty_account_id: body.income_from_penalty_account_id || null,
+    write_off_account_id: body.write_off_account_id || null,
+    overpayment_liability_account_id: body.overpayment_liability_account_id || null,
+    receivable_interest_account_id: body.receivable_interest_account_id || null,
+    receivable_fee_account_id: body.receivable_fee_account_id || null,
+    receivable_penalty_account_id: body.receivable_penalty_account_id || null,
+    // Timestamps
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
@@ -272,60 +452,32 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
   const { data: created, error } = await db.from('loan_products').insert(insertData).execute();
 
   if (error) {
-    logger.error('Error creating product', {
+    logger.error('Error saving product to DB after Fineract creation', {
       action: 'admin.products.create',
       status: 'failed',
       errorMessage: error.message,
+      metadata: { fineractProductId: fineractProductId!, productCode: body.product_code },
     });
-    return errorResponse('Failed to create product', 500, {}, event);
+    return errorResponse('Product created in Fineract but failed to save to database. Contact support.', 500, { fineract_product_id: fineractProductId! }, event);
   }
 
   const row = Array.isArray(created) ? created[0] : created;
 
-  await auditLog(auth, 'product.create', 'loan_product', row.id as string, `Created product: ${body.product_code}`, {
+  await auditLog(auth, 'product.create', 'loan_product', row.id as string, `Created product: ${body.product_code} (Fineract #${fineractProductId!})`, {
     product_code: body.product_code,
     product_category: body.product_category,
+    fineract_product_id: fineractProductId!,
   });
 
-  // Queue Fineract sync asynchronously via SQS — never block the API response.
-  // The inline await was exceeding the 29s API Gateway timeout when Fineract
-  // is cold or slow (list + create = up to 40s of HTTP calls).
-  // The sync will be picked up by the retry queue consumer; if it fails,
-  // it retries with exponential backoff. Users can also trigger manual sync
-  // from the Fineract products page.
-  if (!row.fineract_product_id) {
-    try {
-      const { SQSQueues } = await import('../../../shared/utils/sqs-publisher');
-      await SQSQueues.retryFineractSync({
-        entityType: 'loan_product',
-        entityId: row.id as string,
-        operation: 'create',
-        requestPayload: { product_code: body.product_code },
-        retryCount: 0,
-      });
-      logger.info('Fineract product sync queued', {
-        action: 'admin.products.fineract-sync-queued',
-        status: 'started',
-        metadata: { productId: row.id },
-      });
-    } catch (sqsError) {
-      // SQS failure is non-fatal — reconciliation job is the safety net
-      logger.warn('Failed to queue Fineract product sync', {
-        action: 'admin.products.fineract-sync-queue-failed',
-        status: 'failed',
-        metadata: { productId: row.id, error: sqsError instanceof Error ? sqsError.message : String(sqsError) },
-      });
-    }
-  }
-
   return successResponse(
-    { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'pending' },
+    { ...row, fineract_sync_status: 'synced' },
     201,
     event
   );
 };
 
 // ─── PATCH /admin/products/:id ───
+// Fineract-first: update in Fineract first (if linked), then update Lynia DB.
 
 export const handleUpdateProduct: RouteHandler = async (event, params, auth) => {
   const id = params.id;
@@ -335,26 +487,117 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
   }
 
   const body = JSON.parse(event.body || '{}');
+
+  // Fetch existing product
+  const { data: existingProduct } = await db.from('loan_products')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .execute();
+
+  if (!existingProduct) {
+    return errorResponse('Product not found', 404, {}, event);
+  }
+
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
   const allowedFields = [
+    // Lynia-specific
     'product_name', 'product_type', 'status', 'min_amount_usd', 'max_amount_usd',
     'loan_term_months', 'interest_rate_annual', 'deposit_percentage', 'min_deposit_usd',
     'min_term_months', 'max_term_months', 'interest_rate_monthly', 'requires_device',
     'requires_organization_verification', 'allowed_disbursement_methods', 'max_active_loans',
-    'display_order', 'description', 'fineract_product_id',
+    'display_order', 'description',
+    // Fineract core parameters
+    'short_name', 'currency_code', 'digits_after_decimal', 'in_multiples_of',
+    'default_principal', 'number_of_repayments', 'repayment_every',
+    'repayment_frequency_type', 'amortization_type', 'interest_type',
+    'interest_calculation_period_type', 'interest_rate_frequency_type',
+    'transaction_processing_strategy', 'accounting_rule',
+    'min_interest_rate', 'max_interest_rate',
+    // GL account mappings
+    'fund_source_account_id', 'loan_portfolio_account_id',
+    'transfers_in_suspense_account_id', 'interest_on_loan_account_id',
+    'income_from_fee_account_id', 'income_from_penalty_account_id',
+    'write_off_account_id', 'overpayment_liability_account_id',
+    'receivable_interest_account_id', 'receivable_fee_account_id',
+    'receivable_penalty_account_id',
   ];
 
   for (const field of allowedFields) {
     if (body[field] !== undefined) {
       if (field === 'allowed_disbursement_methods' && typeof body[field] !== 'string') {
         updates[field] = JSON.stringify(body[field]);
+      } else if (field === 'short_name' && typeof body[field] === 'string') {
+        updates[field] = body[field].toUpperCase();
       } else {
         updates[field] = body[field];
       }
     }
   }
 
+  // If product is linked to Fineract, update there first
+  const fineractProductId = existingProduct.fineract_product_id as number | null;
+  if (fineractProductId) {
+    const fineractUpdates: Partial<FineractLoanProductCreateRequest> = {};
+    let hasFineractChanges = false;
+
+    // Map changed fields to Fineract payload
+    if (body.product_name !== undefined) { fineractUpdates.name = `Lynia - ${body.product_name}`; hasFineractChanges = true; }
+    if (body.short_name !== undefined) { fineractUpdates.shortName = body.short_name.toUpperCase(); hasFineractChanges = true; }
+    if (body.description !== undefined) { fineractUpdates.description = body.description; hasFineractChanges = true; }
+    if (body.default_principal !== undefined) { fineractUpdates.principal = body.default_principal; hasFineractChanges = true; }
+    if (body.min_amount_usd !== undefined) { fineractUpdates.minPrincipal = body.min_amount_usd; hasFineractChanges = true; }
+    if (body.max_amount_usd !== undefined) { fineractUpdates.maxPrincipal = body.max_amount_usd; hasFineractChanges = true; }
+    if (body.number_of_repayments !== undefined) { fineractUpdates.numberOfRepayments = body.number_of_repayments; hasFineractChanges = true; }
+    if (body.min_term_months !== undefined) { fineractUpdates.minNumberOfRepayments = body.min_term_months; hasFineractChanges = true; }
+    if (body.max_term_months !== undefined) { fineractUpdates.maxNumberOfRepayments = body.max_term_months; hasFineractChanges = true; }
+    if (body.interest_rate_monthly !== undefined) { fineractUpdates.interestRatePerPeriod = body.interest_rate_monthly; hasFineractChanges = true; }
+    if (body.min_interest_rate !== undefined) { fineractUpdates.minInterestRatePerPeriod = body.min_interest_rate; hasFineractChanges = true; }
+    if (body.max_interest_rate !== undefined) { fineractUpdates.maxInterestRatePerPeriod = body.max_interest_rate; hasFineractChanges = true; }
+    if (body.repayment_every !== undefined) { fineractUpdates.repaymentEvery = body.repayment_every; hasFineractChanges = true; }
+    if (body.repayment_frequency_type !== undefined) { fineractUpdates.repaymentFrequencyType = body.repayment_frequency_type; hasFineractChanges = true; }
+    if (body.amortization_type !== undefined) { fineractUpdates.amortizationType = body.amortization_type; hasFineractChanges = true; }
+    if (body.interest_type !== undefined) { fineractUpdates.interestType = body.interest_type; hasFineractChanges = true; }
+    if (body.interest_calculation_period_type !== undefined) { fineractUpdates.interestCalculationPeriodType = body.interest_calculation_period_type; hasFineractChanges = true; }
+    if (body.accounting_rule !== undefined) { fineractUpdates.accountingRule = body.accounting_rule; hasFineractChanges = true; }
+
+    if (hasFineractChanges) {
+      // Fineract PUT requires locale/dateFormat
+      fineractUpdates.locale = 'en';
+      fineractUpdates.dateFormat = 'dd MMMM yyyy';
+
+      try {
+        const fineract = await getFineractClient();
+        await fineract.updateLoanProduct(fineractProductId, fineractUpdates);
+
+        logger.info('Fineract product updated', {
+          action: 'admin.products.fineract-update',
+          status: 'completed',
+          metadata: { fineractProductId, productId: id },
+        });
+      } catch (error) {
+        const apiError = error instanceof FineractApiError ? error : null;
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        logger.error('Fineract product update failed', {
+          action: 'admin.products.fineract-update',
+          status: 'failed',
+          errorMessage,
+        });
+
+        return errorResponse(
+          `Failed to update product in Fineract: ${errorMessage}`,
+          apiError?.statusCode && apiError.statusCode >= 400 && apiError.statusCode < 500 ? 400 : 502,
+          { code: 'PAY_PROV_001' },
+          event
+        );
+      }
+    }
+  }
+
+  // Update Lynia DB
   const { data: updated, error } = await db.from('loan_products')
     .update(updates)
     .eq('id', id)
@@ -377,28 +620,8 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.update', 'loan_product', id, `Updated product: ${id}`, updates);
 
-  // Queue Fineract sync asynchronously (same fix as create — avoid API Gateway timeout)
-  if (!row.fineract_product_id) {
-    try {
-      const { SQSQueues } = await import('../../../shared/utils/sqs-publisher');
-      await SQSQueues.retryFineractSync({
-        entityType: 'loan_product',
-        entityId: id,
-        operation: 'create',
-        requestPayload: { product_id: id },
-        retryCount: 0,
-      });
-    } catch (sqsError) {
-      logger.warn('Failed to queue Fineract product sync after update', {
-        action: 'admin.products.fineract-sync-queue-failed',
-        status: 'failed',
-        metadata: { productId: id, error: sqsError instanceof Error ? sqsError.message : String(sqsError) },
-      });
-    }
-  }
-
   return successResponse(
-    { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'pending' },
+    { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'not_linked' },
     200,
     event
   );
@@ -560,4 +783,108 @@ export const handleUnlinkDeviceModel: RouteHandler = async (event, params, auth)
     `Unlinked device model ${modelId} from product`, { device_model_id: modelId });
 
   return successResponse({ message: 'Device model unlinked' }, 200, event);
+};
+
+// ─── GET /admin/products/fineract-defaults ───
+// Returns sensible default values for the product creation wizard.
+
+export const handleGetFineractDefaults: RouteHandler = async (event, _params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  // Try to fetch GL accounts from Fineract to pre-populate defaults
+  let glAccountDefaults: Record<string, number | undefined> = {};
+  try {
+    const fineract = await getFineractClient();
+    const glAccounts = await fineract.listGLAccounts();
+
+    // Map GL accounts by code to their Fineract IDs (using chart-of-accounts.json codes)
+    const byCode: Record<string, number> = {};
+    for (const acct of glAccounts) {
+      if (acct.usage?.id === 2) { // Detail accounts only (not headers)
+        byCode[acct.glCode] = acct.id;
+      }
+    }
+
+    glAccountDefaults = {
+      fund_source_account_id: byCode['1001'],
+      loan_portfolio_account_id: byCode['1100'],
+      interest_on_loan_account_id: byCode['4001'],
+      income_from_fee_account_id: byCode['4002'],
+      income_from_penalty_account_id: byCode['4003'],
+      write_off_account_id: byCode['5001'],
+      overpayment_liability_account_id: byCode['2001'],
+      transfers_in_suspense_account_id: byCode['2100'],
+      receivable_interest_account_id: byCode['1200'],
+      receivable_fee_account_id: byCode['1300'],
+      receivable_penalty_account_id: byCode['1400'],
+    };
+  } catch {
+    // Fineract unreachable — return defaults without GL IDs
+    logger.warn('Could not fetch GL accounts from Fineract for defaults', {
+      action: 'admin.products.fineract-defaults',
+      status: 'failed',
+    });
+  }
+
+  return successResponse({
+    currency_code: 'USD',
+    digits_after_decimal: 2,
+    in_multiples_of: 1,
+    repayment_every: 1,
+    repayment_frequency_type: 2, // months
+    interest_rate_frequency_type: 2, // per month
+    amortization_type: 0, // equal installments
+    interest_type: 0, // declining balance
+    interest_calculation_period_type: 1, // same as repayment
+    transaction_processing_strategy: 'mifos-standard-strategy',
+    accounting_rule: 3, // accrual (RBZ compliance)
+    ...glAccountDefaults,
+  }, 200, event);
+};
+
+// ─── GET /admin/products/gl-accounts ───
+// Proxy to Fineract GL accounts, grouped by type for dropdown population.
+
+export const handleGetGLAccounts: RouteHandler = async (event, _params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  try {
+    const fineract = await getFineractClient();
+    const accounts = await fineract.listGLAccounts();
+
+    // Filter to detail accounts only (usage.id === 2, i.e., postable)
+    const detailAccounts = accounts.filter((a) => a.usage?.id === 2);
+
+    // Group by type for dropdown filtering
+    const grouped: Record<string, typeof detailAccounts> = {
+      asset: [],     // type.id === 1
+      liability: [], // type.id === 2
+      equity: [],    // type.id === 3
+      income: [],    // type.id === 4
+      expense: [],   // type.id === 5
+    };
+
+    for (const acct of detailAccounts) {
+      const typeId = acct.type?.id;
+      if (typeId === 1) grouped.asset.push(acct);
+      else if (typeId === 2) grouped.liability.push(acct);
+      else if (typeId === 3) grouped.equity.push(acct);
+      else if (typeId === 4) grouped.income.push(acct);
+      else if (typeId === 5) grouped.expense.push(acct);
+    }
+
+    return successResponse({ accounts: detailAccounts, grouped }, 200, event);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Failed to fetch GL accounts from Fineract', {
+      action: 'admin.products.gl-accounts',
+      status: 'failed',
+      errorMessage,
+    });
+    return errorResponse(`Failed to fetch GL accounts from Fineract: ${errorMessage}`, 502, {}, event);
+  }
 };
