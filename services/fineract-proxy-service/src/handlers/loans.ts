@@ -7,7 +7,7 @@
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getFineractClient, parseFineractDate } from '../../../shared/clients/fineract';
-import { db } from '../../../shared/clients/database';
+import { db, query } from '../../../shared/clients/database';
 import logger from '../../../shared/utils/logger';
 import type {
   FineractLoan,
@@ -121,7 +121,7 @@ export async function handleGetLoans(
 // GET /api/v1/fineract/loans/pending
 // ============================================================
 
-/** Loans pending approval */
+/** Loans with Fineract sync issues (approved in Lynia but sync failed) */
 export async function handleGetPendingLoans(
   event: APIGatewayProxyEvent,
   _params: RouteParams,
@@ -132,20 +132,40 @@ export async function handleGetPendingLoans(
   const limit = clampPage(qs.limit, 25, MAX_PAGE_SIZE);
   const offset = (page - 1) * limit;
 
-  const { data: loans, error } = await db
-    .from('loans')
-    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance_usd, total_paid_usd, status, created_at')
-    .not('fineract_loan_id', 'is', null)
-    .eq('status', 'pending_approval')
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1)
-    .execute();
+  // Find loans with sync issues:
+  // 1. Approved in Lynia but never synced to Fineract (fineract_loan_id IS NULL)
+  // 2. Synced to Fineract but approval failed (failed sync log entries for 'approve' or 'create')
+  const { data: loans, error: loanError } = await query<LyniaLoanRow>(`
+    SELECT DISTINCT l.id, l.customer_id, l.loan_number, l.fineract_loan_id,
+           l.fineract_product_id, l.outstanding_balance_usd, l.total_paid_usd,
+           l.status, l.created_at
+    FROM loans l
+    WHERE (
+      -- Case 1: Approved but never synced to Fineract
+      (l.status = 'approved' AND l.fineract_loan_id IS NULL)
+      OR
+      -- Case 2: Has failed sync log entries for create or approve operations
+      EXISTS (
+        SELECT 1 FROM fineract_sync_log fsl
+        WHERE fsl.entity_id = l.id::text
+          AND fsl.entity_type = 'loan'
+          AND fsl.operation IN ('create', 'approve')
+          AND fsl.status IN ('failed', 'exhausted')
+      )
+    )
+    ORDER BY l.created_at DESC
+    LIMIT $1 OFFSET $2
+  `, [limit, offset]);
 
-  if (error || !loans) {
-    return err(500, 'Failed to query pending loans', event);
+  if (loanError || !loans) {
+    logger.error('Failed to query sync-issue loans', {
+      action: 'fineract.getPendingLoans',
+      meta: { error: loanError?.message || 'Unknown' },
+    });
+    return err(500, 'Failed to query loans with sync issues', event);
   }
 
-  const loanRows = loans as unknown as LyniaLoanRow[];
+  const loanRows = loans;
   const customerIds = [...new Set(loanRows.map((l) => l.customer_id))];
   const customerMap = await getCustomerMap(customerIds);
 
@@ -155,7 +175,13 @@ export async function handleGetPendingLoans(
     items = await Promise.all(
       loanRows.map(async (loan) => {
         const customer = customerMap.get(loan.customer_id);
-        return buildLoanView(loan, customer || null, fineract);
+        const view = loan.fineract_loan_id
+          ? await buildLoanView(loan, customer || null, fineract)
+          : buildLoanViewFromFineract(loan, customer || null, null);
+        return {
+          ...view,
+          syncStatus: loan.fineract_loan_id ? 'approve_failed' : 'not_synced',
+        };
       })
     );
   } catch (e) {
@@ -165,14 +191,35 @@ export async function handleGetPendingLoans(
     });
     items = loanRows.map((loan) => {
       const customer = customerMap.get(loan.customer_id);
-      return buildLoanViewFromFineract(loan, customer || null, null);
+      return {
+        ...buildLoanViewFromFineract(loan, customer || null, null),
+        syncStatus: loan.fineract_loan_id ? 'approve_failed' : 'not_synced',
+      };
     });
   }
+
+  // Get total count
+  const { data: countResult } = await query<{ count: string }>(`
+    SELECT COUNT(DISTINCT l.id) as count
+    FROM loans l
+    WHERE (
+      (l.status = 'approved' AND l.fineract_loan_id IS NULL)
+      OR
+      EXISTS (
+        SELECT 1 FROM fineract_sync_log fsl
+        WHERE fsl.entity_id = l.id::text
+          AND fsl.entity_type = 'loan'
+          AND fsl.operation IN ('create', 'approve')
+          AND fsl.status IN ('failed', 'exhausted')
+      )
+    )
+  `);
+  const total = countResult?.[0] ? parseInt(countResult[0].count) : items.length;
 
   return ok(
     {
       data: items,
-      pagination: { page, limit, total: items.length, totalPages: 1 },
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     },
     event
   );

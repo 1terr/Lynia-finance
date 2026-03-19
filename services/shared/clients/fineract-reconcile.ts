@@ -20,6 +20,10 @@
 import { getFineractClient, FineractApiError } from './fineract';
 import { syncProductToFineract } from './fineract-sync/sync-product';
 import { db } from './database';
+import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
+
+const cloudwatch = new CloudWatchClient({ region: process.env.AWS_REGION || 'us-east-1' });
+const METRIC_NAMESPACE = `Lynia/${process.env.NODE_ENV || 'development'}`;
 
 // ============================================================
 // TYPES
@@ -200,7 +204,70 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   }
 
   // ----------------------------------------------------------
-  // Step 3: Finalize
+  // Step 3: Count pending approval sync failures
+  // ----------------------------------------------------------
+  let approvalSyncFailures = 0;
+  let totalPendingSyncFailures = 0;
+  try {
+    const { data: failedApprovals } = await db
+      .from('fineract_sync_log')
+      .select('id')
+      .eq('operation', 'approve')
+      .in('status', ['failed', 'exhausted'])
+      .execute();
+
+    approvalSyncFailures = Array.isArray(failedApprovals) ? failedApprovals.length : 0;
+
+    const { data: allFailed } = await db
+      .from('fineract_sync_log')
+      .select('id')
+      .in('status', ['failed', 'exhausted'])
+      .neq('operation', 'reconcile')
+      .execute();
+
+    totalPendingSyncFailures = Array.isArray(allFailed) ? allFailed.length : 0;
+  } catch (countError) {
+    console.error('[reconcile] Failed to count sync failures:', countError);
+  }
+
+  // ----------------------------------------------------------
+  // Step 4: Emit CloudWatch metrics
+  // ----------------------------------------------------------
+  try {
+    await cloudwatch.send(new PutMetricDataCommand({
+      Namespace: METRIC_NAMESPACE,
+      MetricData: [
+        {
+          MetricName: 'FineractApprovalSyncFailures',
+          Value: approvalSyncFailures,
+          Unit: 'Count',
+          Timestamp: new Date(),
+        },
+        {
+          MetricName: 'FineractPendingSyncFailures',
+          Value: totalPendingSyncFailures,
+          Unit: 'Count',
+          Timestamp: new Date(),
+        },
+        {
+          MetricName: 'FineractReconciliationDiscrepancies',
+          Value: result.discrepancies.length,
+          Unit: 'Count',
+          Timestamp: new Date(),
+        },
+      ],
+    }));
+    console.log('[reconcile] CloudWatch metrics emitted:', {
+      approvalSyncFailures,
+      totalPendingSyncFailures,
+      discrepancies: result.discrepancies.length,
+    });
+  } catch (metricError) {
+    console.error('[reconcile] Failed to emit CloudWatch metrics:', metricError);
+  }
+
+  // ----------------------------------------------------------
+  // Step 5: Finalize
   // ----------------------------------------------------------
   result.durationMs = Date.now() - startTime;
 
@@ -211,6 +278,8 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
     failedChecks: result.failedChecks,
     retriedSyncs: result.retriedSyncs,
     retriedSuccesses: result.retriedSuccesses,
+    approvalSyncFailures,
+    totalPendingSyncFailures,
     durationMs: result.durationMs,
   });
 

@@ -49,7 +49,7 @@ const NAVIGATION: SidebarItem[] = [
     requiredPermission: { resource: 'loans', action: 'read' },
     children: [
       { label: 'All Loans', href: '/loans' },
-      { label: 'Pending Approval', href: '/loans/pending-approval' },
+      { label: 'Sync Issues', href: '/loans/pending-approval' },
     ],
   },
   {

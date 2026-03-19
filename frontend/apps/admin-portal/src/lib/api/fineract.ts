@@ -232,6 +232,16 @@ export async function closeFineractLoan(
   );
 }
 
+/** Retry failed Fineract sync for a loan (create + approve) */
+export async function retryFineractSync(
+  lyniaLoanId: string
+): Promise<FineractActionResponse> {
+  return fetchFineractAPI<FineractActionResponse>(
+    `/api/v1/fineract/loans/${lyniaLoanId}/retry-sync`,
+    { method: 'POST' }
+  );
+}
+
 // ============================================================
 // LOAN PRODUCTS
 // ============================================================

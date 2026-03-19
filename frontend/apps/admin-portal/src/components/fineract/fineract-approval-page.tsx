@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   getPendingApprovalLoans,
-  approveFineractLoan,
+  retryFineractSync,
   rejectFineractLoan,
 } from '@/lib/api/fineract';
 import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
@@ -13,7 +13,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { formatCurrency, formatDate } from '@lynia/utils';
 import type { FineractLoanView } from '@/types/fineract';
 import { Pagination } from '@/components/ui/pagination';
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, RefreshCw, AlertTriangle } from 'lucide-react';
 
 export default function FineractApprovalPage() {
   const canApprove = useAuthStore((s) => s.hasPermission('loans:approve'));
@@ -23,7 +23,7 @@ export default function FineractApprovalPage() {
     null
   );
   const [modalAction, setModalAction] = useState<
-    'approve' | 'reject' | null
+    'retry' | 'reject' | null
   >(null);
   const [note, setNote] = useState('');
 
@@ -33,14 +33,10 @@ export default function FineractApprovalPage() {
     refetchInterval: 30000,
   });
 
-  const approveMutation = useMutationWithToast({
-    mutationFn: (loanId: string) =>
-      approveFineractLoan(loanId, {
-        approvedOnDate: new Date().toISOString().split('T')[0],
-        note: note || undefined,
-      }),
-    successMessage: 'Loan approved successfully',
-    errorMessage: 'Failed to approve loan',
+  const retrySyncMutation = useMutationWithToast({
+    mutationFn: (loanId: string) => retryFineractSync(loanId),
+    successMessage: 'Fineract sync completed successfully',
+    errorMessage: 'Failed to sync loan to Fineract',
     invalidateKeys: [['fineract-pending-loans'], ['fineract-loans']],
     onSuccess: () => closeModal(),
   });
@@ -59,7 +55,7 @@ export default function FineractApprovalPage() {
 
   function openModal(
     loan: FineractLoanView,
-    action: 'approve' | 'reject'
+    action: 'retry' | 'reject'
   ) {
     setSelectedLoan(loan);
     setModalAction(action);
@@ -75,14 +71,14 @@ export default function FineractApprovalPage() {
   function handleConfirm() {
     if (!selectedLoan) return;
     if (modalAction === 'reject' && !note.trim()) return;
-    if (modalAction === 'approve') {
-      approveMutation.mutate(selectedLoan.lyniaLoanId);
+    if (modalAction === 'retry') {
+      retrySyncMutation.mutate(selectedLoan.lyniaLoanId);
     } else if (modalAction === 'reject') {
       rejectMutation.mutate(selectedLoan.lyniaLoanId);
     }
   }
 
-  const isActionPending = approveMutation.isPending || rejectMutation.isPending;
+  const isActionPending = retrySyncMutation.isPending || rejectMutation.isPending;
   const isRejectNoteEmpty = modalAction === 'reject' && !note.trim();
 
   if (isLoading) {
@@ -106,11 +102,11 @@ export default function FineractApprovalPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">
-          Loan Approval Queue
+          Fineract Sync Review
         </h1>
         <p className="text-sm text-muted-foreground">
-          Review and approve pending loan applications.
-          {data && ` ${data.total} loans pending.`}
+          Loans approved in Lynia but with failed Fineract sync. Retry or reject.
+          {data && ` ${data.total} loans with sync issues.`}
         </p>
       </div>
 
@@ -119,10 +115,10 @@ export default function FineractApprovalPage() {
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border py-16">
           <CheckCircle className="h-12 w-12 text-green-400" />
           <p className="mt-4 text-lg font-medium text-muted-foreground">
-            No loans pending approval
+            No sync issues
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            All caught up! New applications will appear here.
+            All loans are synced to Fineract successfully.
           </p>
         </div>
       )}
@@ -138,12 +134,12 @@ export default function FineractApprovalPage() {
               {/* Customer Info */}
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-yellow-500" />
+                  <AlertTriangle className="h-4 w-4 text-orange-500" />
                   <h3 className="font-semibold text-foreground">
                     {loan.customerName}
                   </h3>
-                  <span className="inline-flex items-center rounded-full bg-yellow-100 dark:bg-yellow-900 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:text-yellow-200">
-                    Pending Approval
+                  <span className="inline-flex items-center rounded-full bg-orange-100 dark:bg-orange-900 px-2 py-0.5 text-xs font-medium text-orange-800 dark:text-orange-200">
+                    Sync Failed
                   </span>
                 </div>
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -195,11 +191,11 @@ export default function FineractApprovalPage() {
                 <div className="flex gap-2">
                   {canApprove && (
                     <button
-                      onClick={() => openModal(loan, 'approve')}
-                      className="inline-flex items-center gap-1 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                      onClick={() => openModal(loan, 'retry')}
+                      className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                     >
-                      <CheckCircle className="h-4 w-4" />
-                      Approve
+                      <RefreshCw className="h-4 w-4" />
+                      Retry Sync
                     </button>
                   )}
                   {canReject && (
@@ -242,9 +238,9 @@ export default function FineractApprovalPage() {
         open={!!modalAction && !!selectedLoan}
         onClose={closeModal}
         onConfirm={handleConfirm}
-        title={modalAction === 'approve' ? 'Approve Loan' : 'Reject Loan'}
+        title={modalAction === 'retry' ? 'Retry Fineract Sync' : 'Reject Loan'}
         variant={modalAction === 'reject' ? 'destructive' : 'warning'}
-        confirmLabel={modalAction === 'approve' ? 'Approve Loan' : 'Reject Loan'}
+        confirmLabel={modalAction === 'retry' ? 'Retry Sync' : 'Reject Loan'}
         isLoading={isActionPending}
         description={
           selectedLoan ? (
@@ -270,29 +266,27 @@ export default function FineractApprovalPage() {
                 </dl>
               </div>
               <p className="text-sm text-muted-foreground">
-                {modalAction === 'approve'
-                  ? 'This will approve the loan application.'
+                {modalAction === 'retry'
+                  ? 'This will retry syncing this loan to the Fineract core banking system.'
                   : 'This action cannot be undone.'}
               </p>
+              {modalAction === 'reject' && (
               <div>
                 <label className="block text-sm font-medium text-foreground">
-                  {modalAction === 'reject' ? 'Rejection reason (required)' : 'Note (optional)'}
+                  Rejection reason (required)
                 </label>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={2}
                   className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground shadow-sm placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  placeholder={
-                    modalAction === 'approve'
-                      ? 'Approval notes...'
-                      : 'Enter reason for rejection...'
-                  }
+                  placeholder="Enter reason for rejection..."
                 />
                 {isRejectNoteEmpty && (
                   <p className="mt-1 text-xs text-red-500">A rejection reason is required.</p>
                 )}
               </div>
+              )}
             </div>
           ) : ''
         }

@@ -259,10 +259,16 @@ Parameters:
     Default: ""
     Description: Cognito User Pool ID for admin user management
 
+  AlertSnsTopicArn:
+    Type: String
+    Default: ""
+    Description: SNS Topic ARN for operational alerts (Fineract sync failures). Leave empty to disable alerting.
+
 Conditions:
   UseVPC: !Equals [!Ref VpcEnabled, "true"]
   IsProduction: !Equals [!Ref Environment, "production"]
   HasCognitoPoolId: !Not [!Equals [!Ref CognitoUserPoolId, ""]]
+  HasAlertSnsTopic: !Not [!Equals [!Ref AlertSnsTopicArn, ""]]
 
 Resources:
   # =====================================================
@@ -899,8 +905,8 @@ Resources:
         ScheduledReconciliation:
           Type: Schedule
           Properties:
-            Schedule: rate(6 hours)
-            Description: Run Fineract reconciliation every 6 hours
+            Schedule: rate(1 hour)
+            Description: Run Fineract reconciliation every hour
             Enabled: true
     Metadata:
       BuildMethod: esbuild
@@ -1076,6 +1082,13 @@ Resources:
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/reconciliation/run
+            Method: POST
+        # Retry Sync
+        RetryLoanSync:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/retry-sync
             Method: POST
         # Reports
         GetReports:
@@ -1705,6 +1718,28 @@ Resources:
             }
           ]
         }
+
+  # =====================================================
+  # CLOUDWATCH ALARM: Fineract Sync Failures
+  # =====================================================
+  FineractSyncFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Condition: HasAlertSnsTopic
+    Properties:
+      AlarmName: !Sub ${Environment}-lynia-fineract-sync-failures
+      AlarmDescription: Fires when Fineract approval sync failures are detected during reconciliation
+      Namespace: !Sub Lynia/${Environment}
+      MetricName: FineractApprovalSyncFailures
+      Statistic: Maximum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlertSnsTopicArn
+      OKActions:
+        - !Ref AlertSnsTopicArn
 
 Outputs:
   # API Gateway
