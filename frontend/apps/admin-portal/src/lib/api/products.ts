@@ -244,20 +244,28 @@ export async function updateOrganization(id: string, data: Partial<Organization>
   });
 }
 
+export async function checkOrgCode(code: string): Promise<{ available: boolean }> {
+  return fetchAPI<{ available: boolean }>(`/admin/organizations/check-code?code=${encodeURIComponent(code)}`);
+}
+
 // ─── Organization Members ───
 
 export interface MemberFilters {
   page?: number;
   limit?: number;
+  search?: string;
+  employment_status?: string;
 }
 
 export async function getMembers(orgId: string, filters: MemberFilters = {}) {
-  const { page = 1, limit: rawLimit = 25 } = filters;
+  const { page = 1, limit: rawLimit = 25, search, employment_status } = filters;
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
 
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('limit', String(limit));
+  if (search) params.set('search', search);
+  if (employment_status) params.set('employment_status', employment_status);
 
   return fetchAPI<{
     data: OrganizationMember[];

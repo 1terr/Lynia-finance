@@ -2,18 +2,20 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getOrganization, updateOrganization, getMembers, importMembers } from '@/lib/api/products';
-import { OrganizationForm } from '@/components/products/organization-form';
 import { MemberImportModal } from '@/components/products/member-import-modal';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Select } from '@/components/ui/select';
+import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
 import { maskPhone, formatDate } from '@lynia/utils';
-import { ArrowLeft, Pencil, Upload } from 'lucide-react';
-import type { OrganizationMember, CreateOrganizationInput, MemberImportInput, MemberImportResult } from '@/types';
+import { ArrowLeft, Pencil, Upload, Search, Power } from 'lucide-react';
+import type { OrganizationMember, MemberImportInput, MemberImportResult } from '@/types';
 
 const ORG_TYPE_VARIANTS: Record<string, 'blue' | 'purple' | 'green' | 'yellow'> = {
   government: 'blue',
@@ -28,15 +30,23 @@ const EMPLOYMENT_VARIANTS: Record<string, 'green' | 'yellow' | 'red'> = {
   suspended: 'red',
 };
 
+const EMPLOYMENT_STATUS_OPTIONS = [
+  { value: 'active', label: 'Active' },
+  { value: 'retired', label: 'Retired' },
+  { value: 'suspended', label: 'Suspended' },
+];
+
 export default function OrganizationDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const id = params.id as string;
 
-  const [editOpen, setEditOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);
   const [memberPage, setMemberPage] = useState(1);
+  const [memberSearchInput, setMemberSearchInput] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [employmentStatus, setEmploymentStatus] = useState('');
 
   const { data: org, isLoading: loadingOrg } = useQuery({
     queryKey: ['organization', id],
@@ -44,23 +54,37 @@ export default function OrganizationDetailPage() {
   });
 
   const { data: membersData, isLoading: loadingMembers } = useQuery({
-    queryKey: ['org-members', id, memberPage],
-    queryFn: () => getMembers(id, { page: memberPage, limit: 25 }),
+    queryKey: ['org-members', id, memberPage, memberSearch, employmentStatus],
+    queryFn: () => getMembers(id, {
+      page: memberPage,
+      limit: 25,
+      search: memberSearch || undefined,
+      employment_status: employmentStatus || undefined,
+    }),
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (data: Partial<CreateOrganizationInput>) => updateOrganization(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organization', id] });
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
-    },
+  const toggleActiveMutation = useMutationWithToast({
+    mutationFn: (data: { is_active: boolean }) => updateOrganization(id, data),
+    successMessage: org?.is_active ? 'Organization deactivated' : 'Organization activated',
+    invalidateKeys: [['organization', id], ['organizations']],
+    onSuccess: () => setConfirmToggleOpen(false),
+  });
+
+  const importMutation = useMutationWithToast<MemberImportResult, { members: MemberImportInput[]; source: string }>({
+    mutationFn: ({ members, source }) => importMembers(id, members, source),
+    successMessage: 'Members imported successfully',
+    invalidateKeys: [['org-members', id], ['organization', id]],
+    onSuccess: () => setImportOpen(false),
   });
 
   async function handleImport(members: MemberImportInput[]): Promise<MemberImportResult> {
-    const result = await importMembers(id, members, 'csv_upload');
-    queryClient.invalidateQueries({ queryKey: ['org-members', id] });
-    queryClient.invalidateQueries({ queryKey: ['organization', id] });
-    return result;
+    return importMutation.mutateAsync({ members, source: 'csv_upload' });
+  }
+
+  function handleMemberSearch(e: React.FormEvent) {
+    e.preventDefault();
+    setMemberSearch(memberSearchInput);
+    setMemberPage(1);
   }
 
   const memberColumns: Column<OrganizationMember>[] = [
@@ -146,7 +170,15 @@ export default function OrganizationDetailPage() {
           <p className="text-sm font-mono text-muted-foreground">{org.org_code}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+          <Button
+            variant={org.is_active ? 'danger' : 'success'}
+            size="sm"
+            onClick={() => setConfirmToggleOpen(true)}
+          >
+            <Power className="mr-1 h-3.5 w-3.5" />
+            {org.is_active ? 'Deactivate' : 'Activate'}
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/products/organizations/${id}/edit`)}>
             <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
           </Button>
           <Button size="sm" onClick={() => setImportOpen(true)}>
@@ -174,8 +206,47 @@ export default function OrganizationDetailPage() {
         </Card>
       </div>
 
+      <Card className="p-4">
+        <h2 className="text-lg font-semibold text-foreground mb-3">Contact Information</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div>
+            <p className="text-sm text-muted-foreground">Contact Name</p>
+            <p className="text-sm font-medium text-foreground">{org.contact_name || '-'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Contact Phone</p>
+            <p className="text-sm font-medium text-foreground">{org.contact_phone || '-'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Contact Email</p>
+            <p className="text-sm font-medium text-foreground">{org.contact_email || '-'}</p>
+          </div>
+        </div>
+      </Card>
+
       <div>
         <h2 className="text-lg font-semibold text-foreground mb-4">Members</h2>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end mb-4">
+          <form onSubmit={handleMemberSearch} className="relative max-w-sm flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              value={memberSearchInput}
+              onChange={(e) => setMemberSearchInput(e.target.value)}
+              placeholder="Search by employee # or phone..."
+              className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          </form>
+          <Select
+            options={EMPLOYMENT_STATUS_OPTIONS}
+            placeholder="All"
+            value={employmentStatus}
+            onChange={(e) => { setEmploymentStatus(e.target.value); setMemberPage(1); }}
+            className="w-36"
+          />
+        </div>
+
         <DataTable
           columns={memberColumns}
           data={membersData?.data || []}
@@ -194,11 +265,19 @@ export default function OrganizationDetailPage() {
         )}
       </div>
 
-      <OrganizationForm
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        onSubmit={async (d) => { await updateMutation.mutateAsync(d); }}
-        organization={org}
+      <ConfirmationDialog
+        open={confirmToggleOpen}
+        onClose={() => setConfirmToggleOpen(false)}
+        onConfirm={() => toggleActiveMutation.mutate({ is_active: !org.is_active })}
+        title={org.is_active ? 'Deactivate Organization' : 'Activate Organization'}
+        description={
+          org.is_active
+            ? `Are you sure you want to deactivate "${org.org_name}"? Members will no longer be eligible for loan verification through this organization.`
+            : `Are you sure you want to activate "${org.org_name}"? Members will become eligible for loan verification through this organization.`
+        }
+        confirmLabel={org.is_active ? 'Deactivate' : 'Activate'}
+        variant={org.is_active ? 'destructive' : 'info'}
+        isLoading={toggleActiveMutation.isPending}
       />
 
       <MemberImportModal

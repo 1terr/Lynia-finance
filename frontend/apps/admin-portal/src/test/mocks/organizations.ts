@@ -7,7 +7,7 @@ export const mockOrganization: Organization = {
   org_type: 'government',
   verification_method: 'excel_upload',
   scoring_trust_level: 90,
-  contact_person: 'Jane Smith',
+  contact_name: 'Jane Smith',
   contact_phone: '+263771234567',
   contact_email: 'jane@csc.gov.zw',
   api_endpoint: undefined,

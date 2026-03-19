@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getOrganizations, createOrganization } from '@/lib/api/products';
-import { OrganizationForm } from '@/components/products/organization-form';
+import { useQuery } from '@tanstack/react-query';
+import { getOrganizations } from '@/lib/api/products';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { Pagination } from '@/components/ui/pagination';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { formatDate, formatNumber } from '@lynia/utils';
-import { Plus, Search, ArrowLeft } from 'lucide-react';
-import type { Organization, CreateOrganizationInput } from '@/types';
+import { Plus, Search, ArrowLeft, RefreshCw } from 'lucide-react';
+import type { Organization } from '@/types';
 
 const ORG_TYPE_VARIANTS: Record<string, 'blue' | 'purple' | 'green' | 'yellow'> = {
   government: 'blue',
@@ -20,25 +20,35 @@ const ORG_TYPE_VARIANTS: Record<string, 'blue' | 'purple' | 'green' | 'yellow'> 
   ngo: 'yellow',
 };
 
+const ORG_TYPE_OPTIONS = [
+  { value: 'government', label: 'Government' },
+  { value: 'corporate', label: 'Corporate' },
+  { value: 'cooperative', label: 'Cooperative' },
+  { value: 'ngo', label: 'NGO' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'true', label: 'Active' },
+  { value: 'false', label: 'Inactive' },
+];
+
 export default function OrganizationsPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
-  const [formOpen, setFormOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [orgType, setOrgType] = useState('');
+  const [activeFilter, setActiveFilter] = useState('');
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['organizations', { search, page }],
-    queryFn: () => getOrganizations({ search: search || undefined, page, limit: 25 }),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (d: CreateOrganizationInput) => createOrganization(d),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizations'] });
-      setFormOpen(false);
-    },
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ['organizations', { search, page, orgType, activeFilter }],
+    queryFn: () => getOrganizations({
+      search: search || undefined,
+      page,
+      limit: 25,
+      org_type: orgType || undefined,
+      is_active: activeFilter ? activeFilter === 'true' : undefined,
+    }),
   });
 
   function handleSearch(e: React.FormEvent) {
@@ -118,46 +128,67 @@ export default function OrganizationsPage() {
             <p className="text-sm text-muted-foreground">Manage partner organizations for digital loan verification.</p>
           </div>
         </div>
-        <Button size="sm" onClick={() => setFormOpen(true)}>
+        <Button size="sm" onClick={() => router.push('/products/organizations/new')}>
           <Plus className="mr-1 h-4 w-4" /> Add Organization
         </Button>
       </div>
 
-      <form onSubmit={handleSearch} className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          type="text"
-          value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Search organizations..."
-          className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <form onSubmit={handleSearch} className="relative max-w-md flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search organizations..."
+            className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+        </form>
+        <Select
+          options={ORG_TYPE_OPTIONS}
+          placeholder="All Types"
+          value={orgType}
+          onChange={(e) => { setOrgType(e.target.value); setPage(1); }}
+          className="w-40"
         />
-      </form>
-
-      <DataTable
-        columns={columns}
-        data={data?.data || []}
-        keyExtractor={(row) => row.id}
-        onRowClick={(row) => router.push(`/products/organizations/${row.id}`)}
-        loading={isLoading}
-        emptyMessage="No organizations found"
-      />
-
-      {data && data.total_pages > 1 && (
-        <Pagination
-          page={data.page}
-          totalPages={data.total_pages}
-          total={data.total}
-          limit={data.limit}
-          onPageChange={setPage}
+        <Select
+          options={STATUS_OPTIONS}
+          placeholder="All Status"
+          value={activeFilter}
+          onChange={(e) => { setActiveFilter(e.target.value); setPage(1); }}
+          className="w-36"
         />
+      </div>
+
+      {isError ? (
+        <div className="rounded-lg border border-dashed border-red-300 bg-red-50 py-12 text-center dark:border-red-800 dark:bg-red-950">
+          <p className="text-red-600 dark:text-red-400">Failed to load organizations.</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
+            <RefreshCw className="mr-1 h-4 w-4" /> Retry
+          </Button>
+        </div>
+      ) : (
+        <>
+          <DataTable
+            columns={columns}
+            data={data?.data || []}
+            keyExtractor={(row) => row.id}
+            onRowClick={(row) => router.push(`/products/organizations/${row.id}`)}
+            loading={isLoading}
+            emptyMessage="No organizations found"
+          />
+
+          {data && data.total_pages > 1 && (
+            <Pagination
+              page={data.page}
+              totalPages={data.total_pages}
+              total={data.total}
+              limit={data.limit}
+              onPageChange={setPage}
+            />
+          )}
+        </>
       )}
-
-      <OrganizationForm
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        onSubmit={async (d) => { await createMutation.mutateAsync(d); }}
-      />
     </div>
   );
 }

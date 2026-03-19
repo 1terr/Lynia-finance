@@ -47,6 +47,12 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
     const file = e.target.files?.[0];
     if (!file) return;
 
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_FILE_SIZE) {
+      setParseError('File too large. Maximum size is 5MB (~50,000 rows).');
+      return;
+    }
+
     if (!file.name.endsWith('.csv')) {
       setParseError('Only CSV files are supported.');
       return;
@@ -84,6 +90,12 @@ export function MemberImportModal({ open, onClose, onImport, organizationName }:
           rows.push(row);
         }
         setParsedRows(rows);
+
+        if (rows.length > 5000) {
+          setParseError(`Too many rows (${rows.length}). Maximum is 5,000 per import. Please split into smaller files.`);
+          setParsedRows([]);
+          return;
+        }
       } catch {
         setParseError('Failed to parse CSV file.');
       }
