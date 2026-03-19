@@ -162,9 +162,12 @@ export function ProductForm({ open, onClose, onSubmit, product }: ProductFormPro
       const data: CreateProductInput = {
         product_code: code,
         product_name: name,
+        short_name: code.slice(0, 4).toUpperCase(),
         product_type: category === 'smartphone' ? 'asset_financing' : 'digital_credit',
         product_category: category,
         status,
+        default_principal: parseFloat(minAmount),
+        number_of_repayments: parseInt(minTerm),
         min_amount_usd: parseFloat(minAmount),
         max_amount_usd: parseFloat(maxAmount),
         min_term_months: parseInt(minTerm),
