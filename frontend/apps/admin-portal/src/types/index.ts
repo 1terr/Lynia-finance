@@ -443,6 +443,35 @@ export const TRANSACTION_STRATEGIES = [
   { value: 'due-penalty-interest-principal-fee-in-advance-penalty-interest-principal-fee-strategy', label: 'Penalty Interest First Strategy' },
 ] as const;
 
+/** Fineract interest recalculation compounding method */
+export const INTEREST_RECALC_COMPOUNDING_METHODS = [
+  { value: 0, label: 'None' },
+  { value: 1, label: 'Interest' },
+  { value: 2, label: 'Fee' },
+  { value: 3, label: 'Interest + Fee' },
+] as const;
+
+/** Fineract reschedule strategy for advance payments */
+export const RESCHEDULE_STRATEGY_METHODS = [
+  { value: 1, label: 'Reduce EMI Amount' },
+  { value: 2, label: 'Reduce Number of Installments' },
+  { value: 3, label: 'Reschedule Next Repayments' },
+] as const;
+
+/** Fineract recalculation rest/compounding frequency type */
+export const RECALCULATION_FREQUENCY_TYPES = [
+  { value: 1, label: 'Same as Repayment Period' },
+  { value: 2, label: 'Daily' },
+  { value: 3, label: 'Weekly' },
+  { value: 4, label: 'Monthly' },
+] as const;
+
+/** Fineract pre-closure interest calculation strategy */
+export const PRE_CLOSURE_INTEREST_STRATEGIES = [
+  { value: 1, label: 'Till Pre-Close Date' },
+  { value: 2, label: 'Till Rest Frequency Date' },
+] as const;
+
 /** Fineract GL account (for dropdown population) */
 export interface GLAccount {
   id: number;
@@ -497,6 +526,16 @@ export interface LoanProduct {
   days_in_year_type?: number;
   days_in_month_type?: number;
   is_interest_recalculation_enabled?: boolean;
+  // Interest recalculation parameters
+  interest_recalculation_compounding_method?: number | null;
+  reschedule_strategy_method?: number | null;
+  recalculation_rest_frequency_type?: number | null;
+  recalculation_rest_frequency_interval?: number | null;
+  recalculation_compounding_frequency_type?: number | null;
+  recalculation_compounding_frequency_interval?: number | null;
+  is_arrears_based_on_original_schedule?: boolean | null;
+  pre_closure_interest_calculation_strategy?: number | null;
+  allow_compounding_on_eod?: boolean | null;
   accounting_rule: number;
   min_interest_rate?: number | null;
   max_interest_rate?: number | null;
@@ -559,6 +598,16 @@ export interface CreateProductInput {
   days_in_year_type?: number;
   days_in_month_type?: number;
   is_interest_recalculation_enabled?: boolean;
+  // Interest recalculation parameters (required when is_interest_recalculation_enabled = true)
+  interest_recalculation_compounding_method?: number;
+  reschedule_strategy_method?: number;
+  recalculation_rest_frequency_type?: number;
+  recalculation_rest_frequency_interval?: number;
+  recalculation_compounding_frequency_type?: number;
+  recalculation_compounding_frequency_interval?: number;
+  is_arrears_based_on_original_schedule?: boolean;
+  pre_closure_interest_calculation_strategy?: number;
+  allow_compounding_on_eod?: boolean;
   accounting_rule?: number;
   // GL account mappings
   income_from_recovery_account_id?: number | null;

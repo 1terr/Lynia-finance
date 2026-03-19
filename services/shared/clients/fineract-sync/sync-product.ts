@@ -201,6 +201,36 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     accountingRule: (product.accounting_rule as number) ?? 1,
   };
 
+  // Add interest recalculation parameters when enabled
+  if (fineractPayload.isInterestRecalculationEnabled) {
+    fineractPayload.interestRecalculationCompoundingMethod =
+      (product.interest_recalculation_compounding_method as number) ?? 0;
+    fineractPayload.rescheduleStrategyMethod =
+      (product.reschedule_strategy_method as number) ?? 1;
+    fineractPayload.recalculationRestFrequencyType =
+      (product.recalculation_rest_frequency_type as number) ?? 1;
+    fineractPayload.recalculationRestFrequencyInterval =
+      (product.recalculation_rest_frequency_interval as number) ?? 1;
+    // Force daily calculation period — Fineract requirement
+    fineractPayload.interestCalculationPeriodType = 0;
+    // Optional parameters
+    if (product.recalculation_compounding_frequency_type != null) {
+      fineractPayload.recalculationCompoundingFrequencyType = product.recalculation_compounding_frequency_type as number;
+    }
+    if (product.recalculation_compounding_frequency_interval != null) {
+      fineractPayload.recalculationCompoundingFrequencyInterval = product.recalculation_compounding_frequency_interval as number;
+    }
+    if (product.is_arrears_based_on_original_schedule != null) {
+      fineractPayload.isArrearsBasedOnOriginalSchedule = product.is_arrears_based_on_original_schedule as boolean;
+    }
+    if (product.pre_closure_interest_calculation_strategy != null) {
+      fineractPayload.preClosureInterestCalculationStrategy = product.pre_closure_interest_calculation_strategy as number;
+    }
+    if (product.allow_compounding_on_eod != null) {
+      fineractPayload.allowCompoundingOnEod = product.allow_compounding_on_eod as boolean;
+    }
+  }
+
   // Add GL account mappings from stored columns (when accounting is enabled)
   const acctRule = fineractPayload.accountingRule;
   if (acctRule > 1) {

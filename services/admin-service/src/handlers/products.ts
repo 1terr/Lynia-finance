@@ -227,6 +227,7 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
       'interest_on_loan_account_id', 'income_from_fee_account_id',
       'income_from_penalty_account_id', 'write_off_account_id',
       'overpayment_liability_account_id', 'transfers_in_suspense_account_id',
+      'income_from_recovery_account_id',
     ];
     // Accrual (3 and 4) additionally requires receivable accounts
     if (accountingRule >= 3) {
@@ -259,6 +260,28 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     if (body.requires_organization_verification !== true) {
       return errorResponse('Digital products must have requires_organization_verification = true', 400, { code: 'VAL_FMT_001' }, event);
     }
+  }
+
+  // Interest recalculation validation
+  if (body.is_interest_recalculation_enabled) {
+    const requiredRecalcFields = [
+      'interest_recalculation_compounding_method',
+      'reschedule_strategy_method',
+      'recalculation_rest_frequency_type',
+      'recalculation_rest_frequency_interval',
+    ];
+    for (const field of requiredRecalcFields) {
+      if (body[field] == null) {
+        return errorResponse(
+          `"${field}" is required when interest recalculation is enabled`,
+          400,
+          { code: 'VAL_REQ_001' },
+          event
+        );
+      }
+    }
+    // Fineract requires interestCalculationPeriodType = 0 (daily) when recalculation is enabled
+    body.interest_calculation_period_type = 0;
   }
 
   // Range validations
@@ -315,6 +338,32 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     dateFormat: 'dd MMMM yyyy',
     accountingRule,
   };
+
+  // Add interest recalculation parameters when enabled
+  if (fineractPayload.isInterestRecalculationEnabled) {
+    fineractPayload.interestRecalculationCompoundingMethod = body.interest_recalculation_compounding_method ?? 0;
+    fineractPayload.rescheduleStrategyMethod = body.reschedule_strategy_method ?? 1;
+    fineractPayload.recalculationRestFrequencyType = body.recalculation_rest_frequency_type ?? 1;
+    fineractPayload.recalculationRestFrequencyInterval = body.recalculation_rest_frequency_interval ?? 1;
+    // Force daily calculation period — Fineract requirement
+    fineractPayload.interestCalculationPeriodType = 0;
+    // Optional recalculation parameters
+    if (body.recalculation_compounding_frequency_type != null) {
+      fineractPayload.recalculationCompoundingFrequencyType = body.recalculation_compounding_frequency_type;
+    }
+    if (body.recalculation_compounding_frequency_interval != null) {
+      fineractPayload.recalculationCompoundingFrequencyInterval = body.recalculation_compounding_frequency_interval;
+    }
+    if (body.is_arrears_based_on_original_schedule != null) {
+      fineractPayload.isArrearsBasedOnOriginalSchedule = body.is_arrears_based_on_original_schedule;
+    }
+    if (body.pre_closure_interest_calculation_strategy != null) {
+      fineractPayload.preClosureInterestCalculationStrategy = body.pre_closure_interest_calculation_strategy;
+    }
+    if (body.allow_compounding_on_eod != null) {
+      fineractPayload.allowCompoundingOnEod = body.allow_compounding_on_eod;
+    }
+  }
 
   // Add GL account mappings when accounting is enabled
   if (accountingRule > 1) {
@@ -437,6 +486,15 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     days_in_year_type: body.days_in_year_type ?? 365,
     days_in_month_type: body.days_in_month_type ?? 30,
     is_interest_recalculation_enabled: body.is_interest_recalculation_enabled ?? false,
+    interest_recalculation_compounding_method: body.interest_recalculation_compounding_method ?? null,
+    reschedule_strategy_method: body.reschedule_strategy_method ?? null,
+    recalculation_rest_frequency_type: body.recalculation_rest_frequency_type ?? null,
+    recalculation_rest_frequency_interval: body.recalculation_rest_frequency_interval ?? null,
+    recalculation_compounding_frequency_type: body.recalculation_compounding_frequency_type ?? null,
+    recalculation_compounding_frequency_interval: body.recalculation_compounding_frequency_interval ?? null,
+    is_arrears_based_on_original_schedule: body.is_arrears_based_on_original_schedule ?? null,
+    pre_closure_interest_calculation_strategy: body.pre_closure_interest_calculation_strategy ?? null,
+    allow_compounding_on_eod: body.allow_compounding_on_eod ?? null,
     min_interest_rate: body.min_interest_rate || null,
     max_interest_rate: body.max_interest_rate || null,
     // GL account mappings
