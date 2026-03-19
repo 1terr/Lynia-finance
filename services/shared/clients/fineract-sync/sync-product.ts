@@ -146,9 +146,23 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
   // Generate collision-safe 4-char shortName by checking existing Fineract products
   const takenShortNames = new Set(existingProducts.map((p) => p.shortName.toUpperCase()));
   const shortName = generateUniqueShortName(product.product_code as string, takenShortNames);
-  const maxRepayments = (product.max_term_months as number) || (product.loan_term_months as number) || 12;
-  const minRepayments = (product.min_term_months as number) || 1;
-  const interestRate = (product.interest_rate_monthly as number) ?? ((product.interest_rate_annual as number) / 12);
+
+  // Null-safe numeric extraction with sensible defaults
+  // (interest_rate_monthly was added in migration 028 with no default — can be null)
+  const rawMonthly = product.interest_rate_monthly as number | null;
+  const rawAnnual = product.interest_rate_annual as number | null;
+  const interestRate =
+    rawMonthly != null && Number.isFinite(rawMonthly) ? rawMonthly
+    : rawAnnual != null && Number.isFinite(rawAnnual) ? rawAnnual / 12
+    : 1.0; // safe default: 1% per month = 12% annual
+
+  const minAmount = Number.isFinite(product.min_amount_usd as number) ? (product.min_amount_usd as number) : 50;
+  const maxAmount = Number.isFinite(product.max_amount_usd as number) ? (product.max_amount_usd as number) : 500;
+  const maxRepayments =
+    Number.isFinite(product.max_term_months as number) ? (product.max_term_months as number)
+    : Number.isFinite(product.loan_term_months as number) ? (product.loan_term_months as number)
+    : 12;
+  const minRepayments = Number.isFinite(product.min_term_months as number) ? (product.min_term_months as number) : 1;
 
   const fineractPayload: FineractLoanProductCreateRequest = {
     name: expectedName,
@@ -159,11 +173,9 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     currencyCode: 'USD',
     digitsAfterDecimal: 2,
     inMultiplesOf: 1,
-    principal: Math.round(
-      ((product.min_amount_usd as number) + (product.max_amount_usd as number)) / 2
-    ),
-    minPrincipal: product.min_amount_usd as number,
-    maxPrincipal: product.max_amount_usd as number,
+    principal: Math.round((minAmount + maxAmount) / 2),
+    minPrincipal: minAmount,
+    maxPrincipal: maxAmount,
     numberOfRepayments: maxRepayments,
     minNumberOfRepayments: minRepayments,
     maxNumberOfRepayments: maxRepayments,
@@ -179,6 +191,16 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     dateFormat: 'dd MMMM yyyy',
     accountingRule: 1, // none (simplest setup)
   };
+
+  // Guard against NaN/Infinity in the payload before sending to Fineract
+  for (const [key, value] of Object.entries(fineractPayload)) {
+    if (typeof value === 'number' && !Number.isFinite(value)) {
+      return {
+        success: false,
+        error: `Invalid numeric value for field "${key}" (got ${value}). Check product data in Lynia DB.`,
+      };
+    }
+  }
 
   try {
     const result = await fineract.createLoanProduct(fineractPayload);

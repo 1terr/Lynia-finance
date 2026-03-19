@@ -8,9 +8,45 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getFineractClient } from '../../../shared/clients/fineract';
 import { db } from '../../../shared/clients/database';
 import { syncProductToFineract } from '../../../shared/clients/fineract-sync';
+import type { SyncProductResult } from '../../../shared/clients/fineract-sync/sync-product';
+import { CircuitOpenError } from '../../../shared/utils/circuit-breaker';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
 import type { AuthContext } from '../../../shared/middleware/authorization';
 import { ok, err } from './helpers';
+
+/**
+ * Map a failed SyncProductResult to the appropriate HTTP status code.
+ * Prevents collapsing all failures into a generic 500.
+ */
+function mapSyncErrorStatus(result: SyncProductResult): number {
+  const fs = result.fineract_status;
+
+  // Fineract returned a 4xx — client/validation error, pass through
+  if (fs !== undefined && fs >= 400 && fs < 500) return fs;
+
+  // Fineract returned 5xx or connection failed (status 0) — upstream failure
+  if (fs !== undefined && (fs >= 500 || fs === 0)) return 502;
+
+  // No fineract_status — error happened before reaching Fineract
+  const errorLower = (result.error || '').toLowerCase();
+  if (errorLower.includes('not found')) return 404;
+  if (errorLower.includes('circuit') || errorLower.includes('unavailable')) return 503;
+
+  return 500;
+}
+
+/**
+ * Build a user-friendly error message from sync result.
+ */
+function buildSyncErrorMessage(result: SyncProductResult): string {
+  if (result.fineract_status === 0) {
+    return 'Cannot reach Fineract core banking service. Check if Fineract ECS is running.';
+  }
+  if (result.fineract_status !== undefined && result.fineract_status >= 500) {
+    return `Fineract server error (${result.fineract_status}). The core banking service may be experiencing issues.`;
+  }
+  return result.error || 'Failed to create Fineract product';
+}
 
 // ============================================================
 // GET /api/v1/fineract/loan-products
@@ -208,19 +244,32 @@ export async function handleCreateFineractProduct(
     return err(400, 'lynia_product_id is required', event);
   }
 
-  let result: Awaited<ReturnType<typeof syncProductToFineract>>;
+  // Pre-flight: fast-fail if Fineract circuit breaker is open
+  try {
+    const fineract = await getFineractClient();
+    const circuitState = fineract.getCircuitState();
+    if (circuitState === 'OPEN') {
+      return err(503, 'Fineract service temporarily unavailable (circuit breaker open). Retry in ~60 seconds.', event);
+    }
+  } catch {
+    // Config/init failure — let syncProductToFineract handle it with full error logging
+  }
+
+  let result: SyncProductResult;
   try {
     result = await syncProductToFineract(lynia_product_id);
   } catch (error) {
+    if (error instanceof CircuitOpenError) {
+      return err(503, 'Fineract service temporarily unavailable (circuit breaker open). Retry in ~60 seconds.', event);
+    }
     const msg = error instanceof Error ? error.message : 'Unexpected sync error';
-    return err(500, msg, event);
+    return err(502, msg, event);
   }
 
   if (!result.success) {
-    const statusCode = result.fineract_status && result.fineract_status >= 400 && result.fineract_status < 500
-      ? result.fineract_status
-      : 500;
-    return err(statusCode, result.error || 'Failed to create Fineract product', event, result.error_details);
+    const statusCode = mapSyncErrorStatus(result);
+    const message = buildSyncErrorMessage(result);
+    return err(statusCode, message, event, result.error_details);
   }
 
   return ok({

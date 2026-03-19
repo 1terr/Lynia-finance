@@ -65,6 +65,13 @@ async function fetchFineractAPI<T>(path: string, options?: RequestInit): Promise
     } catch {
       // Response body is not JSON — fall through to generic message
     }
+    // Actionable fallback messages for upstream failures
+    if (!message && res.status === 502) {
+      message = 'Fineract core banking service is unreachable. Please check if the service is running.';
+    } else if (!message && res.status === 503) {
+      message = 'Fineract service temporarily unavailable. Please retry in a minute.';
+    }
+
     throw new Error(message || `Fineract request failed (${res.status})`);
   }
 
