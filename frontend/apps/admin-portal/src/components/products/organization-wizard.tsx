@@ -205,11 +205,11 @@ export function OrganizationWizard({ organization }: OrganizationWizardProps) {
   });
 
   const updateMutation = useMutationWithToast({
-    mutationFn: (data: Partial<Organization>) => updateOrganization(organization!.id, data),
+    mutationFn: (data: Partial<Organization>) => updateOrganization(organization?.id ?? '', data),
     successMessage: 'Organization updated successfully',
     errorMessage: 'Failed to update organization',
-    invalidateKeys: [['organizations'], ['organization', organization!.id]],
-    onSuccess: () => router.push(`/products/organizations/${organization!.id}`),
+    invalidateKeys: [['organizations'], ['organization', organization?.id ?? '']],
+    onSuccess: () => router.push(`/products/organizations/${organization?.id}`),
   });
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending;
