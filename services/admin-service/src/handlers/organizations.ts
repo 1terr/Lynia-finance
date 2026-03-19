@@ -245,12 +245,22 @@ export const handleImportOrgMembers: RouteHandler = async (event, params, auth) 
   }
 
   // Verify org exists
-  const { data: org } = await db.from('organizations')
+  const { data: org, error: orgError } = await db.from('organizations')
     .select('id')
     .eq('id', orgId)
     .is('deleted_at', null)
     .maybeSingle()
     .execute();
+
+  if (orgError) {
+    logger.error('Database error verifying organization', {
+      action: 'admin.organizations.import',
+      status: 'failed',
+      errorMessage: orgError.message,
+      metadata: { orgId },
+    });
+    return errorResponse('Failed to verify organization', 500, {}, event);
+  }
 
   if (!org) {
     return errorResponse('Organization not found', 404, {}, event);
@@ -379,12 +389,22 @@ export const handleGetOrgMembers: RouteHandler = async (event, params, auth) => 
   }
 
   // Verify org exists
-  const { data: org } = await db.from('organizations')
+  const { data: org, error: orgError } = await db.from('organizations')
     .select('id')
     .eq('id', orgId)
     .is('deleted_at', null)
     .maybeSingle()
     .execute();
+
+  if (orgError) {
+    logger.error('Database error verifying organization', {
+      action: 'admin.organizations.members',
+      status: 'failed',
+      errorMessage: orgError.message,
+      metadata: { orgId },
+    });
+    return errorResponse('Failed to verify organization', 500, {}, event);
+  }
 
   if (!org) {
     return errorResponse('Organization not found', 404, {}, event);
