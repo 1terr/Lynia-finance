@@ -25,6 +25,10 @@ import {
   INTEREST_CALCULATION_PERIOD_TYPES,
   ACCOUNTING_RULES,
   TRANSACTION_STRATEGIES,
+  INTEREST_RECALC_COMPOUNDING_METHODS,
+  RESCHEDULE_STRATEGY_METHODS,
+  RECALCULATION_FREQUENCY_TYPES,
+  PRE_CLOSURE_INTEREST_STRATEGIES,
 } from '@/types';
 
 // ─── Props ───
@@ -153,6 +157,16 @@ export function ProductWizard({ product }: ProductWizardProps) {
   const [daysInYearType, setDaysInYearType] = useState('365');
   const [daysInMonthType, setDaysInMonthType] = useState('30');
   const [isInterestRecalcEnabled, setIsInterestRecalcEnabled] = useState(false);
+  // Interest recalculation settings (visible only when isInterestRecalcEnabled is true)
+  const [recalcCompoundingMethod, setRecalcCompoundingMethod] = useState('0');
+  const [rescheduleStrategy, setRescheduleStrategy] = useState('1');
+  const [recalcRestFreqType, setRecalcRestFreqType] = useState('1');
+  const [recalcRestFreqInterval, setRecalcRestFreqInterval] = useState('1');
+  const [recalcCompoundingFreqType, setRecalcCompoundingFreqType] = useState('1');
+  const [recalcCompoundingFreqInterval, setRecalcCompoundingFreqInterval] = useState('1');
+  const [arrearsOnOriginalSchedule, setArrearsOnOriginalSchedule] = useState(false);
+  const [preClosureStrategy, setPreClosureStrategy] = useState('1');
+  const [allowCompoundingOnEod, setAllowCompoundingOnEod] = useState(false);
   // Lynia-specific
   const [depositPct, setDepositPct] = useState('10');
   const [minDeposit, setMinDeposit] = useState('0');
@@ -208,6 +222,15 @@ export function ProductWizard({ product }: ProductWizardProps) {
       setDaysInYearType(String(product.days_in_year_type ?? 365));
       setDaysInMonthType(String(product.days_in_month_type ?? 30));
       setIsInterestRecalcEnabled(product.is_interest_recalculation_enabled ?? false);
+      setRecalcCompoundingMethod(String(product.interest_recalculation_compounding_method ?? 0));
+      setRescheduleStrategy(String(product.reschedule_strategy_method ?? 1));
+      setRecalcRestFreqType(String(product.recalculation_rest_frequency_type ?? 1));
+      setRecalcRestFreqInterval(String(product.recalculation_rest_frequency_interval ?? 1));
+      setRecalcCompoundingFreqType(String(product.recalculation_compounding_frequency_type ?? 1));
+      setRecalcCompoundingFreqInterval(String(product.recalculation_compounding_frequency_interval ?? 1));
+      setArrearsOnOriginalSchedule(product.is_arrears_based_on_original_schedule ?? false);
+      setPreClosureStrategy(String(product.pre_closure_interest_calculation_strategy ?? 1));
+      setAllowCompoundingOnEod(product.allow_compounding_on_eod ?? false);
       setDepositPct(String(product.deposit_percentage));
       setMinDeposit(String(product.min_deposit_usd));
       setMaxActiveLoans(String(product.max_active_loans));
@@ -255,6 +278,13 @@ export function ProductWizard({ product }: ProductWizardProps) {
       });
     }
   }, [product, defaults]);
+
+  // Force interestCalculationPeriodType to daily when recalculation is enabled
+  useEffect(() => {
+    if (isInterestRecalcEnabled && interestCalcPeriod === '1') {
+      setInterestCalcPeriod('0');
+    }
+  }, [isInterestRecalcEnabled, interestCalcPeriod]);
 
   // ─── Auto-calculate annual rate from monthly ───
   function handleMonthlyRateChange(value: string) {
@@ -329,6 +359,7 @@ export function ProductWizard({ product }: ProductWizardProps) {
           'interest_on_loan_account_id', 'income_from_fee_account_id',
           'income_from_penalty_account_id', 'write_off_account_id',
           'overpayment_liability_account_id', 'transfers_in_suspense_account_id',
+          'income_from_recovery_account_id',
         ];
         if (acctRule >= 3) {
           requiredGL.push('receivable_interest_account_id', 'receivable_fee_account_id', 'receivable_penalty_account_id');
@@ -413,6 +444,18 @@ export function ProductWizard({ product }: ProductWizardProps) {
       days_in_year_type: parseInt(daysInYearType),
       days_in_month_type: parseInt(daysInMonthType),
       is_interest_recalculation_enabled: isInterestRecalcEnabled,
+      ...(isInterestRecalcEnabled ? {
+        interest_recalculation_compounding_method: parseInt(recalcCompoundingMethod),
+        reschedule_strategy_method: parseInt(rescheduleStrategy),
+        recalculation_rest_frequency_type: parseInt(recalcRestFreqType),
+        recalculation_rest_frequency_interval: parseInt(recalcRestFreqInterval),
+        recalculation_compounding_frequency_type: parseInt(recalcCompoundingFreqType),
+        recalculation_compounding_frequency_interval: parseInt(recalcCompoundingFreqInterval),
+        is_arrears_based_on_original_schedule: arrearsOnOriginalSchedule,
+        pre_closure_interest_calculation_strategy: parseInt(preClosureStrategy),
+        allow_compounding_on_eod: allowCompoundingOnEod,
+        interest_calculation_period_type: 0, // Force daily when recalculation is enabled
+      } : {}),
       accounting_rule: parseInt(accountingRule),
       deposit_percentage: category === 'smartphone' ? parseFloat(depositPct) || 0 : 0,
       min_deposit_usd: category === 'smartphone' ? parseFloat(minDeposit) || 0 : 0,
@@ -577,7 +620,8 @@ export function ProductWizard({ product }: ProductWizardProps) {
               <div className="grid grid-cols-2 gap-4">
                 <Select label="Interest Calculation Period" id="interestCalcPeriod"
                   options={INTEREST_CALCULATION_PERIOD_TYPES.map((t) => ({ value: String(t.value), label: t.label }))}
-                  value={interestCalcPeriod} onChange={(e) => setInterestCalcPeriod(e.target.value)} />
+                  value={interestCalcPeriod} onChange={(e) => setInterestCalcPeriod(e.target.value)}
+                  disabled={isInterestRecalcEnabled} />
                 <Select label="Transaction Processing Strategy" id="txnStrategy"
                   options={TRANSACTION_STRATEGIES.map((t) => ({ value: t.value, label: t.label }))}
                   value={txnStrategy} onChange={(e) => setTxnStrategy(e.target.value)} />
@@ -605,7 +649,65 @@ export function ProductWizard({ product }: ProductWizardProps) {
                   </label>
                 </div>
               </div>
+              {isInterestRecalcEnabled && (
+                <p className="text-xs text-amber-600 dark:text-amber-400">
+                  Interest Calculation Period has been forced to &quot;Daily&quot; (required when recalculation is enabled).
+                </p>
+              )}
             </fieldset>
+
+            {/* Interest Recalculation Settings (conditional) */}
+            {isInterestRecalcEnabled && (
+              <fieldset className="space-y-3 rounded-md border border-amber-200 bg-amber-50/50 dark:border-amber-800 dark:bg-amber-950/20 p-4">
+                <legend className="text-sm font-medium text-foreground px-2">Interest Recalculation Settings</legend>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select label="Compounding Method" id="recalcCompoundingMethod"
+                    options={INTEREST_RECALC_COMPOUNDING_METHODS.map((t) => ({ value: String(t.value), label: t.label }))}
+                    value={recalcCompoundingMethod}
+                    onChange={(e) => setRecalcCompoundingMethod(e.target.value)} />
+                  <Select label="Reschedule Strategy" id="rescheduleStrategy"
+                    options={RESCHEDULE_STRATEGY_METHODS.map((t) => ({ value: String(t.value), label: t.label }))}
+                    value={rescheduleStrategy}
+                    onChange={(e) => setRescheduleStrategy(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select label="Rest Frequency Type" id="recalcRestFreqType"
+                    options={RECALCULATION_FREQUENCY_TYPES.map((t) => ({ value: String(t.value), label: t.label }))}
+                    value={recalcRestFreqType}
+                    onChange={(e) => setRecalcRestFreqType(e.target.value)} />
+                  <Input label="Rest Frequency Interval" id="recalcRestFreqInterval" type="number"
+                    value={recalcRestFreqInterval}
+                    onChange={(e) => setRecalcRestFreqInterval(e.target.value)} min="1" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select label="Compounding Frequency Type" id="recalcCompoundingFreqType"
+                    options={RECALCULATION_FREQUENCY_TYPES.map((t) => ({ value: String(t.value), label: t.label }))}
+                    value={recalcCompoundingFreqType}
+                    onChange={(e) => setRecalcCompoundingFreqType(e.target.value)} />
+                  <Input label="Compounding Frequency Interval" id="recalcCompoundingFreqInterval" type="number"
+                    value={recalcCompoundingFreqInterval}
+                    onChange={(e) => setRecalcCompoundingFreqInterval(e.target.value)} min="1" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Select label="Pre-Closure Interest Strategy" id="preClosureStrategy"
+                    options={PRE_CLOSURE_INTEREST_STRATEGIES.map((t) => ({ value: String(t.value), label: t.label }))}
+                    value={preClosureStrategy}
+                    onChange={(e) => setPreClosureStrategy(e.target.value)} />
+                  <div className="space-y-2 flex flex-col justify-end pb-1">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={arrearsOnOriginalSchedule}
+                        onChange={(e) => setArrearsOnOriginalSchedule(e.target.checked)} className="rounded border-border" />
+                      <span>Arrears Based on Original Schedule</span>
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" checked={allowCompoundingOnEod}
+                        onChange={(e) => setAllowCompoundingOnEod(e.target.checked)} className="rounded border-border" />
+                      <span>Allow Compounding on End of Day</span>
+                    </label>
+                  </div>
+                </div>
+              </fieldset>
+            )}
 
             {/* Lynia-specific section */}
             <fieldset className="space-y-3 rounded-md border border-border p-4">
@@ -731,6 +833,13 @@ export function ProductWizard({ product }: ProductWizardProps) {
                 <div><dt className="text-muted-foreground">Amortization</dt><dd className="font-medium">{AMORTIZATION_TYPES.find(t => t.value === parseInt(amortizationType))?.label}</dd></div>
                 <div><dt className="text-muted-foreground">Interest Type</dt><dd className="font-medium">{INTEREST_TYPES.find(t => t.value === parseInt(interestType))?.label}</dd></div>
                 <div><dt className="text-muted-foreground">Accounting</dt><dd className="font-medium">{ACCOUNTING_RULES.find(r => r.value === parseInt(accountingRule))?.label}</dd></div>
+                <div><dt className="text-muted-foreground">Interest Recalculation</dt><dd className="font-medium">{isInterestRecalcEnabled ? 'Enabled' : 'Disabled'}</dd></div>
+                {isInterestRecalcEnabled && (
+                  <>
+                    <div><dt className="text-muted-foreground">Compounding Method</dt><dd className="font-medium">{INTEREST_RECALC_COMPOUNDING_METHODS.find(t => t.value === parseInt(recalcCompoundingMethod))?.label}</dd></div>
+                    <div><dt className="text-muted-foreground">Reschedule Strategy</dt><dd className="font-medium">{RESCHEDULE_STRATEGY_METHODS.find(t => t.value === parseInt(rescheduleStrategy))?.label}</dd></div>
+                  </>
+                )}
               </dl>
             </div>
 

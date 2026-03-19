@@ -399,6 +399,17 @@ export interface FineractLoanProductCreateRequest {
   receivableInterestAccountId?: number;
   receivableFeeAccountId?: number;
   receivablePenaltyAccountId?: number;
+  // Interest recalculation parameters (required when isInterestRecalculationEnabled = true)
+  interestRecalculationCompoundingMethod?: number;   // 0=none, 1=interest, 2=fee, 3=interest+fee
+  rescheduleStrategyMethod?: number;                  // 1=reduce EMI, 2=reduce installments, 3=reschedule next
+  recalculationRestFrequencyType?: number;            // 1=same as repayment, 2=daily, 3=weekly, 4=monthly
+  recalculationRestFrequencyInterval?: number;        // e.g., 1
+  // Optional recalculation parameters
+  recalculationCompoundingFrequencyType?: number;
+  recalculationCompoundingFrequencyInterval?: number;
+  isArrearsBasedOnOriginalSchedule?: boolean;
+  preClosureInterestCalculationStrategy?: number;     // 1=till pre-close date, 2=till rest frequency date
+  allowCompoundingOnEod?: boolean;
 }
 
 export interface FineractLoanProduct {
