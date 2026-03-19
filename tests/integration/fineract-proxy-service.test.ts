@@ -67,6 +67,8 @@ const mockSelect = jest.fn(() => ({
 const mockInsert = jest.fn(() => ({ execute: mockExecute }));
 const mockUpdate = jest.fn(() => ({ eq: mockEq }));
 
+const mockQuery: any = jest.fn();
+
 jest.mock('../../services/shared/clients/database', () => ({
   db: {
     from: jest.fn(() => ({
@@ -75,6 +77,7 @@ jest.mock('../../services/shared/clients/database', () => ({
       update: mockUpdate,
     })),
   },
+  query: (...args: any[]) => mockQuery(...args),
 }));
 
 // Mock Fineract client
@@ -1065,21 +1068,22 @@ describe('Fineract Proxy Service', () => {
   // --------------------------------------------------------
 
   describe('GET /api/v1/fineract/loans/pending', () => {
-    it('should return pending approval loans', async () => {
-      mockExecute.mockResolvedValueOnce({
-        data: [{ ...SAMPLE_LYNIA_LOAN, status: 'pending_approval' }],
+    it('should return loans with sync issues', async () => {
+      // Mock raw query for sync-issue loans
+      mockQuery.mockResolvedValueOnce({
+        data: [{ ...SAMPLE_LYNIA_LOAN, status: 'approved', fineract_loan_id: null }],
         error: null,
       });
+      // Mock customer lookup
       mockExecute.mockResolvedValueOnce({
         data: [SAMPLE_CUSTOMER],
         error: null,
       });
-
-      const pendingLoan = {
-        ...SAMPLE_FINERACT_LOAN,
-        status: { id: 100, code: 'loanStatusType.submittedAndPendingApproval', value: 'Submitted and pending approval' },
-      };
-      mockFineractClient.getLoan.mockResolvedValue(pendingLoan);
+      // Mock count query
+      mockQuery.mockResolvedValueOnce({
+        data: [{ count: '1' }],
+        error: null,
+      });
 
       const event = makeEvent({ path: '/api/v1/fineract/loans/pending' });
       const result = await handler(event);
@@ -1087,6 +1091,7 @@ describe('Fineract Proxy Service', () => {
       expect(result.statusCode).toBe(200);
       const body = JSON.parse(result.body);
       expect(body.data).toHaveLength(1);
+      expect(body.data[0].syncStatus).toBe('not_synced');
     });
   });
 });
