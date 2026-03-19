@@ -159,12 +159,22 @@ export const handleGetOrganizationById: RouteHandler = async (event, params, aut
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
-  const { data: row } = await db.from('organizations')
+  const { data: row, error: dbError } = await db.from('organizations')
     .select('*')
     .eq('id', orgId)
     .is('deleted_at', null)
     .maybeSingle()
     .execute();
+
+  if (dbError) {
+    logger.error('Database error fetching organization', {
+      action: 'admin.organizations.getById',
+      status: 'failed',
+      errorMessage: dbError.message,
+      metadata: { orgId },
+    });
+    return errorResponse('Failed to fetch organization', 500, { code: 'PAY_PROV_001' }, event);
+  }
 
   if (!row) {
     return errorResponse('Organization not found', 404, {}, event);

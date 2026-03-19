@@ -4,12 +4,11 @@ import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  getProduct, updateProduct, deleteProduct, getProductLoansCount,
+  getProduct, deleteProduct, getProductLoansCount,
   getDeviceModels, linkDeviceModels, unlinkDeviceModel,
   type LinkedDeviceModel,
 } from '@/lib/api/products';
 import { createFineractProductFromLynia } from '@/lib/api/fineract';
-import { ProductForm } from '@/components/products/product-form';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,7 +16,7 @@ import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@lynia/utils';
 import { ArrowLeft, Pencil, Trash2, Plus, X, Check, Circle, Link2, Smartphone, Database as DatabaseIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { LoanProduct, CreateProductInput, DeviceModel } from '@/types';
+import type { LoanProduct, DeviceModel } from '@/types';
 
 const STATUS_VARIANTS: Record<string, 'green' | 'gray' | 'blue'> = {
   active: 'green',
@@ -38,7 +37,6 @@ export default function ProductDetailPage() {
   const id = params.id as string;
   const { toast } = useToast();
 
-  const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
@@ -59,18 +57,6 @@ export default function ProductDetailPage() {
     queryKey: ['device-models', { limit: 200 }],
     queryFn: () => getDeviceModels({ limit: 200 }),
     enabled: linkModalOpen,
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (data: Partial<LoanProduct>) => updateProduct(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['product', id] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      toast({ title: 'Product updated successfully', variant: 'success' });
-    },
-    onError: (error: Error) => {
-      toast({ title: 'Failed to update product', description: error.message, variant: 'error' });
-    },
   });
 
   const deleteMutation = useMutation({
@@ -119,10 +105,6 @@ export default function ProductDetailPage() {
       toast({ title: 'Failed to unlink device model', description: error.message, variant: 'error' });
     },
   });
-
-  async function handleUpdate(data: CreateProductInput) {
-    await updateMutation.mutateAsync(data);
-  }
 
   function toggleModelSelection(modelId: string) {
     setSelectedModels((prev) =>
@@ -188,7 +170,7 @@ export default function ProductDetailPage() {
           <p className="text-sm font-mono text-muted-foreground">{product.product_code}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}>
+          <Button variant="secondary" size="sm" onClick={() => router.push(`/products/${id}/edit`)}>
             <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
           </Button>
           <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}>
@@ -422,13 +404,6 @@ export default function ProductDetailPage() {
           </div>
         </div>
       </Modal>
-
-      <ProductForm
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        onSubmit={handleUpdate}
-        product={product}
-      />
 
       <Modal open={deleteOpen} onClose={() => setDeleteOpen(false)} title="Delete Product" size="sm">
         <div className="space-y-4">

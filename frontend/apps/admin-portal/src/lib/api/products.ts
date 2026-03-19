@@ -222,12 +222,8 @@ export async function getOrganizations(filters: OrganizationFilters = {}) {
   }>(`/admin/organizations?${params.toString()}`);
 }
 
-export async function getOrganization(id: string): Promise<Organization | null> {
-  try {
-    return await fetchAPI<Organization>(`/admin/organizations/${id}`);
-  } catch {
-    return null;
-  }
+export async function getOrganization(id: string): Promise<Organization> {
+  return fetchAPI<Organization>(`/admin/organizations/${id}`);
 }
 
 export async function createOrganization(data: CreateOrganizationInput): Promise<Organization> {

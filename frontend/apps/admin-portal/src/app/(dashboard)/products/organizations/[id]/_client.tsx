@@ -48,9 +48,10 @@ export default function OrganizationDetailPage() {
   const [memberSearch, setMemberSearch] = useState('');
   const [employmentStatus, setEmploymentStatus] = useState('');
 
-  const { data: org, isLoading: loadingOrg } = useQuery({
+  const { data: org, isLoading: loadingOrg, isError, error } = useQuery({
     queryKey: ['organization', id],
     queryFn: () => getOrganization(id),
+    retry: 1,
   });
 
   const { data: membersData, isLoading: loadingMembers } = useQuery({
@@ -138,14 +139,17 @@ export default function OrganizationDetailPage() {
     );
   }
 
-  if (!org) {
+  if (isError || !org) {
+    const message = isError
+      ? (error instanceof Error ? error.message : 'Failed to load organization. Please try again.')
+      : 'Organization not found.';
     return (
       <div className="space-y-4">
         <Button variant="ghost" size="sm" onClick={() => router.push('/products/organizations')}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to Organizations
         </Button>
         <div className="rounded-lg border border-dashed border-border py-12 text-center">
-          <p className="text-muted-foreground">Organization not found.</p>
+          <p className="text-muted-foreground">{message}</p>
         </div>
       </div>
     );
