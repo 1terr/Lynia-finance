@@ -2,6 +2,7 @@ import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
+import { isValidUUID } from '../../../shared/utils/validation';
 import logger from '../../../shared/utils/logger';
 import { auditLog, hashNationalId, maskPhone } from './helpers';
 
@@ -58,10 +59,16 @@ export const handleGetOrganizations: RouteHandler = async (event, _params, auth)
     whereClause += ` AND (org_name ILIKE $${idx} OR org_code ILIKE $${idx})`;
   }
 
-  const { data: countRows } = await query<{ count: string }>(
+  const { data: countRows, error: countError } = await query<{ count: string }>(
     `SELECT COUNT(*) as count FROM organizations WHERE ${whereClause}`,
     params
   );
+
+  if (countError) {
+    logger.error('Error counting organizations', { action: 'admin.organizations.list', status: 'failed', errorMessage: countError.message });
+    return errorResponse('Failed to fetch organizations', 500, {}, event);
+  }
+
   const total = parseInt(countRows[0]?.count || '0');
 
   params.push(limit, offset);
@@ -159,6 +166,10 @@ export const handleGetOrganizationById: RouteHandler = async (event, params, aut
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
+  if (!isValidUUID(orgId)) {
+    return errorResponse('Invalid organization ID format', 400, { code: 'VAL_FMT_001' }, event);
+  }
+
   const { data: row, error: dbError } = await db.from('organizations')
     .select('*')
     .eq('id', orgId)
@@ -197,6 +208,10 @@ export const handleUpdateOrganization: RouteHandler = async (event, params, auth
 
   if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  if (!isValidUUID(orgId)) {
+    return errorResponse('Invalid organization ID format', 400, { code: 'VAL_FMT_001' }, event);
   }
 
   const body = JSON.parse(event.body || '{}');
@@ -242,6 +257,10 @@ export const handleImportOrgMembers: RouteHandler = async (event, params, auth) 
 
   if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  if (!isValidUUID(orgId)) {
+    return errorResponse('Invalid organization ID format', 400, { code: 'VAL_FMT_001' }, event);
   }
 
   // Verify org exists
@@ -386,6 +405,10 @@ export const handleGetOrgMembers: RouteHandler = async (event, params, auth) => 
 
   if (!isAdminOrManager(auth)) {
     return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  if (!isValidUUID(orgId)) {
+    return errorResponse('Invalid organization ID format', 400, { code: 'VAL_FMT_001' }, event);
   }
 
   // Verify org exists
