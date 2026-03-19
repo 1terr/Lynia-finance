@@ -10,7 +10,6 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import { db } from '../../../shared/clients/database';
 import { syncLoanToFineract, approveLoanInFineract } from '../../../shared/clients/fineract-sync/sync-executor';
-import { logSync } from '../../../shared/clients/fineract-sync/sync-scheduler';
 import { parseBody } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
