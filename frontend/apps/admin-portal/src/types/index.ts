@@ -648,7 +648,7 @@ export interface Organization {
   verification_method: VerificationMethod;
   api_endpoint?: string;
   scoring_trust_level: number;
-  contact_person?: string;
+  contact_name?: string;
   contact_phone?: string;
   contact_email?: string;
   is_active: boolean;
@@ -667,7 +667,7 @@ export interface CreateOrganizationInput {
   verification_method?: VerificationMethod;
   api_endpoint?: string;
   scoring_trust_level?: number;
-  contact_person?: string;
+  contact_name?: string;
   contact_phone?: string;
   contact_email?: string;
   is_active?: boolean;

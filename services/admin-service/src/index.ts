@@ -22,7 +22,7 @@ import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpd
 import { handleGetDeviceModels, handleCreateDeviceModel, handleGetDeviceModelById, handleUpdateDeviceModel, handleDeleteDeviceModel } from './handlers/device-models';
 
 // ─── Organizations ───
-import { handleGetOrganizations, handleCreateOrganization, handleGetOrganizationById, handleUpdateOrganization, handleImportOrgMembers, handleGetOrgMembers } from './handlers/organizations';
+import { handleCheckOrgCode, handleGetOrganizations, handleCreateOrganization, handleGetOrganizationById, handleUpdateOrganization, handleImportOrgMembers, handleGetOrgMembers } from './handlers/organizations';
 
 // ─── Distributors ───
 import { handleGetDistributors, handleGetDistributorStats, handleCreateDistributor, handleGetDistributorById, handleUpdateDistributor, handleGetDistributorInventory, handleGetDistributorHandovers, handleGetDistributorTransfers, handleGetDistributorCommissions, handleBulkPayCommissions } from './handlers/distributors';
@@ -103,6 +103,7 @@ export const handler = createRouter({
   // Organizations (sub-routes before single-ID routes)
   'POST /admin/organizations/:id/import':   handleImportOrgMembers,
   'GET /admin/organizations/:id/members':   handleGetOrgMembers,
+  'GET /admin/organizations/check-code':    handleCheckOrgCode,
   'GET /admin/organizations':               handleGetOrganizations,
   'POST /admin/organizations':              handleCreateOrganization,
   'GET /admin/organizations/:id':           handleGetOrganizationById,

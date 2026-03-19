@@ -5,6 +5,27 @@ import { isAdminOrManager } from '../../../shared/middleware/authorization';
 import logger from '../../../shared/utils/logger';
 import { auditLog, hashNationalId, maskPhone } from './helpers';
 
+// ─── GET /admin/organizations/check-code ───
+
+export const handleCheckOrgCode: RouteHandler = async (event, _params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const code = (event.queryStringParameters?.code || '').trim().toUpperCase();
+
+  if (!code) {
+    return errorResponse('code query parameter is required', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  const { data: existing } = await query<{ id: string }>(
+    'SELECT id FROM organizations WHERE UPPER(org_code) = $1 AND deleted_at IS NULL',
+    [code]
+  );
+
+  return successResponse({ available: !existing || existing.length === 0 }, 200, event);
+};
+
 // ─── GET /admin/organizations ───
 
 export const handleGetOrganizations: RouteHandler = async (event, _params, auth) => {
@@ -27,7 +48,8 @@ export const handleGetOrganizations: RouteHandler = async (event, _params, auth)
 
   if (qs.is_active !== undefined) {
     const isActive = qs.is_active === 'true';
-    whereClause += ` AND is_active = ${isActive}`;
+    params.push(isActive);
+    whereClause += ` AND is_active = $${params.length}`;
   }
 
   if (qs.search) {
@@ -70,6 +92,17 @@ export const handleCreateOrganization: RouteHandler = async (event, _params, aut
     if (!body[field]) {
       return errorResponse(`Missing required field: ${field}`, 400, { code: 'VAL_REQ_001' }, event);
     }
+  }
+
+  // Validate org_code format
+  const ORG_CODE_REGEX = /^[A-Z0-9_]{2,50}$/;
+  if (!ORG_CODE_REGEX.test(body.org_code)) {
+    return errorResponse(
+      'org_code must be 2-50 uppercase alphanumeric characters or underscores',
+      400,
+      { code: 'VAL_FMT_001' },
+      event
+    );
   }
 
   // Check uniqueness
@@ -220,6 +253,10 @@ export const handleImportOrgMembers: RouteHandler = async (event, params, auth) 
     return errorResponse('members must be a non-empty array', 400, { code: 'VAL_REQ_001' }, event);
   }
 
+  if (members.length > 5000) {
+    return errorResponse('Maximum 5000 members per import batch', 400, { code: 'VAL_RNG_001' }, event);
+  }
+
   const importBatchId = `import_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
   let inserted = 0;
   let skipped = 0;
@@ -348,15 +385,30 @@ export const handleGetOrgMembers: RouteHandler = async (event, params, auth) => 
   const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
   const offset = (page - 1) * limit;
 
+  let whereClause = 'organization_id = $1';
+  const filterParams: unknown[] = [orgId];
+
+  if (qs.employment_status) {
+    filterParams.push(qs.employment_status);
+    whereClause += ` AND employment_status = $${filterParams.length}`;
+  }
+
+  if (qs.search) {
+    filterParams.push(`%${qs.search}%`);
+    const idx = filterParams.length;
+    whereClause += ` AND (employee_number ILIKE $${idx} OR phone_number ILIKE $${idx})`;
+  }
+
   const { data: countRows } = await query<{ count: string }>(
-    'SELECT COUNT(*) as count FROM organization_members WHERE organization_id = $1',
-    [orgId]
+    `SELECT COUNT(*) as count FROM organization_members WHERE ${whereClause}`,
+    filterParams
   );
   const total = parseInt(countRows[0]?.count || '0');
 
+  filterParams.push(limit, offset);
   const { data: rows, error } = await query(
-    'SELECT id, organization_id, phone_number, employee_number, employment_status, employment_start_date, department, grade_level, monthly_salary_usd, salary_verified, import_batch_id, data_source, customer_id, created_at, updated_at FROM organization_members WHERE organization_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3',
-    [orgId, limit, offset]
+    `SELECT id, organization_id, phone_number, employee_number, employment_status, employment_start_date, department, grade_level, monthly_salary_usd, salary_verified, import_batch_id, data_source, customer_id, created_at, updated_at FROM organization_members WHERE ${whereClause} ORDER BY created_at DESC LIMIT $${filterParams.length - 1} OFFSET $${filterParams.length}`,
+    filterParams
   );
 
   if (error) {
