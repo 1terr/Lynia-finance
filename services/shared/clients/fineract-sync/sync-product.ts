@@ -193,6 +193,9 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     interestType: (product.interest_type as number) ?? 0,
     interestCalculationPeriodType: (product.interest_calculation_period_type as number) ?? 1,
     transactionProcessingStrategyCode: (product.transaction_processing_strategy as string) || 'mifos-standard-strategy',
+    daysInYearType: (product.days_in_year_type as number) ?? 365,
+    daysInMonthType: (product.days_in_month_type as number) ?? 30,
+    isInterestRecalculationEnabled: (product.is_interest_recalculation_enabled as boolean) ?? false,
     locale: 'en',
     dateFormat: 'dd MMMM yyyy',
     accountingRule: (product.accounting_rule as number) ?? 1,
@@ -209,6 +212,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     if (product.income_from_penalty_account_id) fineractPayload.incomeFromPenaltyAccountId = product.income_from_penalty_account_id as number;
     if (product.write_off_account_id) fineractPayload.writeOffAccountId = product.write_off_account_id as number;
     if (product.overpayment_liability_account_id) fineractPayload.overpaymentLiabilityAccountId = product.overpayment_liability_account_id as number;
+    if (product.income_from_recovery_account_id) fineractPayload.incomeFromRecoveryAccountId = product.income_from_recovery_account_id as number;
   }
   if (acctRule >= 3) {
     if (product.receivable_interest_account_id) fineractPayload.receivableInterestAccountId = product.receivable_interest_account_id as number;

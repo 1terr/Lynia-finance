@@ -150,6 +150,9 @@ export function ProductWizard({ product }: ProductWizardProps) {
   const [interestType, setInterestType] = useState('0');
   const [interestCalcPeriod, setInterestCalcPeriod] = useState('1');
   const [txnStrategy, setTxnStrategy] = useState('mifos-standard-strategy');
+  const [daysInYearType, setDaysInYearType] = useState('365');
+  const [daysInMonthType, setDaysInMonthType] = useState('30');
+  const [isInterestRecalcEnabled, setIsInterestRecalcEnabled] = useState(false);
   // Lynia-specific
   const [depositPct, setDepositPct] = useState('10');
   const [minDeposit, setMinDeposit] = useState('0');
@@ -171,6 +174,7 @@ export function ProductWizard({ product }: ProductWizardProps) {
     receivable_interest_account_id: null,
     receivable_fee_account_id: null,
     receivable_penalty_account_id: null,
+    income_from_recovery_account_id: null,
   });
 
   // Initialize from defaults or existing product
@@ -201,6 +205,9 @@ export function ProductWizard({ product }: ProductWizardProps) {
       setInterestType(String(product.interest_type ?? 0));
       setInterestCalcPeriod(String(product.interest_calculation_period_type ?? 1));
       setTxnStrategy(product.transaction_processing_strategy || 'mifos-standard-strategy');
+      setDaysInYearType(String(product.days_in_year_type ?? 365));
+      setDaysInMonthType(String(product.days_in_month_type ?? 30));
+      setIsInterestRecalcEnabled(product.is_interest_recalculation_enabled ?? false);
       setDepositPct(String(product.deposit_percentage));
       setMinDeposit(String(product.min_deposit_usd));
       setMaxActiveLoans(String(product.max_active_loans));
@@ -219,6 +226,7 @@ export function ProductWizard({ product }: ProductWizardProps) {
         receivable_interest_account_id: product.receivable_interest_account_id ?? null,
         receivable_fee_account_id: product.receivable_fee_account_id ?? null,
         receivable_penalty_account_id: product.receivable_penalty_account_id ?? null,
+        income_from_recovery_account_id: product.income_from_recovery_account_id ?? null,
       });
     } else if (defaults) {
       // Create mode: populate from Fineract defaults
@@ -243,6 +251,7 @@ export function ProductWizard({ product }: ProductWizardProps) {
         receivable_interest_account_id: defaults.receivable_interest_account_id ?? null,
         receivable_fee_account_id: defaults.receivable_fee_account_id ?? null,
         receivable_penalty_account_id: defaults.receivable_penalty_account_id ?? null,
+        income_from_recovery_account_id: defaults.income_from_recovery_account_id ?? null,
       });
     }
   }, [product, defaults]);
@@ -401,6 +410,9 @@ export function ProductWizard({ product }: ProductWizardProps) {
       interest_type: parseInt(interestType),
       interest_calculation_period_type: parseInt(interestCalcPeriod),
       transaction_processing_strategy: txnStrategy,
+      days_in_year_type: parseInt(daysInYearType),
+      days_in_month_type: parseInt(daysInMonthType),
+      is_interest_recalculation_enabled: isInterestRecalcEnabled,
       accounting_rule: parseInt(accountingRule),
       deposit_percentage: category === 'smartphone' ? parseFloat(depositPct) || 0 : 0,
       min_deposit_usd: category === 'smartphone' ? parseFloat(minDeposit) || 0 : 0,
@@ -570,6 +582,29 @@ export function ProductWizard({ product }: ProductWizardProps) {
                   options={TRANSACTION_STRATEGIES.map((t) => ({ value: t.value, label: t.label }))}
                   value={txnStrategy} onChange={(e) => setTxnStrategy(e.target.value)} />
               </div>
+              <div className="grid grid-cols-3 gap-4">
+                <Select label="Days in Year" id="daysInYearType"
+                  options={[
+                    { value: '365', label: '365 Days' },
+                    { value: '360', label: '360 Days' },
+                    { value: '364', label: '364 Days' },
+                    { value: '1', label: 'Actual' },
+                  ]}
+                  value={daysInYearType} onChange={(e) => setDaysInYearType(e.target.value)} />
+                <Select label="Days in Month" id="daysInMonthType"
+                  options={[
+                    { value: '30', label: '30 Days' },
+                    { value: '1', label: 'Actual' },
+                  ]}
+                  value={daysInMonthType} onChange={(e) => setDaysInMonthType(e.target.value)} />
+                <div className="flex items-end pb-1">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" checked={isInterestRecalcEnabled}
+                      onChange={(e) => setIsInterestRecalcEnabled(e.target.checked)} className="rounded border-border" />
+                    <span>Interest Recalculation</span>
+                  </label>
+                </div>
+              </div>
             </fieldset>
 
             {/* Lynia-specific section */}
@@ -656,6 +691,9 @@ export function ProductWizard({ product }: ProductWizardProps) {
                       <GLAccountSelect label="Transfers in Suspense (Liability)" field="transfers_in_suspense_account_id"
                         value={glAccounts.transfers_in_suspense_account_id} grouped={grouped} error={errors.transfers_in_suspense_account_id}
                         onChange={(v) => setGLAccounts((prev) => ({ ...prev, transfers_in_suspense_account_id: v }))} />
+                      <GLAccountSelect label="Income from Recovery (Income)" field="income_from_recovery_account_id"
+                        value={glAccounts.income_from_recovery_account_id} grouped={grouped} error={errors.income_from_recovery_account_id}
+                        onChange={(v) => setGLAccounts((prev) => ({ ...prev, income_from_recovery_account_id: v }))} />
                     </div>
 
                     {parseInt(accountingRule) >= 3 && (

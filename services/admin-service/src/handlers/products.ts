@@ -308,6 +308,9 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     interestType: body.interest_type ?? 0,
     interestCalculationPeriodType: body.interest_calculation_period_type ?? 1,
     transactionProcessingStrategyCode: body.transaction_processing_strategy || 'mifos-standard-strategy',
+    daysInYearType: body.days_in_year_type ?? 365,
+    daysInMonthType: body.days_in_month_type ?? 30,
+    isInterestRecalculationEnabled: body.is_interest_recalculation_enabled ?? false,
     locale: 'en',
     dateFormat: 'dd MMMM yyyy',
     accountingRule,
@@ -323,6 +326,7 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     fineractPayload.incomeFromPenaltyAccountId = body.income_from_penalty_account_id;
     fineractPayload.writeOffAccountId = body.write_off_account_id;
     fineractPayload.overpaymentLiabilityAccountId = body.overpayment_liability_account_id;
+    fineractPayload.incomeFromRecoveryAccountId = body.income_from_recovery_account_id;
   }
   if (accountingRule >= 3) {
     fineractPayload.receivableInterestAccountId = body.receivable_interest_account_id;
@@ -430,6 +434,9 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     interest_rate_frequency_type: body.interest_rate_frequency_type ?? 2,
     transaction_processing_strategy: body.transaction_processing_strategy || 'mifos-standard-strategy',
     accounting_rule: accountingRule,
+    days_in_year_type: body.days_in_year_type ?? 365,
+    days_in_month_type: body.days_in_month_type ?? 30,
+    is_interest_recalculation_enabled: body.is_interest_recalculation_enabled ?? false,
     min_interest_rate: body.min_interest_rate || null,
     max_interest_rate: body.max_interest_rate || null,
     // GL account mappings
@@ -444,6 +451,7 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     receivable_interest_account_id: body.receivable_interest_account_id || null,
     receivable_fee_account_id: body.receivable_fee_account_id || null,
     receivable_penalty_account_id: body.receivable_penalty_account_id || null,
+    income_from_recovery_account_id: body.income_from_recovery_account_id || null,
     // Timestamps
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
