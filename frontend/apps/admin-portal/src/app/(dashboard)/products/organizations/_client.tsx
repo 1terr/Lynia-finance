@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { formatDate, formatNumber } from '@lynia/utils';
 import { Plus, Search, ArrowLeft, RefreshCw } from 'lucide-react';
-import type { Organization } from '@/types';
+import type { Organization, OrgType } from '@/types';
 
 const ORG_TYPE_VARIANTS: Record<string, 'blue' | 'purple' | 'green' | 'yellow'> = {
   government: 'blue',
@@ -46,7 +46,7 @@ export default function OrganizationsPage() {
       search: search || undefined,
       page,
       limit: 25,
-      org_type: orgType || undefined,
+      org_type: (orgType as OrgType) || undefined,
       is_active: activeFilter ? activeFilter === 'true' : undefined,
     }),
   });
