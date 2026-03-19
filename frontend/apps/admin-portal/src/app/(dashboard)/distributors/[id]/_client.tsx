@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useRouteId } from '@/hooks/use-route-id';
 import {
   getDistributor,
   updateDistributor,
@@ -95,7 +96,7 @@ const TRANSFER_STATUS_BADGE: Record<string, string> = {
 // ─── Main component ───
 
 export default function DistributorDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const id = useRouteId();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();

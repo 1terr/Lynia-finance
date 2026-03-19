@@ -1,16 +1,16 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getOrganization } from '@/lib/api/products';
 import { OrganizationWizard } from '@/components/products/organization-wizard';
+import { useRouteId } from '@/hooks/use-route-id';
 
 export default function EditOrganizationClient() {
-  const { id } = useParams();
+  const id = useRouteId();
 
   const { data: org, isLoading } = useQuery({
     queryKey: ['organization', id],
-    queryFn: () => getOrganization(id as string),
+    queryFn: () => getOrganization(id),
   });
 
   if (isLoading) {

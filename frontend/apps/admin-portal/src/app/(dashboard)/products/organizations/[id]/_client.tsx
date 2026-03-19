@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getOrganization, updateOrganization, getMembers, importMembers } from '@/lib/api/products';
+import { useRouteId } from '@/hooks/use-route-id';
 import { MemberImportModal } from '@/components/products/member-import-modal';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { DataTable, type Column } from '@/components/ui/data-table';
@@ -37,9 +38,8 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 ];
 
 export default function OrganizationDetailPage() {
-  const params = useParams();
+  const id = useRouteId();
   const router = useRouter();
-  const id = params.id as string;
 
   const [importOpen, setImportOpen] = useState(false);
   const [confirmToggleOpen, setConfirmToggleOpen] = useState(false);

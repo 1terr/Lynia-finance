@@ -1,13 +1,12 @@
 'use client';
 
-import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getProduct } from '@/lib/api/products';
 import { ProductWizard } from '@/components/products/product-wizard';
+import { useRouteId } from '@/hooks/use-route-id';
 
 export default function EditProductClient() {
-  const params = useParams();
-  const id = params.id as string;
+  const id = useRouteId();
 
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', id],

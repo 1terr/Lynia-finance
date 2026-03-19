@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import Link from 'next/link';
 import { fetchCustomerById, updateCustomer } from '@/lib/api/customers';
 import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
+import { useRouteId } from '@/hooks/use-route-id';
 import { emailSchema, phoneSchema } from '@/lib/validation/schemas';
 import type { Customer } from '@/types/database';
 
@@ -33,9 +34,8 @@ const editCustomerSchema = z.object({
 type EditCustomerForm = z.infer<typeof editCustomerSchema>;
 
 export default function EditCustomerPage() {
-  const params = useParams();
+  const customerId = useRouteId();
   const router = useRouter();
-  const customerId = params.id as string;
 
   const { data: customer, isLoading } = useQuery({
     queryKey: ['customer', customerId],

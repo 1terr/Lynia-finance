@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   getCustomerById,
@@ -15,6 +15,7 @@ import {
 import { useAuth } from '@/lib/hooks/use-auth';
 import { hasPermission } from '@/lib/permissions';
 import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
+import { useRouteId } from '@/hooks/use-route-id';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +38,7 @@ import {
 import Link from 'next/link';
 
 export default function CustomerDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const id = useRouteId();
   const router = useRouter();
   const { user } = useAuth();
   const [showBlockDialog, setShowBlockDialog] = useState(false);

@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPaymentById, reconcilePayment, retryPayment, refundPayment } from '@/lib/api/payments';
 import { useAuth } from '@/lib/hooks/use-auth';
 import { hasPermission } from '@/lib/permissions';
+import { useRouteId } from '@/hooks/use-route-id';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -22,7 +23,7 @@ import {
 import Link from 'next/link';
 
 export default function PaymentDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const id = useRouteId();
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();

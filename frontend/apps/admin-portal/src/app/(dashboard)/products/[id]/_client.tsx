@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getProduct, deleteProduct, getProductLoansCount,
@@ -16,6 +16,7 @@ import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@lynia/utils';
 import { ArrowLeft, Pencil, Trash2, Plus, X, Check, Circle, Link2, Smartphone, Database as DatabaseIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useRouteId } from '@/hooks/use-route-id';
 import type { LoanProduct, DeviceModel } from '@/types';
 
 const STATUS_VARIANTS: Record<string, 'green' | 'gray' | 'blue'> = {
@@ -31,10 +32,9 @@ interface ProductWithLinks extends LoanProduct {
 }
 
 export default function ProductDetailPage() {
-  const params = useParams();
+  const id = useRouteId();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const id = params.id as string;
   const { toast } = useToast();
 
   const [deleteOpen, setDeleteOpen] = useState(false);

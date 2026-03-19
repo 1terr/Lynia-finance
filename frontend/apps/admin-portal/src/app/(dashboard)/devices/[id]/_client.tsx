@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getDeviceById, getDeviceLockHistory, lockDevice, unlockDevice, updateDevice } from '@/lib/api/devices';
 import { useAuth } from '@/lib/hooks/use-auth';
@@ -14,6 +14,7 @@ import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { DataTable, type Column } from '@/components/ui/data-table';
 import { formatCurrency, formatDate, formatDateTime } from '@lynia/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useRouteId } from '@/hooks/use-route-id';
 import type { DeviceLock } from '@/types';
 import { ArrowLeft, Smartphone, Lock, Unlock, AlertTriangle, Pencil } from 'lucide-react';
 import Link from 'next/link';
@@ -21,7 +22,7 @@ import Link from 'next/link';
 const DESTRUCTIVE_STATUSES = ['damaged', 'lost', 'written_off'] as const;
 
 export default function DeviceDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  const id = useRouteId();
   const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
