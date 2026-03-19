@@ -48,6 +48,7 @@ export function getAccountsForField(
     case 'interest_on_loan_account_id':
     case 'income_from_fee_account_id':
     case 'income_from_penalty_account_id':
+    case 'income_from_recovery_account_id':
       return grouped.income ?? [];
     // Expense accounts
     case 'write_off_account_id':

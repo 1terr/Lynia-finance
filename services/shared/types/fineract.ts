@@ -380,10 +380,14 @@ export interface FineractLoanProductCreateRequest {
   interestType: number;
   interestCalculationPeriodType: number;
   transactionProcessingStrategyCode: string;
+  daysInYearType: number; // 1=actual, 360, 364, 365
+  daysInMonthType: number; // 1=actual, 30=30 days
+  isInterestRecalculationEnabled: boolean;
   locale: string;
   dateFormat: string;
   accountingRule: number; // 1=none, 2=cash, 3=accrual, 4=upfront accrual
   // Fund source and accounting mappings (when accountingRule > 1)
+  incomeFromRecoveryAccountId?: number;
   fundSourceAccountId?: number;
   loanPortfolioAccountId?: number;
   transfersInSuspenseAccountId?: number;

@@ -494,10 +494,14 @@ export interface LoanProduct {
   interest_calculation_period_type: number;
   interest_rate_frequency_type: number;
   transaction_processing_strategy: string;
+  days_in_year_type?: number;
+  days_in_month_type?: number;
+  is_interest_recalculation_enabled?: boolean;
   accounting_rule: number;
   min_interest_rate?: number | null;
   max_interest_rate?: number | null;
   // GL account mapping IDs
+  income_from_recovery_account_id?: number | null;
   fund_source_account_id?: number | null;
   loan_portfolio_account_id?: number | null;
   transfers_in_suspense_account_id?: number | null;
@@ -552,8 +556,12 @@ export interface CreateProductInput {
   interest_type?: number;
   interest_calculation_period_type?: number;
   transaction_processing_strategy?: string;
+  days_in_year_type?: number;
+  days_in_month_type?: number;
+  is_interest_recalculation_enabled?: boolean;
   accounting_rule?: number;
   // GL account mappings
+  income_from_recovery_account_id?: number | null;
   fund_source_account_id?: number | null;
   loan_portfolio_account_id?: number | null;
   transfers_in_suspense_account_id?: number | null;
@@ -592,6 +600,7 @@ export interface FineractProductDefaults {
   receivable_interest_account_id?: number;
   receivable_fee_account_id?: number;
   receivable_penalty_account_id?: number;
+  income_from_recovery_account_id?: number;
 }
 
 // --- Device Models ---
