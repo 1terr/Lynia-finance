@@ -79,7 +79,8 @@ export function validateZimbabwePhoneNumber(phoneNumber: string): {
  * @returns True if the string is a valid UUID
  */
 export function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  // Accept any 8-4-4-4-12 hex string — matches what PostgreSQL's UUID type accepts
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
 }
 
