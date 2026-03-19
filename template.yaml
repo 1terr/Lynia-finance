@@ -1136,6 +1136,11 @@ Resources:
               Action:
                 - cloudwatch:PutMetricData
               Resource: "*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-fineract-sync-retry"
       Environment:
         Variables:
           COGNITO_USER_POOL_ID: !If

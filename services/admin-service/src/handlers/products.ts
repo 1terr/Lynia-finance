@@ -2,7 +2,6 @@ import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { db, query } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
-import { syncProductToFineract } from '../../../shared/clients/fineract-sync';
 import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 
@@ -288,24 +287,39 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     product_category: body.product_category,
   });
 
-  // Auto-sync to Fineract (non-blocking — product is created even if sync fails)
-  let fineractSyncError: string | undefined;
+  // Queue Fineract sync asynchronously via SQS — never block the API response.
+  // The inline await was exceeding the 29s API Gateway timeout when Fineract
+  // is cold or slow (list + create = up to 40s of HTTP calls).
+  // The sync will be picked up by the retry queue consumer; if it fails,
+  // it retries with exponential backoff. Users can also trigger manual sync
+  // from the Fineract products page.
   if (!row.fineract_product_id) {
-    const syncResult = await syncProductToFineract(row.id as string);
-    if (syncResult.success) {
-      row.fineract_product_id = syncResult.fineract_product_id;
-    } else {
-      fineractSyncError = syncResult.error;
-      logger.warn('Fineract product sync failed after create', {
-        action: 'admin.products.fineract-sync',
+    try {
+      const { SQSQueues } = await import('../../../shared/utils/sqs-publisher');
+      await SQSQueues.retryFineractSync({
+        entityType: 'loan_product',
+        entityId: row.id as string,
+        operation: 'create',
+        requestPayload: { product_code: body.product_code },
+        retryCount: 0,
+      });
+      logger.info('Fineract product sync queued', {
+        action: 'admin.products.fineract-sync-queued',
+        status: 'started',
+        metadata: { productId: row.id },
+      });
+    } catch (sqsError) {
+      // SQS failure is non-fatal — reconciliation job is the safety net
+      logger.warn('Failed to queue Fineract product sync', {
+        action: 'admin.products.fineract-sync-queue-failed',
         status: 'failed',
-        metadata: { productId: row.id, error: syncResult.error },
+        metadata: { productId: row.id, error: sqsError instanceof Error ? sqsError.message : String(sqsError) },
       });
     }
   }
 
   return successResponse(
-    { ...row, ...(fineractSyncError ? { fineract_sync_error: fineractSyncError } : {}) },
+    { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'pending' },
     201,
     event
   );
@@ -363,24 +377,28 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.update', 'loan_product', id, `Updated product: ${id}`, updates);
 
-  // Auto-sync to Fineract if not already linked (Fineract products are immutable once created)
-  let fineractSyncError: string | undefined;
+  // Queue Fineract sync asynchronously (same fix as create — avoid API Gateway timeout)
   if (!row.fineract_product_id) {
-    const syncResult = await syncProductToFineract(id);
-    if (syncResult.success) {
-      row.fineract_product_id = syncResult.fineract_product_id;
-    } else {
-      fineractSyncError = syncResult.error;
-      logger.warn('Fineract product sync failed after update', {
-        action: 'admin.products.fineract-sync',
+    try {
+      const { SQSQueues } = await import('../../../shared/utils/sqs-publisher');
+      await SQSQueues.retryFineractSync({
+        entityType: 'loan_product',
+        entityId: id,
+        operation: 'create',
+        requestPayload: { product_id: id },
+        retryCount: 0,
+      });
+    } catch (sqsError) {
+      logger.warn('Failed to queue Fineract product sync after update', {
+        action: 'admin.products.fineract-sync-queue-failed',
         status: 'failed',
-        metadata: { productId: id, error: syncResult.error },
+        metadata: { productId: id, error: sqsError instanceof Error ? sqsError.message : String(sqsError) },
       });
     }
   }
 
   return successResponse(
-    { ...row, ...(fineractSyncError ? { fineract_sync_error: fineractSyncError } : {}) },
+    { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'pending' },
     200,
     event
   );

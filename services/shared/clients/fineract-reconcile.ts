@@ -18,6 +18,7 @@
  */
 
 import { getFineractClient, FineractApiError } from './fineract';
+import { syncProductToFineract } from './fineract-sync/sync-product';
 import { db } from './database';
 
 // ============================================================
@@ -320,6 +321,12 @@ async function retrySyncOperation(sync: FailedSyncRow): Promise<boolean> {
       case 'loan:disburse': {
         await fineract.disburseLoan(payload.fineractLoanId as number);
         success = true;
+        break;
+      }
+
+      case 'loan_product:create': {
+        const syncResult = await syncProductToFineract(sync.entity_id);
+        success = syncResult.success;
         break;
       }
 
