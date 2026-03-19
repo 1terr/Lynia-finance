@@ -31,8 +31,23 @@ jest.mock('../../../services/shared/middleware/authorization', () => ({
   isAdminOrManager: mockIsAdminOrManager,
 }));
 
+const mockFineractClient = {
+  createLoanProduct: jest.fn().mockResolvedValue({ resourceId: 42 }),
+  updateLoanProduct: jest.fn().mockResolvedValue({ resourceId: 42 }),
+  listLoanProducts: jest.fn().mockResolvedValue([]),
+  listGLAccounts: jest.fn().mockResolvedValue([]),
+};
 jest.mock('../../../services/shared/clients/fineract', () => ({
-  getFineractClient: jest.fn(),
+  getFineractClient: jest.fn().mockResolvedValue(mockFineractClient),
+  FineractApiError: class FineractApiError extends Error {
+    statusCode: number;
+    errorBody: unknown;
+    constructor(msg: string, statusCode: number, errorBody?: unknown) {
+      super(msg);
+      this.statusCode = statusCode;
+      this.errorBody = errorBody;
+    }
+  },
 }));
 
 jest.mock('../../../services/shared/clients/fineract-sync', () => ({
@@ -103,6 +118,9 @@ function validSmartphoneProductBody(overrides: Record<string, unknown> = {}) {
     product_name: 'Basic Smartphone Loan',
     product_category: 'smartphone',
     product_type: 'installment',
+    short_name: 'PH01',
+    default_principal: 250,
+    number_of_repayments: 12,
     min_amount_usd: 50,
     max_amount_usd: 500,
     min_term_months: 3,
@@ -111,6 +129,7 @@ function validSmartphoneProductBody(overrides: Record<string, unknown> = {}) {
     interest_rate_annual: 42,
     requires_device: true,
     deposit_percentage: 10,
+    accounting_rule: 1,
     ...overrides,
   };
 }
@@ -122,6 +141,9 @@ function validDigitalProductBody(overrides: Record<string, unknown> = {}) {
     product_name: 'Digital Cash Loan',
     product_category: 'digital',
     product_type: 'installment',
+    short_name: 'DG01',
+    default_principal: 100,
+    number_of_repayments: 6,
     min_amount_usd: 10,
     max_amount_usd: 200,
     min_term_months: 1,
@@ -130,6 +152,7 @@ function validDigitalProductBody(overrides: Record<string, unknown> = {}) {
     interest_rate_annual: 60,
     deposit_percentage: 0,
     requires_organization_verification: true,
+    accounting_rule: 1,
     ...overrides,
   };
 }
@@ -202,6 +225,7 @@ describe('Admin Service — Product Management', () => {
 
   describe('POST /admin/products', () => {
     it('should create a smartphone product (happy path)', async () => {
+      // Fineract mock already set up in top-level mock (returns resourceId: 42)
       // uniqueness check => not found
       const existingChain = chainableMock({ data: null, error: null });
       // insert
@@ -209,6 +233,7 @@ describe('Admin Service — Product Management', () => {
       const insertedRow = {
         id: 'prod-new-1',
         ...validSmartphoneProductBody(),
+        fineract_product_id: 42,
         status: 'active',
         created_at: '2025-01-01T00:00:00Z',
         updated_at: '2025-01-01T00:00:00Z',
@@ -233,6 +258,7 @@ describe('Admin Service — Product Management', () => {
       expect(result.statusCode).toBe(201);
       expect(body.success).toBe(true);
       expect(body.data.product_code).toBe('PHONE_001');
+      expect(body.data.fineract_product_id).toBe(42);
     });
 
     it('should create a digital product (happy path)', async () => {
@@ -241,6 +267,7 @@ describe('Admin Service — Product Management', () => {
       const insertedRow = {
         id: 'prod-new-2',
         ...validDigitalProductBody(),
+        fineract_product_id: 42,
         status: 'active',
         created_at: '2025-01-01T00:00:00Z',
         updated_at: '2025-01-01T00:00:00Z',
@@ -430,18 +457,28 @@ describe('Admin Service — Product Management', () => {
 
   describe('PATCH /admin/products/:id', () => {
     it('should update product fields', async () => {
-      const updatedRow = {
+      const existingProduct = {
         id: 'a1b2c3d4-e5f6-0001-abcd-ef0000000001',
         product_code: 'PHONE_001',
-        product_name: 'Updated Phone Loan',
+        product_name: 'Phone Loan',
         status: 'active',
+        fineract_product_id: null,
+      };
+      const updatedRow = {
+        ...existingProduct,
+        product_name: 'Updated Phone Loan',
         updated_at: '2025-02-01T00:00:00Z',
       };
+      // 1. SELECT existing product
+      const selectChain = chainableMock({ data: existingProduct, error: null });
+      // 2. UPDATE
       const updateChain = chainableMock();
       updateChain.execute.mockResolvedValue({ data: [updatedRow], error: null });
+      // 3. Audit log
       const auditChain = chainableMock();
 
       mockDb.from
+        .mockReturnValueOnce(selectChain)
         .mockReturnValueOnce(updateChain)
         .mockReturnValueOnce(auditChain);
 
@@ -458,9 +495,9 @@ describe('Admin Service — Product Management', () => {
     });
 
     it('should return 404 when product not found for update', async () => {
-      const updateChain = chainableMock();
-      updateChain.execute.mockResolvedValue({ data: [], error: null });
-      mockDb.from.mockReturnValueOnce(updateChain);
+      // SELECT existing product → not found
+      const selectChain = chainableMock({ data: null, error: null });
+      mockDb.from.mockReturnValueOnce(selectChain);
 
       const event = buildEvent({
         httpMethod: 'PATCH',
@@ -475,9 +512,20 @@ describe('Admin Service — Product Management', () => {
     });
 
     it('should return 500 when DB update fails', async () => {
+      const existingProduct = {
+        id: 'a1b2c3d4-e5f6-0001-abcd-ef0000000001',
+        product_code: 'PHONE_001',
+        fineract_product_id: null,
+      };
+      // 1. SELECT existing product
+      const selectChain = chainableMock({ data: existingProduct, error: null });
+      // 2. UPDATE → fails
       const updateChain = chainableMock();
       updateChain.execute.mockResolvedValue({ data: null, error: { message: 'update failed' } });
-      mockDb.from.mockReturnValueOnce(updateChain);
+
+      mockDb.from
+        .mockReturnValueOnce(selectChain)
+        .mockReturnValueOnce(updateChain);
 
       const event = buildEvent({
         httpMethod: 'PATCH',
