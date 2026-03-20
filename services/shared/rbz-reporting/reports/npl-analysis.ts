@@ -65,20 +65,6 @@ async function getProvisionRates(productCategory: string): Promise<ProvisionRate
 }
 
 /**
- * Look up the provision rate for a given DPD value from a rates array.
- */
-function findProvisionRate(rates: ProvisionRate[], daysPastDue: number): number {
-  for (const r of rates) {
-    const max = r.days_past_due_max ?? Infinity;
-    if (daysPastDue >= r.days_past_due_min && daysPastDue <= max) {
-      return r.provision_rate;
-    }
-  }
-  // Fallback: 100% for anything not matched
-  return 100;
-}
-
-/**
  * Build aging buckets from a set of enriched loans.
  */
 function buildAgingBuckets(loans: EnrichedLoan[], totalPortfolio: number): NPLAgingBuckets {

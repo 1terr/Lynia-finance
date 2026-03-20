@@ -16,7 +16,7 @@
  * Designed to run as a scheduled Lambda via EventBridge (e.g. daily).
  */
 
-import { db, query } from '../../../shared/clients/database';
+import { query } from '../../../shared/clients/database';
 import logger from '../../../shared/utils/logger';
 import { requestWriteOff } from './write-off-processor';
 import type { WriteOffRequest } from './write-off-types';
