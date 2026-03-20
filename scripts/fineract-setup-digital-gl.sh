@@ -115,10 +115,25 @@ ENDJSON
   echo "$account_id"
 }
 
+# ─── Pre-flight: Verify Fineract is reachable ───
+
+log "=== Pre-flight: Checking Fineract connectivity ==="
+log "Fineract URL: ${FINERACT_BASE_URL}"
+
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" \
+  "${FINERACT_BASE_URL}/authentication" \
+  -H "Fineract-Platform-TenantId: ${TENANT_ID}" \
+  --connect-timeout 10 || echo "000")
+
+if [ "$HTTP_STATUS" = "000" ]; then
+  log "ERROR: Cannot reach Fineract at ${FINERACT_BASE_URL}. Check URL and network."
+  exit 1
+fi
+log "Fineract reachable (HTTP ${HTTP_STATUS})"
+
 # ─── Step 1: Create GL Accounts in Fineract ───
 
 log "=== Step 1: Creating GL accounts in Fineract ==="
-log "Fineract URL: ${FINERACT_BASE_URL}"
 
 # Declare associative array to store gl_code -> fineract_id mapping
 declare -A GL_IDS
@@ -174,6 +189,7 @@ log "=== Step 3: Updating DIGI_LOAN_001 product GL account mappings ==="
 #   income_from_penalty_account_id   → 4230 Digital Loan Penalty Income
 #   write_off_account_id             → 5220 Digital Loan Write-offs
 #   overpayment_liability_account_id → 2410 Digital Loan Overpayment Liability
+#   income_from_recovery_account_id  → 4240 Digital Loan Recovery Income
 #   receivable_interest_account_id   → 1411 Digital Loans Interest Receivable
 #   receivable_fee_account_id        → 1412 Digital Loans Fee Receivable
 #   receivable_penalty_account_id    → 1413 Digital Loans Penalty Receivable
@@ -188,11 +204,54 @@ psql "${DATABASE_URL}" -c "
     income_from_penalty_account_id   = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '4230'),
     write_off_account_id             = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '5220'),
     overpayment_liability_account_id = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '2410'),
+    income_from_recovery_account_id  = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '4240'),
     receivable_interest_account_id   = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '1411'),
     receivable_fee_account_id        = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '1412'),
     receivable_penalty_account_id    = (SELECT fineract_account_id FROM fineract_gl_account_config WHERE gl_code = '1413')
   WHERE product_code = 'DIGI_LOAN_001';
 "
+
+# ─── Step 4: Validate all GL mappings are set ───
+
+log "=== Step 4: Validating GL account mappings ==="
+
+MISSING_GL=$(psql "${DATABASE_URL}" -t -c "
+  SELECT COUNT(*) FROM fineract_gl_account_config
+  WHERE product_category = 'digital' AND fineract_account_id IS NULL;
+" | xargs)
+
+if [ "$MISSING_GL" -gt 0 ]; then
+  log "ERROR: ${MISSING_GL} GL accounts still have NULL fineract_account_id"
+  psql "${DATABASE_URL}" -c "
+    SELECT gl_code, account_name FROM fineract_gl_account_config
+    WHERE product_category = 'digital' AND fineract_account_id IS NULL;
+  "
+  exit 1
+fi
+
+NULL_COLS=$(psql "${DATABASE_URL}" -t -c "
+  SELECT
+    CASE WHEN fund_source_account_id IS NULL THEN 'fund_source_account_id' END,
+    CASE WHEN loan_portfolio_account_id IS NULL THEN 'loan_portfolio_account_id' END,
+    CASE WHEN interest_on_loan_account_id IS NULL THEN 'interest_on_loan_account_id' END,
+    CASE WHEN income_from_fee_account_id IS NULL THEN 'income_from_fee_account_id' END,
+    CASE WHEN income_from_penalty_account_id IS NULL THEN 'income_from_penalty_account_id' END,
+    CASE WHEN write_off_account_id IS NULL THEN 'write_off_account_id' END,
+    CASE WHEN overpayment_liability_account_id IS NULL THEN 'overpayment_liability_account_id' END,
+    CASE WHEN income_from_recovery_account_id IS NULL THEN 'income_from_recovery_account_id' END,
+    CASE WHEN receivable_interest_account_id IS NULL THEN 'receivable_interest_account_id' END,
+    CASE WHEN receivable_fee_account_id IS NULL THEN 'receivable_fee_account_id' END,
+    CASE WHEN receivable_penalty_account_id IS NULL THEN 'receivable_penalty_account_id' END
+  FROM loan_products WHERE product_code = 'DIGI_LOAN_001';
+" | tr -d ' ' | tr ',' '\n' | grep -v '^$' || true)
+
+if [ -n "$NULL_COLS" ]; then
+  log "ERROR: Some GL mappings are NULL on DIGI_LOAN_001:"
+  echo "$NULL_COLS"
+  exit 1
+fi
+
+log "All 13 GL accounts created and all 12 product mappings populated."
 
 log "=== Done! Digital loan GL accounts configured ==="
 log ""

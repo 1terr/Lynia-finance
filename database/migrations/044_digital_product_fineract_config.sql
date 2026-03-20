@@ -19,6 +19,7 @@
 --   income_from_penalty_account_id   → 4230 Digital Loan Penalty Income
 --   write_off_account_id             → 5220 Digital Loan Write-offs
 --   overpayment_liability_account_id → 2410 Digital Loan Overpayment Liability
+--   income_from_recovery_account_id  → 4240 Digital Loan Recovery Income
 --   receivable_interest_account_id   → 1411 Digital Loans Interest Receivable
 --   receivable_fee_account_id        → 1412 Digital Loans Fee Receivable
 --   receivable_penalty_account_id    → 1413 Digital Loans Penalty Receivable
