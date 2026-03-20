@@ -5,6 +5,21 @@ import { isAdminOrManager } from '../../../shared/middleware/authorization';
 import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 
+// ─── Helpers ───
+
+/** PostgreSQL returns DECIMAL columns as strings; parse them to numbers for the frontend. */
+function parseDistributorNumerics<T extends Record<string, unknown>>(row: T): T {
+  return {
+    ...row,
+    total_revenue_usd: parseFloat(String(row.total_revenue_usd ?? '0')) || 0,
+    total_commissions_earned: parseFloat(String(row.total_commissions_earned ?? '0')) || 0,
+    total_commissions_paid: parseFloat(String(row.total_commissions_paid ?? '0')) || 0,
+    pending_commissions: parseFloat(String(row.pending_commissions ?? '0')) || 0,
+    commission_rate: parseFloat(String(row.commission_rate ?? '0')) || 0,
+    total_devices_sold: parseInt(String(row.total_devices_sold ?? '0'), 10) || 0,
+  };
+}
+
 // ─── GET /admin/distributors ───
 
 export const handleGetDistributors: RouteHandler = async (event, _params, auth) => {
@@ -48,7 +63,8 @@ export const handleGetDistributors: RouteHandler = async (event, _params, auth) 
     return errorResponse('Failed to fetch distributors', 500, {}, event);
   }
 
-  return successResponse({ data: rows, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
+  const parsed = rows.map(parseDistributorNumerics);
+  return successResponse({ data: parsed, total, page, limit, total_pages: Math.ceil(total / limit) }, 200, event);
 };
 
 // ─── GET /admin/distributors/stats ───
@@ -244,8 +260,9 @@ export const handleGetDistributorById: RouteHandler = async (event, params, auth
   );
 
   const stats = enrichment[0];
+  const parsedRow = parseDistributorNumerics(row);
   return successResponse({
-    ...row,
+    ...parsedRow,
     inventory_count: parseInt(stats?.inventory_count || '0'),
     total_commissions: parseFloat(stats?.total_commissions || '0'),
     pending_commissions: parseFloat(stats?.pending_commissions || '0'),

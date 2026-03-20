@@ -169,7 +169,7 @@ export default function DashboardHome() {
             <DollarSign className="h-4 w-4 text-green-600" />
             <span className="text-xs font-medium text-muted-foreground">Total Earned</span>
           </div>
-          <p className="text-2xl font-bold text-green-600">${stats.total_commissions_earned.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-600">${(Number(stats.total_commissions_earned) || 0).toFixed(2)}</p>
           <p className="text-xs text-muted-foreground mt-1">in commissions</p>
         </div>
 
@@ -178,7 +178,7 @@ export default function DashboardHome() {
             <Star className="h-4 w-4 text-yellow-500" />
             <span className="text-xs font-medium text-muted-foreground">Rating</span>
           </div>
-          <p className="text-2xl font-bold">{stats.average_rating.toFixed(1)}</p>
+          <p className="text-2xl font-bold">{(Number(stats.average_rating) || 0).toFixed(1)}</p>
           <p className="text-xs text-muted-foreground mt-1">out of 5.0</p>
         </div>
       </div>
@@ -210,15 +210,15 @@ export default function DashboardHome() {
         <div className="grid grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Total Earned</p>
-            <p className="text-lg font-bold text-green-600">${stats.total_commissions_earned.toFixed(2)}</p>
+            <p className="text-lg font-bold text-green-600">${(Number(stats.total_commissions_earned) || 0).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Paid Out</p>
-            <p className="text-lg font-bold">${stats.total_commissions_paid.toFixed(2)}</p>
+            <p className="text-lg font-bold">${(Number(stats.total_commissions_paid) || 0).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Pending</p>
-            <p className="text-lg font-bold text-yellow-600">${stats.pending_commissions.toFixed(2)}</p>
+            <p className="text-lg font-bold text-yellow-600">${(Number(stats.pending_commissions) || 0).toFixed(2)}</p>
           </div>
         </div>
       </div>
@@ -248,7 +248,7 @@ export default function DashboardHome() {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-sm font-semibold">${h.loan_amount}</p>
-                  <p className="text-xs font-medium text-green-600">+${h.commission_earned.toFixed(2)}</p>
+                  <p className="text-xs font-medium text-green-600">+${(Number(h.commission_earned) || 0).toFixed(2)}</p>
                 </div>
               </div>
             ))

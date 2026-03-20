@@ -36,8 +36,8 @@ const STATUS_OPTIONS = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatMoney(value: number | null | undefined): string {
-  return `$${(value || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function formatMoney(value: number | string | null | undefined): string {
+  return `$${(Number(value) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 // ---------------------------------------------------------------------------

@@ -294,7 +294,7 @@ export default function DistributorDetailPage() {
       const paidCount = selectedCommissions.length;
       const paidTotal = commissionData?.data
         ?.filter((c) => selectedCommissions.includes(c.id))
-        .reduce((sum, c) => sum + (c.commission_amount_usd || 0), 0) || 0;
+        .reduce((sum, c) => sum + (Number(c.commission_amount_usd) || 0), 0) || 0;
       setSelectedCommissions([]);
       setConfirmBulkPay(false);
       queryClient.invalidateQueries({ queryKey: ['distributor-commissions', id] });
@@ -346,7 +346,7 @@ export default function DistributorDetailPage() {
         item.manufacturer,
         item.model,
         item.condition,
-        (item.retail_price_usd || 0).toFixed(2),
+        (Number(item.retail_price_usd) || 0).toFixed(2),
         item.status,
         item.assigned_date || '',
         item.sold_date || '',
@@ -397,9 +397,9 @@ export default function DistributorDetailPage() {
       commissionData.data.map((c) => [
         c.device_model || '',
         c.device_imei || '',
-        (c.commission_amount_usd || 0).toFixed(2),
-        `${(c.commission_percentage || 0).toFixed(1)}%`,
-        (c.device_retail_price_usd || 0).toFixed(2),
+        (Number(c.commission_amount_usd) || 0).toFixed(2),
+        `${(Number(c.commission_percentage) || 0).toFixed(1)}%`,
+        (Number(c.device_retail_price_usd) || 0).toFixed(2),
         c.payment_status,
         c.created_at,
       ])
@@ -469,7 +469,7 @@ export default function DistributorDetailPage() {
     {
       key: 'retail_price_usd',
       header: 'Retail Price',
-      render: (row) => <span className="text-sm">${(row.retail_price_usd || 0).toFixed(2)}</span>,
+      render: (row) => <span className="text-sm">${(Number(row.retail_price_usd) || 0).toFixed(2)}</span>,
     },
     {
       key: 'status',
@@ -648,17 +648,17 @@ export default function DistributorDetailPage() {
     {
       key: 'commission_amount_usd',
       header: 'Amount',
-      render: (row) => <span className="text-sm font-medium">${(row.commission_amount_usd || 0).toFixed(2)}</span>,
+      render: (row) => <span className="text-sm font-medium">${(Number(row.commission_amount_usd) || 0).toFixed(2)}</span>,
     },
     {
       key: 'commission_percentage',
       header: 'Percentage',
-      render: (row) => <span className="text-sm">{(row.commission_percentage || 0).toFixed(1)}%</span>,
+      render: (row) => <span className="text-sm">{(Number(row.commission_percentage) || 0).toFixed(1)}%</span>,
     },
     {
       key: 'device_retail_price_usd',
       header: 'Retail Price',
-      render: (row) => <span className="text-sm">${(row.device_retail_price_usd || 0).toFixed(2)}</span>,
+      render: (row) => <span className="text-sm">${(Number(row.device_retail_price_usd) || 0).toFixed(2)}</span>,
     },
     {
       key: 'payment_status',
@@ -774,7 +774,7 @@ export default function DistributorDetailPage() {
             <div>
               <p className="text-xs text-muted-foreground">Total Revenue</p>
               <p className="text-xl font-bold text-foreground">
-                ${(distributor.total_commissions_earned || 0).toFixed(2)}
+                ${(Number(distributor.total_commissions_earned) || 0).toFixed(2)}
               </p>
             </div>
           </div>
@@ -800,7 +800,7 @@ export default function DistributorDetailPage() {
             <div>
               <p className="text-xs text-muted-foreground">Pending Commissions</p>
               <p className="text-xl font-bold text-foreground">
-                ${(distributor.pending_commissions || 0).toFixed(2)}
+                ${(Number(distributor.pending_commissions) || 0).toFixed(2)}
               </p>
             </div>
           </div>
@@ -1101,19 +1101,19 @@ export default function DistributorDetailPage() {
                 <div className="rounded-lg border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground">Total Earned</p>
                   <p className="text-xl font-bold text-foreground">
-                    ${(commissionData.summary.total_earned || 0).toFixed(2)}
+                    ${(Number(commissionData.summary.total_earned) || 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground">Total Paid</p>
                   <p className="text-xl font-bold text-green-600">
-                    ${(commissionData.summary.total_paid || 0).toFixed(2)}
+                    ${(Number(commissionData.summary.total_paid) || 0).toFixed(2)}
                   </p>
                 </div>
                 <div className="rounded-lg border border-border bg-card p-4">
                   <p className="text-xs text-muted-foreground">Pending</p>
                   <p className="text-xl font-bold text-yellow-600">
-                    ${(commissionData.summary.pending || 0).toFixed(2)}
+                    ${(Number(commissionData.summary.pending) || 0).toFixed(2)}
                   </p>
                 </div>
               </div>
@@ -1324,7 +1324,7 @@ export default function DistributorDetailPage() {
                         <p className="font-mono text-xs text-muted-foreground">{item.imei}</p>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        ${(item.retail_price_usd || 0).toFixed(2)}
+                        ${(Number(item.retail_price_usd) || 0).toFixed(2)}
                       </span>
                     </button>
                   ))}
@@ -1352,7 +1352,7 @@ export default function DistributorDetailPage() {
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Retail Price</dt>
-                  <dd className="font-medium">${(pendingReturnDevice.retail_price_usd || 0).toFixed(2)}</dd>
+                  <dd className="font-medium">${(Number(pendingReturnDevice.retail_price_usd) || 0).toFixed(2)}</dd>
                 </div>
               </dl>
               <div className="flex justify-end gap-2">
@@ -1391,7 +1391,7 @@ export default function DistributorDetailPage() {
                   <span className="font-bold text-foreground">
                     ${commissionData.data
                       .filter((c) => selectedCommissions.includes(c.id))
-                      .reduce((sum, c) => sum + (c.commission_amount_usd || 0), 0)
+                      .reduce((sum, c) => sum + (Number(c.commission_amount_usd) || 0), 0)
                       .toFixed(2)}
                   </span>
                 </div>

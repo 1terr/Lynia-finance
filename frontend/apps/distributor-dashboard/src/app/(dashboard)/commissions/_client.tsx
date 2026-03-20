@@ -244,7 +244,7 @@ export default function CommissionsPage() {
             </span>
           </div>
           <p className="text-2xl font-bold text-green-600">
-            ${stats.total_commissions_earned.toFixed(2)}
+            ${(Number(stats.total_commissions_earned) || 0).toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {handoverCount} handovers
@@ -259,7 +259,7 @@ export default function CommissionsPage() {
             </span>
           </div>
           <p className="text-2xl font-bold">
-            ${stats.total_commissions_paid.toFixed(2)}
+            ${(Number(stats.total_commissions_paid) || 0).toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {commissions.filter((c) => c.payment_status === 'paid').length} payments
@@ -274,7 +274,7 @@ export default function CommissionsPage() {
             </span>
           </div>
           <p className="text-2xl font-bold text-yellow-600">
-            ${stats.pending_commissions.toFixed(2)}
+            ${(Number(stats.pending_commissions) || 0).toFixed(2)}
           </p>
           <p className="text-xs text-muted-foreground mt-1">
             {commissions.filter((c) => c.payment_status === 'pending').length} awaiting
@@ -377,7 +377,7 @@ export default function CommissionsPage() {
               </div>
               <p className="text-lg font-bold">
                 ${handoverCount > 0
-                  ? (stats.total_commissions_earned / handoverCount).toFixed(2)
+                  ? ((Number(stats.total_commissions_earned) || 0) / handoverCount).toFixed(2)
                   : '0.00'}
               </p>
               <p className="text-xs text-muted-foreground">Avg per Handover</p>
@@ -439,7 +439,7 @@ export default function CommissionsPage() {
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Estimated amount</p>
             <p className="text-lg font-bold text-green-600">
-              ${stats.pending_commissions.toFixed(2)}
+              ${(Number(stats.pending_commissions) || 0).toFixed(2)}
             </p>
           </div>
         </div>
@@ -563,7 +563,7 @@ export default function CommissionsPage() {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-sm font-semibold text-green-600">
-                    +${commission.commission_amount.toFixed(2)}
+                    +${(Number(commission.commission_amount) || 0).toFixed(2)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {commission.commission_percentage}% of $

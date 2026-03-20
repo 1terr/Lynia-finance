@@ -434,15 +434,15 @@ export default function ProfilePage() {
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Total Earned</p>
-            <p className="text-lg font-bold text-green-600">${distributor.total_commissions_earned.toFixed(2)}</p>
+            <p className="text-lg font-bold text-green-600">${(Number(distributor.total_commissions_earned) || 0).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Total Paid</p>
-            <p className="text-lg font-bold">${distributor.total_commissions_paid.toFixed(2)}</p>
+            <p className="text-lg font-bold">${(Number(distributor.total_commissions_paid) || 0).toFixed(2)}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Pending</p>
-            <p className="text-lg font-bold text-yellow-600">${distributor.pending_commissions.toFixed(2)}</p>
+            <p className="text-lg font-bold text-yellow-600">${(Number(distributor.pending_commissions) || 0).toFixed(2)}</p>
           </div>
         </div>
       </div>
