@@ -595,11 +595,14 @@ describe('Fineract RBZ Reporting Engine', () => {
   describe('generateNPLAnalysis', () => {
     it('should generate an NPL analysis with Fineract data', async () => {
       const mockLoans = createMockLoans();
-      query.mockResolvedValueOnce({ data: mockLoans, error: null });
+      query.mockResolvedValueOnce({ data: mockLoans, error: null }); // loan mappings
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (default) — falls back
       query.mockResolvedValueOnce({
         data: [{ count: '2', total: '150' }],
         error: null,
-      });
+      }); // recovery data
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (smartphone)
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (digital)
 
       const config = createReportConfig({
         reportType: 'npl_analysis',
@@ -617,8 +620,11 @@ describe('Fineract RBZ Reporting Engine', () => {
 
     it('should classify loans into aging buckets correctly', async () => {
       const mockLoans = createMockLoans();
-      query.mockResolvedValueOnce({ data: mockLoans, error: null });
-      query.mockResolvedValueOnce({ data: [{ count: '0', total: '0' }], error: null });
+      query.mockResolvedValueOnce({ data: mockLoans, error: null }); // loan mappings
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (default)
+      query.mockResolvedValueOnce({ data: [{ count: '0', total: '0' }], error: null }); // recovery
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (smartphone)
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (digital)
 
       const config = createReportConfig({ reportType: 'npl_analysis' });
       const report = await generateNPLAnalysis(config);
@@ -632,8 +638,11 @@ describe('Fineract RBZ Reporting Engine', () => {
     });
 
     it('should calculate provision requirements per RBZ guidelines', async () => {
-      query.mockResolvedValueOnce({ data: createMockLoans(), error: null });
-      query.mockResolvedValueOnce({ data: [{ count: '0', total: '0' }], error: null });
+      query.mockResolvedValueOnce({ data: createMockLoans(), error: null }); // loan mappings
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (default)
+      query.mockResolvedValueOnce({ data: [{ count: '0', total: '0' }], error: null }); // recovery
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (smartphone)
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (digital)
 
       const config = createReportConfig({ reportType: 'npl_analysis' });
       const report = await generateNPLAnalysis(config);
@@ -648,8 +657,11 @@ describe('Fineract RBZ Reporting Engine', () => {
     });
 
     it('should identify NPL ratio (90+ days)', async () => {
-      query.mockResolvedValueOnce({ data: createMockLoans(), error: null });
-      query.mockResolvedValueOnce({ data: [{ count: '0', total: '0' }], error: null });
+      query.mockResolvedValueOnce({ data: createMockLoans(), error: null }); // loan mappings
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (default)
+      query.mockResolvedValueOnce({ data: [{ count: '0', total: '0' }], error: null }); // recovery
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (smartphone)
+      query.mockResolvedValueOnce({ data: [], error: null }); // provision rates (digital)
 
       const config = createReportConfig({ reportType: 'npl_analysis' });
       const report = await generateNPLAnalysis(config);

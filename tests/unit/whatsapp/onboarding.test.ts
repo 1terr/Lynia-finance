@@ -786,7 +786,7 @@ describe('WhatsApp Onboarding', () => {
       expect(result).toContain('Smartphone Financing Selected');
     });
 
-    it('should return digital_credit_soon when user sends "2"', async () => {
+    it('should select digital credit and transition to org_verification when user sends "2"', async () => {
       const session = createSession({
         current_state: 'product_selection',
         state_data: { preferred_language: 'en' },
@@ -795,10 +795,11 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ message: '2' });
       const result = await handleProductSelection(session, context);
 
-      expect(result).toContain('Digital Credit Coming Soon');
+      expect(result).toContain('Digital Credit Selected');
+      expect(result).toContain('Organization Verification');
     });
 
-    it('should return digital_credit_soon when user sends "digital"', async () => {
+    it('should select digital credit and transition to org_verification when user sends "digital"', async () => {
       const session = createSession({
         current_state: 'product_selection',
         state_data: { preferred_language: 'en' },
@@ -807,7 +808,8 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ message: 'digital credit' });
       const result = await handleProductSelection(session, context);
 
-      expect(result).toContain('Digital Credit Coming Soon');
+      expect(result).toContain('Digital Credit Selected');
+      expect(result).toContain('Organization Verification');
     });
 
     it('should re-prompt product selection for unrecognized input', async () => {
