@@ -28,7 +28,8 @@
       "Bash(unzip:*)",
       "Bash(chmod:*)",
       "Bash(mkdir:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(.claude/scripts/guard-destructive.sh)"
     ],
     "deny": [],
     "ask": []
@@ -50,6 +51,16 @@
       }
     ],
     "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/scripts/guard-destructive.sh",
+            "timeout": 5000
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "hooks": [
