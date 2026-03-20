@@ -254,6 +254,7 @@ export class FineractClient {
   listLoanProducts = this._loanOps.listLoanProducts;
   getLoanProduct = this._loanOps.getLoanProduct;
   createLoanProduct = this._loanOps.createLoanProduct;
+  updateLoanProduct = this._loanOps.updateLoanProduct;
 
   // -- Loan operations --
   createLoan = this._loanOps.createLoan;
@@ -268,6 +269,9 @@ export class FineractClient {
   rejectLoan = this._loanOps.rejectLoan;
   writeOffLoan = this._loanOps.writeOffLoan;
   closeLoan = this._loanOps.closeLoan;
+  restructureLoan = this._loanOps.restructureLoan;
+  calculateEarlyPayoff = this._loanOps.calculateEarlyPayoff;
+  processEarlyPayoff = this._loanOps.processEarlyPayoff;
 
   // -- GL/Accounting operations --
   listGLAccounts = this._chargeOps.listGLAccounts;
