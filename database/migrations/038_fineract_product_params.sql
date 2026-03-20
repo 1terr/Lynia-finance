@@ -81,7 +81,7 @@ COMMENT ON COLUMN loan_products.fund_source_account_id IS
 COMMENT ON COLUMN loan_products.loan_portfolio_account_id IS
   'Fineract GL account ID: outstanding loan portfolio (Asset)';
 COMMENT ON COLUMN loan_products.transfers_in_suspense_account_id IS
-  'Fineract GL account ID: transfers in suspense (Liability)';
+  'Fineract GL account ID: transfers in suspense (Asset)';
 COMMENT ON COLUMN loan_products.interest_on_loan_account_id IS
   'Fineract GL account ID: interest income on loans (Income)';
 COMMENT ON COLUMN loan_products.income_from_fee_account_id IS

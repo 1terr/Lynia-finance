@@ -86,12 +86,12 @@
     {
       "name": "Transfers in Suspense",
       "glCode": "2100",
-      "type": 2,
+      "type": 1,
       "usage": 2,
-      "parentGlCode": "2000",
+      "parentGlCode": "1000",
       "manualEntriesAllowed": false,
       "description": "Temporary holding account for funds in transit between accounts.",
-      "financialActivityMapping": "LIABILITY_TRANSFER_IN_SUSPENSE"
+      "financialActivityMapping": "ASSET_TRANSFER_IN_SUSPENSE"
     },
     {
       "name": "Equity",

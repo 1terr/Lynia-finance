@@ -36,13 +36,13 @@ export function getAccountsForField(
     // Asset accounts
     case 'fund_source_account_id':
     case 'loan_portfolio_account_id':
+    case 'transfers_in_suspense_account_id':
     case 'receivable_interest_account_id':
     case 'receivable_fee_account_id':
     case 'receivable_penalty_account_id':
       return grouped.asset ?? [];
     // Liability accounts
     case 'overpayment_liability_account_id':
-    case 'transfers_in_suspense_account_id':
       return grouped.liability ?? [];
     // Income accounts
     case 'interest_on_loan_account_id':
