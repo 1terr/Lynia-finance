@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getProduct, deleteProduct, getProductLoansCount,
   getDeviceModels, linkDeviceModels, unlinkDeviceModel,
+  getOrganizations, linkOrganizations, unlinkOrganization,
   type LinkedDeviceModel,
 } from '@/lib/api/products';
 import { createFineractProductFromLynia } from '@/lib/api/fineract';
@@ -14,10 +15,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@lynia/utils';
-import { ArrowLeft, Pencil, Trash2, Plus, X, Check, Circle, Link2, Smartphone, Database as DatabaseIcon } from 'lucide-react';
+import { ArrowLeft, Pencil, Trash2, Plus, X, Check, Circle, Link2, Smartphone, Database as DatabaseIcon, Building2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouteId } from '@/hooks/use-route-id';
-import type { LoanProduct, DeviceModel } from '@/types';
+import type { LoanProduct, DeviceModel, LinkedOrganization, Organization } from '@/types';
 
 const STATUS_VARIANTS: Record<string, 'green' | 'gray' | 'blue'> = {
   active: 'green',
@@ -25,10 +26,11 @@ const STATUS_VARIANTS: Record<string, 'green' | 'gray' | 'blue'> = {
   launching_soon: 'blue',
 };
 
-// Extended product type with linked models from the API
+// Extended product type with linked models and organizations from the API
 interface ProductWithLinks extends LoanProduct {
   linked_device_models?: LinkedDeviceModel[];
   in_stock_device_count?: number;
+  linked_organizations?: LinkedOrganization[];
 }
 
 export default function ProductDetailPage() {
@@ -40,6 +42,8 @@ export default function ProductDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [linkModalOpen, setLinkModalOpen] = useState(false);
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [orgLinkModalOpen, setOrgLinkModalOpen] = useState(false);
+  const [selectedOrgs, setSelectedOrgs] = useState<string[]>([]);
 
   const { data: loansCountData, isFetching: loadingLoansCount } = useQuery({
     queryKey: ['product-loans-count', id],
@@ -106,6 +110,43 @@ export default function ProductDetailPage() {
     },
   });
 
+  // Fetch all organizations for linking modal
+  const { data: allOrgsData } = useQuery({
+    queryKey: ['organizations', { limit: 200 }],
+    queryFn: () => getOrganizations({ limit: 200, is_active: true }),
+    enabled: orgLinkModalOpen,
+  });
+
+  const orgLinkMutation = useMutation({
+    mutationFn: (orgIds: string[]) => linkOrganizations(id, orgIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      toast({ title: 'Organizations linked successfully', variant: 'success' });
+      setOrgLinkModalOpen(false);
+      setSelectedOrgs([]);
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to link organizations', description: error.message, variant: 'error' });
+    },
+  });
+
+  const orgUnlinkMutation = useMutation({
+    mutationFn: (orgId: string) => unlinkOrganization(id, orgId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product', id] });
+      toast({ title: 'Organization unlinked', variant: 'success' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Failed to unlink organization', description: error.message, variant: 'error' });
+    },
+  });
+
+  function toggleOrgSelection(orgId: string) {
+    setSelectedOrgs((prev) =>
+      prev.includes(orgId) ? prev.filter((id) => id !== orgId) : [...prev, orgId]
+    );
+  }
+
   function toggleModelSelection(modelId: string) {
     setSelectedModels((prev) =>
       prev.includes(modelId) ? prev.filter((id) => id !== modelId) : [...prev, modelId]
@@ -115,6 +156,10 @@ export default function ProductDetailPage() {
   // Filter out already-linked models from the link modal
   const linkedIds = new Set((product?.linked_device_models || []).map((m) => m.device_model_id));
   const availableModels = (allModelsData?.data || []).filter((m: DeviceModel) => !linkedIds.has(m.id) && m.is_active);
+
+  // Filter out already-linked orgs from the link modal
+  const linkedOrgIds = new Set((product?.linked_organizations || []).map((o) => o.organization_id));
+  const availableOrgs = (allOrgsData?.data || []).filter((o: Organization) => !linkedOrgIds.has(o.id));
 
   if (isLoading) {
     return (
@@ -143,12 +188,17 @@ export default function ProductDetailPage() {
   const linkedModels = product.linked_device_models || [];
   const inStockCount = product.in_stock_device_count || 0;
 
+  const linkedOrgs = product.linked_organizations || [];
+
   const checklistItems = [
     { label: 'Product created', done: true },
     { label: 'Core banking product linked', done: product.fineract_product_id != null },
     ...(isSmartphone ? [
       { label: 'Phone models assigned', done: linkedModels.length > 0 },
       { label: 'Physical devices in stock', done: inStockCount > 0 },
+    ] : []),
+    ...(product.requires_organization_verification ? [
+      { label: 'Organizations linked', done: linkedOrgs.length > 0 },
     ] : []),
   ];
   const completedCount = checklistItems.filter((i) => i.done).length;
@@ -338,6 +388,144 @@ export default function ProductDetailPage() {
           )}
         </Card>
       )}
+
+      {/* Linked Organizations (org-verification products) */}
+      {product.requires_organization_verification && (
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Linked Organizations</h2>
+              <p className="text-sm text-muted-foreground">
+                Only members of these organizations can apply for this loan product.
+              </p>
+            </div>
+            <Button size="sm" onClick={() => setOrgLinkModalOpen(true)}>
+              <Plus className="mr-1 h-4 w-4" /> Add Organizations
+            </Button>
+          </div>
+
+          {linkedOrgs.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed border-border py-8 text-center">
+              <Building2 className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+              <p className="text-sm text-muted-foreground">No organizations linked yet.</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Without linked organizations, all verified organization members can apply.
+              </p>
+              <Button size="sm" variant="secondary" className="mt-3" onClick={() => setOrgLinkModalOpen(true)}>
+                <Link2 className="mr-1 h-3.5 w-3.5" /> Link Organizations
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {linkedOrgs.map((org) => (
+                <div key={org.organization_id} className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {org.org_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-mono">{org.org_code}</span>
+                        {' \u00b7 '}
+                        <span className="capitalize">{org.org_type}</span>
+                        {' \u00b7 '}
+                        Trust: {org.scoring_trust_level}%
+                        {' \u00b7 '}
+                        {org.total_members} member{org.total_members !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={org.is_active ? 'green' : 'gray'}>
+                      {org.is_active ? 'Active' : 'Inactive'}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => orgUnlinkMutation.mutate(org.organization_id)}
+                      disabled={orgUnlinkMutation.isPending}
+                    >
+                      <X className="h-4 w-4 text-muted-foreground hover:text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              <p className="text-xs text-muted-foreground pt-1">
+                {linkedOrgs.length} organization{linkedOrgs.length !== 1 ? 's' : ''} linked
+              </p>
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* Link Organizations Modal */}
+      <Modal open={orgLinkModalOpen} onClose={() => { setOrgLinkModalOpen(false); setSelectedOrgs([]); }} title="Link Organizations" size="lg">
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Select organizations whose members should be eligible for this loan product.
+          </p>
+          <div className="max-h-[50vh] overflow-y-auto space-y-1">
+            {availableOrgs.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                All active organizations are already linked to this product.
+              </p>
+            ) : (
+              availableOrgs.map((org: Organization) => {
+                const selected = selectedOrgs.includes(org.id);
+                return (
+                  <button
+                    key={org.id}
+                    type="button"
+                    onClick={() => toggleOrgSelection(org.id)}
+                    className={`w-full flex items-center justify-between rounded-lg border px-4 py-3 text-left transition-colors ${
+                      selected ? 'border-brand-500 bg-brand-50' : 'border-border hover:bg-accent'
+                    }`}
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {org.org_name}
+                        <span className="ml-2 text-xs font-normal text-muted-foreground capitalize">({org.org_type})</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-mono">{org.org_code}</span>
+                        {' \u00b7 '}
+                        Trust Level: {org.scoring_trust_level}%
+                        {' \u00b7 '}
+                        {org.total_members} member{org.total_members !== 1 ? 's' : ''}
+                      </p>
+                    </div>
+                    <div className={`flex h-5 w-5 items-center justify-center rounded border ${
+                      selected ? 'border-brand-500 bg-brand-500' : 'border-border'
+                    }`}>
+                      {selected && <Check className="h-3 w-3 text-white" />}
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+          <div className="flex justify-between items-center border-t border-border pt-4">
+            <span className="text-sm text-muted-foreground">
+              {selectedOrgs.length} organization{selectedOrgs.length !== 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-3">
+              <Button variant="secondary" onClick={() => { setOrgLinkModalOpen(false); setSelectedOrgs([]); }}>
+                Cancel
+              </Button>
+              <Button
+                onClick={() => orgLinkMutation.mutate(selectedOrgs)}
+                disabled={selectedOrgs.length === 0}
+                isLoading={orgLinkMutation.isPending}
+              >
+                Link {selectedOrgs.length > 0 ? `${selectedOrgs.length} Org${selectedOrgs.length !== 1 ? 's' : ''}` : 'Organizations'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </Modal>
 
       {/* Link Device Models Modal */}
       <Modal open={linkModalOpen} onClose={() => { setLinkModalOpen(false); setSelectedModels([]); }} title="Link Phone Models" size="lg">

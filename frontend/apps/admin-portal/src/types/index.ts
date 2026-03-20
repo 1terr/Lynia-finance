@@ -718,6 +718,17 @@ export interface Organization {
   member_count?: number;
 }
 
+export interface LinkedOrganization {
+  id: string;
+  organization_id: string;
+  org_code: string;
+  org_name: string;
+  org_type: OrgType;
+  scoring_trust_level: number;
+  is_active: boolean;
+  total_members: number;
+}
+
 export interface CreateOrganizationInput {
   org_code: string;
   org_name: string;

@@ -15,6 +15,7 @@ import type {
   OrganizationMember,
   MemberImportInput,
   MemberImportResult,
+  LinkedOrganization,
 } from '@/types';
 
 // ─── Product Filters ───
@@ -126,6 +127,25 @@ export async function linkDeviceModels(productId: string, deviceModelIds: string
 
 export async function unlinkDeviceModel(productId: string, deviceModelId: string): Promise<void> {
   return fetchAPI<void>(`/admin/products/${productId}/device-models/${deviceModelId}`, {
+    method: 'DELETE',
+  });
+}
+
+// ─── Product-Organization Linking ───
+
+export async function getProductOrganizations(productId: string): Promise<{ data: LinkedOrganization[] }> {
+  return fetchAPI<{ data: LinkedOrganization[] }>(`/admin/products/${productId}/organizations`);
+}
+
+export async function linkOrganizations(productId: string, organizationIds: string[]): Promise<void> {
+  return fetchAPI<void>(`/admin/products/${productId}/organizations`, {
+    method: 'POST',
+    body: JSON.stringify({ organization_ids: organizationIds }),
+  });
+}
+
+export async function unlinkOrganization(productId: string, orgId: string): Promise<void> {
+  return fetchAPI<void>(`/admin/products/${productId}/organizations/${orgId}`, {
     method: 'DELETE',
   });
 }

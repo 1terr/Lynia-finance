@@ -6,7 +6,7 @@
  */
 
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db } from '../../../shared/clients/database';
+import { db, query } from '../../../shared/clients/database';
 import { getSecurityHeaders } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
 import { hashNationalId } from '../../../shared/utils/crypto';
@@ -58,6 +58,34 @@ export const handleVerifyOrganization: RouteHandler = async (event, _params, _au
       };
     }
 
+    // If product_id is provided, check if the org is linked to that product.
+    // If the product has linked orgs, only members of those orgs are eligible.
+    // If no orgs are linked to the product, all org members qualify (backward compatible).
+    if (body.product_id) {
+      const { data: productOrgLinks } = await query<{ organization_id: string }>(
+        `SELECT organization_id FROM product_organizations WHERE product_id = $1`,
+        [body.product_id]
+      );
+
+      // If the product has explicit org links, verify this org is in the list
+      if (productOrgLinks && productOrgLinks.length > 0) {
+        const linkedOrgIds = productOrgLinks.map((r) => r.organization_id);
+        if (!linkedOrgIds.includes(org.id)) {
+          return {
+            statusCode: 200,
+            body: JSON.stringify({
+              found: true,
+              eligible: false,
+              reason: 'Organization is not linked to this loan product',
+              organization_id: org.id,
+              org_name: org.org_name,
+            }),
+            headers: getSecurityHeaders(event)
+          };
+        }
+      }
+    }
+
     // Calculate tenure in months from employment_start_date
     let tenureMonths = 0;
     if (member.employment_start_date) {
@@ -71,6 +99,7 @@ export const handleVerifyOrganization: RouteHandler = async (event, _params, _au
       statusCode: 200,
       body: JSON.stringify({
         found: true,
+        eligible: true,
         organization_id: org.id,
         org_name: org.org_name,
         org_type: org.org_type,

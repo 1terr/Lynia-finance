@@ -172,7 +172,26 @@ export const handleGetProductById: RouteHandler = async (event, params, auth) =>
     inStockCount = parseInt(stockRows[0]?.count || '0');
   }
 
-  return successResponse({ ...row, linked_device_models: linkedModels || [], in_stock_device_count: inStockCount }, 200, event);
+  // Fetch linked organizations
+  const { data: linkedOrgs } = await query<{
+    id: string; organization_id: string; org_code: string; org_name: string;
+    org_type: string; scoring_trust_level: string; is_active: boolean; total_members: string;
+  }>(
+    `SELECT po.id, po.organization_id, o.org_code, o.org_name, o.org_type,
+            o.scoring_trust_level, o.is_active, o.total_members
+     FROM product_organizations po
+     JOIN organizations o ON o.id = po.organization_id AND o.deleted_at IS NULL
+     WHERE po.product_id = $1
+     ORDER BY o.org_name`,
+    [id]
+  );
+
+  return successResponse({
+    ...row,
+    linked_device_models: linkedModels || [],
+    in_stock_device_count: inStockCount,
+    linked_organizations: linkedOrgs || [],
+  }, 200, event);
 };
 
 // ─── POST /admin/products ───
@@ -856,6 +875,118 @@ export const handleUnlinkDeviceModel: RouteHandler = async (event, params, auth)
     `Unlinked device model ${modelId} from product`, { device_model_id: modelId });
 
   return successResponse({ message: 'Device model unlinked' }, 200, event);
+};
+
+// ─── GET /admin/products/:id/organizations ───
+
+export const handleGetProductOrganizations: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+
+  const { data: rows, error } = await query<{
+    id: string; organization_id: string; org_code: string; org_name: string;
+    org_type: string; scoring_trust_level: string; is_active: boolean; total_members: string;
+  }>(
+    `SELECT po.id, po.organization_id, o.org_code, o.org_name, o.org_type,
+            o.scoring_trust_level, o.is_active, o.total_members
+     FROM product_organizations po
+     JOIN organizations o ON o.id = po.organization_id AND o.deleted_at IS NULL
+     WHERE po.product_id = $1
+     ORDER BY o.org_name`,
+    [productId]
+  );
+
+  if (error) {
+    return errorResponse('Failed to fetch linked organizations', 500, {}, event);
+  }
+
+  return successResponse({ data: rows || [] }, 200, event);
+};
+
+// ─── POST /admin/products/:id/organizations ───
+
+export const handleLinkOrganizations: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+  const body = JSON.parse(event.body || '{}');
+  const organizationIds: string[] = body.organization_ids;
+
+  if (!organizationIds || !Array.isArray(organizationIds) || organizationIds.length === 0) {
+    return errorResponse('organization_ids array is required', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  // Verify product exists
+  const { data: product } = await db.from('loan_products')
+    .select('id, product_category')
+    .eq('id', productId)
+    .is('deleted_at', null)
+    .maybeSingle()
+    .execute();
+
+  if (!product) {
+    return errorResponse('Product not found', 404, {}, event);
+  }
+
+  // Insert links (ignore duplicates)
+  const values = organizationIds.map((_, i) => `($1, $${i + 2}, now())`).join(', ');
+  const insertParams = [productId, ...organizationIds];
+
+  const { error } = await query(
+    `INSERT INTO product_organizations (product_id, organization_id, created_at)
+     VALUES ${values}
+     ON CONFLICT (product_id, organization_id) DO NOTHING`,
+    insertParams
+  );
+
+  if (error) {
+    logger.error('Error linking organizations', {
+      action: 'admin.products.linkOrganizations',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to link organizations', 500, {}, event);
+  }
+
+  await auditLog(auth, 'product.linkOrganizations', 'loan_product', productId,
+    `Linked ${organizationIds.length} organization(s) to product`, { organization_ids: organizationIds });
+
+  return successResponse({ message: `Linked ${organizationIds.length} organization(s)` }, 200, event);
+};
+
+// ─── DELETE /admin/products/:id/organizations/:orgId ───
+
+export const handleUnlinkOrganization: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+  const orgId = params.orgId;
+
+  const { error } = await query(
+    `DELETE FROM product_organizations WHERE product_id = $1 AND organization_id = $2`,
+    [productId, orgId]
+  );
+
+  if (error) {
+    logger.error('Error unlinking organization', {
+      action: 'admin.products.unlinkOrganization',
+      status: 'failed',
+      errorMessage: error.message,
+    });
+    return errorResponse('Failed to unlink organization', 500, {}, event);
+  }
+
+  await auditLog(auth, 'product.unlinkOrganization', 'loan_product', productId,
+    `Unlinked organization ${orgId} from product`, { organization_id: orgId });
+
+  return successResponse({ message: 'Organization unlinked' }, 200, event);
 };
 
 // ─── GET /admin/products/fineract-defaults ───

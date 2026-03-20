@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useGLAccounts, getAccountsForField } from '@/hooks/use-gl-accounts';
-import { createProduct, updateProduct, getProductFineractDefaults } from '@/lib/api/products';
+import { createProduct, updateProduct, getProductFineractDefaults, getOrganizations, linkOrganizations } from '@/lib/api/products';
 import { ChevronLeft, ChevronRight, Check, Loader2, AlertTriangle } from 'lucide-react';
 import type {
   LoanProduct,
@@ -17,6 +17,7 @@ import type {
   ProductStatus,
   GLAccount,
   FineractProductDefaults,
+  Organization,
 } from '@/types';
 import {
   AMORTIZATION_TYPES,
@@ -126,6 +127,14 @@ export function ProductWizard({ product }: ProductWizardProps) {
     staleTime: 10 * 60 * 1000,
   });
 
+  // Fetch active organizations for org verification picker
+  const { data: orgsData } = useQuery({
+    queryKey: ['organizations', { limit: 100, is_active: true }],
+    queryFn: () => getOrganizations({ limit: 100, is_active: true }),
+    staleTime: 5 * 60 * 1000,
+  });
+  const allOrgs: Organization[] = orgsData?.data || [];
+
   // ─── Form state ───
   // Step 1: Basic Info
   const [category, setCategory] = useState<ProductCategory>('smartphone');
@@ -172,6 +181,7 @@ export function ProductWizard({ product }: ProductWizardProps) {
   const [minDeposit, setMinDeposit] = useState('0');
   const [maxActiveLoans, setMaxActiveLoans] = useState('1');
   const [requiresOrgVerification, setRequiresOrgVerification] = useState(false);
+  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
   const [disbursementMethods, setDisbursementMethods] = useState<string[]>([]);
 
   // Step 3: Accounting
@@ -389,7 +399,14 @@ export function ProductWizard({ product }: ProductWizardProps) {
   // ─── Submission ───
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateProductInput) => createProduct(data),
+    mutationFn: async (data: CreateProductInput) => {
+      const created = await createProduct(data);
+      // Link selected organizations after product creation
+      if (selectedOrgIds.length > 0 && created?.id) {
+        await linkOrganizations(created.id, selectedOrgIds);
+      }
+      return created;
+    },
     onSuccess: () => {
       toast({ title: 'Product created successfully', description: 'The product has been created in Fineract and saved.', variant: 'success' });
       router.push('/products');
@@ -738,9 +755,53 @@ export function ProductWizard({ product }: ProductWizardProps) {
                   </div>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={requiresOrgVerification}
-                      onChange={(e) => setRequiresOrgVerification(e.target.checked)} className="rounded border-border" />
+                      onChange={(e) => {
+                        setRequiresOrgVerification(e.target.checked);
+                        if (!e.target.checked) setSelectedOrgIds([]);
+                      }} className="rounded border-border" />
                     <span>Requires Organization Verification</span>
                   </label>
+
+                  {requiresOrgVerification && allOrgs.length > 0 && (
+                    <div className="ml-6 space-y-2">
+                      <label className="block text-sm font-medium text-foreground">Eligible Organizations</label>
+                      <p className="text-xs text-muted-foreground">
+                        Select which organizations' members can apply. Leave empty to allow all verified members.
+                      </p>
+                      <div className="max-h-48 overflow-y-auto rounded-md border border-border p-1 space-y-1">
+                        {allOrgs.map((org) => {
+                          const selected = selectedOrgIds.includes(org.id);
+                          return (
+                            <button
+                              key={org.id}
+                              type="button"
+                              onClick={() => setSelectedOrgIds((prev) =>
+                                prev.includes(org.id) ? prev.filter((id) => id !== org.id) : [...prev, org.id]
+                              )}
+                              className={`w-full flex items-center justify-between rounded px-3 py-2 text-left text-sm transition-colors ${
+                                selected ? 'bg-brand-50 border border-brand-200' : 'hover:bg-accent'
+                              }`}
+                            >
+                              <div>
+                                <span className="font-medium">{org.org_name}</span>
+                                <span className="ml-2 text-xs text-muted-foreground capitalize">({org.org_type})</span>
+                              </div>
+                              <div className={`flex h-4 w-4 items-center justify-center rounded border ${
+                                selected ? 'border-brand-500 bg-brand-500' : 'border-border'
+                              }`}>
+                                {selected && <Check className="h-3 w-3 text-white" />}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {selectedOrgIds.length > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {selectedOrgIds.length} organization{selectedOrgIds.length !== 1 ? 's' : ''} selected
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </>
               )}
 
