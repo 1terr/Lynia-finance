@@ -23,11 +23,14 @@ import { handleWelcome } from './states/welcome';
 import { handlePersonalInfo } from './states/personal-info';
 import { handleEmployment } from './states/employment-info';
 import { handleProductSelection } from './states/product-selection';
+import { handleOrgVerification } from './states/org-verification';
 import { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
 import { handleCreditScoring } from './states/credit-scoring';
 import { handleDeviceSelection } from './states/device-selection';
+import { handleAmountSelection } from './states/amount-selection';
 import { handleTermSelection } from './states/term-selection';
 import { handleLoanSummary, handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
+import { handleDisbursementMethodSelection } from './states/disbursement-method';
 import handleKYCProcessing from './states/kyc-processing';
 import type { MessageContext } from './types';
 
@@ -70,6 +73,9 @@ export async function routeOnboardingMessage(
       case 'product_selection':
         return handleProductSelection(session, context);
 
+      case 'org_verification':
+        return handleOrgVerification(session, context);
+
       case 'kyc_id_upload':
         return handleKYCIdUpload(session, context, imageUrl);
 
@@ -85,6 +91,9 @@ export async function routeOnboardingMessage(
       case 'device_selection':
         return handleDeviceSelection(session, context);
 
+      case 'amount_selection':
+        return handleAmountSelection(session, context);
+
       case 'term_selection':
         return handleTermSelection(session, context);
 
@@ -95,15 +104,27 @@ export async function routeOnboardingMessage(
       case 'loan_offer':
         return handleLoanOffer(session, context);
 
+      case 'disbursement_method_selection':
+        return handleDisbursementMethodSelection(session, context);
+
       case 'terms_acceptance':
         return handleTermsAcceptance(session, context);
 
-      case 'completed':
+      case 'completed': {
+        const isDigital = session.state_data.selected_product === 'digital_credit';
+        if (isDigital) {
+          return `You've already completed onboarding!
+
+Your digital loan is approved and funds have been sent to your mobile money account.
+
+Type *BALANCE* to check your loan or *SUPPORT* for help.`;
+        }
         return `You've already completed onboarding!
 
 Your application is approved. Visit your nearest distributor to collect your device.
 
 Need help? Reply *Support*`;
+      }
 
       default:
         return `Something went wrong. Reply *Restart* to begin again.`;
@@ -124,9 +145,12 @@ export { handleWelcome } from './states/welcome';
 export { handlePersonalInfo } from './states/personal-info';
 export { handleEmployment } from './states/employment-info';
 export { handleProductSelection } from './states/product-selection';
+export { handleOrgVerification } from './states/org-verification';
 export { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
 export { handleCreditScoring } from './states/credit-scoring';
 export { handleDeviceSelection } from './states/device-selection';
+export { handleAmountSelection } from './states/amount-selection';
 export { handleTermSelection } from './states/term-selection';
 export { handleLoanSummary, handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
+export { handleDisbursementMethodSelection } from './states/disbursement-method';
 export { resumeOnboardingAfterKYC } from './states/kyc-processing';

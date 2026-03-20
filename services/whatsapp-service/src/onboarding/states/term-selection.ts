@@ -25,8 +25,29 @@ export async function handleTermSelection(
     return 'Something went wrong. Reply *Restart* to begin again.';
   }
 
-  // "Back" — return to device_selection, re-fetch available devices
+  // "Back" — return to previous step
   if (message.toLowerCase() === 'back') {
+    const isDigital = session.state_data.selected_product === 'digital_credit';
+
+    if (isDigital) {
+      // Digital: go back to amount selection
+      const orgLimits = session.state_data.org_lending_limits;
+      const maxAmount = session.state_data.credit_limit_usd || orgLimits?.max_loan_amount || 500;
+      const minAmount = orgLimits?.min_loan_amount ?? 20;
+
+      await updateSession(context.from, {
+        current_state: 'amount_selection',
+        state_data: {
+          ...session.state_data,
+          requested_loan_amount: undefined,
+          allowed_terms: undefined,
+        }
+      });
+
+      return `How much would you like to borrow?\nEnter an amount between $${minAmount} and $${maxAmount.toFixed(2)}`;
+    }
+
+    // Smartphone: go back to device selection
     const creditLimit = session.state_data.credit_limit_usd || 200;
     const { data: devices } = await query<{ id: string; brand: string; model_name: string; retail_price_usd: number }>(
       `SELECT id, brand, model_name, retail_price_usd
@@ -73,12 +94,18 @@ ${termList}`;
   }
 
   const selectedTerm = allowedTerms[choice - 1];
+  const isDigital = session.state_data.selected_product === 'digital_credit';
+
+  // Digital: principal = requested amount, no deposit
+  // Smartphone: principal = device price - deposit
   const devicePrice = session.state_data.selected_device_price || 0;
-  const downPaymentPct = session.state_data.down_payment_percentage || 20;
+  const downPaymentPct = isDigital ? 0 : (session.state_data.down_payment_percentage || 20);
   const interestRateApr = session.state_data.interest_rate_apr || 4;
 
-  const depositAmount = Math.round(devicePrice * (downPaymentPct / 100) * 100) / 100;
-  const financedAmount = Math.round((devicePrice - depositAmount) * 100) / 100;
+  const depositAmount = isDigital ? 0 : Math.round(devicePrice * (downPaymentPct / 100) * 100) / 100;
+  const financedAmount = isDigital
+    ? (session.state_data.requested_loan_amount || 0)
+    : Math.round((devicePrice - depositAmount) * 100) / 100;
 
   const calc = calculateDecliningBalancePayment({
     principal: financedAmount,
@@ -98,6 +125,21 @@ ${termList}`;
       allowed_terms: undefined,
     }
   });
+
+  if (isDigital) {
+    return `*Your Loan Summary*
+
+Cash Loan: $${financedAmount.toFixed(2)}
+Term: ${selectedTerm} months
+Interest: ${interestRateApr}% APR
+
+Monthly Payment: *$${calc.monthlyPayment.toFixed(2)}*
+Total Repayment: $${calc.totalRepayment.toFixed(2)}
+
+Does this look good?
+Reply *Yes* to accept these terms
+Reply *Back* to change your selection`;
+  }
 
   const deviceName = session.state_data.selected_device_name || 'Selected device';
 

@@ -85,6 +85,13 @@ export interface RBZGeneratedReport {
 // MONTHLY TRANSACTION SUMMARY
 // ===================================================================
 
+export interface TransactionCategorySummary {
+  totalTransactions: number;
+  totalTransactionValue: number;
+  disbursements: { count: number; amount: number };
+  repayments: { count: number; amount: number };
+}
+
 export interface MonthlyTransactionSummary {
   reportingPeriod: { start: string; end: string };
   institutionName: string;
@@ -129,6 +136,11 @@ export interface MonthlyTransactionSummary {
     count: number;
     totalAmount: number;
     topReasons: Array<{ reason: string; count: number }>;
+  };
+
+  byProductCategory?: {
+    smartphone: TransactionCategorySummary;
+    digital: TransactionCategorySummary;
   };
 }
 
@@ -286,6 +298,33 @@ export interface CapitalAdequacyReport {
 // NPL ANALYSIS (From Fineract loan data)
 // ===================================================================
 
+export type ProductCategory = 'smartphone' | 'digital';
+
+export interface NPLAgingBuckets {
+  current: { count: number; outstanding: number; percentage: number };
+  days1to30: { count: number; outstanding: number; percentage: number };
+  days31to60: { count: number; outstanding: number; percentage: number };
+  days61to90: { count: number; outstanding: number; percentage: number };
+  days91to180: { count: number; outstanding: number; percentage: number };
+  days181plus: { count: number; outstanding: number; percentage: number };
+}
+
+export interface NPLProvisionRequirement {
+  category: string;
+  loanCount: number;
+  outstandingAmount: number;
+  provisionRate: number;
+  provisionAmount: number;
+}
+
+export interface NPLCategorySummary {
+  totalLoans: number;
+  totalOutstanding: number;
+  nplRatio: number;
+  agingBuckets: NPLAgingBuckets;
+  provisionRequirements: NPLProvisionRequirement[];
+}
+
 export interface NPLAnalysisReport {
   reportingPeriod: { start: string; end: string };
   generatedFrom: 'fineract';
@@ -300,22 +339,9 @@ export interface NPLAnalysisReport {
     provisionCoverageRatio: number;
   };
 
-  agingBuckets: {
-    current: { count: number; outstanding: number; percentage: number };
-    days1to30: { count: number; outstanding: number; percentage: number };
-    days31to60: { count: number; outstanding: number; percentage: number };
-    days61to90: { count: number; outstanding: number; percentage: number };
-    days91to180: { count: number; outstanding: number; percentage: number };
-    days181plus: { count: number; outstanding: number; percentage: number };
-  };
+  agingBuckets: NPLAgingBuckets;
 
-  provisionRequirements: {
-    category: string;
-    loanCount: number;
-    outstandingAmount: number;
-    provisionRate: number;
-    provisionAmount: number;
-  }[];
+  provisionRequirements: NPLProvisionRequirement[];
 
   topNPLLoans: Array<{
     loanAccountNo: string;
@@ -337,6 +363,11 @@ export interface NPLAnalysisReport {
     recoveredCount: number;
     recoveredAmount: number;
     recoveryRate: number;
+  };
+
+  byProductCategory?: {
+    smartphone: NPLCategorySummary;
+    digital: NPLCategorySummary;
   };
 }
 
@@ -592,6 +623,16 @@ export interface AnnualComplianceAudit {
 // LOAN PORTFOLIO REPORT (Fineract-sourced)
 // ===================================================================
 
+export interface LoanPortfolioCategorySummary {
+  totalActiveLoans: number;
+  totalDisbursedPrincipal: number;
+  totalPrincipalOutstanding: number;
+  totalPrincipalPaid: number;
+  totalInterestCharged: number;
+  totalInterestPaid: number;
+  totalInterestOutstanding: number;
+}
+
 export interface LoanPortfolioFineractReport {
   reportingPeriod: { start: string; end: string };
   generatedFrom: 'fineract';
@@ -643,6 +684,11 @@ export interface LoanPortfolioFineractReport {
     onTimePayments: number;
     latePayments: number;
     missedPayments: number;
+  };
+
+  byProductCategory?: {
+    smartphone: LoanPortfolioCategorySummary;
+    digital: LoanPortfolioCategorySummary;
   };
 }
 

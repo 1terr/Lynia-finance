@@ -10,7 +10,17 @@ import { updateSession } from '../session';
 import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
 import { syncLoanToFineract, approveLoanInFineract } from '../../../../shared/clients/fineract-sync';
 import { logger } from '../../../../shared/utils/logger';
+import { t, type SupportedLanguage } from '../../i18n';
 import type { OnboardingSession, MessageContext } from '../types';
+
+function formatDisbursementMethod(method: string): string {
+  switch (method) {
+    case 'ecocash': return 'EcoCash';
+    case 'onemoney': return 'OneMoney';
+    case 'innbucks': return 'InnBucks';
+    default: return method;
+  }
+}
 
 /**
  * Handle LOAN_SUMMARY state (and legacy LOAN_OFFER state for in-flight sessions).
@@ -24,7 +34,9 @@ export async function handleLoanSummary(
 ): Promise<string> {
   const message = context.message.trim().toLowerCase();
 
-  // "Back" — return to term_selection, preserving device choice
+  const isDigital = session.state_data.selected_product === 'digital_credit';
+
+  // "Back" — return to term_selection, preserving device/amount choice
   if (message === 'back' || message.includes('change')) {
     const tier = session.state_data.credit_tier || 'Tier 1';
     const allowedTerms = getAllowedTerms(tier);
@@ -42,11 +54,23 @@ export async function handleLoanSummary(
       }
     });
 
-    const deviceName = session.state_data.selected_device_name || 'Selected device';
-    const devicePrice = session.state_data.selected_device_price || 0;
     const termList = allowedTerms
       .map((months, i) => `${i + 1}. ${months} months`)
       .join('\n');
+
+    if (isDigital) {
+      const loanAmount = session.state_data.requested_loan_amount || 0;
+      return `Cash Loan: *$${loanAmount.toFixed(2)}*
+
+How long would you like to pay?
+
+${termList}
+
+Reply with the number of your choice, or *Back* to change amount.`;
+    }
+
+    const deviceName = session.state_data.selected_device_name || 'Selected device';
+    const devicePrice = session.state_data.selected_device_price || 0;
 
     return `Device: *${deviceName}* ($${devicePrice.toFixed(2)})
 
@@ -58,6 +82,17 @@ Reply with the number of your choice, or *Back* to change device.`;
   }
 
   if (message.includes('yes') || message.includes('continue') || message.includes('accept')) {
+    if (isDigital) {
+      // Digital: go to disbursement method selection before terms acceptance
+      await updateSession(context.from, {
+        current_state: 'disbursement_method_selection'
+      });
+
+      const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
+      return t('disbursement_method_prompt', lang);
+    }
+
+    // Smartphone: go directly to terms acceptance
     await updateSession(context.from, {
       current_state: 'terms_acceptance'
     });
@@ -87,6 +122,24 @@ Reply *I Accept* to continue`;
   }
 
   // Unrecognized input — re-show summary
+  if (isDigital) {
+    const loanAmount = session.state_data.financed_amount || 0;
+    const termMonths = session.state_data.selected_term_months || 6;
+    const monthlyPayment = session.state_data.monthly_payment || 0;
+    const totalRepayment = session.state_data.total_repayment || 0;
+    const interestRate = session.state_data.interest_rate_apr || 24;
+
+    return `*Your Loan Summary*
+
+Cash Loan: $${loanAmount.toFixed(2)}
+Term: ${termMonths} months
+Interest: ${interestRate}% APR
+Monthly Payment: *$${monthlyPayment.toFixed(2)}*
+Total Repayment: $${totalRepayment.toFixed(2)}
+
+Reply *Yes* to accept or *Back* to change your selection.`;
+  }
+
   const deviceName = session.state_data.selected_device_name || 'Selected device';
   const devicePrice = session.state_data.selected_device_price || 0;
   const depositAmt = session.state_data.deposit_amount || 0;
@@ -117,7 +170,9 @@ export async function handleTermsAcceptance(
 ): Promise<string> {
   const message = context.message.trim().toLowerCase();
 
-  if (message.includes('accept') || message.includes('i accept')) {
+  if (message.includes('accept') || message.includes('i accept') || message.includes('ndinobvuma') || message.includes('ngiyavuma')) {
+    const isDigital = session.state_data.selected_product === 'digital_credit';
+
     // Log consent (schema: migration 007 - customer_consents table)
     await db.from('customer_consents').insert({
       customer_id: session.customer_id,
@@ -127,13 +182,15 @@ export async function handleTermsAcceptance(
       consent_method: 'whatsapp'
     }).execute();
 
-    const depositAmount = session.state_data.deposit_amount || 0;
+    const depositAmount = isDigital ? 0 : (session.state_data.deposit_amount || 0);
     const deviceName = session.state_data.selected_device_name || 'your device';
     const devicePrice = session.state_data.selected_device_price || 0;
     const termMonths = session.state_data.selected_term_months || 6;
     const monthlyPayment = session.state_data.monthly_payment || 0;
-    const interestRate = session.state_data.interest_rate_apr || 4;
-    const financedAmount = session.state_data.financed_amount || (devicePrice - depositAmount);
+    const interestRate = session.state_data.interest_rate_apr || (isDigital ? 24 : 4);
+    const financedAmount = isDigital
+      ? (session.state_data.requested_loan_amount || session.state_data.financed_amount || 0)
+      : (session.state_data.financed_amount || (devicePrice - depositAmount));
     const totalRepayment = session.state_data.total_repayment || (monthlyPayment * termMonths);
 
     // Generate loan reference number
@@ -225,6 +282,19 @@ export async function handleTermsAcceptance(
         loan_number: loanNumber ?? undefined,
       }
     });
+
+    if (isDigital) {
+      const methodName = formatDisbursementMethod(session.state_data.disbursement_method || 'ecocash');
+      const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
+
+      return t('digital_loan_approved', lang, {
+        loan_number: loanNumber,
+        amount: financedAmount.toFixed(2),
+        method: methodName,
+        term: String(termMonths),
+        payment: monthlyPayment.toFixed(2),
+      });
+    }
 
     return `*Application Approved!*
 

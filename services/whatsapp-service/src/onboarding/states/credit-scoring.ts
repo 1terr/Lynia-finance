@@ -297,7 +297,41 @@ Your Credit Score: ${scoreResult.scaled_score}/850
 Type *SUPPORT* if you have questions or need help.`;
     }
 
-    // Resolve loan product to filter device models by linked models (if any)
+    // ── Digital credit: skip device selection, go to amount selection ──
+    if (session.state_data.selected_product === 'digital_credit') {
+      // Cap credit limit to org-specific lending limits
+      const orgLimits = session.state_data.org_lending_limits;
+      const effectiveLimit = orgLimits
+        ? Math.min(scoreResult.credit_limit_usd, orgLimits.max_loan_amount)
+        : scoreResult.credit_limit_usd;
+
+      const minAmount = orgLimits?.min_loan_amount ?? 20;
+
+      await updateSession(context.from, {
+        current_state: 'amount_selection',
+        state_data: {
+          ...session.state_data,
+          credit_score: scoreResult.scaled_score,
+          credit_tier: scoreResult.tier,
+          credit_limit_usd: effectiveLimit,
+          down_payment_percentage: 0,
+          interest_rate_apr: orgLimits?.interest_rate_apr ?? scoreResult.interest_rate_apr,
+          decision: scoreResult.decision,
+        }
+      });
+
+      return `*Congratulations! You're Approved!*
+
+Your Credit Details:
+Credit Limit: *$${effectiveLimit.toFixed(2)}*
+Credit Tier: ${scoreResult.tier}
+Credit Score: ${scoreResult.scaled_score}/850
+
+How much would you like to borrow?
+Enter an amount between $${minAmount} and $${effectiveLimit.toFixed(2)}`;
+    }
+
+    // ── Smartphone financing: device selection flow (existing) ──
     const resolvedProductId = await resolveSmartphoneProduct(scoreResult.credit_limit_usd);
     const devices = await fetchAvailableDevices(scoreResult.credit_limit_usd, resolvedProductId);
 

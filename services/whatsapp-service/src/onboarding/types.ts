@@ -20,14 +20,17 @@ export type OnboardingState =
   | 'employment_debts'
   | 'employment_household'
   | 'product_selection'
+  | 'org_verification'
   | 'kyc_id_upload'
   | 'kyc_selfie_upload'
   | 'kyc_processing'
   | 'credit_scoring'
   | 'device_selection'
+  | 'amount_selection'
   | 'term_selection'
   | 'loan_summary'
   | 'loan_offer'
+  | 'disbursement_method_selection'
   | 'terms_acceptance'
   | 'completed'
   | 'rejected';
@@ -56,6 +59,26 @@ export interface OnboardingSession {
     // Product selection
     selected_product?: 'smartphone' | 'digital_credit';
     requested_loan_amount?: number;
+
+    // Organization verification (digital credit)
+    organization_id?: string;
+    org_name?: string;
+    org_type?: string;
+    tenure_months?: number;
+    salary_verified?: boolean;
+    monthly_salary_usd?: number;
+    org_lending_limits?: {
+      max_loan_amount: number;
+      min_loan_amount: number;
+      interest_rate_monthly: number;
+      interest_rate_apr: number;
+      min_term_months: number;
+      max_term_months: number;
+    };
+
+    // Disbursement method (digital credit)
+    disbursement_method?: 'ecocash' | 'onemoney' | 'innbucks';
+    disbursement_phone?: string;
 
     // KYC
     id_number?: string;

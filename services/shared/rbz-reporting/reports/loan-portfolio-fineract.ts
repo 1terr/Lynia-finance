@@ -5,28 +5,55 @@
 import { query } from '../../clients/database';
 import { getFineractClient } from '../../clients/fineract';
 import { round2 } from '../helpers';
-import type { RBZReportConfig, LoanPortfolioFineractReport } from '../../types/rbz-reports';
+import type {
+  RBZReportConfig,
+  LoanPortfolioFineractReport,
+  LoanPortfolioCategorySummary,
+  ProductCategory,
+} from '../../types/rbz-reports';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+function emptyCategorySummary(): LoanPortfolioCategorySummary {
+  return {
+    totalActiveLoans: 0,
+    totalDisbursedPrincipal: 0,
+    totalPrincipalOutstanding: 0,
+    totalPrincipalPaid: 0,
+    totalInterestCharged: 0,
+    totalInterestPaid: 0,
+    totalInterestOutstanding: 0,
+  };
+}
 
 export async function generateLoanPortfolioFineract(
   config: RBZReportConfig
 ): Promise<LoanPortfolioFineractReport> {
   const fineract = await getFineractClient() as any;
 
-  // Get all active Fineract loans via Lynia mapping
+  // Get all active Fineract loans via Lynia mapping — now includes product_category
   const { data: loanMappings } = await query<{
     id: string;
     fineract_loan_id: number;
     loan_status: string;
+    product_category: string;
   }>(
-    `SELECT id, fineract_loan_id, loan_status FROM loans
+    `SELECT id, fineract_loan_id, loan_status,
+            COALESCE(product_category, 'smartphone') AS product_category
+     FROM loans
      WHERE fineract_loan_id IS NOT NULL
        AND loan_status IN ('active', 'delinquent')`,
     []
   );
 
   const loans = loanMappings || [];
+
+  // Build a map from fineract_loan_id to product_category for quick lookup
+  const loanCategoryMap = new Map<number, ProductCategory>();
+  for (const loan of loans) {
+    const category = (loan.product_category === 'digital' ? 'digital' : 'smartphone') as ProductCategory;
+    loanCategoryMap.set(loan.fineract_loan_id, category);
+  }
 
   let totalDisbursed = 0;
   let totalPrincipalOutstanding = 0;
@@ -54,7 +81,15 @@ export async function generateLoanPortfolioFineract(
 
   const statusMap = new Map<string, { count: number; principalAmount: number }>();
 
+  // Per-product-category accumulators
+  const categoryMap: Record<ProductCategory, LoanPortfolioCategorySummary> = {
+    smartphone: emptyCategorySummary(),
+    digital: emptyCategorySummary(),
+  };
+
   for (const loan of loans.slice(0, 200)) {
+    const category = loanCategoryMap.get(loan.fineract_loan_id) || 'smartphone';
+
     try {
       const fLoan = await fineract.getLoan(loan.fineract_loan_id);
       const summary = fLoan.summary;
@@ -72,6 +107,16 @@ export async function generateLoanPortfolioFineract(
       totalPenaltiesPaid += summary.penaltyChargesPaid;
       totalWrittenOff += summary.totalWrittenOff;
       totalWaived += summary.totalWaived;
+
+      // Accumulate per product category
+      const catSummary = categoryMap[category];
+      catSummary.totalActiveLoans++;
+      catSummary.totalDisbursedPrincipal += summary.principalDisbursed;
+      catSummary.totalPrincipalOutstanding += summary.principalOutstanding;
+      catSummary.totalPrincipalPaid += summary.principalPaid;
+      catSummary.totalInterestCharged += summary.interestCharged;
+      catSummary.totalInterestPaid += summary.interestPaid;
+      catSummary.totalInterestOutstanding += summary.interestOutstanding;
 
       // By product
       const productKey = `${fLoan.loanProductId}`;
@@ -102,6 +147,17 @@ export async function generateLoanPortfolioFineract(
     } catch {
       // Skip loans that can't be fetched
     }
+  }
+
+  // Round category summary values
+  for (const cat of ['smartphone', 'digital'] as ProductCategory[]) {
+    const c = categoryMap[cat];
+    c.totalDisbursedPrincipal = round2(c.totalDisbursedPrincipal);
+    c.totalPrincipalOutstanding = round2(c.totalPrincipalOutstanding);
+    c.totalPrincipalPaid = round2(c.totalPrincipalPaid);
+    c.totalInterestCharged = round2(c.totalInterestCharged);
+    c.totalInterestPaid = round2(c.totalInterestPaid);
+    c.totalInterestOutstanding = round2(c.totalInterestOutstanding);
   }
 
   return {
@@ -142,6 +198,10 @@ export async function generateLoanPortfolioFineract(
       onTimePayments: 0,
       latePayments: 0,
       missedPayments: 0,
+    },
+    byProductCategory: {
+      smartphone: categoryMap.smartphone,
+      digital: categoryMap.digital,
     },
   };
 }

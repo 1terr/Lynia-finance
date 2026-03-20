@@ -9,9 +9,23 @@ import {
   LICENSE_NUMBER,
   LARGE_TRANSACTION_THRESHOLD_USD,
 } from '../helpers';
-import type { RBZReportConfig, MonthlyTransactionSummary } from '../../types/rbz-reports';
+import type {
+  RBZReportConfig,
+  MonthlyTransactionSummary,
+  TransactionCategorySummary,
+  ProductCategory,
+} from '../../types/rbz-reports';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
+
+function emptyTransactionCategorySummary(): TransactionCategorySummary {
+  return {
+    totalTransactions: 0,
+    totalTransactionValue: 0,
+    disbursements: { count: 0, amount: 0 },
+    repayments: { count: 0, amount: 0 },
+  };
+}
 
 export async function generateMonthlyTransactionSummary(
   config: RBZReportConfig
@@ -19,7 +33,7 @@ export async function generateMonthlyTransactionSummary(
   const periodStart = config.periodStart.toISOString();
   const periodEnd = config.periodEnd.toISOString();
 
-  // All payments in period
+  // All payments in period — join to loans to get product_category
   const { data: payments } = await query<{
     id: string;
     amount: number;
@@ -28,10 +42,14 @@ export async function generateMonthlyTransactionSummary(
     payment_type: string;
     created_at: string;
     customer_id: string;
+    product_category: string;
   }>(
-    `SELECT id, amount, payment_method, status, payment_type, created_at, customer_id
-     FROM payments
-     WHERE created_at >= $1 AND created_at <= $2`,
+    `SELECT p.id, p.amount, p.payment_method, p.status, p.payment_type,
+            p.created_at, p.customer_id,
+            COALESCE(l.product_category, 'smartphone') AS product_category
+     FROM payments p
+     LEFT JOIN loans l ON p.loan_id = l.id
+     WHERE p.created_at >= $1 AND p.created_at <= $2`,
     [periodStart, periodEnd]
   );
 
@@ -58,8 +76,8 @@ export async function generateMonthlyTransactionSummary(
     other: { count: 0, amount: 0 },
   };
 
-  const knownChannels = ['ecocash', 'onemoney', 'bank_transfer', 'cash'];
-  const otherChannels = completed.filter(p => !knownChannels.includes(p.payment_method));
+  const knownChannels = new Set(['ecocash', 'onemoney', 'bank_transfer', 'cash']);
+  const otherChannels = completed.filter(p => !knownChannels.has(p.payment_method));
   byChannel.other = {
     count: otherChannels.length,
     amount: otherChannels.reduce((s, p) => s + (p.amount || 0), 0),
@@ -99,6 +117,27 @@ export async function generateMonthlyTransactionSummary(
     .slice(0, 10)
     .map(([reason, count]) => ({ reason, count }));
 
+  // Per-product-category breakdown
+  const categoryMap: Record<ProductCategory, TransactionCategorySummary> = {
+    smartphone: emptyTransactionCategorySummary(),
+    digital: emptyTransactionCategorySummary(),
+  };
+
+  for (const p of completed) {
+    const category = (p.product_category === 'digital' ? 'digital' : 'smartphone') as ProductCategory;
+    const catSummary = categoryMap[category];
+    catSummary.totalTransactions++;
+    catSummary.totalTransactionValue += p.amount || 0;
+
+    if (p.payment_type === 'disbursement') {
+      catSummary.disbursements.count++;
+      catSummary.disbursements.amount += p.amount || 0;
+    } else if (p.payment_type === 'repayment') {
+      catSummary.repayments.count++;
+      catSummary.repayments.amount += p.amount || 0;
+    }
+  }
+
   return {
     reportingPeriod: { start: periodStart, end: periodEnd },
     institutionName: INSTITUTION_NAME,
@@ -114,6 +153,10 @@ export async function generateMonthlyTransactionSummary(
       count: failed.length,
       totalAmount: failed.reduce((s, p) => s + (p.amount || 0), 0),
       topReasons,
+    },
+    byProductCategory: {
+      smartphone: categoryMap.smartphone,
+      digital: categoryMap.digital,
     },
   };
 }

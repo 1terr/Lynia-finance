@@ -162,12 +162,17 @@ async function handleBalance(phoneNumber: string): Promise<string> {
     }
   }
 
+  const isDigital = loan.product_category === 'digital';
+  const productLine = isDigital
+    ? 'Product: Digital Cash Loan'
+    : `Device: ${loan.device_model || 'Smartphone'}`;
+
   return `💰 *Loan Balance*
 
 Hi ${customer.first_name}!
 
 Loan ID: ${loan.loan_reference || loan.id}
-Device: ${loan.device_model || 'Smartphone'}
+${productLine}
 
 📊 *Summary:*
 • Total Loan: $${loan.total_amount_due?.toFixed(2)}
@@ -314,6 +319,21 @@ async function handleDevice(phoneNumber: string): Promise<string> {
     .execute();
 
   if (!customer) return 'Account not found. Please contact support.';
+
+  // Check if the customer's active loan is a digital loan (no associated device)
+  const { data: activeLoan } = await db
+    .from('loans')
+    .select('product_category')
+    .eq('customer_id', customer.id)
+    .in('loan_status', ['active', 'delinquent'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+    .execute();
+
+  if (activeLoan?.product_category === 'digital') {
+    return `Hi ${customer.first_name}! Your digital loan has no associated device.\n\nReply *BALANCE* to check your loan balance.`;
+  }
 
   const { data: device } = await db
     .from('devices')

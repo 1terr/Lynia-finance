@@ -44,6 +44,8 @@ export interface ReminderScheduleEntry {
   tone: ReminderTone;
 }
 
+export type ProductCategory = 'smartphone' | 'digital';
+
 export interface PaymentDue {
   loan_id: string;
   customer_id: string;
@@ -54,6 +56,7 @@ export interface PaymentDue {
   due_date: string;
   days_until_due: number;
   currency: string;
+  product_category: ProductCategory;
 }
 
 export interface ReminderRecord {
@@ -161,6 +164,23 @@ export function generateReminderMessage(
     day: 'numeric',
   });
 
+  if (payment.product_category === 'digital') {
+    return generateDigitalReminderMessage(type, name, amount, dueDate, paymentLink);
+  }
+
+  return generateSmartphoneReminderMessage(type, name, amount, dueDate, paymentLink);
+}
+
+/**
+ * Reminder messages for smartphone loans (existing behavior — includes device lock warnings)
+ */
+function generateSmartphoneReminderMessage(
+  type: ReminderType,
+  name: string,
+  amount: string,
+  dueDate: string,
+  paymentLink: string
+): string {
   const templates: Record<ReminderType, string> = {
     pre_due_7: `Hi ${name}! Just a reminder - your payment of ${amount} is due on ${dueDate} (7 days).\n\nPay early to stay on track:\n${paymentLink}\n\nReply BALANCE to check your account.`,
 
@@ -186,6 +206,41 @@ export function generateReminderMessage(
   return templates[type];
 }
 
+/**
+ * Reminder messages for digital loans (no device lock — leverage is credit score impact and collections)
+ */
+function generateDigitalReminderMessage(
+  type: ReminderType,
+  name: string,
+  amount: string,
+  dueDate: string,
+  paymentLink: string
+): string {
+  const templates: Record<ReminderType, string> = {
+    pre_due_7: `Hi ${name}! Just a reminder - your payment of ${amount} is due on ${dueDate} (7 days).\n\nPay early to stay on track:\n${paymentLink}\n\nReply BALANCE to check your account.`,
+
+    pre_due_3: `Hi ${name}, your payment of ${amount} is due in 3 days (${dueDate}).\n\nTap to pay now:\n${paymentLink}\n\nReply:\n1 - Pay now\n2 - Check balance`,
+
+    pre_due_1: `${name}, your payment of ${amount} is due *tomorrow* (${dueDate}).\n\nPlease pay today to avoid late fees:\n${paymentLink}`,
+
+    due_today: `${name}, your payment of ${amount} is *due today*.\n\nPay now to stay current:\n${paymentLink}\n\nNeed help? Reply HELP`,
+
+    overdue_1: `Hi ${name}, your payment of ${amount} was due yesterday and is now *1 day overdue*.\n\nPlease pay as soon as possible:\n${paymentLink}\n\nHaving trouble? Reply EXTENSION to request more time.`,
+
+    overdue_3: `${name}, your payment of ${amount} is now *3 days overdue*.\n\nPlease pay promptly to avoid further action:\n${paymentLink}\n\nReply EXTENSION to request an extension.`,
+
+    overdue_5: `*Credit Standing Warning*\n\n${name}, your payment of ${amount} is *5 days overdue*. Late payments will lower your credit score and reduce your future loan limit.\n\nPay now to protect your credit standing:\n${paymentLink}\n\nContact us: Reply HELP`,
+
+    overdue_7: `*Collections Notice*\n\n${name}, your payment of ${amount} is *7 days overdue*. Your account has been sent to our collections team.\n\nPay now to resolve this:\n${paymentLink}\n\nNeed help? Reply HELP or call support.`,
+
+    overdue_14: `*Final Notice*\n\n${name}, your account is *14 days overdue* (${amount}). If payment is not received, your account may be reported to the credit bureau. This will affect your ability to get loans in the future.\n\nPay now: ${paymentLink}\n\nReply CALL to request a callback from our team.`,
+
+    overdue_30: `*Default Notice*\n\n${name}, your account is *30 days overdue* (${amount}). Your account has been reported as in default and legal action may follow.\n\nPay now: ${paymentLink}\n\nPlease contact us urgently at support@lynia.finance or reply HELP.`,
+  };
+
+  return templates[type];
+}
+
 // ===================================================================
 // CORE SCHEDULER LOGIC
 // ===================================================================
@@ -205,6 +260,7 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
       next_payment_date,
       monthly_installment_amount,
       currency,
+      product_category,
       customers (
         id,
         phone_number,
@@ -242,6 +298,7 @@ export async function findPaymentsDueForReminders(): Promise<PaymentDue[]> {
       due_date: loan.next_payment_date,
       days_until_due: daysUntilDue,
       currency: loan.currency || 'USD',
+      product_category: (loan.product_category as ProductCategory) || 'smartphone',
     });
   }
 

@@ -25,7 +25,7 @@ export interface InitiatePaymentRequest {
   currency: 'USD' | 'ZWL';
   customer_phone: string;
   gateway?: PaymentGateway; // Optional: auto-select if not provided
-  payment_type: 'deposit' | 'repayment' | 'penalty';
+  payment_type: 'deposit' | 'repayment' | 'penalty' | 'disbursement';
   description?: string;
 }
 
@@ -462,6 +462,55 @@ export class PaymentService {
             meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
           }));
         }
+      } else if (payment.payment_type === 'disbursement') {
+        // Disbursement completed: activate loan and notify customer
+        try {
+          await db
+            .from('loans')
+            .update({
+              status: 'active',
+              disbursement_date: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', payment.loan_id)
+            .execute();
+
+          logger.info('Loan activated after disbursement', {
+            action: 'payment.disbursement_completed',
+            meta: { paymentId, loanId: payment.loan_id, amount: payment.amount },
+          });
+        } catch (err) {
+          logger.error('Failed to activate loan after disbursement', {
+            action: 'payment.disbursement_completed',
+            meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
+          });
+        }
+
+        // Send WhatsApp disbursement confirmation
+        SQSQueues.sendNotification({
+          customerId: payment.customer_id,
+          channel: 'whatsapp',
+          templateName: 'disbursement_confirmed',
+          templateParams: {
+            amount: String(payment.amount),
+            loan_id: payment.loan_id,
+          },
+        }).catch(err => logger.warn('Failed to send disbursement notification', {
+          action: 'payment.notify',
+          meta: { paymentId, error: err instanceof Error ? err.message : 'Unknown' },
+        }));
+
+        // Queue Fineract sync for disbursement
+        SQSQueues.syncDataWarehouse({
+          eventType: 'loan.disbursed',
+          entityId: payment.loan_id,
+          entityType: 'loan',
+          metadata: { paymentId, amount: payment.amount, currency: payment.currency },
+        }).catch(err => logger.warn('Failed to queue Fineract disbursement sync', {
+          action: 'payment.fineract_sync',
+          meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
+        }));
+
       } else if (payment.payment_type === 'penalty') {
         logger.info('Penalty payment completed', {
           action: 'payment.penalty_paid',
@@ -531,6 +580,22 @@ export class PaymentService {
         .execute();
 
       logger.info(`Loan ${payment.loan_id} repayment: $${payment.amount}, new balance: $${newBalance}`, { action: 'payment.link_loan' });
+
+    } else if (payment.payment_type === 'disbursement') {
+      // Disbursement: mark loan as active with disbursement details
+      await db
+        .from('loans')
+        .update({
+          status: 'active',
+          disbursement_date: payment.completed_at || new Date().toISOString(),
+          disbursement_amount: payment.amount,
+          outstanding_balance: payment.amount,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', payment.loan_id)
+        .execute();
+
+      logger.info(`Loan ${payment.loan_id} disbursed: $${payment.amount}`, { action: 'payment.link_loan' });
     }
   }
 

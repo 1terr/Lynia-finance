@@ -31,8 +31,16 @@ export async function handleProductSelection(
     return t('smartphone_selected', lang) + '\n\n' + t('kyc_id_number', lang);
   }
 
-  if (message === '2' || message.includes('digital')) {
-    return t('digital_credit_soon', lang);
+  if (message === '2' || message.includes('digital') || message.includes('mari') || message.includes('imali')) {
+    await updateSession(context.from, {
+      current_state: 'org_verification',
+      state_data: {
+        ...session.state_data,
+        selected_product: 'digital_credit',
+      }
+    });
+
+    return t('digital_credit_selected', lang) + '\n\n' + t('org_verification_prompt', lang);
   }
 
   return t('product_selection', lang);

@@ -294,10 +294,14 @@ export class LockManagementService {
       let failed = 0;
 
       // Step 1: Check for new overdue loans (7+ days)
+      // Skip digital loans — they have no physical device to lock.
+      // Digital loan overdue handling is done by the notification service instead.
       const { data: overdueLoans, error: overdueError } = await db
         .from('loans')
         .select('*, devices(*), customers(*)')
         .eq('status', 'active')
+        .neq('product_category', 'digital')
+        .not('device_id', 'is', null)
         .lt('next_payment_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
         .execute();
 
@@ -307,6 +311,12 @@ export class LockManagementService {
         checked += overdueLoans.length;
 
         for (const loan of overdueLoans) {
+          // Safety check: skip loans with no device (e.g. digital loans)
+          if (!loan.device_id) {
+            logger.info('Skipping loan with no device (digital loan)', { action: 'lock.management.processAutomated', loanId: loan.id });
+            continue;
+          }
+
           // Check if trigger already exists
           const { data: existingTrigger } = await db
             .from('device_lock_triggers')

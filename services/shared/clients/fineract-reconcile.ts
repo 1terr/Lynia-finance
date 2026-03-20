@@ -47,7 +47,10 @@ interface DiscrepancyDetail {
   fineractOutstanding: number;
   difference: number;
   severity: 'low' | 'medium' | 'high';
+  productCategory: ProductCategory;
 }
+
+type ProductCategory = 'smartphone' | 'digital';
 
 interface LyniaLoanRow {
   id: string;
@@ -56,6 +59,7 @@ interface LyniaLoanRow {
   total_paid_usd: number;
   status: string;
   loan_number: string;
+  product_category: ProductCategory;
 }
 
 interface FailedSyncRow {
@@ -100,7 +104,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   try {
     const { data: loans, error } = await db
       .from('loans')
-      .select('id, fineract_loan_id, outstanding_balance, total_paid_usd, status, loan_number')
+      .select('id, fineract_loan_id, outstanding_balance, total_paid_usd, status, loan_number, product_category')
       .not('fineract_loan_id', 'is', null)
       .execute();
 
@@ -135,6 +139,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
             fineractOutstanding,
             difference,
             severity,
+            productCategory: loan.product_category,
           });
 
           // Log discrepancy to sync log
@@ -234,6 +239,14 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   // Step 4: Emit CloudWatch metrics
   // ----------------------------------------------------------
   try {
+    // Count discrepancies per product category
+    const smartphoneDiscrepancies = result.discrepancies.filter(
+      (d) => d.productCategory === 'smartphone'
+    ).length;
+    const digitalDiscrepancies = result.discrepancies.filter(
+      (d) => d.productCategory === 'digital'
+    ).length;
+
     await cloudwatch.send(new PutMetricDataCommand({
       Namespace: METRIC_NAMESPACE,
       MetricData: [
@@ -255,12 +268,28 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
           Unit: 'Count',
           Timestamp: new Date(),
         },
+        {
+          MetricName: 'ReconciliationDiscrepancies',
+          Dimensions: [{ Name: 'ProductCategory', Value: 'smartphone' }],
+          Value: smartphoneDiscrepancies,
+          Unit: 'Count',
+          Timestamp: new Date(),
+        },
+        {
+          MetricName: 'ReconciliationDiscrepancies',
+          Dimensions: [{ Name: 'ProductCategory', Value: 'digital' }],
+          Value: digitalDiscrepancies,
+          Unit: 'Count',
+          Timestamp: new Date(),
+        },
       ],
     }));
     console.log('[reconcile] CloudWatch metrics emitted:', {
       approvalSyncFailures,
       totalPendingSyncFailures,
       discrepancies: result.discrepancies.length,
+      smartphoneDiscrepancies,
+      digitalDiscrepancies,
     });
   } catch (metricError) {
     console.error('[reconcile] Failed to emit CloudWatch metrics:', metricError);
@@ -271,10 +300,15 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   // ----------------------------------------------------------
   result.durationMs = Date.now() - startTime;
 
+  // Per-category summary
+  const smartphoneTotal = result.discrepancies.filter((d) => d.productCategory === 'smartphone').length;
+  const digitalTotal = result.discrepancies.filter((d) => d.productCategory === 'digital').length;
+
   console.log('[reconcile] Reconciliation complete:', {
     totalLoansChecked: result.totalLoansChecked,
     matched: result.matchedLoans,
     discrepancies: result.discrepancies.length,
+    discrepanciesByCategory: { smartphone: smartphoneTotal, digital: digitalTotal },
     failedChecks: result.failedChecks,
     retriedSyncs: result.retriedSyncs,
     retriedSuccesses: result.retriedSuccesses,
