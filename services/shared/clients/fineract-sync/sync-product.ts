@@ -118,6 +118,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       .from('loan_products')
       .update({
         fineract_product_id: existing.id,
+        fineract_synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', lyniaProductId)
@@ -268,6 +269,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       .from('loan_products')
       .update({
         fineract_product_id: result.resourceId,
+        fineract_synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
       .eq('id', lyniaProductId)

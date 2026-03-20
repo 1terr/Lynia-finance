@@ -422,9 +422,13 @@ export interface FineractLoanProduct {
   minPrincipal: number;
   maxPrincipal: number;
   numberOfRepayments: number;
+  minNumberOfRepayments?: number;
+  maxNumberOfRepayments?: number;
   repaymentEvery: number;
   repaymentFrequencyType: FineractEnumValue;
   interestRatePerPeriod: number;
+  minInterestRatePerPeriod?: number;
+  maxInterestRatePerPeriod?: number;
   interestRateFrequencyType: FineractEnumValue;
   annualInterestRate: number;
   amortizationType: FineractEnumValue;
@@ -432,6 +436,9 @@ export interface FineractLoanProduct {
   interestCalculationPeriodType: FineractEnumValue;
   transactionProcessingStrategyCode: string;
   transactionProcessingStrategyName: string;
+  daysInYearType?: FineractEnumValue;
+  daysInMonthType?: FineractEnumValue;
+  isInterestRecalculationEnabled?: boolean;
   accountingRule: FineractEnumValue;
   accountingMappings?: Record<string, { id: number; name: string; glCode: string }>;
 }
