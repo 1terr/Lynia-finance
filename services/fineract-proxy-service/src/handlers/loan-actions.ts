@@ -9,6 +9,7 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import { db } from '../../../shared/clients/database';
+import { syncLoanToFineract, approveLoanInFineract } from '../../../shared/clients/fineract-sync/sync-executor';
 import { parseBody } from '../../../shared/utils/response';
 import logger from '../../../shared/utils/logger';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
@@ -373,5 +374,118 @@ export async function handleLoanClose(
     );
   } catch (e) {
     return handleFineractError(e, 'loanClose', params.loanId, event);
+  }
+}
+
+// ============================================================
+// POST /api/v1/fineract/loans/:loanId/retry-sync
+// ============================================================
+
+/** Retry failed Fineract sync for a loan (create + approve) */
+export async function handleLoanRetrySync(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const lyniaLoanId = params.loanId;
+
+  // Look up the loan with full details needed for sync
+  const { data: loanData, error: dbError } = await db
+    .from('loans')
+    .select('id, customer_id, fineract_loan_id, fineract_product_id, loan_amount_usd, interest_rate, loan_term_months, status')
+    .eq('id', lyniaLoanId)
+    .single()
+    .execute();
+
+  if (dbError || !loanData) {
+    return err(404, 'Loan not found', event);
+  }
+
+  const loan = loanData as unknown as {
+    id: string;
+    customer_id: string;
+    fineract_loan_id: number | null;
+    fineract_product_id: number | null;
+    loan_amount_usd: number;
+    interest_rate: number;
+    loan_term_months: number;
+    status: string;
+  };
+
+  try {
+    if (!loan.fineract_loan_id) {
+      // Case 1: Loan was never synced to Fineract — need to create + approve
+      const { data: customer } = await db
+        .from('customers')
+        .select('id, fineract_client_id')
+        .eq('id', loan.customer_id)
+        .single()
+        .execute();
+
+      const cust = customer as unknown as { id: string; fineract_client_id: number | null } | null;
+      if (!cust?.fineract_client_id) {
+        return err(400, 'Customer has not been synced to Fineract. Customer sync must succeed first.', event);
+      }
+
+      const fineractProductId = loan.fineract_product_id
+        || parseInt(process.env.FINERACT_SMARTPHONE_PRODUCT_ID || '1');
+
+      const fineractLoanId = await syncLoanToFineract({
+        loanId: loan.id,
+        customerId: loan.customer_id,
+        fineractClientId: cust.fineract_client_id,
+        fineractProductId,
+        principal: loan.loan_amount_usd,
+        numberOfRepayments: loan.loan_term_months,
+        repaymentEveryMonths: 1,
+        interestRatePerMonth: loan.interest_rate / 12,
+        expectedDisbursementDate: new Date(),
+      });
+
+      if (!fineractLoanId) {
+        return err(502, 'Failed to create loan in Fineract', event);
+      }
+
+      // Now approve it
+      const approved = await approveLoanInFineract({
+        loanId: loan.id,
+        fineractLoanId,
+      });
+
+      // Clear failed sync log entries for this loan
+      await db
+        .from('fineract_sync_log')
+        .update({ status: 'success', completed_at: new Date().toISOString() })
+        .eq('entity_id', loan.id)
+        .eq('entity_type', 'loan')
+        .in('status', ['failed', 'exhausted'])
+        .execute();
+
+      return ok({ success: true, fineractLoanId, approved }, event);
+    } else {
+      // Case 2: Loan exists in Fineract but approve failed — retry approve only
+      const approved = await approveLoanInFineract({
+        loanId: loan.id,
+        fineractLoanId: loan.fineract_loan_id,
+      });
+
+      if (!approved) {
+        return err(502, 'Failed to approve loan in Fineract', event);
+      }
+
+      // Clear failed sync log entries
+      await db
+        .from('fineract_sync_log')
+        .update({ status: 'success', completed_at: new Date().toISOString() })
+        .eq('entity_id', loan.id)
+        .eq('entity_type', 'loan')
+        .eq('operation', 'approve')
+        .in('status', ['failed', 'exhausted'])
+        .execute();
+
+      return ok({ success: true, fineractLoanId: loan.fineract_loan_id, approved: true }, event);
+    }
+  } catch (e) {
+    return handleFineractError(e, 'loanRetrySync', params.loanId, event);
   }
 }
