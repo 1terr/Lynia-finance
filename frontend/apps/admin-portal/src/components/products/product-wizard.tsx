@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useGLAccounts, getAccountsForField } from '@/hooks/use-gl-accounts';
 import { createProduct, updateProduct, getProductFineractDefaults, getOrganizations, linkOrganizations } from '@/lib/api/products';
 import { ChevronLeft, ChevronRight, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { FeeSimulationPreview } from '@/components/products/fee-simulation-preview';
 import type {
   LoanProduct,
   CreateProductInput,
@@ -920,6 +921,20 @@ export function ProductWizard({ product }: ProductWizardProps) {
                 </div>
               )}
             </fieldset>
+
+            {/* Fee Simulation Preview */}
+            {(parseFloat(minAmount) > 0 || parseFloat(maxAmount) > 0) && parseFloat(maxTerm) > 0 && (
+              <FeeSimulationPreview
+                minAmount={parseFloat(minAmount) || 0}
+                maxAmount={parseFloat(maxAmount) || 0}
+                annualRate={parseFloat(annualRate) || 0}
+                termMonths={parseFloat(maxTerm) || 0}
+                insuranceFeeType={insuranceFeeType}
+                insuranceFeePercentage={parseFloat(insuranceFeePercentage) || 0}
+                insuranceFeeFlatUsd={parseFloat(insuranceFeeFlatUsd) || 0}
+                insuranceFeeFrequency={insuranceFeeFrequency}
+              />
+            )}
           </div>
         )}
 
