@@ -20,7 +20,7 @@ jest.mock('../../../services/shared/clients/database', () => {
   };
   return {
     db: { from: jest.fn().mockImplementation(() => createChain()) },
-    withTransaction: jest.fn().mockImplementation(async (fn: Function) => {
+    withTransaction: jest.fn().mockImplementation(async (fn: (...args: any[]) => any) => {
       const tx = jest.fn().mockResolvedValue({ data: [], error: null });
       return fn(tx);
     }),

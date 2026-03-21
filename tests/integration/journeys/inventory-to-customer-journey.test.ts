@@ -58,7 +58,7 @@ function parseTxSql(sql: string, params?: unknown[]): { table: string; op: strin
   return null;
 }
 
-const mockWithTransaction = jest.fn().mockImplementation(async (fn: Function) => {
+const mockWithTransaction = jest.fn().mockImplementation(async (fn: (...args: any[]) => any) => {
   const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
     const parsed = parseTxSql(sql, params);
     if (parsed) dbOps.push(parsed);

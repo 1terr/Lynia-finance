@@ -245,7 +245,7 @@ describe('Inventory Audit Readiness', () => {
     });
 
     // Mock withTransaction to execute callback with a tx that tracks operations
-    mockWithTransaction.mockImplementation(async (fn: Function) => {
+    mockWithTransaction.mockImplementation(async (fn: (...args: any[]) => any) => {
       const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
         const parsed = parseTxSql(sql, params);
         if (parsed) dbOps.push(parsed);
@@ -614,7 +614,7 @@ describe('Inventory Audit Readiness', () => {
   describe('Bulk Transfer', () => {
     it('transfers devices with spot-check generation', async () => {
       // Mock withTransaction to execute the callback
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           // Track the SQL operations
           if (sql.includes('SELECT') && sql.includes('devices')) {
@@ -772,7 +772,7 @@ describe('Inventory Audit Readiness', () => {
       setupTransferMock('disputed');
 
       // Setup withTransaction mock for received transition
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockResolvedValue({ data: null, error: null });
         return cb(txFn);
       });

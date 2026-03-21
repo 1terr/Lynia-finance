@@ -154,7 +154,7 @@ describe('completeHandover invariants - property tests', () => {
     });
 
     // Mock withTransaction to execute the callback with a tx function that tracks operations
-    mockWithTransaction.mockImplementation(async (fn: Function) => {
+    mockWithTransaction.mockImplementation(async (fn: (...args: any[]) => any) => {
       const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
         const parsed = parseTxSql(sql, params);
         if (parsed) dbOps.push(parsed);

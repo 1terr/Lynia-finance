@@ -62,7 +62,7 @@ function parseTxSql(sql: string, params?: unknown[]): { table: string; op: strin
 jest.mock('../../../services/shared/clients/database', () => ({
   db: { from: (...args: unknown[]) => mockFrom(...args) },
   query: (...args: unknown[]) => mockQuery(...args),
-  withTransaction: jest.fn().mockImplementation(async (fn: Function) => {
+  withTransaction: jest.fn().mockImplementation(async (fn: (...args: any[]) => any) => {
     const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
       const parsed = parseTxSql(sql, params);
       if (parsed) dbOps.push(parsed);

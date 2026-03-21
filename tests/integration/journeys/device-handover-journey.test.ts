@@ -134,7 +134,7 @@ describe('Device Handover Journey', () => {
     });
 
     // Mock withTransaction to execute callback with a tx that tracks operations
-    mockWithTransaction.mockImplementation(async (fn: Function) => {
+    mockWithTransaction.mockImplementation(async (fn: (...args: any[]) => any) => {
       const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
         const parsed = parseTxSql(sql, params);
         if (parsed) dbOps.push(parsed);
@@ -329,7 +329,7 @@ describe('Device Handover Journey', () => {
       });
 
       // Simulate lock insert failure inside the transaction
-      mockWithTransaction.mockImplementation(async (fn: Function) => {
+      mockWithTransaction.mockImplementation(async (fn: (...args: any[]) => any) => {
         let callCount = 0;
         const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
           callCount++;

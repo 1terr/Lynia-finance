@@ -30,7 +30,7 @@ jest.mock('../../services/shared/clients/database', () => ({
   db: { from: jest.fn().mockImplementation(() => createChain()) },
   query: jest.fn().mockResolvedValue({ data: [], error: null }),
   queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
-  withTransaction: jest.fn().mockImplementation((fn: Function) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
+  withTransaction: jest.fn().mockImplementation((fn: (...args: any[]) => any) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
 }));
 
 jest.mock('../../services/shared/utils/logger', () => ({

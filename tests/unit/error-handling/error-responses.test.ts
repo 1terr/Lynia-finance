@@ -29,7 +29,7 @@ jest.mock('../../../services/shared/clients/database', () => ({
   db: mockDb,
   query: mockQuery,
   queryOne: mockQueryOne,
-  withTransaction: jest.fn().mockImplementation((fn: Function) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
+  withTransaction: jest.fn().mockImplementation((fn: (...args: any[]) => any) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
 }));
 
 const mockIsAdminOrManager = jest.fn();

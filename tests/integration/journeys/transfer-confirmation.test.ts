@@ -201,7 +201,7 @@ describe('Transfer Confirmation Flow', () => {
       });
 
       const txCalls: { sql: string; params: unknown[] }[] = [];
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           txCalls.push({ sql, params });
           return { data: [{ device_id: 'dev-001' }], error: null };
@@ -243,7 +243,7 @@ describe('Transfer Confirmation Flow', () => {
         device_id: 'dev-001',
       });
 
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockResolvedValue({ data: null, error: null });
         return cb(txFn);
       });
@@ -278,7 +278,7 @@ describe('Transfer Confirmation Flow', () => {
       });
 
       const forceConfirmTxCalls: { sql: string; params: unknown[] }[] = [];
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           forceConfirmTxCalls.push({ sql, params });
           return { data: null, error: null };
@@ -323,7 +323,7 @@ describe('Transfer Confirmation Flow', () => {
         return chain;
       });
 
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           if (sql.includes('RETURNING id')) {
             return { data: [{ id: 'return-admin-001' }], error: null };
@@ -370,7 +370,7 @@ describe('Transfer Confirmation Flow', () => {
       });
 
       const approveTxCalls: { sql: string; params: unknown[] }[] = [];
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           approveTxCalls.push({ sql, params });
           return { data: null, error: null };
@@ -419,7 +419,7 @@ describe('Transfer Confirmation Flow', () => {
         return { data: [], error: null };
       });
 
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string) => {
           if (sql.includes('RETURNING id')) {
             return { data: [{ id: 'return-dist-001' }], error: null };
@@ -466,7 +466,7 @@ describe('Transfer Confirmation Flow', () => {
       });
 
       const approveTxCalls: { sql: string; params: unknown[] }[] = [];
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           approveTxCalls.push({ sql, params });
           return { data: null, error: null };
@@ -581,7 +581,7 @@ describe('Transfer Confirmation Flow', () => {
       });
 
       const txCalls: { sql: string; params: unknown[] }[] = [];
-      mockWithTransaction.mockImplementation(async (cb: Function) => {
+      mockWithTransaction.mockImplementation(async (cb: (...args: any[]) => any) => {
         const txFn = jest.fn().mockImplementation(async (sql: string, params: unknown[]) => {
           txCalls.push({ sql, params });
           return { data: null, error: null };
