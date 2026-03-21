@@ -151,6 +151,11 @@ Parameters:
     NoEcho: true
     Default: ""
 
+  SesSenderEmail:
+    Type: String
+    Description: SES verified sender email address for transfer notifications
+    Default: "noreply@lynia.finance"
+
   DiditApiKey:
     Type: String
     Description: Didit KYC API Key
@@ -785,8 +790,15 @@ Resources:
               Action:
                 - sns:Publish
               Resource: "*"  # SNS Publish to phone numbers requires wildcard
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource:
+                - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
       Environment:
         Variables:
+          SES_SENDER_EMAIL: !Ref SesSenderEmail
           SMS_PROVIDER: !Ref SmsProvider  # Legacy — SMS now uses AWS SNS (IAM auth)
           SMS_API_KEY: !Ref SmsApiKey     # Legacy — kept for backward compatibility
           WHATSAPP_API_URL: !Ref WhatsAppApiUrl
@@ -1160,12 +1172,19 @@ Resources:
                 - sqs:SendMessage
               Resource:
                 - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-fineract-sync-retry"
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource:
+                - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
       Environment:
         Variables:
           COGNITO_USER_POOL_ID: !If
             - HasCognitoPoolId
             - !Ref CognitoUserPoolId
             - ""
+          SES_SENDER_EMAIL: !Ref SesSenderEmail
       Events:
         # Catch-all proxy routes to avoid Lambda policy size limit (20KB)
         # The handler does its own path-based routing internally
@@ -1270,6 +1289,15 @@ Resources:
                 - sqs:SendMessage
               Resource:
                 - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-fineract-sync-retry"
+            - Effect: Allow
+              Action:
+                - ses:SendEmail
+                - ses:SendRawEmail
+              Resource:
+                - !Sub "arn:aws:ses:${AWS::Region}:${AWS::AccountId}:identity/*"
+      Environment:
+        Variables:
+          SES_SENDER_EMAIL: !Ref SesSenderEmail
       Events:
         GetDistributorProfile:
           Type: Api

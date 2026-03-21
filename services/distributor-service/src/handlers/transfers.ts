@@ -17,6 +17,7 @@ import { requireRole } from '../../../shared/middleware/authorization';
 import { resolveDistributor } from '../helpers/resolve-distributor';
 import {
   notifyAdminsOfTransferEvent,
+  sendTransferEmail,
 } from '../../../shared/utils/notifications';
 import logger from '../../../shared/utils/logger';
 
@@ -369,6 +370,26 @@ export const handleConfirmTransfer: RouteHandler = async (event, params, auth) =
       batchSize: transferIdsToConfirm.length,
     });
 
+    // Best-effort email receipt to distributor
+    const { data: distInfo } = await query<{ email: string; business_name: string }>(
+      `SELECT email, business_name FROM distributors WHERE id = $1`,
+      [dist.id]
+    );
+    if (distInfo[0]?.email) {
+      const { data: devRows } = await query<{ manufacturer: string; model: string }>(
+        `SELECT manufacturer, model FROM devices WHERE id = $1`,
+        [transfer.device_id]
+      );
+      const dev = devRows[0];
+      await sendTransferEmail({
+        to: distInfo[0].email,
+        distributorName: distInfo[0].business_name,
+        transferType: 'Confirmed',
+        deviceInfo: dev ? `${dev.manufacturer} ${dev.model}` : 'N/A',
+        transferId,
+      });
+    }
+
     return successResponse({
       message: `Successfully confirmed ${transferIdsToConfirm.length} transfer(s)`,
       confirmed_transfer_ids: transferIdsToConfirm,
@@ -414,8 +435,9 @@ export const handleRejectTransfer: RouteHandler = async (event, params, auth) =>
     id: string;
     to_distributor_id: string;
     status: string;
+    device_id: string;
   }>(
-    `SELECT id, to_distributor_id, status FROM stock_transfers WHERE id = $1`,
+    `SELECT id, to_distributor_id, status, device_id FROM stock_transfers WHERE id = $1`,
     [transferId]
   );
 
@@ -465,6 +487,26 @@ export const handleRejectTransfer: RouteHandler = async (event, params, auth) =>
       transferId,
       distributorId: dist.id,
     });
+
+    // Best-effort email receipt to distributor
+    const { data: distInfo } = await query<{ email: string; business_name: string }>(
+      `SELECT email, business_name FROM distributors WHERE id = $1`,
+      [dist.id]
+    );
+    if (distInfo[0]?.email) {
+      const { data: devRows } = await query<{ manufacturer: string; model: string }>(
+        `SELECT manufacturer, model FROM devices WHERE id = $1`,
+        [transfer.device_id]
+      );
+      const dev = devRows[0];
+      await sendTransferEmail({
+        to: distInfo[0].email,
+        distributorName: distInfo[0].business_name,
+        transferType: 'Disputed',
+        deviceInfo: dev ? `${dev.manufacturer} ${dev.model}` : 'N/A',
+        transferId,
+      });
+    }
 
     return successResponse({
       message: 'Transfer has been disputed. Admin will review.',

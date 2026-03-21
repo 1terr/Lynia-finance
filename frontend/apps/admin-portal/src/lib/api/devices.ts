@@ -306,10 +306,25 @@ export async function approveAdjustment(id: string, action: 'approve' | 'reject'
   });
 }
 
+export type TransferStatus =
+  | 'requested'
+  | 'approved'
+  | 'in_transit'
+  | 'pending_receipt'
+  | 'received'
+  | 'disputed'
+  | 'return_requested'
+  | 'return_approved'
+  | 'cancelled';
+
+export type TransferType = 'outbound' | 'return';
+
 export interface StockTransfer {
   id: string;
   device_id: string;
-  status: 'requested' | 'approved' | 'in_transit' | 'received' | 'cancelled';
+  status: TransferStatus;
+  transfer_type?: TransferType;
+  batch_id?: string | null;
   device_imei: string | null;
   manufacturer: string | null;
   device_model: string | null;
@@ -363,6 +378,32 @@ export async function updateTransferStatus(
   return fetchAPI<{ message: string }>(`/admin/inventory/transfers/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ status, cancellation_reason: cancellationReason }),
+  });
+}
+
+export async function forceConfirmTransfer(id: string, reason: string) {
+  return fetchAPI<{ message: string }>(`/admin/inventory/transfers/${id}/force-confirm`, {
+    method: 'POST',
+    body: JSON.stringify({ reason }),
+  });
+}
+
+export interface CreateReturnRequest {
+  device_id: string;
+  from_distributor_id: string;
+  reason: string;
+}
+
+export async function createReturn(data: CreateReturnRequest) {
+  return fetchAPI<StockTransfer>('/admin/inventory/transfers/return', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export async function approveReturn(id: string) {
+  return fetchAPI<{ message: string }>(`/admin/inventory/transfers/${id}/approve-return`, {
+    method: 'POST',
   });
 }
 

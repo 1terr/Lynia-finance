@@ -7,6 +7,7 @@ import logger, { getRequestContext } from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 import {
   notifyDistributorOfTransferEvent,
+  sendTransferEmail,
 } from '../../../shared/utils/notifications';
 
 // ─── GET /admin/inventory/transfers ───
@@ -412,6 +413,30 @@ export const handleForceConfirm: RouteHandler = async (event, params, auth) => {
     await auditLog(auth, 'inventory.transfer.force_confirm', 'stock_transfer', transferId,
       `Force-confirmed transfer ${transferId}: ${reason.trim()}`);
 
+    // Best-effort email notification to distributor
+    const toDistributorId = transferRecord.to_distributor_id as string | null;
+    if (toDistributorId) {
+      const { data: distRows } = await query<{ email: string; business_name: string }>(
+        `SELECT email, business_name FROM distributors WHERE id = $1`,
+        [toDistributorId]
+      );
+      const dist = distRows[0];
+      if (dist?.email) {
+        const { data: devRows } = await query<{ manufacturer: string; model: string }>(
+          `SELECT manufacturer, model FROM devices WHERE id = $1`,
+          [transferRecord.device_id as string]
+        );
+        const dev = devRows[0];
+        await sendTransferEmail({
+          to: dist.email,
+          distributorName: dist.business_name,
+          transferType: 'Force-Confirmed',
+          deviceInfo: dev ? `${dev.manufacturer} ${dev.model}` : 'N/A',
+          transferId,
+        });
+      }
+    }
+
     return successResponse({ message: 'Transfer force-confirmed successfully' }, 200, event);
 
   } catch (err) {
@@ -493,6 +518,29 @@ export const handleCreateReturn: RouteHandler = async (event, _params, auth) => 
 
     await auditLog(auth, 'inventory.transfer.return_create', 'stock_transfer', returnTransferId || null,
       `Created return request for device ${device_id} from distributor ${from_distributor_id}`);
+
+    // Best-effort email notification to distributor
+    if (returnTransferId) {
+      const { data: distRows } = await query<{ email: string; business_name: string }>(
+        `SELECT email, business_name FROM distributors WHERE id = $1`,
+        [from_distributor_id]
+      );
+      const dist = distRows[0];
+      if (dist?.email) {
+        const { data: devRows } = await query<{ manufacturer: string; model: string }>(
+          `SELECT manufacturer, model FROM devices WHERE id = $1`,
+          [device_id]
+        );
+        const dev = devRows[0];
+        await sendTransferEmail({
+          to: dist.email,
+          distributorName: dist.business_name,
+          transferType: 'Return Requested',
+          deviceInfo: dev ? `${dev.manufacturer} ${dev.model}` : 'N/A',
+          transferId: returnTransferId,
+        });
+      }
+    }
 
     return successResponse({ message: 'Return request created', transfer_id: returnTransferId }, 201, event);
 
@@ -594,6 +642,29 @@ export const handleApproveReturn: RouteHandler = async (event, params, auth) => 
 
     await auditLog(auth, 'inventory.transfer.return_approved', 'stock_transfer', transferId,
       `Approved return ${transferId}, device ${deviceId} returned to stock`);
+
+    // Best-effort email notification to distributor
+    if (fromDistributorId) {
+      const { data: distRows } = await query<{ email: string; business_name: string }>(
+        `SELECT email, business_name FROM distributors WHERE id = $1`,
+        [fromDistributorId]
+      );
+      const dist = distRows[0];
+      if (dist?.email) {
+        const { data: devRows } = await query<{ manufacturer: string; model: string }>(
+          `SELECT manufacturer, model FROM devices WHERE id = $1`,
+          [deviceId]
+        );
+        const dev = devRows[0];
+        await sendTransferEmail({
+          to: dist.email,
+          distributorName: dist.business_name,
+          transferType: 'Return Approved',
+          deviceInfo: dev ? `${dev.manufacturer} ${dev.model}` : 'N/A',
+          transferId,
+        });
+      }
+    }
 
     return successResponse({ message: 'Return approved. Device returned to stock.' }, 200, event);
 
