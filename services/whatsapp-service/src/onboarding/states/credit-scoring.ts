@@ -351,6 +351,8 @@ Enter an amount between $${minAmount} and $${effectiveLimit.toFixed(2)}`;
           down_payment_percentage: scoreResult.down_payment_percentage,
           interest_rate_apr: scoreResult.interest_rate_apr,
           decision: scoreResult.decision,
+          matched_product_id: scoreResult.matched_product_id,
+          matched_product_code: scoreResult.matched_product_code,
         }
       });
 
@@ -375,6 +377,10 @@ However, there are no devices currently available in your price range. Please ch
         decision: scoreResult.decision,
         available_devices: devices,
         resolved_product_id: resolvedProductId,
+        matched_product_id: scoreResult.matched_product_id,
+        matched_product_code: scoreResult.matched_product_code,
+        matched_product_min_term: 6,
+        matched_product_max_term: 18,
       }
     });
 
@@ -386,7 +392,6 @@ However, there are no devices currently available in your price range. Please ch
 
 Your Credit Details:
 Loan Limit: $${scoreResult.credit_limit_usd}
-Credit Tier: ${scoreResult.tier}
 Credit Score: ${scoreResult.scaled_score}/850
 
 Choose your smartphone:
