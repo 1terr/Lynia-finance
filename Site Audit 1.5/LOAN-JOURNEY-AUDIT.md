@@ -467,28 +467,54 @@ Uses **retail price** (not depreciated) since device is new at disbursement.
 
 ---
 
-## REMAINING GAPS (Post-Implementation)
+## REMAINING GAPS & RECOMMENDATIONS (Post-Implementation)
 
-### Items Requiring Business/Ops Action (Not Code)
+---
 
-| # | Item | Owner | Priority | Notes |
-|---|------|-------|----------|-------|
-| 1 | Payment providers production setup | Biz Dev | P0 | Start with EcoCash (largest market share). Obtain prod API credentials. |
-| 2 | MDM provider selection + integration | CTO | P0 | Evaluate Trustonic alternatives. Device lock/unlock is core to smartphone loans. |
-| 3 | WhatsApp Cloud API Meta verification | Marketing | P0 | Business account verification + message template approval. |
-| 4 | DIDIT KYC production testing with ZW IDs | KYC Team | P0 | Face matching + ID verification with Zimbabwean national IDs. |
-| 5 | Interest rates finalization | Finance | P0 | Must decide before any loan disbursement. Current seed data inconsistent. |
-| 6 | Cognito groups creation | DevOps | P1 | 8 groups needed: super_admin, admin, operations_manager, kyc_reviewer, finance_team, inventory_manager, customer_support, reports_viewer |
-| 7 | E2E testing with real payment providers | QA | P1 | Payment reconciliation, webhook testing, USSD flow validation |
-| 8 | Load testing (100 concurrent WhatsApp sessions) | QA | P2 | Validate Lambda cold starts, DB connection pooling, SQS throughput |
-| 9 | Migration 047 deployment to production RDS | DevOps | P1 | `credit_balance_usd` column needed for overpayment handling |
+### P0 — Cannot Launch Without These (Business/Ops Action Required)
+
+| # | Item | Owner | Impact | Recommended Action |
+|---|------|-------|--------|-------------------|
+| 1 | **Payment providers production setup** | Biz Dev | No payments can be collected or disbursed | Start with EcoCash (largest ZW market share). Obtain prod API credentials, configure webhook URLs, test sandbox→prod promotion. Budget 2 weeks for certification. |
+| 2 | **MDM provider selection + integration** | CTO | Device lock/unlock won't work for smartphone loans | Trustonic evaluation stalled — evaluate alternatives: Samsung Knox (Samsung-only), Google Android Management API (broader support), Famoco. Device collateral is the core risk mitigation for smartphone loans. |
+| 3 | **WhatsApp Cloud API Meta verification** | Marketing | Entire customer-facing flow blocked | Push Meta business verification to completion. Submit message templates for approval (payment reminders, deposit confirmations, default notifications, refund notifications). Allow 1-2 weeks for Meta review. |
+| 4 | **DIDIT KYC production testing with ZW IDs** | KYC Team | May reject valid customers or approve fraudulent ones | Test face matching + ID verification with actual Zimbabwean national IDs. Validate edge cases: poor lighting, damaged IDs, older ID formats, rural connectivity. Configure production webhooks. |
+| 5 | **Interest rates finalization** | Finance | Legal liability — customers shown incorrect terms | Current seed data shows 4% APR but mocks show 5%/month. Finance must decide rates per product and per org. Update `loan_products` table. This must happen before ANY loan offer is shown to a customer. |
+
+### P1 — Required Before Soft Launch
+
+| # | Item | Owner | Impact | Recommended Action |
+|---|------|-------|--------|-------------------|
+| 6 | **Deploy migration 047 to production RDS** | DevOps | Overpayment credit handling won't work | Run `bash database/deploy-to-rds.sh "$RDS_CONNECTION_STRING"`. Adds `credit_balance_usd` column to loans table. Backwards-compatible (DEFAULT 0). |
+| 7 | **Create 8 Cognito groups in production** | DevOps | Staff cannot access admin portal | Groups: `super_admin`, `admin`, `operations_manager`, `kyc_reviewer`, `finance_team`, `inventory_manager`, `customer_support`, `reports_viewer`. Assign staff accounts. |
+| 8 | **Set `INTERNAL_API_KEY` in production Lambda** | DevOps | PAY/SETTLE service-to-service auth will fail silently | Generate a strong random key, store in AWS Secrets Manager, add to Lambda environment variables for `whatsapp-service` function. |
+| 9 | **E2E testing: smartphone loan journey** | QA | Untested end-to-end flow with real services | WhatsApp onboarding → KYC → scoring → device selection → terms → deposit → handover → repayment → lock/unlock. Use sandbox payment providers. |
+| 10 | **E2E testing: digital loan journey** | QA | Untested end-to-end flow with real services | WhatsApp onboarding → KYC → org verification → product selection → scoring → disbursement → repayment. |
+| 11 | **Payment reconciliation testing** | QA | Payment matching by national ID not validated | Test that customer-entered national ID at USSD prompt correctly matches to the right loan. Verify webhook payloads contain expected reference fields. |
+
+### P2 — Recommended Before Scale (Post Soft-Launch)
+
+| # | Item | Owner | Impact | Recommended Action |
+|---|------|-------|--------|-------------------|
+| 12 | **Load testing (100+ concurrent sessions)** | QA | Unknown system behaviour under load | Simulate 100 concurrent WhatsApp sessions. Measure Lambda cold starts, DB connection pool saturation, SQS throughput, API Gateway latency. Target: p95 < 300ms. |
+| 13 | **OneMoney production setup** | Biz Dev | Only one payment channel (EcoCash) | Second payment provider adds redundancy. OneMoney covers NetOne subscribers. Same integration pattern as EcoCash. |
+| 14 | **Distributor dashboard E2E test** | QA | Handover flow untested | Verify: identity check, deposit verification, device condition check, handover completion. Test on tablet (field agents use tablets). |
+| 15 | **Admin portal walkthrough** | QA | Admin workflows untested | Verify: loan approval, cancellation (with refund), KYC manual review, score v2 display, defaulted status filter, audit log viewer. |
+| 16 | **Monitoring dashboards** | DevOps | No visibility into auto-default or payment health | CloudWatch metrics from D3 are now emitted. Create dashboard: AutoDefault.Processed/Defaulted/Errors, payment success rates, KYC pass rates, Lambda duration. |
+
+---
 
 ### Code Items for Future Consideration
 
-| # | Item | Priority | Description |
-|---|------|----------|-------------|
-| 1 | SETTLE session state tracking | LOW | Currently "SETTLE YES" works as compound command. Standalone "YES" after separate SETTLE message is unhandled. Consider storing pending_command in session. |
-| 2 | External credit bureau integration | LOW | `externalCredit` weight is 0. When ZW credit bureau API available, re-weight to 50-100 points. |
-| 3 | Refund payment processing | MED | D5 creates pending refund record but actual payment transfer requires payment provider integration. |
-| 4 | Overpayment credit auto-application | LOW | `credit_balance_usd` stored but not yet auto-deducted from next installment calculation. |
-| 5 | database-query-builder test suite | LOW | 27 pre-existing test failures in `tests/unit/shared/database-query-builder.test.ts`. Not related to loan journey. |
+| # | Item | Priority | Description | Effort |
+|---|------|----------|-------------|--------|
+| 1 | **SETTLE session state tracking** | MED | Currently "SETTLE YES" works as a compound command (one message). A customer sending "YES" in a separate follow-up message after "SETTLE" is unhandled — `parseCommand("yes")` returns null. Fix: store `pending_command: 'settle_confirmation'` in the WhatsApp session. On next message, check pending state before `parseCommand`. | 2-3 hours |
+| 2 | **Overpayment credit auto-application** | MED | `credit_balance_usd` is stored on the loan record but not yet auto-deducted from the next installment. When `handlePay()` calculates `installmentAmount`, it should subtract `loan.credit_balance_usd` and reset the credit to 0 after application. | 1-2 hours |
+| 3 | **Refund payment processing** | MED | D5 creates a `pending` refund record in the `payments` table and queues an SQS message, but actual money transfer to the customer's mobile wallet requires payment provider integration. Until then, admins must process refunds manually. Add a refund admin UI page showing pending refunds. | 4-6 hours (UI) + provider integration |
+| 4 | **Fineract overpayment sync** | MED | Our code handles overpayment correctly (credit balance), but Fineract core banking's behavior with overpayments has not been validated. If Fineract auto-applies overpayments differently, the two systems may diverge. Test with Fineract sandbox. | 2-4 hours |
+| 5 | **External credit bureau integration** | LOW | `externalCredit` scoring weight is intentionally 0, documented for future use. When a ZW credit bureau API becomes available, re-weight to 50-100 points and reduce other components proportionally. Implementation is already in `scoreExternalCredit()`. | 1-2 days |
+| 6 | **Penalty/late fee automation** | LOW | Penalties are disabled for launch (confirmed design decision). When ready, enable per-product penalty configuration via `loan_products` table. Fineract handles penalty calculation — Lynia needs to sync and display. | 1 day |
+| 7 | **Multi-language support (Shona/Ndebele)** | LOW | English only at launch (confirmed). The `t()` i18n function is plumbed through the WhatsApp service but translation files are empty. Provide Shona and Ndebele translations for all customer-facing messages. | 2-3 days (translation) + 1 day (integration) |
+| 8 | **database-query-builder test suite fix** | LOW | 27 pre-existing test failures in `tests/unit/shared/database-query-builder.test.ts`. Not related to loan journey. Likely a mock compatibility issue after a database client refactor. | 2-3 hours |
+| 9 | **Progressive credit building analytics** | LOW | Score-driven credit building is implemented (repeat customers improve via repayment willingness component). But there's no analytics dashboard to track how customer scores evolve over time. Add a time-series score chart to admin portal. | 1-2 days |
+| 10 | **SMS fallback for critical notifications** | LOW | Design decision: WhatsApp-first. But for critical notifications (payment overdue, device lock warning, loan default), add SMS fallback when WhatsApp delivery fails. The `notification-service` already supports SMS channel — just needs trigger logic. | 4-6 hours |
