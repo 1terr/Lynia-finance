@@ -306,8 +306,10 @@ describe('handleCreditScoring', () => {
 
       expect(result).toContain('Congratulations');
       expect(result).toContain('Approved');
-      expect(result).toContain('Tecno Spark 20 - $120');
-      expect(result).toContain('Samsung A15 - $180');
+      expect(result).toContain('*Tecno:*');
+      expect(result).toContain('Spark 20 - $120.00');
+      expect(result).toContain('*Samsung:*');
+      expect(result).toContain('A15 - $180.00');
       expect(result).toContain('Reply with the number');
     });
 
