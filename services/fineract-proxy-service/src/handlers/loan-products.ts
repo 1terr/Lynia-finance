@@ -141,8 +141,7 @@ export async function handleGetLoanProducts(
       .is('deleted_at', null)
       .execute();
 
-    const tiers = ['Tier 1', 'Tier 2', 'Tier 3'];
-    const mapped = (lyniaProducts || []).map((p: Record<string, unknown>, i: number) => ({
+    const mapped = (lyniaProducts || []).map((p: Record<string, unknown>) => ({
       id: p.id,
       name: p.product_name as string,
       shortName: ((p.product_code as string) || '').substring(0, 4),
@@ -161,7 +160,9 @@ export async function handleGetLoanProducts(
       interestType: 'Declining Balance',
       amortizationType: 'Equal Installments',
       accountingRule: 'None',
-      lyniaTier: tiers[i % tiers.length],
+      minCreditScore: (p.min_credit_score as number) ?? undefined,
+      maxCreditScore: (p.max_credit_score as number) ?? undefined,
+      productCategory: (p.product_category as string) ?? 'smartphone',
       downPaymentPercentage: (p.deposit_percentage as number) || undefined,
       source: 'lynia',
     }));

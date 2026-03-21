@@ -188,10 +188,10 @@ export interface FineractLoanProductView {
   interestType: string;
   amortizationType: string;
   accountingRule: string;
-  // Lynia tier mapping
-  lyniaTier?: string;
+  // Lynia product eligibility
   minCreditScore?: number;
   maxCreditScore?: number;
+  productCategory?: 'smartphone' | 'digital';
   downPaymentPercentage?: number;
   // Data source: 'fineract' if from core banking, 'lynia' if from local DB fallback
   source?: 'fineract' | 'lynia';
