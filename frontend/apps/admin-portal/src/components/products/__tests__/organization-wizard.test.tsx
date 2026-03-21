@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { axe } from 'jest-axe';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { OrganizationWizard } from '@/components/products/organization-wizard';
+import { checkOrgCode } from '@/lib/api/products';
 
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
@@ -20,6 +21,16 @@ jest.mock('@/lib/api/products', () => ({
 // Mock toast
 jest.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: jest.fn() }),
+}));
+
+// Mock @lynia/utils to avoid clsx resolution failure in test environment
+jest.mock('@lynia/utils', () => ({
+  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+}));
+
+// Remove debounce delay so org code uniqueness check fires immediately
+jest.mock('@/hooks/use-debounced-value', () => ({
+  useDebouncedValue: <T,>(value: T) => value,
 }));
 
 const mockOrg = {
@@ -50,7 +61,8 @@ function createWrapper() {
 
 /**
  * Helper: fill step 1 fields so we can advance to step 2.
- * Uses fireEvent for the select and userEvent for text inputs.
+ * The org code uniqueness check is debounced (500ms via useDebouncedValue)
+ * and must resolve before validation allows step advance.
  */
 async function fillStep1AndAdvance(user: ReturnType<typeof userEvent.setup>) {
   const orgNameInput = screen.getByLabelText(/organization name/i);
@@ -61,13 +73,25 @@ async function fillStep1AndAdvance(user: ReturnType<typeof userEvent.setup>) {
   await user.clear(orgCodeInput);
   await user.type(orgCodeInput, 'TEST_ORG');
 
+  // Wait for the code check query to resolve and codeAvailable to become true
+  // The green check icon appears when code is available
+  await waitFor(() => {
+    expect(checkOrgCode).toHaveBeenCalled();
+    // Ensure no "already taken" error is showing, meaning codeAvailable = true
+    expect(screen.queryByText(/already taken/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/is required/i)).not.toBeInTheDocument();
+  }, { timeout: 3000 });
+
+  // Small delay to ensure React state has updated with query result
+  await new Promise((r) => setTimeout(r, 50));
+
   const nextButton = screen.getByRole('button', { name: /next/i });
   await user.click(nextButton);
 
-  // Wait for step 2 heading to appear
+  // Wait for step 2 heading to appear (use heading role to avoid matching stepper labels)
   await waitFor(() => {
-    expect(screen.getByText('Verification & Scoring')).toBeInTheDocument();
-  });
+    expect(screen.getByRole('heading', { name: /verification & scoring/i })).toBeInTheDocument();
+  }, { timeout: 3000 });
 }
 
 /**
@@ -81,7 +105,7 @@ async function fillStep1And2AndAdvance(user: ReturnType<typeof userEvent.setup>)
   await user.click(nextButton);
 
   await waitFor(() => {
-    expect(screen.getByText('Contact Information')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /contact information/i })).toBeInTheDocument();
   });
 }
 
@@ -230,12 +254,18 @@ describe('OrganizationWizard', () => {
     await user.clear(orgCodeInput);
     await user.type(orgCodeInput, 'COOP_TEST');
 
+    // Wait for code check to resolve
+    await waitFor(() => {
+      expect(checkOrgCode).toHaveBeenCalled();
+    }, { timeout: 3000 });
+    await new Promise((r) => setTimeout(r, 50));
+
     const nextButton = screen.getByRole('button', { name: /next/i });
     await user.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Verification & Scoring')).toBeInTheDocument();
-    });
+      expect(screen.getByRole('heading', { name: /verification & scoring/i })).toBeInTheDocument();
+    }, { timeout: 3000 });
 
     // Trust level should be 50 for cooperative
     const trustSlider = screen.getByLabelText(/scoring trust level/i) as HTMLInputElement;
@@ -256,7 +286,7 @@ describe('OrganizationWizard', () => {
     await user.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Verification & Scoring')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /verification & scoring/i })).toBeInTheDocument();
     });
 
     // Trust level should remain 90 (not change to 50)
@@ -284,7 +314,7 @@ describe('OrganizationWizard', () => {
     await user.click(nextButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Verification & Scoring')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /verification & scoring/i })).toBeInTheDocument();
     });
 
     // Trust level should be 90
@@ -296,7 +326,7 @@ describe('OrganizationWizard', () => {
     await user.click(nextButton2);
 
     await waitFor(() => {
-      expect(screen.getByText('Contact Information')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: /contact information/i })).toBeInTheDocument();
     });
 
     // Step 3 fields

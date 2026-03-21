@@ -109,7 +109,7 @@ describe('Fineract API Client', () => {
 
       await expect(
         fineractClient.getFineractLoans()
-      ).rejects.toThrow('Fineract request failed (502)');
+      ).rejects.toThrow('Fineract core banking service is unreachable');
     });
 
     it('throws "timed out" on AbortError', async () => {

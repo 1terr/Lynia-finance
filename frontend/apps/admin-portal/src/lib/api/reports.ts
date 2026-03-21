@@ -38,12 +38,12 @@ export async function fetchLoanDisbursementReport(
   const qs = buildFilterParams(filters);
   const raw = await fetchAPI<Record<string, unknown>>(`/api/v1/reports/disbursements?${qs}`);
   return {
-    totalDisbursed: num(raw.total_disbursed ?? raw.approved),
-    totalValue: num(raw.total_disbursed),
-    avgLoanSize: num(raw.avg_loan_size),
-    approvalRate: num(raw.approval_rate),
+    totalDisbursed: num(raw.total_disbursed ?? raw.totalDisbursed ?? raw.approved),
+    totalValue: num(raw.total_value ?? raw.totalValue ?? raw.total_disbursed ?? raw.totalDisbursed),
+    avgLoanSize: num(raw.avg_loan_size ?? raw.avgLoanSize),
+    approvalRate: num(raw.approval_rate ?? raw.approvalRate),
     growthPct: 0,
-    rows: [],
+    rows: Array.isArray(raw.rows) ? raw.rows as LoanDisbursementSummary['rows'] : [],
   };
 }
 
@@ -55,13 +55,13 @@ export async function fetchPaymentCollectionReport(
   const qs = buildFilterParams(filters);
   const raw = await fetchAPI<Record<string, unknown>>(`/api/v1/reports/collections/detailed?${qs}`);
   return {
-    totalExpected: num(raw.total_payments),
-    totalCollected: num(raw.total_collected),
-    collectionRate: num(raw.collection_rate),
+    totalExpected: num(raw.total_payments ?? raw.totalExpected),
+    totalCollected: num(raw.total_collected ?? raw.totalCollected),
+    collectionRate: num(raw.collection_rate ?? raw.collectionRate),
     totalTransactions: num(raw.total_payments),
     failedTransactions: num(raw.failed_count),
-    byMethod: [],
-    rows: [],
+    byMethod: Array.isArray(raw.byMethod) ? raw.byMethod as PaymentCollectionSummary['byMethod'] : [],
+    rows: Array.isArray(raw.rows) ? raw.rows as PaymentCollectionSummary['rows'] : [],
   };
 }
 
@@ -75,35 +75,44 @@ export async function fetchKycStatusReport(
   const total = num(raw.total_submissions);
   const approved = num(raw.approved);
   return {
-    totalSubmissions: total,
-    pendingCount: num(raw.pending),
-    approvedCount: approved,
-    rejectedCount: num(raw.rejected),
+    totalSubmissions: total || num(raw.totalSubmissions),
+    pendingCount: num(raw.pending ?? raw.pendingCount),
+    approvedCount: approved || num(raw.approvedCount),
+    rejectedCount: num(raw.rejected ?? raw.rejectedCount),
     approvalRate: total > 0 ? (approved / total) * 100 : 0,
     avgProcessingTime: num(raw.avg_processing_time_hours),
-    rows: [],
-    rejectionReasons: [],
+    rows: Array.isArray(raw.rows) ? raw.rows as KycStatusSummary['rows'] : [],
+    rejectionReasons: Array.isArray(raw.rejectionReasons) ? raw.rejectionReasons as KycStatusSummary['rejectionReasons'] : [],
   };
 }
 
 // --- Device Management Report ---
 
 export async function fetchDeviceManagementReport(
-  _filters: ReportFilters
+  filters: ReportFilters
 ): Promise<DeviceManagementSummary> {
-  // Backend handler not yet implemented — return safe defaults
-  return {
-    totalDevices: 0,
-    inStock: 0,
-    allocated: 0,
-    active: 0,
-    locked: 0,
-    repossessed: 0,
-    lockOperations: 0,
-    unlockOperations: 0,
-    avgLockDurationHrs: 0,
-    rows: [],
-  };
+  const qs = buildFilterParams(filters);
+  try {
+    const raw = await fetchAPI<Record<string, unknown>>(`/api/v1/reports/devices?${qs}`);
+    return {
+      totalDevices: num(raw.total_devices ?? raw.totalDevices),
+      inStock: num(raw.in_stock ?? raw.inStock),
+      allocated: num(raw.allocated),
+      active: num(raw.active),
+      locked: num(raw.locked),
+      repossessed: num(raw.repossessed),
+      lockOperations: num(raw.lock_operations ?? raw.lockOperations),
+      unlockOperations: num(raw.unlock_operations ?? raw.unlockOperations),
+      avgLockDurationHrs: num(raw.avg_lock_duration_hrs ?? raw.avgLockDurationHrs),
+      rows: Array.isArray(raw.rows) ? raw.rows as DeviceManagementSummary['rows'] : [],
+    };
+  } catch {
+    // Backend handler may not be implemented yet — return safe defaults
+    return {
+      totalDevices: 0, inStock: 0, allocated: 0, active: 0, locked: 0, repossessed: 0,
+      lockOperations: 0, unlockOperations: 0, avgLockDurationHrs: 0, rows: [],
+    };
+  }
 }
 
 // --- Customer Acquisition Report ---
@@ -114,12 +123,12 @@ export async function fetchCustomerAcquisitionReport(
   const qs = buildFilterParams(filters);
   const raw = await fetchAPI<Record<string, unknown>>(`/api/v1/reports/acquisition?${qs}`);
   return {
-    newCustomers: num(raw.total_customers),
+    newCustomers: num(raw.total_customers ?? raw.newCustomers),
     completionRate: num(raw.completion_rate),
     avgOnboardingDays: 0,
     costPerAcquisition: 0,
-    funnel: [],
-    bySource: [],
+    funnel: Array.isArray(raw.funnel) ? raw.funnel as CustomerAcquisitionSummary['funnel'] : [],
+    bySource: Array.isArray(raw.bySource) ? raw.bySource as CustomerAcquisitionSummary['bySource'] : [],
   };
 }
 
@@ -131,14 +140,14 @@ export async function fetchDefaultRateReport(
   const qs = buildFilterParams(filters);
   const raw = await fetchAPI<Record<string, unknown>>(`/api/v1/reports/defaults/summary?${qs}`);
   return {
-    par30: num(raw.par_30),
+    par30: num(raw.par_30 ?? raw.par30),
     par60: num(raw.par_60),
     par90: num(raw.par_90),
     defaultRate: num(raw.default_rate),
     recoveryRate: 0,
     writeOffRate: 0,
-    totalOutstanding: num(raw.total_outstanding),
-    rows: [],
+    totalOutstanding: num(raw.total_outstanding ?? raw.totalOutstanding),
+    rows: Array.isArray(raw.rows) ? raw.rows as DefaultRateSummary['rows'] : [],
   };
 }
 
@@ -150,15 +159,15 @@ export async function fetchPortfolioHealthReport(
   const qs = buildFilterParams(filters);
   const raw = await fetchAPI<Record<string, unknown>>(`/api/v1/reports/portfolio/health?${qs}`);
   return {
-    totalOutstanding: num(raw.total_outstanding),
+    totalOutstanding: num(raw.total_outstanding ?? raw.totalOutstanding),
     totalDisbursed: num(raw.total_disbursed),
     par30: num(raw.par_1_30),
     par60: num(raw.par_31_60),
     par90: num(raw.par_90_plus),
     collectionEfficiency: num(raw.collection_efficiency),
-    byStatus: [],
-    byTier: [],
-    byAge: [],
+    byStatus: Array.isArray(raw.byStatus) ? raw.byStatus as PortfolioHealthSummary['byStatus'] : [],
+    byTier: Array.isArray(raw.byTier) ? raw.byTier as PortfolioHealthSummary['byTier'] : [],
+    byAge: Array.isArray(raw.byAge) ? raw.byAge as PortfolioHealthSummary['byAge'] : [],
   };
 }
 

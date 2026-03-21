@@ -7,11 +7,25 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import FineractApprovalPage from '@/components/fineract/fineract-approval-page';
 import * as fineractApi from '@/lib/api/fineract';
-import { createMockPendingLoan, createMockLoanView } from '../fixtures/fineract-mocks';
+import { createMockPendingLoan } from '../fixtures/fineract-mocks';
 
+jest.mock('@lynia/auth', () => ({
+  getValidSession: jest.fn().mockResolvedValue({
+    getIdToken: () => ({ getJwtToken: () => 'mock-jwt' }),
+  }),
+  signOut: jest.fn(),
+}));
+jest.mock('@lynia/utils', () => ({
+  cn: (...args: unknown[]) => args.filter(Boolean).join(' '),
+  formatCurrency: (v: number) => `$${(v / 100).toFixed(2)}`,
+  formatDate: (d: string) => d,
+}));
 jest.mock('@/lib/api/fineract');
 jest.mock('next/navigation', () => ({
   useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+}));
+jest.mock('@/hooks/use-toast', () => ({
+  useToast: () => ({ toast: jest.fn() }),
 }));
 jest.mock('@/lib/store/auth-store', () => ({
   useAuthStore: (selector: (state: { hasPermission: (p: string) => boolean }) => unknown) =>
@@ -60,7 +74,7 @@ describe('FineractApprovalPage', () => {
     });
   });
 
-  it('shows approve and reject buttons for each loan', async () => {
+  it('shows retry sync and reject buttons for each loan', async () => {
     mockedApi.getPendingApprovalLoans.mockResolvedValue({
       data: [createMockPendingLoan()],
       total: 1,
@@ -72,12 +86,12 @@ describe('FineractApprovalPage', () => {
     render(<FineractApprovalPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText('Approve')).toBeInTheDocument();
+      expect(screen.getByText('Retry Sync')).toBeInTheDocument();
       expect(screen.getByText('Reject')).toBeInTheDocument();
     });
   });
 
-  it('shows confirmation dialog on approve click', async () => {
+  it('shows confirmation dialog on retry sync click', async () => {
     mockedApi.getPendingApprovalLoans.mockResolvedValue({
       data: [createMockPendingLoan()],
       total: 1,
@@ -89,18 +103,21 @@ describe('FineractApprovalPage', () => {
     render(<FineractApprovalPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText('Approve')).toBeInTheDocument();
+      expect(screen.getByText('Retry Sync')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Approve'));
+    fireEvent.click(screen.getByText('Retry Sync'));
 
     await waitFor(() => {
-      // ConfirmationDialog shows "Approve Loan" as the confirm action button
-      expect(screen.getByRole('button', { name: /Approve Loan/i })).toBeInTheDocument();
+      // Dialog opens with title "Retry Fineract Sync"
+      expect(screen.getByText('Retry Fineract Sync')).toBeInTheDocument();
+      // Dialog has its own "Retry Sync" confirm button (2 total on page now)
+      const retrySyncButtons = screen.getAllByRole('button', { name: /Retry Sync/i });
+      expect(retrySyncButtons.length).toBeGreaterThanOrEqual(2);
     });
   });
 
-  it('calls Fineract approve API on confirmation', async () => {
+  it('calls Fineract retry sync API on confirmation', async () => {
     mockedApi.getPendingApprovalLoans.mockResolvedValue({
       data: [createMockPendingLoan()],
       total: 1,
@@ -108,34 +125,30 @@ describe('FineractApprovalPage', () => {
       limit: 25,
       total_pages: 1,
     });
-    mockedApi.approveFineractLoan.mockResolvedValue({
+    mockedApi.retryFineractSync.mockResolvedValue({
       success: true,
-      resourceId: 102,
-      loanId: 102,
-      message: 'Loan approved successfully',
+      message: 'Sync completed',
     });
 
     render(<FineractApprovalPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText('Approve')).toBeInTheDocument();
+      expect(screen.getByText('Retry Sync')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Approve'));
+    fireEvent.click(screen.getByText('Retry Sync'));
 
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: /Approve Loan/i })).toBeInTheDocument();
+      expect(screen.getByText('Retry Fineract Sync')).toBeInTheDocument();
     });
 
-    // Click the "Approve Loan" button in the ConfirmationDialog
-    fireEvent.click(screen.getByRole('button', { name: /Approve Loan/i }));
+    // Click the confirm "Retry Sync" button in the ConfirmationDialog (last one on page)
+    const retrySyncButtons = screen.getAllByRole('button', { name: /Retry Sync/i });
+    fireEvent.click(retrySyncButtons[retrySyncButtons.length - 1]);
 
     await waitFor(() => {
-      expect(mockedApi.approveFineractLoan).toHaveBeenCalledWith(
-        'loan-pending-uuid',
-        expect.objectContaining({
-          approvedOnDate: expect.any(String),
-        })
+      expect(mockedApi.retryFineractSync).toHaveBeenCalledWith(
+        'loan-pending-uuid'
       );
     });
   });
@@ -152,7 +165,7 @@ describe('FineractApprovalPage', () => {
     render(<FineractApprovalPage />, { wrapper: createWrapper() });
 
     await waitFor(() => {
-      expect(screen.getByText(/No loans pending approval/)).toBeInTheDocument();
+      expect(screen.getByText(/No sync issues/)).toBeInTheDocument();
     });
   });
 

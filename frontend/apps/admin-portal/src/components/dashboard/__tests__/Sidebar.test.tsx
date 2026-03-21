@@ -56,7 +56,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('All Customers')).toBeInTheDocument();
     expect(screen.getByText('KYC Review')).toBeInTheDocument();
     expect(screen.getByText('All Loans')).toBeInTheDocument();
-    expect(screen.getByText('Pending Approval')).toBeInTheDocument();
+    expect(screen.getByText('Sync Issues')).toBeInTheDocument();
     expect(screen.getByText('Inventory')).toBeInTheDocument();
     expect(screen.getByText('Handovers')).toBeInTheDocument();
     expect(screen.getByText('Lock/Unlock')).toBeInTheDocument();
