@@ -9,6 +9,9 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': ['ts-jest', { diagnostics: false }]
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(date-fns)/)'
+  ],
   collectCoverageFrom: [
     'services/**/src/**/*.{ts,tsx}',
     '!services/**/src/**/*.d.ts',
