@@ -102,8 +102,12 @@ Temporary `trg_sync_agent_inventory` — remove after 2 weeks.
 **File:** `services/admin-service/src/handlers/inventory-devices.ts` — Lines 153-245
 Batch `WHERE imei = ANY($1)` + `INSERT ... ON CONFLICT DO NOTHING`. Target: 500 devices < 10s.
 
-### 3.2 New: `POST /admin/inventory/transfers/bulk`
-`{ device_ids[], to_distributor_id, auto_approve? }` → `{ transferred, skipped, errors }`
+### 3.2 New: `POST /admin/inventory/transfers/bulk` (with Spot-Check Generation)
+`{ device_ids[], to_distributor_id, auto_approve? }` → `{ transferred, skipped, errors, batch_id, spot_check_device_ids }`
+- Assign `batch_id` UUID to all transfers in batch
+- Generate spot-check entries: randomly select 10-20% of devices (min 1, max 50)
+- Insert into `transfer_spot_checks` table
+- Bulk transfers land in `pending_receipt` state (not `received`) — distributor must confirm
 
 ### 3.3 New: `POST /admin/inventory/adjustments/bulk`
 `{ device_ids[], adjustment_type, reason }` → `{ created, adjustment_ids }`
@@ -111,15 +115,102 @@ Batch `WHERE imei = ANY($1)` + `INSERT ... ON CONFLICT DO NOTHING`. Target: 500 
 ### 3.4 New: `POST /admin/inventory/allocate`
 New file: `inventory-allocations.ts`. Shortcut for warehouse → distributor.
 
-### 3.5 Register Routes
+### 3.6 Register Routes
 `services/admin-service/src/index.ts` after line 167. No template.yaml changes needed.
 
 ---
 
-## Phase 4: Handover Robustness (Week 4-5)
+## Phase 3.5: Distributor Transfer Confirmation & Returns (Week 4-5, parallel with Phase 3)
+
+### 3.5.1 Database Migration: `055_distributor_transfer_confirmation.sql`
+
+**Alter `stock_transfers`:**
+- Add `transfer_type` VARCHAR(20) — `'outbound'` | `'return'`
+- Add `batch_id` UUID — groups bulk transfer devices
+- Add `confirmed_by` UUID, `confirmed_at` TIMESTAMPTZ — distributor confirmation
+- Add `rejected_at` TIMESTAMPTZ, `rejection_reason` TEXT — distributor rejection
+- Add `force_confirmed_by` UUID, `force_confirmed_at` TIMESTAMPTZ, `force_confirm_reason` TEXT — admin override
+- Add `initiated_by_type` VARCHAR(20) — `'admin'` | `'distributor'`
+- Add `initiated_by_distributor` UUID — for distributor-initiated returns
+- New indexes: `idx_transfers_pending_receipt`, `idx_transfers_type`, `idx_transfers_batch`
+
+**New table: `transfer_spot_checks`:**
+- `id`, `transfer_id`, `device_id`, `imei_verified` BOOLEAN, `condition_rating` VARCHAR(20), `verified_at`, `verified_by`
+
+**New table: `notifications`:**
+- `id`, `recipient_type`, `recipient_id`, `type`, `title`, `message`, `reference_type`, `reference_id`, `read` BOOLEAN, `read_at`, `created_at`
+
+### 3.5.2 Distributor Transfer Handlers
+**New file:** `services/distributor-service/src/handlers/transfers.ts`
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/distributor/transfers` | List transfers + pending_count |
+| GET | `/api/v1/distributor/transfers/:id` | Detail with spot-checks |
+| POST | `/api/v1/distributor/transfers/:id/confirm` | Confirm receipt |
+| POST | `/api/v1/distributor/transfers/:id/reject` | Reject → disputed |
+| POST | `/api/v1/distributor/transfers/return` | Initiate return |
+| GET | `/api/v1/distributor/transfers/pending-count` | Badge count |
+| PATCH | `/api/v1/distributor/notifications/:id/read` | Mark notification read |
+
+**Register routes in:** `services/distributor-service/src/index.ts`
+
+### 3.5.3 Modified Admin Endpoints
+**File:** `services/admin-service/src/handlers/inventory-transfers.ts`
+
+- Expand `handleUpdateTransfer` valid transitions:
+  ```
+  requested → approved | cancelled                    (admin)
+  approved → in_transit | cancelled                   (admin)
+  in_transit → pending_receipt | cancelled             (admin)
+  pending_receipt → received | disputed                (distributor)
+  disputed → received | cancelled                     (admin, force-resolve)
+  return_requested → return_approved | disputed | cancelled  (admin or distributor)
+  return_approved → received | cancelled              (admin)
+  ```
+- `in_transit → pending_receipt` replaces direct `in_transit → received`
+- Device assignment only via distributor confirm or admin force-confirm
+
+**New endpoints:**
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/admin/inventory/transfers/:id/force-confirm` | Override (reason required, audit-logged) |
+| POST | `/admin/inventory/transfers/return` | Admin initiates return |
+| POST | `/admin/inventory/transfers/:id/approve-return` | Approve distributor return → instant to warehouse |
+
+**Register routes in:** `services/admin-service/src/index.ts`
+
+### 3.5.4 Auto-Cancel Returns on Handover
+**File:** `services/lock-service/src/handover/handover-workflow.ts`
+
+After device marked `sold` in `completeHandover`, cancel pending returns for that device.
+
+### 3.5.5 Notification System
+**New file:** `services/shared/utils/notifications.ts`
+
+- `createNotification()` — in-app notification insert
+- `sendTransferEmail()` — email via SES for transfer events
+
+Events: pending_receipt (email+app), confirmed (app), rejected (email+app), force-confirmed (email+app), return requested (email+app), return approved (email+app), auto-cancelled (app).
+
+### 3.5.6 Frontend: Transfers Page
+**New:** `frontend/apps/distributor-dashboard/src/app/(dashboard)/transfers/` (page.tsx + _client.tsx)
+**New:** `frontend/apps/distributor-dashboard/src/lib/api/transfers.ts`
+**Modify:** `frontend/apps/distributor-dashboard/src/components/layout/sidebar.tsx` — Transfers nav + badge
+**Modify:** `frontend/apps/distributor-dashboard/src/types/distributor.ts` — TransferStatus, TransferType, TransferListItem, SpotCheckItem
+
+3 tabs: Pending, Returns, History. Modals: Confirm (with spot-checks), Reject (reason required), Request Return.
+
+**Acceptance:** Distributors can confirm/reject transfers. Returns work bidirectionally. Spot-checks enforced for bulk. Notifications delivered. Auto-cancel on sale works.
+
+---
+
+## Phase 4: Handover Robustness (Week 5-6)
 
 ### 4.1 Transaction Wrap for completeHandover
 Lines 66-237: `BEGIN/COMMIT/ROLLBACK`. Fineract disbursement after COMMIT.
+**Note:** Transfer confirmation endpoints (Phase 3.5) also require transaction wrapping — implemented in Phase 3.5.
 
 ### 4.2 Product-Model Validation
 Add `product_device_models` check to `handleVerifyDevice` (line 214).
@@ -172,17 +263,24 @@ New: `POST /admin/inventory/reconcile` — tracked vs actual stock comparison.
 
 ## Phase 7: Tests & Launch Readiness (Week 9-12)
 
-### 7.1 Integration Tests (10 scenarios)
-1. Full lifecycle: create → allocate → reserve → handover → sold
+### 7.1 Integration Tests (17 scenarios)
+1. Full lifecycle: create → allocate → confirm → reserve → handover → sold
 2. Bulk import 500 devices (performance + correctness)
 3. Concurrent handover (FOR UPDATE lock)
 4. Catalogue filtering (2 products)
 5. Reservation expiry
 6. Reconciliation
 7. Commission calculation accuracy
-8. Bulk transfer 100 devices
+8. Bulk transfer 100 devices with spot-check generation
 9. Adjustment maker-checker
 10. Wrong device model rejection
+11. Outbound with confirmation: create → approve → ship → pending_receipt → confirm
+12. Reject and dispute: pending_receipt → reject → disputed → force-confirm
+13. Admin-initiated return: return_requested → distributor approves → device to warehouse
+14. Distributor-initiated return: return_requested → admin approves → device to warehouse
+15. Auto-cancel: return pending → device sold via handover → return auto-cancelled
+16. Bulk transfer spot-checks: 100 devices, verify 10-20% spot-check generation
+17. Force-confirm audit trail: verify force_confirmed_by/at/reason recorded
 
 ### 7.2 Performance Targets
 | Test | Target |
@@ -211,30 +309,33 @@ CloudWatch: below reorder level, aging > 90 days, import error > 10%.
 
 ## Phase Dependencies
 ```
-Phase 1 (Bugs)          ← Immediate
+Phase 1 (Bugs)               ← Immediate
    ↓
-Phase 2 (Consolidation) ← Depends on 1
+Phase 2 (Consolidation)      ← Depends on 1
    ↓
-Phase 3 (Bulk) ←──┐     ← Depends on 2
-Phase 4 (Handover) ┘    ← Parallel with 3
+Phase 3 (Bulk) ──────────┐   ← Depends on 2
+Phase 3.5 (Confirmation) ┘   ← Depends on 2, parallel with 3
    ↓
-Phase 5 (Catalogue) ┐   ← Depends on 2
-Phase 6 (Quality)   ┘   ← Parallel with 5
+Phase 4 (Handover) ←──────── Parallel with 3/3.5
    ↓
-Phase 7 (Tests/SLAs)    ← All above
+Phase 5 (Catalogue) ┐        ← Depends on 2
+Phase 6 (Quality)   ┘        ← Parallel with 5
+   ↓
+Phase 7 (Tests/SLAs)         ← All above
 ```
-**~10 weeks critical path.**
+**~12 weeks critical path.**
 
 ---
 
-## ~30 Files
+## ~40 Files
 
 | Phase | Key Files |
 |-------|-----------|
 | 1 | `commission-calculator.ts`, `device-models.ts`, `mocks/utils.ts` |
 | 2 | `054_consolidate_inventory.sql`, `inventory.ts`, `handovers.ts`, `inventory-transfers.ts`, `handover-workflow.ts`, `notifications.ts` |
 | 3 | `inventory-devices.ts`, `inventory-transfers.ts`, `inventory-adjustments.ts`, `inventory-allocations.ts` (new), `index.ts` |
+| 3.5 | `055_distributor_transfer_confirmation.sql` (new), `distributor/handlers/transfers.ts` (new), `shared/utils/notifications.ts` (new), `inventory-transfers.ts`, `handover-workflow.ts`, `distributor/index.ts`, `admin/index.ts`, `transfers/page.tsx` (new), `transfers/_client.tsx` (new), `lib/api/transfers.ts` (new), `sidebar.tsx`, `types/distributor.ts`, `template.yaml` |
 | 4 | `handover-workflow.ts`, `handovers.ts`, `payments.ts`, `use-offline-queue.ts` |
 | 5 | `inventory-reports.ts`, `inventory.ts`, `reservation-expiry.ts` (new), `template.yaml` |
 | 6 | `logger.ts`, `inventory-devices.ts`, all handlers, `inventory-reports.ts` |
-| 7 | `inventory-audit-readiness.test.ts` (new) |
+| 7 | `inventory-audit-readiness.test.ts` (new), `transfer-confirmation.test.ts` (new) |

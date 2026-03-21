@@ -46,6 +46,8 @@ Lynia Finance is preparing for launch. This audit covers the entire inventory ma
 ### Inventory State Machine
 ```
 in_stock → reserved → assigned → sold → [returned | repossessed | damaged | lost | written_off]
+              ↑
+       pending_receipt (device in transit, awaiting distributor confirmation before assignment)
 ```
 
 ### API Surfaces
@@ -89,15 +91,45 @@ Admin creates device_model (catalogue)
 ```
 **Status**: Implemented. Bulk import with duplicate detection (IMEI).
 
-### 2. Distributor Allocation Flow
+### 2. Distributor Allocation Flow (with Distributor Confirmation)
 ```
 Admin creates stock_transfer (from warehouse → to distributor)
-  → Approval (or auto_approve flag)
-  → In Transit → Received
-  → agent_inventory record created
-  → Device status: in_stock → assigned
+  → Admin approval (or auto_approve flag)
+  → In Transit → pending_receipt (distributor notified via in-app + email)
+  → Distributor confirms receipt (with IMEI + condition spot-check for bulk transfers)
+    OR Distributor rejects → disputed → admin resolves (force-confirm or cancel)
+    OR Admin force-confirms (with required reason, audit-logged)
+  → Device status: in_stock → assigned, distributor_id set on device
 ```
-**Gap**: No dedicated "bulk allocation" endpoint — transfers are single-device only.
+
+**Outbound Transfer State Machine:**
+```
+requested ─admin─→ approved ─admin─→ in_transit ─admin─→ pending_receipt
+                                                              │
+                                                  ┌───────────┤
+                                                  │           │
+                                           dist-reject    dist-confirm
+                                                  │           │
+                                                  ▼           ▼
+                                              disputed     received
+                                                  │      (device assigned)
+                                          admin-resolve
+                                          ┌───────┴───────┐
+                                          ▼               ▼
+                                      cancelled       received
+                                                   (force-confirm)
+
+Any non-terminal state → cancelled
+```
+
+**Key rules:**
+- Device does NOT appear in distributor's inventory until they confirm receipt
+- No time limit on confirmation — stays pending until resolved
+- Admin can force-confirm with required reason (audit-logged)
+- Bulk transfers: system randomly selects 10-20% of devices for spot-check (IMEI scan + condition rating)
+- Distributor can reject with reason — transfer enters `disputed` state for admin resolution
+
+**Status**: Partially implemented. Needs distributor-facing endpoints, state machine expansion, and frontend Transfers page.
 
 ### 3. Catalogue → Product Linkage
 ```
@@ -106,12 +138,32 @@ device_models (catalogue) ←→ product_device_models ←→ loan_products
 Customer sees only devices compatible with their eligible loan product during WhatsApp onboarding.
 **Gap**: NOT tested with multiple products having overlapping device models.
 
-### 4. Bulk Transfer Between Distributors
+### 4. Returns & Redistribution Flow (No Direct Inter-Distributor Transfers)
 ```
-stock_transfers table: requested → approved → in_transit → received
-State machine with cancellation from any state
+No direct inter-distributor transfers. All redistribution routes through warehouse:
+
+Return flow (distributor → warehouse):
+  Admin or distributor initiates return request
+  → Other party approves (admin approves distributor-initiated, distributor approves admin-initiated)
+  → Device immediately returns to warehouse (instant status change, no in_transit tracking)
+  → Admin creates fresh outbound transfer to target distributor (standard confirmation flow)
+
+Auto-cancel: If device is sold (handover completed) while return is pending → return auto-cancelled
+Device usability: Device remains usable for handovers until distributor approves the return
 ```
-**Gap**: Single-device transfers only. No batch/bulk transfer capability.
+
+**Return State Machine:**
+```
+Admin-initiated:
+  return_requested ─dist-approve─→ received (device back to warehouse, instant)
+                   ─dist-reject──→ disputed → admin resolves
+
+Distributor-initiated:
+  return_requested ─admin-approve─→ received (device back to warehouse, instant)
+                   ─admin-reject──→ cancelled
+```
+
+**Status**: Not implemented. Needs new return endpoints, auto-cancel logic, and frontend support.
 
 ### 5. Bulk Adjustments
 ```
@@ -169,9 +221,11 @@ Loan lifecycle sync:
 
 | # | Gap | Location | Impact | Recommendation |
 |---|-----|----------|--------|----------------|
-| C1 | No bulk allocation to distributors | `inventory-transfers.ts` | Field ops can't efficiently stock distributors (50-500 devices) | Add batch transfer endpoint |
+| C1 | No bulk allocation to distributors | `inventory-transfers.ts` | Field ops can't efficiently stock distributors (50-500 devices) | Add batch transfer endpoint with distributor confirmation + spot-checks |
 | C2 | No bulk adjustment API | `inventory-adjustments.ts` | Auditors can't correct stock counts after physical audit | Add batch adjustment endpoint |
-| C3 | No bulk transfer between distributors | `inventory-transfers.ts` | Regional redistribution requires N individual requests | Add batch transfer endpoint |
+| C3 | No return/redistribution workflow | `inventory-transfers.ts` | No structured process for device returns or redistribution between distributors | Returns through warehouse with bidirectional initiation (admin or distributor) |
+| C10 | No distributor confirmation on incoming transfers | `inventory-transfers.ts`, distributor-service | Distributors credited with inventory they never confirmed receiving — accountability gap | Add pending_receipt state with confirm/reject flow |
+| C11 | No transfer notifications to distributors | Multiple | Distributors unaware of incoming transfers until they check dashboard | Add in-app + email notifications for transfer events |
 | C4 | Device reservation expiry not automated | `device_reservations` table | 48-hour holds may never expire, blocking stock | EventBridge scheduled cleanup |
 | C5 | `agent_inventory` vs `devices` dual tracking | Multiple files | Potential for inventory count drift between tables | Consolidate into `devices` table |
 | C6 | Deposit verification blocked | `handovers.ts` | No payment provider means deposits can never be auto-confirmed | Add manual confirmation endpoint |
@@ -202,7 +256,7 @@ Loan lifecycle sync:
 | M3 | No inventory forecasting | Reports | Manual reorder decisions only | Future: demand prediction |
 | M4 | Device condition grading not linked to pricing | `device_models` | Grade A/B/C priced the same | Condition-based pricing tiers |
 | M5 | No device model image upload | `device_models.image_url` | Field exists but no upload handler | S3 presigned URL upload |
-| M6 | No return/exchange workflow | Devices | No structured process for device returns | Design when return policy defined |
+| M6 | ~~No return/exchange workflow~~ | Devices | ~~No structured process for device returns~~ | **Addressed in C3**: Returns through warehouse with bidirectional initiation |
 | M7 | Commission calculator column names | `commission-calculator.ts` | May use `retail_price` vs `retail_price_usd` | Verify against schema |
 
 ---
@@ -286,12 +340,17 @@ Current: Sequential DB queries per device (1000+ round-trips for 500 devices).
 3. Wrap in transaction
 4. **Target:** 500 devices in < 10 seconds (within Lambda 29s timeout)
 
-### 3B. New Bulk Transfer Endpoint
+### 3B. New Bulk Transfer Endpoint (with Spot-Check Generation)
 ```
 POST /admin/inventory/transfers/bulk
 Body: { device_ids: string[], to_distributor_id: string, auto_approve?: boolean }
-Response: { transferred: N, skipped: N, errors: [...] }
+Response: { transferred: N, skipped: N, errors: [...], batch_id: string, spot_check_device_ids: string[] }
 ```
+- All transfers in a batch share a `batch_id` UUID for grouping
+- System randomly selects 10-20% of devices (min 1, max 50) as spot-checks
+- Spot-check entries stored in `transfer_spot_checks` table
+- Bulk transfers land in `pending_receipt` state (not `received`) — distributor must confirm
+- Distributor confirms batch after completing IMEI scan + condition rating on spot-checked devices
 
 ### 3C. New Bulk Adjustment Endpoint
 ```
@@ -313,7 +372,143 @@ Run 500-device bulk import, measure execution time, verify all triggers fire cor
 
 ---
 
-## Phase 4: Handover Wizard E2E Testing & Fixes (Week 4-5)
+## Phase 3.5: Distributor Transfer Confirmation & Returns (Week 4-5, parallel with Phase 3)
+
+### 3.5A. Database Migration: `055_distributor_transfer_confirmation.sql`
+
+**Alter `stock_transfers` table:**
+```sql
+ALTER TABLE stock_transfers ADD COLUMN transfer_type VARCHAR(20) NOT NULL DEFAULT 'outbound';
+  -- 'outbound' (warehouse→distributor) | 'return' (distributor→warehouse)
+ALTER TABLE stock_transfers ADD COLUMN batch_id UUID;
+ALTER TABLE stock_transfers ADD COLUMN confirmed_by UUID REFERENCES distributors(id);
+ALTER TABLE stock_transfers ADD COLUMN confirmed_at TIMESTAMPTZ;
+ALTER TABLE stock_transfers ADD COLUMN rejected_at TIMESTAMPTZ;
+ALTER TABLE stock_transfers ADD COLUMN rejection_reason TEXT;
+ALTER TABLE stock_transfers ADD COLUMN force_confirmed_by UUID REFERENCES admin_users(id);
+ALTER TABLE stock_transfers ADD COLUMN force_confirmed_at TIMESTAMPTZ;
+ALTER TABLE stock_transfers ADD COLUMN force_confirm_reason TEXT;
+ALTER TABLE stock_transfers ADD COLUMN initiated_by_type VARCHAR(20) NOT NULL DEFAULT 'admin';
+ALTER TABLE stock_transfers ADD COLUMN initiated_by_distributor UUID REFERENCES distributors(id);
+```
+
+**New table: `transfer_spot_checks`** — IMEI verification for bulk transfers:
+```sql
+CREATE TABLE transfer_spot_checks (
+  id UUID PRIMARY KEY, transfer_id UUID REFERENCES stock_transfers(id),
+  device_id UUID REFERENCES devices(id), imei_verified BOOLEAN DEFAULT FALSE,
+  condition_rating VARCHAR(20), -- 'new', 'good', 'damaged'
+  verified_at TIMESTAMPTZ, verified_by UUID REFERENCES distributors(id),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+**New table: `notifications`** — In-app notification tracking with read/unread state:
+```sql
+CREATE TABLE notifications (
+  id UUID PRIMARY KEY, recipient_type VARCHAR(20) NOT NULL, recipient_id UUID NOT NULL,
+  type VARCHAR(50) NOT NULL, title VARCHAR(200) NOT NULL, message TEXT NOT NULL,
+  reference_type VARCHAR(50), reference_id UUID,
+  read BOOLEAN DEFAULT FALSE, read_at TIMESTAMPTZ, created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 3.5B. New Distributor Transfer Endpoints
+
+**New file:** `services/distributor-service/src/handlers/transfers.ts`
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/api/v1/distributor/transfers` | List transfers (filter by status, type) + pending_count |
+| GET | `/api/v1/distributor/transfers/:id` | Transfer detail with spot-check requirements |
+| POST | `/api/v1/distributor/transfers/:id/confirm` | Confirm receipt (with spot-checks if bulk) |
+| POST | `/api/v1/distributor/transfers/:id/reject` | Reject with reason → status becomes `disputed` |
+| POST | `/api/v1/distributor/transfers/return` | Initiate return to warehouse (device_id + reason) |
+| GET | `/api/v1/distributor/transfers/pending-count` | Pending action count for sidebar badge |
+| PATCH | `/api/v1/distributor/notifications/:id/read` | Mark notification as read |
+
+**Confirm endpoint:**
+- Validates: `transfer.to_distributor_id == auth distributor`, status is `pending_receipt`
+- If spot-checks exist: all must be completed (IMEI verified + condition rated)
+- Side effects: device `distributor_id` set, status → `assigned`, `inventory_movement` created
+- Wrapped in DB transaction
+
+**Reject endpoint:**
+- Reason required (min 10 chars)
+- Sets status → `disputed`, creates notification for admin
+
+**Return endpoint:**
+- Validates device assigned to this distributor, not `sold`
+- Creates stock_transfer with `transfer_type='return'`, `status='return_requested'`
+
+### 3.5C. Modified Admin Transfer Endpoints
+
+**File:** `services/admin-service/src/handlers/inventory-transfers.ts`
+
+- Expand `handleUpdateTransfer` state machine with: `pending_receipt`, `disputed`, `return_requested`, `return_approved`
+- `in_transit → pending_receipt` replaces direct `in_transit → received`
+- Device assignment only happens via distributor confirm or admin force-confirm (not on admin marking as "received")
+
+**New admin endpoints:**
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| POST | `/admin/inventory/transfers/:id/force-confirm` | Override distributor confirmation (reason required, audit-logged) |
+| POST | `/admin/inventory/transfers/return` | Admin initiates return from distributor |
+| POST | `/admin/inventory/transfers/:id/approve-return` | Approve distributor-initiated return → instant device to warehouse |
+
+### 3.5D. Auto-Cancel Returns on Device Sale
+
+**File:** `services/lock-service/src/handover/handover-workflow.ts`
+
+After device marked `sold` in `completeHandover`, cancel any pending returns:
+```sql
+UPDATE stock_transfers SET status='cancelled', cancelled_at=NOW(),
+  cancellation_reason='Device sold before return processed'
+WHERE device_id = $1 AND transfer_type = 'return'
+  AND status IN ('return_requested', 'return_approved')
+```
+
+### 3.5E. Notification System
+
+**New file:** `services/shared/utils/notifications.ts`
+
+| Event | In-App | Email | Recipient |
+|-------|--------|-------|-----------|
+| Transfer reaches `pending_receipt` | ✓ | ✓ | Distributor |
+| Transfer confirmed by distributor | ✓ | ✗ | Admin |
+| Transfer rejected (disputed) | ✓ | ✓ | Admin |
+| Force-confirm by admin | ✓ | ✓ | Distributor |
+| Return requested by admin | ✓ | ✓ | Distributor |
+| Return requested by distributor | ✓ | ✗ | Admin |
+| Return approved | ✓ | ✓ | Distributor |
+| Return auto-cancelled (device sold) | ✓ | ✗ | Both |
+
+### 3.5F. Frontend: Distributor Dashboard Transfers Page
+
+**New directory:** `frontend/apps/distributor-dashboard/src/app/(dashboard)/transfers/`
+
+**Dedicated Transfers page with 3 tabs:**
+1. **Pending** — Incoming transfers requiring action (`pending_receipt` + admin-initiated returns). Confirm/Reject buttons
+2. **Returns** — Return requests (all states). "Request Return" button opens modal
+3. **History** — Completed/cancelled transfers
+
+**Modals:**
+- **Confirm Transfer** — If spot-checks: IMEI scan field + condition selector per device. All required before submit
+- **Reject Transfer** — Reason textarea (min 10 chars)
+- **Request Return** — Device selector (current available inventory) + reason textarea
+
+**Sidebar:** Add "Transfers" nav item with notification badge showing pending count.
+
+**New files:**
+- `frontend/apps/distributor-dashboard/src/lib/api/transfers.ts` — API client
+- `frontend/apps/distributor-dashboard/src/types/distributor.ts` — Add transfer types
+
+**Acceptance:** Distributors can view, confirm, reject incoming transfers. Returns can be initiated by either party. Spot-checks enforced for bulk. Notifications delivered. Auto-cancel on device sale works.
+
+---
+
+## Phase 4: Handover Wizard E2E Testing & Fixes (Week 5-6)
 
 ### 4A. Critical Fix: Deposit Verification Gap
 `handleVerifyDeposit` creates payment with `status: 'pending'`, but `handleSubmitHandover` requires `status = 'confirmed'`. With no payment provider, deposits can never be confirmed.
@@ -477,22 +672,24 @@ CloudWatch alarms or SQS notifications when:
 
 ## Phase Dependency Graph
 ```
-Phase 1 (Verification)         ← Start immediately
+Phase 1 (Verification)              ← Start immediately
    ↓
-Phase 2 (Consolidation)        ← Depends on Phase 1
+Phase 2 (Consolidation)             ← Depends on Phase 1
    ↓
-Phase 3 (Bulk APIs)            ← Depends on Phase 2
+Phase 3 (Bulk APIs) ──────────┐     ← Depends on Phase 2
+   ↓                          │
+Phase 3.5 (Transfer Confirm)  ┘     ← Depends on Phase 2, parallel with Phase 3
    ↓↘
-Phase 4 (Handover)  ←──── Can parallel with Phase 3
+Phase 4 (Handover) ←──── Can parallel with Phase 3/3.5
    ↓
 Phase 5 (Catalogue/CSV/Visibility)  ← Depends on Phase 2
    ↓↘
 Phase 6 (Code Quality) ←── Can parallel with Phase 5
    ↓
-Phase 7 (Tests/SLAs/Readiness) ← Depends on all above
+Phase 7 (Tests/SLAs/Readiness)      ← Depends on all above
 ```
 
-**Critical path: ~10 weeks.** Phases 3+4 parallel, Phases 5+6 parallel.
+**Critical path: ~12 weeks.** Phases 3+3.5 parallel, Phases 3.5+4 parallel, Phases 5+6 parallel.
 
 ---
 
@@ -504,18 +701,24 @@ Phase 7 (Tests/SLAs/Readiness) ← Depends on all above
 | `database/migrations/031_inventory_management.sql` | 1 | Verify triggers in prod |
 | `services/distributor-service/src/handlers/inventory.ts` | 2 | Remove agent_inventory join |
 | `services/distributor-service/src/handlers/handovers.ts` | 2,4 | Consolidation + product validation + deposit fix |
-| `services/admin-service/src/handlers/inventory-transfers.ts` | 2,3 | Consolidation + bulk transfer |
+| `services/admin-service/src/handlers/inventory-transfers.ts` | 2,3,3.5 | Consolidation + bulk transfer + confirmation state machine + force-confirm + returns |
 | `services/admin-service/src/handlers/inventory-adjustments.ts` | 3 | Bulk adjustment |
 | `services/admin-service/src/handlers/inventory-devices.ts` | 3,6 | Bulk import perf + PII masking |
 | `services/admin-service/src/handlers/inventory-reports.ts` | 5 | CSV export |
 | `services/admin-service/src/handlers/device-models.ts` | 6 | SQL parameterization |
-| `services/lock-service/src/handover/handover-workflow.ts` | 2,4 | Consolidation + transaction safety |
+| `services/lock-service/src/handover/handover-workflow.ts` | 2,3.5,4 | Consolidation + auto-cancel returns on sale + transaction safety |
 | `services/lock-service/src/handover/commission-calculator.ts` | 6 | Column name verification |
 | `services/shared/clients/fineract-sync/sync-executor.ts` | 1 | Fineract health verification |
 | `services/whatsapp-service/src/onboarding/states/device-selection.ts` | 5 | Catalogue filtering test |
 | `frontend/apps/distributor-dashboard/src/components/handover/handover-wizard.tsx` | 4 | Offline testing + fixes |
 | `frontend/apps/distributor-dashboard/src/lib/api/handovers.ts` | 4,6 | Mock data gating |
-| `template.yaml` | 3,5 | New routes + reservation expiry Lambda |
+| `database/migrations/055_distributor_transfer_confirmation.sql` | 3.5 | New: stock_transfers alterations, transfer_spot_checks, notifications tables |
+| `services/distributor-service/src/handlers/transfers.ts` | 3.5 | New: distributor transfer confirmation/rejection/return endpoints |
+| `services/shared/utils/notifications.ts` | 3.5 | New: notification helper (in-app + email) |
+| `frontend/apps/distributor-dashboard/src/app/(dashboard)/transfers/` | 3.5 | New: Transfers page (3 tabs: Pending, Returns, History) |
+| `frontend/apps/distributor-dashboard/src/lib/api/transfers.ts` | 3.5 | New: transfer API client |
+| `frontend/apps/distributor-dashboard/src/components/layout/sidebar.tsx` | 3.5 | Transfers nav item + pending count badge |
+| `template.yaml` | 3,3.5,5 | New routes + distributor transfer routes + reservation expiry Lambda |
 
 ---
 
@@ -538,6 +741,12 @@ Phase 7 (Tests/SLAs/Readiness) ← Depends on all above
 - No load/stress tests for bulk operations
 - No tests for inventory count drift detection
 - No tests for multi-product catalogue filtering
+- No tests for distributor transfer confirmation/rejection flow
+- No tests for force-confirm audit trail
+- No tests for return flows (admin-initiated and distributor-initiated)
+- No tests for spot-check verification on bulk transfers
+- No tests for auto-cancel return on device sale
+- No tests for transfer notification delivery (in-app + email)
 
 ---
 
