@@ -7,6 +7,7 @@ import { auditLog } from './helpers';
 import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import type { FineractLoanProductCreateRequest } from '../../../shared/types/fineract';
 import { createProductVersion, getProductVersions } from '../../../shared/utils/product-versioning';
+import { validateRBZCompliance } from '../../../shared/utils/rbz-compliance';
 
 const VALID_PRODUCT_CATEGORIES = ['smartphone', 'digital'] as const;
 const PRODUCT_CODE_REGEX = /^[A-Za-z0-9_]{1,50}$/;

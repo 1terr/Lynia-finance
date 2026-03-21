@@ -54,6 +54,15 @@ jest.mock('../../../services/shared/clients/fineract-sync', () => ({
   syncProductToFineract: jest.fn().mockResolvedValue({ success: true, fineract_product_id: 42 }),
 }));
 
+jest.mock('../../../services/shared/utils/rbz-compliance', () => ({
+  validateRBZCompliance: jest.fn().mockReturnValue({ compliant: true, violations: [] }),
+}));
+
+jest.mock('../../../services/shared/utils/product-versioning', () => ({
+  createProductVersion: jest.fn().mockResolvedValue(undefined),
+  getProductVersions: jest.fn().mockResolvedValue([]),
+}));
+
 jest.mock('../../../services/shared/utils/response', () => {
   const actual = jest.requireActual('../../../services/shared/utils/response');
   return {
@@ -548,6 +557,8 @@ describe('Admin Service — Product Management', () => {
     it('should soft-delete a product with no active loans', async () => {
       // active loan count check => 0
       mockQuery.mockResolvedValueOnce({ data: [{ count: '0' }], error: null });
+      // active session count check => 0
+      mockQuery.mockResolvedValueOnce({ data: [{ count: 0 }], error: null });
 
       // soft delete (update)
       const updateChain = chainableMock();
@@ -584,6 +595,8 @@ describe('Admin Service — Product Management', () => {
 
     it('should return 404 when product not found for delete', async () => {
       mockQuery.mockResolvedValueOnce({ data: [{ count: '0' }], error: null });
+      // active session count check => 0
+      mockQuery.mockResolvedValueOnce({ data: [{ count: 0 }], error: null });
 
       const updateChain = chainableMock();
       updateChain.execute.mockResolvedValue({ data: [], error: null });
@@ -608,6 +621,8 @@ describe('Admin Service — Product Management', () => {
 
     it('should return 500 when DB soft-delete fails', async () => {
       mockQuery.mockResolvedValueOnce({ data: [{ count: '0' }], error: null });
+      // active session count check => 0
+      mockQuery.mockResolvedValueOnce({ data: [{ count: 0 }], error: null });
 
       const updateChain = chainableMock();
       updateChain.execute.mockResolvedValue({ data: null, error: { message: 'delete failed' } });

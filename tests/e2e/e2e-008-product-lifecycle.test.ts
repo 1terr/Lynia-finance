@@ -96,6 +96,15 @@ jest.mock('../../services/shared/utils/sqs-publisher', () => ({
 
 jest.mock('axios');
 
+jest.mock('../../services/shared/utils/rbz-compliance', () => ({
+  validateRBZCompliance: jest.fn().mockReturnValue({ compliant: true, violations: [] }),
+}));
+
+jest.mock('../../services/shared/utils/product-versioning', () => ({
+  createProductVersion: jest.fn().mockResolvedValue(undefined),
+  getProductVersions: jest.fn().mockResolvedValue([]),
+}));
+
 // ---------------------------------------------------------------------------
 // Import source utilities (after mocks)
 // ---------------------------------------------------------------------------
