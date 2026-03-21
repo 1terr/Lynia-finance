@@ -16,7 +16,7 @@ function parseDistributorNumerics<T extends Record<string, unknown>>(row: T): T 
     total_commissions_paid: parseFloat(String(row.total_commissions_paid ?? '0')) || 0,
     pending_commissions: parseFloat(String(row.pending_commissions ?? '0')) || 0,
     commission_rate: parseFloat(String(row.commission_rate ?? '0')) || 0,
-    total_devices_sold: parseInt(String(row.total_devices_sold ?? '0'), 10) || 0,
+    total_devices_distributed: parseInt(String(row.total_devices_distributed ?? '0'), 10) || 0,
   };
 }
 
@@ -84,7 +84,7 @@ export const handleGetDistributorStats: RouteHandler = async (event, _params, au
        COUNT(*) as total,
        COUNT(*) FILTER (WHERE status = 'active') as active,
        COALESCE(SUM(total_revenue_usd), 0) as total_revenue_usd,
-       COALESCE(SUM(total_devices_sold), 0) as total_devices_distributed
+       COALESCE(SUM(total_devices_distributed), 0) as total_devices_distributed
      FROM distributors
      WHERE deleted_at IS NULL`
   );
