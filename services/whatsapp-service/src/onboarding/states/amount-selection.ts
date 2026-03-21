@@ -6,7 +6,7 @@
  */
 
 import { t, type SupportedLanguage } from '../../i18n';
-import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
+import { getAllowedTermsForProduct } from '../../../../shared/utils/loan-calculator';
 import { updateSession } from '../session';
 import type { OnboardingSession, MessageContext } from '../types';
 
@@ -59,19 +59,12 @@ export async function handleAmountSelection(
   // Round to 2 decimal places
   const roundedAmount = Math.round(amount * 100) / 100;
 
-  // Determine allowed terms from org config or credit tier
-  const minTerm = orgLimits?.min_term_months ?? 1;
-  const maxTerm = orgLimits?.max_term_months ?? 6;
-  const tier = session.state_data.credit_tier || 'Tier 1';
+  // Determine allowed terms from product config or org overrides
+  const minTerm = orgLimits?.min_term_months ?? session.state_data.matched_product_min_term ?? 1;
+  const maxTerm = orgLimits?.max_term_months ?? session.state_data.matched_product_max_term ?? 6;
 
-  // Build allowed terms: use org range, filtered by tier-allowed terms
-  const tierTerms = getAllowedTerms(tier);
-  const allowedTerms = tierTerms.filter(t => t >= minTerm && t <= maxTerm);
-
-  // Fallback: if no overlap, generate from org range
-  const finalTerms = allowedTerms.length > 0
-    ? allowedTerms
-    : Array.from({ length: maxTerm - minTerm + 1 }, (_, i) => minTerm + i);
+  // Build allowed terms from product's term range
+  const finalTerms = getAllowedTermsForProduct(minTerm, maxTerm);
 
   await updateSession(context.from, {
     current_state: 'term_selection',
