@@ -1,14 +1,16 @@
 /**
- * Fineract Product & GL Account Setup Script
+ * @deprecated This script created the original 3-tier loan products (Tier 1/2/3).
+ * Loan products are now created through the admin portal product wizard and synced
+ * to Fineract via services/shared/clients/fineract-sync/sync-product.ts.
  *
- * One-time setup script that creates GL accounts, loan products, and
- * financial activity mappings in a fresh Fineract instance. Run after
- * Fineract is deployed and healthy.
+ * The GL account setup portion is still valid for fresh Fineract instances.
+ *
+ * Original description:
+ * Fineract Product & GL Account Setup Script — one-time setup that creates
+ * GL accounts, loan products, and financial activity mappings.
  *
  * Usage:
  *   FINERACT_SECRET_NAME=dev/lynia/fineract-api npx ts-node setup-fineract-products.ts
- *
- * Idempotent: Checks if resources exist before creating. Safe to re-run.
  */
 
 import { getFineractClient, FineractApiError } from '../../../services/shared/clients/fineract';
@@ -18,7 +20,8 @@ import type {
 } from '../../../services/shared/types/fineract';
 
 import chartOfAccountsConfig from './chart-of-accounts.json';
-import loanProductsConfig from './loan-products.json';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const loanProductsConfig = require('./loan-products.json.archived');
 
 // ============================================================
 // GL ACCOUNT SETUP

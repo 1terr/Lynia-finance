@@ -306,7 +306,8 @@ export function scoreCustomer(
   const scaledScore = Math.round(300 + (probability * 550));
   const clampedScore = Math.max(300, Math.min(850, scaledScore));
 
-  // Determine tier and decision
+  // Fallback tier/decision defaults. The handler layer overrides these
+  // with product-specific values from the product eligibility resolver.
   let tier: string;
   const decision = 'approve' as const;
 

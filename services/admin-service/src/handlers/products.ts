@@ -475,6 +475,8 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     loan_term_months: body.max_term_months,
     interest_rate_annual: body.interest_rate_annual,
     interest_rate_monthly: body.interest_rate_monthly,
+    min_credit_score: body.min_credit_score ?? 300,
+    max_credit_score: body.max_credit_score ?? 850,
     deposit_percentage: body.deposit_percentage || 0,
     min_deposit_usd: body.min_deposit_usd || 0,
     min_term_months: body.min_term_months,
@@ -600,7 +602,7 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
     'loan_term_months', 'interest_rate_annual', 'deposit_percentage', 'min_deposit_usd',
     'min_term_months', 'max_term_months', 'interest_rate_monthly', 'requires_device',
     'requires_organization_verification', 'allowed_disbursement_methods', 'max_active_loans',
-    'display_order', 'description',
+    'display_order', 'description', 'min_credit_score', 'max_credit_score',
     // Fineract core parameters
     'short_name', 'currency_code', 'digits_after_decimal', 'in_multiples_of',
     'default_principal', 'number_of_repayments', 'repayment_every',

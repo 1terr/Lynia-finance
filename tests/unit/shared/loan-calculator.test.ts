@@ -1,6 +1,7 @@
 import {
   calculateDecliningBalancePayment,
   getAllowedTerms,
+  getAllowedTermsForProduct,
 } from '../../../services/shared/utils/loan-calculator';
 
 describe('calculateDecliningBalancePayment', () => {
@@ -94,20 +95,23 @@ describe('calculateDecliningBalancePayment', () => {
   });
 });
 
-describe('getAllowedTerms', () => {
-  it('returns [6, 12] for Tier 1', () => {
-    expect(getAllowedTerms('Tier 1')).toEqual([6, 12]);
+describe('getAllowedTermsForProduct', () => {
+  it('returns standard terms within product range', () => {
+    expect(getAllowedTermsForProduct(6, 18)).toEqual([6, 9, 12, 18]);
   });
 
-  it('returns [6, 12] for Tier 2', () => {
-    expect(getAllowedTerms('Tier 2')).toEqual([6, 12]);
+  it('handles typical smartphone product (6-12 months)', () => {
+    expect(getAllowedTermsForProduct(6, 12)).toEqual([6, 9, 12]);
   });
 
-  it('returns [6, 12, 18] for Tier 3', () => {
-    expect(getAllowedTerms('Tier 3')).toEqual([6, 12, 18]);
+  it('returns empty array when no standard terms fit', () => {
+    expect(getAllowedTermsForProduct(4, 5)).toEqual([]);
   });
+});
 
-  it('returns [6, 12] for unknown tier', () => {
-    expect(getAllowedTerms('Unknown')).toEqual([6, 12]);
+describe('getAllowedTerms (deprecated)', () => {
+  it('still works as backward-compat wrapper', () => {
+    expect(getAllowedTerms('Tier 1')).toEqual([6, 9, 12]);
+    expect(getAllowedTerms('Tier 3')).toEqual([6, 9, 12, 18]);
   });
 });

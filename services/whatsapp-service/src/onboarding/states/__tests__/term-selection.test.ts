@@ -35,7 +35,8 @@ function makeSmartphoneSession(overrides: Partial<OnboardingSession['state_data'
     current_state: 'term_selection',
     state_data: {
       selected_product: 'smartphone',
-      credit_tier: 'Tier 2',
+      credit_tier: 'Standard Product',
+      matched_product_id: 'prod-001',
       credit_limit_usd: 500,
       down_payment_percentage: 20,
       interest_rate_apr: 4,
@@ -57,7 +58,8 @@ function makeDigitalSession(overrides: Partial<OnboardingSession['state_data']> 
     current_state: 'term_selection',
     state_data: {
       selected_product: 'digital_credit',
-      credit_tier: 'Tier 2',
+      credit_tier: 'Standard Product',
+      matched_product_id: 'prod-001',
       credit_limit_usd: 500,
       down_payment_percentage: 0,
       interest_rate_apr: 4,

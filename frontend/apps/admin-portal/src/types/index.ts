@@ -497,6 +497,8 @@ export interface LoanProduct {
   max_term_months: number;
   interest_rate_annual: number;
   interest_rate_monthly: number;
+  min_credit_score?: number;
+  max_credit_score?: number;
   deposit_percentage: number;
   min_deposit_usd: number;
   requires_device: boolean;
@@ -590,6 +592,8 @@ export interface CreateProductInput {
   interest_rate_annual: number;
   min_interest_rate?: number;
   max_interest_rate?: number;
+  min_credit_score?: number;
+  max_credit_score?: number;
   interest_rate_frequency_type?: number;
   amortization_type?: number;
   interest_type?: number;

@@ -11,7 +11,9 @@ function makeSession(overrides: Partial<OnboardingSession['state_data']> = {}): 
     phone_number: '+263771234567',
     current_state: 'term_selection',
     state_data: {
-      credit_tier: 'Tier 2',
+      credit_tier: 'Standard Product',
+      matched_product_min_term: 6,
+      matched_product_max_term: 12,
       credit_limit_usd: 500,
       down_payment_percentage: 20,
       interest_rate_apr: 4,
