@@ -74,42 +74,61 @@ export const handleGetDistributorStats: RouteHandler = async (event, _params, au
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
-  // Try new column name first, fall back to old name if migration 034 hasn't been applied
-  let { data: rows, error } = await query<{
-    total: string;
-    active: string;
-    total_revenue_usd: string;
-    total_devices_distributed: string;
-  }>(
-    `SELECT
-       COUNT(*) as total,
-       COUNT(*) FILTER (WHERE status = 'active') as active,
-       COALESCE(SUM(total_revenue_usd), 0) as total_revenue_usd,
-       COALESCE(SUM(total_devices_distributed), 0) as total_devices_distributed
-     FROM distributors
-     WHERE deleted_at IS NULL`
-  );
+  type StatsRow = { total: string; active: string; total_revenue_usd: string; total_devices_distributed: string };
 
-  if (error?.message?.includes('total_devices_distributed')) {
-    logger.info('Falling back to total_devices_sold column', { action: 'admin.distributors.stats' });
-    ({ data: rows, error } = await query<{
-      total: string;
-      active: string;
-      total_revenue_usd: string;
-      total_devices_distributed: string;
-    }>(
-      `SELECT
-         COUNT(*) as total,
-         COUNT(*) FILTER (WHERE status = 'active') as active,
-         COALESCE(SUM(total_revenue_usd), 0) as total_revenue_usd,
-         COALESCE(SUM(total_devices_sold), 0) as total_devices_distributed
-       FROM distributors
-       WHERE deleted_at IS NULL`
-    ));
+  // Cascading fallback queries — each handles progressively fewer column assumptions
+  const queries: Array<{ label: string; sql: string }> = [
+    {
+      label: 'full (total_devices_distributed)',
+      sql: `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active,
+              COALESCE(SUM(total_revenue_usd), 0) as total_revenue_usd,
+              COALESCE(SUM(total_devices_distributed), 0) as total_devices_distributed
+            FROM distributors WHERE deleted_at IS NULL`,
+    },
+    {
+      label: 'fallback (total_devices_sold)',
+      sql: `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active,
+              COALESCE(SUM(total_revenue_usd), 0) as total_revenue_usd,
+              COALESCE(SUM(total_devices_sold), 0) as total_devices_distributed
+            FROM distributors WHERE deleted_at IS NULL`,
+    },
+    {
+      label: 'minimal (counts only)',
+      sql: `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active,
+              '0' as total_revenue_usd, '0' as total_devices_distributed
+            FROM distributors WHERE deleted_at IS NULL`,
+    },
+    {
+      label: 'bare minimum (no deleted_at)',
+      sql: `SELECT COUNT(*) as total, COUNT(*) FILTER (WHERE status = 'active') as active,
+              '0' as total_revenue_usd, '0' as total_devices_distributed
+            FROM distributors`,
+    },
+  ];
+
+  let rows: StatsRow[] = [];
+  let lastError: Error | null = null;
+
+  for (const q of queries) {
+    const result = await query<StatsRow>(q.sql);
+    if (!result.error) {
+      rows = result.data;
+      if (q.label !== 'full (total_devices_distributed)') {
+        logger.warn('Distributor stats used fallback query', { action: 'admin.distributors.stats', query: q.label });
+      }
+      lastError = null;
+      break;
+    }
+    logger.warn('Distributor stats query failed, trying next fallback', {
+      action: 'admin.distributors.stats',
+      query: q.label,
+      errorMessage: result.error.message,
+    });
+    lastError = result.error;
   }
 
-  if (error) {
-    logger.error('Error fetching distributor stats', { action: 'admin.distributors.stats', status: 'failed', errorMessage: error.message });
+  if (lastError) {
+    logger.error('All distributor stats queries failed', { action: 'admin.distributors.stats', status: 'failed', errorMessage: lastError.message });
     return errorResponse('Failed to fetch distributor stats', 500, {}, event);
   }
 
