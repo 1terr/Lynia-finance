@@ -61,6 +61,7 @@ jest.mock('../../../services/shared/utils/logger', () => ({
   getRequestContext: jest.fn().mockReturnValue({ requestId: 'test-req-id' }),
   setRequestContext: jest.fn(),
   clearRequestContext: jest.fn(),
+  maskImei: jest.fn((imei: string) => imei),
 }));
 
 jest.mock('../../../services/admin-service/src/handlers/helpers', () => ({
@@ -172,6 +173,52 @@ describe('Inventory Audit Readiness', () => {
     });
   }
 
+  /**
+   * Parse raw SQL from withTransaction tx() calls into dbOps entries.
+   */
+  function parseTxSql(sql: string, params?: unknown[]): { table: string; op: string; data: Record<string, unknown> } | null {
+    const updateMatch = sql.match(/UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)\s+WHERE/i);
+    if (updateMatch) {
+      const table = updateMatch[1];
+      const setClause = updateMatch[2];
+      const data: Record<string, unknown> = {};
+      const paramMatches = setClause.matchAll(/(\w+)\s*=\s*\$(\d+)/g);
+      for (const m of paramMatches) {
+        const col = m[1];
+        const idx = parseInt(m[2]) - 1;
+        data[col] = params && params[idx] !== undefined ? params[idx] : `$${m[2]}`;
+      }
+      const literalMatches = setClause.matchAll(/(\w+)\s*=\s*'([^']*)'/g);
+      for (const m of literalMatches) {
+        data[m[1]] = m[2];
+      }
+      return { table, op: 'update', data };
+    }
+    const insertMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
+    if (insertMatch) {
+      const table = insertMatch[1];
+      const data: Record<string, unknown> = {};
+      const colListMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+      if (colListMatch) {
+        const cols = colListMatch[1].split(',').map(c => c.trim());
+        const vals = colListMatch[2].split(',').map(v => v.trim());
+        cols.forEach((col, i) => {
+          const val = vals[i];
+          if (val && val.startsWith('$') && params) {
+            const idx = parseInt(val.substring(1)) - 1;
+            data[col] = params[idx] !== undefined ? params[idx] : null;
+          } else if (val && val.startsWith("'") && val.endsWith("'")) {
+            data[col] = val.slice(1, -1);
+          } else {
+            data[col] = val || null;
+          }
+        });
+      }
+      return { table, op: 'insert', data };
+    }
+    return null;
+  }
+
   function setupHandoverDbMock(handover: Record<string, unknown>) {
     mockFrom.mockImplementation((table: string) => {
       const chain: Record<string, any> = {};
@@ -195,6 +242,16 @@ describe('Inventory Audit Readiness', () => {
       }
 
       return chain;
+    });
+
+    // Mock withTransaction to execute callback with a tx that tracks operations
+    mockWithTransaction.mockImplementation(async (fn: Function) => {
+      const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
+        const parsed = parseTxSql(sql, params);
+        if (parsed) dbOps.push(parsed);
+        return { data: [], error: null };
+      });
+      return fn(tx);
     });
   }
 
@@ -373,10 +430,11 @@ describe('Inventory Audit Readiness', () => {
   // ─── 3. Concurrency Safety ───
 
   describe('Concurrency & Safety', () => {
-    it('concurrent handover is prevented by FOR UPDATE lock pattern', async () => {
-      // Simulate two concurrent handover attempts on the same device
-      // The first one should succeed, the second should fail because
-      // the handover record is already 'completed'
+    it('concurrent handover is prevented when second attempt finds no record', async () => {
+      // Simulate two concurrent handover attempts on the same device.
+      // The first one succeeds. The second attempt, in a real DB with
+      // FOR UPDATE, would block or see the updated row. Here we simulate
+      // the second finding no handover (already processed/consumed).
       const handover = {
         id: 'handover-concurrent-001',
         loan_id: 'loan-001',
@@ -402,12 +460,17 @@ describe('Inventory Audit Readiness', () => {
       const result1 = await completeHandover('handover-concurrent-001');
       expect(result1.success).toBe(true);
 
-      // Second handover attempt finds status = 'completed' (already done)
+      // Second handover attempt finds no record (already consumed by first)
       dbOps.length = 0;
-      setupHandoverDbMock({ ...handover, status: 'completed' });
+      mockFrom.mockImplementation(() => ({
+        select: jest.fn().mockReturnThis(),
+        eq: jest.fn().mockReturnThis(),
+        single: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({ data: null, error: null }),
+        update: jest.fn().mockReturnThis(),
+      }));
 
-      // completeHandover should reject non-initiated handovers
-      await expect(completeHandover('handover-concurrent-001')).rejects.toThrow();
+      await expect(completeHandover('handover-concurrent-001')).rejects.toThrow('Handover not found');
     });
   });
 
@@ -530,11 +593,9 @@ describe('Inventory Audit Readiness', () => {
 
       // Verify commission calculation uses correct values
       expect(mockCalcCommission).toHaveBeenCalledWith(
-        expect.objectContaining({
-          distributor_id: 'dist-001',
-          device_id: 'dev-comm-001',
-          loan_id: 'loan-comm-001',
-        })
+        'loan-comm-001',
+        'dev-comm-001',
+        'dist-001'
       );
 
       // Verify commission is recorded with correct column names

@@ -20,6 +20,7 @@ const mockFrom = jest.fn();
 jest.mock('../../../services/shared/clients/database', () => ({
   db: { from: (...args: unknown[]) => mockFrom(...args) },
   query: jest.fn(),
+  withTransaction: jest.fn().mockImplementation((fn: Function) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
 }));
 
 jest.mock('../../../services/shared/utils/response', () => ({
@@ -42,6 +43,8 @@ jest.mock('../../../services/shared/middleware/authorization', () => ({
 jest.mock('../../../services/shared/utils/logger', () => ({
   __esModule: true,
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  getRequestContext: jest.fn().mockReturnValue({ requestId: 'test-req-id' }),
+  maskImei: jest.fn((imei: string) => imei),
 }));
 
 jest.mock('../../../services/admin-service/src/handlers/helpers', () => ({

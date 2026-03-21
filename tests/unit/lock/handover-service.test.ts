@@ -20,6 +20,10 @@ jest.mock('../../../services/shared/clients/database', () => {
   };
   return {
     db: { from: jest.fn().mockImplementation(() => createChain()) },
+    withTransaction: jest.fn().mockImplementation(async (fn: Function) => {
+      const tx = jest.fn().mockResolvedValue({ data: [], error: null });
+      return fn(tx);
+    }),
     __mockExecute: mockExecute,
   };
 });
@@ -588,15 +592,13 @@ describe('HandoverService', () => {
             distributor_id: 'dist-001',
           },
           error: null,
-        }) // handover
-        .mockResolvedValueOnce({ data: null, error: null }) // update loan to active
-        .mockResolvedValueOnce({ data: null, error: null }) // update device to sold
-        // calculateDistributorCommission sub-calls:
-        .mockResolvedValueOnce({ data: { principal: 1000 }, error: null }) // loan
-        .mockResolvedValueOnce({ data: { retail_price: 500, model: 'Samsung A15' }, error: null }) // device
+        }) // handover read via db.from
+        // calculateDistributorCommission sub-calls (via db.from):
+        .mockResolvedValueOnce({ data: { loan_amount_usd: 1000 }, error: null }) // loan
+        .mockResolvedValueOnce({ data: { retail_price_usd: 500, model: 'Samsung A15' }, error: null }) // device
         .mockResolvedValueOnce({ data: { commission_rate: 5 }, error: null }) // distributor
-        .mockResolvedValueOnce({ data: null, error: null }) // insert commission
-        .mockResolvedValueOnce({ data: null, error: null }); // update handover to completed
+        // withTransaction handles mutations (loan update, device update, commission insert, handover update, lock insert, cancel returns)
+        .mockResolvedValue({ data: null, error: null }); // any remaining db.from calls
 
       const result = await service.completeHandover('handover-001');
 
@@ -620,15 +622,13 @@ describe('HandoverService', () => {
             distributor_id: 'dist-002',
           },
           error: null,
-        })
-        .mockResolvedValueOnce({ data: null, error: null }) // update loan
-        .mockResolvedValueOnce({ data: null, error: null }) // update device
-        .mockResolvedValueOnce({ data: null, error: null }) // update inventory
-        .mockResolvedValueOnce({ data: { principal: 2000 }, error: null }) // loan
-        .mockResolvedValueOnce({ data: { retail_price: 800, model: 'Samsung A25' }, error: null }) // device
+        }) // handover read
+        // calculateDistributorCommission sub-calls (via db.from):
+        .mockResolvedValueOnce({ data: { loan_amount_usd: 2000 }, error: null }) // loan
+        .mockResolvedValueOnce({ data: { retail_price_usd: 800, model: 'Samsung A25' }, error: null }) // device
         .mockResolvedValueOnce({ data: null, error: null }) // distributor not found (null)
-        .mockResolvedValueOnce({ data: null, error: null }) // insert commission
-        .mockResolvedValueOnce({ data: null, error: null }); // update handover
+        // withTransaction handles mutations
+        .mockResolvedValue({ data: null, error: null });
 
       const result = await service.completeHandover('handover-002');
 
@@ -636,7 +636,9 @@ describe('HandoverService', () => {
       expect(result.commission.percentage).toBe(5);
     });
 
-    it('should mark handover as failed on error', async () => {
+    it('should mark handover as failed on transaction error', async () => {
+      const { withTransaction: mockTx } = require('../../../services/shared/clients/database');
+
       __mockExecute
         .mockResolvedValueOnce({
           data: {
@@ -650,9 +652,15 @@ describe('HandoverService', () => {
             distributor_id: 'dist-003',
           },
           error: null,
-        })
-        .mockRejectedValueOnce(new Error('DB write error')) // update loan fails
-        .mockResolvedValue({ data: null, error: null }); // mark as failed
+        }) // handover read
+        // calculateDistributorCommission sub-calls:
+        .mockResolvedValueOnce({ data: { loan_amount_usd: 1000 }, error: null })
+        .mockResolvedValueOnce({ data: { retail_price_usd: 500, model: 'Samsung A15' }, error: null })
+        .mockResolvedValueOnce({ data: { commission_rate: 5 }, error: null })
+        .mockResolvedValue({ data: null, error: null }); // mark as failed via db.from
+
+      // Make withTransaction reject to simulate DB failure
+      mockTx.mockRejectedValueOnce(new Error('DB write error'));
 
       await expect(service.completeHandover('handover-003')).rejects.toThrow('DB write error');
       expect(db.from).toHaveBeenCalledWith('device_handovers');

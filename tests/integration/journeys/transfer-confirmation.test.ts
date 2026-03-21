@@ -620,7 +620,9 @@ describe('Transfer Confirmation Flow', () => {
         c.sql.includes('INSERT INTO inventory_movements') && c.sql.includes('transfer_force_confirmed')
       );
       expect(movementInsert).toBeDefined();
-      expect(movementInsert!.params).toContain(expect.stringContaining('Force confirmed by admin'));
+      expect(movementInsert!.params).toEqual(
+        expect.arrayContaining([expect.stringContaining('Force confirmed by admin')])
+      );
 
       // Verify auditLog was also called
       const { auditLog } = require('../../../services/admin-service/src/handlers/helpers');

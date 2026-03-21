@@ -20,6 +20,7 @@ jest.mock('../../../services/shared/clients/database', () => ({
   db: mockDb,
   query: mockQuery,
   queryOne: mockQueryOne,
+  withTransaction: jest.fn().mockImplementation((fn: Function) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
 }));
 
 const mockGetAuthContext = jest.fn();
@@ -50,6 +51,8 @@ jest.mock('../../../services/shared/utils/logger', () => ({
   default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
   setRequestContext: jest.fn().mockReturnValue('test-req-id'),
   clearRequestContext: jest.fn(),
+  getRequestContext: jest.fn().mockReturnValue({ requestId: 'test-req-id' }),
+  maskImei: jest.fn((imei: string) => imei),
 }));
 
 import { handler } from '../../../services/admin-service/src/index';
@@ -946,7 +949,7 @@ describe('PATCH /admin/inventory/transfers/:id', () => {
     expect(result.statusCode).toBe(200);
   });
 
-  it('should transition from in_transit to received and update device location', async () => {
+  it('should transition from in_transit to pending_receipt', async () => {
     mockChain.execute
       .mockResolvedValueOnce({
         data: {
@@ -963,13 +966,10 @@ describe('PATCH /admin/inventory/transfers/:id', () => {
     const event = createAPIGatewayEvent({
       httpMethod: 'PATCH',
       path: '/admin/inventory/transfers/ff00000000000001',
-      body: JSON.stringify({ status: 'received' }),
+      body: JSON.stringify({ status: 'pending_receipt' }),
     });
     const result = await handler(event);
     expect(result.statusCode).toBe(200);
-
-    // Verify device update was called (now includes distributor_id assignment)
-    expect(mockDb.from).toHaveBeenCalledWith('devices');
   });
 
   it('should reject invalid state transition (requested -> received)', async () => {

@@ -14,8 +14,10 @@
 const dbOps: { table: string; op: string; data: Record<string, unknown> }[] = [];
 const mockFrom = jest.fn();
 
+const mockWithTransaction = jest.fn();
 jest.mock('../../../services/shared/clients/database', () => ({
   db: { from: (...args: unknown[]) => mockFrom(...args) },
+  withTransaction: (...args: unknown[]) => mockWithTransaction(...args),
 }));
 
 jest.mock('../../../services/shared/utils/logger', () => ({
@@ -44,6 +46,52 @@ const testHandover = {
   device_condition_verified: true,
   status: 'initiated',
 };
+
+/**
+ * Parse raw SQL from withTransaction tx() calls into dbOps entries.
+ */
+function parseTxSql(sql: string, params?: unknown[]): { table: string; op: string; data: Record<string, unknown> } | null {
+  const updateMatch = sql.match(/UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)\s+WHERE/i);
+  if (updateMatch) {
+    const table = updateMatch[1];
+    const setClause = updateMatch[2];
+    const data: Record<string, unknown> = {};
+    const paramMatches = setClause.matchAll(/(\w+)\s*=\s*\$(\d+)/g);
+    for (const m of paramMatches) {
+      const col = m[1];
+      const idx = parseInt(m[2]) - 1;
+      data[col] = params && params[idx] !== undefined ? params[idx] : `$${m[2]}`;
+    }
+    const literalMatches = setClause.matchAll(/(\w+)\s*=\s*'([^']*)'/g);
+    for (const m of literalMatches) {
+      data[m[1]] = m[2];
+    }
+    return { table, op: 'update', data };
+  }
+  const insertMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
+  if (insertMatch) {
+    const table = insertMatch[1];
+    const data: Record<string, unknown> = {};
+    const colListMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (colListMatch) {
+      const cols = colListMatch[1].split(',').map(c => c.trim());
+      const vals = colListMatch[2].split(',').map(v => v.trim());
+      cols.forEach((col, i) => {
+        const val = vals[i];
+        if (val && val.startsWith('$') && params) {
+          const idx = parseInt(val.substring(1)) - 1;
+          data[col] = params[idx] !== undefined ? params[idx] : null;
+        } else if (val && val.startsWith("'") && val.endsWith("'")) {
+          data[col] = val.slice(1, -1);
+        } else {
+          data[col] = val || null;
+        }
+      });
+    }
+    return { table, op: 'insert', data };
+  }
+  return null;
+}
 
 describe('Device Handover Journey', () => {
   beforeEach(() => {
@@ -83,6 +131,16 @@ describe('Device Handover Journey', () => {
       }
 
       return chain;
+    });
+
+    // Mock withTransaction to execute callback with a tx that tracks operations
+    mockWithTransaction.mockImplementation(async (fn: Function) => {
+      const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
+        const parsed = parseTxSql(sql, params);
+        if (parsed) dbOps.push(parsed);
+        return { data: [], error: null };
+      });
+      return fn(tx);
     });
   }
 
@@ -202,7 +260,8 @@ describe('Device Handover Journey', () => {
   // ─── Error Recovery ───
 
   describe('Error Recovery', () => {
-    it('marks handover as failed when loan update throws', async () => {
+    it('marks handover as failed when transaction throws', async () => {
+      // Setup db.from for the initial handover read + failure status update
       mockFrom.mockImplementation((table: string) => {
         const chain: Record<string, any> = {};
         chain.select = jest.fn().mockReturnValue(chain);
@@ -221,14 +280,15 @@ describe('Device Handover Journey', () => {
           chain.execute = jest.fn()
             .mockResolvedValueOnce({ data: testHandover, error: null })
             .mockResolvedValue({ data: null, error: null });
-        } else if (table === 'loans') {
-          chain.execute = jest.fn().mockRejectedValue(new Error('Connection timeout'));
         } else {
           chain.execute = jest.fn().mockResolvedValue({ data: null, error: null });
         }
 
         return chain;
       });
+
+      // withTransaction throws to simulate DB failure inside the transaction
+      mockWithTransaction.mockRejectedValue(new Error('Connection timeout'));
 
       await expect(completeHandover('handover-001')).rejects.toThrow('Connection timeout');
 
@@ -239,7 +299,10 @@ describe('Device Handover Journey', () => {
       expect(failUpdate!.data.failure_reason).toBe('Connection timeout');
     });
 
-    it('device lock failure does NOT fail the handover', async () => {
+    it('device lock failure inside transaction fails the handover', async () => {
+      // With the transaction-based approach, a lock failure inside the tx
+      // will cause the entire transaction to roll back and the handover to fail.
+      // Setup db.from for the initial handover read + failure status update
       mockFrom.mockImplementation((table: string) => {
         const chain: Record<string, any> = {};
         chain.select = jest.fn().mockReturnValue(chain);
@@ -253,29 +316,41 @@ describe('Device Handover Journey', () => {
         });
         chain.eq = jest.fn().mockReturnValue(chain);
         chain.single = jest.fn().mockReturnValue(chain);
-        chain.execute = jest.fn().mockResolvedValue({ data: null, error: null });
 
         if (table === 'device_handovers') {
           chain.execute = jest.fn()
             .mockResolvedValueOnce({ data: testHandover, error: null })
             .mockResolvedValue({ data: null, error: null });
-        } else if (table === 'device_locks') {
-          // Lock insert throws
-          chain.execute = jest.fn().mockRejectedValue(new Error('Trustonic unavailable'));
+        } else {
+          chain.execute = jest.fn().mockResolvedValue({ data: null, error: null });
         }
 
         return chain;
       });
 
-      // Should still succeed despite lock failure
-      const result = await completeHandover('handover-001');
-      expect(result.success).toBe(true);
+      // Simulate lock insert failure inside the transaction
+      mockWithTransaction.mockImplementation(async (fn: Function) => {
+        let callCount = 0;
+        const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
+          callCount++;
+          // The 5th tx call is the device_locks INSERT
+          if (callCount === 5) {
+            throw new Error('Trustonic unavailable');
+          }
+          const parsed = parseTxSql(sql, params);
+          if (parsed) dbOps.push(parsed);
+          return { data: [], error: null };
+        });
+        return fn(tx);
+      });
 
-      // Handover should be marked completed, not failed
-      const completedUpdate = dbOps.find(
-        op => op.table === 'device_handovers' && op.op === 'update' && op.data.status === 'completed'
+      await expect(completeHandover('handover-001')).rejects.toThrow('Trustonic unavailable');
+
+      // Handover should be marked as failed
+      const failUpdate = dbOps.find(
+        op => op.table === 'device_handovers' && op.op === 'update' && op.data.status === 'failed'
       );
-      expect(completedUpdate).toBeDefined();
+      expect(failUpdate).toBeDefined();
     });
 
     it('throws when handover not found', async () => {

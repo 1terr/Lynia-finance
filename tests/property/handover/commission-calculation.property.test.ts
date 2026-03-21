@@ -25,17 +25,17 @@ describe('Commission Calculation - property tests', () => {
   });
 
   function setupMocks(principal: number, retailPrice: number, model: string, commissionRate: number | null) {
-    // Call 1: db.from('loans').select('principal').eq('id', loanId).single().execute()
-    // Call 2: db.from('devices').select(...).eq(...).single().execute()
-    // Call 3: db.from('distributors').select(...).eq(...).single().execute()
+    // Call 1: db.from('loans').select('loan_amount_usd').eq('id', loanId).single().execute()
+    // Call 2: db.from('devices').select('retail_price_usd, model').eq(...).single().execute()
+    // Call 3: db.from('distributors').select('commission_rate').eq(...).single().execute()
 
     mockFrom.mockImplementation((table: string) => {
       const chainSelect = jest.fn(() => {
         const chainEq = jest.fn(() => {
           const chainSingle = jest.fn(() => ({
             execute: jest.fn().mockResolvedValue((() => {
-              if (table === 'loans') return { data: { principal }, error: null };
-              if (table === 'devices') return { data: { retail_price: retailPrice, model }, error: null };
+              if (table === 'loans') return { data: { loan_amount_usd: principal }, error: null };
+              if (table === 'devices') return { data: { retail_price_usd: retailPrice, model }, error: null };
               if (table === 'distributors') {
                 return commissionRate !== null
                   ? { data: { commission_rate: commissionRate }, error: null }

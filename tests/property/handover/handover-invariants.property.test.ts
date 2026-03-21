@@ -36,8 +36,10 @@ function createChain() {
 
 const mockFrom = jest.fn();
 
+const mockWithTransaction = jest.fn();
 jest.mock('../../../services/shared/clients/database', () => ({
   db: { from: (...args: unknown[]) => mockFrom(...args) },
+  withTransaction: (...args: unknown[]) => mockWithTransaction(...args),
 }));
 
 jest.mock('../../../services/shared/utils/logger', () => ({
@@ -56,6 +58,55 @@ jest.mock('../../../services/lock-service/src/handover/commission-calculator', (
 }));
 
 import { completeHandover } from '../../../services/lock-service/src/handover/handover-workflow';
+
+/**
+ * Helper: parse raw SQL from withTransaction tx() calls into dbOps entries
+ * so the existing assertions (which look for table + op + data) still work.
+ */
+function parseTxSql(sql: string, params?: unknown[]): { table: string; op: string; data: Record<string, unknown> } | null {
+  const updateMatch = sql.match(/UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)\s+WHERE/i);
+  if (updateMatch) {
+    const table = updateMatch[1];
+    const setClause = updateMatch[2];
+    const data: Record<string, unknown> = {};
+    // Extract column = $N pairs (parameterized values)
+    const paramMatches = setClause.matchAll(/(\w+)\s*=\s*\$(\d+)/g);
+    for (const m of paramMatches) {
+      const col = m[1];
+      const idx = parseInt(m[2]) - 1;
+      data[col] = params && params[idx] !== undefined ? params[idx] : `$${m[2]}`;
+    }
+    // Extract column = 'literal' pairs (string literals in SQL)
+    const literalMatches = setClause.matchAll(/(\w+)\s*=\s*'([^']*)'/g);
+    for (const m of literalMatches) {
+      data[m[1]] = m[2];
+    }
+    return { table, op: 'update', data };
+  }
+  const insertMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
+  if (insertMatch) {
+    const table = insertMatch[1];
+    const data: Record<string, unknown> = {};
+    const colListMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (colListMatch) {
+      const cols = colListMatch[1].split(',').map(c => c.trim());
+      const vals = colListMatch[2].split(',').map(v => v.trim());
+      cols.forEach((col, i) => {
+        const val = vals[i];
+        if (val && val.startsWith('$') && params) {
+          const idx = parseInt(val.substring(1)) - 1;
+          data[col] = params[idx] !== undefined ? params[idx] : null;
+        } else if (val && val.startsWith("'") && val.endsWith("'")) {
+          data[col] = val.slice(1, -1);
+        } else {
+          data[col] = val || null;
+        }
+      });
+    }
+    return { table, op: 'insert', data };
+  }
+  return null;
+}
 
 describe('completeHandover invariants - property tests', () => {
   beforeEach(() => {
@@ -100,6 +151,16 @@ describe('completeHandover invariants - property tests', () => {
       }
 
       return chain;
+    });
+
+    // Mock withTransaction to execute the callback with a tx function that tracks operations
+    mockWithTransaction.mockImplementation(async (fn: Function) => {
+      const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
+        const parsed = parseTxSql(sql, params);
+        if (parsed) dbOps.push(parsed);
+        return { data: [], error: null };
+      });
+      return fn(tx);
     });
   }
 
@@ -298,7 +359,7 @@ describe('completeHandover invariants - property tests', () => {
   });
 
   it('on failure: marks handover as failed with error message', async () => {
-    // Setup: identity verified, but loan update throws
+    // Setup: identity verified, but withTransaction throws (simulating DB failure)
     const handoverRecord = {
       id: 'handover-1',
       loan_id: 'loan-1',
@@ -328,14 +389,15 @@ describe('completeHandover invariants - property tests', () => {
         chain.execute = jest.fn()
           .mockResolvedValueOnce({ data: handoverRecord, error: null }) // select
           .mockResolvedValue({ data: null, error: null }); // update (failure marking)
-      } else if (table === 'loans') {
-        chain.execute = jest.fn().mockRejectedValue(new Error('DB connection failed'));
       } else {
         chain.execute = jest.fn().mockResolvedValue({ data: null, error: null });
       }
 
       return chain;
     });
+
+    // withTransaction throws to simulate DB failure inside the transaction
+    mockWithTransaction.mockRejectedValue(new Error('DB connection failed'));
 
     await expect(completeHandover('handover-1')).rejects.toThrow('DB connection failed');
 

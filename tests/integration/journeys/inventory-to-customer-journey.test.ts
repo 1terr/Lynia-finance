@@ -15,9 +15,61 @@ const existingImeis = new Set<string>();
 const mockFrom = jest.fn();
 const mockQuery = jest.fn();
 
+function parseTxSql(sql: string, params?: unknown[]): { table: string; op: string; data: Record<string, unknown> } | null {
+  const updateMatch = sql.match(/UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)\s+WHERE/i);
+  if (updateMatch) {
+    const table = updateMatch[1];
+    const setClause = updateMatch[2];
+    const data: Record<string, unknown> = {};
+    const paramMatches = setClause.matchAll(/(\w+)\s*=\s*\$(\d+)/g);
+    for (const m of paramMatches) {
+      const col = m[1];
+      const idx = parseInt(m[2]) - 1;
+      data[col] = params && params[idx] !== undefined ? params[idx] : `$${m[2]}`;
+    }
+    const literalMatches = setClause.matchAll(/(\w+)\s*=\s*'([^']*)'/g);
+    for (const m of literalMatches) {
+      data[m[1]] = m[2];
+    }
+    return { table, op: 'update', data };
+  }
+  const insertMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
+  if (insertMatch) {
+    const table = insertMatch[1];
+    const data: Record<string, unknown> = {};
+    const colListMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (colListMatch) {
+      const cols = colListMatch[1].split(',').map(c => c.trim());
+      const vals = colListMatch[2].split(',').map(v => v.trim());
+      cols.forEach((col, i) => {
+        const val = vals[i];
+        if (val && val.startsWith('$') && params) {
+          const idx = parseInt(val.substring(1)) - 1;
+          data[col] = params[idx] !== undefined ? params[idx] : null;
+        } else if (val && val.startsWith("'") && val.endsWith("'")) {
+          data[col] = val.slice(1, -1);
+        } else {
+          data[col] = val || null;
+        }
+      });
+    }
+    return { table, op: 'insert', data };
+  }
+  return null;
+}
+
+const mockWithTransaction = jest.fn().mockImplementation(async (fn: Function) => {
+  const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
+    const parsed = parseTxSql(sql, params);
+    if (parsed) dbOps.push(parsed);
+    return { data: [], error: null };
+  });
+  return fn(tx);
+});
 jest.mock('../../../services/shared/clients/database', () => ({
   db: { from: (...args: unknown[]) => mockFrom(...args) },
   query: (...args: unknown[]) => mockQuery(...args),
+  withTransaction: (...args: unknown[]) => mockWithTransaction(...args),
 }));
 
 jest.mock('../../../services/shared/utils/response', () => ({
@@ -40,6 +92,8 @@ jest.mock('../../../services/shared/middleware/authorization', () => ({
 jest.mock('../../../services/shared/utils/logger', () => ({
   __esModule: true,
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  getRequestContext: jest.fn().mockReturnValue({ requestId: 'test-req-id' }),
+  maskImei: jest.fn((imei: string) => imei),
 }));
 
 jest.mock('../../../services/admin-service/src/handlers/helpers', () => ({
@@ -320,9 +374,19 @@ describe('Inventory to Customer Journey', () => {
       const transitUpdate = dbOps.find(op => op.table === 'stock_transfers' && op.op === 'update');
       expect(transitUpdate!.data.shipped_at).toBeDefined();
 
-      // Step 4: Received → device assigned + inventory created
+      // Step 4: Pending receipt
       dbOps.length = 0;
       setupTransferMock('in_transit');
+      const pendingEvent = createAPIGatewayEvent({
+        httpMethod: 'PATCH',
+        body: JSON.stringify({ status: 'pending_receipt' }),
+      });
+      const pendingResult = await handleUpdateTransfer(pendingEvent, { id: 'transfer-001' }, authContext);
+      expect(pendingResult.statusCode).toBe(200);
+
+      // Step 5: Received → device assigned + inventory created
+      dbOps.length = 0;
+      setupTransferMock('pending_receipt');
       const receiveEvent = createAPIGatewayEvent({
         httpMethod: 'PATCH',
         body: JSON.stringify({ status: 'received' }),
@@ -330,7 +394,7 @@ describe('Inventory to Customer Journey', () => {
       const receiveResult = await handleUpdateTransfer(receiveEvent, { id: 'transfer-001' }, authContext);
       expect(receiveResult.statusCode).toBe(200);
 
-      // Device should be assigned
+      // Device should be assigned (via withTransaction)
       const deviceUpdate = dbOps.find(op => op.table === 'devices' && op.op === 'update');
       expect(deviceUpdate!.data.status).toBe('assigned');
 

@@ -16,6 +16,7 @@ jest.mock('../../../services/shared/clients/database', () => ({
   db: mockDb,
   query: mockQuery,
   queryOne: mockQueryOne,
+  withTransaction: jest.fn().mockImplementation((fn: Function) => fn(jest.fn().mockResolvedValue({ data: [], error: null }))),
 }));
 
 const mockIsAdminOrManager = jest.fn();
@@ -45,6 +46,8 @@ jest.mock('../../../services/shared/utils/logger', () => ({
   default: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
   setRequestContext: jest.fn().mockReturnValue('test-req-id'),
   clearRequestContext: jest.fn(),
+  getRequestContext: jest.fn().mockReturnValue({ requestId: 'test-req-id' }),
+  maskImei: jest.fn((imei: string) => imei),
 }));
 
 // Mock the audit log helper — define fn inside factory to avoid hoisting issues

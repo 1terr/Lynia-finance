@@ -16,9 +16,60 @@ const dbOps: { table: string; op: string; data: Record<string, unknown> }[] = []
 const mockFrom = jest.fn();
 const mockQuery = jest.fn();
 
+function parseTxSql(sql: string, params?: unknown[]): { table: string; op: string; data: Record<string, unknown> } | null {
+  const updateMatch = sql.match(/UPDATE\s+(\w+)\s+SET\s+([\s\S]+?)\s+WHERE/i);
+  if (updateMatch) {
+    const table = updateMatch[1];
+    const setClause = updateMatch[2];
+    const data: Record<string, unknown> = {};
+    const paramMatches = setClause.matchAll(/(\w+)\s*=\s*\$(\d+)/g);
+    for (const m of paramMatches) {
+      const col = m[1];
+      const idx = parseInt(m[2]) - 1;
+      data[col] = params && params[idx] !== undefined ? params[idx] : `$${m[2]}`;
+    }
+    const literalMatches = setClause.matchAll(/(\w+)\s*=\s*'([^']*)'/g);
+    for (const m of literalMatches) {
+      data[m[1]] = m[2];
+    }
+    return { table, op: 'update', data };
+  }
+  const insertMatch = sql.match(/INSERT\s+INTO\s+(\w+)/i);
+  if (insertMatch) {
+    const table = insertMatch[1];
+    const data: Record<string, unknown> = {};
+    const colListMatch = sql.match(/\(([^)]+)\)\s*VALUES\s*\(([^)]+)\)/i);
+    if (colListMatch) {
+      const cols = colListMatch[1].split(',').map(c => c.trim());
+      const vals = colListMatch[2].split(',').map(v => v.trim());
+      cols.forEach((col, i) => {
+        const val = vals[i];
+        if (val && val.startsWith('$') && params) {
+          const idx = parseInt(val.substring(1)) - 1;
+          data[col] = params[idx] !== undefined ? params[idx] : null;
+        } else if (val && val.startsWith("'") && val.endsWith("'")) {
+          data[col] = val.slice(1, -1);
+        } else {
+          data[col] = val || null;
+        }
+      });
+    }
+    return { table, op: 'insert', data };
+  }
+  return null;
+}
+
 jest.mock('../../../services/shared/clients/database', () => ({
   db: { from: (...args: unknown[]) => mockFrom(...args) },
   query: (...args: unknown[]) => mockQuery(...args),
+  withTransaction: jest.fn().mockImplementation(async (fn: Function) => {
+    const tx = jest.fn().mockImplementation(async (sql: string, params?: unknown[]) => {
+      const parsed = parseTxSql(sql, params);
+      if (parsed) dbOps.push(parsed);
+      return { data: [], error: null };
+    });
+    return fn(tx);
+  }),
 }));
 
 jest.mock('../../../services/shared/utils/response', () => ({
@@ -41,6 +92,8 @@ jest.mock('../../../services/shared/middleware/authorization', () => ({
 jest.mock('../../../services/shared/utils/logger', () => ({
   __esModule: true,
   default: { info: jest.fn(), error: jest.fn(), warn: jest.fn() },
+  getRequestContext: jest.fn().mockReturnValue({ requestId: 'test-req-id' }),
+  maskImei: jest.fn((imei: string) => imei),
 }));
 
 jest.mock('../../../services/admin-service/src/handlers/helpers', () => ({
@@ -53,12 +106,16 @@ import { createAPIGatewayEvent } from '../../helpers/test-utils';
 const validTransitions: Record<string, string[]> = {
   requested: ['approved', 'cancelled'],
   approved: ['in_transit', 'cancelled'],
-  in_transit: ['received', 'cancelled'],
+  in_transit: ['pending_receipt', 'cancelled'],
+  pending_receipt: ['received', 'disputed'],
+  disputed: ['received', 'cancelled'],
+  return_requested: ['return_approved', 'disputed', 'cancelled'],
+  return_approved: ['received', 'cancelled'],
 };
 
-const allStatuses = ['requested', 'approved', 'in_transit', 'received', 'cancelled'];
+const allStatuses = ['requested', 'approved', 'in_transit', 'pending_receipt', 'disputed', 'received', 'cancelled'];
 const terminalStatuses = ['received', 'cancelled'];
-const nonTerminalStatuses = ['requested', 'approved', 'in_transit'];
+const nonTerminalStatuses = ['requested', 'approved', 'in_transit', 'pending_receipt', 'disputed', 'return_requested', 'return_approved'];
 
 describe('Transfer State Machine - property tests', () => {
   beforeEach(() => {
@@ -169,7 +226,7 @@ describe('Transfer State Machine - property tests', () => {
   });
 
   it('"received" transition assigns device to distributor', async () => {
-    setupTransferMock('in_transit', 'dist-1');
+    setupTransferMock('pending_receipt', 'dist-1');
     const event = makeEvent('received');
     const result = await handleUpdateTransfer(event, { id: 'transfer-1' }, { userId: 'admin-1', role: 'admin' });
 
@@ -196,9 +253,13 @@ describe('Transfer State Machine - property tests', () => {
     expect(transferUpdate!.data.approved_at).toBeDefined();
   });
 
-  it('"cancelled" from any non-terminal state records cancelled_at', () => {
+  it('"cancelled" from cancellable states records cancelled_at', () => {
+    // Only states that include 'cancelled' in their valid transitions
+    const cancellableStatuses = Object.entries(validTransitions)
+      .filter(([, tos]) => tos.includes('cancelled'))
+      .map(([from]) => from);
     return fc.assert(
-      fc.asyncProperty(fc.constantFrom(...nonTerminalStatuses), async (currentStatus) => {
+      fc.asyncProperty(fc.constantFrom(...cancellableStatuses), async (currentStatus) => {
         dbOps.length = 0;
         setupTransferMock(currentStatus);
         const event = makeEvent('cancelled', 'No longer needed');
