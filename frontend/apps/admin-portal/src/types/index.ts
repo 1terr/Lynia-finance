@@ -566,6 +566,19 @@ export interface LoanProduct {
   receivable_interest_account_id?: number | null;
   receivable_fee_account_id?: number | null;
   receivable_penalty_account_id?: number | null;
+  // Fee Configuration (Migration 049)
+  insurance_fee_percentage?: number;
+  insurance_fee_flat_usd?: number;
+  insurance_fee_type?: 'percentage' | 'flat' | 'none';
+  insurance_fee_frequency?: 'upfront' | 'monthly';
+  late_penalty_percentage?: number;
+  late_penalty_flat_usd?: number;
+  late_penalty_type?: 'percentage' | 'flat' | 'none';
+  late_penalty_grace_days?: number;
+  fineract_insurance_charge_id?: number;
+  fineract_penalty_charge_id?: number;
+  // Flat rate interest (Migration 050)
+  effective_apr?: number;
   // Timestamps
   created_at: string;
   updated_at: string;
@@ -625,6 +638,15 @@ export interface CreateProductInput {
   pre_closure_interest_calculation_strategy?: number;
   allow_compounding_on_eod?: boolean;
   accounting_rule?: number;
+  // Fee Configuration (Migration 049)
+  insurance_fee_type?: 'percentage' | 'flat' | 'none';
+  insurance_fee_percentage?: number;
+  insurance_fee_flat_usd?: number;
+  insurance_fee_frequency?: 'upfront' | 'monthly';
+  late_penalty_type?: 'percentage' | 'flat' | 'none';
+  late_penalty_percentage?: number;
+  late_penalty_flat_usd?: number;
+  late_penalty_grace_days?: number;
   // GL account mappings
   income_from_recovery_account_id?: number | null;
   fund_source_account_id?: number | null;

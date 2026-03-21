@@ -256,6 +256,10 @@ export class FineractClient {
   createLoanProduct = this._loanOps.createLoanProduct;
   updateLoanProduct = this._loanOps.updateLoanProduct;
 
+  // -- Charge operations --
+  createCharge = this._loanOps.createCharge;
+  getCharges = this._loanOps.getCharges;
+
   // -- Loan operations --
   createLoan = this._loanOps.createLoan;
   getLoan = this._loanOps.getLoan;
@@ -272,6 +276,18 @@ export class FineractClient {
   restructureLoan = this._loanOps.restructureLoan;
   calculateEarlyPayoff = this._loanOps.calculateEarlyPayoff;
   processEarlyPayoff = this._loanOps.processEarlyPayoff;
+
+  // -- GL validation (cross-cutting) --
+  async validateGLAccounts(accountIds: number[]): Promise<{ valid: boolean; invalidIds: number[] }> {
+    try {
+      const response = await request<Array<{ id: number }>>('GET', '/glaccounts');
+      const existingIds = new Set(response.map(a => a.id));
+      const invalidIds = accountIds.filter(id => id != null && !existingIds.has(id));
+      return { valid: invalidIds.length === 0, invalidIds };
+    } catch (error) {
+      throw new Error(`Cannot validate GL accounts: Fineract unreachable - ${(error as Error).message}`);
+    }
+  }
 
   // -- GL/Accounting operations --
   listGLAccounts = this._chargeOps.listGLAccounts;

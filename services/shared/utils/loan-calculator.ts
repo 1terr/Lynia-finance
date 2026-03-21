@@ -71,6 +71,38 @@ export function getAllowedTermsForProduct(minTerm: number, maxTerm: number): num
   return standardTerms.filter(t => t >= minTerm && t <= maxTerm);
 }
 
+/**
+ * Calculate flat rate loan payment.
+ * Interest is calculated on the original principal for the full term.
+ * Simpler for semi-literate users to understand ("you pay $X every month").
+ */
+export function calculateFlatRatePayment(params: {
+  principal: number;
+  annualRatePercent: number;
+  termMonths: number;
+}): { monthlyPayment: number; totalRepayment: number; totalInterest: number; effectiveApr: number } {
+  const { principal, annualRatePercent, termMonths } = params;
+
+  if (termMonths <= 0) {
+    return { monthlyPayment: 0, totalRepayment: 0, totalInterest: 0, effectiveApr: 0 };
+  }
+
+  if (annualRatePercent === 0) {
+    const monthlyPayment = Math.round(principal / termMonths * 100) / 100;
+    return { monthlyPayment, totalRepayment: principal, totalInterest: 0, effectiveApr: 0 };
+  }
+
+  // Flat rate: interest = principal * annual_rate * (term_in_years)
+  const totalInterest = Math.round(principal * (annualRatePercent / 100) * (termMonths / 12) * 100) / 100;
+  const totalRepayment = Math.round((principal + totalInterest) * 100) / 100;
+  const monthlyPayment = Math.round(totalRepayment / termMonths * 100) / 100;
+
+  // Effective APR for regulatory disclosure
+  const effectiveApr = Math.round((totalInterest / principal) * (12 / termMonths) * 100 * 100) / 100;
+
+  return { monthlyPayment, totalRepayment, totalInterest, effectiveApr };
+}
+
 /** @deprecated Use getAllowedTermsForProduct with product min/max terms instead */
 export function getAllowedTerms(tier: string): number[] {
   return getAllowedTermsForProduct(6, tier === 'Tier 3' ? 18 : 12);

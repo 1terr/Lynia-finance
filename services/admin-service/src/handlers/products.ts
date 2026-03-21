@@ -402,6 +402,37 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     fineractPayload.receivablePenaltyAccountId = body.receivable_penalty_account_id;
   }
 
+  // Validate GL account IDs exist in Fineract before creation (Gap 3 fix)
+  if (accountingRule > 1) {
+    const glAccountIds = [
+      body.fund_source_account_id,
+      body.loan_portfolio_account_id,
+      body.transfers_in_suspense_account_id,
+      body.interest_on_loan_account_id,
+      body.income_from_fee_account_id,
+      body.income_from_penalty_account_id,
+      body.write_off_account_id,
+      body.overpayment_liability_account_id,
+      body.income_from_recovery_account_id,
+      body.receivable_interest_account_id,
+      body.receivable_fee_account_id,
+      body.receivable_penalty_account_id,
+    ].filter((id): id is number => id != null && id > 0);
+
+    if (glAccountIds.length > 0) {
+      const fineract = await getFineractClient();
+      const glValidation = await fineract.validateGLAccounts(glAccountIds);
+      if (!glValidation.valid) {
+        return errorResponse(
+          'One or more GL account IDs do not exist in Fineract',
+          400,
+          { code: 'VAL_GL_001', invalidAccountIds: glValidation.invalidIds },
+          event
+        );
+      }
+    }
+  }
+
   // ─── Create in Fineract FIRST ───
   let fineractProductId: number;
   try {
@@ -537,6 +568,15 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     receivable_fee_account_id: body.receivable_fee_account_id || null,
     receivable_penalty_account_id: body.receivable_penalty_account_id || null,
     income_from_recovery_account_id: body.income_from_recovery_account_id || null,
+    // Fee and penalty columns
+    insurance_fee_percentage: body.insurance_fee_percentage || 0,
+    insurance_fee_flat_usd: body.insurance_fee_flat_usd || 0,
+    insurance_fee_type: body.insurance_fee_type || 'none',
+    insurance_fee_frequency: body.insurance_fee_frequency || null,
+    late_penalty_percentage: body.late_penalty_percentage || 0,
+    late_penalty_flat_usd: body.late_penalty_flat_usd || 0,
+    late_penalty_type: body.late_penalty_type || 'none',
+    late_penalty_grace_days: body.late_penalty_grace_days ?? 3,
     // Timestamps
     fineract_synced_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
@@ -739,6 +779,26 @@ export const handleDeleteProduct: RouteHandler = async (event, params, auth) => 
 
   if (activeCount > 0) {
     return errorResponse('Cannot delete product with active loans', 400, { active_loans: activeCount }, event);
+  }
+
+  // Check for in-flight WhatsApp sessions referencing this product (Gap 10 fix)
+  const { data: sessionRows } = await query<{ count: number }>(
+    `SELECT COUNT(*)::integer as count FROM whatsapp_sessions
+     WHERE current_state NOT IN ('completed', 'cancelled', 'expired')
+       AND (state_data->>'resolved_product_id' = $1
+         OR state_data->>'selected_product_id' = $1)
+       AND updated_at > NOW() - INTERVAL '24 hours'`,
+    [id]
+  );
+
+  const activeSessionCount = sessionRows[0]?.count || 0;
+  if (activeSessionCount > 0) {
+    return errorResponse(
+      `Cannot deactivate product: ${activeSessionCount} active WhatsApp session(s) reference this product`,
+      409,
+      { code: 'LOAN_PROD_001', activeSessionCount },
+      event
+    );
   }
 
   const { data: deleted, error } = await db.from('loan_products')

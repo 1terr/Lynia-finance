@@ -186,6 +186,16 @@ export function ProductWizard({ product }: ProductWizardProps) {
   const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
   const [disbursementMethods, setDisbursementMethods] = useState<string[]>([]);
 
+  // Fee Configuration (Migration 049)
+  const [insuranceFeeType, setInsuranceFeeType] = useState<'none' | 'percentage' | 'flat'>('none');
+  const [insuranceFeePercentage, setInsuranceFeePercentage] = useState('0');
+  const [insuranceFeeFlatUsd, setInsuranceFeeFlatUsd] = useState('0');
+  const [insuranceFeeFrequency, setInsuranceFeeFrequency] = useState<'upfront' | 'monthly'>('upfront');
+  const [latePenaltyType, setLatePenaltyType] = useState<'none' | 'percentage' | 'flat'>('none');
+  const [latePenaltyPercentage, setLatePenaltyPercentage] = useState('0');
+  const [latePenaltyFlatUsd, setLatePenaltyFlatUsd] = useState('0');
+  const [latePenaltyGraceDays, setLatePenaltyGraceDays] = useState('3');
+
   // Step 3: Accounting
   const [accountingRule, setAccountingRule] = useState('3');
   const [glAccounts, setGLAccounts] = useState<Record<string, number | null>>({
@@ -248,6 +258,15 @@ export function ProductWizard({ product }: ProductWizardProps) {
       setMaxActiveLoans(String(product.max_active_loans));
       setRequiresOrgVerification(product.requires_organization_verification);
       setDisbursementMethods(product.allowed_disbursement_methods || []);
+      // Fee Configuration (Migration 049)
+      setInsuranceFeeType(product.insurance_fee_type || 'none');
+      setInsuranceFeePercentage(String(product.insurance_fee_percentage ?? 0));
+      setInsuranceFeeFlatUsd(String(product.insurance_fee_flat_usd ?? 0));
+      setInsuranceFeeFrequency(product.insurance_fee_frequency || 'upfront');
+      setLatePenaltyType(product.late_penalty_type || 'none');
+      setLatePenaltyPercentage(String(product.late_penalty_percentage ?? 0));
+      setLatePenaltyFlatUsd(String(product.late_penalty_flat_usd ?? 0));
+      setLatePenaltyGraceDays(String(product.late_penalty_grace_days ?? 3));
       setAccountingRule(String(product.accounting_rule ?? 3));
       setGLAccounts({
         fund_source_account_id: product.fund_source_account_id ?? null,
@@ -484,6 +503,15 @@ export function ProductWizard({ product }: ProductWizardProps) {
       requires_organization_verification: category === 'digital' ? requiresOrgVerification : false,
       allowed_disbursement_methods: category === 'digital' ? disbursementMethods : [],
       max_active_loans: parseInt(maxActiveLoans) || 1,
+      // Fee Configuration (Migration 049)
+      insurance_fee_type: insuranceFeeType,
+      insurance_fee_percentage: insuranceFeeType === 'percentage' ? parseFloat(insuranceFeePercentage) || 0 : 0,
+      insurance_fee_flat_usd: insuranceFeeType === 'flat' ? parseFloat(insuranceFeeFlatUsd) || 0 : 0,
+      insurance_fee_frequency: insuranceFeeType !== 'none' ? insuranceFeeFrequency : 'upfront',
+      late_penalty_type: latePenaltyType,
+      late_penalty_percentage: latePenaltyType === 'percentage' ? parseFloat(latePenaltyPercentage) || 0 : 0,
+      late_penalty_flat_usd: latePenaltyType === 'flat' ? parseFloat(latePenaltyFlatUsd) || 0 : 0,
+      late_penalty_grace_days: parseInt(latePenaltyGraceDays) || 3,
       ...glAccounts,
     };
 
@@ -825,6 +853,72 @@ export function ProductWizard({ product }: ProductWizardProps) {
 
               <Input label="Max Active Loans" id="maxActiveLoans" type="number" value={maxActiveLoans}
                 onChange={(e) => setMaxActiveLoans(e.target.value)} min="1" />
+            </fieldset>
+
+            {/* Insurance Premium */}
+            <fieldset className="space-y-3 rounded-md border border-border p-4">
+              <legend className="text-sm font-medium text-foreground px-2">Insurance Premium</legend>
+              <div className="grid grid-cols-2 gap-4">
+                <Select label="Fee Type" id="insuranceFeeType"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'percentage', label: 'Percentage of Principal' },
+                    { value: 'flat', label: 'Flat Amount (USD)' },
+                  ]}
+                  value={insuranceFeeType}
+                  onChange={(e) => setInsuranceFeeType(e.target.value as 'none' | 'percentage' | 'flat')} />
+                {insuranceFeeType !== 'none' && (
+                  <Select label="Frequency" id="insuranceFeeFrequency"
+                    options={[
+                      { value: 'upfront', label: 'Upfront (one-time)' },
+                      { value: 'monthly', label: 'Monthly' },
+                    ]}
+                    value={insuranceFeeFrequency}
+                    onChange={(e) => setInsuranceFeeFrequency(e.target.value as 'upfront' | 'monthly')} />
+                )}
+              </div>
+              {insuranceFeeType === 'percentage' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Percentage (%)" id="insuranceFeePercentage" type="number" value={insuranceFeePercentage}
+                    onChange={(e) => setInsuranceFeePercentage(e.target.value)} min="0" max="20" step="0.1" />
+                </div>
+              )}
+              {insuranceFeeType === 'flat' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Flat Amount (USD)" id="insuranceFeeFlatUsd" type="number" value={insuranceFeeFlatUsd}
+                    onChange={(e) => setInsuranceFeeFlatUsd(e.target.value)} min="0" step="0.01" />
+                </div>
+              )}
+            </fieldset>
+
+            {/* Late Payment Penalty */}
+            <fieldset className="space-y-3 rounded-md border border-border p-4">
+              <legend className="text-sm font-medium text-foreground px-2">Late Payment Penalty</legend>
+              <div className="grid grid-cols-2 gap-4">
+                <Select label="Penalty Type" id="latePenaltyType"
+                  options={[
+                    { value: 'none', label: 'None' },
+                    { value: 'percentage', label: 'Percentage of Overdue Amount' },
+                    { value: 'flat', label: 'Flat Amount (USD)' },
+                  ]}
+                  value={latePenaltyType}
+                  onChange={(e) => setLatePenaltyType(e.target.value as 'none' | 'percentage' | 'flat')} />
+                <Input label="Grace Days" id="latePenaltyGraceDays" type="number" value={latePenaltyGraceDays}
+                  onChange={(e) => setLatePenaltyGraceDays(e.target.value)} min="0" max="30" />
+              </div>
+              <p className="text-xs text-muted-foreground">Days after due date before penalty applies</p>
+              {latePenaltyType === 'percentage' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Percentage (%)" id="latePenaltyPercentage" type="number" value={latePenaltyPercentage}
+                    onChange={(e) => setLatePenaltyPercentage(e.target.value)} min="0" max="10" step="0.1" />
+                </div>
+              )}
+              {latePenaltyType === 'flat' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <Input label="Flat Amount (USD)" id="latePenaltyFlatUsd" type="number" value={latePenaltyFlatUsd}
+                    onChange={(e) => setLatePenaltyFlatUsd(e.target.value)} min="0" step="0.01" />
+                </div>
+              )}
             </fieldset>
           </div>
         )}

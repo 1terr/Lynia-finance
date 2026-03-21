@@ -8,7 +8,7 @@
 
 import { query } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
-import { calculateDecliningBalancePayment } from '../../../../shared/utils/loan-calculator';
+import { calculateFlatRatePayment } from '../../../../shared/utils/loan-calculator';
 import type { OnboardingSession, MessageContext } from '../types';
 
 /**
@@ -53,7 +53,7 @@ export async function handleTermSelection(
       `SELECT id, brand, model_name, retail_price_usd
        FROM device_models
        WHERE retail_price_usd <= $1
-         AND is_active = true AND deleted_at IS NULL AND available_stock > 0
+         AND is_active = true AND deleted_at IS NULL
        ORDER BY retail_price_usd ASC`,
       [creditLimit]
     );
@@ -74,9 +74,22 @@ export async function handleTermSelection(
       return 'No devices currently available. Please check back later or contact support@lynia.finance.';
     }
 
-    const deviceList = devices
-      .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
-      .join('\n');
+    const brandGroups = new Map<string, Array<typeof devices[0]>>();
+    for (const d of devices) {
+      const group = brandGroups.get(d.brand) || [];
+      group.push(d);
+      brandGroups.set(d.brand, group);
+    }
+
+    let counter = 1;
+    const deviceList = Array.from(brandGroups.entries())
+      .map(([brand, models]) => {
+        const header = `*${brand}:*`;
+        const items = models.map(d =>
+          `${counter++}. ${d.model_name} - $${Number(d.retail_price_usd).toFixed(2)}`
+        ).join('\n');
+        return `${header}\n${items}`;
+      }).join('\n\n');
 
     return `Choose your smartphone:\n\n${deviceList}\n\nReply with the number of your choice (e.g. *1*)`;
   }
@@ -107,7 +120,7 @@ ${termList}`;
     ? (session.state_data.requested_loan_amount || 0)
     : Math.round((devicePrice - depositAmount) * 100) / 100;
 
-  const calc = calculateDecliningBalancePayment({
+  const calc = calculateFlatRatePayment({
     principal: financedAmount,
     annualRatePercent: interestRateApr,
     termMonths: selectedTerm,
@@ -131,7 +144,7 @@ ${termList}`;
 
 Cash Loan: $${financedAmount.toFixed(2)}
 Term: ${selectedTerm} months
-Interest: ${interestRateApr}% APR
+Interest: ${interestRateApr}% flat rate
 
 Monthly Payment: *$${calc.monthlyPayment.toFixed(2)}*
 Total Repayment: $${calc.totalRepayment.toFixed(2)}
@@ -151,7 +164,7 @@ Price: $${devicePrice.toFixed(2)}
 Deposit: $${depositAmount.toFixed(2)} (${downPaymentPct}%)
 Financed: $${financedAmount.toFixed(2)}
 Term: ${selectedTerm} months
-Interest: ${interestRateApr}% APR
+Interest: ${interestRateApr}% flat rate
 
 Monthly Payment: *$${calc.monthlyPayment.toFixed(2)}*
 Total Repayment: $${calc.totalRepayment.toFixed(2)}

@@ -5,12 +5,37 @@
  * (EcoCash, OneMoney, InnBucks) and confirms the receiving phone number.
  */
 
+import { query } from '../../../../shared/clients/database';
+import { logger } from '../../../../shared/utils/logger';
 import { t, type SupportedLanguage } from '../../i18n';
 import { updateSession } from '../session';
 import type { OnboardingSession, MessageContext } from '../types';
 
 const METHODS = ['ecocash', 'onemoney', 'innbucks'] as const;
 type DisbursementMethod = typeof METHODS[number];
+
+/**
+ * Resolve allowed disbursement methods from the loan product config.
+ * Falls back to all methods if product config is unavailable.
+ */
+async function getAllowedDisbursementMethods(session: OnboardingSession): Promise<DisbursementMethod[]> {
+  try {
+    const productCategory = session.state_data.selected_product === 'digital_credit' ? 'digital' : 'smartphone';
+    const { data } = await query<{ allowed_disbursement_methods: string[] | null }>(
+      `SELECT allowed_disbursement_methods FROM loan_products
+       WHERE product_category = $1 AND status = 'active' AND deleted_at IS NULL
+       ORDER BY display_order ASC LIMIT 1`,
+      [productCategory]
+    );
+    const allowed = data?.[0]?.allowed_disbursement_methods;
+    if (allowed && Array.isArray(allowed) && allowed.length > 0) {
+      return allowed.filter((m): m is DisbursementMethod => METHODS.includes(m as DisbursementMethod));
+    }
+  } catch (err) {
+    logger.warn('Failed to lookup product disbursement config', { action: 'disbursement.product_config_lookup_failed', error: (err as Error).message });
+  }
+  return [...METHODS];
+}
 
 /** Zimbabwe phone number: +263 7X XXX XXXX or 07X XXX XXXX */
 const ZW_PHONE_REGEX = /^(?:\+?263|0)7[1-9]\d{7}$/;
@@ -44,6 +69,9 @@ export async function handleDisbursementMethodSelection(
     return reShowLoanSummary(session);
   }
 
+  // Resolve allowed methods from product config
+  const allowedMethods = await getAllowedDisbursementMethods(session);
+
   // Parse method selection
   const choice = message.toLowerCase();
   let method: DisbursementMethod | undefined;
@@ -54,6 +82,12 @@ export async function handleDisbursementMethodSelection(
     method = 'onemoney';
   } else if (choice === '3' || choice.includes('innbucks')) {
     method = 'innbucks';
+  }
+
+  // Validate selected method is allowed by product config
+  if (method && !allowedMethods.includes(method)) {
+    const allowedNames = allowedMethods.map(m => formatMethodName(m)).join(', ');
+    return `${formatMethodName(method)} is not available for this loan product. Available methods: ${allowedNames}\n\n` + t('disbursement_method_prompt', lang);
   }
 
   if (!method) {

@@ -43,14 +43,12 @@ async function fetchAvailableDevices(creditLimitUsd: number, productId?: string)
          AND dm.retail_price_usd <= $1
          AND dm.is_active = true
          AND dm.deleted_at IS NULL
-         AND dm.available_stock > 0
        ORDER BY dm.retail_price_usd ASC`
     : `SELECT id, brand, model_name, retail_price_usd
        FROM device_models
        WHERE retail_price_usd <= $1
          AND is_active = true
          AND deleted_at IS NULL
-         AND available_stock > 0
        ORDER BY retail_price_usd ASC`;
 
   const params: unknown[] = useProductFilter ? [creditLimitUsd, productId] : [creditLimitUsd];
@@ -397,9 +395,22 @@ However, there are no devices currently available in your price range. Please ch
       }
     });
 
-    const deviceList = devices
-      .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
-      .join('\n');
+    const brandGroups = new Map<string, Array<typeof devices[0]>>();
+    for (const d of devices) {
+      const group = brandGroups.get(d.brand) || [];
+      group.push(d);
+      brandGroups.set(d.brand, group);
+    }
+
+    let counter = 1;
+    const deviceList = Array.from(brandGroups.entries())
+      .map(([brand, models]) => {
+        const header = `*${brand}:*`;
+        const items = models.map(d =>
+          `${counter++}. ${d.model_name} - $${Number(d.retail_price_usd).toFixed(2)}`
+        ).join('\n');
+        return `${header}\n${items}`;
+      }).join('\n\n');
 
     return `*Congratulations! You're Approved!*
 

@@ -12,6 +12,7 @@ import type {
   FineractLoanTransaction,
   FineractLoanProduct,
   FineractLoanProductCreateRequest,
+  FineractChargeCreateRequest,
 } from '../../types/fineract';
 
 const DATE_FORMAT = 'dd MMMM yyyy';
@@ -336,6 +337,20 @@ export function createLoanOperations(request: RequestFn, formatDate: (d: Date) =
         `/loans/${params.loanId}/transactions?command=repayment`,
         body
       );
+    },
+
+    // ----------------------------------------------------------
+    // CHARGES
+    // ----------------------------------------------------------
+
+    /** Create a charge definition */
+    async createCharge(charge: FineractChargeCreateRequest): Promise<FineractCommandResponse> {
+      return request<FineractCommandResponse>('POST', '/charges', charge);
+    },
+
+    /** List all charge definitions */
+    async getCharges(): Promise<Array<{ id: number; name: string; active: boolean }>> {
+      return request<Array<{ id: number; name: string; active: boolean }>>('GET', '/charges');
     },
   };
 }

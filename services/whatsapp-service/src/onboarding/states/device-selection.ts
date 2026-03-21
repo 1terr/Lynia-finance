@@ -38,9 +38,22 @@ export async function handleDeviceSelection(
   const choice = parseInt(message);
 
   if (isNaN(choice) || choice < 1 || choice > devices.length) {
-    const deviceList = devices
-      .map((d, i) => `${i + 1}. ${d.brand} ${d.model_name} - $${d.retail_price_usd}`)
-      .join('\n');
+    const brandGroups = new Map<string, Array<typeof devices[0]>>();
+    for (const d of devices) {
+      const group = brandGroups.get(d.brand) || [];
+      group.push(d);
+      brandGroups.set(d.brand, group);
+    }
+
+    let counter = 1;
+    const deviceList = Array.from(brandGroups.entries())
+      .map(([brand, models]) => {
+        const header = `*${brand}:*`;
+        const items = models.map(d =>
+          `${counter++}. ${d.model_name} - $${Number(d.retail_price_usd).toFixed(2)}`
+        ).join('\n');
+        return `${header}\n${items}`;
+      }).join('\n\n');
 
     return `Please reply with a number between 1 and ${devices.length}, or *Back* to go back.
 

@@ -115,7 +115,7 @@ Please review before accepting:
 4. Device will be locked if payment is missed
 5. Device unlocks permanently after final payment
 6. No early repayment penalties
-7. Interest rate: ${interestRate}% APR (declining balance)
+7. Interest rate: ${interestRate}% flat rate
 
 Do you accept these terms?
 
@@ -134,9 +134,11 @@ Reply *I Accept* to continue`;
 
 Cash Loan: $${loanAmount.toFixed(2)}
 Term: ${termMonths} months
-Interest: ${interestRate}% APR
+Interest: ${interestRate}% flat rate
 Monthly Payment: *$${monthlyPayment.toFixed(2)}*
 Total Repayment: $${totalRepayment.toFixed(2)}
+Total Cost of Credit: $${(totalRepayment - loanAmount).toFixed(2)}
+Effective APR: ${loanAmount > 0 && termMonths > 0 ? Math.round(((totalRepayment - loanAmount) / loanAmount) * (12 / termMonths) * 100 * 100) / 100 : 0}%
 
 Reply *Yes* to accept or *Back* to change your selection.`;
   }
@@ -147,6 +149,11 @@ Reply *Yes* to accept or *Back* to change your selection.`;
   const financedAmt = session.state_data.financed_amount || 0;
   const termMonths = session.state_data.selected_term_months || 6;
   const monthlyPayment = session.state_data.monthly_payment || 0;
+  const totalRepayment = session.state_data.total_repayment || 0;
+  const totalInterest = totalRepayment - financedAmt;
+  const effectiveApr = financedAmt > 0 && termMonths > 0
+    ? Math.round((totalInterest / financedAmt) * (12 / termMonths) * 100 * 100) / 100
+    : 0;
 
   return `*Your Loan Summary*
 
@@ -155,6 +162,9 @@ Deposit: $${depositAmt.toFixed(2)}
 Financed: $${financedAmt.toFixed(2)}
 Term: ${termMonths} months
 Monthly Payment: *$${monthlyPayment.toFixed(2)}*
+Total Repayment: $${totalRepayment.toFixed(2)}
+Total Cost of Credit: $${totalInterest.toFixed(2)}
+Effective APR: ${effectiveApr}%
 
 Reply *Yes* to accept or *Back* to change your selection.`;
 }
@@ -218,6 +228,41 @@ export async function handleTermsAcceptance(
       });
     }
 
+    // Calculate insurance fee if configured
+    let insuranceFee = 0;
+    let insuranceLine = '';
+    try {
+      if (productId) {
+        const { data: productFees } = await query<{
+          insurance_fee_type: string;
+          insurance_fee_percentage: number | null;
+          insurance_fee_flat_usd: number | null;
+          insurance_fee_frequency: string | null;
+        }>(
+          `SELECT insurance_fee_type, insurance_fee_percentage, insurance_fee_flat_usd, insurance_fee_frequency
+           FROM loan_products WHERE id = $1`,
+          [productId]
+        );
+        const fees = productFees?.[0];
+        if (fees && fees.insurance_fee_type !== 'none') {
+          insuranceFee = fees.insurance_fee_type === 'percentage'
+            ? Math.round(financedAmount * (fees.insurance_fee_percentage || 0) / 100 * 100) / 100
+            : (fees.insurance_fee_flat_usd || 0);
+          if (insuranceFee > 0) {
+            const feeDesc = fees.insurance_fee_type === 'percentage'
+              ? `${fees.insurance_fee_percentage}% ${fees.insurance_fee_frequency}`
+              : `$${insuranceFee.toFixed(2)} ${fees.insurance_fee_frequency}`;
+            insuranceLine = `Insurance: $${insuranceFee.toFixed(2)} (${feeDesc})\n`;
+          }
+        }
+      }
+    } catch (_feeErr) { /* non-blocking */ }
+
+    const totalInterest = totalRepayment - financedAmount;
+    const effectiveApr = financedAmount > 0 && termMonths > 0
+      ? Math.round((totalInterest / financedAmount) * (12 / termMonths) * 100 * 100) / 100
+      : 0;
+
     // Create loan record in database
     let loanId: string | null = null;
     try {
@@ -255,6 +300,27 @@ export async function handleTermsAcceptance(
         });
       } else {
         loanId = loan.id;
+
+        // Create product snapshot for regulatory compliance (Gap 2)
+        if (productId) {
+          try {
+            await query(
+              `INSERT INTO loan_product_snapshots
+                 (loan_id, product_id, snapshot_data, fineract_product_id,
+                  interest_rate_at_approval, term_months_at_approval, fees_at_approval)
+               SELECT $1, lp.id, to_jsonb(lp.*), lp.fineract_product_id,
+                  lp.interest_rate_annual, lp.loan_term_months,
+                  jsonb_build_object(
+                    'insurance', jsonb_build_object('type', COALESCE(lp.insurance_fee_type, 'none'), 'percentage', COALESCE(lp.insurance_fee_percentage, 0), 'flat_usd', COALESCE(lp.insurance_fee_flat_usd, 0), 'frequency', COALESCE(lp.insurance_fee_frequency, 'upfront')),
+                    'penalty', jsonb_build_object('type', COALESCE(lp.late_penalty_type, 'none'), 'percentage', COALESCE(lp.late_penalty_percentage, 0), 'flat_usd', COALESCE(lp.late_penalty_flat_usd, 0), 'grace_days', COALESCE(lp.late_penalty_grace_days, 3))
+                  )
+               FROM loan_products lp WHERE lp.id = $2`,
+              [loanId, productId]
+            );
+          } catch (snapshotErr) {
+            logger.error('Failed to create product snapshot', { action: 'product_snapshot.failed', loanId, productId, error: (snapshotErr as Error).message });
+          }
+        }
       }
     } catch (loanCreateError) {
       logger.error('Loan creation threw error', {
@@ -266,12 +332,21 @@ export async function handleTermsAcceptance(
 
     // Non-blocking: Sync loan to Fineract (create + auto-approve)
     if (loanId && process.env.FINERACT_SECRET_NAME) {
-      syncLoanToFineractAfterAcceptance(loanId, session, productId).catch((err) => {
-        logger.error('Fineract loan sync failed', {
-          action: 'loan.fineract-sync',
-          status: 'failed',
-          meta: { loanId, error: err instanceof Error ? err.message : String(err) },
-        });
+      syncLoanToFineractAfterAcceptance(loanId, session, productId).catch(async (err) => {
+        logger.warn('Fineract sync failed, queuing for retry', { action: 'fineract.fallback_queued', loanId, error: (err as Error).message });
+        try {
+          const { SQSQueues } = await import('../../../../shared/utils/sqs-publisher');
+          await SQSQueues.retryFineractSync({
+            entityType: 'loan',
+            entityId: loanId!,
+            operation: 'create_loan',
+            requestPayload: { loanId, productId, customerId: session.customer_id },
+            retryCount: 0,
+            originalError: (err as Error).message,
+          });
+        } catch (sqsErr) {
+          logger.error('Failed to queue Fineract sync retry', { action: 'fineract.fallback_queue_failed', loanId, error: (sqsErr as Error).message });
+        }
       });
     }
 
@@ -353,7 +428,10 @@ Amount: *$${depositAmount.toFixed(2)}*
 We will send you a confirmation once your deposit is received.
 
 *Your Payment Plan:*
-${termMonths} monthly payments of $${monthlyPayment.toFixed(2)}
+${insuranceLine}${termMonths} monthly payments of $${monthlyPayment.toFixed(2)}
+Total Repayment: $${totalRepayment.toFixed(2)}
+Total Cost of Credit: $${totalInterest.toFixed(2)}
+Effective APR: ${effectiveApr}%
 
 *What to bring:*
 - Your National ID

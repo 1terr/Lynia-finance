@@ -444,6 +444,30 @@ export interface FineractLoanProduct {
 }
 
 // ============================================================
+// CHARGE TYPES
+// ============================================================
+
+export interface FineractChargeCreateRequest {
+  name: string;
+  currencyCode: string;
+  chargeAppliesTo: 1;
+  chargeTimeType: number;
+  chargeCalculationType: number;
+  chargePaymentMode: number;
+  amount: number;
+  active: boolean;
+  penalty: boolean;
+  locale: string;
+  monthDayFormat?: string;
+  feeOnMonthDay?: string;
+  feeInterval?: number;
+}
+
+export interface FineractChargeResponse {
+  resourceId: number;
+}
+
+// ============================================================
 // GL ACCOUNT TYPES
 // ============================================================
 
