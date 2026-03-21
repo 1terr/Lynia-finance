@@ -463,9 +463,6 @@ export default function ProductDetailPage() {
         </Card>
       )}
 
-      {/* Product Term Snapshots */}
-      <SnapshotComparison productId={id} />
-
       {/* Product Configuration Version History */}
       <ProductVersionHistory productId={id} />
 

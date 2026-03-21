@@ -6,7 +6,6 @@ import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import type { FineractLoanProductCreateRequest } from '../../../shared/types/fineract';
-import { validateRBZCompliance } from '../../../shared/utils/rbz-compliance';
 import { createProductVersion, getProductVersions } from '../../../shared/utils/product-versioning';
 
 const VALID_PRODUCT_CATEGORIES = ['smartphone', 'digital'] as const;
@@ -810,7 +809,6 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 
   // Record version history (non-blocking)
   try {
-    // Build previous values from only the fields that changed
     const previousValues: Record<string, unknown> = {};
     for (const key of Object.keys(updates)) {
       if (key !== 'updated_at' && existingProduct[key] !== undefined) {
@@ -929,7 +927,6 @@ export const handleGetProductVersions: RouteHandler = async (event, params, auth
   }
 
   const productId = params.id;
-
   const versions = await getProductVersions(productId);
 
   return successResponse({ data: versions }, 200, event);
