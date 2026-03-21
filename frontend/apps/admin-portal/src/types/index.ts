@@ -145,7 +145,7 @@ export interface Device {
 
 export type PaymentStatus = 'pending' | 'processing' | 'confirmed' | 'completed' | 'failed' | 'refunded';
 export type PaymentMethod = 'ecocash' | 'onemoney' | 'cash' | 'bank_transfer';
-export type PaymentType = 'deposit' | 'installment' | 'late_fee' | 'early_payoff';
+export type PaymentType = 'deposit' | 'installment' | 'late_fee' | 'early_payoff' | 'insurance_fee';
 
 export interface Payment {
   id: string;

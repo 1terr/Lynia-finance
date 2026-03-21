@@ -1,0 +1,545 @@
+# Suite Audit 1.5 — Inventory System End-to-End Audit (Launch Readiness)
+
+> **Date:** 2026-03-21
+> **Scope:** Inventory management, distributor operations, Fineract integration, handover workflows, device lock facility, loan flows
+> **Timeline:** 3+ months to launch | ~10 weeks implementation
+> **Status:** Audit complete — implementation pending
+
+---
+
+## Context
+
+Lynia Finance is preparing for launch. This audit covers the entire inventory management system, its connections to lending (Fineract), distributor operations, device lock facility, and handover workflows. Recent changes to loan flows and loan product creation must be validated. Both smartphone and digital loan products launch together. USD-only at launch. 1-5 distributors in pilot. Hybrid ops team (ops for daily, devs for bulk).
+
+**Key decisions from user:**
+- Lock provider (Trustonic) not engaged — skip lock provider work, ensure abstraction
+- Consolidate `agent_inventory` into `devices` table (single source of truth)
+- Full fix mode: fix mechanical AND architectural issues
+- Verify DB triggers in production RDS
+- Full Fineract GL account verification
+- Full offline handover testing
+- Bulk APIs needed (50-500 devices/batch)
+- Commission payout: manual for now
+- No SLAs defined — audit should recommend them
+
+---
+
+## Architecture Overview
+
+### Core Inventory Data Model (12 Tables)
+
+| Table | Purpose |
+|-------|---------|
+| `devices` | Physical device records (IMEI, status, lock_status, pricing) |
+| `device_models` | Product catalogue (brand, model, pricing, stock levels) |
+| `product_device_models` | Join table: loan products ↔ compatible device models |
+| `agent_inventory` | Distributor-level stock assignments (**TO BE CONSOLIDATED**) |
+| `device_handovers` | Multi-step handover workflow tracking |
+| `device_lock_triggers` | Scheduled lock events for defaults |
+| `device_lock_history` | Immutable lock/unlock audit log |
+| `inventory_movements` | Immutable ledger of all stock changes (trigger-driven) |
+| `inventory_adjustments` | Maker-checker adjustment requests |
+| `stock_transfers` | Inter-distributor/location transfers |
+| `device_reservations` | 48-hour holds for approved loans |
+| `distributor_commissions` | Commission tracking per handover |
+
+### Inventory State Machine
+```
+in_stock → reserved → assigned → sold → [returned | repossessed | damaged | lost | written_off]
+```
+
+### API Surfaces
+- **Admin Service**: 25+ inventory endpoints (CRUD, bulk import, adjustments, transfers, reports, lock/unlock)
+- **Distributor Service**: 10+ endpoints (inventory view, handover wizard, commissions, search)
+- **Fineract Proxy**: 10+ endpoints (loan sync, products, disbursement, repayment)
+- **Lock Service**: Handover workflow, lock management, repossession
+- **Payment Service**: Deposit processing, repayment sync, auto-default scheduler
+
+### End-to-End Loan-Inventory Flow
+```
+Customer WhatsApp Onboarding
+  ↓ (Accept Terms)
+Create Loan in DB (auto-approved) + Sync to Fineract (async)
+  ↓ (Pay Deposit)
+Deposit → Fineract Repayment + Auto-Approve
+  ↓ (Confirm Deposit)
+Loan Status: paid_deposit
+  ↓ (Distributor Handover — 7-step wizard)
+Device Handed Over → Trigger Fineract Disbursement
+  ↓ (Disbursement Succeeds)
+Loan Status: active → First Payment Due in 30 Days
+  ↓ (Monthly Payments)
+Payments → Fineract Repayments → Balance Updates
+  ↓ (90+ Days Overdue)
+Auto-Default → Device Lock (via lock provider)
+  ↓ (60+ Days Overdue + Restructuring Failed)
+Repossession Order → Field Agent Recovery
+```
+
+---
+
+## Process Flow Audit
+
+### 1. Inventory Addition Flow
+```
+Admin creates device_model (catalogue)
+  → Admin adds devices (single or bulk CSV, max 500)
+  → DB trigger: fn_sync_device_model_stock() updates available_stock
+  → DB trigger: fn_record_inventory_movement() creates audit entry
+```
+**Status**: Implemented. Bulk import with duplicate detection (IMEI).
+
+### 2. Distributor Allocation Flow
+```
+Admin creates stock_transfer (from warehouse → to distributor)
+  → Approval (or auto_approve flag)
+  → In Transit → Received
+  → agent_inventory record created
+  → Device status: in_stock → assigned
+```
+**Gap**: No dedicated "bulk allocation" endpoint — transfers are single-device only.
+
+### 3. Catalogue → Product Linkage
+```
+device_models (catalogue) ←→ product_device_models ←→ loan_products
+```
+Customer sees only devices compatible with their eligible loan product during WhatsApp onboarding.
+**Gap**: NOT tested with multiple products having overlapping device models.
+
+### 4. Bulk Transfer Between Distributors
+```
+stock_transfers table: requested → approved → in_transit → received
+State machine with cancellation from any state
+```
+**Gap**: Single-device transfers only. No batch/bulk transfer capability.
+
+### 5. Bulk Adjustments
+```
+inventory_adjustments: add | remove | damage | write_off | found | audit_correction
+Maker-checker: pending → approved/rejected
+```
+**Gap**: Single-device adjustments only. No batch adjustment API.
+
+### 6. Handover End-to-End (7 Steps)
+```
+1. Find customer (search approved loans)
+2. Verify identity (national ID)
+3. Select device (scan IMEI from distributor inventory)
+4. Device check (power on, install app, configure lock, test lock)
+5. Device photos (min 2 photos)
+6. Customer signature (digital canvas)
+7. Confirm & deposit verification
+```
+**Backend on completion:**
+- Create handover record
+- Update loan: paid_deposit → active
+- Update device: in_stock → sold
+- Update agent_inventory: available → sold
+- Calculate commission (default 5%)
+- Trigger Fineract disbursement (async, non-blocking)
+- Send WhatsApp notification
+
+### 7. Device Lock Facility
+```
+Auto-default scheduler (daily 7am CAT):
+  → 90+ days past due → mark defaulted
+  → Create device_lock_trigger (grace period)
+  → Execute lock via provider
+  → Immutable audit in device_lock_history
+  → Auto-unlock on payment
+```
+**Note**: Lock provider not engaged yet. Architecture is provider-agnostic.
+
+### 8. Fineract Integration
+```
+Loan lifecycle sync:
+  Terms accepted → syncLoanToFineract (submittedAndPendingApproval)
+  → approveLoanInFineract (approved)
+  Deposit paid → syncPaymentToFineract
+  Handover complete → disburseLoanInFineract (active)
+  Repayment → syncRepaymentToFineract
+```
+**Pattern**: Non-blocking async sync. Failures queue to SQS retry. Idempotent via external IDs.
+
+---
+
+## Gap Analysis & Findings
+
+### CRITICAL (Launch Blockers)
+
+| # | Gap | Location | Impact | Recommendation |
+|---|-----|----------|--------|----------------|
+| C1 | No bulk allocation to distributors | `inventory-transfers.ts` | Field ops can't efficiently stock distributors (50-500 devices) | Add batch transfer endpoint |
+| C2 | No bulk adjustment API | `inventory-adjustments.ts` | Auditors can't correct stock counts after physical audit | Add batch adjustment endpoint |
+| C3 | No bulk transfer between distributors | `inventory-transfers.ts` | Regional redistribution requires N individual requests | Add batch transfer endpoint |
+| C4 | Device reservation expiry not automated | `device_reservations` table | 48-hour holds may never expire, blocking stock | EventBridge scheduled cleanup |
+| C5 | `agent_inventory` vs `devices` dual tracking | Multiple files | Potential for inventory count drift between tables | Consolidate into `devices` table |
+| C6 | Deposit verification blocked | `handovers.ts` | No payment provider means deposits can never be auto-confirmed | Add manual confirmation endpoint |
+| C7 | Product-model validation missing in handover | `handovers.ts` | Distributor could hand over wrong device model for loan product | Add `product_device_models` check |
+| C8 | `completeHandover` has no transaction | `handover-workflow.ts` | 6-table update without atomicity — failure = inconsistent state | Wrap in DB transaction |
+| C9 | Bulk import is sequential | `inventory-devices.ts` | 500 devices = 1000+ DB round-trips, may timeout Lambda | Batch insert with `ON CONFLICT` |
+
+### HIGH (Should Fix Before Launch)
+
+| # | Gap | Location | Impact | Recommendation |
+|---|-----|----------|--------|----------------|
+| H1 | No device photo upload handler | Handover wizard | Photos captured but no S3 upload integration | S3 presigned URL upload |
+| H2 | No inventory reconciliation endpoint | Reports | Can't detect drift between `devices` count and `device_models.available_stock` | Add reconciliation API |
+| H3 | No real-time stock alerts | Reports | Low-stock discovered only when checking reports | EventBridge + SNS alerts |
+| H4 | Movement history not visible to distributors/customers | Multiple | Only admin sees device movements | Add distributor + customer endpoints |
+| H5 | `useMock()` flag in distributor dashboard | `handovers.ts` (frontend) | Could serve fake data in production | Environment-gate mock data |
+| H6 | SQL interpolation in device-models.ts | `device-models.ts` | `is_active` filter directly interpolated | Parameterize query |
+| H7 | IMEI logged unmasked | `inventory-devices.ts` | PII exposure in audit logs | Add `maskImei()` utility |
+| H8 | No standardized error codes | Multiple handlers | Generic error messages without codes | Apply `SERVICE_CATEGORY_CODE` format |
+| H9 | `handleUpdateTransfer` has no transaction | `inventory-transfers.ts` | Multi-table update without atomicity | Wrap in DB transaction |
+
+### MEDIUM (Post-Launch Improvements)
+
+| # | Gap | Location | Impact | Recommendation |
+|---|-----|----------|--------|----------------|
+| M1 | No serial number validation | Device creation | Free-text, no format enforcement | Add manufacturer-specific validation |
+| M2 | No device warranty tracking | `devices` table | No warranty period or insurance linkage | Add columns |
+| M3 | No inventory forecasting | Reports | Manual reorder decisions only | Future: demand prediction |
+| M4 | Device condition grading not linked to pricing | `device_models` | Grade A/B/C priced the same | Condition-based pricing tiers |
+| M5 | No device model image upload | `device_models.image_url` | Field exists but no upload handler | S3 presigned URL upload |
+| M6 | No return/exchange workflow | Devices | No structured process for device returns | Design when return policy defined |
+| M7 | Commission calculator column names | `commission-calculator.ts` | May use `retail_price` vs `retail_price_usd` | Verify against schema |
+
+---
+
+## Implementation Plan
+
+## Phase 1: Production Environment Verification (Week 1)
+
+### 1A. Verify Database Triggers in Production RDS
+Two critical triggers must be confirmed deployed:
+- `trg_sync_device_model_stock` → `fn_sync_device_model_stock()` (migration 030)
+- `trg_record_inventory_movement` → `fn_record_inventory_movement()` (migration 031)
+
+**Actions:**
+1. Connect to production RDS, query `pg_trigger` and `pg_proc` for both triggers/functions
+2. If missing, run migrations against RDS via `database/deploy-to-rds.sh`
+3. Insert test device, verify: (a) `device_models.available_stock` incremented, (b) `inventory_movements` row created
+4. Verify all 12 inventory tables exist with correct columns and indexes
+
+**Files:** `database/migrations/030_inventory_foundation.sql`, `database/migrations/031_inventory_management.sql`
+
+### 1B. Verify Fineract ECS Service
+**Actions:**
+1. Check CloudFormation stack: `production-lynia-fineract-ecs`
+2. Check ECS service health + ALB health check
+3. Hit Fineract health endpoint: `GET /api/v1/fineract/health`
+4. Verify GL accounts exist via `GET /api/v1/fineract/glaccounts`
+5. Cross-reference GL accounts with `loan_products.fineract_product_id` values
+6. Verify both smartphone and digital loan products have valid Fineract product IDs
+
+**Files:** `services/shared/clients/fineract-sync/sync-executor.ts`, `services/fineract-proxy-service/src/handlers/loan-products.ts`
+
+### 1C. Run Existing Test Suite
+```bash
+pnpm test -- --testPathPattern=inventory
+pnpm test -- --testPathPattern=handover
+pnpm test -- --testPathPattern=fineract
+```
+
+**Acceptance:** All triggers fire correctly. Fineract is healthy. All existing tests pass.
+
+---
+
+## Phase 2: Data Model Consolidation — agent_inventory → devices (Week 2-3)
+
+### 2A. New Migration: Add distributor_id to devices
+```sql
+ALTER TABLE devices ADD COLUMN distributor_id UUID REFERENCES distributors(id);
+ALTER TABLE devices ADD COLUMN assigned_to_distributor_at TIMESTAMPTZ;
+CREATE INDEX idx_devices_distributor ON devices(distributor_id) WHERE distributor_id IS NOT NULL;
+-- Backfill from agent_inventory
+UPDATE devices d SET distributor_id = ai.distributor_id, assigned_to_distributor_at = ai.assigned_date
+FROM agent_inventory ai WHERE ai.device_id = d.id AND ai.status = 'available';
+```
+
+### 2B. Update All Queries (8 files)
+| File | Change |
+|------|--------|
+| `services/distributor-service/src/handlers/inventory.ts` | Replace `JOIN agent_inventory` with `WHERE d.distributor_id = $1` |
+| `services/distributor-service/src/handlers/handovers.ts` | Replace `JOIN agent_inventory` in device verification |
+| `services/admin-service/src/handlers/inventory-transfers.ts` | Replace `agent_inventory INSERT` with `devices UPDATE distributor_id` |
+| `services/lock-service/src/handover/handover-workflow.ts` | Remove `agent_inventory` update in `completeHandover` |
+| `services/distributor-service/src/handlers/notifications.ts` | Update any `agent_inventory` references |
+| All test files | Update mocks to use `devices.distributor_id` |
+
+### 2C. Backward Compatibility
+Keep a temporary trigger writing to `agent_inventory` for 2 weeks. Remove after confirming no queries hit it.
+
+**Acceptance:** All distributor queries use `devices.distributor_id`. All tests pass. No `agent_inventory` reads remain.
+
+---
+
+## Phase 3: Bulk API Implementation (Week 3-4)
+
+### 3A. Optimize Bulk Import Performance
+Current: Sequential DB queries per device (1000+ round-trips for 500 devices).
+
+**Fix in** `services/admin-service/src/handlers/inventory-devices.ts`:
+1. Batch IMEI duplicate check: `SELECT imei FROM devices WHERE imei = ANY($1)`
+2. Batch insert: `INSERT INTO devices (...) VALUES ... ON CONFLICT (imei) DO NOTHING`
+3. Wrap in transaction
+4. **Target:** 500 devices in < 10 seconds (within Lambda 29s timeout)
+
+### 3B. New Bulk Transfer Endpoint
+```
+POST /admin/inventory/transfers/bulk
+Body: { device_ids: string[], to_distributor_id: string, auto_approve?: boolean }
+Response: { transferred: N, skipped: N, errors: [...] }
+```
+
+### 3C. New Bulk Adjustment Endpoint
+```
+POST /admin/inventory/adjustments/bulk
+Body: { device_ids: string[], adjustment_type: string, reason: string }
+Response: { created: N, errors: [...] }
+```
+
+### 3D. New Bulk Allocation Shortcut
+```
+POST /admin/inventory/allocate
+Body: { device_ids: string[], distributor_id: string }
+```
+
+### 3E. Performance Test
+Run 500-device bulk import, measure execution time, verify all triggers fire correctly.
+
+**Acceptance:** All bulk endpoints work atomically. 500-device import < 10s. `inventory_movements` created for each device.
+
+---
+
+## Phase 4: Handover Wizard E2E Testing & Fixes (Week 4-5)
+
+### 4A. Critical Fix: Deposit Verification Gap
+`handleVerifyDeposit` creates payment with `status: 'pending'`, but `handleSubmitHandover` requires `status = 'confirmed'`. With no payment provider, deposits can never be confirmed.
+
+**Fix:** Add manual deposit confirmation endpoint: `POST /admin/payments/:id/confirm`
+AND/OR: Add `auto_confirm_deposits` feature flag for interim use.
+
+### 4B. Critical Fix: Product-Model Validation Missing
+`handleVerifyDevice` does NOT check `product_device_models` — a distributor could hand over a device model not linked to the loan's product.
+
+**Fix:** Add to device verification query:
+```sql
+JOIN product_device_models pdm ON pdm.device_model_id = d.device_model_id
+WHERE pdm.product_id = (SELECT product_id FROM loans WHERE id = $1)
+```
+
+### 4C. Critical Fix: Transaction Safety
+`completeHandover` updates 6 tables without a transaction. Any failure leaves inconsistent state.
+
+**Fix:** Wrap in `BEGIN/COMMIT/ROLLBACK` transaction block.
+
+### 4D. Photo Upload Handler
+Add `POST /api/v1/distributor/handovers/upload-photo` using S3 presigned URLs.
+
+### 4E. Offline Handover Testing
+Test scenarios:
+1. Network drops after step 6 → verify payload queued to localStorage
+2. Come back online → verify auto-retry succeeds
+3. Network drops mid-submit → verify no duplicate handovers
+4. Fix: offline queue shows stale `handover_id: 'pending'` after successful retry
+5. Fix: add max 5 retries before marking as failed
+
+### 4F. Full 7-Step Flow Test Scenarios
+1. Happy path: all 7 steps complete
+2. Identity mismatch: wrong national ID
+3. IMEI mismatch: scanned IMEI doesn't match
+4. Device price exceeds loan amount
+5. Deposit not confirmed
+6. Duplicate handover attempt
+7. Concurrent handover (race condition with `FOR UPDATE` lock)
+
+**Acceptance:** Full handover works E2E. Deposit has workable path. Photos upload. Offline queue works. Product-model validation enforced.
+
+---
+
+## Phase 5: Catalogue Filtering, CSV Export, Movement Visibility (Week 5-7)
+
+### 5A. Test Multi-Product Catalogue Filtering
+Create two smartphone products with overlapping device models. Verify:
+1. Customer approved for Product A only sees Product A devices in WhatsApp flow
+2. Device model linked to both products appears in both catalogues
+3. Models with 0 stock hidden
+4. Handover device verification respects product-model linkage
+
+### 5B. CSV Export for Physical Stock Audit
+New endpoint: `GET /admin/reports/inventory/export` returning CSV with:
+IMEI, Serial Number, Manufacturer, Model, Status, Lock Status, Location, Distributor Name, Purchase Price, Retail Price, Condition, Created Date, Customer Name (if sold), Loan ID
+
+### 5C. Movement History Visibility
+- Distributor: `GET /api/v1/distributor/devices/:id/movements`
+- Customer: simplified trail via WhatsApp ("Received → Assigned → Handed to you on [date]")
+- Admin portal: "Movement History" tab on device detail page
+
+### 5D. Reservation Expiry Automation
+Scheduled Lambda (hourly via EventBridge):
+1. Find `device_reservations WHERE status = 'active' AND expires_at < NOW()`
+2. Set `status = 'expired'`
+3. Set `devices.status` back to `in_stock`
+4. Create inventory movement record
+
+**Acceptance:** Catalogue filtering correct. CSV export complete. Distributors see movements. Reservations auto-expire.
+
+---
+
+## Phase 6: Code Quality, Security & Error Handling (Week 7-9)
+
+### 6A. SQL Injection Audit
+- Fix `device-models.ts`: parameterize `is_active` filter (currently interpolated)
+- Verify all other handlers use parameterized queries
+
+### 6B. PII Masking
+- Add `maskImei()` to `shared/utils/masking.ts`
+- Fix: `inventory-devices.ts` logs full IMEI in audit — mask it
+- Verify no national IDs or phone numbers in log statements
+
+### 6C. Error Code Standardization
+Apply Lynia error codes across all inventory handlers:
+- `DEV_DUP_001` — duplicate IMEI
+- `DEV_IMPORT_001` — bulk import validation failure
+- `INV_TRANSFER_001` — non-transferable device status
+- `INV_ADJ_001` — invalid adjustment
+- `AUTH_PERM_001` — insufficient permissions
+- `DEV_404_001` — device not found
+- Add `requestId` from Lambda context to all error responses
+
+### 6D. Transaction Safety (Remaining)
+Wrap `handleUpdateTransfer` (status=received) in transaction.
+
+### 6E. Dead Code & Mock Data
+- Evaluate legacy `handleHandoverAction` endpoint — deprecate if unused
+- Gate `useMock()` with `NODE_ENV !== 'production'` check
+- Remove dead imports
+
+### 6F. Commission Calculator Verification
+Verify column names in `commission-calculator.ts` match schema (`retail_price` vs `retail_price_usd`).
+
+**Acceptance:** All SQL parameterized. No PII in logs. All errors have codes + requestId. Multi-table ops transactional.
+
+---
+
+## Phase 7: Test Suite, SLA Recommendations & Launch Readiness (Week 9-12)
+
+### 7A. New Integration Tests (Real PostgreSQL)
+1. Full inventory lifecycle: create → assign → reserve → handover → sold
+2. Bulk import 500 devices: triggers fire, stock counts correct
+3. Transfer state machine: all transitions + cancellation
+4. Adjustment maker-checker: create → approve → verify
+5. Concurrent handover: two simultaneous attempts, only one succeeds
+6. Catalogue filtering: two products, overlapping models
+7. Reservation expiry: create → time advance → verify cleanup
+
+### 7B. Performance Tests
+| Test | Target |
+|------|--------|
+| Bulk import 500 devices | < 10s |
+| Inventory report (10,000 devices) | < 5s |
+| 10 concurrent handovers | Data integrity maintained |
+| Movement history (100+ entries) | < 1s paginated |
+
+### 7C. Inventory Reconciliation Endpoint
+```
+POST /admin/inventory/reconcile
+```
+Compares `device_models.available_stock` vs actual `COUNT(*)` from `devices`. Reports and optionally fixes discrepancies.
+
+### 7D. Recommended Operational SLAs
+
+| Operation | Target SLA |
+|-----------|-----------|
+| Device registration (single) | < 500ms p95 |
+| Bulk import (500 devices) | < 15s p95 |
+| Inventory report generation | < 3s p95 |
+| Handover completion | < 2s p95 |
+| Transfer approval | < 500ms p95 |
+| Reservation expiry job | < 5 min latency |
+| Movement history query | < 1s p95 paginated |
+| Inventory reconciliation | Daily at midnight |
+| Low stock alert detection | < 5 min from reorder level breach |
+| Deposit confirmation (manual) | < 4 hours business hours |
+| Handover-to-Fineract-disbursement | < 24 hours |
+| **Uptime** | 99.9% during 6AM-10PM CAT |
+| **Data integrity** | Zero inventory count divergence (weekly reconciliation) |
+
+### 7E. Real-time Stock Alerts
+CloudWatch alarms or SQS notifications when:
+1. Device model drops below `reorder_level`
+2. Device in stock > 90 days (aging alert)
+3. Bulk import error rate > 10%
+
+---
+
+## Phase Dependency Graph
+```
+Phase 1 (Verification)         ← Start immediately
+   ↓
+Phase 2 (Consolidation)        ← Depends on Phase 1
+   ↓
+Phase 3 (Bulk APIs)            ← Depends on Phase 2
+   ↓↘
+Phase 4 (Handover)  ←──── Can parallel with Phase 3
+   ↓
+Phase 5 (Catalogue/CSV/Visibility)  ← Depends on Phase 2
+   ↓↘
+Phase 6 (Code Quality) ←── Can parallel with Phase 5
+   ↓
+Phase 7 (Tests/SLAs/Readiness) ← Depends on all above
+```
+
+**Critical path: ~10 weeks.** Phases 3+4 parallel, Phases 5+6 parallel.
+
+---
+
+## Critical Files Summary
+
+| File | Phase | Changes |
+|------|-------|---------|
+| `database/migrations/030_inventory_foundation.sql` | 1 | Verify triggers in prod |
+| `database/migrations/031_inventory_management.sql` | 1 | Verify triggers in prod |
+| `services/distributor-service/src/handlers/inventory.ts` | 2 | Remove agent_inventory join |
+| `services/distributor-service/src/handlers/handovers.ts` | 2,4 | Consolidation + product validation + deposit fix |
+| `services/admin-service/src/handlers/inventory-transfers.ts` | 2,3 | Consolidation + bulk transfer |
+| `services/admin-service/src/handlers/inventory-adjustments.ts` | 3 | Bulk adjustment |
+| `services/admin-service/src/handlers/inventory-devices.ts` | 3,6 | Bulk import perf + PII masking |
+| `services/admin-service/src/handlers/inventory-reports.ts` | 5 | CSV export |
+| `services/admin-service/src/handlers/device-models.ts` | 6 | SQL parameterization |
+| `services/lock-service/src/handover/handover-workflow.ts` | 2,4 | Consolidation + transaction safety |
+| `services/lock-service/src/handover/commission-calculator.ts` | 6 | Column name verification |
+| `services/shared/clients/fineract-sync/sync-executor.ts` | 1 | Fineract health verification |
+| `services/whatsapp-service/src/onboarding/states/device-selection.ts` | 5 | Catalogue filtering test |
+| `frontend/apps/distributor-dashboard/src/components/handover/handover-wizard.tsx` | 4 | Offline testing + fixes |
+| `frontend/apps/distributor-dashboard/src/lib/api/handovers.ts` | 4,6 | Mock data gating |
+| `template.yaml` | 3,5 | New routes + reservation expiry Lambda |
+
+---
+
+## Existing Test Coverage
+
+| Test File | Type | Coverage |
+|-----------|------|----------|
+| `tests/unit/admin/inventory-management.test.ts` | Unit | Inventory CRUD |
+| `tests/unit/admin-service/inventory-adjustments-errors.test.ts` | Unit | Adjustment errors |
+| `tests/property/inventory/transfer-state-machine.property.test.ts` | Property | Transfer transitions |
+| `tests/property/inventory/imei-validation.property.test.ts` | Property | IMEI format |
+| `tests/property/inventory/bulk-import-invariants.property.test.ts` | Property | Bulk import |
+| `tests/integration/journeys/inventory-to-customer-journey.test.ts` | Integration | Full journey |
+
+### Test Gaps
+- No integration tests for full handover → Fineract disbursement flow
+- No tests for reservation expiry
+- No tests for commission calculation edge cases
+- No tests for concurrent handover attempts (race conditions)
+- No load/stress tests for bulk operations
+- No tests for inventory count drift detection
+- No tests for multi-product catalogue filtering
+
+---
+
+> **Financial inclusion is not just our product — it's our mission.**
+> Every feature we build serves real people trying to build better lives.
