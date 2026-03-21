@@ -10,7 +10,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': ['ts-jest', { diagnostics: false }]
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(date-fns)/)'
+    'node_modules/(?!(date-fns|uuid)/)'
   ],
   collectCoverageFrom: [
     'services/**/src/**/*.{ts,tsx}',
