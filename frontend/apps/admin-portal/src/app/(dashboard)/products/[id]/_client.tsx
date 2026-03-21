@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card';
 import { Modal } from '@/components/ui/modal';
 import { formatCurrency } from '@lynia/utils';
 import { ArrowLeft, Pencil, Trash2, Plus, X, Check, Circle, Link2, Smartphone, Database as DatabaseIcon, Building2 } from 'lucide-react';
+import { ProductVersionHistory } from '@/components/products/product-version-history';
 import { useToast } from '@/hooks/use-toast';
 import { useRouteId } from '@/hooks/use-route-id';
 import type { LoanProduct, DeviceModel, LinkedOrganization, Organization } from '@/types';
@@ -460,6 +461,9 @@ export default function ProductDetailPage() {
           )}
         </Card>
       )}
+
+      {/* Product Configuration Version History */}
+      <ProductVersionHistory productId={id} />
 
       {/* Link Organizations Modal */}
       <Modal open={orgLinkModalOpen} onClose={() => { setOrgLinkModalOpen(false); setSelectedOrgs([]); }} title="Link Organizations" size="lg">

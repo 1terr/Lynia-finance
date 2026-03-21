@@ -16,7 +16,7 @@ import { handleGetConfigs, handleUpdateConfig } from './handlers/configuration';
 import { handleGetAuditLogs } from './handlers/audit-logs';
 
 // ─── Products ───
-import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel, handleGetProductOrganizations, handleLinkOrganizations, handleUnlinkOrganization, handleGetFineractDefaults, handleGetGLAccounts, handleRecoverProductFromFineract } from './handlers/products';
+import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductVersions, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel, handleGetProductOrganizations, handleLinkOrganizations, handleUnlinkOrganization, handleGetFineractDefaults, handleGetGLAccounts, handleRecoverProductFromFineract } from './handlers/products';
 
 // ─── Device Models ───
 import { handleGetDeviceModels, handleCreateDeviceModel, handleGetDeviceModelById, handleUpdateDeviceModel, handleDeleteDeviceModel } from './handlers/device-models';
@@ -89,6 +89,7 @@ export const handler = createRouter({
   'GET /admin/products':                       handleGetProducts,
   'POST /admin/products':                      handleCreateProduct,
   'POST /admin/products/recover-from-fineract': handleRecoverProductFromFineract,
+  'GET /admin/products/:id/versions':                handleGetProductVersions,
   'GET /admin/products/:id/loans-count':            handleGetProductLoansCount,
   'GET /admin/products/:id/device-models':          handleGetProductDeviceModels,
   'POST /admin/products/:id/device-models':         handleLinkDeviceModel,

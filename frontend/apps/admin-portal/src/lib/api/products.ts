@@ -86,6 +86,25 @@ export async function getProductLoansCount(id: string): Promise<{ active_loans: 
   return fetchAPI<{ active_loans: number }>(`/admin/products/${id}/loans-count`);
 }
 
+// ─── Product Version History ───
+
+export interface ProductVersion {
+  id: string;
+  product_id: string;
+  version_number: number;
+  changed_by: string;
+  changed_at: string;
+  change_type: 'create' | 'update' | 'deactivate' | 'reactivate';
+  previous_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown>;
+  change_reason: string | null;
+  created_at: string;
+}
+
+export async function getProductVersions(productId: string): Promise<{ data: ProductVersion[] }> {
+  return fetchAPI<{ data: ProductVersion[] }>(`/admin/products/${productId}/versions`);
+}
+
 // ─── Fineract Defaults & GL Accounts ───
 
 export async function getProductFineractDefaults(): Promise<FineractProductDefaults> {

@@ -6,6 +6,7 @@ import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import type { FineractLoanProductCreateRequest } from '../../../shared/types/fineract';
+import { createProductVersion, getProductVersions } from '../../../shared/utils/product-versioning';
 
 const VALID_PRODUCT_CATEGORIES = ['smartphone', 'digital'] as const;
 const PRODUCT_CODE_REGEX = /^[A-Za-z0-9_]{1,50}$/;
@@ -603,6 +604,23 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     fineract_product_id: fineractProductId!,
   });
 
+  // Record version history (non-blocking)
+  try {
+    await createProductVersion({
+      productId: row.id as string,
+      changedBy: auth.email || auth.userId,
+      changeType: 'create',
+      previousValues: null,
+      newValues: insertData,
+    });
+  } catch (versionErr) {
+    logger.error('Failed to record product version on create', {
+      action: 'product.version.create',
+      status: 'failed',
+      errorMessage: versionErr instanceof Error ? versionErr.message : String(versionErr),
+    });
+  }
+
   return successResponse(
     { ...row, fineract_sync_status: 'synced' },
     201,
@@ -754,6 +772,29 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.update', 'loan_product', id, `Updated product: ${id}`, updates);
 
+  // Record version history (non-blocking)
+  try {
+    const previousValues: Record<string, unknown> = {};
+    for (const key of Object.keys(updates)) {
+      if (key !== 'updated_at' && existingProduct[key] !== undefined) {
+        previousValues[key] = existingProduct[key];
+      }
+    }
+    await createProductVersion({
+      productId: id,
+      changedBy: auth.email || auth.userId,
+      changeType: 'update',
+      previousValues,
+      newValues: updates,
+    });
+  } catch (versionErr) {
+    logger.error('Failed to record product version on update', {
+      action: 'product.version.update',
+      status: 'failed',
+      errorMessage: versionErr instanceof Error ? versionErr.message : String(versionErr),
+    });
+  }
+
   return successResponse(
     { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'not_linked' },
     200,
@@ -823,7 +864,37 @@ export const handleDeleteProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.delete', 'loan_product', id, `Soft-deleted product: ${id}`);
 
+  // Record version history (non-blocking)
+  try {
+    await createProductVersion({
+      productId: id,
+      changedBy: auth.email || auth.userId,
+      changeType: 'deactivate',
+      previousValues: { deleted_at: null },
+      newValues: { deleted_at: new Date().toISOString() },
+    });
+  } catch (versionErr) {
+    logger.error('Failed to record product version on delete', {
+      action: 'product.version.deactivate',
+      status: 'failed',
+      errorMessage: versionErr instanceof Error ? versionErr.message : String(versionErr),
+    });
+  }
+
   return successResponse({ message: 'Product deleted successfully' }, 200, event);
+};
+
+// ─── GET /admin/products/:id/versions ───
+
+export const handleGetProductVersions: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+  const versions = await getProductVersions(productId);
+
+  return successResponse({ data: versions }, 200, event);
 };
 
 // ─── GET /admin/products/:id/device-models ───
