@@ -17,7 +17,6 @@ import { requireRole } from '../../../shared/middleware/authorization';
 import { resolveDistributor } from '../helpers/resolve-distributor';
 import {
   notifyAdminsOfTransferEvent,
-  notifyDistributorOfTransferEvent,
 } from '../../../shared/utils/notifications';
 import logger from '../../../shared/utils/logger';
 

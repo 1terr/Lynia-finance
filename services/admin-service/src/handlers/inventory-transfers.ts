@@ -6,7 +6,6 @@ import { isAdminOrManager } from '../../../shared/middleware/authorization';
 import logger, { getRequestContext } from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 import {
-  notifyAdminsOfTransferEvent,
   notifyDistributorOfTransferEvent,
 } from '../../../shared/utils/notifications';
 
