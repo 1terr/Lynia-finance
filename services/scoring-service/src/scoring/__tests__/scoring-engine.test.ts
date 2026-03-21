@@ -406,14 +406,13 @@ describe('calculateRuleBasedScore', () => {
       },
     }));
     // With worst-case data across all components, raw=95, scaled=352
-    // This is right at the boundary — still Tier 1 (350-499)
+    // This is right at the boundary — still approved (>= 350)
     expect(result.scaled_score).toBeGreaterThanOrEqual(350);
     expect(result.scaled_score).toBeLessThan(500);
     expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 1');
   });
 
-  it('score 350-499 -> Tier 1 ($200 limit, 30% down, 5% APR)', async () => {
+  it('score 350-499 -> approved with fallback defaults', async () => {
     const result = await calculateRuleBasedScore(buildInput({
       monthly_income_usd: 100,
       existing_debt_obligations_usd: 50,
@@ -438,7 +437,7 @@ describe('calculateRuleBasedScore', () => {
     expect(result.interest_rate_apr).toBe(5);
   });
 
-  it('score 500-649 -> Tier 2 ($500 limit, 20% down, 4% APR)', async () => {
+  it('score 500-649 -> approved with mid-range fallback defaults', async () => {
     const result = await calculateRuleBasedScore(buildInput({
       monthly_income_usd: 200,
       existing_debt_obligations_usd: 0,
@@ -458,7 +457,7 @@ describe('calculateRuleBasedScore', () => {
     expect(result.interest_rate_apr).toBe(4);
   });
 
-  it('score >= 650 -> Tier 3 ($2000 limit, 10% down, 3% APR)', async () => {
+  it('score >= 650 -> approved with high-score fallback defaults', async () => {
     const result = await calculateRuleBasedScore(buildInput({
       monthly_income_usd: 500,
       existing_debt_obligations_usd: 0,

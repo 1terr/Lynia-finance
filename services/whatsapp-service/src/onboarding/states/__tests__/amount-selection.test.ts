@@ -18,6 +18,10 @@ jest.mock('../../session', () => ({
 }));
 
 jest.mock('../../../../../shared/utils/loan-calculator', () => ({
+  getAllowedTermsForProduct: jest.fn((minTerm: number, maxTerm: number) => {
+    const standardTerms = [1, 2, 3, 6, 9, 12, 18, 24];
+    return standardTerms.filter(t => t >= minTerm && t <= maxTerm);
+  }),
   getAllowedTerms: jest.fn((tier: string) => {
     switch (tier) {
       case 'Tier 3': return [6, 12, 18];
@@ -41,7 +45,10 @@ function makeSession(overrides: Partial<OnboardingSession['state_data']> = {}): 
       selected_product: 'digital_credit',
       preferred_language: 'en',
       credit_limit_usd: 500,
-      credit_tier: 'Tier 1',
+      credit_tier: 'Digital Cash Loan',
+      matched_product_id: 'prod-001',
+      matched_product_min_term: 1,
+      matched_product_max_term: 6,
       org_lending_limits: {
         max_loan_amount: 500,
         min_loan_amount: 20,
@@ -310,7 +317,9 @@ describe('handleAmountSelection', () => {
 
   it('shows term options in response message', async () => {
     const session = makeSession({
-      credit_tier: 'Tier 2',
+      credit_tier: 'Standard Product',
+      matched_product_min_term: 1,
+      matched_product_max_term: 6,
       org_lending_limits: {
         max_loan_amount: 500,
         min_loan_amount: 20,

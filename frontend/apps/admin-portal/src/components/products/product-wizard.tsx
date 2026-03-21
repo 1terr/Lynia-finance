@@ -159,6 +159,8 @@ export function ProductWizard({ product }: ProductWizardProps) {
   const [maxInterestRate, setMaxInterestRate] = useState('');
   const [annualRate, setAnnualRate] = useState('');
   const [interestRateFreqType, setInterestRateFreqType] = useState('2');
+  const [minCreditScore, setMinCreditScore] = useState('350');
+  const [maxCreditScore, setMaxCreditScore] = useState('850');
   const [amortizationType, setAmortizationType] = useState('0');
   const [interestType, setInterestType] = useState('0');
   const [interestCalcPeriod, setInterestCalcPeriod] = useState('1');
@@ -453,6 +455,8 @@ export function ProductWizard({ product }: ProductWizardProps) {
       interest_rate_annual: parseFloat(annualRate),
       min_interest_rate: minInterestRate ? parseFloat(minInterestRate) : undefined,
       max_interest_rate: maxInterestRate ? parseFloat(maxInterestRate) : undefined,
+      min_credit_score: minCreditScore ? parseInt(minCreditScore) : 300,
+      max_credit_score: maxCreditScore ? parseInt(maxCreditScore) : 850,
       interest_rate_frequency_type: parseInt(interestRateFreqType),
       amortization_type: parseInt(amortizationType),
       interest_type: parseInt(interestType),
@@ -620,6 +624,20 @@ export function ProductWizard({ product }: ProductWizardProps) {
                 <Select label="Rate Frequency" id="interestRateFreqType"
                   options={[{ value: '2', label: 'Per Month' }, { value: '3', label: 'Per Year' }]}
                   value={interestRateFreqType} onChange={(e) => setInterestRateFreqType(e.target.value)} />
+              </div>
+            </fieldset>
+
+            {/* Credit Score Eligibility */}
+            <fieldset className="space-y-3">
+              <legend className="text-sm font-medium text-foreground">Credit Score Eligibility</legend>
+              <p className="text-xs text-muted-foreground">
+                Define the credit score range (300-850) for customer eligibility. Products with overlapping ranges allow flexible matching.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <Input label="Min Score" id="minCreditScore" type="number" value={minCreditScore}
+                  onChange={(e) => setMinCreditScore(e.target.value)} min="300" max="850" step="1" />
+                <Input label="Max Score" id="maxCreditScore" type="number" value={maxCreditScore}
+                  onChange={(e) => setMaxCreditScore(e.target.value)} min="300" max="850" step="1" />
               </div>
             </fieldset>
 

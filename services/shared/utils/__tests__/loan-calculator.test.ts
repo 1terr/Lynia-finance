@@ -8,6 +8,7 @@
 import {
   calculateDecliningBalancePayment,
   getAllowedTerms,
+  getAllowedTermsForProduct,
 } from '../loan-calculator';
 
 describe('calculateDecliningBalancePayment', () => {
@@ -48,7 +49,7 @@ describe('calculateDecliningBalancePayment', () => {
     expect(result.totalInterest).toBe(8.72);
   });
 
-  it('$140 at 5% APR for 6 months (Tier 1 example)', () => {
+  it('$140 at 5% APR for 6 months (entry-level example)', () => {
     const result = calculateDecliningBalancePayment({
       principal: 140,
       annualRatePercent: 5,
@@ -59,7 +60,7 @@ describe('calculateDecliningBalancePayment', () => {
     expect(result.totalInterest).toBe(2.02);
   });
 
-  it('$1800 at 3% APR for 18 months (Tier 3 example)', () => {
+  it('$1800 at 3% APR for 18 months (premium example)', () => {
     const result = calculateDecliningBalancePayment({
       principal: 1800,
       annualRatePercent: 3,
@@ -190,24 +191,42 @@ describe('calculateDecliningBalancePayment', () => {
   });
 });
 
-describe('getAllowedTerms', () => {
+describe('getAllowedTermsForProduct', () => {
+  it('returns standard terms within product range', () => {
+    expect(getAllowedTermsForProduct(6, 18)).toEqual([6, 9, 12, 18]);
+  });
+
+  it('returns single term when min equals max', () => {
+    expect(getAllowedTermsForProduct(6, 6)).toEqual([6]);
+  });
+
+  it('returns short-term options for 1-3 month products', () => {
+    expect(getAllowedTermsForProduct(1, 3)).toEqual([1, 2, 3]);
+  });
+
+  it('returns all standard terms for wide range', () => {
+    expect(getAllowedTermsForProduct(1, 24)).toEqual([1, 2, 3, 6, 9, 12, 18, 24]);
+  });
+
+  it('returns empty array when no standard terms fit', () => {
+    expect(getAllowedTermsForProduct(4, 5)).toEqual([]);
+  });
+
+  it('handles typical smartphone product (6-12 months)', () => {
+    expect(getAllowedTermsForProduct(6, 12)).toEqual([6, 9, 12]);
+  });
+});
+
+describe('getAllowedTerms (deprecated)', () => {
   it('Tier 1: returns [6, 12]', () => {
-    expect(getAllowedTerms('Tier 1')).toEqual([6, 12]);
+    expect(getAllowedTerms('Tier 1')).toEqual([6, 9, 12]);
   });
 
-  it('Tier 2: returns [6, 12]', () => {
-    expect(getAllowedTerms('Tier 2')).toEqual([6, 12]);
+  it('Tier 3: returns terms up to 18', () => {
+    expect(getAllowedTerms('Tier 3')).toEqual([6, 9, 12, 18]);
   });
 
-  it('Tier 3: returns [6, 12, 18]', () => {
-    expect(getAllowedTerms('Tier 3')).toEqual([6, 12, 18]);
-  });
-
-  it('unknown tier: defaults to [6, 12]', () => {
-    expect(getAllowedTerms('Unknown')).toEqual([6, 12]);
-  });
-
-  it('empty string: defaults to [6, 12]', () => {
-    expect(getAllowedTerms('')).toEqual([6, 12]);
+  it('unknown tier: defaults to 6-12 range', () => {
+    expect(getAllowedTerms('Unknown')).toEqual([6, 9, 12]);
   });
 });

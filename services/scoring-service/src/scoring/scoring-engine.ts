@@ -398,9 +398,36 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
     decision = 'approve';
   }
 
-  // Product-specific terms (credit_limit, down_payment, interest_rate) are
-  // resolved by the product eligibility resolver in the handler layer.
-  // The scoring engine is a pure function — it returns only the score and decision.
+  // Determine tier and default terms based on scaled score.
+  // These serve as fallback defaults; the handler layer may override them
+  // with product-specific values from the product eligibility resolver.
+  let tier: string;
+  let credit_limit_usd: number;
+  let down_payment_percentage: number;
+  let interest_rate_apr: number;
+
+  if (decision === 'reject') {
+    tier = 'Below Minimum';
+    credit_limit_usd = 0;
+    down_payment_percentage = 0;
+    interest_rate_apr = 0;
+  } else if (scaled_score >= 650) {
+    tier = 'Tier 3';
+    credit_limit_usd = 2000;
+    down_payment_percentage = 10;
+    interest_rate_apr = 3;
+  } else if (scaled_score >= 500) {
+    tier = 'Tier 2';
+    credit_limit_usd = 500;
+    down_payment_percentage = 20;
+    interest_rate_apr = 4;
+  } else {
+    tier = 'Tier 1';
+    credit_limit_usd = 200;
+    down_payment_percentage = 30;
+    interest_rate_apr = 5;
+  }
+
   return {
     customer_id: input.customer_id,
     product_category: productCategory,
@@ -408,10 +435,10 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
     scaled_score,
     components,
     decision,
-    credit_limit_usd: 0,
-    tier: decision === 'reject' ? 'Below Minimum' : '',
-    down_payment_percentage: 0,
-    interest_rate_apr: 0,
+    credit_limit_usd,
+    tier,
+    down_payment_percentage,
+    interest_rate_apr,
     calculated_at: new Date().toISOString()
   };
 }

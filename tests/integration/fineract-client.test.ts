@@ -213,16 +213,10 @@ describe('Loan Product Configuration', () => {
     expect(new Set(shortNames).size).toBe(3);
   });
 
-  it('should have non-overlapping principal ranges across tiers', () => {
-    const [tier1, tier2, tier3] = loanProducts.products;
-    expect(tier1.maxPrincipal).toBeLessThanOrEqual(tier2.minPrincipal);
-    expect(tier2.maxPrincipal).toBeLessThanOrEqual(tier3.minPrincipal);
-  });
-
-  it('should have decreasing interest rates for higher tiers', () => {
-    const [tier1, tier2, tier3] = loanProducts.products;
-    expect(tier1.interestRatePerPeriod).toBeGreaterThan(tier2.interestRatePerPeriod);
-    expect(tier2.interestRatePerPeriod).toBeGreaterThan(tier3.interestRatePerPeriod);
+  it('should have valid principal ranges (min <= max) for each product', () => {
+    for (const product of loanProducts.products) {
+      expect(product.minPrincipal).toBeLessThanOrEqual(product.maxPrincipal);
+    }
   });
 
   it('should use consistent defaults across all products', () => {
@@ -240,12 +234,12 @@ describe('Loan Product Configuration', () => {
     }
   });
 
-  it('should have Lynia tier metadata for score-based product selection', () => {
+  it('should have credit score eligibility metadata for product selection', () => {
     for (const product of loanProducts.products) {
-      expect(product.lyniaTier).toBeTruthy();
-      expect(product.lyniaMinCreditScore).toBeGreaterThanOrEqual(300);
-      expect(product.lyniaMaxCreditScore).toBeLessThanOrEqual(850);
-      expect(product.lyniaDownPaymentPercentage).toBeGreaterThan(0);
+      if (product.minCreditScore != null) {
+        expect(product.minCreditScore).toBeGreaterThanOrEqual(300);
+        expect(product.maxCreditScore).toBeLessThanOrEqual(850);
+      }
     }
   });
 });

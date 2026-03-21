@@ -141,10 +141,12 @@ function setupApprovalMocks(options: {
     scoreResult = {
       decision: 'approve',
       scaled_score: 620,
-      tier: 'Tier 2',
+      tier: 'Standard Smartphone Loan',
       credit_limit_usd: 500,
       down_payment_percentage: 20,
       interest_rate_apr: 4,
+      matched_product_id: 'prod-002',
+      matched_product_code: 'SMRT_FIN_001',
     },
     devices = [
       { id: 'dev-001', brand: 'Tecno', model_name: 'Spark 20', retail_price_usd: 120 },
@@ -300,7 +302,7 @@ describe('handleCreditScoring', () => {
         current_state: 'device_selection',
         state_data: expect.objectContaining({
           credit_score: 620,
-          credit_tier: 'Tier 2',
+          credit_tier: 'Standard Smartphone Loan',
           credit_limit_usd: 500,
           down_payment_percentage: 20,
           interest_rate_apr: 4,
@@ -331,7 +333,6 @@ describe('handleCreditScoring', () => {
       const result = await handleCreditScoring(makeSmartphoneSession(), makeContext('check'));
 
       expect(result).toContain('720');
-      expect(result).toContain('Tier 3');
       expect(result).toContain('$800');
     });
 
@@ -575,16 +576,16 @@ describe('handleCreditScoring', () => {
     });
   });
 
-  // ── Score tier mapping ──────────────────────────────────────────────
+  // ── Score-to-product mapping ─────────────────────────────────────────
 
-  describe('score tier mapping', () => {
-    const tiers = [
-      { tier: 'Tier 1', score: 350 },
-      { tier: 'Tier 2', score: 550 },
-      { tier: 'Tier 3', score: 750 },
+  describe('score-to-product mapping', () => {
+    const products = [
+      { tier: 'Entry Product', score: 350 },
+      { tier: 'Standard Product', score: 550 },
+      { tier: 'Premium Product', score: 750 },
     ];
 
-    for (const { tier, score } of tiers) {
+    for (const { tier, score } of products) {
       it(`stores ${tier} correctly in state_data`, async () => {
         setupApprovalMocks({
           scoreResult: {

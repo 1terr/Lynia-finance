@@ -18,10 +18,12 @@ function makeSession(overrides: Partial<OnboardingSession['state_data']> = {}): 
     phone_number: '+263771234567',
     current_state: 'device_selection',
     state_data: {
-      credit_tier: 'Tier 2',
+      credit_tier: 'Standard Product',
       credit_limit_usd: 500,
       down_payment_percentage: 20,
       interest_rate_apr: 4,
+      matched_product_min_term: 6,
+      matched_product_max_term: 12,
       available_devices: mockDevices,
       ...overrides,
     },
@@ -73,8 +75,8 @@ describe('handleDeviceSelection', () => {
     expect(result).toContain('12 months');
   });
 
-  it('shows 18-month option for Tier 3', async () => {
-    const session = makeSession({ credit_tier: 'Tier 3' });
+  it('shows 18-month option for products with max_term 18', async () => {
+    const session = makeSession({ matched_product_min_term: 6, matched_product_max_term: 18 });
     const result = await handleDeviceSelection(session, makeContext('1'));
     expect(result).toContain('18 months');
   });

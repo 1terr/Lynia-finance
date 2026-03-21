@@ -391,6 +391,7 @@ However, there are no devices currently available in your price range. Please ch
     return `*Congratulations! You're Approved!*
 
 Your Credit Details:
+Loan Product: ${scoreResult.tier}
 Loan Limit: $${scoreResult.credit_limit_usd}
 Credit Score: ${scoreResult.scaled_score}/850
 

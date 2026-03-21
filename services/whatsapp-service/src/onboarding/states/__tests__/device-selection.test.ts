@@ -19,6 +19,10 @@ jest.mock('../../session', () => ({
 
 // Mock the loan calculator — return deterministic values
 jest.mock('../../../../../shared/utils/loan-calculator', () => ({
+  getAllowedTermsForProduct: (minTerm: number, maxTerm: number) => {
+    const standardTerms = [1, 2, 3, 6, 9, 12, 18, 24];
+    return standardTerms.filter(t => t >= minTerm && t <= maxTerm);
+  },
   getAllowedTerms: (tier: string) => {
     switch (tier) {
       case 'Tier 3': return [6, 12, 18];
@@ -45,11 +49,14 @@ function makeSession(overrides: Partial<OnboardingSession['state_data']> = {}): 
     phone_number: '+263771234567',
     current_state: 'device_selection',
     state_data: {
-      credit_tier: 'Tier 2',
+      credit_tier: 'Standard Product',
       credit_limit_usd: 500,
       down_payment_percentage: 20,
       interest_rate_apr: 4,
       available_devices: mockDevices,
+      matched_product_min_term: 6,
+      matched_product_max_term: 12,
+      matched_product_id: 'prod-001',
       ...overrides,
     },
     last_activity_at: new Date(),
@@ -85,7 +92,7 @@ describe('handleDeviceSelection', () => {
           selected_device_id: 'dev-001',
           selected_device_price: 120,
           selected_device_name: 'Tecno Spark 20',
-          allowed_terms: [6, 12],
+          allowed_terms: [6, 9, 12],
           available_devices: undefined,
         }),
       }));
@@ -124,16 +131,17 @@ describe('handleDeviceSelection', () => {
       expect(result).toContain('Infinix Note 30');
     });
 
-    it('shows term options from getAllowedTerms based on credit tier', async () => {
+    it('shows term options from getAllowedTermsForProduct based on product config', async () => {
       const result = await handleDeviceSelection(makeSession(), makeContext('1'));
 
       expect(result).toContain('6 months');
+      expect(result).toContain('9 months');
       expect(result).toContain('12 months');
-      expect(result).not.toContain('18 months'); // Tier 2 only gets 6, 12
+      expect(result).not.toContain('18 months'); // max term is 12
     });
 
-    it('shows 18-month option for Tier 3 customers', async () => {
-      const session = makeSession({ credit_tier: 'Tier 3' });
+    it('shows 18-month option when product max term is 18', async () => {
+      const session = makeSession({ matched_product_max_term: 18 });
       const result = await handleDeviceSelection(session, makeContext('1'));
 
       expect(result).toContain('6 months');
@@ -148,11 +156,11 @@ describe('handleDeviceSelection', () => {
       expect(callArgs.state_data.available_devices).toBeUndefined();
     });
 
-    it('defaults to Tier 1 when credit_tier is missing', async () => {
+    it('uses default term range when credit_tier is missing', async () => {
       const session = makeSession({ credit_tier: undefined });
       const result = await handleDeviceSelection(session, makeContext('1'));
 
-      // Tier 1 default returns [6, 12]
+      // Default min=6, max=12 returns [6, 9, 12]
       expect(result).toContain('6 months');
       expect(result).toContain('12 months');
     });
