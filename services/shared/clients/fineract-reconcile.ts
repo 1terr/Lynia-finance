@@ -29,6 +29,15 @@ const METRIC_NAMESPACE = `Lynia/${process.env.NODE_ENV || 'development'}`;
 // TYPES
 // ============================================================
 
+interface GLMismatchDetail {
+  productId: string;
+  fineractProductId: number;
+  field: string;
+  lyniaValue: number | null;
+  fineractValue: number | null;
+  severity: 'high';
+}
+
 interface ReconciliationResult {
   totalLoansChecked: number;
   matchedLoans: number;
@@ -36,6 +45,8 @@ interface ReconciliationResult {
   failedChecks: number;
   retriedSyncs: number;
   retriedSuccesses: number;
+  glMismatches: GLMismatchDetail[];
+  glProductsChecked: number;
   durationMs: number;
   timestamp: string;
 }
@@ -92,6 +103,8 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
     failedChecks: 0,
     retriedSyncs: 0,
     retriedSuccesses: 0,
+    glMismatches: [],
+    glProductsChecked: 0,
     durationMs: 0,
     timestamp: new Date().toISOString(),
   };
@@ -209,7 +222,18 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   }
 
   // ----------------------------------------------------------
-  // Step 3: Count pending approval sync failures
+  // Step 3: Reconcile GL account mappings
+  // ----------------------------------------------------------
+  try {
+    const glResult = await reconcileGLAccounts();
+    result.glMismatches = glResult.mismatches;
+    result.glProductsChecked = glResult.productsChecked;
+  } catch (glError) {
+    console.error('[reconcile] GL account reconciliation failed:', glError);
+  }
+
+  // ----------------------------------------------------------
+  // Step 4: Count pending approval sync failures
   // ----------------------------------------------------------
   let approvalSyncFailures = 0;
   let totalPendingSyncFailures = 0;
@@ -236,7 +260,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   }
 
   // ----------------------------------------------------------
-  // Step 4: Emit CloudWatch metrics
+  // Step 5: Emit CloudWatch metrics
   // ----------------------------------------------------------
   try {
     // Count discrepancies per product category
@@ -282,6 +306,12 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
           Unit: 'Count',
           Timestamp: new Date(),
         },
+        {
+          MetricName: 'GLAccountMismatch',
+          Value: result.glMismatches.length,
+          Unit: 'Count',
+          Timestamp: new Date(),
+        },
       ],
     }));
     console.log('[reconcile] CloudWatch metrics emitted:', {
@@ -290,13 +320,14 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
       discrepancies: result.discrepancies.length,
       smartphoneDiscrepancies,
       digitalDiscrepancies,
+      glMismatches: result.glMismatches.length,
     });
   } catch (metricError) {
     console.error('[reconcile] Failed to emit CloudWatch metrics:', metricError);
   }
 
   // ----------------------------------------------------------
-  // Step 5: Finalize
+  // Step 6: Finalize
   // ----------------------------------------------------------
   result.durationMs = Date.now() - startTime;
 
@@ -314,10 +345,116 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
     retriedSuccesses: result.retriedSuccesses,
     approvalSyncFailures,
     totalPendingSyncFailures,
+    glProductsChecked: result.glProductsChecked,
+    glMismatches: result.glMismatches.length,
     durationMs: result.durationMs,
   });
 
   return result;
+}
+
+// ============================================================
+// GL ACCOUNT RECONCILIATION
+// ============================================================
+
+/** GL account fields stored in Lynia loan_products that map to Fineract accountingMappings */
+const GL_ACCOUNT_FIELDS = [
+  { lyniaField: 'fund_source_account_id', fineractKey: 'fundSourceAccountId' },
+  { lyniaField: 'loan_portfolio_account_id', fineractKey: 'loanPortfolioAccountId' },
+  { lyniaField: 'transfers_in_suspense_account_id', fineractKey: 'transfersInSuspenseAccountId' },
+  { lyniaField: 'interest_on_loan_account_id', fineractKey: 'interestOnLoanAccountId' },
+  { lyniaField: 'income_from_fee_account_id', fineractKey: 'incomeFromFeeAccountId' },
+  { lyniaField: 'income_from_penalty_account_id', fineractKey: 'incomeFromPenaltyAccountId' },
+  { lyniaField: 'write_off_account_id', fineractKey: 'writeOffAccountId' },
+  { lyniaField: 'overpayment_liability_account_id', fineractKey: 'overpaymentLiabilityAccountId' },
+  { lyniaField: 'income_from_recovery_account_id', fineractKey: 'incomeFromRecoveryAccountId' },
+  { lyniaField: 'receivable_interest_account_id', fineractKey: 'receivableInterestAccountId' },
+  { lyniaField: 'receivable_fee_account_id', fineractKey: 'receivableFeeAccountId' },
+  { lyniaField: 'receivable_penalty_account_id', fineractKey: 'receivablePenaltyAccountId' },
+] as const;
+
+interface GLReconciliationResult {
+  productsChecked: number;
+  mismatches: GLMismatchDetail[];
+}
+
+/**
+ * Reconcile GL account mappings between Lynia DB and Fineract.
+ *
+ * For each active loan product with a fineract_product_id:
+ *  1. Fetch the Fineract loan product details
+ *  2. Compare 12 GL account ID fields
+ *  3. Log mismatches with structured logging
+ */
+async function reconcileGLAccounts(): Promise<GLReconciliationResult> {
+  const mismatches: GLMismatchDetail[] = [];
+
+  const { data: products, error } = await db
+    .from('loan_products')
+    .select('*')
+    .not('fineract_product_id', 'is', null)
+    .is('deleted_at', null)
+    .execute();
+
+  if (error || !products) {
+    console.error('[reconcile] Failed to query loan products for GL reconciliation:', error);
+    return { productsChecked: 0, mismatches: [] };
+  }
+
+  const productRows = products as unknown as Array<Record<string, unknown>>;
+  console.log(`[reconcile] Checking GL accounts for ${productRows.length} products`);
+
+  const fineract = await getFineractClient();
+
+  for (const product of productRows) {
+    const productId = product.id as string;
+    const fineractProductId = product.fineract_product_id as number;
+
+    try {
+      const fineractProduct = await fineract.getLoanProduct(fineractProductId);
+      const accountingMappings = fineractProduct.accountingMappings || {};
+
+      for (const { lyniaField, fineractKey } of GL_ACCOUNT_FIELDS) {
+        const lyniaValue = (product[lyniaField] as number | null) ?? null;
+        const fineractMapping = accountingMappings[fineractKey] as
+          | { id: number; name: string; glCode: string }
+          | undefined;
+        const fineractValue = fineractMapping?.id ?? null;
+
+        // Skip comparison if both are null (field not configured)
+        if (lyniaValue === null && fineractValue === null) {
+          continue;
+        }
+
+        if (lyniaValue !== fineractValue) {
+          const mismatch: GLMismatchDetail = {
+            productId,
+            fineractProductId,
+            field: lyniaField,
+            lyniaValue,
+            fineractValue,
+            severity: 'high',
+          };
+          mismatches.push(mismatch);
+
+          console.warn('[reconcile] GL mismatch:', {
+            action: 'gl_reconciliation.mismatch',
+            productId,
+            fineractProductId,
+            field: lyniaField,
+            lyniaValue,
+            fineractValue,
+            severity: 'high',
+          });
+        }
+      }
+    } catch (checkError) {
+      console.error(`[reconcile] Failed to check GL accounts for product ${productId}:`, checkError);
+    }
+  }
+
+  console.log(`[reconcile] GL reconciliation complete: ${productRows.length} products checked, ${mismatches.length} mismatches`);
+  return { productsChecked: productRows.length, mismatches };
 }
 
 // ============================================================
@@ -515,6 +652,8 @@ export async function reconciliationHandler(): Promise<{
           failedChecks: result.failedChecks,
           retriedSyncs: result.retriedSyncs,
           retriedSuccesses: result.retriedSuccesses,
+          glProductsChecked: result.glProductsChecked,
+          glMismatchCount: result.glMismatches.length,
           durationMs: result.durationMs,
         },
       }),

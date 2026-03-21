@@ -401,6 +401,23 @@ Resources:
       ComparisonOperator: GreaterThanOrEqualToThreshold
       TreatMissingData: notBreaching
 
+  FineractSyncRetryQueueDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "${Environment}-lynia-fineract-sync-retry-queue-depth"
+      AlarmDescription: "Fineract Sync Retry main queue has >5 messages accumulating - possible processing backlog"
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt FineractSyncRetryQueue.QueueName
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
   FineractSyncRetryDLQAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:

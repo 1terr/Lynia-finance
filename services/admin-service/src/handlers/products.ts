@@ -6,6 +6,8 @@ import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 import { getFineractClient, FineractApiError } from '../../../shared/clients/fineract';
 import type { FineractLoanProductCreateRequest } from '../../../shared/types/fineract';
+import { validateRBZCompliance } from '../../../shared/utils/rbz-compliance';
+import { createProductVersion, getProductVersions } from '../../../shared/utils/product-versioning';
 
 const VALID_PRODUCT_CATEGORIES = ['smartphone', 'digital'] as const;
 const PRODUCT_CODE_REGEX = /^[A-Za-z0-9_]{1,50}$/;
@@ -433,6 +435,23 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     }
   }
 
+  // ─── RBZ compliance check ───
+  const rbzResult = validateRBZCompliance({
+    interest_rate_annual: body.interest_rate_annual,
+    effective_apr: body.effective_apr,
+    max_amount_usd: body.max_amount_usd,
+    insurance_fee_percentage: body.insurance_fee_percentage,
+    late_penalty_percentage: body.late_penalty_percentage,
+  });
+  if (!rbzResult.compliant) {
+    return errorResponse(
+      'Product violates RBZ regulatory limits or internal policy caps',
+      400,
+      { code: 'VAL_RNG_001', violations: rbzResult.violations },
+      event
+    );
+  }
+
   // ─── Create in Fineract FIRST ───
   let fineractProductId: number;
   try {
@@ -603,6 +622,23 @@ export const handleCreateProduct: RouteHandler = async (event, _params, auth) =>
     fineract_product_id: fineractProductId!,
   });
 
+  // Record version history (non-blocking)
+  try {
+    await createProductVersion({
+      productId: row.id as string,
+      changedBy: auth.email || auth.userId,
+      changeType: 'create',
+      previousValues: null,
+      newValues: insertData,
+    });
+  } catch (versionErr) {
+    logger.error('Failed to record product version on create', {
+      action: 'product.version.create',
+      status: 'failed',
+      errorMessage: versionErr instanceof Error ? versionErr.message : String(versionErr),
+    });
+  }
+
   return successResponse(
     { ...row, fineract_sync_status: 'synced' },
     201,
@@ -669,6 +705,24 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
         updates[field] = body[field];
       }
     }
+  }
+
+  // ─── RBZ compliance check (merge existing product values with updates) ───
+  const rbzCheckInput = {
+    interest_rate_annual: body.interest_rate_annual ?? (existingProduct.interest_rate_annual as number | undefined),
+    effective_apr: body.effective_apr ?? (existingProduct.effective_apr as number | undefined),
+    max_amount_usd: body.max_amount_usd ?? (existingProduct.max_amount_usd as number | undefined),
+    insurance_fee_percentage: body.insurance_fee_percentage ?? (existingProduct.insurance_fee_percentage as number | undefined),
+    late_penalty_percentage: body.late_penalty_percentage ?? (existingProduct.late_penalty_percentage as number | undefined),
+  };
+  const rbzResult = validateRBZCompliance(rbzCheckInput);
+  if (!rbzResult.compliant) {
+    return errorResponse(
+      'Product update violates RBZ regulatory limits or internal policy caps',
+      400,
+      { code: 'VAL_RNG_001', violations: rbzResult.violations },
+      event
+    );
   }
 
   // If product is linked to Fineract, update there first
@@ -754,6 +808,30 @@ export const handleUpdateProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.update', 'loan_product', id, `Updated product: ${id}`, updates);
 
+  // Record version history (non-blocking)
+  try {
+    // Build previous values from only the fields that changed
+    const previousValues: Record<string, unknown> = {};
+    for (const key of Object.keys(updates)) {
+      if (key !== 'updated_at' && existingProduct[key] !== undefined) {
+        previousValues[key] = existingProduct[key];
+      }
+    }
+    await createProductVersion({
+      productId: id,
+      changedBy: auth.email || auth.userId,
+      changeType: 'update',
+      previousValues,
+      newValues: updates,
+    });
+  } catch (versionErr) {
+    logger.error('Failed to record product version on update', {
+      action: 'product.version.update',
+      status: 'failed',
+      errorMessage: versionErr instanceof Error ? versionErr.message : String(versionErr),
+    });
+  }
+
   return successResponse(
     { ...row, fineract_sync_status: row.fineract_product_id ? 'synced' : 'not_linked' },
     200,
@@ -823,7 +901,38 @@ export const handleDeleteProduct: RouteHandler = async (event, params, auth) => 
 
   await auditLog(auth, 'product.delete', 'loan_product', id, `Soft-deleted product: ${id}`);
 
+  // Record version history (non-blocking)
+  try {
+    await createProductVersion({
+      productId: id,
+      changedBy: auth.email || auth.userId,
+      changeType: 'deactivate',
+      previousValues: { deleted_at: null },
+      newValues: { deleted_at: new Date().toISOString() },
+    });
+  } catch (versionErr) {
+    logger.error('Failed to record product version on delete', {
+      action: 'product.version.deactivate',
+      status: 'failed',
+      errorMessage: versionErr instanceof Error ? versionErr.message : String(versionErr),
+    });
+  }
+
   return successResponse({ message: 'Product deleted successfully' }, 200, event);
+};
+
+// ─── GET /admin/products/:id/versions ───
+
+export const handleGetProductVersions: RouteHandler = async (event, params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const productId = params.id;
+
+  const versions = await getProductVersions(productId);
+
+  return successResponse({ data: versions }, 200, event);
 };
 
 // ─── GET /admin/products/:id/device-models ───
