@@ -10,7 +10,7 @@
 
 import { query } from '../../../../shared/clients/database';
 import { logger } from '../../../../shared/utils/logger';
-import { t, type SupportedLanguage } from '../../i18n';
+import { t as _t, type SupportedLanguage } from '../../i18n';
 import { updateSession } from '../session';
 import type { OnboardingSession, MessageContext } from '../types';
 
@@ -37,7 +37,7 @@ export async function handleDigitalProductSelection(
   context: MessageContext
 ): Promise<string> {
   const message = context.message.trim();
-  const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
+  const _lang: SupportedLanguage = session.state_data.preferred_language || 'en';
   const stateData = session.state_data;
 
   // First entry: show available products
