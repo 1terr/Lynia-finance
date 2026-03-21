@@ -1,6 +1,6 @@
 import type { TransferListItem, SpotCheckItem, SpotCheckInput } from '@/types/distributor';
 import { fetchAPI } from '@lynia/api-client';
-import { delay, useMock } from '@/test/mocks/utils';
+import { delay, shouldUseMock } from '@/test/mocks/utils';
 import { mockTransfers } from '@/test/mocks/transfers';
 
 /**
@@ -13,7 +13,7 @@ export async function fetchTransfers(params?: {
   page?: number;
   limit?: number;
 }): Promise<{ data: TransferListItem[]; total: number; pending_count: number }> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(400);
     let filtered = [...mockTransfers];
     if (params?.status) {
@@ -45,7 +45,7 @@ export async function fetchTransferById(id: string): Promise<{
   transfer: TransferListItem;
   spot_checks?: SpotCheckItem[];
 }> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(300);
     const transfer = mockTransfers.find(t => t.id === id);
     if (!transfer) throw new Error('Transfer not found');
@@ -63,7 +63,7 @@ export async function confirmTransfer(
   id: string,
   spotChecks?: SpotCheckInput[]
 ): Promise<void> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(800);
     return;
   }
@@ -77,7 +77,7 @@ export async function confirmTransfer(
  * Reject/dispute an incoming transfer.
  */
 export async function rejectTransfer(id: string, reason: string): Promise<void> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(600);
     return;
   }
@@ -91,7 +91,7 @@ export async function rejectTransfer(id: string, reason: string): Promise<void> 
  * Request to return a device to the warehouse.
  */
 export async function requestReturn(deviceId: string, reason: string): Promise<void> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(600);
     return;
   }
@@ -105,7 +105,7 @@ export async function requestReturn(deviceId: string, reason: string): Promise<v
  * Fetch count of transfers needing distributor action.
  */
 export async function fetchPendingTransferCount(): Promise<number> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(200);
     return mockTransfers.filter(t => t.status === 'pending_receipt').length;
   }

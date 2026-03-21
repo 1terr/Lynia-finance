@@ -141,8 +141,9 @@ export default function WhatsAppFunnel() {
         <CardContent className="pt-4">
           <div className="flex flex-wrap items-end gap-4">
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Start Date</label>
+              <label htmlFor="funnel-start-date" className="text-xs text-muted-foreground block mb-1">Start Date</label>
               <input
+                id="funnel-start-date"
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
@@ -150,8 +151,9 @@ export default function WhatsAppFunnel() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">End Date</label>
+              <label htmlFor="funnel-end-date" className="text-xs text-muted-foreground block mb-1">End Date</label>
               <input
+                id="funnel-end-date"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
@@ -159,8 +161,9 @@ export default function WhatsAppFunnel() {
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Product Category</label>
+              <label htmlFor="funnel-product-category" className="text-xs text-muted-foreground block mb-1">Product Category</label>
               <select
+                id="funnel-product-category"
                 value={productCategory}
                 onChange={(e) => setProductCategory(e.target.value)}
                 className="border rounded px-3 py-1.5 text-sm bg-background"

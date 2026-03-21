@@ -330,6 +330,7 @@ export function KYCReviewCard({
                         onChange={(e) => setRejectionReason(e.target.value)}
                         placeholder="Provide a detailed reason for rejection..."
                         className="w-full rounded-md border border-border px-3 py-2 text-sm placeholder-muted-foreground focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500"
+                        /* eslint-disable-next-line jsx-a11y/no-autofocus */
                         autoFocus
                       />
                     </div>

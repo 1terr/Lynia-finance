@@ -38,8 +38,10 @@ function createWrapper() {
       queries: { retry: false },
     },
   });
-  return ({ children }: { children: React.ReactNode }) =>
+  const Wrapper = ({ children }: { children: React.ReactNode }) =>
     React.createElement(QueryClientProvider, { client: queryClient }, children);
+  Wrapper.displayName = 'TestQueryWrapper';
+  return Wrapper;
 }
 
 describe('useDashboardMetrics', () => {

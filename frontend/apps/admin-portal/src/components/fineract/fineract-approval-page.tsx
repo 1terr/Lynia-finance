@@ -272,10 +272,11 @@ export default function FineractApprovalPage() {
               </p>
               {modalAction === 'reject' && (
               <div>
-                <label className="block text-sm font-medium text-foreground">
+                <label htmlFor="fineract-rejection-reason" className="block text-sm font-medium text-foreground">
                   Rejection reason (required)
                 </label>
                 <textarea
+                  id="fineract-rejection-reason"
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
                   rows={2}

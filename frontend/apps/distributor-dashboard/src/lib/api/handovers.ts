@@ -1,6 +1,6 @@
 import type { ApprovedLoan, CompletedHandover, HandoverResult, DeviceCondition } from '@/types/distributor';
 import { fetchAPI } from '@lynia/api-client';
-import { delay, useMock } from '@/test/mocks/utils';
+import { delay, shouldUseMock } from '@/test/mocks/utils';
 import { mockApprovedLoans, mockCompletedHandovers } from '@/test/mocks/handovers';
 
 /**
@@ -8,7 +8,7 @@ import { mockApprovedLoans, mockCompletedHandovers } from '@/test/mocks/handover
  * Any distributor can search — results are not scoped to a specific distributor.
  */
 export async function searchApprovedLoans(query: string): Promise<ApprovedLoan[]> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(500);
     const q = query.toLowerCase();
     return mockApprovedLoans.filter(
@@ -24,7 +24,7 @@ export async function searchApprovedLoans(query: string): Promise<ApprovedLoan[]
  * Fetch completed handovers for this distributor.
  */
 export async function fetchCompletedHandovers(): Promise<CompletedHandover[]> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(400);
     return [...mockCompletedHandovers];
   }
@@ -38,7 +38,7 @@ export async function verifyCustomerIdentity(
   loanId: string,
   nationalId: string,
 ): Promise<{ verified: boolean; message: string }> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(800);
     const valid = /^\d{2}-\d{6,7}[A-Z]\d{2}$/.test(nationalId);
     return {
@@ -60,7 +60,7 @@ export async function verifyDeviceSelection(
   deviceId: string,
   imei: string,
 ): Promise<{ verified: boolean; message: string }> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(600);
     const valid = imei.length === 15 && /^\d{15}$/.test(imei);
     return {
@@ -82,7 +82,7 @@ export async function verifyDepositPayment(
   paymentMethod: string,
   transactionRef: string,
 ): Promise<{ verified: boolean; amount: number; message: string }> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(1000);
     if (!transactionRef || transactionRef.length < 4) {
       return { verified: false, amount: 0, message: 'Invalid transaction reference' };
@@ -117,7 +117,7 @@ export async function submitHandover(data: {
   deposit_payment_method: string;
   deposit_transaction_ref: string;
 }): Promise<HandoverResult> {
-  if (useMock()) {
+  if (shouldUseMock()) {
     await delay(1200);
     const loan = mockApprovedLoans.find((l) => l.loan_id === data.loan_id);
     if (!loan) throw new Error('Loan not found');

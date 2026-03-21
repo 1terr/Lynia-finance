@@ -789,6 +789,7 @@ export function ProductWizard({ product }: ProductWizardProps) {
               {category === 'digital' && (
                 <>
                   <div>
+                    {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                     <label className="block text-sm font-medium text-foreground mb-2">Disbursement Methods</label>
                     <div className="flex gap-3">
                       {DISBURSEMENT_OPTIONS.map((method) => (
@@ -811,9 +812,10 @@ export function ProductWizard({ product }: ProductWizardProps) {
 
                   {requiresOrgVerification && allOrgs.length > 0 && (
                     <div className="ml-6 space-y-2">
+                      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                       <label className="block text-sm font-medium text-foreground">Eligible Organizations</label>
                       <p className="text-xs text-muted-foreground">
-                        Select which organizations' members can apply. Leave empty to allow all verified members.
+                        Select which organizations&apos; members can apply. Leave empty to allow all verified members.
                       </p>
                       <div className="max-h-48 overflow-y-auto rounded-md border border-border p-1 space-y-1">
                         {allOrgs.map((org) => {

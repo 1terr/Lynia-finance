@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { ThemeProvider } from '@/components/layout/theme-provider';
 import { ConfigGuard } from '@/components/layout/config-guard';
 import { ToastContainer } from '@/components/ui/toast';
@@ -19,7 +20,7 @@ export default function RootLayout({
       <head>
         {/* Runtime config loaded before React hydration so createClient()
             can read window.__LYNIA_CONFIG__ on first render. */}
-        <script src="/config.js" />
+        <Script src="/config.js" strategy="beforeInteractive" />
       </head>
       <body className="font-sans">
         <ThemeProvider

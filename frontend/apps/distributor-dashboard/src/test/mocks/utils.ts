@@ -12,7 +12,7 @@ export const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve
  * In production, mocks are NEVER used regardless of Cognito configuration
  * to prevent fake data from leaking to real users.
  */
-export function useMock(): boolean {
+export function shouldUseMock(): boolean {
   if (process.env.NODE_ENV === 'production') {
     return false;
   }

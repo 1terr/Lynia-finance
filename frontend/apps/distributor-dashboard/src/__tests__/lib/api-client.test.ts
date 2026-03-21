@@ -26,9 +26,9 @@ jest.mock('@lynia/api-client', () => ({
   fetchAPI: jest.fn(),
 }));
 
-// Mock environment check for useMock()
+// Mock environment check for shouldUseMock()
 jest.mock('@/test/mocks/utils', () => ({
-  useMock: () => false, // Always use real API calls in tests
+  shouldUseMock: () => false, // Always use real API calls in tests
 }));
 
 describe('API Client', () => {
