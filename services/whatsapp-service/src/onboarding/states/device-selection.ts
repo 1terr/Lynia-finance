@@ -6,7 +6,7 @@
  */
 
 import { updateSession } from '../session';
-import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
+import { getAllowedTermsForProduct } from '../../../../shared/utils/loan-calculator';
 import type { OnboardingSession, MessageContext } from '../types';
 
 /**
@@ -48,8 +48,9 @@ ${deviceList}`;
   }
 
   const selectedDevice = devices[choice - 1];
-  const tier = session.state_data.credit_tier || 'Tier 1';
-  const allowedTerms = getAllowedTerms(tier);
+  const minTerm = session.state_data.matched_product_min_term ?? 6;
+  const maxTerm = session.state_data.matched_product_max_term ?? 12;
+  const allowedTerms = getAllowedTermsForProduct(minTerm, maxTerm);
 
   await updateSession(context.from, {
     current_state: 'term_selection',
