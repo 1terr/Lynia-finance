@@ -52,11 +52,11 @@ describe('handleTermSelection', () => {
     expect(result).toContain('between 1 and 2');
   });
 
-  it('calculates correct declining balance payment for 6 months', async () => {
+  it('calculates correct flat rate payment for 6 months', async () => {
     const { updateSession } = require('../../../services/whatsapp-service/src/onboarding/session');
 
     // Device: $180, 20% down = $36 deposit, $144 financed
-    // $144 at 4% APR for 6 months (declining balance)
+    // $144 at 4% APR for 6 months (flat rate)
     const result = await handleTermSelection(makeSession(), makeContext('1'));
 
     expect(updateSession).toHaveBeenCalledWith('+263771234567', expect.objectContaining({
@@ -76,7 +76,7 @@ describe('handleTermSelection', () => {
     expect(result).toContain('Reply *Yes*');
   });
 
-  it('calculates correct declining balance payment for 12 months', async () => {
+  it('calculates correct flat rate payment for 12 months', async () => {
     const { updateSession } = require('../../../services/whatsapp-service/src/onboarding/session');
 
     // $144 financed at 4% APR for 12 months

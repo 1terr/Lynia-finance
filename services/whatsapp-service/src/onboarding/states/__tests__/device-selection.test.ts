@@ -183,9 +183,12 @@ describe('handleDeviceSelection', () => {
       const result = await handleDeviceSelection(makeSession(), makeContext('abc'));
 
       expect(result).toContain('Please reply with a number between 1 and 3');
-      expect(result).toContain('Tecno Spark 20 - $120');
-      expect(result).toContain('Samsung Galaxy A15 - $180');
-      expect(result).toContain('Infinix Note 30 - $220');
+      expect(result).toContain('*Tecno:*');
+      expect(result).toContain('Spark 20 - $120.00');
+      expect(result).toContain('*Samsung:*');
+      expect(result).toContain('Galaxy A15 - $180.00');
+      expect(result).toContain('*Infinix:*');
+      expect(result).toContain('Note 30 - $220.00');
       expect(mockUpdateSession).not.toHaveBeenCalled();
     });
 

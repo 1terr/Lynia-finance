@@ -3,11 +3,11 @@
  *
  * Tests the term_selection onboarding state where customers pick a repayment
  * period. Covers both smartphone financing (deposit-based) and digital credit
- * (no deposit) paths, including declining balance calculation.
+ * (no deposit) paths, including flat rate calculation.
  */
 
 import { handleTermSelection } from '../term-selection';
-import { calculateDecliningBalancePayment } from '../../../../../shared/utils/loan-calculator';
+import { calculateFlatRatePayment } from '../../../../../shared/utils/loan-calculator';
 import type { OnboardingSession, MessageContext } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -126,8 +126,8 @@ describe('handleTermSelection', () => {
     });
 
     it('stores correct term, payment, and total for 6-month term', async () => {
-      // $160 at 4% APR for 6 months
-      const expected = calculateDecliningBalancePayment({
+      // $160 at 4% flat rate for 6 months
+      const expected = calculateFlatRatePayment({
         principal: 160,
         annualRatePercent: 4,
         termMonths: 6,
@@ -148,7 +148,7 @@ describe('handleTermSelection', () => {
     });
 
     it('stores correct values for 12-month term', async () => {
-      const expected = calculateDecliningBalancePayment({
+      const expected = calculateFlatRatePayment({
         principal: 160,
         annualRatePercent: 4,
         termMonths: 12,
@@ -170,7 +170,7 @@ describe('handleTermSelection', () => {
       expect(result).toContain('$40.00');           // deposit
       expect(result).toContain('$160.00');          // financed
       expect(result).toContain('6 months');
-      expect(result).toContain('4% APR');
+      expect(result).toContain('4% flat rate');
       expect(result).toContain('Monthly Payment');
       expect(result).toContain('Total Repayment');
       expect(result).toContain('Reply *Yes*');
@@ -196,7 +196,7 @@ describe('handleTermSelection', () => {
     });
 
     it('calculates correct payment for digital credit', async () => {
-      const expected = calculateDecliningBalancePayment({
+      const expected = calculateFlatRatePayment({
         principal: 300,
         annualRatePercent: 4,
         termMonths: 6,
@@ -226,15 +226,15 @@ describe('handleTermSelection', () => {
     });
   });
 
-  // ── Declining balance calculation correctness ─────────────────────────
+  // ── Flat rate calculation correctness ───────────────────────────────
 
-  describe('declining balance calculation', () => {
+  describe('flat rate calculation', () => {
     it('matches the loan-calculator utility output exactly', async () => {
       const principal = 160;
       const apr = 4;
       const term = 6;
 
-      const calc = calculateDecliningBalancePayment({
+      const calc = calculateFlatRatePayment({
         principal,
         annualRatePercent: apr,
         termMonths: term,
@@ -255,7 +255,7 @@ describe('handleTermSelection', () => {
       const session = makeSmartphoneSession({ interest_rate_apr: 8 });
       await handleTermSelection(session, makeContext('1'));
 
-      const expected = calculateDecliningBalancePayment({
+      const expected = calculateFlatRatePayment({
         principal: 160,
         annualRatePercent: 8,
         termMonths: 6,
@@ -269,7 +269,7 @@ describe('handleTermSelection', () => {
       const session = makeSmartphoneSession({ interest_rate_apr: undefined });
       await handleTermSelection(session, makeContext('1'));
 
-      const expected = calculateDecliningBalancePayment({
+      const expected = calculateFlatRatePayment({
         principal: 160,
         annualRatePercent: 4,
         termMonths: 6,

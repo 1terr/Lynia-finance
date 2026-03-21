@@ -48,7 +48,8 @@ describe('handleDeviceSelection', () => {
   it('re-shows device list for invalid input', async () => {
     const result = await handleDeviceSelection(makeSession(), makeContext('abc'));
     expect(result).toContain('Please reply with a number');
-    expect(result).toContain('Tecno Spark 20');
+    expect(result).toContain('*Tecno:*');
+    expect(result).toContain('Spark 20 - $150.00');
   });
 
   it('re-shows device list for out-of-range number', async () => {
