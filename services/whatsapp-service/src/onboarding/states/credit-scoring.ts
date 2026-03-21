@@ -281,6 +281,8 @@ Type *BALANCE* to check your loan balance or *SUPPORT* for help.`;
           credit_score: scoreResult.scaled_score,
           credit_tier: scoreResult.tier,
           decision: scoreResult.decision,
+          matched_product_id: scoreResult.matched_product_id,
+          matched_product_code: scoreResult.matched_product_code,
         }
       });
 
@@ -317,6 +319,10 @@ Type *SUPPORT* if you have questions or need help.`;
           down_payment_percentage: 0,
           interest_rate_apr: orgLimits?.interest_rate_apr ?? scoreResult.interest_rate_apr,
           decision: scoreResult.decision,
+          matched_product_id: scoreResult.matched_product_id,
+          matched_product_code: scoreResult.matched_product_code,
+          matched_product_min_term: orgLimits?.min_term_months ?? 1,
+          matched_product_max_term: orgLimits?.max_term_months ?? 6,
         }
       });
 
@@ -324,7 +330,6 @@ Type *SUPPORT* if you have questions or need help.`;
 
 Your Credit Details:
 Credit Limit: *$${effectiveLimit.toFixed(2)}*
-Credit Tier: ${scoreResult.tier}
 Credit Score: ${scoreResult.scaled_score}/850
 
 How much would you like to borrow?

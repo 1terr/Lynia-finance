@@ -372,10 +372,6 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
   const MINIMUM_SCORE_THRESHOLD = 350;
 
   let decision: 'approve' | 'reject';
-  let credit_limit_usd = 0;
-  let tier = '';
-  let down_payment_percentage = 0;
-  let interest_rate_apr = 0;
 
   // Defense-in-depth: auto-reject if KYC identity verification failed.
   // Even if the WhatsApp flow guard is bypassed (e.g. direct API call),
@@ -398,27 +394,13 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
 
   if (scaled_score < MINIMUM_SCORE_THRESHOLD) {
     decision = 'reject';
-    tier = 'Below Minimum';
-  } else if (scaled_score >= 650) {
-    decision = 'approve';
-    credit_limit_usd = 2000;
-    tier = 'Tier 3';
-    down_payment_percentage = 10;
-    interest_rate_apr = 3; // 2-4% APR range, use midpoint
-  } else if (scaled_score >= 500) {
-    decision = 'approve';
-    credit_limit_usd = 500;
-    tier = 'Tier 2';
-    down_payment_percentage = 20;
-    interest_rate_apr = 4; // 3-5% APR range, use midpoint
   } else {
     decision = 'approve';
-    credit_limit_usd = 200;
-    tier = 'Tier 1';
-    down_payment_percentage = 30;
-    interest_rate_apr = 5; // 4-6% APR range, use midpoint
   }
 
+  // Product-specific terms (credit_limit, down_payment, interest_rate) are
+  // resolved by the product eligibility resolver in the handler layer.
+  // The scoring engine is a pure function — it returns only the score and decision.
   return {
     customer_id: input.customer_id,
     product_category: productCategory,
@@ -426,10 +408,10 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
     scaled_score,
     components,
     decision,
-    credit_limit_usd,
-    tier,
-    down_payment_percentage,
-    interest_rate_apr,
+    credit_limit_usd: 0,
+    tier: decision === 'reject' ? 'Below Minimum' : '',
+    down_payment_percentage: 0,
+    interest_rate_apr: 0,
     calculated_at: new Date().toISOString()
   };
 }

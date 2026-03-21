@@ -12,6 +12,7 @@ import logger from '../../../shared/utils/logger';
 import { syncCustomerToFineract } from '../../../shared/clients/fineract-sync';
 import { calculateRuleBasedScore } from '../scoring/scoring-engine';
 import { CreditScoreInput } from '../scoring/types';
+import { findBestProduct } from '../../../shared/utils/product-eligibility-resolver';
 
 export const handleCalculateScore: RouteHandler = async (event, _params, _auth) => {
   const body = JSON.parse(event.body || '{}');
@@ -75,8 +76,36 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
     // Continue scoring — don't block on check failure
   }
 
-  // Calculate credit score
+  // Calculate credit score (pure function — returns score + decision only)
   const scoreResult = await calculateRuleBasedScore(body as CreditScoreInput);
+
+  // Enrich with product-based terms (replaces hardcoded tier assignment)
+  if (scoreResult.decision === 'approve') {
+    try {
+      const bestProduct = await findBestProduct({
+        scaled_score: scoreResult.scaled_score,
+        product_category: body.product_category || 'smartphone',
+        organization_id: body.organization_id,
+        requested_amount: body.requested_loan_amount,
+        member_financials: body.member_financials,
+      });
+      if (bestProduct) {
+        scoreResult.credit_limit_usd = bestProduct.max_loan_amount;
+        scoreResult.down_payment_percentage = bestProduct.deposit_percentage;
+        scoreResult.interest_rate_apr = bestProduct.interest_rate_apr;
+        scoreResult.matched_product_id = bestProduct.product_id;
+        scoreResult.matched_product_code = bestProduct.product_code;
+        scoreResult.tier = bestProduct.product_name;
+      }
+    } catch (productError) {
+      logger.error('Product eligibility lookup failed', {
+        action: 'scoring.product-eligibility',
+        status: 'failed',
+        errorMessage: productError instanceof Error ? productError.message : String(productError),
+      });
+      // Continue with zero-value defaults — caller can still use the raw score
+    }
+  }
 
   // Store score in database
   try {
@@ -94,7 +123,8 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
         scoring_data: { ...scoreResult.components, employment_type: body.employment_type || null },
         decision: scoreResult.decision,
         credit_tier: scoreResult.tier,
-        recommended_limit_usd: scoreResult.credit_limit_usd
+        recommended_limit_usd: scoreResult.credit_limit_usd,
+        matched_product_id: scoreResult.matched_product_id || null
       })
       .execute();
 

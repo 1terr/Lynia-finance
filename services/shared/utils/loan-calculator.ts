@@ -63,17 +63,15 @@ export function calculateDecliningBalancePayment(
 }
 
 /**
- * Get allowed repayment term options for a given credit tier.
- * Matches Fineract product configurations (loan-products.json).
+ * Get allowed repayment term options from product min/max term configuration.
+ * Returns standard term intervals that fall within the product's range.
  */
+export function getAllowedTermsForProduct(minTerm: number, maxTerm: number): number[] {
+  const standardTerms = [1, 2, 3, 6, 9, 12, 18, 24];
+  return standardTerms.filter(t => t >= minTerm && t <= maxTerm);
+}
+
+/** @deprecated Use getAllowedTermsForProduct with product min/max terms instead */
 export function getAllowedTerms(tier: string): number[] {
-  switch (tier) {
-    case 'Tier 3':
-      return [6, 12, 18];
-    case 'Tier 2':
-      return [6, 12];
-    case 'Tier 1':
-    default:
-      return [6, 12];
-  }
+  return getAllowedTermsForProduct(6, tier === 'Tier 3' ? 18 : 12);
 }

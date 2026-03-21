@@ -1,7 +1,7 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/tests'],
+  roots: ['<rootDir>/tests', '<rootDir>/services'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
     '**/?(*.)+(spec|test).+(ts|tsx|js)'
@@ -17,10 +17,10 @@ module.exports = {
   ],
   coverageThreshold: {
     global: {
-      branches: 48,
-      functions: 50,
-      lines: 50,
-      statements: 50
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
     }
   },
   coverageDirectory: '<rootDir>/coverage',

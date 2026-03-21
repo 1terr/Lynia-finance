@@ -119,9 +119,17 @@ export interface CreditScoreResult {
     org_verification: number;
   };
   decision: 'approve' | 'reject';
+  /** Populated by product eligibility resolver (not the scoring engine) */
   credit_limit_usd: number;
+  /** @deprecated Product name used for backward compat; products no longer use rigid tiers */
   tier: string;
+  /** Populated by product eligibility resolver */
   down_payment_percentage: number;
+  /** Populated by product eligibility resolver */
   interest_rate_apr: number;
+  /** Matched product ID from product eligibility resolver */
+  matched_product_id?: string;
+  /** Matched product code from product eligibility resolver */
+  matched_product_code?: string;
   calculated_at: string;
 }

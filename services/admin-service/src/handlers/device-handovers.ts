@@ -8,9 +8,102 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
 import { query, queryOne } from '../../../shared/clients/database';
 import { successResponse, errorResponse, notFoundResponse } from '../../../shared/utils/response';
-import { isAdminOrManager } from '../../../shared/middleware/authorization';
+import { isAdminOrManager, AuthContext } from '../../../shared/middleware/authorization';
 import logger from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
+
+/**
+ * Decrement device model available_stock when a handover is completed.
+ * Updates the device status to 'assigned' (which also triggers the DB-level
+ * stock sync trigger), then performs an explicit safety-net decrement on
+ * device_models.available_stock. Logs a warning when stock reaches zero.
+ *
+ * Failures here must NOT block handover completion — inventory inaccuracy
+ * is preferable to a stuck handover.
+ */
+async function decrementDeviceModelStock(
+  deviceId: string,
+  handoverId: string,
+  auth: AuthContext
+): Promise<void> {
+  try {
+    // Update device status to 'assigned' — the DB trigger (trg_sync_device_model_stock)
+    // will auto-decrement available_stock if the device was previously 'in_stock'.
+    await query(
+      `UPDATE devices SET status = 'assigned', assigned_at = NOW(), updated_at = NOW() WHERE id = $1 AND status = 'in_stock'`,
+      [deviceId]
+    );
+
+    // Fetch device_model_id from the device
+    const deviceResult = await queryOne<{ device_model_id: string | null }>(
+      'SELECT device_model_id FROM devices WHERE id = $1',
+      [deviceId]
+    );
+
+    const deviceModelId = deviceResult.data?.device_model_id;
+    if (!deviceModelId) {
+      logger.warn('Device has no device_model_id, skipping stock decrement', {
+        action: 'device.handover.stock_decrement',
+        status: 'skipped',
+        deviceId,
+        handoverId,
+      });
+      return;
+    }
+
+    // Safety-net: explicitly decrement available_stock, preventing it from going below 0.
+    // This handles edge cases where the device status was already not 'in_stock'
+    // and the DB trigger did not fire.
+    const stockResult = await queryOne<{ available_stock: number }>(
+      `UPDATE device_models
+       SET available_stock = GREATEST(available_stock - 1, 0),
+           updated_at = NOW()
+       WHERE id = $1
+       RETURNING available_stock`,
+      [deviceModelId]
+    );
+
+    const newStock = stockResult.data?.available_stock ?? -1;
+
+    logger.info('Device model stock decremented on handover completion', {
+      action: 'device.handover.stock_decrement',
+      status: 'completed',
+      deviceId,
+      deviceModelId,
+      handoverId,
+      newAvailableStock: newStock,
+    });
+
+    // Warn when stock is depleted
+    if (newStock === 0) {
+      logger.warn('Device model stock depleted — available_stock is now 0', {
+        action: 'device.handover.stock_depleted',
+        status: 'warning',
+        deviceModelId,
+        handoverId,
+      });
+    }
+
+    // Audit log for the inventory change
+    await auditLog(
+      auth,
+      'device.stock.decrement',
+      'device_model',
+      deviceModelId,
+      `Stock decremented by 1 on handover completion (handover ${handoverId}). New stock: ${newStock}`,
+      { handoverId, deviceId, deviceModelId, newAvailableStock: newStock }
+    );
+  } catch (error) {
+    // Stock decrement failure must NOT block handover completion
+    logger.error('Failed to decrement device model stock on handover completion', {
+      action: 'device.handover.stock_decrement',
+      status: 'failed',
+      deviceId,
+      handoverId,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
 
 // ─── GET /admin/devices/handovers ───
 
@@ -129,8 +222,8 @@ export const handleUpdateHandoverStatus: RouteHandler = async (event, params, au
     }
 
     // Check handover exists
-    const existing = await queryOne<{ id: string; status: string }>(
-      'SELECT id, status FROM device_handovers WHERE id = $1',
+    const existing = await queryOne<{ id: string; status: string; device_id: string }>(
+      'SELECT id, status, device_id FROM device_handovers WHERE id = $1',
       [params.id]
     );
     if (!existing.data) {
@@ -169,6 +262,11 @@ export const handleUpdateHandoverStatus: RouteHandler = async (event, params, au
       `UPDATE device_handovers SET ${updates.join(', ')} WHERE id = $${paramIdx}`,
       values
     );
+
+    // Decrement device model stock when handover is completed
+    if (status === 'completed' && existing.data.device_id) {
+      await decrementDeviceModelStock(existing.data.device_id, params.id, auth);
+    }
 
     await auditLog(auth, 'device.handover.update', 'device_handover', params.id,
       `Handover status changed from ${existing.data.status} to ${status}`,

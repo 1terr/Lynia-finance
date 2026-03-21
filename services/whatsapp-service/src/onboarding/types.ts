@@ -89,12 +89,17 @@ export interface OnboardingSession {
 
     // Credit scoring
     credit_score?: number;
+    /** @deprecated Use matched_product_id; kept for in-flight session backward compat */
     credit_tier?: string;
     credit_limit_usd?: number;
     down_payment_percentage?: number;
     interest_rate_apr?: number;
     decision?: 'approve' | 'reject';
     rejection_reason?: string;
+    matched_product_id?: string;
+    matched_product_code?: string;
+    matched_product_min_term?: number;
+    matched_product_max_term?: number;
 
     // Device selection
     available_devices?: Array<{

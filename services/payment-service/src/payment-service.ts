@@ -10,6 +10,7 @@ import { InnBucksProvider } from './innbucks-provider';
 import { PaymentAnalyticsService, type TrackedPaymentMethod } from './payment-analytics';
 import { PaymentEventLogger } from './payment-event-logger';
 import { PaymentStateMachine } from './payment-state-machine';
+import { disburseLoanInFineract } from '../../shared/clients/fineract-sync';
 
 // Re-export for backward compatibility
 export type { PaymentGateway } from './payment-provider.interface';
@@ -442,6 +443,34 @@ export class PaymentService {
           action: 'payment.loanUpdate',
           meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
         }));
+
+        // Non-blocking Fineract disbursement: transition loan from approved → disbursed
+        try {
+          const { data: depositLoan } = await db
+            .from('loans')
+            .select('fineract_loan_id')
+            .eq('id', payment.loan_id)
+            .single()
+            .execute();
+
+          if (depositLoan?.fineract_loan_id) {
+            disburseLoanInFineract({
+              loanId: payment.loan_id,
+              fineractLoanId: depositLoan.fineract_loan_id,
+              disbursementDate: new Date(payment.completed_at || new Date().toISOString()),
+            }).catch(err => {
+              logger.warn('Fineract disbursement sync failed after deposit (non-blocking)', {
+                action: 'payment.fineract_disburse',
+                meta: { loanId: payment.loan_id, error: err instanceof Error ? err.message : String(err) },
+              });
+            });
+          }
+        } catch (err) {
+          logger.warn('Failed to fetch loan for Fineract disbursement after deposit', {
+            action: 'payment.fineract_disburse',
+            meta: { loanId: payment.loan_id, error: err instanceof Error ? err.message : String(err) },
+          });
+        }
       } else if (payment.payment_type === 'repayment') {
         // Check if loan is fully paid off — trigger device unlock
         const { data: updatedLoan } = await db
@@ -486,6 +515,34 @@ export class PaymentService {
           });
         }
 
+        // Non-blocking Fineract disbursement: transition loan from approved → disbursed
+        try {
+          const { data: disbursementLoan } = await db
+            .from('loans')
+            .select('fineract_loan_id')
+            .eq('id', payment.loan_id)
+            .single()
+            .execute();
+
+          if (disbursementLoan?.fineract_loan_id) {
+            disburseLoanInFineract({
+              loanId: payment.loan_id,
+              fineractLoanId: disbursementLoan.fineract_loan_id,
+              disbursementDate: new Date(payment.completed_at || new Date().toISOString()),
+            }).catch(err => {
+              logger.warn('Fineract disbursement sync failed after disbursement payment (non-blocking)', {
+                action: 'payment.fineract_disburse',
+                meta: { loanId: payment.loan_id, error: err instanceof Error ? err.message : String(err) },
+              });
+            });
+          }
+        } catch (err) {
+          logger.warn('Failed to fetch loan for Fineract disbursement after disbursement payment', {
+            action: 'payment.fineract_disburse',
+            meta: { loanId: payment.loan_id, error: err instanceof Error ? err.message : String(err) },
+          });
+        }
+
         // Send WhatsApp disbursement confirmation
         SQSQueues.sendNotification({
           customerId: payment.customer_id,
@@ -500,14 +557,14 @@ export class PaymentService {
           meta: { paymentId, error: err instanceof Error ? err.message : 'Unknown' },
         }));
 
-        // Queue Fineract sync for disbursement
+        // Queue data warehouse sync for analytics/reporting
         SQSQueues.syncDataWarehouse({
           eventType: 'loan.disbursed',
           entityId: payment.loan_id,
           entityType: 'loan',
           metadata: { paymentId, amount: payment.amount, currency: payment.currency },
-        }).catch(err => logger.warn('Failed to queue Fineract disbursement sync', {
-          action: 'payment.fineract_sync',
+        }).catch(err => logger.warn('Failed to queue data warehouse disbursement sync', {
+          action: 'payment.data_warehouse_sync',
           meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
         }));
 
