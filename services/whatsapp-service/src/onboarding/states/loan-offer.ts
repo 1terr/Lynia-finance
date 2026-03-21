@@ -7,7 +7,7 @@
 
 import { db, query } from '../../../../shared/clients/database';
 import { updateSession } from '../session';
-import { getAllowedTerms } from '../../../../shared/utils/loan-calculator';
+import { getAllowedTermsForProduct } from '../../../../shared/utils/loan-calculator';
 import { syncLoanToFineract, approveLoanInFineract } from '../../../../shared/clients/fineract-sync';
 import { logger } from '../../../../shared/utils/logger';
 import { t, type SupportedLanguage } from '../../i18n';
@@ -38,8 +38,9 @@ export async function handleLoanSummary(
 
   // "Back" — return to term_selection, preserving device/amount choice
   if (message === 'back' || message.includes('change')) {
-    const tier = session.state_data.credit_tier || 'Tier 1';
-    const allowedTerms = getAllowedTerms(tier);
+    const minTerm = session.state_data.matched_product_min_term ?? 6;
+    const maxTerm = session.state_data.matched_product_max_term ?? 12;
+    const allowedTerms = getAllowedTermsForProduct(minTerm, maxTerm);
 
     await updateSession(context.from, {
       current_state: 'term_selection',
