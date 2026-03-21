@@ -1,8 +1,8 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db, query } from '../../../shared/clients/database';
+import { db, query, withTransaction } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
-import logger from '../../../shared/utils/logger';
+import logger, { maskImei, getRequestContext } from '../../../shared/utils/logger';
 import { auditLog } from './helpers';
 
 // ─── Inventory Constants ───
@@ -106,7 +106,11 @@ export const handleCreateDevice: RouteHandler = async (event, _params, auth) => 
     .execute();
 
   if (existing) {
-    return errorResponse('A device with this IMEI already exists', 409, {}, event);
+    return errorResponse('A device with this IMEI already exists', 409, {
+      code: 'DEV_DUP_001',
+      requestId: getRequestContext()?.requestId,
+      timestamp: new Date().toISOString(),
+    }, event);
   }
 
   const insertData: Record<string, unknown> = {
@@ -133,16 +137,23 @@ export const handleCreateDevice: RouteHandler = async (event, _params, auth) => 
   if (error) {
     logger.error('Error creating device', { action: 'admin.devices.create', status: 'failed', errorMessage: error.message });
     if (error.message.includes('unique') || error.message.includes('duplicate')) {
-      return errorResponse('A device with this IMEI already exists', 409, {}, event);
+      return errorResponse('A device with this IMEI already exists', 409, {
+        code: 'DEV_DUP_001',
+        requestId: getRequestContext()?.requestId,
+        timestamp: new Date().toISOString(),
+      }, event);
     }
-    return errorResponse('Failed to create device', 500, {}, event);
+    return errorResponse('Failed to create device', 500, {
+      requestId: getRequestContext()?.requestId,
+      timestamp: new Date().toISOString(),
+    }, event);
   }
 
   const row = Array.isArray(created) ? created[0] : created;
 
   await auditLog(auth, 'device.create', 'device', row.id as string,
-    `Registered device: ${body.manufacturer} ${body.model} (IMEI: ${body.imei})`, {
-    imei: body.imei, manufacturer: body.manufacturer, model: body.model,
+    `Registered device: ${body.manufacturer} ${body.model} (IMEI: ${maskImei(body.imei)})`, {
+    imei: maskImei(body.imei), manufacturer: body.manufacturer, model: body.model,
   });
 
   return successResponse(row, 201, event);
@@ -167,61 +178,108 @@ export const handleBulkImportDevices: RouteHandler = async (event, _params, auth
   }
 
   const importBatchId = `import_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-  let inserted = 0;
-  let skipped = 0;
-  let errors = 0;
   const errorDetails: { imei: string; error: string }[] = [];
 
+  // Phase 1: Client-side validation (no DB calls)
+  const validDevices: typeof devices = [];
   for (const device of devices) {
+    if (!device.imei || !IMEI_REGEX.test(device.imei)) {
+      errorDetails.push({ imei: device.imei || 'missing', error: 'Invalid IMEI format' });
+      continue;
+    }
+    if (!device.manufacturer || !device.model) {
+      errorDetails.push({ imei: device.imei, error: 'Missing manufacturer or model' });
+      continue;
+    }
+    validDevices.push(device);
+  }
+
+  const errors = errorDetails.length;
+  let inserted = 0;
+  let skipped = 0;
+
+  if (validDevices.length > 0) {
     try {
-      if (!device.imei || !IMEI_REGEX.test(device.imei)) {
-        errorDetails.push({ imei: device.imei || 'missing', error: 'Invalid IMEI format' });
-        errors++;
-        continue;
-      }
+      const result = await withTransaction(async (tx) => {
+        // Phase 2: Batch IMEI duplicate check — single query
+        const allImeis = validDevices.map(d => d.imei);
+        const { data: existingRows } = await tx<{ imei: string }>(
+          'SELECT imei FROM devices WHERE imei = ANY($1)',
+          [allImeis]
+        );
+        const existingImeis = new Set(existingRows.map(r => r.imei));
 
-      if (!device.manufacturer || !device.model) {
-        errorDetails.push({ imei: device.imei, error: 'Missing manufacturer or model' });
-        errors++;
-        continue;
-      }
+        // Phase 3: Filter to new devices only
+        const newDevices = validDevices.filter(d => !existingImeis.has(d.imei));
+        const batchSkipped = validDevices.length - newDevices.length;
 
-      // Check for duplicate IMEI
-      const { data: dup } = await db.from('devices')
-        .select('id')
-        .eq('imei', device.imei)
-        .maybeSingle()
-        .execute();
+        if (newDevices.length === 0) {
+          return { batchInserted: 0, batchSkipped };
+        }
 
-      if (dup) {
-        skipped++;
-        continue;
-      }
+        // Phase 4: Batch insert with ON CONFLICT DO NOTHING
+        const now = new Date().toISOString();
+        const columns = [
+          'imei', 'serial_number', 'manufacturer', 'model', 'device_type',
+          'storage_gb', 'color', 'condition', 'purchase_price_usd',
+          'retail_price_usd', 'device_model_id', 'status', 'location',
+          'lock_status', 'created_at', 'updated_at',
+        ];
 
-      await db.from('devices').insert({
-        imei: device.imei,
-        serial_number: device.serial_number || null,
-        manufacturer: device.manufacturer,
-        model: device.model,
-        device_type: device.device_type || 'smartphone',
-        storage_gb: device.storage_gb || null,
-        color: device.color || null,
-        condition: device.condition || 'new',
-        purchase_price_usd: device.purchase_price_usd || null,
-        retail_price_usd: device.retail_price_usd || null,
-        device_model_id: device.device_model_id || null,
-        status: 'in_stock',
-        location: device.location || body.default_location || 'Warehouse',
-        lock_status: 'unlocked',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).execute();
+        // Build batch VALUES with parameterized placeholders
+        const values: unknown[] = [];
+        const valueGroups: string[] = [];
+        for (const device of newDevices) {
+          const offset = values.length;
+          values.push(
+            device.imei,
+            device.serial_number || null,
+            device.manufacturer,
+            device.model,
+            device.device_type || 'smartphone',
+            device.storage_gb || null,
+            device.color || null,
+            device.condition || 'new',
+            device.purchase_price_usd || null,
+            device.retail_price_usd || null,
+            device.device_model_id || null,
+            'in_stock',
+            device.location || body.default_location || 'Warehouse',
+            'unlocked',
+            now,
+            now,
+          );
+          const placeholders = columns.map((_, i) => `$${offset + i + 1}`);
+          valueGroups.push(`(${placeholders.join(', ')})`);
+        }
 
-      inserted++;
+        const { data: insertedRows } = await tx(
+          `INSERT INTO devices (${columns.join(', ')})
+           VALUES ${valueGroups.join(', ')}
+           ON CONFLICT (imei) DO NOTHING
+           RETURNING id`,
+          values
+        );
+
+        return {
+          batchInserted: insertedRows.length,
+          batchSkipped: batchSkipped + (newDevices.length - insertedRows.length),
+        };
+      });
+
+      inserted = result.batchInserted;
+      skipped = result.batchSkipped;
     } catch (err) {
-      logger.error('Error importing device', { action: 'admin.devices.bulk_import', status: 'failed', errorMessage: err instanceof Error ? err.message : String(err) });
-      errorDetails.push({ imei: device.imei || 'unknown', error: (err as Error).message });
-      errors++;
+      logger.error('Error in bulk import transaction', {
+        action: 'admin.devices.bulk_import',
+        status: 'failed',
+        errorMessage: err instanceof Error ? err.message : String(err),
+      });
+      return errorResponse('Failed to bulk import devices', 500, {
+        code: 'DEV_IMPORT_001',
+        requestId: getRequestContext()?.requestId,
+        timestamp: new Date().toISOString(),
+      }, event);
     }
   }
 
@@ -294,7 +352,11 @@ export const handleGetDeviceById: RouteHandler = async (event, params, auth) => 
   );
 
   if (!rows || rows.length === 0) {
-    return errorResponse('Device not found', 404, {}, event);
+    return errorResponse('Device not found', 404, {
+      code: 'DEV_404_001',
+      requestId: getRequestContext()?.requestId,
+      timestamp: new Date().toISOString(),
+    }, event);
   }
 
   return successResponse(rows[0], 200, event);
@@ -341,7 +403,11 @@ export const handleUpdateDevice: RouteHandler = async (event, params, auth) => {
 
   const row = Array.isArray(updated) ? updated[0] : updated;
   if (!row) {
-    return errorResponse('Device not found', 404, {}, event);
+    return errorResponse('Device not found', 404, {
+      code: 'DEV_404_001',
+      requestId: getRequestContext()?.requestId,
+      timestamp: new Date().toISOString(),
+    }, event);
   }
 
   await auditLog(auth, 'device.update', 'device', deviceId, `Updated device: ${deviceId}`, updates);

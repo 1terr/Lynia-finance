@@ -290,7 +290,7 @@ export const handleGetDistributorById: RouteHandler = async (event, params, auth
     handover_count: string;
   }>(
     `SELECT
-       (SELECT COUNT(*) FROM agent_inventory WHERE distributor_id = $1 AND status = 'available') as inventory_count,
+       (SELECT COUNT(*) FROM devices WHERE distributor_id = $1 AND status IN ('in_stock', 'assigned')) as inventory_count,
        COALESCE((SELECT SUM(commission_amount_usd) FROM distributor_commissions WHERE distributor_id = $1), 0) as total_commissions,
        COALESCE((SELECT SUM(commission_amount_usd) FROM distributor_commissions WHERE distributor_id = $1 AND payment_status = 'pending'), 0) as pending_commissions,
        (SELECT COUNT(*) FROM device_handovers WHERE distributor_id = $1) as handover_count`,
@@ -368,12 +368,12 @@ export const handleGetDistributorInventory: RouteHandler = async (event, params,
   const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
   const offset = (page - 1) * limit;
 
-  let whereClause = 'ai.distributor_id = $1';
+  let whereClause = 'd.distributor_id = $1';
   const sqlParams: unknown[] = [distributorId];
 
   if (qs.status) {
     sqlParams.push(qs.status);
-    whereClause += ` AND ai.status = $${sqlParams.length}`;
+    whereClause += ` AND d.status = $${sqlParams.length}`;
   }
 
   if (qs.search) {
@@ -383,19 +383,18 @@ export const handleGetDistributorInventory: RouteHandler = async (event, params,
   }
 
   const { data: countRows } = await query<{ count: string }>(
-    `SELECT COUNT(*) as count FROM agent_inventory ai LEFT JOIN devices d ON ai.device_id = d.id WHERE ${whereClause}`,
+    `SELECT COUNT(*) as count FROM devices d WHERE ${whereClause}`,
     sqlParams
   );
   const total = parseInt(countRows[0]?.count || '0');
 
   sqlParams.push(limit, offset);
   const { data: rows, error } = await query(
-    `SELECT ai.id, ai.device_id, ai.status, ai.assigned_date, ai.sold_date, ai.quantity,
+    `SELECT d.id, d.id AS device_id, d.status, d.assigned_to_distributor_at AS assigned_date, NULL AS sold_date, 1 AS quantity,
             d.imei, d.manufacturer, d.model, d.retail_price_usd, d.condition, d.status as device_status
-     FROM agent_inventory ai
-     LEFT JOIN devices d ON ai.device_id = d.id
+     FROM devices d
      WHERE ${whereClause}
-     ORDER BY ai.assigned_date DESC
+     ORDER BY d.assigned_to_distributor_at DESC
      LIMIT $${sqlParams.length - 1} OFFSET $${sqlParams.length}`,
     sqlParams
   );

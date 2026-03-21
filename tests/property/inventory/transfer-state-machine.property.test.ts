@@ -168,23 +168,19 @@ describe('Transfer State Machine - property tests', () => {
     );
   });
 
-  it('"received" transition creates agent_inventory record and assigns device', async () => {
+  it('"received" transition assigns device to distributor', async () => {
     setupTransferMock('in_transit', 'dist-1');
     const event = makeEvent('received');
     const result = await handleUpdateTransfer(event, { id: 'transfer-1' }, { userId: 'admin-1', role: 'admin' });
 
     expect(result.statusCode).toBe(200);
 
-    // Device should be updated to 'assigned'
+    // Device should be updated to 'assigned' with distributor_id set
     const deviceUpdate = dbOps.find(op => op.table === 'devices' && op.op === 'update');
     expect(deviceUpdate).toBeDefined();
     expect(deviceUpdate!.data.status).toBe('assigned');
-
-    // agent_inventory record should be created
-    const inventoryInsert = dbOps.find(op => op.table === 'agent_inventory' && op.op === 'insert');
-    expect(inventoryInsert).toBeDefined();
-    expect(inventoryInsert!.data.distributor_id).toBe('dist-1');
-    expect(inventoryInsert!.data.status).toBe('available');
+    expect(deviceUpdate!.data.distributor_id).toBe('dist-1');
+    expect(deviceUpdate!.data.assigned_to_distributor_at).toBeDefined();
   });
 
   it('"approved" transition records approved_by and approved_at', async () => {

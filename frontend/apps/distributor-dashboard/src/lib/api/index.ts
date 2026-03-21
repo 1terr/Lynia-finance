@@ -20,6 +20,16 @@ export { fetchInventory } from './inventory';
 // Commissions
 export { fetchCommissions } from './commissions';
 
+// Transfers
+export {
+  fetchTransfers,
+  fetchTransferById,
+  confirmTransfer,
+  rejectTransfer,
+  requestReturn,
+  fetchPendingTransferCount,
+} from './transfers';
+
 // Handovers
 export {
   searchApprovedLoans,

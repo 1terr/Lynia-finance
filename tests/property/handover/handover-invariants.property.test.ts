@@ -4,7 +4,7 @@
  *
  * Key invariants:
  * - All 3 verification flags must be true for success
- * - On success: loan→active, device→sold, agent_inventory→sold (tri-state consistency)
+ * - On success: loan→active, device→sold (dual-state consistency)
  * - On failure: handover status → 'failed'
  * - Device lock failure is non-blocking
  */
@@ -198,7 +198,7 @@ describe('completeHandover invariants - property tests', () => {
     expect(deviceUpdate!.data.loan_id).toBe('loan-1');
   });
 
-  it('on success: sets agent_inventory status to sold', async () => {
+  it('on success: device status set to sold with customer and loan info', async () => {
     setupHandoverMock({
       identity_verified: true,
       deposit_verified: true,
@@ -207,14 +207,14 @@ describe('completeHandover invariants - property tests', () => {
 
     await completeHandover('handover-1');
 
-    const inventoryUpdate = dbOps.find(op => op.table === 'agent_inventory' && op.op === 'update');
-    expect(inventoryUpdate).toBeDefined();
-    expect(inventoryUpdate!.data.status).toBe('sold');
-    expect(inventoryUpdate!.data.sold_to_customer_id).toBe('cust-1');
-    expect(inventoryUpdate!.data.sold_loan_id).toBe('loan-1');
+    const deviceUpdate = dbOps.find(op => op.table === 'devices' && op.op === 'update');
+    expect(deviceUpdate).toBeDefined();
+    expect(deviceUpdate!.data.status).toBe('sold');
+    expect(deviceUpdate!.data.customer_id).toBe('cust-1');
+    expect(deviceUpdate!.data.loan_id).toBe('loan-1');
   });
 
-  it('on success: tri-state consistency — loan, device, and inventory all updated', async () => {
+  it('on success: dual-state consistency — loan and device both updated', async () => {
     setupHandoverMock({
       identity_verified: true,
       deposit_verified: true,
@@ -226,7 +226,6 @@ describe('completeHandover invariants - property tests', () => {
     const tables = dbOps.filter(op => op.op === 'update').map(op => op.table);
     expect(tables).toContain('loans');
     expect(tables).toContain('devices');
-    expect(tables).toContain('agent_inventory');
     expect(tables).toContain('device_handovers');
   });
 

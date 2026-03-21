@@ -31,13 +31,16 @@ import { handleGetDistributors, handleGetDistributorStats, handleCreateDistribut
 import { handleGetDevices, handleCreateDevice, handleBulkImportDevices, handleGetDeviceInventoryStats, handleGetDeviceById, handleUpdateDevice, handleGetDeviceMovements } from './handlers/inventory-devices';
 
 // ─── Inventory: Adjustments ───
-import { handleGetAdjustments, handleCreateAdjustment, handleApproveAdjustment } from './handlers/inventory-adjustments';
+import { handleGetAdjustments, handleCreateAdjustment, handleApproveAdjustment, handleBulkAdjustment } from './handlers/inventory-adjustments';
 
 // ─── Inventory: Transfers ───
-import { handleGetTransfers, handleCreateTransfer, handleUpdateTransfer } from './handlers/inventory-transfers';
+import { handleGetTransfers, handleCreateTransfer, handleUpdateTransfer, handleBulkTransfer, handleForceConfirm, handleCreateReturn, handleApproveReturn } from './handlers/inventory-transfers';
+
+// ─── Inventory: Allocations ───
+import { handleBulkAllocate } from './handlers/inventory-allocations';
 
 // ─── Inventory: Reports ───
-import { handleInventoryReport, handleMovementsReport, handleLowStockReport } from './handlers/inventory-reports';
+import { handleInventoryReport, handleMovementsReport, handleLowStockReport, handleReconcile, handleExportInventory } from './handlers/inventory-reports';
 
 // ─── Dashboard ───
 import { handleDashboardMetrics, handlePortfolioAtRisk, handleDailyTrends, handleLoansByStatus, handleRecentActivity } from './handlers/dashboard';
@@ -152,17 +155,29 @@ export const handler = createRouter({
   'GET /admin/devices/:id':                 handleGetDeviceById,
   'PATCH /admin/devices/:id':               handleUpdateDevice,
 
-  // Inventory: Adjustments
+  // Inventory: Adjustments (bulk route before parameterized)
+  'POST /admin/inventory/adjustments/bulk':          handleBulkAdjustment,
   'GET /admin/inventory/adjustments':               handleGetAdjustments,
   'POST /admin/inventory/adjustments':              handleCreateAdjustment,
   'POST /admin/inventory/adjustments/:id/approve':  handleApproveAdjustment,
 
-  // Inventory: Transfers
-  'GET /admin/inventory/transfers':         handleGetTransfers,
-  'POST /admin/inventory/transfers':        handleCreateTransfer,
-  'PATCH /admin/inventory/transfers/:id':   handleUpdateTransfer,
+  // Inventory: Transfers (static routes before parameterized)
+  'POST /admin/inventory/transfers/bulk':              handleBulkTransfer,
+  'POST /admin/inventory/transfers/return':            handleCreateReturn,
+  'GET /admin/inventory/transfers':                    handleGetTransfers,
+  'POST /admin/inventory/transfers':                   handleCreateTransfer,
+  'POST /admin/inventory/transfers/:id/force-confirm': handleForceConfirm,
+  'POST /admin/inventory/transfers/:id/approve-return': handleApproveReturn,
+  'PATCH /admin/inventory/transfers/:id':              handleUpdateTransfer,
+
+  // Inventory: Allocations
+  'POST /admin/inventory/allocate':         handleBulkAllocate,
+
+  // Inventory: Reconciliation
+  'POST /admin/inventory/reconcile':           handleReconcile,
 
   // Inventory: Reports
+  'GET /admin/reports/inventory/export':      handleExportInventory,
   'GET /admin/reports/inventory':             handleInventoryReport,
   'GET /admin/reports/inventory/movements':   handleMovementsReport,
   'GET /admin/reports/inventory/low-stock':   handleLowStockReport,

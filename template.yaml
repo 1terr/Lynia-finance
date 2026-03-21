@@ -1765,6 +1765,49 @@ Resources:
           - admin-service/src/handlers/org-data-freshness.ts
 
   # =====================================================
+  # 15. RESERVATION EXPIRY SCHEDULER (Hourly)
+  # =====================================================
+  ReservationExpiryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-reservation-expiry
+      CodeUri: services/
+      Handler: admin-service/src/handlers/reservation-expiry.handler
+      Description: Hourly check for expired device reservations - releases devices back to in_stock
+      MemorySize: 256
+      Timeout: 60
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/database-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        HourlyReservationExpiry:
+          Type: Schedule
+          Properties:
+            Schedule: rate(1 hour)
+            Description: Expire stale device reservations every hour
+            Enabled: !If [IsProduction, true, false]
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - admin-service/src/handlers/reservation-expiry.ts
+
+  # =====================================================
   # FINERACT CLOUDWATCH DASHBOARD
   # =====================================================
   FineractDashboard:
@@ -1943,4 +1986,10 @@ Outputs:
     Value: !GetAtt AutoDefaultSchedulerFunction.Arn
     Export:
       Name: !Sub ${Environment}-lynia-auto-default-scheduler-arn
+
+  ReservationExpiryFunctionArn:
+    Description: Reservation Expiry Scheduler Lambda Function ARN
+    Value: !GetAtt ReservationExpiryFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-reservation-expiry-arn
 

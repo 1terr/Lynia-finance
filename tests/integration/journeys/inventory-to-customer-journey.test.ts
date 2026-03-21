@@ -334,11 +334,9 @@ describe('Inventory to Customer Journey', () => {
       const deviceUpdate = dbOps.find(op => op.table === 'devices' && op.op === 'update');
       expect(deviceUpdate!.data.status).toBe('assigned');
 
-      // Agent inventory created
-      const inventoryInsert = dbOps.find(op => op.table === 'agent_inventory' && op.op === 'insert');
-      expect(inventoryInsert).toBeDefined();
-      expect(inventoryInsert!.data.distributor_id).toBe('dist-001');
-      expect(inventoryInsert!.data.status).toBe('available');
+      // Device assigned to distributor
+      expect(deviceUpdate!.data.distributor_id).toBe('dist-001');
+      expect(deviceUpdate!.data.assigned_to_distributor_at).toBeDefined();
     });
 
     it('cannot skip states: requested → in_transit is rejected', async () => {
@@ -444,10 +442,9 @@ describe('Inventory to Customer Journey', () => {
       const deviceUpdate = dbOps.find(op => op.table === 'devices' && op.op === 'update');
       expect(deviceUpdate!.data.status).toBe('assigned');
 
-      // Agent inventory created with 'available'
-      const inventoryInsert = dbOps.find(op => op.table === 'agent_inventory' && op.op === 'insert');
-      expect(inventoryInsert!.data.distributor_id).toBe('dist-001');
-      expect(inventoryInsert!.data.status).toBe('available');
+      // Device assigned to distributor
+      expect(deviceUpdate!.data.distributor_id).toBe('dist-001');
+      expect(deviceUpdate!.data.assigned_to_distributor_at).toBeDefined();
     });
   });
 

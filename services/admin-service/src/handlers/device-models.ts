@@ -27,7 +27,8 @@ export const handleGetDeviceModels: RouteHandler = async (event, _params, auth) 
 
   if (qs.is_active !== undefined) {
     const isActive = qs.is_active === 'true';
-    whereClause += ` AND is_active = ${isActive}`;
+    params.push(isActive);
+    whereClause += ` AND is_active = $${params.length}`;
   }
 
   if (qs.search) {

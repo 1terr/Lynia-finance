@@ -389,12 +389,17 @@ export const handleConfirmPayment: RouteHandler = async (event, params, auth) =>
   try {
     const body = JSON.parse(event.body || '{}');
 
-    const existing = await queryOne<{ status: string }>(
-      'SELECT status FROM payments WHERE id = $1', [params.id]
+    const existing = await queryOne<{ status: string; payment_type: string; loan_id: string }>(
+      'SELECT status, payment_type, loan_id FROM payments WHERE id = $1', [params.id]
     );
     if (!existing.data) return notFoundResponse('Payment', event);
-    if (existing.data.status === 'confirmed') {
-      return errorResponse('Payment is already confirmed', 409, { requestId: event.requestContext?.requestId }, event);
+    if (existing.data.status !== 'pending') {
+      return errorResponse(
+        `Payment cannot be confirmed — current status is '${existing.data.status}'`,
+        409,
+        { requestId: event.requestContext?.requestId },
+        event,
+      );
     }
 
     const result = await queryOne(
@@ -405,8 +410,18 @@ export const handleConfirmPayment: RouteHandler = async (event, params, auth) =>
       [params.id, auth.userId, body.notes || null]
     );
 
+    // When a deposit payment is confirmed, update the loan status to 'paid_deposit'
+    // so it becomes eligible for handover
+    if (existing.data.payment_type === 'deposit' && existing.data.loan_id) {
+      await query(
+        `UPDATE loans SET status = 'paid_deposit', updated_at = NOW()
+         WHERE id = $1 AND status = 'approved'`,
+        [existing.data.loan_id]
+      );
+    }
+
     await auditLog(auth, 'payment.confirm', 'payment', params.id,
-      'Manually confirmed payment', { notes: body.notes });
+      'Manually confirmed payment', { notes: body.notes, paymentType: existing.data.payment_type });
 
     return successResponse(result.data, 200, event);
   } catch (error) {

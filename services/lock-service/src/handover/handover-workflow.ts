@@ -4,7 +4,7 @@
  * Initiate, complete, and status tracking for the device handover process.
  */
 
-import { db } from '../../../shared/clients/database';
+import { db, withTransaction } from '../../../shared/clients/database';
 import logger from '../../../shared/utils/logger';
 import type { InitiateHandoverRequest, HandoverRecord } from './handover-types';
 import { checkHandoverReadiness } from './handover-validation';
@@ -103,109 +103,84 @@ export async function completeHandover(handoverId: string): Promise<{
     const handoverDate = new Date();
     const firstPaymentDate = new Date(handoverDate.getTime() + 30 * 24 * 60 * 60 * 1000);
 
-    // Update loan status to 'active'
-    await db
-      .from('loans')
-      .update({
-        status: 'active',
-        disbursed_at: handoverDate.toISOString(),
-        next_payment_date: firstPaymentDate.toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', handover.loan_id)
-      .execute();
-
-    // Update device status to 'sold' (handed over to customer)
-    await db
-      .from('devices')
-      .update({
-        status: 'sold',
-        customer_id: handover.customer_id,
-        loan_id: handover.loan_id,
-        assigned_at: handoverDate.toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', handover.device_id)
-      .execute();
-
-    // Update agent inventory record
-    await db
-      .from('agent_inventory')
-      .update({
-        status: 'sold',
-        sold_date: handoverDate.toISOString(),
-        sold_to_customer_id: handover.customer_id,
-        sold_loan_id: handover.loan_id,
-        updated_at: new Date().toISOString()
-      })
-      .eq('device_id', handover.device_id)
-      .execute();
-
-    // Calculate distributor commission
+    // Calculate distributor commission before the transaction (reads only)
     const commission = await calculateDistributorCommission(
       handover.loan_id,
       handover.device_id,
       handover.distributor_id
     );
 
-    // Record distributor commission (based on loan amount)
-    await db
-      .from('distributor_commissions')
-      .insert({
-        distributor_id: handover.distributor_id,
-        loan_id: handover.loan_id,
-        device_id: handover.device_id,
-        commission_amount_usd: commission.amount,
-        commission_percentage: commission.percentage,
-        loan_amount_usd: commission.loan_amount,
-        device_retail_price_usd: commission.device_price,
-        calculation_date: handoverDate.toISOString(),
-        payment_status: 'pending',
-        notes: `Commission for device handover - ${commission.device_model}`,
-        created_at: handoverDate.toISOString()
-      })
-      .execute();
+    // Wrap all database mutations in a transaction for atomicity.
+    // If any step fails, ALL changes are rolled back.
+    await withTransaction(async (tx) => {
+      // Update loan status to 'active'
+      await tx(
+        `UPDATE loans SET status = 'active', disbursed_at = $2, next_payment_date = $3, updated_at = $4
+         WHERE id = $1`,
+        [handover.loan_id, handoverDate.toISOString(), firstPaymentDate.toISOString(), new Date().toISOString()]
+      );
 
-    // Update handover record
-    await db
-      .from('device_handovers')
-      .update({
-        status: 'completed',
-        handed_over_at: handoverDate.toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', handoverId)
-      .execute();
+      // Update device status to 'sold' (handed over to customer)
+      await tx(
+        `UPDATE devices SET status = 'sold', customer_id = $2, loan_id = $3, assigned_at = $4, updated_at = $5
+         WHERE id = $1`,
+        [handover.device_id, handover.customer_id, handover.loan_id, handoverDate.toISOString(), new Date().toISOString()]
+      );
 
-    // Request device lock (stub — Trustonic not yet integrated)
-    // Records the lock intent in DB; actual Trustonic API call is a no-op until integration
-    try {
-      await db
-        .from('device_locks')
-        .insert({
-          device_id: handover.device_id,
-          loan_id: handover.loan_id,
-          lock_status: 'pending',
-          lock_reason: 'handover_activation',
-          requested_at: new Date().toISOString(),
-          created_at: new Date().toISOString(),
-        })
-        .execute();
+      // Record distributor commission (based on loan amount)
+      await tx(
+        `INSERT INTO distributor_commissions
+          (distributor_id, loan_id, device_id, commission_amount_usd, commission_percentage,
+           loan_amount_usd, device_retail_price_usd, calculation_date, payment_status, notes, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [
+          handover.distributor_id, handover.loan_id, handover.device_id,
+          commission.amount, commission.percentage, commission.loan_amount,
+          commission.device_price, handoverDate.toISOString(), 'pending',
+          `Commission for device handover - ${commission.device_model}`,
+          handoverDate.toISOString(),
+        ]
+      );
 
-      logger.info('Device lock requested (Trustonic stub)', {
-        action: 'lock.handover.lock-request',
-        handoverId,
-        deviceId: handover.device_id,
-        loanId: handover.loan_id,
-      });
-    } catch (lockError) {
-      // Non-blocking — don't fail handover if lock request fails
-      logger.error('Device lock request failed (non-blocking)', {
-        action: 'lock.handover.lock-request',
-        handoverId,
-        errorMessage: lockError instanceof Error ? lockError.message : String(lockError),
-      });
-    }
+      // Update handover record
+      await tx(
+        `UPDATE device_handovers SET status = 'completed', handed_over_at = $2, updated_at = $3
+         WHERE id = $1`,
+        [handoverId, handoverDate.toISOString(), new Date().toISOString()]
+      );
+
+      // Request device lock (stub — Trustonic not yet integrated)
+      // Records the lock intent in DB; actual Trustonic API call is a no-op until integration.
+      // Inside the transaction so the lock record is consistent with the handover state.
+      await tx(
+        `INSERT INTO device_locks (device_id, loan_id, lock_status, lock_reason, requested_at, created_at)
+         VALUES ($1, $2, 'pending', 'handover_activation', $3, $4)`,
+        [handover.device_id, handover.loan_id, new Date().toISOString(), new Date().toISOString()]
+      );
+
+      // Cancel any pending return transfers for this device (sold devices cannot be returned)
+      await tx(
+        `UPDATE stock_transfers
+         SET status = 'cancelled',
+             cancelled_at = $2,
+             cancellation_reason = 'Device sold before return processed',
+             updated_at = $2
+         WHERE device_id = $1
+           AND transfer_type = 'return'
+           AND status IN ('return_requested', 'return_approved')`,
+        [handover.device_id, new Date().toISOString()]
+      );
+    });
+
+    // NOTE: Fineract disbursement is called by the caller (handleSubmitHandover)
+    // AFTER this function returns, ensuring external API calls happen after COMMIT.
+
+    logger.info('Device lock requested (Trustonic stub)', {
+      action: 'lock.handover.lock-request',
+      handoverId,
+      deviceId: handover.device_id,
+      loanId: handover.loan_id,
+    });
 
     logger.info('Handover completed successfully', { action: 'lock.handover.complete', handoverId, loanId: handover.loan_id, commissionAmount: commission.amount, commissionPercentage: commission.percentage });
 
@@ -221,16 +196,24 @@ export async function completeHandover(handoverId: string): Promise<{
   } catch (error) {
     logger.error('Error completing handover', { action: 'lock.handover.complete', handoverId, errorMessage: error instanceof Error ? error.message : 'Unknown error' });
 
-    // Mark handover as failed
-    await db
-      .from('device_handovers')
-      .update({
-        status: 'failed',
-        failure_reason: error instanceof Error ? error.message : 'Unknown error',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', handoverId)
-      .execute();
+    // Mark handover as failed (outside transaction — best-effort status update)
+    try {
+      await db
+        .from('device_handovers')
+        .update({
+          status: 'failed',
+          failure_reason: error instanceof Error ? error.message : 'Unknown error',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', handoverId)
+        .execute();
+    } catch (statusError) {
+      logger.error('Failed to mark handover as failed', {
+        action: 'lock.handover.complete',
+        handoverId,
+        errorMessage: statusError instanceof Error ? statusError.message : String(statusError),
+      });
+    }
 
     throw error;
   }

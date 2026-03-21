@@ -10,7 +10,8 @@ import { requireRole } from '../../../shared/middleware/authorization';
 import { resolveDistributor } from '../helpers/resolve-distributor';
 import { triggerDisbursement } from '../helpers/trigger-disbursement';
 import { completeHandover } from '../../../lock-service/src/handover/handover-workflow';
-import logger from '../../../shared/utils/logger';
+import { getSignedUploadUrl } from '../../../shared/clients/storage';
+import logger, { getRequestContext } from '../../../shared/utils/logger';
 
 /**
  * GET /api/v1/distributor/handovers
@@ -163,6 +164,7 @@ export const handleVerifyIdentity: RouteHandler = async (event, _params, auth) =
 
   return successResponse({
     verified,
+    ...(verified ? {} : { code: 'INV_HANDOVER_002' }),
     message: verified
       ? 'Identity verified successfully'
       : 'National ID does not match loan application',
@@ -203,19 +205,19 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
   }
 
   // Check device exists in this distributor's inventory and is available
-  const deviceResult = await query<{ id: string; imei: string; retail_price_usd: number; status: string }>(
-    `SELECT d.id, d.imei, d.retail_price_usd, d.status
+  const deviceResult = await query<{ id: string; imei: string; retail_price_usd: number; status: string; device_model_id: string | null }>(
+    `SELECT d.id, d.imei, d.retail_price_usd, d.status, d.device_model_id
      FROM devices d
-     JOIN agent_inventory ai ON ai.device_id = d.id
      WHERE d.id = $1
-       AND ai.distributor_id = $2
-       AND ai.status = 'available'`,
+       AND d.distributor_id = $2
+       AND d.status IN ('in_stock', 'assigned')`,
     [device_id, dist.id]
   );
 
   if (deviceResult.data.length === 0) {
     return successResponse({
       verified: false,
+      code: 'INV_HANDOVER_001',
       message: 'Device not found in your available inventory',
     }, 200, event);
   }
@@ -230,9 +232,9 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
     }, 200, event);
   }
 
-  // Check price is within approved loan budget
-  const loanResult = await query<{ loan_amount_usd: number }>(
-    `SELECT l.loan_amount_usd FROM loans l WHERE l.id = $1 AND l.status = 'paid_deposit'`,
+  // Check price is within approved loan budget and product-model compatibility
+  const loanResult = await query<{ loan_amount_usd: number; product_id: string }>(
+    `SELECT l.loan_amount_usd, l.product_id FROM loans l WHERE l.id = $1 AND l.status = 'paid_deposit'`,
     [loan_id]
   );
 
@@ -240,7 +242,30 @@ export const handleVerifyDevice: RouteHandler = async (event, _params, auth) => 
     return notFoundResponse('Approved loan', event);
   }
 
-  const loanAmount = loanResult.data[0].loan_amount_usd;
+  const { loan_amount_usd: loanAmount, product_id: productId } = loanResult.data[0];
+
+  // Validate that this device model is linked to the loan's product
+  if (device.device_model_id) {
+    const modelCheck = await query(
+      `SELECT 1 FROM product_device_models
+       WHERE product_id = $1 AND device_model_id = $2`,
+      [productId, device.device_model_id]
+    );
+
+    if (modelCheck.data.length === 0) {
+      return errorResponse(
+        'Device model not compatible with this loan product',
+        400,
+        {
+          code: 'INV_HANDOVER_004',
+          requestId: getRequestContext()?.requestId,
+          timestamp: new Date().toISOString(),
+        },
+        event,
+      );
+    }
+  }
+
   if (device.retail_price_usd > loanAmount) {
     return successResponse({
       verified: false,
@@ -442,7 +467,12 @@ export const handleSubmitHandover: RouteHandler = async (event, _params, auth) =
     return errorResponse(
       'Deposit payment has not been confirmed. Customer must pay the deposit before handover.',
       409,
-      { loan_id },
+      {
+        code: 'INV_HANDOVER_003',
+        loan_id,
+        requestId: getRequestContext()?.requestId,
+        timestamp: new Date().toISOString(),
+      },
       event,
     );
   }
@@ -604,4 +634,79 @@ export const handleHandoverAction: RouteHandler = async (event, params, auth) =>
     default:
       return errorResponse('Unknown action', 400, undefined, event);
   }
+};
+
+/**
+ * POST /api/v1/distributor/handovers/upload-photo
+ *
+ * Generate an S3 presigned URL for uploading a handover photo.
+ * The client uploads the file directly to S3 using the returned URL.
+ */
+const VALID_PHOTO_TYPES = ['device_front', 'device_back', 'device_screen', 'receipt', 'signature', 'id_document'] as const;
+type PhotoType = typeof VALID_PHOTO_TYPES[number];
+
+export const handleUploadHandoverPhoto: RouteHandler = async (event, _params, auth) => {
+  requireRole(auth, 'distributor');
+
+  const dist = await resolveDistributor(auth, event);
+  if (!dist) return notFoundResponse('Distributor', event);
+
+  const { data: body, error: parseError } = parseBody<{
+    handover_id: string;
+    photo_type: string;
+  }>(event);
+  if (parseError) return parseError;
+  if (!body) return errorResponse('Missing request body', 400, undefined, event);
+
+  const { handover_id, photo_type } = body;
+
+  if (!handover_id || !photo_type) {
+    return errorResponse('handover_id and photo_type are required', 400, undefined, event);
+  }
+
+  if (!VALID_PHOTO_TYPES.includes(photo_type as PhotoType)) {
+    return errorResponse(
+      `Invalid photo_type. Must be one of: ${VALID_PHOTO_TYPES.join(', ')}`,
+      400,
+      undefined,
+      event,
+    );
+  }
+
+  // Verify the handover exists and belongs to this distributor
+  const handoverCheck = await query(
+    `SELECT id FROM device_handovers WHERE id = $1 AND distributor_id = $2`,
+    [handover_id, dist.id]
+  );
+
+  if (handoverCheck.data.length === 0) {
+    return notFoundResponse('Handover', event);
+  }
+
+  // Generate S3 key: handovers/<handover_id>/<photo_type>_<timestamp>.jpg
+  const timestamp = Date.now();
+  const key = `handovers/${handover_id}/${photo_type}_${timestamp}.jpg`;
+  const expiresIn = 300; // 5 minutes
+
+  const { url, error: s3Error } = await getSignedUploadUrl(
+    'kyc',
+    key,
+    'image/jpeg',
+    expiresIn,
+  );
+
+  if (s3Error) {
+    logger.error('Failed to generate presigned upload URL', {
+      action: 'distributor.handover.upload-photo',
+      handoverId: handover_id,
+      errorMessage: s3Error.message,
+    });
+    return errorResponse('Failed to generate upload URL', 500, undefined, event);
+  }
+
+  return successResponse({
+    upload_url: url,
+    key,
+    expires_in: expiresIn,
+  }, 200, event);
 };

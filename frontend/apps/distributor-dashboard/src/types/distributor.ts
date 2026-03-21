@@ -194,3 +194,42 @@ export const ACCESSORY_OPTIONS = [
   'sim_ejector',
   'manual',
 ] as const;
+
+// ── Transfer Types ──
+
+export type TransferStatus = 'requested' | 'approved' | 'in_transit' | 'pending_receipt'
+  | 'received' | 'disputed' | 'cancelled' | 'return_requested' | 'return_approved';
+export type TransferType = 'outbound' | 'return';
+
+export interface TransferListItem {
+  id: string;
+  transfer_type: TransferType;
+  status: TransferStatus;
+  device_imei: string;
+  device_manufacturer: string;
+  device_model: string;
+  from_distributor_name: string | null;
+  to_distributor_name: string | null;
+  from_location: string | null;
+  to_location: string | null;
+  initiated_by_type: 'admin' | 'distributor';
+  rejection_reason: string | null;
+  force_confirmed: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SpotCheckItem {
+  id: string;
+  device_id: string;
+  device_imei: string;
+  device_model: string;
+  imei_verified: boolean;
+  condition_rating: string | null;
+}
+
+export interface SpotCheckInput {
+  device_id: string;
+  imei_verified: boolean;
+  condition_rating: 'new' | 'good' | 'damaged';
+}

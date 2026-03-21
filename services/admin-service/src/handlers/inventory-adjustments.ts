@@ -1,8 +1,8 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db, query } from '../../../shared/clients/database';
+import { db, query, withTransaction } from '../../../shared/clients/database';
 import { successResponse, errorResponse } from '../../../shared/utils/response';
 import { isAdminOrManager } from '../../../shared/middleware/authorization';
-import logger from '../../../shared/utils/logger';
+import logger, { getRequestContext } from '../../../shared/utils/logger';
 import { auditLog, COGNITO_ADMIN_ROLES } from './helpers';
 
 // ─── GET /admin/inventory/adjustments ───
@@ -90,7 +90,11 @@ export const handleCreateAdjustment: RouteHandler = async (event, _params, auth)
 
   const validTypes = ['add', 'remove', 'damage', 'write_off', 'found', 'audit_correction'];
   if (!validTypes.includes(body.adjustment_type)) {
-    return errorResponse(`Invalid adjustment_type. Must be one of: ${validTypes.join(', ')}`, 400, { code: 'VAL_FMT_001' }, event);
+    return errorResponse(`Invalid adjustment_type. Must be one of: ${validTypes.join(', ')}`, 400, {
+      code: 'INV_ADJ_001',
+      requestId: getRequestContext()?.requestId,
+      timestamp: new Date().toISOString(),
+    }, event);
   }
 
   // Get current device status
@@ -247,4 +251,122 @@ export const handleApproveAdjustment: RouteHandler = async (event, params, auth)
     `${action === 'approve' ? 'Approved' : 'Rejected'} adjustment ${adjustmentId}`);
 
   return successResponse({ message: `Adjustment ${action}d successfully` }, 200, event);
+};
+
+// ─── POST /admin/inventory/adjustments/bulk ───
+
+export const handleBulkAdjustment: RouteHandler = async (event, _params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const body = JSON.parse(event.body || '{}');
+  const { device_ids, adjustment_type, reason } = body;
+
+  if (!Array.isArray(device_ids) || device_ids.length === 0) {
+    return errorResponse('device_ids must be a non-empty array', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  if (!adjustment_type) {
+    return errorResponse('Missing required field: adjustment_type', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  if (!reason) {
+    return errorResponse('Missing required field: reason', 400, { code: 'VAL_REQ_001' }, event);
+  }
+
+  const validTypes = ['add', 'remove', 'damage', 'write_off', 'found', 'audit_correction'];
+  if (!validTypes.includes(adjustment_type)) {
+    return errorResponse(`Invalid adjustment_type. Must be one of: ${validTypes.join(', ')}`, 400, { code: 'VAL_FMT_001' }, event);
+  }
+
+  if (device_ids.length > 500) {
+    return errorResponse('Maximum 500 devices per bulk adjustment', 400, { code: 'VAL_RNG_001' }, event);
+  }
+
+  try {
+    const result = await withTransaction(async (tx) => {
+      const now = new Date().toISOString();
+
+      // Batch fetch all devices
+      const { data: devices } = await tx<{ id: string; status: string }>(
+        `SELECT id, status FROM devices WHERE id = ANY($1) AND deleted_at IS NULL`,
+        [device_ids]
+      );
+
+      const deviceMap = new Map(devices.map(d => [d.id, d]));
+      const errors: { device_id: string; error: string }[] = [];
+      const validEntries: { device_id: string; previous_status: string }[] = [];
+
+      for (const deviceId of device_ids) {
+        const device = deviceMap.get(deviceId);
+        if (!device) {
+          errors.push({ device_id: deviceId, error: 'Device not found' });
+          continue;
+        }
+        validEntries.push({ device_id: deviceId, previous_status: device.status });
+      }
+
+      if (validEntries.length === 0) {
+        return { created: 0, adjustment_ids: [] as string[], errors };
+      }
+
+      // Bulk insert adjustments
+      const columns = [
+        'device_id', 'adjustment_type', 'reason', 'previous_status',
+        'new_status', 'requested_by', 'approval_status', 'notes',
+        'created_at', 'updated_at',
+      ];
+      const values: unknown[] = [];
+      const groups: string[] = [];
+
+      for (const entry of validEntries) {
+        const offset = values.length;
+        values.push(
+          entry.device_id,
+          adjustment_type,
+          reason,
+          entry.previous_status,
+          body.new_status || null,
+          auth.userId,
+          'pending',
+          body.notes || null,
+          now,
+          now,
+        );
+        const placeholders = columns.map((_, i) => `$${offset + i + 1}`);
+        groups.push(`(${placeholders.join(', ')})`);
+      }
+
+      const { data: insertedRows } = await tx<{ id: string }>(
+        `INSERT INTO inventory_adjustments (${columns.join(', ')})
+         VALUES ${groups.join(', ')}
+         RETURNING id`,
+        values
+      );
+
+      return {
+        created: insertedRows.length,
+        adjustment_ids: insertedRows.map(r => r.id),
+        errors,
+      };
+    });
+
+    await auditLog(auth, 'inventory.adjustment.bulk', 'inventory_adjustment', null,
+      `Bulk adjustment: ${result.created} ${adjustment_type} adjustments created`, {
+      adjustment_type,
+      reason,
+      created: result.created,
+      errors_count: result.errors.length,
+    });
+
+    return successResponse(result, 201, event);
+  } catch (err) {
+    logger.error('Error in bulk adjustment', {
+      action: 'inventory.adjustments.bulk',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to process bulk adjustment', 500, {}, event);
+  }
 };

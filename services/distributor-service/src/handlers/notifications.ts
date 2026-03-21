@@ -39,16 +39,15 @@ export const handleGetNotifications: RouteHandler = async (event, _params, auth)
   // Pull recent inventory assignments
   const inventoryEvents = await query(
     `SELECT
-       ai.id,
+       d.id,
        'inventory_assigned' AS type,
        d.manufacturer,
        d.model,
-       ai.assigned_at AS created_at
-     FROM agent_inventory ai
-     JOIN devices d ON d.id = ai.device_id
-     WHERE ai.distributor_id = $1
-       AND ai.assigned_at > NOW() - INTERVAL '30 days'
-     ORDER BY ai.assigned_at DESC
+       d.assigned_to_distributor_at AS created_at
+     FROM devices d
+     WHERE d.distributor_id = $1
+       AND d.assigned_to_distributor_at > NOW() - INTERVAL '30 days'
+     ORDER BY d.assigned_to_distributor_at DESC
      LIMIT 10`,
     [dist.id],
   );

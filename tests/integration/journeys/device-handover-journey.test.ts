@@ -113,11 +113,9 @@ describe('Device Handover Journey', () => {
       expect(deviceUpdate!.data.customer_id).toBe('cust-001');
       expect(deviceUpdate!.data.loan_id).toBe('loan-001');
 
-      // Agent inventory → sold
-      const inventoryUpdate = dbOps.find(op => op.table === 'agent_inventory' && op.op === 'update');
-      expect(inventoryUpdate).toBeDefined();
-      expect(inventoryUpdate!.data.status).toBe('sold');
-      expect(inventoryUpdate!.data.sold_to_customer_id).toBe('cust-001');
+      // Device sold with customer info (no separate agent_inventory update needed)
+      expect(deviceUpdate!.data.customer_id).toBe('cust-001');
+      expect(deviceUpdate!.data.loan_id).toBe('loan-001');
 
       // Commission recorded
       const commInsert = dbOps.find(op => op.table === 'distributor_commissions' && op.op === 'insert');
@@ -307,7 +305,6 @@ describe('Device Handover Journey', () => {
 
       expect(updatedTables).toContain('loans');
       expect(updatedTables).toContain('devices');
-      expect(updatedTables).toContain('agent_inventory');
       expect(updatedTables).toContain('device_handovers');
     });
 

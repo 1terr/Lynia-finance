@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 
 const STORAGE_KEY = 'lynia-offline-queue';
+const FAILED_STORAGE_KEY = 'lynia-failed-submissions';
+const MAX_RETRIES = 5;
 
 interface QueuedSubmission {
   id: string;
@@ -11,23 +13,37 @@ interface QueuedSubmission {
   retries: number;
 }
 
+interface FailedSubmission extends QueuedSubmission {
+  failedAt: string;
+}
+
 /**
  * Offline submission queue. When a handover submission fails due to
  * network error, the payload is saved to localStorage. On reconnect,
- * the queue auto-retries. A badge count is exposed for the UI.
+ * the queue auto-retries. After MAX_RETRIES failures, items are moved
+ * to a 'failed' state for later review. A badge count is exposed for the UI.
  */
 export function useOfflineQueue(
   submitFn: (payload: Record<string, unknown>) => Promise<unknown>,
 ) {
   const [queue, setQueue] = useState<QueuedSubmission[]>([]);
+  const [failedItems, setFailedItems] = useState<FailedSubmission[]>([]);
   const [processing, setProcessing] = useState(false);
 
-  // Load queue from localStorage on mount
+  // Load queue and failed items from localStorage on mount
   useEffect(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         setQueue(JSON.parse(stored));
+      }
+    } catch {
+      // ignore corrupt data
+    }
+    try {
+      const storedFailed = localStorage.getItem(FAILED_STORAGE_KEY);
+      if (storedFailed) {
+        setFailedItems(JSON.parse(storedFailed));
       }
     } catch {
       // ignore corrupt data
@@ -42,6 +58,15 @@ export function useOfflineQueue(
       localStorage.setItem(STORAGE_KEY, JSON.stringify(queue));
     }
   }, [queue]);
+
+  // Persist failed items to localStorage on change
+  useEffect(() => {
+    if (failedItems.length === 0) {
+      localStorage.removeItem(FAILED_STORAGE_KEY);
+    } else {
+      localStorage.setItem(FAILED_STORAGE_KEY, JSON.stringify(failedItems));
+    }
+  }, [failedItems]);
 
   const enqueue = useCallback((payload: Record<string, unknown>) => {
     const entry: QueuedSubmission = {
@@ -58,15 +83,30 @@ export function useOfflineQueue(
     setProcessing(true);
 
     const remaining: QueuedSubmission[] = [];
+    const newFailed: FailedSubmission[] = [];
 
     for (const item of queue) {
       try {
         await submitFn(item.payload);
         // Success — don't re-add
       } catch {
-        // Still failing — keep in queue with incremented retry
-        remaining.push({ ...item, retries: item.retries + 1 });
+        const updatedRetries = item.retries + 1;
+        if (updatedRetries >= MAX_RETRIES) {
+          // Max retries exceeded — move to failed state
+          newFailed.push({
+            ...item,
+            retries: updatedRetries,
+            failedAt: new Date().toISOString(),
+          });
+        } else {
+          // Still within retry limit — keep in queue
+          remaining.push({ ...item, retries: updatedRetries });
+        }
       }
+    }
+
+    if (newFailed.length > 0) {
+      setFailedItems((prev) => [...prev, ...newFailed]);
     }
 
     setQueue(remaining);
@@ -86,12 +126,16 @@ export function useOfflineQueue(
   }, [queue.length, processQueue]);
 
   const clear = useCallback(() => setQueue([]), []);
+  const clearFailed = useCallback(() => setFailedItems([]), []);
 
   return {
     pendingCount: queue.length,
+    failedCount: failedItems.length,
+    failedItems,
     processing,
     enqueue,
     processQueue,
     clear,
+    clearFailed,
   };
 }

@@ -32,12 +32,11 @@ export const handleGetInventory: RouteHandler = async (event, _params, auth) => 
        d.condition,
        d.storage_gb,
        d.color,
-       ai.assigned_date AS received_at
+       d.assigned_to_distributor_at AS received_at
      FROM devices d
-     JOIN agent_inventory ai ON ai.device_id = d.id
-     WHERE ai.distributor_id = $1
-       AND ai.status != 'sold'
-     ORDER BY ai.assigned_date DESC`,
+     WHERE d.distributor_id = $1
+       AND d.status NOT IN ('sold')
+     ORDER BY d.assigned_to_distributor_at DESC`,
     [dist.id]
   );
 

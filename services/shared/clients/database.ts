@@ -384,3 +384,33 @@ export async function queryOne<T = Record<string, unknown>>(
   const result = await query<T>(text, params);
   return { data: result.data[0] || null, error: result.error };
 }
+
+/**
+ * Execute a callback inside a database transaction (BEGIN / COMMIT / ROLLBACK).
+ *
+ * The callback receives a `tx` function that behaves like `query` but runs on
+ * the same client. If the callback throws, the transaction is rolled back.
+ */
+export async function withTransaction<R>(
+  fn: (tx: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<{ data: T[]; error: Error | null }>) => Promise<R>
+): Promise<R> {
+  const p = await getPool();
+  const client = await p.connect();
+  try {
+    await client.query('BEGIN');
+
+    const tx = async <T = Record<string, unknown>>(text: string, params?: unknown[]): Promise<{ data: T[]; error: Error | null }> => {
+      const result = await client.query(text, params);
+      return { data: result.rows as T[], error: null };
+    };
+
+    const result = await fn(tx);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}

@@ -87,6 +87,7 @@ const SENSITIVE_FIELD_PATTERNS = [
   'biometric', 'face_image', 'selfie', 'id_document',
   'api_key', 'api_secret', 'webhook_secret',
   'authorization', 'cookie',
+  'imei',
 ];
 
 /**
@@ -103,6 +104,14 @@ export function maskPhone(phone: string): string {
 export function maskNationalId(id: string): string {
   if (!id || id.length < 6) return '***';
   return id.slice(0, 3) + '******' + id.slice(-3);
+}
+
+/**
+ * Mask an IMEI for safe logging: 1234*******2345
+ */
+export function maskImei(imei: string): string {
+  if (!imei || imei.length < 10) return '***';
+  return imei.substring(0, 4) + '*'.repeat(imei.length - 8) + imei.substring(imei.length - 4);
 }
 
 /**
@@ -138,6 +147,8 @@ export function maskSensitiveData(obj: unknown, depth: number = 0): unknown {
         masked[key] = maskPhone(value);
       } else if (lowerKey.includes('national_id') || lowerKey.includes('id_number')) {
         masked[key] = maskNationalId(value);
+      } else if (lowerKey.includes('imei')) {
+        masked[key] = maskImei(value);
       } else {
         masked[key] = maskGeneric(value);
       }

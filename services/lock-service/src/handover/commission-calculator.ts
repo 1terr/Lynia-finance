@@ -24,7 +24,7 @@ export async function calculateDistributorCommission(
   // Get loan details for commission base
   const { data: loan } = await db
     .from('loans')
-    .select('principal')
+    .select('loan_amount_usd')
     .eq('id', loanId)
     .single()
     .execute();
@@ -36,7 +36,7 @@ export async function calculateDistributorCommission(
   // Get device details for record-keeping
   const { data: device } = await db
     .from('devices')
-    .select('retail_price, model')
+    .select('retail_price_usd, model')
     .eq('id', deviceId)
     .single()
     .execute();
@@ -54,13 +54,13 @@ export async function calculateDistributorCommission(
     .execute();
 
   const percentageRate = distributor?.commission_rate ?? 5;
-  const commissionAmount = Math.round(loan.principal * percentageRate) / 100;
+  const commissionAmount = Math.round(loan.loan_amount_usd * percentageRate) / 100;
 
   return {
     amount: commissionAmount,
     percentage: percentageRate,
-    loan_amount: loan.principal,
-    device_price: device.retail_price,
+    loan_amount: loan.loan_amount_usd,
+    device_price: device.retail_price_usd,
     device_model: device.model
   };
 }

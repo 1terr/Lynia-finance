@@ -7,16 +7,20 @@ import {
   LayoutDashboard,
   PackageCheck,
   Smartphone,
+  ArrowLeftRight,
   DollarSign,
   User,
   LogOut,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/auth-store';
+import { fetchPendingTransferCount } from '@/lib/api/transfers';
 
 const navItems = [
   { label: 'Dashboard', href: '/', icon: LayoutDashboard },
   { label: 'Handovers', href: '/handovers', icon: PackageCheck },
   { label: 'Inventory', href: '/inventory', icon: Smartphone },
+  { label: 'Transfers', href: '/transfers', icon: ArrowLeftRight },
   { label: 'Commissions', href: '/commissions', icon: DollarSign },
   { label: 'Profile', href: '/profile', icon: User },
 ];
@@ -24,6 +28,12 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const { distributor, signOutUser } = useAuthStore();
+
+  const { data: pendingTransferCount = 0 } = useQuery({
+    queryKey: ['distributor', 'transfers', 'pending-count'],
+    queryFn: fetchPendingTransferCount,
+    refetchInterval: 60_000, // Poll every 60 seconds
+  });
 
   return (
     <aside className="hidden md:flex md:w-16 lg:w-64 md:flex-col md:border-r bg-card h-screen sticky top-0 transition-all duration-200">
@@ -57,8 +67,20 @@ export function Sidebar() {
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
-              <Icon className="h-5 w-5 flex-shrink-0" />
+              <span className="relative">
+                <Icon className="h-5 w-5 flex-shrink-0" />
+                {item.href === '/transfers' && pendingTransferCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center lg:hidden">
+                    {pendingTransferCount}
+                  </span>
+                )}
+              </span>
               <span className="hidden lg:inline">{item.label}</span>
+              {item.href === '/transfers' && pendingTransferCount > 0 && (
+                <span className="hidden lg:inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold ml-auto">
+                  {pendingTransferCount}
+                </span>
+              )}
             </Link>
           );
         })}

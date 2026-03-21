@@ -1,6 +1,8 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { query, queryOne } from '../../../shared/clients/database';
-import { successResponse } from '../../../shared/utils/response';
+import { query, queryOne, withTransaction } from '../../../shared/clients/database';
+import { successResponse, errorResponse, getSecurityHeaders, parseBody } from '../../../shared/utils/response';
+import { isAdminOrManager } from '../../../shared/middleware/authorization';
+import logger, { getRequestContext } from '../../../shared/utils/logger';
 
 /**
  * GET /admin/reports/inventory
@@ -192,4 +194,235 @@ export const handleLowStockReport: RouteHandler = async (event, _params, _auth) 
     total_out_of_stock: outOfStock.data.length,
     generated_at: new Date().toISOString(),
   }, 200, event);
+};
+
+/**
+ * POST /admin/inventory/reconcile
+ * Compare device_models.available_stock vs actual device count.
+ * Optionally fix discrepancies when { fix: true } is passed.
+ */
+export const handleReconcile: RouteHandler = async (event, _params, auth) => {
+  if (!isAdminOrManager(auth)) {
+    return errorResponse('Insufficient permissions', 403, {}, event);
+  }
+
+  const { data: body } = parseBody<{ fix?: boolean }>(event);
+  const shouldFix = body?.fix === true;
+
+  try {
+    // Compare tracked stock (device_models.available_stock) vs actual count
+    // from devices table for statuses that represent "available" stock
+    const { data: rows, error } = await query<{
+      device_model_id: string;
+      model_name: string;
+      manufacturer: string;
+      tracked_stock: number;
+      actual_stock: number;
+    }>(`
+      SELECT
+        dm.id AS device_model_id,
+        dm.model_name,
+        dm.manufacturer,
+        dm.available_stock AS tracked_stock,
+        COUNT(d.id) FILTER (WHERE d.status IN ('in_stock', 'assigned', 'reserved')) AS actual_stock
+      FROM device_models dm
+      LEFT JOIN devices d ON d.device_model_id = dm.id AND d.deleted_at IS NULL
+      GROUP BY dm.id, dm.model_name, dm.manufacturer, dm.available_stock
+      ORDER BY dm.manufacturer, dm.model_name
+    `);
+
+    if (error) {
+      logger.error('Reconciliation query failed', {
+        action: 'inventory.reconcile',
+        status: 'failed',
+        errorMessage: error.message,
+      });
+      return errorResponse('Failed to run reconciliation', 500, {
+        requestId: getRequestContext()?.requestId,
+        timestamp: new Date().toISOString(),
+      }, event);
+    }
+
+    const discrepancies = rows
+      .filter(r => Number(r.tracked_stock) !== Number(r.actual_stock))
+      .map(r => ({
+        device_model_id: r.device_model_id,
+        model_name: `${r.manufacturer} ${r.model_name}`,
+        tracked_stock: Number(r.tracked_stock),
+        actual_stock: Number(r.actual_stock),
+        difference: Number(r.actual_stock) - Number(r.tracked_stock),
+      }));
+
+    // Fix discrepancies if requested
+    if (shouldFix && discrepancies.length > 0) {
+      await withTransaction(async (tx) => {
+        for (const d of discrepancies) {
+          await tx(
+            `UPDATE device_models SET available_stock = $1, updated_at = NOW() WHERE id = $2`,
+            [d.actual_stock, d.device_model_id]
+          );
+        }
+      });
+
+      logger.info('Reconciliation fix applied', {
+        action: 'inventory.reconcile',
+        status: 'completed',
+        modelsFixed: discrepancies.length,
+      });
+    }
+
+    return successResponse({
+      discrepancies,
+      total_models_checked: rows.length,
+      models_with_discrepancies: discrepancies.length,
+      fixed: shouldFix && discrepancies.length > 0,
+    }, 200, event);
+  } catch (err) {
+    logger.error('Reconciliation failed', {
+      action: 'inventory.reconcile',
+      status: 'failed',
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    return errorResponse('Failed to run reconciliation', 500, {
+      requestId: getRequestContext()?.requestId,
+      timestamp: new Date().toISOString(),
+    }, event);
+  }
+};
+
+/**
+ * Escape a value for CSV output.
+ * Wraps in double quotes if the value contains commas, quotes, or newlines.
+ * Doubles any internal double quotes per RFC 4180.
+ */
+function escapeCsvValue(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+/**
+ * GET /admin/reports/inventory/export
+ * CSV export of full device inventory with joins to related tables.
+ * Supports optional filters: ?status=, ?distributor_id=
+ */
+export const handleExportInventory: RouteHandler = async (event, _params, _auth) => {
+  const params = event.queryStringParameters || {};
+  const statusFilter = params.status;
+  const distributorFilter = params.distributor_id;
+
+  // Build WHERE clause with parameterized filters
+  const whereClauses: string[] = ['d.deleted_at IS NULL'];
+  const queryParams: unknown[] = [];
+  let paramIndex = 1;
+
+  if (statusFilter) {
+    whereClauses.push(`d.status = $${paramIndex++}`);
+    queryParams.push(statusFilter);
+  }
+
+  if (distributorFilter) {
+    whereClauses.push(`d.distributor_id = $${paramIndex++}`);
+    queryParams.push(distributorFilter);
+  }
+
+  const whereClause = whereClauses.join(' AND ');
+
+  const result = await query<{
+    imei: string;
+    serial_number: string;
+    manufacturer: string;
+    model_name: string;
+    status: string;
+    lock_status: string;
+    location: string;
+    distributor_name: string;
+    purchase_price_usd: number;
+    retail_price_usd: number;
+    condition: string;
+    created_at: string;
+    customer_name: string;
+    loan_id: string;
+  }>(`
+    SELECT
+      d.imei,
+      d.serial_number,
+      dm.manufacturer,
+      dm.model_name,
+      d.status,
+      COALESCE(d.lock_status, 'unknown') AS lock_status,
+      COALESCE(d.location, '') AS location,
+      COALESCE(dist.business_name, '') AS distributor_name,
+      COALESCE(d.purchase_price_usd, 0) AS purchase_price_usd,
+      COALESCE(d.retail_price_usd, 0) AS retail_price_usd,
+      COALESCE(d.condition, '') AS condition,
+      d.created_at,
+      CASE
+        WHEN c.id IS NOT NULL THEN COALESCE(c.first_name || ' ' || c.last_name, '')
+        ELSE ''
+      END AS customer_name,
+      COALESCE(l.id::text, '') AS loan_id
+    FROM devices d
+    LEFT JOIN device_models dm ON dm.id = d.device_model_id
+    LEFT JOIN distributors dist ON dist.id = d.distributor_id
+    LEFT JOIN loans l ON l.device_id = d.id AND l.status NOT IN ('cancelled', 'rejected')
+    LEFT JOIN customers c ON c.id = l.customer_id
+    WHERE ${whereClause}
+    ORDER BY d.created_at DESC
+  `, queryParams);
+
+  if (result.error) {
+    logger.error('Inventory CSV export failed', {
+      action: 'reports.inventory-export',
+      status: 'failed',
+      meta: { error: result.error.message },
+    });
+    return errorResponse('Failed to export inventory data', 500, undefined, event);
+  }
+
+  // Build CSV
+  const headers = [
+    'IMEI', 'Serial Number', 'Manufacturer', 'Model', 'Status', 'Lock Status',
+    'Location', 'Distributor Name', 'Purchase Price', 'Retail Price',
+    'Condition', 'Created Date', 'Customer Name', 'Loan ID',
+  ];
+
+  const csvLines: string[] = [headers.join(',')];
+
+  for (const row of result.data) {
+    csvLines.push([
+      escapeCsvValue(row.imei),
+      escapeCsvValue(row.serial_number),
+      escapeCsvValue(row.manufacturer),
+      escapeCsvValue(row.model_name),
+      escapeCsvValue(row.status),
+      escapeCsvValue(row.lock_status),
+      escapeCsvValue(row.location),
+      escapeCsvValue(row.distributor_name),
+      escapeCsvValue(row.purchase_price_usd),
+      escapeCsvValue(row.retail_price_usd),
+      escapeCsvValue(row.condition),
+      escapeCsvValue(row.created_at),
+      escapeCsvValue(row.customer_name),
+      escapeCsvValue(row.loan_id),
+    ].join(','));
+  }
+
+  const csvContent = csvLines.join('\n');
+  const today = new Date().toISOString().slice(0, 10);
+
+  const securityHeaders = getSecurityHeaders(event);
+
+  return {
+    statusCode: 200,
+    headers: {
+      ...securityHeaders,
+      'Content-Type': 'text/csv',
+      'Content-Disposition': `attachment; filename=inventory-export-${today}.csv`,
+    },
+    body: csvContent,
+  };
 };

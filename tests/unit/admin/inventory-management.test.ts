@@ -903,7 +903,7 @@ describe('POST /admin/inventory/transfers', () => {
 // Handler flow:
 //   1. db.from('stock_transfers').select().eq().maybeSingle().execute()  → lookup
 //   2. (if received + to_distributor_id) db.from('devices').update().eq().execute()
-//   3. (if received + to_distributor_id) db.from('agent_inventory').insert().execute()
+//   3. (device update already includes distributor_id and assigned_to_distributor_at)
 //   4. db.from('stock_transfers').update().eq().execute()                → update
 //   5. db.from('audit_log').insert(data).execute()                      → audit
 // =====================================================================
@@ -968,9 +968,8 @@ describe('PATCH /admin/inventory/transfers/:id', () => {
     const result = await handler(event);
     expect(result.statusCode).toBe(200);
 
-    // Verify device update and agent_inventory insert were called
+    // Verify device update was called (now includes distributor_id assignment)
     expect(mockDb.from).toHaveBeenCalledWith('devices');
-    expect(mockDb.from).toHaveBeenCalledWith('agent_inventory');
   });
 
   it('should reject invalid state transition (requested -> received)', async () => {

@@ -590,8 +590,7 @@ describe('HandoverService', () => {
           error: null,
         }) // handover
         .mockResolvedValueOnce({ data: null, error: null }) // update loan to active
-        .mockResolvedValueOnce({ data: null, error: null }) // update device to assigned
-        .mockResolvedValueOnce({ data: null, error: null }) // update agent_inventory
+        .mockResolvedValueOnce({ data: null, error: null }) // update device to sold
         // calculateDistributorCommission sub-calls:
         .mockResolvedValueOnce({ data: { principal: 1000 }, error: null }) // loan
         .mockResolvedValueOnce({ data: { retail_price: 500, model: 'Samsung A15' }, error: null }) // device
