@@ -1,7 +1,7 @@
 # Inventory Management System — Implementation Report
 
 **Date:** 2026-02-20
-**Status:** Deployed to Production
+**Status:** Deployed to Production (superseded by [Suite Audit 1.5](SUITE-AUDIT-1.5-INVENTORY-SYSTEM.md) on 2026-03-21)
 **Commits:** `8db6f65..1a2cfdd` (14 commits, 56 files changed, +5,594 / -610 lines)
 
 ---

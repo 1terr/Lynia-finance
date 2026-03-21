@@ -5,6 +5,7 @@
 > **Timeline:** 3+ months to launch | ~12 weeks implementation
 > **Status:** ✅ ALL PHASES IMPLEMENTED (2026-03-21) — deployed to production
 > **Commit:** `01741d24` (43 files, +5,060 lines)
+> **Frontend fix:** `743a761b` (2026-03-21) — ESLint errors resolved, frontend redeployed to CloudFront
 
 ---
 
@@ -746,6 +747,16 @@ Phase 7 (Tests/SLAs/Readiness)      ← Depends on all above
 - No load/stress tests for bulk operations (needs staging environment)
 - No E2E tests for offline handover queue on real devices
 - No tests for transfer notification email delivery (SES stub, not yet wired)
+
+---
+
+## Post-Implementation Deployment Incident (Resolved 2026-03-21)
+
+The `Deploy Frontend (Blue-Green)` CI workflow failed on every push after commit `01741d24`, blocking the inventory UI from reaching production CloudFront. Backend APIs were live but both frontends served stale builds.
+
+**Root cause:** ESLint errors — `useMock()` (not a React hook) triggered `react-hooks/rules-of-hooks` across 6 distributor dashboard API files; admin portal had accessibility lint issues (missing `htmlFor`, sync `<script>`, `autoFocus`, unescaped entity).
+
+**Fix:** Commit `743a761b` — renamed `useMock()` → `shouldUseMock()`, fixed all admin portal lint errors. Deploy Frontend workflow passed and both apps redeployed to CloudFront.
 
 ---
 

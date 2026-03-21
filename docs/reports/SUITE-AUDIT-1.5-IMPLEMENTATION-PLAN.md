@@ -7,6 +7,7 @@
 > **Mode:** Full fix — mechanical AND architectural
 > **Status:** ✅ ALL PHASES IMPLEMENTED (2026-03-21) — deployed to production
 > **Commit:** `01741d24` (43 files, +5,060 lines)
+> **Frontend fix:** `743a761b` (2026-03-21) — ESLint errors resolved, frontend redeployed to CloudFront
 
 ---
 
@@ -41,6 +42,7 @@ No max retry limit. Fix: add `MAX_RETRIES = 5`.
 **File:** `frontend/apps/distributor-dashboard/src/test/mocks/utils.ts` — Lines 1-14
 
 `useMock()` returns true when Cognito not configured. Fix: guard with `NODE_ENV === 'production'`.
+**Post-fix:** Function renamed to `shouldUseMock()` in `743a761b` to avoid `react-hooks/rules-of-hooks` lint error (the `use*` prefix made ESLint think it was a React hook).
 
 ---
 
@@ -341,6 +343,23 @@ Phase 7 (Tests/SLAs)         ← All above
 | 5 | `inventory-reports.ts`, `inventory.ts`, `reservation-expiry.ts` (new), `template.yaml` |
 | 6 | `logger.ts`, `inventory-devices.ts`, all handlers, `inventory-reports.ts` |
 | 7 | `inventory-audit-readiness.test.ts` (new), `transfer-confirmation.test.ts` (new) |
+
+---
+
+## Post-Implementation Deployment Incident (Resolved 2026-03-21)
+
+**Problem:** The `Deploy Frontend (Blue-Green)` workflow failed on every push after commit `01741d24`, preventing the inventory UI (admin portal bulk transfers, distributor dashboard transfers/inventory pages) from reaching production CloudFront. Backend APIs were live but the frontend was stale.
+
+**Root cause:** Two categories of ESLint errors introduced in the implementation commit:
+
+1. **Distributor dashboard** — `useMock()` (a plain config check, not a React hook) was called inside regular API functions (`fetchTransfers`, `confirmTransfer`, `fetchInventory`, etc.). The `use*` prefix triggered `react-hooks/rules-of-hooks` violations across 6 API files and 1 test file.
+2. **Admin portal** — Accessibility lint errors: missing `htmlFor` on `<label>` elements (whatsapp-funnel, fineract-approval-page), synchronous `<script>` tag in layout.tsx, missing `displayName` on test wrapper, `autoFocus` prop in modal contexts, unescaped apostrophe in product-wizard.
+
+**Fix (commit `743a761b`):**
+- Renamed `useMock()` → `shouldUseMock()` in definition + all 7 consumer files
+- Added `htmlFor`/`id` pairs to labels, converted `<script>` to `next/script`, added `displayName`, suppressed `autoFocus` in modals (acceptable UX pattern), escaped entity
+
+**Lesson learned:** The CI lint step must be run locally before committing large frontend changes. Consider adding a pre-commit hook for `next lint` on staged frontend files.
 
 ---
 
