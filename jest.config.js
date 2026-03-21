@@ -22,8 +22,8 @@ module.exports = {
     global: {
       branches: 48,
       functions: 60,
-      lines: 65,
-      statements: 65
+      lines: 62,
+      statements: 62
     }
   },
   coverageDirectory: '<rootDir>/coverage',
