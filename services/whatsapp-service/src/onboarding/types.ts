@@ -21,6 +21,7 @@ export type OnboardingState =
   | 'employment_household'
   | 'product_selection'
   | 'org_verification'
+  | 'digital_product_selection'
   | 'kyc_id_upload'
   | 'kyc_selfie_upload'
   | 'kyc_processing'
@@ -67,6 +68,10 @@ export interface OnboardingSession {
     tenure_months?: number;
     salary_verified?: boolean;
     monthly_salary_usd?: number;
+    scoring_trust_level?: string;
+    employment_status?: string;
+    org_verified_salary_usd?: number;
+    verified_organization_ids?: string[];
     org_lending_limits?: {
       max_loan_amount: number;
       min_loan_amount: number;
@@ -75,6 +80,33 @@ export interface OnboardingSession {
       min_term_months: number;
       max_term_months: number;
     };
+
+    // Digital product selection
+    selected_digital_product_id?: string;
+    selected_product_code?: string;
+    selected_product_name?: string;
+    selected_organization_id?: string;
+    product_min_amount?: number;
+    product_max_amount?: number;
+    product_interest_rate?: number;
+    product_min_term?: number;
+    product_max_term?: number;
+    products_shown?: boolean;
+    available_products?: Array<{
+      id: string;
+      product_code: string;
+      product_name: string;
+      min_amount_usd: number;
+      max_amount_usd: number;
+      interest_rate_monthly: number;
+      min_term_months: number;
+      max_term_months: number;
+      org_name: string | null;
+      org_id: string | null;
+    }>;
+
+    // Device price (used by scoring for smartphone loans)
+    device_price?: number;
 
     // Disbursement method (digital credit)
     disbursement_method?: 'ecocash' | 'onemoney' | 'innbucks';

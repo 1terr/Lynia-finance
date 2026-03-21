@@ -53,15 +53,14 @@ import { handler } from '../../services/scoring-service/src/index';
 function buildScoringInput(overrides: Record<string, unknown> = {}) {
   return {
     customer_id: 'cust_001',
-    monthly_income_usd: 500,
-    existing_debt_obligations_usd: 50,
     household_size: 3,
     dependents: 2,
     requested_loan_amount: 350,
+    device_retail_price_usd: 400,
     kyc_result: {
       id_verification: { status: 'verified' },
-      face_match: { confidence: 0.95 },
-      liveness: { status: 'passed' },
+      face_match_score: 95,
+      liveness_passed: true,
     },
     ...overrides,
   };
@@ -70,31 +69,20 @@ function buildScoringInput(overrides: Record<string, unknown> = {}) {
 /** Build a scoring input tuned to produce a high score (Tier 3, approve) */
 function buildHighScoreInput() {
   return buildScoringInput({
-    monthly_income_usd: 800,
-    existing_debt_obligations_usd: 0,
+    org_verified_salary_usd: 800,
     household_size: 1,
     dependents: 0,
     requested_loan_amount: 200,
+    device_retail_price_usd: 300,
     previous_loans_count: 5,
     on_time_payment_rate: 0.98,
     bill_payment_consistency: 0.95,
     communication_response_rate: 0.95,
-    mobile_money_profile: {
-      account_age_months: 36,
-      avg_monthly_inflow_usd: 600,
-      avg_monthly_outflow_usd: 400,
-      transaction_count_3m: 120,
-      balance_usd: 150,
-      airtime_purchases_3m: 15,
-      airtime_avg_per_purchase_usd: 5,
-    },
-    external_credit_data: {
-      credit_bureau_score: 780,
-      platform_verified: true,
-      platform_earnings_3m_usd: 2000,
-      platform_rating: 4.8,
-      bank_account_verified: true,
-      bank_account_age_months: 36,
+    org_verification: {
+      scoring_trust_level: 90,
+      employment_status: 'active',
+      tenure_months: 72,
+      salary_verified: true,
     },
   });
 }
@@ -102,36 +90,18 @@ function buildHighScoreInput() {
 /** Build a scoring input tuned to produce a low score (reject) */
 function buildLowScoreInput() {
   return buildScoringInput({
-    monthly_income_usd: 80,
-    existing_debt_obligations_usd: 60,
     household_size: 8,
     dependents: 7,
     requested_loan_amount: 500,
+    device_retail_price_usd: 50,
     previous_loans_count: 3,
     on_time_payment_rate: 0.3,
     bill_payment_consistency: 0.2,
     communication_response_rate: 0.1,
-    mobile_money_profile: {
-      account_age_months: 2,
-      avg_monthly_inflow_usd: 30,
-      avg_monthly_outflow_usd: 25,
-      transaction_count_3m: 5,
-      balance_usd: 2,
-      airtime_purchases_3m: 1,
-      airtime_avg_per_purchase_usd: 1,
-    },
-    external_credit_data: {
-      credit_bureau_score: 400,
-      platform_verified: false,
-      platform_earnings_3m_usd: 0,
-      platform_rating: 0,
-      bank_account_verified: false,
-      bank_account_age_months: 0,
-    },
     kyc_result: {
       id_verification: { status: 'review' },
-      face_match: { confidence: 0.5 },
-      liveness: { status: 'failed' },
+      face_match_score: 50,
+      liveness_passed: false,
     },
   });
 }
@@ -190,21 +160,22 @@ describe('Scoring Service Contract Tests', () => {
       const components = body.components as Record<string, number>;
 
       expect(components.affordability).toBeGreaterThanOrEqual(0);
-      expect(components.affordability).toBeLessThanOrEqual(300);
+      expect(components.affordability).toBeLessThanOrEqual(250);
 
       expect(components.repayment_willingness).toBeGreaterThanOrEqual(0);
-      expect(components.repayment_willingness).toBeLessThanOrEqual(250);
+      expect(components.repayment_willingness).toBeLessThanOrEqual(150);
 
-      expect(components.mobile_money).toBeGreaterThanOrEqual(0);
-      expect(components.mobile_money).toBeLessThanOrEqual(200);
+      expect(components.device_collateral).toBeGreaterThanOrEqual(0);
+      expect(components.device_collateral).toBeLessThanOrEqual(100);
 
-      expect(components.external_credit).toBeGreaterThanOrEqual(0);
-      expect(components.external_credit).toBeLessThanOrEqual(150);
+      // external_credit has weight 0, so always 0
+      expect(components.external_credit).toBe(0);
 
       expect(components.kyc_verification).toBeGreaterThanOrEqual(0);
-      expect(components.kyc_verification).toBeLessThanOrEqual(100);
+      expect(components.kyc_verification).toBeLessThanOrEqual(150);
 
-      expect(components.org_verification).toBe(0); // 0 for smartphone loans
+      expect(components.org_verification).toBeGreaterThanOrEqual(0);
+      expect(components.org_verification).toBeLessThanOrEqual(350);
     });
 
     it('should return total_raw_score in range 0-1000', async () => {
@@ -235,7 +206,7 @@ describe('Scoring Service Contract Tests', () => {
       expect(body.scaled_score).toBeLessThanOrEqual(850);
     });
 
-    it('should always return decision as approve', async () => {
+    it('should always return decision as approve for default input', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -263,7 +234,6 @@ describe('Scoring Service Contract Tests', () => {
 
       expect((body.scaled_score as number)).toBeGreaterThanOrEqual(650);
       expect(body.decision).toBe('approve');
-      // Product-based terms populated by handler (may be zero if no products in DB)
       expect(body.tier).toBeDefined();
       expect(body.credit_limit_usd).toBeDefined();
     });
@@ -279,7 +249,8 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
 
       // With bad data across all components, score is low
-      expect((body.scaled_score as number)).toBeLessThan(500);
+      // (v2 model gives neutral org 175/350 so worst-case is higher than v1)
+      expect((body.scaled_score as number)).toBeLessThan(600);
       expect(body.decision).toBe('approve');
       expect(body.tier).toBeDefined();
     });
@@ -302,8 +273,8 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // Neutral score for first-time customers is 125
-      expect(components.repayment_willingness).toBe(125);
+      // Neutral score for first-time customers is 75 (raw), scaled to weight: round(75/150 * 150) = 75
+      expect(components.repayment_willingness).toBe(75);
     });
 
     // -----------------------------------------------------------------------
@@ -324,24 +295,6 @@ describe('Scoring Service Contract Tests', () => {
       expectErrorResponse(response, 400);
       const body = parseResponseBody(response);
       expect(body).toHaveProperty('error', 'customer_id is required');
-    });
-
-    it('should return 400 when monthly_income_usd is missing', async () => {
-      const input = buildScoringInput();
-      delete (input as Record<string, unknown>).monthly_income_usd;
-
-      const event = createAPIGatewayEvent({
-        httpMethod: 'POST',
-        path: '/scoring/calculate',
-        body: JSON.stringify(input),
-      });
-
-      const response = await handler(event);
-
-      expectErrorResponse(response, 400);
-      const body = parseResponseBody(response);
-      expect(body).toHaveProperty('error');
-      expect((body as Record<string, string>).error).toContain('monthly_income_usd');
     });
 
     it('should return 400 when requested_loan_amount is missing', async () => {
@@ -415,11 +368,12 @@ describe('Scoring Service Contract Tests', () => {
         total_raw_score: 720,
         scaled_score: 696,
         components: {
-          affordability: 250,
-          repayment_willingness: 200,
-          mobile_money: 150,
-          external_credit: 80,
-          kyc_verification: 40,
+          affordability: 200,
+          repayment_willingness: 120,
+          device_collateral: 80,
+          external_credit: 0,
+          kyc_verification: 120,
+          org_verification: 200,
         },
         decision: 'approve',
         credit_limit_usd: 200,
@@ -445,9 +399,6 @@ describe('Scoring Service Contract Tests', () => {
     });
 
     it('should return 404 when customerId path is "undefined"', async () => {
-      // With the lambda-router, /scoring/undefined is a valid path that matches
-      // GET /scoring/:customerId with customerId='undefined'. The handler treats
-      // this as a non-existent customer (no DB row), returning 404.
       const event = createAPIGatewayEvent({
         httpMethod: 'GET',
         path: '/scoring/undefined',
@@ -513,9 +464,6 @@ describe('Scoring Service Contract Tests', () => {
     });
 
     it('should return 405 for POST to GET-only endpoint', async () => {
-      // The lambda-router returns 405 (Method Not Allowed) when the path matches
-      // an existing route but the method doesn't. /scoring/unknown matches
-      // GET /scoring/:customerId, so POST returns 405.
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/unknown',
@@ -595,8 +543,6 @@ describe('Scoring Service Contract Tests', () => {
     });
 
     it('should return found: true with org data when member exists', async () => {
-      // First call: organization_members lookup
-      // Second call: organizations lookup
       let callCount = 0;
       mockQueryBuilder.execute.mockImplementation(() => {
         callCount++;
@@ -696,10 +642,10 @@ describe('Scoring Service Contract Tests', () => {
   });
 
   // =========================================================================
-  // Organization Verification Scoring (6-component digital loans)
+  // Organization Verification Scoring (digital loans)
   // =========================================================================
   describe('POST /scoring/calculate - Digital loan with org verification', () => {
-    it('should score 200/200 for government employee with active status, 5+ years, verified salary', async () => {
+    it('should score high for government employee with active status, 5+ years, verified salary', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: {
@@ -721,12 +667,12 @@ describe('Scoring Service Contract Tests', () => {
       const components = body.components as Record<string, number>;
 
       expect(body.product_category).toBe('digital');
-      // Org verification raw: 80 (gov) + 50 (active) + 40 (5+ yrs) + 30 (verified) = 200/200
-      // Scaled to weight 200: (200/200) * 200 = 200
-      expect(components.org_verification).toBe(200);
+      // Org verification raw: 120 (gov) + 80 (active) + 70 (5+ yrs) + 80 (verified) = 350/350
+      // Scaled to weight 350: (350/350) * 350 = 350
+      expect(components.org_verification).toBe(350);
     });
 
-    it('should score 140/200 for corporate employee with active status, 2-5 years, unverified salary', async () => {
+    it('should score 245/350 for corporate employee with active status, 2-5 years, unverified salary', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: {
@@ -747,12 +693,12 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // Org verification raw: 60 (corp) + 50 (active) + 30 (2-5yr) + 0 (not verified) = 140/200
-      // Scaled to weight 200: (140/200) * 200 = 140
-      expect(components.org_verification).toBe(140);
+      // Org verification raw: 90 (corp) + 80 (active) + 55 (2-5yr) + 0 (not verified) = 225/350
+      // Scaled to weight 350: round(225/350 * 350) = 225
+      expect(components.org_verification).toBe(225);
     });
 
-    it('should score 175/200 for retired government employee with 5+ years and verified salary', async () => {
+    it('should score for retired government employee with 5+ years and verified salary', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: {
@@ -773,12 +719,12 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // 80 (gov) + 25 (retired) + 40 (5+ yrs) + 30 (verified) = 175/200
-      // Scaled: (175/200) * 200 = 175
-      expect(components.org_verification).toBe(175);
+      // 120 (gov) + 40 (retired) + 70 (5+ yrs) + 80 (verified) = 310/350
+      // Scaled: round(310/350 * 350) = 310
+      expect(components.org_verification).toBe(310);
     });
 
-    it('should score 170/200 for new government employee (<1 year) with verified salary', async () => {
+    it('should score for new government employee (<1 year) with verified salary', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: {
@@ -799,12 +745,12 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // 80 (gov) + 50 (active) + 10 (<1yr) + 30 (verified) = 170/200
-      // Scaled: (170/200) * 200 = 170
-      expect(components.org_verification).toBe(170);
+      // 120 (gov) + 80 (active) + 15 (<1yr) + 80 (verified) = 295/350
+      // Scaled: round(295/350 * 350) = 295
+      expect(components.org_verification).toBe(295);
     });
 
-    it('should use 5-component model with org_verification=0 for smartphone loans', async () => {
+    it('should use neutral org score (175) for smartphone loans without org data', async () => {
       const input = buildScoringInput({
         product_category: 'smartphone',
         org_verification: null,
@@ -821,7 +767,8 @@ describe('Scoring Service Contract Tests', () => {
       const components = body.components as Record<string, number>;
 
       expect(body.product_category).toBe('smartphone');
-      expect(components.org_verification).toBe(0);
+      // Unaffiliated smartphone gets neutral 175/350
+      expect(components.org_verification).toBe(175);
     });
 
     it('should default to smartphone product_category when not specified', async () => {
@@ -839,7 +786,7 @@ describe('Scoring Service Contract Tests', () => {
       expect(body.product_category).toBe('smartphone');
     });
 
-    it('should redistribute weights correctly for digital loans', async () => {
+    it('should have component sum within 0-1000 for digital loans', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: {
@@ -860,13 +807,8 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // For digital loans:
-      // mobile_money max = 100 (halved from 200)
-      // external_credit max = 50 (reduced from 150)
-      // org_verification max = 200 (new)
-      expect(components.mobile_money).toBeLessThanOrEqual(100);
-      expect(components.external_credit).toBeLessThanOrEqual(50);
-      expect(components.org_verification).toBeLessThanOrEqual(200);
+      // external_credit always 0 due to weight 0
+      expect(components.external_credit).toBe(0);
 
       // Total should still be in 0-1000 range
       const total = Object.values(components).reduce((a, b) => a + b, 0);
@@ -898,7 +840,7 @@ describe('Scoring Service Contract Tests', () => {
       expect(body.scaled_score).toBeLessThanOrEqual(850);
     });
 
-    it('should give org_verification=0 for digital loan with no org data', async () => {
+    it('should give neutral org score for digital loan with no org data', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: null,
@@ -914,10 +856,11 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      expect(components.org_verification).toBe(0);
+      // Null org data -> neutral 175/350
+      expect(components.org_verification).toBe(175);
     });
 
-    it('should score 0 for employment_status=suspended', async () => {
+    it('should score 0 employment points for employment_status=suspended', async () => {
       const input = buildScoringInput({
         product_category: 'digital',
         org_verification: {
@@ -938,9 +881,9 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // 80 (gov) + 0 (suspended) + 40 (5+ yrs) + 0 (not verified) = 120/200
-      // Scaled: (120/200) * 200 = 120
-      expect(components.org_verification).toBe(120);
+      // 120 (gov) + 0 (suspended) + 70 (5+ yrs) + 0 (not verified) = 190/350
+      // Scaled: round(190/350 * 350) = 190
+      expect(components.org_verification).toBe(190);
     });
 
     it('should score cooperative org type correctly (trust 40-59)', async () => {
@@ -964,9 +907,9 @@ describe('Scoring Service Contract Tests', () => {
       const body = parseResponseBody<Record<string, unknown>>(response);
       const components = body.components as Record<string, number>;
 
-      // 40 (coop) + 50 (active) + 20 (1-2yr) + 30 (verified) = 140/200
-      // Scaled: (140/200) * 200 = 140
-      expect(components.org_verification).toBe(140);
+      // 60 (coop) + 80 (active) + 35 (1-2yr) + 80 (verified) = 255/350
+      // Scaled: round(255/350 * 350) = 255
+      expect(components.org_verification).toBe(255);
     });
   });
 });

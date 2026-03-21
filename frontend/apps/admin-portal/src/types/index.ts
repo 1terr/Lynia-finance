@@ -69,7 +69,8 @@ export type LoanStatus =
   | 'active'
   | 'paid'
   | 'defaulted'
-  | 'written_off';
+  | 'written_off'
+  | 'cancelled';
 
 export interface Loan {
   id: string;
@@ -207,6 +208,7 @@ export interface KYCSubmission {
 
 // --- Credit Scores ---
 
+/** V1 scoring model components */
 export interface CreditScoreComponents {
   affordability: number;
   repayment_willingness: number;
@@ -215,12 +217,22 @@ export interface CreditScoreComponents {
   kyc_verification: number;
 }
 
+/** V2 scoring model components (org-verification-based) */
+export interface CreditScoreComponentsV2 {
+  org_verification: number;
+  affordability: number;
+  kyc_verification: number;
+  repayment_willingness: number;
+  device_collateral: number;
+}
+
 export interface CreditScore {
   id: string;
   customer_id: string;
   total_score: number;
   scaled_score: number;
-  components: CreditScoreComponents;
+  components: CreditScoreComponents & Partial<CreditScoreComponentsV2>;
+  scoring_model_version?: 'v1' | 'v2';
   decision: 'approve' | 'review' | 'reject';
   credit_limit: number;
   tier: 'Tier 1' | 'Tier 2' | 'Tier 3';

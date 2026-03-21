@@ -1025,6 +1025,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/fineract/loans/{loanId}/early-payoff
             Method: POST
+        CancelLoan:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/loans/{loanId}/cancel
+            Method: POST
         # Loan Products
         CreateFineractProduct:
           Type: Api
@@ -1637,6 +1643,55 @@ Resources:
           - dw-sync-service/src/index.ts
 
   # =====================================================
+  # 13. AUTO-DEFAULT SCHEDULER (Daily Loan Default Check)
+  # =====================================================
+  AutoDefaultSchedulerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-auto-default-scheduler
+      CodeUri: services/
+      Handler: payment-service/src/handlers/auto-default-handler.handler
+      Description: Auto-default loans at 90+ days past due - runs daily at 7am CAT
+      MemorySize: 512
+      Timeout: 120
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/database-*"
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${Environment}/lynia/fineract-*"
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        DailyAutoDefault:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 5 * * ? *)
+            Description: Auto-default loans daily at 5am UTC (7am CAT)
+            Enabled: !If [IsProduction, true, false]
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - payment-service/src/handlers/auto-default-handler.ts
+
+  # =====================================================
   # FINERACT CLOUDWATCH DASHBOARD
   # =====================================================
   FineractDashboard:
@@ -1809,4 +1864,10 @@ Outputs:
     Value: !GetAtt FineractProxyFunction.Arn
     Export:
       Name: !Sub ${Environment}-lynia-fineract-proxy-arn
+
+  AutoDefaultSchedulerFunctionArn:
+    Description: Auto-Default Scheduler Lambda Function ARN
+    Value: !GetAtt AutoDefaultSchedulerFunction.Arn
+    Export:
+      Name: !Sub ${Environment}-lynia-auto-default-scheduler-arn
 

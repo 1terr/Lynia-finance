@@ -1,8 +1,12 @@
 /**
  * WhatsApp Onboarding - Employment Info State Handler
  *
- * Collects employment and income information: employment type, monthly income,
- * existing debts, and household size.
+ * Collects employment information: employment type and household size.
+ * Income and debt fields are no longer collected here — the scoring service
+ * derives affordability from organization verification and device pricing data.
+ *
+ * Type fields for monthly_income_usd and existing_debt_obligations_usd are
+ * retained in OnboardingSession for backward compatibility with in-flight sessions.
  */
 
 import { t, type SupportedLanguage } from '../../i18n';
@@ -25,46 +29,6 @@ export async function handleEmployment(
       state_data: {
         ...session.state_data,
         employment_type: message
-      }
-    });
-
-    return t('ask_income', lang);
-  }
-
-  // Collect monthly income
-  if (!session.state_data.monthly_income_usd) {
-    const income = parseFloat(message);
-
-    if (isNaN(income) || income <= 0) {
-      return t('invalid_input', lang);
-    }
-
-    if (income < 50) {
-      return t('invalid_input', lang);
-    }
-
-    await updateSession(context.from, {
-      state_data: {
-        ...session.state_data,
-        monthly_income_usd: income
-      }
-    });
-
-    return t('ask_debts', lang);
-  }
-
-  // Collect existing debts
-  if (session.state_data.existing_debt_obligations_usd === undefined) {
-    const debts = parseFloat(message);
-
-    if (isNaN(debts) || debts < 0) {
-      return t('invalid_input', lang);
-    }
-
-    await updateSession(context.from, {
-      state_data: {
-        ...session.state_data,
-        existing_debt_obligations_usd: debts
       }
     });
 

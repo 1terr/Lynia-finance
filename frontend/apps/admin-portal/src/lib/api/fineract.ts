@@ -232,6 +232,20 @@ export async function closeFineractLoan(
   );
 }
 
+/** Cancel a loan (approved or paid_deposit status only) */
+export async function cancelFineractLoan(
+  lyniaLoanId: string,
+  request: { reason?: string } = {}
+): Promise<FineractActionResponse> {
+  return fetchFineractAPI<FineractActionResponse>(
+    `/api/v1/fineract/loans/${lyniaLoanId}/cancel`,
+    {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }
+  );
+}
+
 /** Retry failed Fineract sync for a loan (create + approve) */
 export async function retryFineractSync(
   lyniaLoanId: string

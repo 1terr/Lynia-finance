@@ -60,11 +60,10 @@ import { handler } from '../../services/scoring-service/src/index';
 function buildScoringInput(overrides: Record<string, unknown> = {}) {
   return {
     customer_id: 'cust_test_001',
-    monthly_income_usd: 500,
-    existing_debt_obligations_usd: 50,
     household_size: 3,
     dependents: 2,
     requested_loan_amount: 350,
+    device_retail_price_usd: 400,
     kyc_result: {
       id_verification: { status: 'verified' },
       face_match_score: 95,
@@ -77,31 +76,20 @@ function buildScoringInput(overrides: Record<string, unknown> = {}) {
 function buildHighScoreSmartphoneInput() {
   return buildScoringInput({
     product_category: 'smartphone',
-    monthly_income_usd: 800,
-    existing_debt_obligations_usd: 0,
+    org_verified_salary_usd: 800,
     household_size: 1,
     dependents: 0,
     requested_loan_amount: 200,
+    device_retail_price_usd: 300,
     previous_loans_count: 5,
     on_time_payment_rate: 0.98,
     bill_payment_consistency: 0.95,
     communication_response_rate: 0.95,
-    mobile_money_profile: {
-      account_age_months: 36,
-      avg_monthly_inflow_usd: 600,
-      avg_monthly_outflow_usd: 400,
-      transaction_count_3m: 120,
-      balance_usd: 150,
-      airtime_purchases_3m: 15,
-      airtime_avg_per_purchase_usd: 5,
-    },
-    external_credit_data: {
-      credit_bureau_score: 780,
-      platform_verified: true,
-      platform_earnings_3m_usd: 2000,
-      platform_rating: 4.8,
-      bank_account_verified: true,
-      bank_account_age_months: 36,
+    org_verification: {
+      scoring_trust_level: 90,
+      employment_status: 'active',
+      tenure_months: 72,
+      salary_verified: true,
     },
   });
 }
@@ -109,32 +97,15 @@ function buildHighScoreSmartphoneInput() {
 function buildHighScoreDigitalInput() {
   return buildScoringInput({
     product_category: 'digital',
-    monthly_income_usd: 800,
-    existing_debt_obligations_usd: 0,
+    org_verified_salary_usd: 800,
     household_size: 1,
     dependents: 0,
     requested_loan_amount: 200,
+    device_retail_price_usd: 300,
     previous_loans_count: 5,
     on_time_payment_rate: 0.98,
     bill_payment_consistency: 0.95,
     communication_response_rate: 0.95,
-    mobile_money_profile: {
-      account_age_months: 36,
-      avg_monthly_inflow_usd: 600,
-      avg_monthly_outflow_usd: 400,
-      transaction_count_3m: 120,
-      balance_usd: 150,
-      airtime_purchases_3m: 15,
-      airtime_avg_per_purchase_usd: 5,
-    },
-    external_credit_data: {
-      credit_bureau_score: 780,
-      platform_verified: true,
-      platform_earnings_3m_usd: 2000,
-      platform_rating: 4.8,
-      bank_account_verified: true,
-      bank_account_age_months: 36,
-    },
     org_verification: {
       scoring_trust_level: 90,
       employment_status: 'active',
@@ -146,11 +117,10 @@ function buildHighScoreDigitalInput() {
 
 function buildLowScoreInput() {
   return buildScoringInput({
-    monthly_income_usd: 80,
-    existing_debt_obligations_usd: 60,
     household_size: 8,
     dependents: 6,
     requested_loan_amount: 500,
+    device_retail_price_usd: 50,
     kyc_result: {
       id_verification: { status: 'failed' },
       face_match_score: 40,
@@ -174,7 +144,7 @@ describe('Loan Products E2E Integration', () => {
   // Scoring Weight Verification (Task 9 - E2E Test 8)
   // =========================================================================
   describe('Scoring Weight Verification', () => {
-    it('smartphone scoring uses 5-component weights summing to 1000', async () => {
+    it('smartphone scoring uses 6-component weights summing to 1000', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
@@ -194,14 +164,13 @@ describe('Loan Products E2E Integration', () => {
       expect(body.product_category).toBe('smartphone');
       expect(body.components).toHaveProperty('affordability');
       expect(body.components).toHaveProperty('repayment_willingness');
-      expect(body.components).toHaveProperty('mobile_money');
+      expect(body.components).toHaveProperty('device_collateral');
       expect(body.components).toHaveProperty('external_credit');
       expect(body.components).toHaveProperty('kyc_verification');
+      expect(body.components).toHaveProperty('org_verification');
 
-      // org_verification should be 0 for smartphone
-      if ('org_verification' in body.components) {
-        expect(body.components.org_verification).toBe(0);
-      }
+      // external_credit is always 0 (weight is 0)
+      expect(body.components.external_credit).toBe(0);
 
       // Total raw score: 0-1000, scaled: 300-850
       expect(body.total_raw_score).toBeGreaterThanOrEqual(0);
@@ -394,8 +363,8 @@ describe('Loan Products E2E Integration', () => {
         components: Record<string, number>;
       }>(response);
 
-      // Neutral repayment score = 125/250 * 250 = 125
-      expect(body.components.repayment_willingness).toBe(125);
+      // Neutral repayment score = 75/150 * 150 = 75
+      expect(body.components.repayment_willingness).toBe(75);
     });
   });
 
@@ -419,7 +388,7 @@ describe('Loan Products E2E Integration', () => {
         credit_limit_usd: number;
       }>(response);
 
-      // KYC failed → auto-reject regardless of score (defense-in-depth)
+      // KYC failed -> auto-reject regardless of score (defense-in-depth)
       expect(body.decision).toBe('reject');
       expect(body.tier).toBe('KYC Not Verified');
       expect(body.credit_limit_usd).toBe(0);
@@ -435,7 +404,6 @@ describe('Loan Products E2E Integration', () => {
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
-          monthly_income_usd: 500,
           requested_loan_amount: 200,
           kyc_result: { id_verification: { status: 'verified' }, face_match_score: 90, liveness_passed: true },
         }),
@@ -445,13 +413,12 @@ describe('Loan Products E2E Integration', () => {
       expect(response.statusCode).toBe(400);
     });
 
-    it('rejects missing monthly_income_usd', async () => {
+    it('rejects missing requested_loan_amount', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: 'cust-001',
-          requested_loan_amount: 200,
           kyc_result: { id_verification: { status: 'verified' }, face_match_score: 90, liveness_passed: true },
         }),
       });
@@ -466,7 +433,6 @@ describe('Loan Products E2E Integration', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: 'cust-001',
-          monthly_income_usd: 500,
           requested_loan_amount: 200,
         }),
       });
@@ -581,9 +547,8 @@ describe('Loan Products E2E Integration', () => {
       }>(response);
 
       expect(body.product_category).toBe('smartphone');
-      if ('org_verification' in body.components) {
-        expect(body.components.org_verification).toBe(0);
-      }
+      // Unaffiliated smartphone: neutral org score 175
+      expect(body.components.org_verification).toBe(175);
     });
   });
 
@@ -599,7 +564,7 @@ describe('Loan Products E2E Integration', () => {
           customer_id: 'cust-001',
           total_raw_score: 750,
           scaled_score: 712,
-          components: { affordability: 250, repayment_willingness: 200, mobile_money: 150, external_credit: 100, kyc_verification: 50 },
+          components: { affordability: 200, repayment_willingness: 120, device_collateral: 80, external_credit: 0, kyc_verification: 150, org_verification: 200 },
           decision: 'approve',
           tier: 'Standard',
           credit_limit_usd: 350,
@@ -644,7 +609,30 @@ describe('Fineract Product Mapping', () => {
     const event = createAPIGatewayEvent({
       httpMethod: 'POST',
       path: '/scoring/calculate',
-      body: JSON.stringify(buildHighScoreDigitalInput()),
+      body: JSON.stringify({
+        customer_id: 'cust_test_001',
+        product_category: 'digital',
+        household_size: 1,
+        dependents: 0,
+        requested_loan_amount: 200,
+        device_retail_price_usd: 300,
+        org_verified_salary_usd: 800,
+        previous_loans_count: 5,
+        on_time_payment_rate: 0.98,
+        bill_payment_consistency: 0.95,
+        communication_response_rate: 0.95,
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 72,
+          salary_verified: true,
+        },
+        kyc_result: {
+          id_verification: { status: 'verified' },
+          face_match_score: 95,
+          liveness_passed: true,
+        },
+      }),
     });
 
     const response = await handler(event);
@@ -666,7 +654,30 @@ describe('Fineract Product Mapping', () => {
     const event = createAPIGatewayEvent({
       httpMethod: 'POST',
       path: '/scoring/calculate',
-      body: JSON.stringify(buildHighScoreSmartphoneInput()),
+      body: JSON.stringify({
+        customer_id: 'cust_test_001',
+        product_category: 'smartphone',
+        household_size: 1,
+        dependents: 0,
+        requested_loan_amount: 200,
+        device_retail_price_usd: 300,
+        org_verified_salary_usd: 800,
+        previous_loans_count: 5,
+        on_time_payment_rate: 0.98,
+        bill_payment_consistency: 0.95,
+        communication_response_rate: 0.95,
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 72,
+          salary_verified: true,
+        },
+        kyc_result: {
+          id_verification: { status: 'verified' },
+          face_match_score: 95,
+          liveness_passed: true,
+        },
+      }),
     });
 
     const response = await handler(event);
@@ -687,7 +698,30 @@ describe('Fineract Product Mapping', () => {
     const event = createAPIGatewayEvent({
       httpMethod: 'POST',
       path: '/scoring/calculate',
-      body: JSON.stringify(buildHighScoreSmartphoneInput()),
+      body: JSON.stringify({
+        customer_id: 'cust_test_001',
+        product_category: 'smartphone',
+        household_size: 1,
+        dependents: 0,
+        requested_loan_amount: 200,
+        device_retail_price_usd: 300,
+        org_verified_salary_usd: 800,
+        previous_loans_count: 5,
+        on_time_payment_rate: 0.98,
+        bill_payment_consistency: 0.95,
+        communication_response_rate: 0.95,
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 72,
+          salary_verified: true,
+        },
+        kyc_result: {
+          id_verification: { status: 'verified' },
+          face_match_score: 95,
+          liveness_passed: true,
+        },
+      }),
     });
 
     const response = await handler(event);

@@ -24,6 +24,7 @@ import { handlePersonalInfo } from './states/personal-info';
 import { handleEmployment } from './states/employment-info';
 import { handleProductSelection } from './states/product-selection';
 import { handleOrgVerification } from './states/org-verification';
+import { handleDigitalProductSelection } from './states/digital-product-selection';
 import { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
 import { handleCreditScoring } from './states/credit-scoring';
 import { handleDeviceSelection } from './states/device-selection';
@@ -75,6 +76,9 @@ export async function routeOnboardingMessage(
 
       case 'org_verification':
         return handleOrgVerification(session, context);
+
+      case 'digital_product_selection':
+        return handleDigitalProductSelection(session, context);
 
       case 'kyc_id_upload':
         return handleKYCIdUpload(session, context, imageUrl);
@@ -146,6 +150,7 @@ export { handlePersonalInfo } from './states/personal-info';
 export { handleEmployment } from './states/employment-info';
 export { handleProductSelection } from './states/product-selection';
 export { handleOrgVerification } from './states/org-verification';
+export { handleDigitalProductSelection } from './states/digital-product-selection';
 export { handleKYCIdUpload, handleKYCSelfieUpload } from './states/kyc-upload';
 export { handleCreditScoring } from './states/credit-scoring';
 export { handleDeviceSelection } from './states/device-selection';

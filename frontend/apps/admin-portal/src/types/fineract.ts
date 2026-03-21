@@ -15,7 +15,9 @@ export type FineractLoanStatusCode =
   | 'loanStatusType.closed.reschedule.outstanding.amount'
   | 'loanStatusType.overpaid'
   | 'loanStatusType.rejected'
-  | 'loanStatusType.withdrawn.by.client';
+  | 'loanStatusType.withdrawn.by.client'
+  | 'loanStatusType.defaulted'
+  | 'loanStatusType.cancelled';
 
 export interface FineractEnumValue {
   id: number;
@@ -98,6 +100,10 @@ export interface FineractLoanView {
   deviceBrand?: string;
   deviceModel?: string;
   deviceImei?: string;
+
+  // Default / Cancellation info (from Lynia DB)
+  defaultedAt?: string | null;
+  cancelledAt?: string | null;
 }
 
 /** Repayment schedule period from Fineract */
@@ -377,6 +383,16 @@ export const FINERACT_STATUS_MAP: Record<FineractLoanStatusCode, {
     label: 'Withdrawn',
     color: 'text-gray-600',
     bgColor: 'bg-gray-50',
+  },
+  'loanStatusType.defaulted': {
+    label: 'Defaulted',
+    color: 'text-red-900',
+    bgColor: 'bg-red-200',
+  },
+  'loanStatusType.cancelled': {
+    label: 'Cancelled',
+    color: 'text-red-800',
+    bgColor: 'bg-red-100',
   },
 };
 

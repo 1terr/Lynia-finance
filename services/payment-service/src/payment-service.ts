@@ -472,7 +472,7 @@ export class PaymentService {
           });
         }
       } else if (payment.payment_type === 'repayment') {
-        // Check if loan is fully paid off — trigger device unlock
+        // Check loan status and trigger device unlock evaluation
         const { data: updatedLoan } = await db
           .from('loans')
           .select('status, device_id')
@@ -480,13 +480,15 @@ export class PaymentService {
           .single()
           .execute();
 
-        if (updatedLoan?.status === 'paid_off' && updatedLoan?.device_id) {
+        // Trigger device unlock check on any repayment for loans with a device
+        // The lock-service evaluates whether the loan is current or fully paid
+        if (updatedLoan?.device_id) {
           SQSQueues.processDeviceLock({
             deviceId: updatedLoan.device_id,
             action: 'unlock',
-            reason: 'loan_paid_off',
+            reason: updatedLoan.status === 'paid_off' ? 'loan_paid_off' : 'repayment_received',
             loanId: payment.loan_id,
-          }).catch(err => logger.warn('Failed to queue device unlock', {
+          }).catch(err => logger.warn('Failed to queue device unlock evaluation', {
             action: 'payment.unlock',
             meta: { paymentId, loanId: payment.loan_id, error: err instanceof Error ? err.message : 'Unknown' },
           }));
@@ -749,6 +751,79 @@ export class PaymentService {
     } catch (error) {
       // Never let analytics tracking block the payment flow
       logger.error('Failed to track payment analytics', { action: 'payment.track_analytics', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    }
+  }
+
+  /**
+   * Initiate push-to-wallet disbursement for digital loans.
+   * Called after terms acceptance for digital credit products.
+   */
+  async initiateDisbursement(request: {
+    loan_id: string;
+    customer_id: string;
+    amount: number;
+    customer_phone: string;
+    disbursement_method: string; // 'ecocash' | 'onemoney' | 'innbucks'
+    currency?: string;
+  }): Promise<{
+    payment_id: string;
+    transaction_id: string;
+    gateway: PaymentGateway;
+  }> {
+    try {
+      logger.info('Initiating digital loan disbursement', {
+        action: 'payment.disburse',
+        meta: { loanId: request.loan_id, amount: request.amount, method: request.disbursement_method },
+      });
+
+      // Validate loan status — only approved or terms_accepted loans can be disbursed
+      const { data: loan } = await db
+        .from('loans')
+        .select('id, status')
+        .eq('id', request.loan_id)
+        .single()
+        .execute();
+
+      if (!loan) {
+        throw new Error('Loan not found');
+      }
+
+      if (!['approved', 'terms_accepted'].includes(loan.status)) {
+        throw new Error(`Loan status "${loan.status}" is not eligible for disbursement`);
+      }
+
+      // Map disbursement method to payment gateway
+      const gateway = (request.disbursement_method || 'ecocash') as PaymentGateway;
+
+      // Use the existing initiatePayment flow with payment_type 'disbursement'
+      const result = await this.initiatePayment({
+        loan_id: request.loan_id,
+        customer_id: request.customer_id,
+        amount: request.amount,
+        currency: (request.currency || 'USD') as 'USD' | 'ZWL',
+        customer_phone: request.customer_phone,
+        gateway,
+        payment_type: 'disbursement',
+        description: `Digital loan disbursement to ${request.disbursement_method}`,
+      });
+
+      logger.info('Digital loan disbursement initiated', {
+        action: 'payment.disburse',
+        meta: { loanId: request.loan_id, paymentId: result.payment_id, gateway },
+      });
+
+      return {
+        payment_id: result.payment_id,
+        transaction_id: result.transaction_id,
+        gateway: result.gateway,
+      };
+
+    } catch (error) {
+      logger.error('Failed to initiate disbursement', {
+        action: 'payment.disburse',
+        meta: { loanId: request.loan_id, error: error instanceof Error ? error.message : 'Unknown' },
+      });
+      throw new Error(`Disbursement failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

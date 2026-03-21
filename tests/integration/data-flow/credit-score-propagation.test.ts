@@ -7,7 +7,7 @@
  * - Decision thresholds determine tier correctly
  * - Score is stored in credit_scores table with all components
  * - Loan limit and interest rate match tier
- * - Neutral scores for missing data (first-time, no mobile money, no external credit)
+ * - Neutral scores for missing data (first-time, no device, no external credit)
  */
 
 import {
@@ -76,30 +76,20 @@ describe('Credit Score Propagation Data Flow Tests', () => {
   // 1. Score components sum to total_raw_score (0-1000)
   // =========================================================================
   describe('Score Component Summation', () => {
-    it('should correctly sum all 5 components to total_raw_score', async () => {
+    it('should correctly sum all 6 components to total_raw_score', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 3,
           dependents: 2,
           requested_loan_amount: 350,
+          device_retail_price_usd: 400,
           previous_loans_count: 2,
           on_time_payment_rate: 0.95,
           bill_payment_consistency: 0.90,
           communication_response_rate: 0.90,
-          mobile_money_profile: {
-            account_age_months: 24,
-            avg_monthly_inflow_usd: 500,
-            avg_monthly_outflow_usd: 400,
-            transaction_count_3m: 100,
-            balance_usd: 100,
-            airtime_purchases_3m: 12,
-            airtime_avg_per_purchase_usd: 5,
-          },
           external_credit_data: {
             credit_bureau_score: 750,
             platform_verified: true,
@@ -110,8 +100,8 @@ describe('Credit Score Propagation Data Flow Tests', () => {
           },
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.97 },
-            liveness: { status: 'passed' },
+            face_match_score: 97,
+            liveness_passed: true,
           },
         }),
       });
@@ -125,17 +115,22 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       expect(result.components).toBeDefined();
       expect(result.components.affordability).toBeDefined();
       expect(result.components.repayment_willingness).toBeDefined();
-      expect(result.components.mobile_money).toBeDefined();
+      expect(result.components.device_collateral).toBeDefined();
       expect(result.components.external_credit).toBeDefined();
       expect(result.components.kyc_verification).toBeDefined();
+      expect(result.components.org_verification).toBeDefined();
+
+      // external_credit always 0 due to weight 0
+      expect(result.components.external_credit).toBe(0);
 
       // Verify sum equals total_raw_score
       const componentSum =
         result.components.affordability
         + result.components.repayment_willingness
-        + result.components.mobile_money
+        + result.components.device_collateral
         + result.components.external_credit
-        + result.components.kyc_verification;
+        + result.components.kyc_verification
+        + result.components.org_verification;
 
       expect(result.total_raw_score).toBe(componentSum);
     });
@@ -146,36 +141,25 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 1000,
-          existing_debt_obligations_usd: 0,
           household_size: 1,
           dependents: 0,
           requested_loan_amount: 200,
+          device_retail_price_usd: 300,
           previous_loans_count: 5,
           on_time_payment_rate: 1.0,
           bill_payment_consistency: 1.0,
           communication_response_rate: 1.0,
-          mobile_money_profile: {
-            account_age_months: 48,
-            avg_monthly_inflow_usd: 2000,
-            avg_monthly_outflow_usd: 1000,
-            transaction_count_3m: 200,
-            balance_usd: 500,
-            airtime_purchases_3m: 24,
-            airtime_avg_per_purchase_usd: 10,
-          },
-          external_credit_data: {
-            credit_bureau_score: 850,
-            platform_verified: true,
-            platform_earnings_3m_usd: 5000,
-            platform_rating: 5.0,
-            bank_account_verified: true,
-            bank_account_age_months: 60,
+          org_verified_salary_usd: 1000,
+          org_verification: {
+            scoring_trust_level: 90,
+            employment_status: 'active',
+            tenure_months: 72,
+            salary_verified: true,
           },
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.99 },
-            liveness: { status: 'passed' },
+            face_match_score: 99,
+            liveness_passed: true,
           },
         }),
       });
@@ -187,42 +171,31 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       expect(result.total_raw_score).toBeLessThanOrEqual(1000);
     });
 
-    it('should enforce component maximums: affordability<=300, repayment<=250, mobile<=200, external<=150, kyc<=100', async () => {
+    it('should enforce component maximums: affordability<=250, repayment<=150, device_collateral<=100, external_credit=0, kyc<=150, org<=350', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 1000,
-          existing_debt_obligations_usd: 0,
           household_size: 1,
           dependents: 0,
           requested_loan_amount: 200,
+          device_retail_price_usd: 300,
+          org_verified_salary_usd: 1000,
           previous_loans_count: 5,
           on_time_payment_rate: 1.0,
           bill_payment_consistency: 1.0,
           communication_response_rate: 1.0,
-          mobile_money_profile: {
-            account_age_months: 48,
-            avg_monthly_inflow_usd: 2000,
-            avg_monthly_outflow_usd: 1000,
-            transaction_count_3m: 200,
-            balance_usd: 500,
-            airtime_purchases_3m: 24,
-            airtime_avg_per_purchase_usd: 10,
-          },
-          external_credit_data: {
-            credit_bureau_score: 850,
-            platform_verified: true,
-            platform_earnings_3m_usd: 5000,
-            platform_rating: 5.0,
-            bank_account_verified: true,
-            bank_account_age_months: 60,
+          org_verification: {
+            scoring_trust_level: 90,
+            employment_status: 'active',
+            tenure_months: 72,
+            salary_verified: true,
           },
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.99 },
-            liveness: { status: 'passed' },
+            face_match_score: 99,
+            liveness_passed: true,
           },
         }),
       });
@@ -230,11 +203,12 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      expect(result.components.affordability).toBeLessThanOrEqual(300);
-      expect(result.components.repayment_willingness).toBeLessThanOrEqual(250);
-      expect(result.components.mobile_money).toBeLessThanOrEqual(200);
-      expect(result.components.external_credit).toBeLessThanOrEqual(150);
-      expect(result.components.kyc_verification).toBeLessThanOrEqual(100);
+      expect(result.components.affordability).toBeLessThanOrEqual(250);
+      expect(result.components.repayment_willingness).toBeLessThanOrEqual(150);
+      expect(result.components.device_collateral).toBeLessThanOrEqual(100);
+      expect(result.components.external_credit).toBe(0);
+      expect(result.components.kyc_verification).toBeLessThanOrEqual(150);
+      expect(result.components.org_verification).toBeLessThanOrEqual(350);
     });
   });
 
@@ -248,15 +222,14 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 50,
           household_size: 4,
           dependents: 2,
           requested_loan_amount: 300,
+          device_retail_price_usd: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });
@@ -278,36 +251,18 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 10,
-          existing_debt_obligations_usd: 1000,
           household_size: 10,
           dependents: 8,
           requested_loan_amount: 500,
+          device_retail_price_usd: 30,
           previous_loans_count: 5,
           on_time_payment_rate: 0.1,
           bill_payment_consistency: 0.1,
           communication_response_rate: 0.1,
-          mobile_money_profile: {
-            account_age_months: 1,
-            avg_monthly_inflow_usd: 10,
-            avg_monthly_outflow_usd: 5,
-            transaction_count_3m: 2,
-            balance_usd: 1,
-            airtime_purchases_3m: 1,
-            airtime_avg_per_purchase_usd: 1,
-          },
-          external_credit_data: {
-            credit_bureau_score: 300,
-            platform_verified: false,
-            platform_earnings_3m_usd: 0,
-            platform_rating: 1.0,
-            bank_account_verified: false,
-            bank_account_age_months: 0,
-          },
           kyc_result: {
             id_verification: { status: 'failed' },
-            face_match: { confidence: 0.2 },
-            liveness: { status: 'failed' },
+            face_match_score: 20,
+            liveness_passed: false,
           },
         }),
       });
@@ -325,36 +280,25 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 5000,
-          existing_debt_obligations_usd: 0,
           household_size: 1,
           dependents: 0,
           requested_loan_amount: 100,
+          device_retail_price_usd: 300,
+          org_verified_salary_usd: 2000,
           previous_loans_count: 10,
           on_time_payment_rate: 1.0,
           bill_payment_consistency: 1.0,
           communication_response_rate: 1.0,
-          mobile_money_profile: {
-            account_age_months: 60,
-            avg_monthly_inflow_usd: 5000,
-            avg_monthly_outflow_usd: 2000,
-            transaction_count_3m: 500,
-            balance_usd: 3000,
-            airtime_purchases_3m: 50,
-            airtime_avg_per_purchase_usd: 20,
-          },
-          external_credit_data: {
-            credit_bureau_score: 850,
-            platform_verified: true,
-            platform_earnings_3m_usd: 10000,
-            platform_rating: 5.0,
-            bank_account_verified: true,
-            bank_account_age_months: 120,
+          org_verification: {
+            scoring_trust_level: 90,
+            employment_status: 'active',
+            tenure_months: 72,
+            salary_verified: true,
           },
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 1.0 },
-            liveness: { status: 'passed' },
+            face_match_score: 100,
+            liveness_passed: true,
           },
         }),
       });
@@ -376,36 +320,25 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 800,
-          existing_debt_obligations_usd: 0,
           household_size: 2,
           dependents: 1,
-          requested_loan_amount: 350,
+          requested_loan_amount: 200,
+          device_retail_price_usd: 300,
+          org_verified_salary_usd: 800,
           previous_loans_count: 3,
           on_time_payment_rate: 0.98,
           bill_payment_consistency: 0.95,
           communication_response_rate: 0.95,
-          mobile_money_profile: {
-            account_age_months: 36,
-            avg_monthly_inflow_usd: 800,
-            avg_monthly_outflow_usd: 600,
-            transaction_count_3m: 120,
-            balance_usd: 200,
-            airtime_purchases_3m: 15,
-            airtime_avg_per_purchase_usd: 8,
-          },
-          external_credit_data: {
-            credit_bureau_score: 780,
-            platform_verified: true,
-            platform_earnings_3m_usd: 2000,
-            platform_rating: 4.8,
-            bank_account_verified: true,
-            bank_account_age_months: 36,
+          org_verification: {
+            scoring_trust_level: 90,
+            employment_status: 'active',
+            tenure_months: 72,
+            salary_verified: true,
           },
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.98 },
-            liveness: { status: 'passed' },
+            face_match_score: 98,
+            liveness_passed: true,
           },
         }),
       });
@@ -423,42 +356,19 @@ describe('Credit Score Propagation Data Flow Tests', () => {
     });
 
     it('should approve Tier 2 for scaled_score >= 500 and < 650', async () => {
-      // Use a moderate input designed to land in 700-749 range
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 50,
           household_size: 3,
           dependents: 1,
           requested_loan_amount: 300,
-          previous_loans_count: 2,
-          on_time_payment_rate: 0.90,
-          bill_payment_consistency: 0.85,
-          communication_response_rate: 0.85,
-          mobile_money_profile: {
-            account_age_months: 18,
-            avg_monthly_inflow_usd: 500,
-            avg_monthly_outflow_usd: 350,
-            transaction_count_3m: 60,
-            balance_usd: 80,
-            airtime_purchases_3m: 8,
-            airtime_avg_per_purchase_usd: 5,
-          },
-          external_credit_data: {
-            credit_bureau_score: 700,
-            platform_verified: false,
-            platform_earnings_3m_usd: 0,
-            platform_rating: 0,
-            bank_account_verified: true,
-            bank_account_age_months: 18,
-          },
+          device_retail_price_usd: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.92 },
-            liveness: { status: 'passed' },
+            face_match_score: 92,
+            liveness_passed: true,
           },
         }),
       });
@@ -481,36 +391,18 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 80,
-          existing_debt_obligations_usd: 200,
           household_size: 8,
           dependents: 6,
           requested_loan_amount: 500,
+          device_retail_price_usd: 50,
           previous_loans_count: 2,
           on_time_payment_rate: 0.30,
           bill_payment_consistency: 0.20,
           communication_response_rate: 0.20,
-          mobile_money_profile: {
-            account_age_months: 2,
-            avg_monthly_inflow_usd: 30,
-            avg_monthly_outflow_usd: 25,
-            transaction_count_3m: 5,
-            balance_usd: 2,
-            airtime_purchases_3m: 1,
-            airtime_avg_per_purchase_usd: 1,
-          },
-          external_credit_data: {
-            credit_bureau_score: 350,
-            platform_verified: false,
-            platform_earnings_3m_usd: 0,
-            platform_rating: 0,
-            bank_account_verified: false,
-            bank_account_age_months: 0,
-          },
           kyc_result: {
             id_verification: { status: 'failed' },
-            face_match: { confidence: 0.30 },
-            liveness: { status: 'failed' },
+            face_match_score: 30,
+            liveness_passed: false,
           },
         }),
       });
@@ -518,9 +410,9 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      // With bad data everywhere, score is low — below minimum threshold means reject
+      // With bad data everywhere, score is low
       expect(result.scaled_score).toBeLessThan(500);
-      expect(['approve', 'review', 'reject']).toContain(result.decision);
+      expect(['approve', 'reject']).toContain(result.decision);
     });
 
     it('should validate all tier thresholds and their corresponding limits', () => {
@@ -586,15 +478,14 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 3,
           dependents: 1,
           requested_loan_amount: 350,
+          device_retail_price_usd: 400,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });
@@ -615,26 +506,23 @@ describe('Credit Score Propagation Data Flow Tests', () => {
   });
 
   // =========================================================================
-  // 5. First-time customer neutral repayment score
+  // 5. Neutral scores for missing data
   // =========================================================================
   describe('Neutral Scores for Missing Data', () => {
-    it('should give first-time customer neutral repayment score (125/250)', async () => {
-      // No previous loans
+    it('should give first-time customer neutral repayment score (75/150)', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 3,
           dependents: 1,
           requested_loan_amount: 300,
-          // No repayment data provided = first-time customer
+          device_retail_price_usd: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });
@@ -642,25 +530,24 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      expect(result.components.repayment_willingness).toBe(125);
+      // Neutral repayment: raw 75/150, scaled: round(75/150 * 150) = 75
+      expect(result.components.repayment_willingness).toBe(75);
     });
 
-    it('should give neutral mobile money score (100/200) when no mobile money data', async () => {
+    it('should give neutral device collateral score (50/100) when no device price', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 3,
           dependents: 1,
           requested_loan_amount: 300,
-          // No mobile_money_profile
+          // No device_retail_price_usd
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });
@@ -668,25 +555,24 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      expect(result.components.mobile_money).toBe(100);
+      // No device price -> neutral 50/100, scaled: round(50/100 * 100) = 50
+      expect(result.components.device_collateral).toBe(50);
     });
 
-    it('should give neutral external credit score (75/150) when no external data', async () => {
+    it('should give zero external credit score due to zero weight', async () => {
       const event = createAPIGatewayEvent({
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 3,
           dependents: 1,
           requested_loan_amount: 300,
-          // No external_credit_data
+          device_retail_price_usd: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });
@@ -694,7 +580,8 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      expect(result.components.external_credit).toBe(75);
+      // Weight is 0, so component is always 0 regardless of raw score
+      expect(result.components.external_credit).toBe(0);
     });
   });
 
@@ -708,36 +595,25 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 1000,
-          existing_debt_obligations_usd: 0,
           household_size: 1,
           dependents: 0,
-          requested_loan_amount: 500,
+          requested_loan_amount: 200,
+          device_retail_price_usd: 300,
+          org_verified_salary_usd: 1000,
           previous_loans_count: 5,
           on_time_payment_rate: 0.99,
           bill_payment_consistency: 0.95,
           communication_response_rate: 0.95,
-          mobile_money_profile: {
-            account_age_months: 36,
-            avg_monthly_inflow_usd: 1000,
-            avg_monthly_outflow_usd: 600,
-            transaction_count_3m: 150,
-            balance_usd: 300,
-            airtime_purchases_3m: 15,
-            airtime_avg_per_purchase_usd: 8,
-          },
-          external_credit_data: {
-            credit_bureau_score: 800,
-            platform_verified: true,
-            platform_earnings_3m_usd: 3000,
-            platform_rating: 4.9,
-            bank_account_verified: true,
-            bank_account_age_months: 48,
+          org_verification: {
+            scoring_trust_level: 90,
+            employment_status: 'active',
+            tenure_months: 72,
+            salary_verified: true,
           },
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.99 },
-            liveness: { status: 'passed' },
+            face_match_score: 99,
+            liveness_passed: true,
           },
         }),
       });
@@ -759,19 +635,18 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 200,
-          existing_debt_obligations_usd: 80,
           household_size: 5,
           dependents: 3,
           requested_loan_amount: 350,
+          device_retail_price_usd: 200,
           previous_loans_count: 1,
           on_time_payment_rate: 0.70,
           bill_payment_consistency: 0.60,
           communication_response_rate: 0.65,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.85 },
-            liveness: { status: 'passed' },
+            face_match_score: 85,
+            liveness_passed: true,
           },
         }),
       });
@@ -779,9 +654,9 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       const response = await handler(event);
       const result = JSON.parse(response.body);
 
-      // All scores now get approved — review/reject removed
-      expect(result.decision).toBe('approve');
-      if (result.scaled_score < 500) {
+      // Score gets approved or rejected based on threshold
+      expect(['approve', 'reject']).toContain(result.decision);
+      if (result.decision === 'approve' && result.scaled_score < 500) {
         expect(result.tier).toBe('Tier 1');
         expect(result.credit_limit_usd).toBe(200);
       }
@@ -798,15 +673,14 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 2,
           dependents: 1,
           requested_loan_amount: 350,
+          device_retail_price_usd: 400,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });
@@ -817,7 +691,7 @@ describe('Credit Score Propagation Data Flow Tests', () => {
       // The score result should contain all information needed for loan creation
       expect(result.customer_id).toBe(customerId);
       expect(result.decision).toBeDefined();
-      expect(['approve', 'review', 'reject']).toContain(result.decision);
+      expect(['approve', 'reject']).toContain(result.decision);
       expect(result.credit_limit_usd).toBeDefined();
       expect(typeof result.credit_limit_usd).toBe('number');
       expect(result.interest_rate_apr).toBeDefined();
@@ -830,7 +704,7 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: customerId,
-          // Missing: monthly_income_usd, requested_loan_amount, kyc_result
+          // Missing: requested_loan_amount, kyc_result
         }),
       });
 
@@ -843,12 +717,11 @@ describe('Credit Score Propagation Data Flow Tests', () => {
         httpMethod: 'POST',
         path: '/scoring/calculate',
         body: JSON.stringify({
-          monthly_income_usd: 500,
           requested_loan_amount: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
-            face_match: { confidence: 0.95 },
-            liveness: { status: 'passed' },
+            face_match_score: 95,
+            liveness_passed: true,
           },
         }),
       });

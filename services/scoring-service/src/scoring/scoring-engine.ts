@@ -9,7 +9,6 @@
 import {
   AffordabilityData,
   RepaymentData,
-  MobileMoneyProfile,
   ExternalCreditData,
   KYCVerificationInput,
   OrgVerificationData,
@@ -17,142 +16,110 @@ import {
   CreditScoreInput,
   CreditScoreResult,
 } from './types';
-import { calculateDecliningBalancePayment } from '../../../shared/utils/loan-calculator';
 
 // ===================================================================
 // SCORING FUNCTIONS - 5 COMPONENTS
 // ===================================================================
 
 /**
- * Component 1: Affordability Assessment (30%, 0-300 points)
+ * Component 1: Affordability Assessment (250 points max)
  *
- * Determines if customer can afford monthly installment based on income.
- * Uses debt-to-income ratio as primary metric.
+ * Uses org-verified salary for DTI if available, otherwise falls back
+ * to a household-based heuristic. No longer requires monthly_income_usd.
  */
 export function scoreAffordability(data: AffordabilityData): number {
-  // Use 12-month term for conservative affordability estimate — the customer
-  // selects their actual term after approval. Longer term = lower monthly
-  // payment = more generous DTI ratio, avoiding false rejections.
-  const { monthlyPayment: monthlyInstallment } = calculateDecliningBalancePayment({
-    principal: data.requested_loan_amount,
-    annualRatePercent: 5, // Worst-case APR (Tier 1)
-    termMonths: 12,
-  });
+  let score = 0;
+  const loanAmount = data.requested_loan_amount || 0;
 
-  // 1. Debt-to-Income Ratio (150 points max)
-  const totalMonthlyObligations = data.existing_debt_obligations_usd + monthlyInstallment;
-  const dtiRatio = totalMonthlyObligations / Math.max(data.monthly_income_usd, 1);
+  // Salary-based DTI (if org-verified salary available) - 150pts
+  if (data.org_verified_salary_usd && data.org_verified_salary_usd > 0) {
+    // Monthly payment estimate (loan / 12 months conservative)
+    const estimatedMonthlyPayment = loanAmount / 12;
+    const dti = estimatedMonthlyPayment / data.org_verified_salary_usd;
 
-  let dtiScore = 0;
-  if (dtiRatio <= 0.30) dtiScore = 150; // Ideal: ≤30% DTI
-  else if (dtiRatio <= 0.40) dtiScore = 120; // Acceptable
-  else if (dtiRatio <= 0.50) dtiScore = 80; // Risky
-  else if (dtiRatio <= 0.60) dtiScore = 40; // Very risky
-  else dtiScore = 0; // Cannot afford
-
-  // 2. Income Level (100 points max)
-  let incomeScore = 0;
-  if (data.monthly_income_usd >= 500) incomeScore = 100;
-  else if (data.monthly_income_usd >= 300) incomeScore = 75;
-  else if (data.monthly_income_usd >= 150) incomeScore = 50;
-  else if (data.monthly_income_usd >= 100) incomeScore = 25;
-  else incomeScore = 0;
-
-  // 3. Household Financial Stress (50 points max)
-  const householdSize = Math.max(data.household_size, 1);
-  const incomePerPerson = data.monthly_income_usd / householdSize;
-
-  let householdScore = 0;
-  if (incomePerPerson >= 100) householdScore = 50;
-  else if (incomePerPerson >= 75) householdScore = 35;
-  else if (incomePerPerson >= 50) householdScore = 20;
-  else householdScore = 10;
-
-  return Math.min(dtiScore + incomeScore + householdScore, 300);
-}
-
-/**
- * Component 2: Repayment Willingness (25%, 0-250 points)
- *
- * Assesses customer's willingness and history of making payments on time.
- * Returns neutral score (125) for first-time customers.
- */
-export function scoreRepaymentWillingness(data: RepaymentData | null): number {
-  if (!data || data.previous_loans_count === 0) {
-    return 125; // Neutral score for first-time customers
+    if (dti <= 0.20) score += 150;
+    else if (dti <= 0.30) score += 120;
+    else if (dti <= 0.40) score += 90;
+    else if (dti <= 0.50) score += 60;
+    else score += 30;
+  } else {
+    // No salary data: neutral score
+    score += 75;
   }
 
-  let score = 0;
-
-  // 1. Historical Repayment Performance (150 points max)
-  if (data.on_time_payment_rate >= 0.95) score += 150; // Excellent
-  else if (data.on_time_payment_rate >= 0.85) score += 120; // Good
-  else if (data.on_time_payment_rate >= 0.75) score += 80; // Fair
-  else if (data.on_time_payment_rate >= 0.60) score += 40; // Poor
-  else score += 0; // Very poor
-
-  // 2. Bill Payment Consistency (50 points max)
-  if (data.bill_payment_consistency >= 0.90) score += 50;
-  else if (data.bill_payment_consistency >= 0.75) score += 35;
-  else if (data.bill_payment_consistency >= 0.60) score += 20;
-  else score += 10;
-
-  // 3. Communication Responsiveness (50 points max)
-  if (data.communication_response_rate >= 0.90) score += 50;
-  else if (data.communication_response_rate >= 0.75) score += 35;
-  else if (data.communication_response_rate >= 0.60) score += 20;
-  else score += 10;
+  // Household Financial Capacity (100pts)
+  const householdSize = data.household_size || 1;
+  // Lower loan-to-household ratio is better
+  const loanPerPerson = loanAmount / householdSize;
+  if (loanPerPerson <= 50) score += 100;
+  else if (loanPerPerson <= 100) score += 75;
+  else if (loanPerPerson <= 200) score += 50;
+  else score += 25;
 
   return Math.min(score, 250);
 }
 
 /**
- * Component 3: Mobile Money Activity (20%, 0-200 points)
+ * Component 2: Repayment Willingness (150 points max)
  *
- * Uses mobile money transaction patterns as income and stability proxy.
- * Returns neutral score (100) if no mobile money data available.
+ * Assesses customer's willingness and history of making payments on time.
+ * Returns neutral score (75) for first-time customers.
  */
-export function scoreMobileMoneyActivity(profile: MobileMoneyProfile | null): number {
-  if (!profile) return 100; // Neutral score if no data
+export function scoreRepaymentWillingness(data: RepaymentData | null): number {
+  if (!data || data.previous_loans_count === 0) {
+    return 75; // Neutral score for first-time customers
+  }
 
   let score = 0;
 
-  // 1. Account Age (40 points) - Established customer
-  if (profile.account_age_months >= 24) score += 40;
-  else if (profile.account_age_months >= 12) score += 30;
-  else if (profile.account_age_months >= 6) score += 20;
-  else score += 10;
+  // 1. Historical Repayment Performance (90 points max)
+  if (data.on_time_payment_rate >= 0.95) score += 90; // Excellent
+  else if (data.on_time_payment_rate >= 0.85) score += 72; // Good
+  else if (data.on_time_payment_rate >= 0.75) score += 48; // Fair
+  else if (data.on_time_payment_rate >= 0.60) score += 24; // Poor
+  else score += 0; // Very poor
 
-  // 2. Monthly Inflow (70 points) - Income proxy
-  if (profile.avg_monthly_inflow_usd >= 500) score += 70;
-  else if (profile.avg_monthly_inflow_usd >= 300) score += 55;
-  else if (profile.avg_monthly_inflow_usd >= 150) score += 35;
-  else if (profile.avg_monthly_inflow_usd >= 75) score += 20;
-  else score += 5;
+  // 2. Bill Payment Consistency (30 points max)
+  if (data.bill_payment_consistency >= 0.90) score += 30;
+  else if (data.bill_payment_consistency >= 0.75) score += 21;
+  else if (data.bill_payment_consistency >= 0.60) score += 12;
+  else score += 6;
 
-  // 3. Transaction Frequency (40 points) - Active usage
-  if (profile.transaction_count_3m >= 100) score += 40;
-  else if (profile.transaction_count_3m >= 50) score += 30;
-  else if (profile.transaction_count_3m >= 20) score += 15;
-  else score += 5;
+  // 3. Communication Responsiveness (30 points max)
+  if (data.communication_response_rate >= 0.90) score += 30;
+  else if (data.communication_response_rate >= 0.75) score += 21;
+  else if (data.communication_response_rate >= 0.60) score += 12;
+  else score += 6;
 
-  // 4. Airtime Purchase Consistency (30 points) - Regular income indicator
-  if (profile.airtime_purchases_3m >= 12) score += 30; // Weekly purchases
-  else if (profile.airtime_purchases_3m >= 6) score += 20; // Bi-weekly
-  else if (profile.airtime_purchases_3m >= 3) score += 10; // Monthly
-  else score += 5;
-
-  // 5. Current Balance (20 points) - Financial stability
-  if (profile.balance_usd >= 100) score += 20;
-  else if (profile.balance_usd >= 50) score += 15;
-  else if (profile.balance_usd >= 20) score += 10;
-  else score += 5;
-
-  return Math.min(score, 200);
+  return Math.min(score, 150);
 }
 
 /**
- * Component 4: External Credit Data (15%, 0-150 points)
+ * Component 3: Device Collateral Coverage (100 points max)
+ *
+ * Score device collateral coverage for smartphone loans.
+ * Uses retail price (not depreciated) since device is new at disbursement.
+ * Digital loans get neutral score (no physical collateral).
+ */
+export function scoreDeviceCollateral(
+  deviceRetailPriceUsd: number | undefined,
+  requestedLoanAmount: number,
+  productCategory: string
+): number {
+  // Digital loans: no device collateral, neutral score
+  if (productCategory === 'digital' || !deviceRetailPriceUsd) return 50;
+
+  const coverageRatio = deviceRetailPriceUsd / requestedLoanAmount;
+
+  if (coverageRatio >= 1.0) return 100;   // Device fully covers loan
+  if (coverageRatio >= 0.8) return 80;    // Strong coverage
+  if (coverageRatio >= 0.6) return 60;    // Moderate coverage
+  if (coverageRatio >= 0.4) return 40;    // Partial coverage
+  return 20;                                // Weak coverage
+}
+
+/**
+ * Component 4: External Credit Data (0-150 points)
  *
  * Leverages external data sources for credit verification.
  * Returns neutral score (75) if no external data available.
@@ -201,7 +168,7 @@ export function scoreExternalCredit(data: ExternalCreditData | null): number {
 }
 
 /**
- * Component 5: KYC Verification (10%, 0-100 points)
+ * Component 5: KYC Verification (150 points max)
  *
  * Provider-agnostic identity verification scoring.
  * Works with the DIDIT KYC provider.
@@ -210,25 +177,25 @@ export function scoreExternalCredit(data: ExternalCreditData | null): number {
 export function scoreKYCVerification(kycResult: KYCVerificationInput): number {
   let score = 0;
 
-  // 1. ID Document Verification (50 points)
+  // 1. ID Document Verification (75 points)
   if (kycResult.id_verification.status === 'verified') {
-    score += 50;
+    score += 75;
   } else if (kycResult.id_verification.status === 'review') {
+    score += 37;
+  }
+
+  // 2. Selfie-ID Match (50 points) — score is 0-100
+  const faceMatch = kycResult.face_match_score;
+  if (faceMatch >= 95) score += 50;
+  else if (faceMatch >= 85) score += 36;
+  else if (faceMatch >= 75) score += 21;
+
+  // 3. Liveness Check (25 points)
+  if (kycResult.liveness_passed) {
     score += 25;
   }
 
-  // 2. Selfie-ID Match (35 points) — score is 0-100
-  const faceMatch = kycResult.face_match_score;
-  if (faceMatch >= 95) score += 35;
-  else if (faceMatch >= 85) score += 25;
-  else if (faceMatch >= 75) score += 15;
-
-  // 3. Liveness Check (15 points)
-  if (kycResult.liveness_passed) {
-    score += 15;
-  }
-
-  return Math.min(score, 100);
+  return Math.min(score, 150);
 }
 
 // ===================================================================
@@ -236,69 +203,63 @@ export function scoreKYCVerification(kycResult: KYCVerificationInput): number {
 // ===================================================================
 
 /**
- * Get scoring component weights based on product category.
+ * Get scoring component weights for credit scoring.
  *
- * Smartphone loans use the standard 5-component model (org verification = 0).
- * Digital loans redistribute weight to include a 6th org verification component
- * by reducing mobile money (200->100) and external credit (150->50).
+ * Both smartphone and digital products use IDENTICAL weights.
  * Total always sums to 1000.
  */
-export function getScoringWeights(productCategory: 'smartphone' | 'digital'): ScoringWeights {
-  if (productCategory === 'digital') {
-    return {
-      affordability: 300,
-      repayment: 250,
-      mobileMoney: 100,
-      externalCredit: 50,
-      kycVerification: 100,
-      orgVerification: 200,
-    };
-  }
+export function getScoringWeights(_productCategory: 'smartphone' | 'digital'): ScoringWeights {
   return {
-    affordability: 300,
-    repayment: 250,
-    mobileMoney: 200,
-    externalCredit: 150,
-    kycVerification: 100,
-    orgVerification: 0,
+    orgVerification: 350,
+    affordability: 250,
+    kycVerification: 150,
+    repayment: 150,
+    deviceCollateral: 100,
+    externalCredit: 0,
   };
 }
 
 /**
- * Component 6: Organization Verification (up to 200 points for digital loans)
+ * Organization Verification Score (350 points max)
  *
  * Scores based on 4 sub-factors:
- * - Organization trust level:  up to 80 pts
- * - Employment status:         up to 50 pts
- * - Employment tenure:         up to 40 pts
- * - Salary verification:       up to 30 pts
+ * - Organization trust level:  up to 120 pts
+ * - Employment status:         up to 80 pts
+ * - Employment tenure:         up to 70 pts
+ * - Salary verification:       up to 80 pts
+ *
+ * Unaffiliated smartphone customers get neutral score (175).
  */
 export function calculateOrgVerificationScore(data: OrgVerificationData | null | undefined): number {
-  if (!data) return 0;
+  // Unaffiliated smartphone customers get neutral score
+  if (!data) return 175;
 
   let score = 0;
 
-  // 1. Organization Trust Level (80 points max)
-  if (data.scoring_trust_level >= 80) score += 80;       // Government
-  else if (data.scoring_trust_level >= 60) score += 60;   // Corporate
-  else if (data.scoring_trust_level >= 40) score += 40;   // Cooperative
-  else score += 20;                                       // Other
+  // 1. Organization Trust Level (120 points max)
+  const trustLevel = data.scoring_trust_level ?? 0;
+  if (trustLevel >= 80) score += 120;       // Government
+  else if (trustLevel >= 60) score += 90;   // Corporate
+  else if (trustLevel >= 40) score += 60;   // Cooperative
+  else score += 30;                          // Other
 
-  // 2. Employment Status (50 points max)
-  if (data.employment_status === 'active') score += 50;
-  else if (data.employment_status === 'retired') score += 25;
-  // suspended/other: 0 pts
+  // 2. Employment Status (80 points max)
+  const status = data.employment_status?.toLowerCase();
+  if (status === 'active') score += 80;
+  else if (status === 'retired') score += 40;
+  // suspended/other = 0
 
-  // 3. Employment Tenure (40 points max)
-  if (data.tenure_months >= 60) score += 40;       // 5+ years
-  else if (data.tenure_months >= 24) score += 30;  // 2-5 years
-  else if (data.tenure_months >= 12) score += 20;  // 1-2 years
-  else score += 10;                                // <1 year
+  // 3. Employment Tenure (70 points max)
+  const tenureMonths = data.tenure_months ?? 0;
+  if (tenureMonths >= 60) score += 70;       // >=5 years
+  else if (tenureMonths >= 24) score += 55;  // >=2 years
+  else if (tenureMonths >= 12) score += 35;  // >=1 year
+  else score += 15;                           // <1 year
 
-  // 4. Salary Verification (30 points max)
-  if (data.salary_verified) score += 30;
+  // 4. Salary Verification (80 points max)
+  if (data.salary_verified) score += 80;
 
-  return Math.min(score, 200);
+  return score;
 }
 
 // ===================================================================
@@ -308,14 +269,14 @@ export function calculateOrgVerificationScore(data: OrgVerificationData | null |
 /**
  * Calculate complete credit score using rule-based algorithm.
  *
- * Smartphone loans use a 5-component model (org verification = 0).
- * Digital loans use a 6-component model with redistributed weights,
- * reducing mobile money and external credit to make room for org verification.
+ * Both smartphone and digital loans use a unified 5-component model
+ * with identical weights. Organization verification is the primary
+ * differentiator (unaffiliated customers get neutral 175/350).
  *
  * Returns:
  * - Raw score: 0-1000
  * - Scaled score: 300-850 (FICO-like)
- * - Decision: approve/review/reject
+ * - Decision: approve/reject
  * - Credit tier and limit
  */
 export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<CreditScoreResult> {
@@ -324,12 +285,12 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
 
   // Calculate raw sub-scores (each on its own 0-maxPoints scale)
   const rawAffordability = scoreAffordability({
-    monthly_income_usd: input.monthly_income_usd,
-    existing_debt_obligations_usd: input.existing_debt_obligations_usd,
+    org_verified_salary_usd: input.org_verified_salary_usd,
+    device_retail_price_usd: input.device_retail_price_usd,
     household_size: input.household_size,
     dependents: input.dependents,
     requested_loan_amount: input.requested_loan_amount
-  }); // 0-300
+  }); // 0-250
 
   const rawRepayment = scoreRepaymentWillingness(
     input.previous_loans_count !== undefined ? {
@@ -340,25 +301,25 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
       bill_payment_consistency: input.bill_payment_consistency || 0,
       communication_response_rate: input.communication_response_rate || 0
     } : null
-  ); // 0-250
+  ); // 0-150
 
-  const rawMobileMoney = scoreMobileMoneyActivity(input.mobile_money_profile || null); // 0-200
+  const rawDeviceCollateral = scoreDeviceCollateral(
+    input.device_retail_price_usd,
+    input.requested_loan_amount,
+    productCategory
+  ); // 0-100
   const rawExternalCredit = scoreExternalCredit(input.external_credit_data || null); // 0-150
-  const rawKyc = scoreKYCVerification(input.kyc_result); // 0-100
-  const rawOrgVerification = calculateOrgVerificationScore(input.org_verification); // 0-200
+  const rawKyc = scoreKYCVerification(input.kyc_result); // 0-150
+  const rawOrgVerification = calculateOrgVerificationScore(input.org_verification); // 0-350
 
   // Scale each component to its weighted allocation
-  // For smartphone: standard max points = weight (no scaling needed for components 1-5, org=0)
-  // For digital: scale mobile money (200->100), external credit (150->50), add org (0->200)
   const components = {
-    affordability: Math.round((rawAffordability / 300) * weights.affordability),
-    repayment_willingness: Math.round((rawRepayment / 250) * weights.repayment),
-    mobile_money: Math.round((rawMobileMoney / 200) * weights.mobileMoney),
+    affordability: Math.round((rawAffordability / 250) * weights.affordability),
+    repayment_willingness: Math.round((rawRepayment / 150) * weights.repayment),
+    device_collateral: Math.round((rawDeviceCollateral / 100) * weights.deviceCollateral),
     external_credit: Math.round((rawExternalCredit / 150) * weights.externalCredit),
-    kyc_verification: Math.round((rawKyc / 100) * weights.kycVerification),
-    org_verification: weights.orgVerification > 0
-      ? Math.round((rawOrgVerification / 200) * weights.orgVerification)
-      : 0,
+    kyc_verification: Math.round((rawKyc / 150) * weights.kycVerification),
+    org_verification: Math.round((rawOrgVerification / 350) * weights.orgVerification),
   };
 
   // Calculate total raw score (0-1000)
@@ -367,9 +328,8 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
   // Scale to 300-850 range (FICO-like)
   const scaled_score = Math.round(300 + (total_raw_score / 1000) * 550);
 
-  // Determine decision based on scaled score (300-850)
-  // Thresholds aligned with Fineract product configuration (source of truth)
-  const MINIMUM_SCORE_THRESHOLD = 350;
+  // Per-product approval thresholds
+  const approvalThreshold = productCategory === 'digital' ? 450 : 350;
 
   let decision: 'approve' | 'reject';
 
@@ -392,7 +352,7 @@ export async function calculateRuleBasedScore(input: CreditScoreInput): Promise<
     };
   }
 
-  if (scaled_score < MINIMUM_SCORE_THRESHOLD) {
+  if (scaled_score < approvalThreshold) {
     decision = 'reject';
   } else {
     decision = 'approve';

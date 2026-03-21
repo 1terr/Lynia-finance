@@ -57,6 +57,9 @@ import { handleGetDeviceLockHistory, handleLockDevice, handleUnlockDevice, handl
 // ─── Device Handovers ───
 import { handleGetDeviceHandovers, handleUpdateHandoverStatus } from './handlers/device-handovers';
 
+// ─── Loans Admin ───
+import { handleCancelLoan } from './handlers/loans';
+
 // ─── Payments Admin ───
 import { handleGetPayments, handleGetPaymentStats, handleGetUnreconciledPayments, handleGetOverdueCollections, handleGetPaymentSummary, handleRecordManualPayment, handleGetPaymentById, handleConfirmPayment, handleFailPayment, handleRetryPayment, handleRefundPayment, handleReconcilePayment } from './handlers/payments';
 
@@ -171,6 +174,9 @@ export const handler = createRouter({
   'GET /api/v1/kyc/submissions/sla-stats':        handleGetKYCSLAStats,
   'POST /api/v1/kyc/submissions/:id/approve':     handleApproveKYC,
   'POST /api/v1/kyc/submissions/:id/reject':      handleRejectKYC,
+
+  // Loans Admin
+  'POST /api/v1/loans/:id/cancel':            handleCancelLoan,
 
   // Payments Admin (static before parameterized)
   'GET /api/v1/payments/stats':               handleGetPaymentStats,

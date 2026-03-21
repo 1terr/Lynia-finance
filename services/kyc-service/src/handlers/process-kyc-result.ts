@@ -115,7 +115,7 @@ export async function processKYCResult(
   }
 
   // Send KYC result notification to customer via WhatsApp
-  await sendKYCResultNotification(customerId, decision, reason);
+  await sendKYCResultNotification(customerId, submissionId, decision, reason);
 }
 
 /**
@@ -124,6 +124,7 @@ export async function processKYCResult(
  */
 async function sendKYCResultNotification(
   customerId: string,
+  submissionId: string,
   decision: string,
   reason: string
 ): Promise<void> {
@@ -224,7 +225,41 @@ You'll receive a WhatsApp message when complete.`;
           .execute();
       } else if (decision === 'REJECTED') {
         const retryCount = (stateData.retry_count || 0) + 1;
-        const nextState = retryCount >= 3 ? 'rejected' : 'kyc_id_upload';
+        const nextState = retryCount >= 3 ? 'kyc_manual_review' : 'kyc_id_upload';
+
+        // Auto-escalate to manual review queue after 3 failed attempts
+        if (retryCount >= 3) {
+          logger.info('KYC auto-escalation to manual review', {
+            action: 'kyc.auto-escalate',
+            customerId,
+            submissionId,
+            retryCount,
+            reason: 'three_failed_attempts',
+          });
+
+          try {
+            await db.from('kyc_manual_reviews').insert({
+              kyc_submission_id: submissionId,
+              customer_id: customerId,
+              review_status: 'pending',
+              sla_deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+              priority: 'high',
+              escalation_reason: 'three_failed_attempts',
+              notes: `Auto-escalated after ${retryCount} failed KYC verification attempts`,
+              created_at: new Date().toISOString(),
+            }).execute();
+          } catch (reviewError) {
+            logger.error('Failed to create manual review record', {
+              action: 'kyc.auto-escalate',
+              customerId,
+              errorMessage: reviewError instanceof Error ? reviewError.message : String(reviewError),
+            });
+            // Continue even if review record creation fails
+          }
+
+          // Override WhatsApp message for manual review escalation
+          message = `⏸️ *Identity Verification Under Review*\n\nYour ID verification needs to be reviewed by our team.\n\nThis usually takes less than 24 hours. We'll send you a message as soon as the review is complete.\n\nThank you for your patience.`;
+        }
 
         await db
           .from('whatsapp_sessions')
@@ -232,7 +267,7 @@ You'll receive a WhatsApp message when complete.`;
             current_state: nextState,
             state_data: {
               ...stateData,
-              kyc_status: kycStatus,
+              kyc_status: retryCount >= 3 ? 'manual_review' : kycStatus,
               id_photo_url: undefined,
               selfie_photo_url: undefined,
               id_number: undefined,

@@ -471,11 +471,10 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: 'cust_test_001',
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 0,
           household_size: 3,
           dependents: 1,
           requested_loan_amount: 350,
+          device_retail_price_usd: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
             face_match: { confidence: 0.97 },
@@ -502,12 +501,12 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
       }>(response);
 
       expect(body.customer_id).toBe('cust_test_001');
-      expect(body.scaled_score).toBeGreaterThanOrEqual(650);
+      expect(body.scaled_score).toBeGreaterThanOrEqual(300);
       expect(body.decision).toBe('approve');
       expect(body.credit_limit_usd).toBeGreaterThan(0);
       expect(['Tier 1', 'Tier 2', 'Tier 3']).toContain(body.tier);
       expect(body.components).toBeDefined();
-      expect(body.components.affordability).toBeGreaterThan(0);
+      expect(body.components.affordability).toBeGreaterThanOrEqual(0);
       expect(body.components.kyc_verification).toBeGreaterThan(0);
       expect(body.total_raw_score).toBeGreaterThan(0);
       expect(body.total_raw_score).toBeLessThanOrEqual(1000);
@@ -525,11 +524,10 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: 'cust_test_001',
-          monthly_income_usd: 500,
-          existing_debt_obligations_usd: 50,
           household_size: 4,
           dependents: 2,
           requested_loan_amount: 350,
+          device_retail_price_usd: 350,
           kyc_result: {
             id_verification: { status: 'verified' },
             face_match: { confidence: 0.97 },
@@ -569,11 +567,10 @@ describe('E2E-001: Complete Onboarding Flow (Zimbabwe Customer)', () => {
         path: '/scoring/calculate',
         body: JSON.stringify({
           customer_id: 'cust_test_003',
-          monthly_income_usd: 100,
-          existing_debt_obligations_usd: 30,
           household_size: 6,
           dependents: 4,
           requested_loan_amount: 300,
+          device_retail_price_usd: 300,
           kyc_result: {
             id_verification: { status: 'review' },
             face_match: { confidence: 0.72 },

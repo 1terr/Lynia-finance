@@ -411,7 +411,8 @@ describe('LockManagementService', () => {
       expect(db.from).toHaveBeenCalledWith('device_lock_history');
     });
 
-    it('should not unlock when loan still has outstanding balance', async () => {
+    it('should not unlock when loan still has outstanding balance and is overdue', async () => {
+      const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       __mockExecute
         .mockResolvedValueOnce({
           data: {
@@ -421,7 +422,7 @@ describe('LockManagementService', () => {
           error: null,
         })
         .mockResolvedValueOnce({
-          data: { outstanding_balance: 500, status: 'active' },
+          data: { outstanding_balance: 500, status: 'active', next_payment_date: pastDate },
           error: null,
         });
 
@@ -429,6 +430,33 @@ describe('LockManagementService', () => {
 
       // Only 2 from() calls (payments + loans), no unlock
       expect(db.from).toHaveBeenCalledTimes(2);
+    });
+
+    it('should unlock when loan has balance but is no longer overdue', async () => {
+      const futureDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      __mockExecute
+        .mockResolvedValueOnce({
+          data: {
+            id: 'pay-003', loan_id: 'loan-003',
+            loans: { devices: { lock_status: 'locked' }, device_id: 'dev-003' },
+          },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: { outstanding_balance: 300, status: 'active', next_payment_date: futureDate },
+          error: null,
+        })
+        // unlockDevice sub-calls
+        .mockResolvedValueOnce({
+          data: { id: 'dev-003', lock_status: 'locked', trustonic_device_id: 'tdev-003' },
+          error: null,
+        })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: null });
+
+      await service.handlePaymentReceived('pay-003');
+
+      expect(db.from).toHaveBeenCalledWith('device_lock_history');
     });
   });
 

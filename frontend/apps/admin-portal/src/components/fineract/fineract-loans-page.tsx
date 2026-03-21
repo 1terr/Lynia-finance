@@ -26,6 +26,8 @@ const STATUS_OPTIONS = [
   { value: 'loanStatusType.active', label: 'Active' },
   { value: 'loanStatusType.closed.obligations.met', label: 'Closed (Paid)' },
   { value: 'loanStatusType.closed.written.off', label: 'Written Off' },
+  { value: 'loanStatusType.defaulted', label: 'Defaulted' },
+  { value: 'loanStatusType.cancelled', label: 'Cancelled' },
   { value: 'loanStatusType.rejected', label: 'Rejected' },
 ];
 

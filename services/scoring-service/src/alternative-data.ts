@@ -106,6 +106,7 @@ export interface AlternativeDataFeatures {
 
 /**
  * Analyze EcoCash/OneMoney transaction history
+ * @deprecated Mobile money scoring removed in v2 scoring model. Retained for backward compatibility.
  */
 export async function analyzeMobileMoneyTransactions(
   customerId: string,
@@ -204,6 +205,9 @@ export async function analyzeMobileMoneyTransactions(
   };
 }
 
+/**
+ * @deprecated Mobile money scoring removed in v2 scoring model. Retained for backward compatibility.
+ */
 function getDefaultMobileMoneyProfile(): MobileMoneyProfile {
   return {
     account_age_months: 0,

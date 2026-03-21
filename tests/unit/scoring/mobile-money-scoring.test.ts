@@ -1,22 +1,21 @@
 /**
  * Characterization tests for scoring sub-functions in scoring-engine.ts
  *
- * Tests scoreMobileMoneyActivity, scoreRepaymentWillingness, scoreExternalCredit,
+ * Tests scoreDeviceCollateral, scoreRepaymentWillingness, scoreExternalCredit,
  * scoreKYCVerification, and calculateOrgVerificationScore.
  *
  * Wrong sub-scores propagate through the entire credit decision — a broken
- * mobile money score can push borderline customers into rejection.
+ * device collateral score can push borderline customers into rejection.
  */
 
 import {
-  scoreMobileMoneyActivity,
+  scoreDeviceCollateral,
   scoreRepaymentWillingness,
   scoreExternalCredit,
   scoreKYCVerification,
   calculateOrgVerificationScore,
 } from '../../../services/scoring-service/src/scoring/scoring-engine';
 import type {
-  MobileMoneyProfile,
   RepaymentData,
   ExternalCreditData,
   KYCVerificationInput,
@@ -24,140 +23,65 @@ import type {
 } from '../../../services/scoring-service/src/scoring/types';
 
 // ═════════════════════════════════════════════════════════════════
-// scoreMobileMoneyActivity (0-200 points)
+// scoreDeviceCollateral (0-100 points)
 // ═════════════════════════════════════════════════════════════════
 
-describe('scoreMobileMoneyActivity', () => {
-  it('returns 100 when profile is null', () => {
-    expect(scoreMobileMoneyActivity(null)).toBe(100);
+describe('scoreDeviceCollateral', () => {
+  it('coverage ratio >= 1.0 returns 100', () => {
+    // devicePrice=200, loanAmount=200 -> ratio=1.0
+    expect(scoreDeviceCollateral(200, 200, 'smartphone')).toBe(100);
+    // devicePrice=300, loanAmount=200 -> ratio=1.5
+    expect(scoreDeviceCollateral(300, 200, 'smartphone')).toBe(100);
   });
 
-  it('max score: all sub-scores at highest tier = 200', () => {
-    // account_age=24 -> 40, inflow=500 -> 70, count=100 -> 40, airtime=12 -> 30, balance=100 -> 20
-    // total = 40+70+40+30+20 = 200
-    const profile: MobileMoneyProfile = {
-      account_age_months: 24,
-      avg_monthly_inflow_usd: 500,
-      avg_monthly_outflow_usd: 300,
-      transaction_count_3m: 100,
-      balance_usd: 100,
-      airtime_purchases_3m: 12,
-      airtime_avg_per_purchase_usd: 5,
-    };
-    expect(scoreMobileMoneyActivity(profile)).toBe(200);
+  it('coverage ratio 0.8-0.99 returns 80', () => {
+    // devicePrice=160, loanAmount=200 -> ratio=0.8
+    expect(scoreDeviceCollateral(160, 200, 'smartphone')).toBe(80);
+    // devicePrice=190, loanAmount=200 -> ratio=0.95
+    expect(scoreDeviceCollateral(190, 200, 'smartphone')).toBe(80);
   });
 
-  it('min score with data: all sub-scores at lowest tier = 30', () => {
-    // account_age=1 -> 10, inflow=10 -> 5, count=5 -> 5, airtime=1 -> 5, balance=5 -> 5
-    // total = 10+5+5+5+5 = 30
-    const profile: MobileMoneyProfile = {
-      account_age_months: 1,
-      avg_monthly_inflow_usd: 10,
-      avg_monthly_outflow_usd: 5,
-      transaction_count_3m: 5,
-      balance_usd: 5,
-      airtime_purchases_3m: 1,
-      airtime_avg_per_purchase_usd: 2,
-    };
-    expect(scoreMobileMoneyActivity(profile)).toBe(30);
+  it('coverage ratio 0.6-0.79 returns 60', () => {
+    // devicePrice=120, loanAmount=200 -> ratio=0.6
+    expect(scoreDeviceCollateral(120, 200, 'smartphone')).toBe(60);
+    // devicePrice=150, loanAmount=200 -> ratio=0.75
+    expect(scoreDeviceCollateral(150, 200, 'smartphone')).toBe(60);
   });
 
-  it('account age boundaries: 12 months -> 30, 6 months -> 20', () => {
-    const base: MobileMoneyProfile = {
-      account_age_months: 12,
-      avg_monthly_inflow_usd: 10,
-      avg_monthly_outflow_usd: 5,
-      transaction_count_3m: 5,
-      balance_usd: 5,
-      airtime_purchases_3m: 1,
-      airtime_avg_per_purchase_usd: 2,
-    };
-    // 12 months: 30 + 5+5+5+5 = 50
-    expect(scoreMobileMoneyActivity(base)).toBe(50);
-
-    // 6 months: 20 + 5+5+5+5 = 40
-    expect(scoreMobileMoneyActivity({ ...base, account_age_months: 6 })).toBe(40);
+  it('coverage ratio 0.4-0.59 returns 40', () => {
+    // devicePrice=80, loanAmount=200 -> ratio=0.4
+    expect(scoreDeviceCollateral(80, 200, 'smartphone')).toBe(40);
+    // devicePrice=100, loanAmount=200 -> ratio=0.5
+    expect(scoreDeviceCollateral(100, 200, 'smartphone')).toBe(40);
   });
 
-  it('monthly inflow boundaries: 300 -> 55, 150 -> 35, 75 -> 20', () => {
-    const base: MobileMoneyProfile = {
-      account_age_months: 1,
-      avg_monthly_inflow_usd: 300,
-      avg_monthly_outflow_usd: 100,
-      transaction_count_3m: 5,
-      balance_usd: 5,
-      airtime_purchases_3m: 1,
-      airtime_avg_per_purchase_usd: 2,
-    };
-    // 300: 10+55+5+5+5 = 80
-    expect(scoreMobileMoneyActivity(base)).toBe(80);
-
-    // 150: 10+35+5+5+5 = 60
-    expect(scoreMobileMoneyActivity({ ...base, avg_monthly_inflow_usd: 150 })).toBe(60);
-
-    // 75: 10+20+5+5+5 = 45
-    expect(scoreMobileMoneyActivity({ ...base, avg_monthly_inflow_usd: 75 })).toBe(45);
+  it('coverage ratio < 0.4 returns 20', () => {
+    // devicePrice=50, loanAmount=200 -> ratio=0.25
+    expect(scoreDeviceCollateral(50, 200, 'smartphone')).toBe(20);
+    // devicePrice=10, loanAmount=200 -> ratio=0.05
+    expect(scoreDeviceCollateral(10, 200, 'smartphone')).toBe(20);
   });
 
-  it('transaction count boundaries: 50 -> 30, 20 -> 15', () => {
-    const base: MobileMoneyProfile = {
-      account_age_months: 1,
-      avg_monthly_inflow_usd: 10,
-      avg_monthly_outflow_usd: 5,
-      transaction_count_3m: 50,
-      balance_usd: 5,
-      airtime_purchases_3m: 1,
-      airtime_avg_per_purchase_usd: 2,
-    };
-    // 50: 10+5+30+5+5 = 55
-    expect(scoreMobileMoneyActivity(base)).toBe(55);
-
-    // 20: 10+5+15+5+5 = 40
-    expect(scoreMobileMoneyActivity({ ...base, transaction_count_3m: 20 })).toBe(40);
+  it('digital loans (no device) return neutral 50', () => {
+    expect(scoreDeviceCollateral(300, 200, 'digital')).toBe(50);
+    expect(scoreDeviceCollateral(undefined, 200, 'digital')).toBe(50);
   });
 
-  it('airtime boundaries: 6 -> 20, 3 -> 10', () => {
-    const base: MobileMoneyProfile = {
-      account_age_months: 1,
-      avg_monthly_inflow_usd: 10,
-      avg_monthly_outflow_usd: 5,
-      transaction_count_3m: 5,
-      balance_usd: 5,
-      airtime_purchases_3m: 6,
-      airtime_avg_per_purchase_usd: 2,
-    };
-    // 6: 10+5+5+20+5 = 45
-    expect(scoreMobileMoneyActivity(base)).toBe(45);
-
-    // 3: 10+5+5+10+5 = 35
-    expect(scoreMobileMoneyActivity({ ...base, airtime_purchases_3m: 3 })).toBe(35);
-  });
-
-  it('is capped at 200', () => {
-    // Even with all maximum values, cannot exceed 200
-    const profile: MobileMoneyProfile = {
-      account_age_months: 100,
-      avg_monthly_inflow_usd: 10000,
-      avg_monthly_outflow_usd: 5000,
-      transaction_count_3m: 1000,
-      balance_usd: 10000,
-      airtime_purchases_3m: 100,
-      airtime_avg_per_purchase_usd: 50,
-    };
-    expect(scoreMobileMoneyActivity(profile)).toBe(200);
+  it('undefined device price returns 50', () => {
+    expect(scoreDeviceCollateral(undefined, 200, 'smartphone')).toBe(50);
   });
 });
 
 // ═════════════════════════════════════════════════════════════════
-// scoreRepaymentWillingness (0-250 points)
+// scoreRepaymentWillingness (0-150 points)
 // ═════════════════════════════════════════════════════════════════
 
 describe('scoreRepaymentWillingness', () => {
-  it('returns 125 when data is null', () => {
-    expect(scoreRepaymentWillingness(null)).toBe(125);
+  it('returns 75 when data is null', () => {
+    expect(scoreRepaymentWillingness(null)).toBe(75);
   });
 
-  it('returns 125 when previous_loans_count = 0', () => {
+  it('returns 75 when previous_loans_count = 0', () => {
     const data: RepaymentData = {
       previous_loans_count: 0,
       on_time_payment_rate: 0.95,
@@ -166,10 +90,10 @@ describe('scoreRepaymentWillingness', () => {
       bill_payment_consistency: 0.90,
       communication_response_rate: 0.90,
     };
-    expect(scoreRepaymentWillingness(data)).toBe(125);
+    expect(scoreRepaymentWillingness(data)).toBe(75);
   });
 
-  it('high scores: on_time >= 0.95 -> 150, bill >= 0.90 -> 50, comm >= 0.90 -> 50 = 250', () => {
+  it('high scores: on_time >= 0.95 -> 90, bill >= 0.90 -> 30, comm >= 0.90 -> 30 = 150', () => {
     const data: RepaymentData = {
       previous_loans_count: 5,
       on_time_payment_rate: 0.95,
@@ -178,10 +102,10 @@ describe('scoreRepaymentWillingness', () => {
       bill_payment_consistency: 0.90,
       communication_response_rate: 0.90,
     };
-    expect(scoreRepaymentWillingness(data)).toBe(250);
+    expect(scoreRepaymentWillingness(data)).toBe(150);
   });
 
-  it('partial scores: on_time=0.85 -> 120, bill=0.75 -> 35, comm=0.75 -> 35 = 190', () => {
+  it('partial scores: on_time=0.85 -> 72, bill=0.75 -> 21, comm=0.75 -> 21 = 114', () => {
     const data: RepaymentData = {
       previous_loans_count: 3,
       on_time_payment_rate: 0.85,
@@ -190,10 +114,10 @@ describe('scoreRepaymentWillingness', () => {
       bill_payment_consistency: 0.75,
       communication_response_rate: 0.75,
     };
-    expect(scoreRepaymentWillingness(data)).toBe(190);
+    expect(scoreRepaymentWillingness(data)).toBe(114);
   });
 
-  it('low scores: on_time < 0.60 -> 0, bill < 0.60 -> 10, comm < 0.60 -> 10 = 20', () => {
+  it('low scores: on_time < 0.60 -> 0, bill < 0.60 -> 6, comm < 0.60 -> 6 = 12', () => {
     const data: RepaymentData = {
       previous_loans_count: 2,
       on_time_payment_rate: 0.50,
@@ -202,11 +126,10 @@ describe('scoreRepaymentWillingness', () => {
       bill_payment_consistency: 0.40,
       communication_response_rate: 0.40,
     };
-    expect(scoreRepaymentWillingness(data)).toBe(20);
+    expect(scoreRepaymentWillingness(data)).toBe(12);
   });
 
-  it('is capped at 250', () => {
-    // Max possible is 150+50+50 = 250, verify cap enforced
+  it('is capped at 150', () => {
     const data: RepaymentData = {
       previous_loans_count: 10,
       on_time_payment_rate: 1.0,
@@ -215,8 +138,8 @@ describe('scoreRepaymentWillingness', () => {
       bill_payment_consistency: 1.0,
       communication_response_rate: 1.0,
     };
-    expect(scoreRepaymentWillingness(data)).toBeLessThanOrEqual(250);
-    expect(scoreRepaymentWillingness(data)).toBe(250);
+    expect(scoreRepaymentWillingness(data)).toBeLessThanOrEqual(150);
+    expect(scoreRepaymentWillingness(data)).toBe(150);
   });
 });
 
@@ -230,7 +153,6 @@ describe('scoreExternalCredit', () => {
   });
 
   it('no bureau score (null) yields 40 neutral bureau points', () => {
-    // bureau=null -> 40, no platform, no bank = 40
     const data: ExternalCreditData = {
       credit_bureau_score: null,
       platform_verified: false,
@@ -251,8 +173,6 @@ describe('scoreExternalCredit', () => {
       bank_account_verified: true,
       bank_account_age_months: 24,
     };
-    // bureau=80, platform: 15+15+10=40, bank: 15+15=30
-    // total = 80+40+30 = 150
     expect(scoreExternalCredit(data)).toBe(150);
   });
 
@@ -283,8 +203,6 @@ describe('scoreExternalCredit', () => {
   });
 
   it('platform with mid-range earnings and rating', () => {
-    // bureau=null -> 40, platform(verified, 900, 4.0) -> 15+10+7=32
-    // total = 40+32 = 72
     const data: ExternalCreditData = {
       credit_bureau_score: null,
       platform_verified: true,
@@ -305,35 +223,34 @@ describe('scoreExternalCredit', () => {
       bank_account_verified: true,
       bank_account_age_months: 120,
     };
-    // bureau=80, platform=15+15+10=40, bank=15+15=30 -> 150
     expect(scoreExternalCredit(data)).toBeLessThanOrEqual(150);
     expect(scoreExternalCredit(data)).toBe(150);
   });
 });
 
 // ═════════════════════════════════════════════════════════════════
-// scoreKYCVerification (0-100 points)
+// scoreKYCVerification (0-150 points)
 // ═════════════════════════════════════════════════════════════════
 
 describe('scoreKYCVerification', () => {
-  it('verified ID + face >= 95 + liveness = 100 (max)', () => {
+  it('verified ID + face >= 95 + liveness = 150 (max)', () => {
     const kyc: KYCVerificationInput = {
       id_verification: { status: 'verified' },
       face_match_score: 95,
       liveness_passed: true,
     };
-    // 50 + 35 + 15 = 100
-    expect(scoreKYCVerification(kyc)).toBe(100);
+    // 75 + 50 + 25 = 150
+    expect(scoreKYCVerification(kyc)).toBe(150);
   });
 
-  it('review ID + face 85-94 + liveness = 65', () => {
+  it('review ID + face 85-94 + liveness = 98', () => {
     const kyc: KYCVerificationInput = {
       id_verification: { status: 'review' },
       face_match_score: 90,
       liveness_passed: true,
     };
-    // 25 + 25 + 15 = 65
-    expect(scoreKYCVerification(kyc)).toBe(65);
+    // 37 + 36 + 25 = 98
+    expect(scoreKYCVerification(kyc)).toBe(98);
   });
 
   it('failed ID + face < 75 + no liveness = 0', () => {
@@ -346,98 +263,98 @@ describe('scoreKYCVerification', () => {
     expect(scoreKYCVerification(kyc)).toBe(0);
   });
 
-  it('face_match = 75 yields 15 (the >= 75 tier)', () => {
+  it('face_match = 75 yields 21 (the >= 75 tier)', () => {
     const kyc: KYCVerificationInput = {
       id_verification: { status: 'failed' },
       face_match_score: 75,
       liveness_passed: false,
     };
-    // 0 + 15 + 0 = 15
-    expect(scoreKYCVerification(kyc)).toBe(15);
+    // 0 + 21 + 0 = 21
+    expect(scoreKYCVerification(kyc)).toBe(21);
   });
 
-  it('is capped at 100', () => {
+  it('is capped at 150', () => {
     const kyc: KYCVerificationInput = {
       id_verification: { status: 'verified' },
       face_match_score: 100,
       liveness_passed: true,
     };
-    // 50 + 35 + 15 = 100
-    expect(scoreKYCVerification(kyc)).toBeLessThanOrEqual(100);
-    expect(scoreKYCVerification(kyc)).toBe(100);
+    // 75 + 50 + 25 = 150
+    expect(scoreKYCVerification(kyc)).toBeLessThanOrEqual(150);
+    expect(scoreKYCVerification(kyc)).toBe(150);
   });
 });
 
 // ═════════════════════════════════════════════════════════════════
-// calculateOrgVerificationScore (0-200 points)
+// calculateOrgVerificationScore (0-350 points)
 // ═════════════════════════════════════════════════════════════════
 
 describe('calculateOrgVerificationScore', () => {
-  it('returns 0 when data is null', () => {
-    expect(calculateOrgVerificationScore(null)).toBe(0);
+  it('returns 175 (neutral) when data is null', () => {
+    expect(calculateOrgVerificationScore(null)).toBe(175);
   });
 
-  it('returns 0 when data is undefined', () => {
-    expect(calculateOrgVerificationScore(undefined)).toBe(0);
+  it('returns 175 (neutral) when data is undefined', () => {
+    expect(calculateOrgVerificationScore(undefined)).toBe(175);
   });
 
-  it('government trust + active + 60mo tenure + verified salary = 200', () => {
-    // trust>=80 -> 80, active -> 50, tenure>=60 -> 40, salary -> 30
-    // total = 80+50+40+30 = 200
+  it('government trust + active + 60mo tenure + verified salary = 350', () => {
+    // trust>=80 -> 120, active -> 80, tenure>=60 -> 70, salary -> 80
+    // total = 120+80+70+80 = 350
     const data: OrgVerificationData = {
       scoring_trust_level: 80,
       employment_status: 'active',
       tenure_months: 60,
       salary_verified: true,
     };
-    expect(calculateOrgVerificationScore(data)).toBe(200);
+    expect(calculateOrgVerificationScore(data)).toBe(350);
   });
 
-  it('corporate trust + retired + 12mo tenure = 105', () => {
-    // trust 60-79 -> 60, retired -> 25, tenure>=12 -> 20, no salary -> 0
-    // total = 60+25+20+0 = 105
+  it('corporate trust + retired + 12mo tenure = 165', () => {
+    // trust 60-79 -> 90, retired -> 40, tenure>=12 -> 35, no salary -> 0
+    // total = 90+40+35+0 = 165
     const data: OrgVerificationData = {
       scoring_trust_level: 65,
       employment_status: 'retired',
       tenure_months: 12,
       salary_verified: false,
     };
-    expect(calculateOrgVerificationScore(data)).toBe(105);
+    expect(calculateOrgVerificationScore(data)).toBe(165);
   });
 
-  it('low trust + suspended + 6mo tenure + unverified = 30', () => {
-    // trust<40 -> 20, suspended -> 0, tenure>=6 but <12 -> 10, no salary -> 0
-    // total = 20+0+10+0 = 30
+  it('low trust + suspended + 6mo tenure + unverified = 45', () => {
+    // trust<40 -> 30, suspended -> 0, tenure<12 but >=6 -> 15 (actually <12 -> 15)
+    // Wait, tenure 6 months: < 12 -> 15
+    // total = 30+0+15+0 = 45
     const data: OrgVerificationData = {
       scoring_trust_level: 30,
       employment_status: 'suspended',
       tenure_months: 6,
       salary_verified: false,
     };
-    expect(calculateOrgVerificationScore(data)).toBe(30);
+    expect(calculateOrgVerificationScore(data)).toBe(45);
   });
 
-  it('is capped at 200', () => {
-    // Maximum possible is 80+50+40+30 = 200
+  it('maximum possible is 350', () => {
+    // 120+80+70+80 = 350
     const data: OrgVerificationData = {
       scoring_trust_level: 100,
       employment_status: 'active',
       tenure_months: 120,
       salary_verified: true,
     };
-    expect(calculateOrgVerificationScore(data)).toBeLessThanOrEqual(200);
-    expect(calculateOrgVerificationScore(data)).toBe(200);
+    expect(calculateOrgVerificationScore(data)).toBe(350);
   });
 
-  it('cooperative trust level (40-59) yields 40 trust points', () => {
-    // trust 40-59 -> 40, active -> 50, tenure 24-59 -> 30, salary -> 30
-    // total = 40+50+30+30 = 150
+  it('cooperative trust level (40-59) yields 60 trust points', () => {
+    // trust 40-59 -> 60, active -> 80, tenure 24-59 -> 55, salary -> 80
+    // total = 60+80+55+80 = 275
     const data: OrgVerificationData = {
       scoring_trust_level: 50,
       employment_status: 'active',
       tenure_months: 36,
       salary_verified: true,
     };
-    expect(calculateOrgVerificationScore(data)).toBe(150);
+    expect(calculateOrgVerificationScore(data)).toBe(275);
   });
 });

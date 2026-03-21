@@ -26,11 +26,11 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
     };
   }
 
-  if (!body.monthly_income_usd || !body.requested_loan_amount || !body.kyc_result) {
+  if (!body.requested_loan_amount || !body.kyc_result) {
     return {
       statusCode: 400,
       body: JSON.stringify({
-        error: 'Missing required fields: monthly_income_usd, requested_loan_amount, kyc_result'
+        error: 'Missing required fields: requested_loan_amount, kyc_result'
       }),
       headers: getSecurityHeaders(event)
     };
@@ -50,7 +50,7 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
         `SELECT l.id FROM loans l
          JOIN customers c ON c.id = l.customer_id
          WHERE c.national_id = $1
-           AND l.status IN ('approved', 'paid_deposit', 'active')
+           AND l.status IN ('approved', 'paid_deposit', 'active', 'disbursed')
          LIMIT 1`,
         [customer.national_id]
       );
@@ -117,9 +117,12 @@ export const handleCalculateScore: RouteHandler = async (event, _params, _auth) 
         scaled_score: scoreResult.scaled_score,
         affordability_score: scoreResult.components.affordability,
         repayment_willingness_score: scoreResult.components.repayment_willingness,
-        mobile_money_score: scoreResult.components.mobile_money,
+        mobile_money_score: 0, // deprecated, kept for backward compat
         external_credit_score: scoreResult.components.external_credit,
         kyc_verification_score: scoreResult.components.kyc_verification,
+        org_verification_score: scoreResult.components.org_verification,
+        device_collateral_score: scoreResult.components.device_collateral,
+        scoring_model_version: 'v2',
         scoring_data: { ...scoreResult.components, employment_type: body.employment_type || null },
         decision: scoreResult.decision,
         credit_tier: scoreResult.tier,

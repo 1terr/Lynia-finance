@@ -275,6 +275,43 @@ export async function handleTermsAcceptance(
       });
     }
 
+    // Queue disbursement for digital loans (push-to-wallet)
+    if (isDigital && loanId) {
+      try {
+        const disbursementMethod = session.state_data.disbursement_method || 'ecocash';
+        const queueUrl = process.env.PAYMENT_QUEUE_URL;
+        if (queueUrl) {
+          const { SQSClient, SendMessageCommand } = await import('@aws-sdk/client-sqs');
+          const sqs = new SQSClient({});
+          await sqs.send(new SendMessageCommand({
+            QueueUrl: queueUrl,
+            MessageBody: JSON.stringify({
+              action: 'disburse',
+              loan_id: loanId,
+              customer_id: session.customer_id,
+              amount: financedAmount,
+              customer_phone: context.from,
+              disbursement_method: disbursementMethod,
+              currency: 'USD',
+            }),
+          }));
+          logger.info('Queued digital loan disbursement', {
+            action: 'loan.disbursement.queued',
+            loanId,
+            amount: financedAmount,
+            method: disbursementMethod,
+          });
+        }
+      } catch (disbError) {
+        logger.error('Failed to queue disbursement', {
+          action: 'loan.disbursement.queue-failed',
+          loanId,
+          errorMessage: disbError instanceof Error ? disbError.message : String(disbError),
+        });
+        // Don't fail the whole flow — admin can retry disbursement
+      }
+    }
+
     await updateSession(context.from, {
       current_state: 'completed',
       state_data: {

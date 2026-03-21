@@ -9,6 +9,7 @@ import {
   disburseFineractLoan,
   writeOffFineractLoan,
   closeFineractLoan,
+  cancelFineractLoan,
 } from '@/lib/api/fineract';
 import { useMutationWithToast } from '@/hooks/use-mutation-with-toast';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
@@ -36,7 +37,7 @@ interface Props {
   loanId: string;
 }
 
-type LoanAction = 'disburse' | 'writeoff' | 'close' | null;
+type LoanAction = 'disburse' | 'writeoff' | 'close' | 'cancel' | null;
 
 export default function FineractLoanDetailPage({ loanId }: Props) {
   const router = useRouter();
@@ -77,6 +78,14 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
     onSuccess: () => setActiveAction(null),
   });
 
+  const cancelMutation = useMutationWithToast({
+    mutationFn: () => cancelFineractLoan(loanId),
+    successMessage: 'Loan cancelled successfully. Refund will be initiated if deposit was paid.',
+    errorMessage: 'Failed to cancel loan',
+    invalidateKeys: [['fineract-loan-detail', loanId], ['fineract-loans'], ['fineract-pending-loans']],
+    onSuccess: () => setActiveAction(null),
+  });
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -107,6 +116,8 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
   const statusDisplay = getFineractStatusDisplay(loan.status.code);
   const isApproved = loan.status.code === 'loanStatusType.approved';
   const isActive = loan.status.code === 'loanStatusType.active';
+  const isDefaulted = loan.status.code === 'loanStatusType.defaulted';
+  const isCancellable = loan.status.code === 'loanStatusType.approved';
 
   return (
     <div className="space-y-6">
@@ -179,6 +190,16 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
                 Close
               </button>
             </>
+          )}
+          {isCancellable && canApprove && (
+            <button
+              onClick={() => setActiveAction('cancel')}
+              disabled={cancelMutation.isPending}
+              className="inline-flex items-center gap-1 rounded-md border border-red-300 bg-card px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:bg-red-950 dark:text-red-400"
+            >
+              <Ban className="h-4 w-4" />
+              Cancel Loan
+            </button>
           )}
         </div>
       </div>
@@ -301,6 +322,20 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
               <TimelineEntry
                 label="Closed"
                 date={loan.closedOnDate}
+                done
+              />
+            )}
+            {isDefaulted && loan.defaultedAt && (
+              <TimelineEntry
+                label="Defaulted"
+                date={loan.defaultedAt}
+                done
+              />
+            )}
+            {loan.cancelledAt && (
+              <TimelineEntry
+                label="Cancelled"
+                date={loan.cancelledAt}
                 done
               />
             )}
@@ -492,6 +527,42 @@ export default function FineractLoanDetailPage({ loanId }: Props) {
             )}
             <p className="text-xs">
               This will permanently close the loan in Fineract.
+            </p>
+          </div>
+        }
+      />
+
+      {/* Cancel Loan Confirmation */}
+      <ConfirmationDialog
+        open={activeAction === 'cancel'}
+        onClose={() => setActiveAction(null)}
+        onConfirm={() => { cancelMutation.mutateAsync(); }}
+        title="Cancel Loan"
+        variant="destructive"
+        confirmLabel="Cancel Loan"
+        confirmInput="CANCEL"
+        isLoading={cancelMutation.isPending}
+        description={
+          <div className="space-y-2 text-left">
+            <p>
+              Are you sure you want to cancel this loan?
+            </p>
+            <dl className="rounded-md bg-muted p-3 text-sm space-y-1">
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Loan</dt>
+                <dd className="font-medium text-foreground">{loan.fineractAccountNo}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Customer</dt>
+                <dd className="font-medium text-foreground">{loan.customerName}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted-foreground">Amount</dt>
+                <dd className="font-medium text-foreground">{formatCurrency(loan.principal)}</dd>
+              </div>
+            </dl>
+            <p className="text-xs text-red-600 dark:text-red-400">
+              This action cannot be undone. If a deposit was paid, a refund will be initiated.
             </p>
           </div>
         }

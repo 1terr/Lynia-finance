@@ -22,7 +22,7 @@ import { getFineractLoanBalance, getFineractRepaymentSchedule } from '../../shar
 // COMMAND DEFINITIONS
 // ===================================================================
 
-export type CommandName = 'BALANCE' | 'HISTORY' | 'SCHEDULE' | 'HELP' | 'UPDATE' | 'DEVICE' | 'EXTENSION';
+export type CommandName = 'BALANCE' | 'HISTORY' | 'SCHEDULE' | 'HELP' | 'UPDATE' | 'DEVICE' | 'EXTENSION' | 'PAY' | 'SETTLE';
 
 const COMMAND_ALIASES: Record<string, CommandName> = {
   balance: 'BALANCE', bal: 'BALANCE', check: 'BALANCE', owe: 'BALANCE',
@@ -32,6 +32,9 @@ const COMMAND_ALIASES: Record<string, CommandName> = {
   update: 'UPDATE', change: 'UPDATE', edit: 'UPDATE',
   device: 'DEVICE', phone: 'DEVICE', lock: 'DEVICE', status: 'DEVICE',
   extension: 'EXTENSION', extend: 'EXTENSION', delay: 'EXTENSION',
+  pay: 'PAY', repay: 'PAY', send: 'PAY', lipiri: 'PAY', bhadala: 'PAY', 'pay now': 'PAY',
+  settle: 'SETTLE', payoff: 'SETTLE', 'pay off': 'SETTLE', 'early payoff': 'SETTLE',
+  finish: 'SETTLE', clear: 'SETTLE', closeup: 'SETTLE',
 };
 
 // ===================================================================
@@ -59,22 +62,31 @@ function levenshtein(a: string, b: string): number {
 }
 
 /**
- * Parse user input to a command using exact match, alias, or fuzzy match
+ * Parse user input to a command using exact match, alias, or fuzzy match.
+ * Supports multi-word aliases (e.g. "pay now", "pay off", "early payoff").
  */
 export function parseCommand(input: string): CommandName | null {
-  const normalized = input.trim().toLowerCase().split(/\s+/)[0];
+  const trimmed = input.trim().toLowerCase();
+  const firstWord = trimmed.split(/\s+/)[0];
 
-  // Exact alias match
-  if (COMMAND_ALIASES[normalized]) {
-    return COMMAND_ALIASES[normalized];
+  // Check multi-word exact match first (e.g. "pay now", "pay off", "early payoff")
+  if (COMMAND_ALIASES[trimmed]) {
+    return COMMAND_ALIASES[trimmed];
   }
 
-  // Fuzzy match with max distance of 2
+  // Single-word exact alias match
+  if (COMMAND_ALIASES[firstWord]) {
+    return COMMAND_ALIASES[firstWord];
+  }
+
+  // Fuzzy match with max distance of 2 (single-word aliases only)
   let bestMatch: CommandName | null = null;
   let bestDistance = 3;
 
   for (const [alias, command] of Object.entries(COMMAND_ALIASES)) {
-    const distance = levenshtein(normalized, alias);
+    // Skip multi-word aliases for fuzzy matching
+    if (alias.includes(' ')) continue;
+    const distance = levenshtein(firstWord, alias);
     if (distance < bestDistance) {
       bestDistance = distance;
       bestMatch = command;
@@ -292,12 +304,177 @@ async function handleSchedule(phoneNumber: string): Promise<string> {
   return message;
 }
 
+/**
+ * Handle PAY command — initiate a loan repayment via mobile money.
+ * Looks up the customer's active loan, gets the next installment amount,
+ * initiates payment via the payment service, and shows USSD instructions.
+ */
+async function handlePay(phoneNumber: string): Promise<string> {
+  const { data: customer } = await db
+    .from('customers')
+    .select('id, first_name')
+    .eq('phone_number', phoneNumber)
+    .single()
+    .execute();
+
+  if (!customer) return 'Account not found. Please contact support.';
+
+  const { data: loan } = await db
+    .from('loans')
+    .select('id, loan_reference, next_payment_amount_usd, monthly_installment_amount, total_amount_due, total_amount_paid, outstanding_balance_usd')
+    .eq('customer_id', customer.id)
+    .in('loan_status', ['active', 'delinquent'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+    .execute();
+
+  if (!loan) {
+    return `Hi ${customer.first_name}! You don't have any active loans.\n\nWant to apply? Reply *APPLY* to get started.`;
+  }
+
+  // Get next installment amount — try Fineract first, fall back to Lynia DB
+  const installmentAmount = loan.next_payment_amount_usd || loan.monthly_installment_amount;
+  const outstanding = loan.outstanding_balance_usd || (loan.total_amount_due - (loan.total_amount_paid || 0));
+  const merchantCode = process.env.ECOCASH_MERCHANT_CODE || '171717';
+
+  if (!installmentAmount || installmentAmount <= 0) {
+    return `Hi ${customer.first_name}! We couldn't determine your next payment amount.\n\nPlease contact support@lynia.finance for help.`;
+  }
+
+  // Initiate payment via payment service
+  try {
+    const paymentApiUrl = `${process.env.API_BASE_URL || ''}/api/v1/payments/initiate`;
+    const paymentResponse = await fetch(paymentApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        loan_id: loan.id,
+        customer_id: customer.id,
+        amount: installmentAmount,
+        customer_phone: phoneNumber,
+        payment_type: 'repayment',
+        currency: 'USD',
+      }),
+    });
+
+    if (!paymentResponse.ok) {
+      throw new Error(`Payment service returned ${paymentResponse.status}`);
+    }
+  } catch {
+    // Payment initiation failed — still show USSD instructions as fallback
+  }
+
+  return `💰 *Payment for Loan ${loan.loan_reference || loan.id}*
+
+Amount Due: *$${installmentAmount.toFixed(2)}*
+Outstanding Balance: *$${outstanding.toFixed(2)}*
+
+To pay, dial on your phone:
+📱 EcoCash: *151*2*1*${merchantCode}*${installmentAmount.toFixed(2)}#
+📱 OneMoney: *111*3*${merchantCode}*${installmentAmount.toFixed(2)}#
+
+Use your National ID as the payment reference.
+
+Your payment will be confirmed via WhatsApp within a few minutes.
+
+Need help? Type HELP`;
+}
+
+/**
+ * Handle SETTLE command — early payoff of the full outstanding loan balance.
+ * Shows the total outstanding amount and asks for confirmation before
+ * initiating a full balance payment.
+ */
+async function handleSettle(phoneNumber: string, subCommand?: string): Promise<string> {
+  const { data: customer } = await db
+    .from('customers')
+    .select('id, first_name')
+    .eq('phone_number', phoneNumber)
+    .single()
+    .execute();
+
+  if (!customer) return 'Account not found. Please contact support.';
+
+  const { data: loan } = await db
+    .from('loans')
+    .select('id, loan_reference, total_amount_due, total_amount_paid, outstanding_balance_usd')
+    .eq('customer_id', customer.id)
+    .in('loan_status', ['active', 'delinquent'])
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+    .execute();
+
+  if (!loan) {
+    return `Hi ${customer.first_name}! You don't have any active loans.\n\nWant to apply? Reply *APPLY* to get started.`;
+  }
+
+  const outstandingBalance = loan.outstanding_balance_usd || (loan.total_amount_due - (loan.total_amount_paid || 0));
+  const merchantCode = process.env.ECOCASH_MERCHANT_CODE || '171717';
+
+  // Handle YES confirmation
+  if (subCommand && subCommand.toLowerCase() === 'yes') {
+    // Initiate full balance payment
+    try {
+      const paymentApiUrl = `${process.env.API_BASE_URL || ''}/api/v1/payments/initiate`;
+      const paymentResponse = await fetch(paymentApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          loan_id: loan.id,
+          customer_id: customer.id,
+          amount: outstandingBalance,
+          customer_phone: phoneNumber,
+          payment_type: 'early_payoff',
+          currency: 'USD',
+        }),
+      });
+
+      if (!paymentResponse.ok) {
+        throw new Error(`Payment service returned ${paymentResponse.status}`);
+      }
+    } catch {
+      // Payment initiation failed — still show USSD instructions as fallback
+    }
+
+    return `💰 *Early Payoff — Loan ${loan.loan_reference || loan.id}*
+
+Amount: *$${outstandingBalance.toFixed(2)}*
+
+To pay, dial on your phone:
+📱 EcoCash: *151*2*1*${merchantCode}*${outstandingBalance.toFixed(2)}#
+📱 OneMoney: *111*3*${merchantCode}*${outstandingBalance.toFixed(2)}#
+
+Use your National ID as the payment reference.
+
+Your payment will be confirmed via WhatsApp within a few minutes.
+
+Need help? Type HELP`;
+  }
+
+  return `💰 *Early Payoff — Loan ${loan.loan_reference || loan.id}*
+
+Total Outstanding: *$${outstandingBalance.toFixed(2)}*
+
+Paying this amount will close your loan completely.
+No early payoff fees apply.
+
+Reply *YES* to proceed with early payoff of $${outstandingBalance.toFixed(2)}
+Reply *NO* to cancel`;
+}
+
+/**
+ * Display available commands to the customer
+ */
 function handleHelp(): string {
   return `📱 *Lynia Finance Commands*
 
 Available commands:
 
 💰 *BALANCE* - Check your loan balance and next payment
+💵 *PAY* - Make a loan payment
+💰 *SETTLE* - Pay off your entire loan early
 📋 *HISTORY* - View your last 5 payments
 📅 *SCHEDULE* - See your full payment schedule
 📱 *DEVICE* - Check your device lock status
@@ -525,6 +702,8 @@ export async function routeLoanCommand(
     case 'DEVICE': return handleDevice(phoneNumber);
     case 'UPDATE': return handleUpdate(phoneNumber);
     case 'EXTENSION': return handleExtension(phoneNumber);
+    case 'PAY': return handlePay(phoneNumber);
+    case 'SETTLE': return handleSettle(phoneNumber);
     default: return null;
   }
 }

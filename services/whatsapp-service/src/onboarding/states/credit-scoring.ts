@@ -151,7 +151,6 @@ export async function handleCreditScoring(
   try {
     // ── Gap 5: Fail fast if required fields are missing ──────────────
     const requiredFields = {
-      monthly_income_usd: session.state_data.monthly_income_usd,
       requested_loan_amount: session.state_data.requested_loan_amount,
       household_size: session.state_data.household_size,
     };
@@ -206,21 +205,35 @@ export async function handleCreditScoring(
     const repaymentHistory = await fetchRepaymentHistory(session.customer_id);
 
     // ── Build scoring payload (Gaps 2, 3, 4, 5 applied) ─────────────
+    const isSmartphone = session.state_data.selected_product !== 'digital_credit';
+
     const scoringPayload = {
       customer_id: session.customer_id || `temp_${context.from}`,
 
       // Gap 5: Use validated values — no dangerous defaults
-      monthly_income_usd: session.state_data.monthly_income_usd!,
-      existing_debt_obligations_usd: session.state_data.existing_debt_obligations_usd ?? 0,
       household_size: session.state_data.household_size!,
       dependents: session.state_data.dependents ?? 0,
       requested_loan_amount: session.state_data.requested_loan_amount!,
 
       // Gap 3: Product category passthrough (map digital_credit → digital)
-      product_category: session.state_data.selected_product === 'digital_credit' ? 'digital' as const : 'smartphone' as const,
+      product_category: isSmartphone ? 'smartphone' as const : 'digital' as const,
 
       // Gap 4: Employment type passthrough (stored in scoring_data for future use)
       employment_type: session.state_data.employment_type,
+
+      // Smartphone loans: pass device retail price for affordability assessment
+      ...(isSmartphone ? {
+        device_retail_price_usd: session.state_data.selected_device_price || session.state_data.device_price,
+      } : {}),
+
+      // Digital loans with org verification: pass org data for scoring
+      org_verification: session.state_data.organization_id ? {
+        scoring_trust_level: session.state_data.scoring_trust_level,
+        employment_status: session.state_data.employment_status || 'active',
+        tenure_months: session.state_data.tenure_months || 0,
+        salary_verified: session.state_data.salary_verified || false,
+        org_verified_salary_usd: session.state_data.org_verified_salary_usd,
+      } : null,
 
       // Gap 2: Real KYC data only — no fake defaults
       kyc_result: {

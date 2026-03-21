@@ -177,18 +177,21 @@ export async function handleOrgVerification(
         + (now.getMonth() - start.getMonth());
     }
 
-    // Store org data and national ID, transition to KYC
+    // Store org data and national ID, transition to digital product selection
     await updateSession(context.from, {
-      current_state: 'kyc_id_upload',
+      current_state: 'digital_product_selection',
       state_data: {
         ...session.state_data,
         id_number: normalizedId,
         organization_id: org.id,
         org_name: org.org_name,
         org_type: org.org_type,
+        scoring_trust_level: org.scoring_trust_level,
+        employment_status: member.employment_status,
         tenure_months: tenureMonths,
         salary_verified: member.salary_verified ?? false,
         monthly_salary_usd: member.monthly_salary_usd ?? 0,
+        org_verified_salary_usd: member.monthly_salary_usd ?? undefined,
         org_lending_limits: {
           max_loan_amount: limits.max_loan_amount,
           min_loan_amount: limits.min_loan_amount,
@@ -208,7 +211,7 @@ export async function handleOrgVerification(
       tenure: String(tenureMonths),
     });
 
-    return verifiedMsg + '\n\n' + t('kyc_id_upload', lang);
+    return verifiedMsg + '\n\nNow let\'s find the right loan product for you.';
 
   } catch (error) {
     logger.error('Organization verification failed', {

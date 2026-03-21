@@ -6,8 +6,8 @@
  */
 
 export interface AffordabilityData {
-  monthly_income_usd: number;
-  existing_debt_obligations_usd: number;
+  org_verified_salary_usd?: number;
+  device_retail_price_usd?: number;
   household_size: number;
   dependents: number;
   requested_loan_amount: number;
@@ -68,8 +68,8 @@ export interface CreditScoreInput {
   product_category?: 'smartphone' | 'digital';
 
   // Affordability data
-  monthly_income_usd: number;
-  existing_debt_obligations_usd: number;
+  org_verified_salary_usd?: number;
+  device_retail_price_usd?: number;
   household_size: number;
   dependents: number;
   requested_loan_amount: number;
@@ -82,9 +82,6 @@ export interface CreditScoreInput {
   on_time_payment_rate?: number;
   bill_payment_consistency?: number;
   communication_response_rate?: number;
-
-  // Mobile money data (nullable)
-  mobile_money_profile?: MobileMoneyProfile | null;
 
   // External credit data (nullable)
   external_credit_data?: ExternalCreditData | null;
@@ -99,7 +96,7 @@ export interface CreditScoreInput {
 export interface ScoringWeights {
   affordability: number;
   repayment: number;
-  mobileMoney: number;
+  deviceCollateral: number;
   externalCredit: number;
   kycVerification: number;
   orgVerification: number;
@@ -113,7 +110,7 @@ export interface CreditScoreResult {
   components: {
     affordability: number;
     repayment_willingness: number;
-    mobile_money: number;
+    device_collateral: number;
     external_credit: number;
     kyc_verification: number;
     org_verification: number;

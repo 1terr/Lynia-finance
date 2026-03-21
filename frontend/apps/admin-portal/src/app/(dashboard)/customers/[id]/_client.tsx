@@ -292,44 +292,62 @@ export default function CustomerDetailPage() {
       </div>
 
       {/* Credit Score Card */}
-      {creditScore && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Credit Score</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
-              <div className="text-center">
-                <p className="text-4xl font-bold text-foreground">{creditScore.scaled_score}</p>
-                <p className="text-sm text-muted-foreground">{creditScore.tier} - {creditScore.decision}</p>
-                <p className="text-xs text-muted-foreground">Limit: {formatCurrency(creditScore.credit_limit)}</p>
+      {creditScore && (() => {
+        const isV2 = creditScore.scoring_model_version === 'v2'
+          || creditScore.components.org_verification !== undefined;
+
+        const scoreComponents = isV2 ? [
+          { label: 'Org Verification', value: creditScore.components.org_verification ?? 0, max: 350, color: 'bg-blue-500' },
+          { label: 'Affordability', value: creditScore.components.affordability, max: 250, color: 'bg-green-500' },
+          { label: 'KYC Quality', value: creditScore.components.kyc_verification, max: 150, color: 'bg-purple-500' },
+          { label: 'Repayment Willingness', value: creditScore.components.repayment_willingness, max: 150, color: 'bg-orange-500' },
+          { label: 'Device Collateral', value: creditScore.components.device_collateral ?? 0, max: 100, color: 'bg-cyan-500' },
+        ] : [
+          { label: 'Affordability', value: creditScore.components.affordability, max: 300, color: 'bg-green-500' },
+          { label: 'Repayment', value: creditScore.components.repayment_willingness, max: 250, color: 'bg-orange-500' },
+          { label: 'Mobile Money', value: creditScore.components.mobile_money, max: 200, color: 'bg-blue-500' },
+          { label: 'External Credit', value: creditScore.components.external_credit, max: 150, color: 'bg-purple-500' },
+          { label: 'KYC Verification', value: creditScore.components.kyc_verification, max: 100, color: 'bg-cyan-500' },
+        ];
+
+        return (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Credit Score</CardTitle>
+                {isV2 && (
+                  <Badge variant="blue">v2 Model</Badge>
+                )}
               </div>
-              <div className="flex-1 space-y-2">
-                {[
-                  { label: 'Affordability', value: creditScore.components.affordability, max: 300 },
-                  { label: 'Repayment', value: creditScore.components.repayment_willingness, max: 250 },
-                  { label: 'Mobile Money', value: creditScore.components.mobile_money, max: 200 },
-                  { label: 'External Credit', value: creditScore.components.external_credit, max: 150 },
-                  { label: 'KYC Verification', value: creditScore.components.kyc_verification, max: 100 },
-                ].map((component) => (
-                  <div key={component.label} className="flex items-center gap-3">
-                    <span className="w-28 text-xs text-muted-foreground">{component.label}</span>
-                    <div className="flex-1 h-2 rounded-full bg-muted">
-                      <div
-                        className="h-2 rounded-full bg-brand-500"
-                        style={{ width: `${(component.value / component.max) * 100}%` }}
-                      />
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-8">
+                <div className="text-center">
+                  <p className="text-4xl font-bold text-foreground">{creditScore.scaled_score}</p>
+                  <p className="text-sm text-muted-foreground">{creditScore.tier} - {creditScore.decision}</p>
+                  <p className="text-xs text-muted-foreground">Limit: {formatCurrency(creditScore.credit_limit)}</p>
+                </div>
+                <div className="flex-1 space-y-2">
+                  {scoreComponents.map((component) => (
+                    <div key={component.label} className="flex items-center gap-3">
+                      <span className="w-36 text-xs text-muted-foreground">{component.label}</span>
+                      <div className="flex-1 h-2 rounded-full bg-muted">
+                        <div
+                          className={`h-2 rounded-full ${component.color}`}
+                          style={{ width: `${Math.min((component.value / component.max) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <span className="w-14 text-xs text-right text-muted-foreground">
+                        {component.value}/{component.max}
+                      </span>
                     </div>
-                    <span className="w-12 text-xs text-right text-muted-foreground">
-                      {component.value}/{component.max}
-                    </span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Tabs */}
       <Tabs defaultValue="loans">

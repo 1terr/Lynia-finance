@@ -543,7 +543,7 @@ describe('WhatsApp Onboarding', () => {
   // handleEmployment()
   // -----------------------------------------------------------------
   describe('handleEmployment', () => {
-    it('should accept employment type and ask for income', async () => {
+    it('should accept employment type and ask for household size', async () => {
       const session = createSession({
         current_state: 'collecting_employment',
         state_data: {
@@ -558,106 +558,7 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ message: 'Self-employed' });
       const result = await handleEmployment(session, context);
 
-      expect(result).toContain('monthly income');
-    });
-
-    it('should accept a valid income >= 50 and ask for debts', async () => {
-      const session = createSession({
-        current_state: 'collecting_employment',
-        state_data: {
-          preferred_language: 'en',
-          employment_type: 'Self-employed',
-        },
-      });
-
-      mockQueryBuilder.execute.mockResolvedValueOnce({ data: null, error: null });
-
-      const context = createMessageContext({ message: '350' });
-      const result = await handleEmployment(session, context);
-
-      expect(result).toContain('debt');
-    });
-
-    it('should reject income below minimum (< 50)', async () => {
-      const session = createSession({
-        current_state: 'collecting_employment',
-        state_data: {
-          preferred_language: 'en',
-          employment_type: 'Self-employed',
-        },
-      });
-
-      const context = createMessageContext({ message: '30' });
-      const result = await handleEmployment(session, context);
-
-      expect(result).toContain('Invalid input');
-    });
-
-    it('should reject non-numeric income input', async () => {
-      const session = createSession({
-        current_state: 'collecting_employment',
-        state_data: {
-          preferred_language: 'en',
-          employment_type: 'Self-employed',
-        },
-      });
-
-      const context = createMessageContext({ message: 'three hundred' });
-      const result = await handleEmployment(session, context);
-
-      expect(result).toContain('Invalid input');
-    });
-
-    it('should accept debts amount and ask for household size', async () => {
-      const session = createSession({
-        current_state: 'collecting_employment',
-        state_data: {
-          preferred_language: 'en',
-          employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-        },
-      });
-
-      mockQueryBuilder.execute.mockResolvedValueOnce({ data: null, error: null });
-
-      const context = createMessageContext({ message: '50' });
-      const result = await handleEmployment(session, context);
-
       expect(result).toContain('household');
-    });
-
-    it('should accept zero debts', async () => {
-      const session = createSession({
-        current_state: 'collecting_employment',
-        state_data: {
-          preferred_language: 'en',
-          employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-        },
-      });
-
-      mockQueryBuilder.execute.mockResolvedValueOnce({ data: null, error: null });
-
-      const context = createMessageContext({ message: '0' });
-      const result = await handleEmployment(session, context);
-
-      expect(result).toContain('household');
-    });
-
-    it('should reject negative debt amount', async () => {
-      const session = createSession({
-        current_state: 'collecting_employment',
-        state_data: {
-          preferred_language: 'en',
-          employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-        },
-      });
-
-      const context = createMessageContext({ message: '-50' });
-      const result = await handleEmployment(session, context);
-
-      expect(result).toContain('Invalid input');
     });
 
     it('should accept valid household size (1-20) and transition to product_selection', async () => {
@@ -666,8 +567,6 @@ describe('WhatsApp Onboarding', () => {
         state_data: {
           preferred_language: 'en',
           employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-          existing_debt_obligations_usd: 0,
         },
       });
 
@@ -686,8 +585,6 @@ describe('WhatsApp Onboarding', () => {
         state_data: {
           preferred_language: 'en',
           employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-          existing_debt_obligations_usd: 0,
         },
       });
 
@@ -703,8 +600,6 @@ describe('WhatsApp Onboarding', () => {
         state_data: {
           preferred_language: 'en',
           employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-          existing_debt_obligations_usd: 0,
         },
       });
 
@@ -720,8 +615,6 @@ describe('WhatsApp Onboarding', () => {
         state_data: {
           preferred_language: 'en',
           employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-          existing_debt_obligations_usd: 0,
         },
       });
 
@@ -739,8 +632,6 @@ describe('WhatsApp Onboarding', () => {
         state_data: {
           preferred_language: 'en',
           employment_type: 'Self-employed',
-          monthly_income_usd: 350,
-          existing_debt_obligations_usd: 0,
         },
       });
 

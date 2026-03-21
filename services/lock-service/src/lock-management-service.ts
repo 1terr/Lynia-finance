@@ -468,10 +468,10 @@ export class LockManagementService {
         return;
       }
 
-      // Check if overdue loan is fully repaid with no balance
+      // Check loan balance and payment schedule to determine unlock eligibility
       const { data: loan } = await db
         .from('loans')
-        .select('outstanding_balance, status')
+        .select('outstanding_balance, status, next_payment_date')
         .eq('id', payment.loan_id)
         .single()
         .execute();
@@ -481,17 +481,34 @@ export class LockManagementService {
         return;
       }
 
-      // CRITICAL: Only unlock if outstanding balance is zero
-      if (loan.outstanding_balance === 0) {
-        logger.info('Loan fully repaid - unlocking device', { action: 'lock.management.handlePayment', loanId: payment.loan_id });
+      // Determine if loan is still overdue after this payment
+      const isStillOverdue = loan.next_payment_date &&
+        new Date(loan.next_payment_date) < new Date();
+
+      // Unlock if: fully paid off OR no longer overdue (payment brought loan current)
+      if (loan.outstanding_balance === 0 || !isStillOverdue) {
+        logger.info('Payment cleared overdue - unlocking device', {
+          action: 'lock.management.handlePayment',
+          loanId: payment.loan_id,
+          outstandingBalance: loan.outstanding_balance,
+          isFullyPaid: loan.outstanding_balance === 0,
+          isCurrentOnPayments: !isStillOverdue,
+        });
 
         await this.unlockDevice(
           payment.loans.device_id,
-          'Overdue payment cleared - no outstanding balance',
+          loan.outstanding_balance === 0
+            ? 'Loan fully repaid - no outstanding balance'
+            : 'Overdue payment cleared - loan brought current',
           'customer_payment'
         );
       } else {
-        logger.info('Loan still has outstanding balance', { action: 'lock.management.handlePayment', loanId: payment.loan_id });
+        logger.info('Loan still has overdue balance after payment', {
+          action: 'lock.management.handlePayment',
+          loanId: payment.loan_id,
+          outstandingBalance: loan.outstanding_balance,
+          nextPaymentDate: loan.next_payment_date,
+        });
       }
 
     } catch (error) {

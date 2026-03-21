@@ -200,15 +200,6 @@ describe('handleCreditScoring', () => {
   // ── Missing required fields ─────────────────────────────────────────
 
   describe('missing required fields', () => {
-    it('returns error when monthly_income_usd is missing', async () => {
-      const session = makeSmartphoneSession({ monthly_income_usd: undefined });
-      const result = await handleCreditScoring(session, makeContext('check'));
-
-      expect(result).toContain('missing some information');
-      expect(result).toContain('RESTART');
-      expect(mockAxiosPost).not.toHaveBeenCalled();
-    });
-
     it('returns error when requested_loan_amount is missing', async () => {
       const session = makeSmartphoneSession({ requested_loan_amount: undefined });
       const result = await handleCreditScoring(session, makeContext('check'));
@@ -224,13 +215,15 @@ describe('handleCreditScoring', () => {
       expect(result).toContain('missing some information');
     });
 
-    it('allows null values to trigger the missing field check', async () => {
-      const session = makeSmartphoneSession();
-      // Explicitly set to null (as opposed to undefined)
-      (session.state_data as Record<string, unknown>).monthly_income_usd = null;
+    it('does not include monthly_income_usd in required fields', async () => {
+      setupApprovalMocks();
+      const session = makeSmartphoneSession({ monthly_income_usd: undefined });
       const result = await handleCreditScoring(session, makeContext('check'));
 
-      expect(result).toContain('missing some information');
+      // monthly_income_usd is no longer required, so scoring should proceed (not fail validation)
+      expect(result).not.toContain('missing some information');
+      // Verify scoring API was called (passed validation)
+      expect(mockAxiosPost).toHaveBeenCalled();
     });
   });
 

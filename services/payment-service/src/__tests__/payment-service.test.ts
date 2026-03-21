@@ -501,7 +501,7 @@ describe('PaymentService', () => {
       );
     });
 
-    it('repayment: does not trigger unlock when balance is still positive', async () => {
+    it('repayment: does not trigger unlock when no device exists on loan', async () => {
       __mockExecute.mockReset();
       __mockExecute
         .mockResolvedValueOnce({
@@ -517,13 +517,45 @@ describe('PaymentService', () => {
         })
         .mockResolvedValueOnce({ data: null, error: null })
         .mockResolvedValueOnce({
-          data: { status: 'active', device_id: 'dev-003' },
+          data: { status: 'active', device_id: null },
           error: null,
         });
 
       await service.processPaymentCompletion('pay-005');
 
       expect(SQSQueues.processDeviceLock).not.toHaveBeenCalled();
+    });
+
+    it('repayment: triggers unlock evaluation when device exists', async () => {
+      __mockExecute.mockReset();
+      __mockExecute
+        .mockResolvedValueOnce({
+          data: {
+            id: 'pay-011', loan_id: 'loan-11', customer_id: 'cust-11',
+            amount: 100, status: 'completed', payment_type: 'repayment',
+          },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: { id: 'loan-11', outstanding_balance: 400, principal_amount: 1000, status: 'active' },
+          error: null,
+        })
+        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({
+          data: { status: 'active', device_id: 'dev-005' },
+          error: null,
+        });
+
+      await service.processPaymentCompletion('pay-011');
+
+      expect(SQSQueues.processDeviceLock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          deviceId: 'dev-005',
+          action: 'unlock',
+          reason: 'repayment_received',
+          loanId: 'loan-11',
+        })
+      );
     });
 
     // ─── Disbursement Completion ─────────────────────────────────

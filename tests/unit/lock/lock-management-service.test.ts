@@ -441,7 +441,8 @@ describe('LockManagementService', () => {
       expect(db.from).toHaveBeenCalledTimes(1);
     });
 
-    it('should not unlock when loan still has outstanding balance', async () => {
+    it('should not unlock when loan still has outstanding balance and is overdue', async () => {
+      const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       __mockExecute
         .mockResolvedValueOnce({
           data: {
@@ -455,7 +456,7 @@ describe('LockManagementService', () => {
           error: null,
         }) // payment
         .mockResolvedValueOnce({
-          data: { outstanding_balance: 500, status: 'active' },
+          data: { outstanding_balance: 500, status: 'active', next_payment_date: pastDate },
           error: null,
         }); // loan
 
@@ -463,6 +464,37 @@ describe('LockManagementService', () => {
 
       // Should not trigger unlockDevice, so only 2 from calls (payments + loans)
       expect(db.from).toHaveBeenCalledTimes(2);
+    });
+
+    it('should unlock when loan has balance but is no longer overdue', async () => {
+      const futureDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+      __mockExecute
+        .mockResolvedValueOnce({
+          data: {
+            id: 'pay-003',
+            loan_id: 'loan-003',
+            loans: {
+              devices: { lock_status: 'locked' },
+              device_id: 'dev-003',
+            },
+          },
+          error: null,
+        }) // payment
+        .mockResolvedValueOnce({
+          data: { outstanding_balance: 300, status: 'active', next_payment_date: futureDate },
+          error: null,
+        }) // loan — balance > 0 but next_payment_date is in the future
+        // unlockDevice sub-calls:
+        .mockResolvedValueOnce({
+          data: { id: 'dev-003', lock_status: 'locked', trustonic_device_id: 'tdev-003' },
+          error: null,
+        }) // device select
+        .mockResolvedValueOnce({ data: null, error: null })  // update device
+        .mockResolvedValueOnce({ data: null, error: null }); // insert history
+
+      await service.handlePaymentReceived('pay-003');
+
+      expect(db.from).toHaveBeenCalledWith('device_lock_history');
     });
 
     it('should unlock device when outstanding balance is zero', async () => {

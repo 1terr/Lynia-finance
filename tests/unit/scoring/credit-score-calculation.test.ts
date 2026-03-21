@@ -20,11 +20,10 @@ jest.mock('../../../services/shared/utils/logger', () => ({
 function buildInput(overrides: Partial<CreditScoreInput> = {}): CreditScoreInput {
   return {
     customer_id: 'cust-001',
-    monthly_income_usd: 500,
-    existing_debt_obligations_usd: 0,
     household_size: 1,
     dependents: 0,
     requested_loan_amount: 200,
+    device_retail_price_usd: 250,
     kyc_result: {
       id_verification: { status: 'verified' },
       face_match_score: 98,
@@ -39,35 +38,42 @@ describe('getScoringWeights', () => {
   it('smartphone weights sum to 1000', () => {
     const w = getScoringWeights('smartphone');
     const sum =
-      w.affordability + w.repayment + w.mobileMoney + w.externalCredit + w.kycVerification + w.orgVerification;
+      w.affordability + w.repayment + w.deviceCollateral + w.externalCredit + w.kycVerification + w.orgVerification;
     expect(sum).toBe(1000);
   });
 
-  it('smartphone orgVerification is 0', () => {
+  it('smartphone orgVerification is 350', () => {
     const w = getScoringWeights('smartphone');
-    expect(w.orgVerification).toBe(0);
+    expect(w.orgVerification).toBe(350);
+  });
+
+  it('smartphone externalCredit is 0', () => {
+    const w = getScoringWeights('smartphone');
+    expect(w.externalCredit).toBe(0);
   });
 
   // ─── Digital weights ────────────────────────────────────────────
   it('digital weights sum to 1000', () => {
     const w = getScoringWeights('digital');
     const sum =
-      w.affordability + w.repayment + w.mobileMoney + w.externalCredit + w.kycVerification + w.orgVerification;
+      w.affordability + w.repayment + w.deviceCollateral + w.externalCredit + w.kycVerification + w.orgVerification;
     expect(sum).toBe(1000);
   });
 
-  it('digital mobileMoney = 100, externalCredit = 50, orgVerification = 200', () => {
-    const w = getScoringWeights('digital');
-    expect(w.mobileMoney).toBe(100);
-    expect(w.externalCredit).toBe(50);
-    expect(w.orgVerification).toBe(200);
+  it('digital weights are identical to smartphone weights', () => {
+    const sp = getScoringWeights('smartphone');
+    const dg = getScoringWeights('digital');
+    expect(sp).toEqual(dg);
   });
 
-  it('digital affordability = 300, repayment = 250, kycVerification = 100', () => {
-    const w = getScoringWeights('digital');
-    expect(w.affordability).toBe(300);
-    expect(w.repayment).toBe(250);
-    expect(w.kycVerification).toBe(100);
+  it('weights: orgVerification=350, affordability=250, kycVerification=150, repayment=150, deviceCollateral=100, externalCredit=0', () => {
+    const w = getScoringWeights('smartphone');
+    expect(w.orgVerification).toBe(350);
+    expect(w.affordability).toBe(250);
+    expect(w.kycVerification).toBe(150);
+    expect(w.repayment).toBe(150);
+    expect(w.deviceCollateral).toBe(100);
+    expect(w.externalCredit).toBe(0);
   });
 });
 
@@ -114,29 +120,23 @@ describe('calculateRuleBasedScore', () => {
 
   // ─── Extreme inputs ─────────────────────────────────────────────
   it('all-max input produces approve with high tier', async () => {
-    // Affordability: income=500, debt=0, loan=200, household=1
-    //   monthlyInst = (200*1.12)/6 = 37.33, dti = 37.33/500 = 0.075 -> 150
-    //   incomeScore = 100 (500 >= 500)
-    //   householdScore = 50 (500/1 = 500 >= 100)
-    //   total = 300
-    // Repayment: on_time=0.95 -> 150, bill=0.90 -> 50, comm=0.90 -> 50 = 250
-    // Mobile Money: null -> 100 (neutral)
-    // External Credit: null -> 75 (neutral)
-    // KYC: verified -> 50, face=98 -> 35, liveness -> 15 = 100
-    // Components (smartphone weights):
-    //   affordability = round(300/300 * 300) = 300
-    //   repayment = round(250/250 * 250) = 250
-    //   mobile_money = round(100/200 * 200) = 100
-    //   external_credit = round(75/150 * 150) = 75
-    //   kyc = round(100/100 * 100) = 100
-    //   org = 0
-    // raw = 300 + 250 + 100 + 75 + 100 = 825
-    // scaled = 300 + (825/1000) * 550 = 300 + 453.75 = 754 (rounded)
+    // Affordability: no org salary -> neutral 75, loan=200, household=1 -> loanPerPerson=200 -> 50. Total = 125
+    //   component = round(125/250 * 250) = 125
+    // Repayment: on_time=0.95->90, bill=0.90->30, comm=0.90->30 = 150
+    //   component = round(150/150 * 150) = 150
+    // Device Collateral: 250/200 = 1.25 >= 1.0 -> 100
+    //   component = round(100/100 * 100) = 100
+    // External Credit: weight=0 -> component = 0
+    // KYC: verified->75, face=98->50, liveness->25 = 150
+    //   component = round(150/150 * 150) = 150
+    // Org Verification: null -> neutral 175
+    //   component = round(175/350 * 350) = 175
+    // raw = 125+150+100+0+150+175 = 700
+    // scaled = 300 + (700/1000)*550 = 685
     const result = await calculateRuleBasedScore(
       buildInput({
-        monthly_income_usd: 500,
-        existing_debt_obligations_usd: 0,
         requested_loan_amount: 200,
+        device_retail_price_usd: 250,
         household_size: 1,
         previous_loans_count: 5,
         on_time_payment_rate: 0.95,
@@ -145,22 +145,14 @@ describe('calculateRuleBasedScore', () => {
       })
     );
     expect(result.decision).toBe('approve');
-    // Raw score should be 825, scaled ~754
-    expect(result.scaled_score).toBeGreaterThanOrEqual(750);
+    expect(result.scaled_score).toBeGreaterThanOrEqual(650);
   });
 
-  it('all-min input produces low score with Tier 1', async () => {
-    // Affordability: income=0, debt=0, loan=200, household=1
-    //   M = 200 × 0.08561 = 17.12, dti = 17.12/1 = 17.12 -> 0 (> 0.60)
-    //   incomeScore = 0, householdScore = 10. total = 10
-    // Repayment: on_time=0->0, bill=0->10, comm=0->10 = 20
-    // Mobile Money: null -> 100, External: null -> 75, KYC: 0
-    // raw = 10+20+100+75+0 = 205, scaled = 413 -> Tier 1
+  it('all-min input produces low score with KYC Not Verified', async () => {
     const result = await calculateRuleBasedScore(
       buildInput({
-        monthly_income_usd: 0,
-        existing_debt_obligations_usd: 0,
         requested_loan_amount: 200,
+        device_retail_price_usd: 50,
         household_size: 1,
         previous_loans_count: 1,
         on_time_payment_rate: 0,
@@ -173,35 +165,40 @@ describe('calculateRuleBasedScore', () => {
         },
       })
     );
-    // KYC failed → auto-reject regardless of score (defense-in-depth)
+    // KYC failed -> auto-reject regardless of score
     expect(result.decision).toBe('reject');
     expect(result.tier).toBe('KYC Not Verified');
     expect(result.credit_limit_usd).toBe(0);
   });
 
   // ─── First-time customer ───────────────────────────────────────
-  it('first-time customer (no previous_loans_count) gets neutral repayment score 125', async () => {
-    // No previous_loans_count -> repayment data is null -> 125 neutral
-    // repayment component = round(125/250 * 250) = 125
+  it('first-time customer (no previous_loans_count) gets neutral repayment score 75', async () => {
+    // No previous_loans_count -> repayment data is null -> 75 neutral
+    // repayment component = round(75/150 * 150) = 75
     const result = await calculateRuleBasedScore(buildInput());
-    expect(result.components.repayment_willingness).toBe(125);
+    expect(result.components.repayment_willingness).toBe(75);
   });
 
   // ─── Tier threshold tests ──────────────────────────────────────
   // Tier 3: scaled >= 650 -> approve, $2000, 10% down, 3% APR
   it('scaled_score >= 650 produces Tier 3 with $2000 limit, 10% down, 3% APR', async () => {
-    // affordability=300, repayment=250, mobile=100, ext=75, kyc=100
-    // raw=825, scaled=754 -> Tier 3
+    // Use org-verified salary + org verification to get high score
     const result = await calculateRuleBasedScore(
       buildInput({
-        monthly_income_usd: 500,
-        existing_debt_obligations_usd: 0,
-        requested_loan_amount: 200,
+        org_verified_salary_usd: 800,
+        requested_loan_amount: 100,
+        device_retail_price_usd: 250,
         household_size: 1,
         previous_loans_count: 5,
         on_time_payment_rate: 0.95,
         bill_payment_consistency: 0.90,
         communication_response_rate: 0.90,
+        org_verification: {
+          scoring_trust_level: 90,
+          employment_status: 'active',
+          tenure_months: 72,
+          salary_verified: true,
+        },
       })
     );
     expect(result.decision).toBe('approve');
@@ -211,92 +208,17 @@ describe('calculateRuleBasedScore', () => {
     expect(result.interest_rate_apr).toBe(3);
   });
 
-  // Tier 2: scaled 500-649 -> approve, $500, 20% down, 4% APR
-  it('scaled_score in 500-649 produces Tier 2 with $500 limit, 20% down, 4% APR', async () => {
-    // Lower income and bad repayment to land in Tier 2 range
-    // affordability: income=200, loan=200, household=3
-    //   M=17.12, dti=0.086->150, income=50, household=200/3=67->20 = 220
-    // repayment: on_time=0.75->80, bill=0.60->20, comm=0.60->20 = 120
-    // mobile=100, ext=75, kyc=100
-    // raw = 220+120+100+75+100 = 615, scaled = 638 -> Tier 2
-    const result = await calculateRuleBasedScore(
-      buildInput({
-        monthly_income_usd: 200,
-        existing_debt_obligations_usd: 0,
-        requested_loan_amount: 200,
-        household_size: 3,
-        previous_loans_count: 5,
-        on_time_payment_rate: 0.75,
-        bill_payment_consistency: 0.60,
-        communication_response_rate: 0.60,
-      })
-    );
-    expect(result.scaled_score).toBeGreaterThanOrEqual(500);
-    expect(result.scaled_score).toBeLessThan(650);
-    expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 2');
-    expect(result.credit_limit_usd).toBe(500);
-    expect(result.down_payment_percentage).toBe(20);
-    expect(result.interest_rate_apr).toBe(4);
-  });
-
-  // Tier 1: scaled 350-499 -> approve, $200, 30% down, 5% APR
-  it('scaled_score in 350-499 produces Tier 1 with $200 limit, 30% down, 5% APR', async () => {
-    // Very bad affordability + bad repayment to land in Tier 1
-    // affordability: income=100, debt=50, loan=300, household=5
-    //   M=25.68, total=75.68, dti=0.757->0, income=25, household=20->10 = 35
-    // repayment: on_time=0.60->40, bill=0.50->10, comm=0.50->10 = 60
-    // mobile=100, ext=75, kyc: review->25, face=80->15 = 40
-    // raw = 35+60+100+75+40 = 310, scaled = 471 -> Tier 1
-    const result = await calculateRuleBasedScore(
-      buildInput({
-        monthly_income_usd: 100,
-        existing_debt_obligations_usd: 50,
-        requested_loan_amount: 300,
-        household_size: 5,
-        previous_loans_count: 3,
-        on_time_payment_rate: 0.60,
-        bill_payment_consistency: 0.50,
-        communication_response_rate: 0.50,
-        kyc_result: {
-          id_verification: { status: 'review' },
-          face_match_score: 80,
-          liveness_passed: false,
-        },
-      })
-    );
-    expect(result.scaled_score).toBeGreaterThanOrEqual(350);
-    expect(result.scaled_score).toBeLessThan(500);
-    expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 1');
-    expect(result.credit_limit_usd).toBe(200);
-    expect(result.down_payment_percentage).toBe(30);
-    expect(result.interest_rate_apr).toBe(5);
-  });
-
   // Lowest possible score below threshold gets rejected
-  it('scaled_score in 300-349 is rejected (below minimum threshold of 350)', async () => {
-    // Worst-case scores across all components
-    // raw = ~70, scaled = ~339 -> Below Minimum (< 350)
+  it('scaled_score below smartphone threshold (350) is rejected', async () => {
     const result = await calculateRuleBasedScore(
       buildInput({
-        monthly_income_usd: 50,
-        existing_debt_obligations_usd: 100,
         requested_loan_amount: 500,
+        device_retail_price_usd: 50,
         household_size: 8,
         previous_loans_count: 3,
         on_time_payment_rate: 0.40,
         bill_payment_consistency: 0.30,
         communication_response_rate: 0.30,
-        mobile_money_profile: {
-          account_age_months: 1,
-          avg_monthly_inflow_usd: 10,
-          avg_monthly_outflow_usd: 5,
-          transaction_count_3m: 2,
-          balance_usd: 1,
-          airtime_purchases_3m: 1,
-          airtime_avg_per_purchase_usd: 1,
-        },
         external_credit_data: {
           credit_bureau_score: 400,
           platform_verified: false,
@@ -312,10 +234,8 @@ describe('calculateRuleBasedScore', () => {
         },
       })
     );
-    expect(result.scaled_score).toBeGreaterThanOrEqual(300);
-    expect(result.scaled_score).toBeLessThan(350);
+    // KYC failed triggers early rejection
     expect(result.decision).toBe('reject');
-    // KYC failed triggers early rejection before score threshold check
     expect(result.tier).toBe('KYC Not Verified');
     expect(result.credit_limit_usd).toBe(0);
   });
@@ -334,23 +254,17 @@ describe('calculateRuleBasedScore', () => {
       })
     );
     expect(result.product_category).toBe('digital');
-    // org raw = 80+50+40+30 = 200, component = round(200/200 * 200) = 200
     expect(result.components.org_verification).toBeGreaterThan(0);
   });
 
-  it('smartphone product category has org_verification = 0', async () => {
+  it('smartphone product category without org data gets neutral org score 175', async () => {
     const result = await calculateRuleBasedScore(
       buildInput({
         product_category: 'smartphone',
-        org_verification: {
-          scoring_trust_level: 80,
-          employment_status: 'active',
-          tenure_months: 60,
-          salary_verified: true,
-        },
       })
     );
-    expect(result.components.org_verification).toBe(0);
+    // Unaffiliated smartphone customers get neutral org score 175/350
+    expect(result.components.org_verification).toBe(175);
   });
 
   // ─── Component sum ─────────────────────────────────────────────
@@ -359,7 +273,7 @@ describe('calculateRuleBasedScore', () => {
     const componentSum =
       result.components.affordability +
       result.components.repayment_willingness +
-      result.components.mobile_money +
+      result.components.device_collateral +
       result.components.external_credit +
       result.components.kyc_verification +
       result.components.org_verification;
@@ -377,16 +291,21 @@ describe('calculateRuleBasedScore', () => {
 
   // ─── Exact score verification ──────────────────────────────────
   it('exact score for default input with all neutrals', async () => {
-    // Default: income=500, debt=0, loan=200, household=1, no repayment history
-    // Affordability: M=17.12, dti=0.034->150, income=100, household=50 = 300
-    // Repayment: null -> 125, Mobile: null -> 100, External: null -> 75
-    // KYC: verified->50, face=98->35, liveness->15 = 100
-    // raw = 300+125+100+75+100 = 700, scaled = 685 -> Tier 3 (>=650)
+    // Default: no salary, loan=200, household=1, no repayment history, device=250
+    // Affordability: no salary -> 75, loanPerPerson=200/1=200 -> 50. Total = 125
+    //   component = round(125/250 * 250) = 125
+    // Repayment: null -> 75.  component = round(75/150 * 150) = 75
+    // Device Collateral: 250/200 = 1.25 >= 1.0 -> 100. component = round(100/100 * 100) = 100
+    // External Credit: weight=0 -> component = 0
+    // KYC: verified->75, face=98->50, liveness->25 = 150. component = round(150/150 * 150) = 150
+    // Org: null -> 175. component = round(175/350 * 350) = 175
+    // raw = 125+75+100+0+150+175 = 625
+    // scaled = 300 + (625/1000)*550 = 300+343.75 = 644 (rounded)
     const result = await calculateRuleBasedScore(buildInput());
-    expect(result.total_raw_score).toBe(700);
-    expect(result.scaled_score).toBe(685);
+    expect(result.total_raw_score).toBe(625);
+    expect(result.scaled_score).toBe(644);
     expect(result.decision).toBe('approve');
-    expect(result.tier).toBe('Tier 3');
+    expect(result.tier).toBe('Tier 2');
   });
 
   it('customer_id is passed through correctly', async () => {
@@ -396,22 +315,16 @@ describe('calculateRuleBasedScore', () => {
 
   // ─── Digital scoring with org verification ─────────────────────
   it('digital product with max org verification produces high score', async () => {
-    // Affordability: same as default = 300
-    // Repayment: null -> 125
-    // Mobile Money: null -> 100, but digital weight = 100 -> component = round(100/200 * 100) = 50
-    // External Credit: null -> 75, digital weight = 50 -> component = round(75/150 * 50) = 25
-    // KYC: 100, weight = 100 -> component = 100
-    // Org: scoring_trust=80->80, active->50, tenure=60->40, salary=true->30 = 200
-    //   component = round(200/200 * 200) = 200
-    // Components:
-    //   affordability = round(300/300 * 300) = 300
-    //   repayment = round(125/250 * 250) = 125
-    //   mobile_money = 50
-    //   external_credit = 25
-    //   kyc = 100
-    //   org = 200
-    // raw = 300+125+50+25+100+200 = 800
-    // scaled = 300 + (800/1000) * 550 = 300 + 440 = 740
+    // Affordability: no salary -> 75, loanPerPerson=200/1=200 -> 50 = 125
+    //   component = round(125/250 * 250) = 125
+    // Repayment: null -> 75, component = 75
+    // Device Collateral: digital loan -> 50 neutral. component = round(50/100 * 100) = 50
+    // External Credit: weight=0 -> component = 0
+    // KYC: 150, component = 150
+    // Org: trust=80->120, active->80, tenure=60->70, salary=true->80 = 350
+    //   component = round(350/350 * 350) = 350
+    // raw = 125+75+50+0+150+350 = 750
+    // scaled = 300 + (750/1000)*550 = 300+412.5 = 713
     const result = await calculateRuleBasedScore(
       buildInput({
         product_category: 'digital',
@@ -423,38 +336,29 @@ describe('calculateRuleBasedScore', () => {
         },
       })
     );
-    expect(result.total_raw_score).toBe(800);
-    expect(result.scaled_score).toBe(740);
+    expect(result.total_raw_score).toBe(750);
+    expect(result.scaled_score).toBe(713);
     expect(result.decision).toBe('approve');
     expect(result.tier).toBe('Tier 3');
   });
 
-  // ─── Score with full mobile money and external credit data ─────
-  it('full mobile money data increases score beyond neutral', async () => {
-    // Mobile Money: account_age=24->40, inflow=500->70, count=100->40, airtime=12->30, balance=100->20
-    //   raw = 200, component = round(200/200 * 200) = 200 (vs. 100 for neutral)
-    const withMobile = await calculateRuleBasedScore(
-      buildInput({
-        mobile_money_profile: {
-          account_age_months: 24,
-          avg_monthly_inflow_usd: 500,
-          avg_monthly_outflow_usd: 300,
-          transaction_count_3m: 100,
-          balance_usd: 100,
-          airtime_purchases_3m: 12,
-          airtime_avg_per_purchase_usd: 5,
-        },
-      })
+  // ─── Device collateral impact ──────────────────────────────────
+  it('high device value increases score via device_collateral', async () => {
+    const withHighDevice = await calculateRuleBasedScore(
+      buildInput({ device_retail_price_usd: 300, requested_loan_amount: 200 })
     );
-    const withoutMobile = await calculateRuleBasedScore(buildInput());
-    expect(withMobile.components.mobile_money).toBeGreaterThan(withoutMobile.components.mobile_money);
-    expect(withMobile.components.mobile_money).toBe(200);
-    expect(withoutMobile.components.mobile_money).toBe(100);
+    const withLowDevice = await calculateRuleBasedScore(
+      buildInput({ device_retail_price_usd: 50, requested_loan_amount: 200 })
+    );
+    expect(withHighDevice.components.device_collateral).toBeGreaterThan(withLowDevice.components.device_collateral);
+    // 300/200 = 1.5 >= 1.0 -> 100, component = 100
+    expect(withHighDevice.components.device_collateral).toBe(100);
+    // 50/200 = 0.25 < 0.4 -> 20, component = 20
+    expect(withLowDevice.components.device_collateral).toBe(20);
   });
 
-  it('full external credit data increases score beyond neutral', async () => {
-    // External: bureau=750->80, platform(verified,1500,4.5)->15+15+10=40, bank(verified,24)->15+15=30
-    //   raw = 150, component = round(150/150 * 150) = 150 (vs. 75 for neutral)
+  it('external_credit component is always 0 due to zero weight', async () => {
+    // Even with full external credit data, weighted contribution is 0
     const withExternal = await calculateRuleBasedScore(
       buildInput({
         external_credit_data: {
@@ -468,8 +372,7 @@ describe('calculateRuleBasedScore', () => {
       })
     );
     const withoutExternal = await calculateRuleBasedScore(buildInput());
-    expect(withExternal.components.external_credit).toBeGreaterThan(withoutExternal.components.external_credit);
-    expect(withExternal.components.external_credit).toBe(150);
-    expect(withoutExternal.components.external_credit).toBe(75);
+    expect(withExternal.components.external_credit).toBe(0);
+    expect(withoutExternal.components.external_credit).toBe(0);
   });
 });

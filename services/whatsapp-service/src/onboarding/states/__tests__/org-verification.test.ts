@@ -172,7 +172,7 @@ describe('handleOrgVerification', () => {
   // Member + org found and eligible
   // -----------------------------------------------------------------------
 
-  it('stores org data and transitions to kyc_id_upload on eligible org', async () => {
+  it('stores org data and transitions to digital_product_selection on eligible org', async () => {
     setupFullHappyPath();
 
     const result = await handleOrgVerification(makeSession(), makeContext('63-2345678-B-08'));
@@ -180,12 +180,13 @@ describe('handleOrgVerification', () => {
     expect(mockUpdateSession).toHaveBeenCalledWith(
       '+263771234567',
       expect.objectContaining({
-        current_state: 'kyc_id_upload',
+        current_state: 'digital_product_selection',
         state_data: expect.objectContaining({
           id_number: '63-2345678-B-08',
           organization_id: 'org-001',
           org_name: 'Econet Wireless',
           org_type: 'corporate',
+          scoring_trust_level: 'high',
           org_lending_limits: expect.objectContaining({
             max_loan_amount: 500,
             min_loan_amount: 20,
@@ -197,8 +198,6 @@ describe('handleOrgVerification', () => {
     );
 
     expect(result).toContain('Econet Wireless');
-    // Should also prompt for KYC upload next
-    expect(result).toContain('National ID');
   });
 
   it('stores resolved lending limits in state_data', async () => {
