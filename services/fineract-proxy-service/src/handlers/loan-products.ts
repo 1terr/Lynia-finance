@@ -89,13 +89,6 @@ export async function handleGetLoanProducts(
 
     fineractProducts = products.map((p) => {
       const lynia = lyniaByFineractId.get(p.id);
-      let lyniaTier = 'Tier 1';
-      const nameLower = p.name.toLowerCase();
-      if (nameLower.includes('tier 3') || nameLower.includes('premium')) {
-        lyniaTier = 'Tier 3';
-      } else if (nameLower.includes('tier 2') || nameLower.includes('standard')) {
-        lyniaTier = 'Tier 2';
-      }
 
       return {
         id: p.id,
@@ -123,7 +116,9 @@ export async function handleGetLoanProducts(
         amortizationType: p.amortizationType?.value || 'Equal Installments',
         accountingRule: p.accountingRule?.value || 'None',
         accountingMappings: p.accountingMappings,
-        lyniaTier,
+        minCreditScore: lynia?.min_credit_score ?? undefined,
+        maxCreditScore: lynia?.max_credit_score ?? undefined,
+        productCategory: lynia?.product_category ?? 'smartphone',
         downPaymentPercentage: lynia?.deposit_percentage ?? undefined,
         source: 'fineract',
       };
