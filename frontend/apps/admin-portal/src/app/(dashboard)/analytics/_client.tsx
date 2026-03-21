@@ -32,9 +32,16 @@ import {
   PieChart as PieChartIcon,
   FileSpreadsheet,
   RefreshCw,
+  MessageSquare,
 } from 'lucide-react';
 import { fetchAPI } from '@/lib/api/client';
 import { getValidSession } from '@lynia/auth';
+import dynamic from 'next/dynamic';
+
+const WhatsAppFunnel = dynamic(
+  () => import('@/components/analytics/whatsapp-funnel'),
+  { ssr: false }
+);
 
 async function fetchInvestorData(endpoint: string, params?: Record<string, string>) {
   const query = params ? '?' + new URLSearchParams(params).toString() : '';
@@ -44,7 +51,7 @@ async function fetchInvestorData(endpoint: string, params?: Record<string, strin
 const PAR_COLORS = ['#22c55e', '#eab308', '#f97316', '#ef4444', '#991b1b'];
 const TIER_COLORS = ['#3b82f6', '#8b5cf6', '#06b6d4'];
 
-type Tab = 'portfolio' | 'vintage' | 'borrowing-base' | 'financials' | 'covenants';
+type Tab = 'portfolio' | 'vintage' | 'borrowing-base' | 'financials' | 'covenants' | 'whatsapp-funnel';
 
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState<Tab>('portfolio');
@@ -62,6 +69,7 @@ export default function AnalyticsPage() {
     { key: 'borrowing-base', label: 'Borrowing Base', icon: <DollarSign className="h-4 w-4" /> },
     { key: 'financials', label: 'Financials', icon: <PieChartIcon className="h-4 w-4" /> },
     { key: 'covenants', label: 'Covenants', icon: <Shield className="h-4 w-4" /> },
+    { key: 'whatsapp-funnel', label: 'WhatsApp Funnel', icon: <MessageSquare className="h-4 w-4" /> },
   ];
 
   return (
@@ -112,6 +120,7 @@ export default function AnalyticsPage() {
       {activeTab === 'borrowing-base' && <BorrowingBaseTab />}
       {activeTab === 'financials' && <FinancialsTab />}
       {activeTab === 'covenants' && <CovenantsTab />}
+      {activeTab === 'whatsapp-funnel' && <WhatsAppFunnel />}
     </div>
   );
 }

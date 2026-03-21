@@ -43,6 +43,8 @@ const mockDb = {
 
 jest.mock('../../../services/shared/clients/database', () => ({
   db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
 }));
 
 jest.mock('../../../services/shared/utils/logger', () => ({

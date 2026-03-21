@@ -30,7 +30,11 @@ const mockQueryBuilder = {
   execute: jest.fn().mockResolvedValue({ data: null, error: null }),
 };
 const mockDb = { from: jest.fn(() => ({ ...mockQueryBuilder })) };
-jest.mock('../../../services/shared/clients/database', () => ({ db: mockDb }));
+jest.mock('../../../services/shared/clients/database', () => ({
+  db: mockDb,
+  query: jest.fn().mockResolvedValue({ data: [], error: null }),
+  queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
+}));
 
 // Mock Fineract sync client (not needed for most tests)
 jest.mock('../../../services/shared/clients/fineract-sync', () => ({
