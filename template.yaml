@@ -1579,6 +1579,21 @@ Resources:
             Method: OPTIONS
             Auth:
               Authorizer: NONE
+        # Fee Revenue
+        GetFeeRevenue:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/fee-revenue
+            Method: GET
+        GetFeeRevenueOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/fee-revenue
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
     Metadata:
       BuildMethod: esbuild
       BuildProperties:
@@ -1690,6 +1705,64 @@ Resources:
           - "@aws-sdk/*"
         EntryPoints:
           - payment-service/src/handlers/auto-default-handler.ts
+
+  # =====================================================
+  # 14. ORG DATA FRESHNESS CHECKER (Monthly Schedule)
+  # =====================================================
+  OrgDataFreshnessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub ${Environment}-lynia-org-data-freshness
+      CodeUri: services/
+      Handler: admin-service/src/handlers/org-data-freshness.handler
+      Description: Monthly check for organizations with stale member data (30+ days since last import)
+      MemorySize: 256
+      Timeout: 60
+      Environment:
+        Variables:
+          ENVIRONMENT: !Ref Environment
+          ALERT_SNS_TOPIC_ARN: !If
+            - HasAlertSnsTopic
+            - !Ref AlertSnsTopicArn
+            - ""
+      Policies:
+        - Version: "2012-10-17"
+          Statement:
+            - Effect: Allow
+              Action:
+                - secretsmanager:GetSecretValue
+              Resource:
+                - !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:lynia/${Environment}/database-*"
+            - Effect: Allow
+              Action:
+                - sns:Publish
+              Resource:
+                - !If
+                  - HasAlertSnsTopic
+                  - !Ref AlertSnsTopicArn
+                  - !Sub "arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*"
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: "*"
+      Events:
+        MonthlyFreshnessCheck:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 6 1 * ? *)
+            Description: Check org data freshness monthly on 1st at 6am UTC (8am CAT)
+            Enabled: !If [IsProduction, true, false]
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        Minify: true
+        Target: es2022
+        Sourcemap: true
+        TreeShaking: true
+        External:
+          - "@aws-sdk/*"
+        EntryPoints:
+          - admin-service/src/handlers/org-data-freshness.ts
 
   # =====================================================
   # FINERACT CLOUDWATCH DASHBOARD

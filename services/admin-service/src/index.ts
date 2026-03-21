@@ -16,7 +16,7 @@ import { handleGetConfigs, handleUpdateConfig } from './handlers/configuration';
 import { handleGetAuditLogs } from './handlers/audit-logs';
 
 // ─── Products ───
-import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel, handleGetProductOrganizations, handleLinkOrganizations, handleUnlinkOrganization, handleGetFineractDefaults, handleGetGLAccounts, handleRecoverProductFromFineract } from './handlers/products';
+import { handleGetProducts, handleCreateProduct, handleGetProductById, handleUpdateProduct, handleDeleteProduct, handleGetProductStats, handleGetProductLoansCount, handleGetProductVersions, handleGetProductDeviceModels, handleLinkDeviceModel, handleUnlinkDeviceModel, handleGetProductOrganizations, handleLinkOrganizations, handleUnlinkOrganization, handleGetFineractDefaults, handleGetGLAccounts, handleRecoverProductFromFineract } from './handlers/products';
 
 // ─── Device Models ───
 import { handleGetDeviceModels, handleCreateDeviceModel, handleGetDeviceModelById, handleUpdateDeviceModel, handleDeleteDeviceModel } from './handlers/device-models';
@@ -57,6 +57,9 @@ import { handleGetDeviceLockHistory, handleLockDevice, handleUnlockDevice, handl
 // ─── Device Handovers ───
 import { handleGetDeviceHandovers, handleUpdateHandoverStatus } from './handlers/device-handovers';
 
+// ─── Product Snapshots ───
+import { handleGetProductSnapshots, handleGetSnapshotDiff } from './handlers/product-snapshots';
+
 // ─── Loans Admin ───
 import { handleCancelLoan } from './handlers/loans';
 
@@ -90,6 +93,8 @@ export const handler = createRouter({
   'POST /admin/products':                      handleCreateProduct,
   'POST /admin/products/recover-from-fineract': handleRecoverProductFromFineract,
   'GET /admin/products/:id/loans-count':            handleGetProductLoansCount,
+  'GET /admin/products/:id/versions':                handleGetProductVersions,
+  'GET /admin/products/:id/snapshots':               handleGetProductSnapshots,
   'GET /admin/products/:id/device-models':          handleGetProductDeviceModels,
   'POST /admin/products/:id/device-models':         handleLinkDeviceModel,
   'DELETE /admin/products/:id/device-models/:modelId': handleUnlinkDeviceModel,
@@ -176,6 +181,7 @@ export const handler = createRouter({
   'POST /api/v1/kyc/submissions/:id/reject':      handleRejectKYC,
 
   // Loans Admin
+  'GET /admin/loans/:id/snapshot-diff':      handleGetSnapshotDiff,
   'POST /api/v1/loans/:id/cancel':            handleCancelLoan,
 
   // Payments Admin (static before parameterized)

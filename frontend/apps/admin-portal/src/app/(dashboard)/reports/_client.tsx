@@ -12,6 +12,7 @@ import { KycStatusReport } from '@/components/reports/kyc-status-report';
 import { DefaultRateReport } from '@/components/reports/default-rate-report';
 import { DeviceManagementReport } from '@/components/reports/device-management-report';
 import { CustomerAcquisitionReport } from '@/components/reports/customer-acquisition-report';
+import { FeeRevenueReport } from '@/components/reports/fee-revenue-report';
 import {
   getDefaultReport,
   getKYCReport,
@@ -299,6 +300,7 @@ export default function ReportsPage() {
             <TabsTrigger value="defaults">Defaults & Recovery</TabsTrigger>
             <TabsTrigger value="devices">Devices</TabsTrigger>
             <TabsTrigger value="acquisition">Acquisition</TabsTrigger>
+            <TabsTrigger value="fee-revenue">Fee Revenue</TabsTrigger>
           </TabsList>
         </div>
 
@@ -337,6 +339,11 @@ export default function ReportsPage() {
         {/* --- Customer Acquisition Tab --- */}
         <TabsContent value="acquisition">
           <CustomerAcquisitionReport filters={filters} />
+        </TabsContent>
+
+        {/* --- Fee Revenue Tab --- */}
+        <TabsContent value="fee-revenue">
+          <FeeRevenueReport filters={filters} />
         </TabsContent>
       </Tabs>
     </div>
