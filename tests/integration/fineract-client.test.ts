@@ -201,48 +201,9 @@ describe('Fineract Type Definitions', () => {
 // LOAN PRODUCT CONFIG VALIDATION TESTS
 // ============================================================
 
-describe('Loan Product Configuration', () => {
-  const loanProducts = require('../../phase-6-fineract-integration/config/loan-products.json');
-
-  it('should define exactly 3 loan products', () => {
-    expect(loanProducts.products).toHaveLength(3);
-  });
-
-  it('should have unique short names for each product', () => {
-    const shortNames = loanProducts.products.map((p: { shortName: string }) => p.shortName);
-    expect(new Set(shortNames).size).toBe(3);
-  });
-
-  it('should have valid principal ranges (min <= max) for each product', () => {
-    for (const product of loanProducts.products) {
-      expect(product.minPrincipal).toBeLessThanOrEqual(product.maxPrincipal);
-    }
-  });
-
-  it('should use consistent defaults across all products', () => {
-    const defaults = loanProducts.defaults;
-    expect(defaults.currencyCode).toBe('USD');
-    expect(defaults.amortizationType).toBe(0); // equal installments
-    expect(defaults.interestType).toBe(0); // declining balance
-    expect(defaults.accountingRule).toBe(3); // accrual-based
-  });
-
-  it('should have min <= default <= max for principal in each product', () => {
-    for (const product of loanProducts.products) {
-      expect(product.minPrincipal).toBeLessThanOrEqual(product.principal);
-      expect(product.principal).toBeLessThanOrEqual(product.maxPrincipal);
-    }
-  });
-
-  it('should have credit score eligibility metadata for product selection', () => {
-    for (const product of loanProducts.products) {
-      if (product.minCreditScore != null) {
-        expect(product.minCreditScore).toBeGreaterThanOrEqual(300);
-        expect(product.maxCreditScore).toBeLessThanOrEqual(850);
-      }
-    }
-  });
-});
+// Loan Product Configuration tests removed — products are now managed
+// in the database (loan_products table) rather than a static JSON file.
+// See migration 028_loan_product_categories.sql for product definitions.
 
 // ============================================================
 // CHART OF ACCOUNTS VALIDATION TESTS
