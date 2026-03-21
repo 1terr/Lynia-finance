@@ -622,23 +622,70 @@ export class PaymentService {
 
       logger.info(`Loan ${payment.loan_id} deposit paid: $${payment.amount}`, { action: 'payment.link_loan' });
 
-    } else if (payment.payment_type === 'repayment') {
+      // F4: Audit trail for deposit
+      db.from('audit_log').insert({
+        user_id: payment.customer_id || 'system',
+        user_type: payment.customer_id ? 'customer' : 'system',
+        action: 'loan.deposit_paid',
+        entity_type: 'loan',
+        entity_id: payment.loan_id,
+        description: `Deposit of $${payment.amount} paid. Loan status: paid_deposit`,
+        changes: JSON.stringify({ payment_id: payment.id, amount: payment.amount, new_status: 'paid_deposit' }),
+        created_at: new Date().toISOString(),
+      }).execute().catch(() => {});
+
+    } else if (payment.payment_type === 'repayment' || payment.payment_type === 'early_payoff') {
       // Update loan balance
-      const newBalance = (loan.outstanding_balance || loan.principal_amount) - payment.amount;
+      const rawBalance = (loan.outstanding_balance || loan.principal_amount) - payment.amount;
+      const previousStatus = loan.status;
+
+      // F1: Handle overpayment — apply excess to next installment as credit
+      const hasOverpayment = rawBalance < 0;
+      const creditAmount = hasOverpayment ? Math.abs(rawBalance) : 0;
+      const newBalance = hasOverpayment ? 0 : rawBalance;
+      const newStatus = newBalance <= 0 ? 'paid_off' : 'active';
+
+      const updateData: Record<string, unknown> = {
+        outstanding_balance: newBalance,
+        last_payment_date: payment.completed_at,
+        last_payment_amount: payment.amount,
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      };
+
+      // Store credit balance for next installment if overpaid
+      if (hasOverpayment && newStatus !== 'paid_off') {
+        updateData.credit_balance_usd = (loan.credit_balance_usd || 0) + creditAmount;
+      }
 
       await db
         .from('loans')
-        .update({
-          outstanding_balance: newBalance,
-          last_payment_date: payment.completed_at,
-          last_payment_amount: payment.amount,
-          status: newBalance <= 0 ? 'paid_off' : 'active',
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', payment.loan_id)
         .execute();
 
-      logger.info(`Loan ${payment.loan_id} repayment: $${payment.amount}, new balance: $${newBalance}`, { action: 'payment.link_loan' });
+      logger.info(`Loan ${payment.loan_id} repayment: $${payment.amount}, new balance: $${newBalance}${hasOverpayment ? `, credit: $${creditAmount.toFixed(2)}` : ''}`, { action: 'payment.link_loan' });
+
+      // F4: Audit trail for repayment and status transition
+      db.from('audit_log').insert({
+        user_id: payment.customer_id || 'system',
+        user_type: payment.customer_id ? 'customer' : 'system',
+        action: 'loan.repayment_applied',
+        entity_type: 'loan',
+        entity_id: payment.loan_id,
+        description: `Repayment of $${payment.amount} applied. Balance: $${newBalance.toFixed(2)}${hasOverpayment ? `. Overpayment of $${creditAmount.toFixed(2)} credited.` : ''}`,
+        changes: JSON.stringify({
+          payment_id: payment.id,
+          amount: payment.amount,
+          previous_balance: loan.outstanding_balance || loan.principal_amount,
+          new_balance: newBalance,
+          credit_amount: creditAmount,
+          previous_status: previousStatus,
+          new_status: newStatus,
+          payment_type: payment.payment_type,
+        }),
+        created_at: new Date().toISOString(),
+      }).execute().catch(() => {});
 
     } else if (payment.payment_type === 'disbursement') {
       // Disbursement: mark loan as active with disbursement details
@@ -655,6 +702,18 @@ export class PaymentService {
         .execute();
 
       logger.info(`Loan ${payment.loan_id} disbursed: $${payment.amount}`, { action: 'payment.link_loan' });
+
+      // F4: Audit trail for disbursement
+      db.from('audit_log').insert({
+        user_id: 'system',
+        user_type: 'system',
+        action: 'loan.disbursed',
+        entity_type: 'loan',
+        entity_id: payment.loan_id,
+        description: `Loan disbursed: $${payment.amount}. Status: active`,
+        changes: JSON.stringify({ payment_id: payment.id, amount: payment.amount, new_status: 'active' }),
+        created_at: new Date().toISOString(),
+      }).execute().catch(() => {});
     }
   }
 

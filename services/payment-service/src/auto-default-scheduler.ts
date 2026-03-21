@@ -1,5 +1,6 @@
 import { db, query } from '../../shared/clients/database';
 import logger from '../../shared/utils/logger';
+import { publishMetrics } from '../../shared/utils/metrics';
 import { SQSClient, SendMessageCommand } from '@aws-sdk/client-sqs';
 
 interface AutoDefaultResult {
@@ -174,6 +175,13 @@ export async function processAutoDefaults(): Promise<AutoDefaultResult> {
     action: 'auto-default.complete',
     ...result,
   });
+
+  // D3: Emit CloudWatch metrics for monitoring
+  publishMetrics([
+    { name: 'AutoDefault.Processed', value: result.processed, unit: 'Count', dimensions: { Service: 'payment-service' } },
+    { name: 'AutoDefault.Defaulted', value: result.defaulted, unit: 'Count', dimensions: { Service: 'payment-service' } },
+    { name: 'AutoDefault.Errors', value: result.errors, unit: 'Count', dimensions: { Service: 'payment-service' } },
+  ]).catch(() => {});
 
   return result;
 }

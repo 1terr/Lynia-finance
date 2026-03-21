@@ -314,6 +314,7 @@ describe('PaymentService', () => {
           error: null,
         })
         .mockResolvedValueOnce({ data: null, error: null }) // linkPaymentToLoan: update loan
+        .mockResolvedValueOnce({ data: null, error: null }) // linkPaymentToLoan: audit log insert (F4)
         .mockResolvedValueOnce({   // fetch updated loan for paid_off check
           data: { status: 'paid_off', device_id: 'dev-001' },
           error: null,

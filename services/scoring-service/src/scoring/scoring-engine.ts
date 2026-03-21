@@ -215,6 +215,9 @@ export function getScoringWeights(_productCategory: 'smartphone' | 'digital'): S
     kycVerification: 150,
     repayment: 150,
     deviceCollateral: 100,
+    // Intentionally 0: External credit bureau integration planned for post-launch.
+    // When ZW credit bureau API becomes available, re-weight to 50-100 points
+    // and reduce other components proportionally. See scoreExternalCredit() implementation.
     externalCredit: 0,
   };
 }

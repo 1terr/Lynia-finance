@@ -17,6 +17,7 @@
 
 import { db } from '../../shared/clients/database';
 import { getFineractLoanBalance, getFineractRepaymentSchedule } from '../../shared/clients/fineract-sync';
+import { auditLogEntry } from '../../shared/utils/audit';
 
 // ===================================================================
 // COMMAND DEFINITIONS
@@ -64,19 +65,31 @@ function levenshtein(a: string, b: string): number {
 /**
  * Parse user input to a command using exact match, alias, or fuzzy match.
  * Supports multi-word aliases (e.g. "pay now", "pay off", "early payoff").
+ * Returns the matched command and any remaining text as subCommand.
  */
-export function parseCommand(input: string): CommandName | null {
+export function parseCommand(input: string): { command: CommandName; subCommand?: string } | null {
   const trimmed = input.trim().toLowerCase();
-  const firstWord = trimmed.split(/\s+/)[0];
+  const words = trimmed.split(/\s+/);
+  const firstWord = words[0];
 
   // Check multi-word exact match first (e.g. "pay now", "pay off", "early payoff")
   if (COMMAND_ALIASES[trimmed]) {
-    return COMMAND_ALIASES[trimmed];
+    return { command: COMMAND_ALIASES[trimmed] };
+  }
+
+  // Check two-word prefix match (e.g. "pay off immediately" → command: SETTLE, subCommand: "immediately")
+  if (words.length >= 2) {
+    const twoWords = `${words[0]} ${words[1]}`;
+    if (COMMAND_ALIASES[twoWords]) {
+      const rest = words.slice(2).join(' ').trim() || undefined;
+      return { command: COMMAND_ALIASES[twoWords], subCommand: rest };
+    }
   }
 
   // Single-word exact alias match
   if (COMMAND_ALIASES[firstWord]) {
-    return COMMAND_ALIASES[firstWord];
+    const rest = words.slice(1).join(' ').trim() || undefined;
+    return { command: COMMAND_ALIASES[firstWord], subCommand: rest };
   }
 
   // Fuzzy match with max distance of 2 (single-word aliases only)
@@ -93,7 +106,10 @@ export function parseCommand(input: string): CommandName | null {
     }
   }
 
-  return bestMatch;
+  if (!bestMatch) return null;
+
+  const rest = words.slice(1).join(' ').trim() || undefined;
+  return { command: bestMatch, subCommand: rest };
 }
 
 // ===================================================================
@@ -347,7 +363,10 @@ async function handlePay(phoneNumber: string): Promise<string> {
     const paymentApiUrl = `${process.env.API_BASE_URL || ''}/api/v1/payments/initiate`;
     const paymentResponse = await fetch(paymentApiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.INTERNAL_API_KEY || '',
+      },
       body: JSON.stringify({
         loan_id: loan.id,
         customer_id: customer.id,
@@ -364,6 +383,17 @@ async function handlePay(phoneNumber: string): Promise<string> {
   } catch {
     // Payment initiation failed — still show USSD instructions as fallback
   }
+
+  // Audit log: payment initiated via WhatsApp PAY command
+  auditLogEntry({
+    userId: customer.id,
+    userType: 'customer',
+    action: 'payment.initiated',
+    entityType: 'loan',
+    entityId: loan.id,
+    description: `Customer initiated repayment of $${installmentAmount.toFixed(2)} via WhatsApp PAY command`,
+    changes: { amount: installmentAmount, payment_type: 'repayment', channel: 'whatsapp' },
+  }).catch(() => {});
 
   return `💰 *Payment for Loan ${loan.loan_reference || loan.id}*
 
@@ -420,7 +450,10 @@ async function handleSettle(phoneNumber: string, subCommand?: string): Promise<s
       const paymentApiUrl = `${process.env.API_BASE_URL || ''}/api/v1/payments/initiate`;
       const paymentResponse = await fetch(paymentApiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': process.env.INTERNAL_API_KEY || '',
+        },
         body: JSON.stringify({
           loan_id: loan.id,
           customer_id: customer.id,
@@ -437,6 +470,17 @@ async function handleSettle(phoneNumber: string, subCommand?: string): Promise<s
     } catch {
       // Payment initiation failed — still show USSD instructions as fallback
     }
+
+    // Audit log: early payoff initiated via WhatsApp SETTLE command
+    auditLogEntry({
+      userId: customer.id,
+      userType: 'customer',
+      action: 'payment.early_payoff_initiated',
+      entityType: 'loan',
+      entityId: loan.id,
+      description: `Customer initiated early payoff of $${outstandingBalance.toFixed(2)} via WhatsApp SETTLE command`,
+      changes: { amount: outstandingBalance, payment_type: 'early_payoff', channel: 'whatsapp' },
+    }).catch(() => {});
 
     return `💰 *Early Payoff — Loan ${loan.loan_reference || loan.id}*
 
@@ -676,9 +720,11 @@ export async function routeLoanCommand(
   phoneNumber: string,
   message: string
 ): Promise<string | null> {
-  const command = parseCommand(message);
+  const parsed = parseCommand(message);
 
-  if (!command) return null;
+  if (!parsed) return null;
+
+  const { command, subCommand } = parsed;
 
   // Rate limit check (database-backed, persists across cold starts)
   if (!(await checkRateLimit(phoneNumber))) {
@@ -700,10 +746,10 @@ export async function routeLoanCommand(
     case 'SCHEDULE': return handleSchedule(phoneNumber);
     case 'HELP': return handleHelp();
     case 'DEVICE': return handleDevice(phoneNumber);
-    case 'UPDATE': return handleUpdate(phoneNumber);
-    case 'EXTENSION': return handleExtension(phoneNumber);
+    case 'UPDATE': return handleUpdate(phoneNumber, subCommand);
+    case 'EXTENSION': return handleExtension(phoneNumber, subCommand);
     case 'PAY': return handlePay(phoneNumber);
-    case 'SETTLE': return handleSettle(phoneNumber);
+    case 'SETTLE': return handleSettle(phoneNumber, subCommand);
     default: return null;
   }
 }

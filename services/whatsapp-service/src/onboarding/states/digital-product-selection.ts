@@ -140,11 +140,13 @@ export async function handleDigitalProductSelection(
 
     productList += '\nReply with the number of your choice.';
 
+    // D4: Store only product IDs instead of full objects to minimize session data
     await updateSession(context.from, {
       state_data: {
         ...stateData,
         products_shown: true,
-        available_products: allProducts,
+        available_product_ids: allProducts.map(p => p.id),
+        available_product_count: allProducts.length,
       },
     });
 
@@ -153,13 +155,30 @@ export async function handleDigitalProductSelection(
 
   // Customer selecting a product by number
   const choice = parseInt(message, 10);
-  const availableProducts: DigitalProduct[] = stateData.available_products || [];
+  const productCount = stateData.available_product_count || (stateData.available_products || []).length;
+  const productIds: string[] = stateData.available_product_ids || (stateData.available_products || []).map((p: DigitalProduct) => p.id);
 
-  if (isNaN(choice) || choice < 1 || choice > availableProducts.length) {
-    return `Please reply with a number between 1 and ${availableProducts.length}.`;
+  if (isNaN(choice) || choice < 1 || choice > productCount) {
+    return `Please reply with a number between 1 and ${productCount}.`;
   }
 
-  const selected = availableProducts[choice - 1];
+  // Re-query the selected product by ID
+  const selectedId = productIds[choice - 1];
+  const { data: selectedProducts } = await query<DigitalProduct>(
+    `SELECT lp.id, lp.product_code, lp.product_name, lp.min_amount_usd, lp.max_amount_usd,
+            lp.interest_rate_monthly, lp.min_term_months, lp.max_term_months,
+            o.org_name, o.id as org_id
+     FROM loan_products lp
+     LEFT JOIN product_organizations po ON po.product_id = lp.id
+     LEFT JOIN organizations o ON o.id = po.organization_id
+     WHERE lp.id = $1`,
+    [selectedId]
+  );
+
+  const selected = selectedProducts?.[0];
+  if (!selected) {
+    return 'Sorry, the selected product is no longer available. Please type any message to see the updated list.';
+  }
 
   await updateSession(context.from, {
     current_state: 'kyc_id_upload',
@@ -177,6 +196,8 @@ export async function handleDigitalProductSelection(
       // Clean up temporary selection state
       products_shown: undefined,
       available_products: undefined,
+      available_product_ids: undefined,
+      available_product_count: undefined,
     },
   });
 

@@ -16,6 +16,7 @@
  */
 
 import { db } from '../../shared/clients/database';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // TYPE DEFINITIONS
@@ -118,6 +119,10 @@ export async function analyzeMobileMoneyTransactions(
     counterparty?: string;
   }>
 ): Promise<MobileMoneyProfile> {
+  logger.warn('analyzeMobileMoneyTransactions is deprecated — mobile money scoring removed in v2', {
+    action: 'scoring.deprecated_function_called',
+    customerId,
+  });
   if (!transactions.length) {
     return getDefaultMobileMoneyProfile();
   }

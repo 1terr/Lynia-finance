@@ -90,6 +90,13 @@ export const REMINDER_SCHEDULE: ReminderScheduleEntry[] = [
   { days_offset: 30, type: 'overdue_30', tone: 'default_notice' },
 ];
 
+/**
+ * Central Africa Time (CAT) offset from UTC in hours.
+ * Zimbabwe does NOT observe daylight saving time — CAT is always UTC+2.
+ * This constant is safe to use without DST adjustments.
+ */
+const CAT_OFFSET_HOURS = 2;
+
 /** Off-hours: do not send between 9pm and 7am local time (CAT = UTC+2) */
 const SEND_WINDOW_START = 7;
 const SEND_WINDOW_END = 21;
@@ -103,7 +110,7 @@ const SEND_WINDOW_END = 21;
  */
 export function isWithinSendingWindow(): boolean {
   const now = new Date();
-  const catHour = (now.getUTCHours() + 2) % 24;
+  const catHour = (now.getUTCHours() + CAT_OFFSET_HOURS) % 24;
   return catHour >= SEND_WINDOW_START && catHour < SEND_WINDOW_END;
 }
 
@@ -112,7 +119,7 @@ export function isWithinSendingWindow(): boolean {
  */
 export function getNextSendingTime(): Date {
   const now = new Date();
-  const catHour = (now.getUTCHours() + 2) % 24;
+  const catHour = (now.getUTCHours() + CAT_OFFSET_HOURS) % 24;
 
   if (catHour >= SEND_WINDOW_START && catHour < SEND_WINDOW_END) {
     return now;

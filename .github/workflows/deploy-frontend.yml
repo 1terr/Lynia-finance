@@ -88,27 +88,52 @@ jobs:
             pnpm --filter "@lynia/distributor-dashboard" test || echo "::warning::Distributor dashboard tests failed"
           fi
 
+      - name: Validate frontend environment variables
+        run: |
+          MISSING=""
+          [ -z "${FE_API_URL}" ] && MISSING="${MISSING} API_URL"
+          [ -z "${FE_COGNITO_POOL}" ] && MISSING="${MISSING} COGNITO_USER_POOL_ID"
+          if [ -n "${MISSING}" ]; then
+            echo "::error::Missing required frontend vars:${MISSING}. Configure them in GitHub repository variables."
+            exit 1
+          fi
+        env:
+          FE_API_URL: ${{ vars.API_URL }}
+          FE_COGNITO_POOL: ${{ vars.COGNITO_USER_POOL_ID }}
+
       - name: Build admin portal
         id: build-admin
         if: env.DEPLOY_APP == 'admin-portal' || env.DEPLOY_APP == 'both' || env.DEPLOY_APP == 'all'
-        run: pnpm --filter "@lynia/admin-portal" build
+        run: |
+          NEXT_PUBLIC_API_BASE_URL="${FE_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod}"
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID="${FE_COGNITO_POOL:-placeholder}"
+          NEXT_PUBLIC_COGNITO_CLIENT_ID="${FE_COGNITO_ADMIN_CLIENT:-placeholder}"
+          NEXT_PUBLIC_COGNITO_REGION="${FE_AWS_REGION:-us-east-1}"
+          NEXT_PUBLIC_ENVIRONMENT="${DEPLOY_ENV}"
+          export NEXT_PUBLIC_API_BASE_URL NEXT_PUBLIC_COGNITO_USER_POOL_ID NEXT_PUBLIC_COGNITO_CLIENT_ID NEXT_PUBLIC_COGNITO_REGION NEXT_PUBLIC_ENVIRONMENT
+          pnpm --filter "@lynia/admin-portal" build
         env:
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.API_URL }}
-          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
-          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.COGNITO_ADMIN_CLIENT_ID }}
-          NEXT_PUBLIC_COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-          NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
+          FE_API_URL: ${{ vars.API_URL }}
+          FE_COGNITO_POOL: ${{ vars.COGNITO_USER_POOL_ID }}
+          FE_COGNITO_ADMIN_CLIENT: ${{ vars.COGNITO_ADMIN_CLIENT_ID }}
+          FE_AWS_REGION: ${{ vars.AWS_REGION }}
 
       - name: Build distributor dashboard
         id: build-distributor
         if: env.DEPLOY_APP == 'distributor-dashboard' || env.DEPLOY_APP == 'both' || env.DEPLOY_APP == 'all'
-        run: pnpm --filter "@lynia/distributor-dashboard" build
+        run: |
+          NEXT_PUBLIC_API_BASE_URL="${FE_API_URL:-https://placeholder.execute-api.us-east-1.amazonaws.com/Prod}"
+          NEXT_PUBLIC_COGNITO_USER_POOL_ID="${FE_COGNITO_POOL:-placeholder}"
+          NEXT_PUBLIC_COGNITO_CLIENT_ID="${FE_COGNITO_DIST_CLIENT:-placeholder}"
+          NEXT_PUBLIC_COGNITO_REGION="${FE_AWS_REGION:-us-east-1}"
+          NEXT_PUBLIC_ENVIRONMENT="${DEPLOY_ENV}"
+          export NEXT_PUBLIC_API_BASE_URL NEXT_PUBLIC_COGNITO_USER_POOL_ID NEXT_PUBLIC_COGNITO_CLIENT_ID NEXT_PUBLIC_COGNITO_REGION NEXT_PUBLIC_ENVIRONMENT
+          pnpm --filter "@lynia/distributor-dashboard" build
         env:
-          NEXT_PUBLIC_API_BASE_URL: ${{ vars.API_URL }}
-          NEXT_PUBLIC_COGNITO_USER_POOL_ID: ${{ vars.COGNITO_USER_POOL_ID }}
-          NEXT_PUBLIC_COGNITO_CLIENT_ID: ${{ vars.COGNITO_DISTRIBUTOR_CLIENT_ID }}
-          NEXT_PUBLIC_COGNITO_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-          NEXT_PUBLIC_ENVIRONMENT: ${{ env.DEPLOY_ENV }}
+          FE_API_URL: ${{ vars.API_URL }}
+          FE_COGNITO_POOL: ${{ vars.COGNITO_USER_POOL_ID }}
+          FE_COGNITO_DIST_CLIENT: ${{ vars.COGNITO_DISTRIBUTOR_CLIENT_ID }}
+          FE_AWS_REGION: ${{ vars.AWS_REGION }}
 
       - name: Build landing page
         id: build-landing

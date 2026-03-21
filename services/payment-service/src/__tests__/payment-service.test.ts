@@ -373,6 +373,7 @@ describe('PaymentService', () => {
           error: null,
         })
         .mockResolvedValueOnce({ data: null, error: null })  // update loan
+        .mockResolvedValueOnce({ data: null, error: null })  // audit log insert (F4)
         .mockResolvedValueOnce({                             // fetch loan for Fineract
           data: { fineract_loan_id: 'fin-loan-123' },
           error: null,
@@ -432,6 +433,7 @@ describe('PaymentService', () => {
           error: null,
         })
         .mockResolvedValueOnce({ data: null, error: null })  // update loan
+        .mockResolvedValueOnce({ data: null, error: null })  // audit log insert (F4)
         .mockResolvedValueOnce({                             // fetch updated loan
           data: { status: 'active', device_id: 'dev-001' },
           error: null,
@@ -458,6 +460,7 @@ describe('PaymentService', () => {
           error: null,
         })
         .mockResolvedValueOnce({ data: null, error: null })  // update loan (balance = 0 -> paid_off)
+        .mockResolvedValueOnce({ data: null, error: null })  // audit log insert (F4)
         .mockResolvedValueOnce({
           data: { status: 'paid_off', device_id: 'dev-001' },
           error: null,
@@ -483,7 +486,8 @@ describe('PaymentService', () => {
           data: { id: 'loan-4', outstanding_balance: 300, principal_amount: 1000, status: 'active' },
           error: null,
         })
-        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: null })  // update loan
+        .mockResolvedValueOnce({ data: null, error: null })  // audit log insert (F4)
         .mockResolvedValueOnce({
           data: { status: 'paid_off', device_id: 'dev-002' },
           error: null,
@@ -515,7 +519,8 @@ describe('PaymentService', () => {
           data: { id: 'loan-5', outstanding_balance: 500, principal_amount: 1000, status: 'active' },
           error: null,
         })
-        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: null })  // update loan
+        .mockResolvedValueOnce({ data: null, error: null })  // audit log insert (F4)
         .mockResolvedValueOnce({
           data: { status: 'active', device_id: null },
           error: null,
@@ -540,7 +545,8 @@ describe('PaymentService', () => {
           data: { id: 'loan-11', outstanding_balance: 400, principal_amount: 1000, status: 'active' },
           error: null,
         })
-        .mockResolvedValueOnce({ data: null, error: null })
+        .mockResolvedValueOnce({ data: null, error: null })  // update loan
+        .mockResolvedValueOnce({ data: null, error: null })  // audit log insert (F4)
         .mockResolvedValueOnce({
           data: { status: 'active', device_id: 'dev-005' },
           error: null,

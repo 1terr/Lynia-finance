@@ -86,9 +86,33 @@ export const handleCancelLoan: RouteHandler = async (event, params, auth) => {
       cancelledBy: auth.userId,
     });
 
-    // If deposit was paid, queue refund
+    // If deposit was paid, create pending refund record + queue notification
     if (loan.deposit_paid && loan.deposit_amount_usd && loan.deposit_amount_usd > 0) {
       try {
+        // Create pending refund payment record for admin visibility and processing
+        db.from('payments').insert({
+          loan_id: loanId,
+          customer_id: loan.customer_id,
+          amount: loan.deposit_amount_usd,
+          currency: 'USD',
+          payment_type: 'refund',
+          status: 'pending',
+          description: `Deposit refund for cancelled loan ${loan.loan_number}`,
+          created_at: new Date().toISOString(),
+        }).execute().catch(() => {});
+
+        // Queue loan status update for downstream processing
+        SQSQueues.processLoanUpdate({
+          loanId,
+          action: 'status_change',
+          metadata: {
+            type: 'refund',
+            refund_amount: loan.deposit_amount_usd,
+            reason: 'loan_cancellation_deposit_refund',
+          },
+        }).catch(() => {});
+
+        // Notify customer via WhatsApp
         SQSQueues.sendNotification({
           customerId: loan.customer_id,
           channel: 'whatsapp',
@@ -99,13 +123,13 @@ export const handleCancelLoan: RouteHandler = async (event, params, auth) => {
           },
         }).catch(() => {});
 
-        logger.info('Deposit refund notification queued', {
+        logger.info('Deposit refund queued', {
           action: 'loan.cancel.refund',
           loanId,
           refundAmount: loan.deposit_amount_usd,
         });
       } catch (refundError) {
-        logger.error('Failed to queue deposit refund notification', {
+        logger.error('Failed to queue deposit refund', {
           action: 'loan.cancel.refund',
           loanId,
           errorMessage: refundError instanceof Error ? refundError.message : String(refundError),

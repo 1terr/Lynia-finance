@@ -83,37 +83,37 @@ describe('WhatsApp Loan Commands', () => {
   // -----------------------------------------------------------------
   describe('parseCommand', () => {
     it('should match exact command "BALANCE" (case insensitive)', () => {
-      expect(parseCommand('BALANCE')).toBe('BALANCE');
+      expect(parseCommand('BALANCE')).toEqual({ command: 'BALANCE' });
     });
 
     it('should match lowercase command "balance"', () => {
-      expect(parseCommand('balance')).toBe('BALANCE');
+      expect(parseCommand('balance')).toEqual({ command: 'BALANCE' });
     });
 
     it('should match mixed case "Balance"', () => {
-      expect(parseCommand('Balance')).toBe('BALANCE');
+      expect(parseCommand('Balance')).toEqual({ command: 'BALANCE' });
     });
 
     it('should match alias "bal" to BALANCE', () => {
-      expect(parseCommand('bal')).toBe('BALANCE');
+      expect(parseCommand('bal')).toEqual({ command: 'BALANCE' });
     });
 
     it('should match alias "check" to BALANCE', () => {
-      expect(parseCommand('check')).toBe('BALANCE');
+      expect(parseCommand('check')).toEqual({ command: 'BALANCE' });
     });
 
     it('should match alias "owe" to BALANCE', () => {
-      expect(parseCommand('owe')).toBe('BALANCE');
+      expect(parseCommand('owe')).toEqual({ command: 'BALANCE' });
     });
 
     it('should match fuzzy input "balence" (typo) to BALANCE via Levenshtein', () => {
       // "balence" vs "balance" has Levenshtein distance of 1
-      expect(parseCommand('balence')).toBe('BALANCE');
+      expect(parseCommand('balence')).toEqual({ command: 'BALANCE' });
     });
 
     it('should fuzzy-match "hello" to HELP (Levenshtein distance 2)', () => {
       // "hello" -> first word "hello", fuzzy match to "help" (distance 2)
-      expect(parseCommand('hello world')).toBe('HELP');
+      expect(parseCommand('hello world')).toEqual({ command: 'HELP', subCommand: 'world' });
     });
 
     it('should return null for completely unrecognized input', () => {
@@ -121,29 +121,45 @@ describe('WhatsApp Loan Commands', () => {
       expect(parseCommand('xyzqwert')).toBeNull();
     });
 
-    it('should only use first word when input contains spaces', () => {
-      // "help me" -> first word "help" -> HELP
-      expect(parseCommand('help me please')).toBe('HELP');
+    it('should extract subCommand when input has extra words', () => {
+      // "help me please" -> command: HELP, subCommand: "me please"
+      expect(parseCommand('help me please')).toEqual({ command: 'HELP', subCommand: 'me please' });
+    });
+
+    it('should extract subCommand for SETTLE YES', () => {
+      expect(parseCommand('settle yes')).toEqual({ command: 'SETTLE', subCommand: 'yes' });
+    });
+
+    it('should extract subCommand for EXTENSION YES', () => {
+      expect(parseCommand('extension yes')).toEqual({ command: 'EXTENSION', subCommand: 'yes' });
+    });
+
+    it('should match multi-word alias "pay off" to SETTLE', () => {
+      expect(parseCommand('pay off')).toEqual({ command: 'SETTLE' });
+    });
+
+    it('should match multi-word alias "early payoff" to SETTLE', () => {
+      expect(parseCommand('early payoff')).toEqual({ command: 'SETTLE' });
     });
 
     it('should match "history" to HISTORY', () => {
-      expect(parseCommand('history')).toBe('HISTORY');
+      expect(parseCommand('history')).toEqual({ command: 'HISTORY' });
     });
 
     it('should match alias "payments" to HISTORY', () => {
-      expect(parseCommand('payments')).toBe('HISTORY');
+      expect(parseCommand('payments')).toEqual({ command: 'HISTORY' });
     });
 
     it('should match "schedule" to SCHEDULE', () => {
-      expect(parseCommand('schedule')).toBe('SCHEDULE');
+      expect(parseCommand('schedule')).toEqual({ command: 'SCHEDULE' });
     });
 
     it('should match "?" to HELP', () => {
-      expect(parseCommand('?')).toBe('HELP');
+      expect(parseCommand('?')).toEqual({ command: 'HELP' });
     });
 
     it('should trim whitespace before matching', () => {
-      expect(parseCommand('  balance  ')).toBe('BALANCE');
+      expect(parseCommand('  balance  ')).toEqual({ command: 'BALANCE' });
     });
   });
 
