@@ -95,10 +95,15 @@ export default function DistributorsPage() {
       }),
   });
 
-  const { data: stats } = useQuery({
+  const { data: stats, error: statsError } = useQuery({
     queryKey: ['distributor-stats'],
     queryFn: getDistributorStats,
   });
+
+  // Surface stats errors so they're not silently swallowed
+  if (statsError) {
+    console.error('[distributor-stats] Failed to load stats:', statsError.message);
+  }
 
   // --- Mutations ---
   const createMutation = useMutation({
@@ -226,6 +231,11 @@ export default function DistributorsPage() {
       </div>
 
       {/* Stats Cards */}
+      {statsError && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Failed to load stats: {statsError.message}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           label="Total Distributors"

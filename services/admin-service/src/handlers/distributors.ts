@@ -16,7 +16,7 @@ function parseDistributorNumerics<T extends Record<string, unknown>>(row: T): T 
     total_commissions_paid: parseFloat(String(row.total_commissions_paid ?? '0')) || 0,
     pending_commissions: parseFloat(String(row.pending_commissions ?? '0')) || 0,
     commission_rate: parseFloat(String(row.commission_rate ?? '0')) || 0,
-    total_devices_distributed: parseInt(String(row.total_devices_distributed ?? '0'), 10) || 0,
+    total_devices_distributed: parseInt(String(row.total_devices_distributed ?? row.total_devices_sold ?? '0'), 10) || 0,
   };
 }
 
@@ -74,7 +74,8 @@ export const handleGetDistributorStats: RouteHandler = async (event, _params, au
     return errorResponse('Insufficient permissions', 403, {}, event);
   }
 
-  const { data: rows, error } = await query<{
+  // Try new column name first, fall back to old name if migration 034 hasn't been applied
+  let { data: rows, error } = await query<{
     total: string;
     active: string;
     total_revenue_usd: string;
@@ -88,6 +89,24 @@ export const handleGetDistributorStats: RouteHandler = async (event, _params, au
      FROM distributors
      WHERE deleted_at IS NULL`
   );
+
+  if (error?.message?.includes('total_devices_distributed')) {
+    logger.info('Falling back to total_devices_sold column', { action: 'admin.distributors.stats' });
+    ({ data: rows, error } = await query<{
+      total: string;
+      active: string;
+      total_revenue_usd: string;
+      total_devices_distributed: string;
+    }>(
+      `SELECT
+         COUNT(*) as total,
+         COUNT(*) FILTER (WHERE status = 'active') as active,
+         COALESCE(SUM(total_revenue_usd), 0) as total_revenue_usd,
+         COALESCE(SUM(total_devices_sold), 0) as total_devices_distributed
+       FROM distributors
+       WHERE deleted_at IS NULL`
+    ));
+  }
 
   if (error) {
     logger.error('Error fetching distributor stats', { action: 'admin.distributors.stats', status: 'failed', errorMessage: error.message });

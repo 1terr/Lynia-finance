@@ -494,7 +494,7 @@ CREATE TABLE IF NOT EXISTS distributors (
   approved_by UUID REFERENCES admin_users(id),
 
   -- Performance
-  total_devices_sold INTEGER DEFAULT 0,
+  total_devices_distributed INTEGER DEFAULT 0,
   total_revenue_usd DECIMAL(12, 2) DEFAULT 0,
 
   -- Metadata
@@ -1372,7 +1372,7 @@ RETURNS void AS $$
 BEGIN
   UPDATE distributors
   SET
-    total_devices_sold = total_devices_sold + devices_sold,
+    total_devices_distributed = total_devices_distributed + devices_sold,
     total_revenue_usd = total_revenue_usd + revenue,
     updated_at = NOW()
   WHERE id = dist_id;
