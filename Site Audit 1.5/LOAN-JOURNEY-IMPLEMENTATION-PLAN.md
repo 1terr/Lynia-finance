@@ -207,20 +207,44 @@ Phase 5 (Frontend):         ✅ ALL DONE
 
 ---
 
-## REMAINING GAPS
+## REMAINING GAPS — ✅ CODE GAPS RESOLVED (2026-03-21)
 
-### Missing Unit Tests (Priority: HIGH)
-5 new functions have no dedicated unit tests. Project requires 80%+ coverage.
-- `handlePay()`, `handleSettle()`, `handleDigitalProductSelection()`, `processAutoDefaults()`, `handleCancelLoan()`
+> **Gap Analysis Phase 2 deployed:** Commit `815de418` + `7b91b090`
+> 17 code items fixed, 74 new tests, 138 suites / 3064 tests / 0 failures
 
-### CI/CD Issues
-- "Deploy to AWS" GitHub Action fails due to SSM parameter resolution (`{resolve:ssm:...}` not in Parameter Store)
-- "Deploy Frontend (Blue-Green)" fails on turbopack root resolution (partially fixed with `next.config.js` change)
+### Missing Unit Tests — ✅ ALL COMPLETE (74 new tests)
+| Function | Test File | Tests |
+|----------|-----------|-------|
+| `handlePay()` | `loan-commands-pay.test.ts` | 14 |
+| `handleSettle()` | `loan-commands-settle.test.ts` | 16 |
+| `handleDigitalProductSelection()` | `digital-product-selection.test.ts` | 15 |
+| `processAutoDefaults()` | `auto-default-scheduler.test.ts` | 12 |
+| `handleCancelLoan()` | `loans.test.ts` | 17 |
+
+### Code-Level Improvements — ✅ ALL COMPLETE
+- D1: PAY/SETTLE auth → `x-api-key` header added
+- D2: SETTLE YES routing → `parseCommand()` returns `{ command, subCommand }`
+- D3: CloudWatch metrics → Processed/Defaulted/Errors emitted
+- D4: Session optimization → stores only product IDs, re-queries on selection
+- D5: Refund initiation → pending refund record + SQS queue
+- D6: Dead weight documented → reserved for credit bureau
+- D7: Deprecation warning → `logger.warn()` on mobile money function
+- D8: Audit logging → shared `auditLogEntry()` helper + PAY/SETTLE audit trail
+
+### Security/Compliance — ✅ ALL ADDRESSED
+- F1: Overpayment → credit balance on loan, migration 047
+- F2: Timezone → `CAT_OFFSET_HOURS` constant (no DST in Zimbabwe)
+- F4: Audit trail → entries for deposit, repayment, disbursement, overpayment
+
+### CI/CD — ✅ FRONTEND FIX APPLIED
+- Frontend deploy: Added env var validation step + shell-level fallbacks in `deploy-frontend.yml`
+- Backend deploy: SSM parameter resolution still needs Parameter Store entries for new environments
 
 ### External Dependencies (Not Code — Require Business/Ops Action)
-- Payment providers: None production-ready
-- MDM provider: Not selected
-- WhatsApp Cloud API: Meta verification pending
-- DIDIT KYC: Not production-tested with ZW IDs
-- Interest rates: Business decision pending
-- Cognito groups: Not created in production
+- Payment providers: None production-ready (P0)
+- MDM provider: Not selected (P0)
+- WhatsApp Cloud API: Meta verification pending (P0)
+- DIDIT KYC: Not production-tested with ZW IDs (P0)
+- Interest rates: Business decision pending (P0)
+- Cognito groups: Not created in production (P1)
+- Migration 047: Needs deployment to production RDS (P1)
