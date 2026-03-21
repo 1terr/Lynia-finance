@@ -31,6 +31,7 @@ module.exports = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/services/$1',
     '^@supabase/supabase-js$': '<rootDir>/tests/helpers/supabase-stub.ts',
+    '^uuid$': '<rootDir>/tests/helpers/uuid-stub.ts',
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
   testTimeout: 30000, // 30 seconds for integration tests
