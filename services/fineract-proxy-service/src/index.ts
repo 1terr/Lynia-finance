@@ -19,6 +19,13 @@ import { handleGetReports, handleRunReport } from './handlers/reports';
 import { handleGetSystemHealth } from './handlers/system-health';
 
 export const handler = createRouter({
+  // Health check
+  'GET /api/v1/fineract/health': async (_event, _params, _auth) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'fineract-proxy', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
+
   // Static paths FIRST to avoid false matches with :loanId
   'GET /api/v1/fineract/loans/pending':            handleGetPendingLoans,
   'GET /api/v1/fineract/loans/overdue':             handleGetOverdueLoans,

@@ -13,6 +13,11 @@ import { handleOmariWebhook } from './handlers/webhook-omari';
 import { handleInnBucksWebhook } from './handlers/webhook-innbucks';
 
 export const handler = createRouter({
+  'GET /payments/health': async (_event, _params, _auth) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'payment-service', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
   'POST /payments/initiate': handleInitiatePayment,
   'POST /payments/webhook/ecocash': handleEcoCashWebhook,
   'POST /payments/webhook/onemoney': handleOneMoneyWebhook,

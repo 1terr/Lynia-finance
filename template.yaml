@@ -351,6 +351,14 @@ Resources:
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       # ReservedConcurrentExecutions: !If [IsProduction, 50, !Ref "AWS::NoValue"]  # Disabled - account concurrency limit too low
       Events:
+        ScoringHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /scoring/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         CalculateScore:
           Type: Api
           Properties:
@@ -424,6 +432,14 @@ Resources:
           KYC_API_URL: !Ref KycApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
+        WhatsAppHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /whatsapp/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         SendMessage:
           Type: Api
           Properties:
@@ -552,6 +568,14 @@ Resources:
           WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
+        KYCHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /kyc/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         InitiateKYC:
           Type: Api
           Properties:
@@ -638,6 +662,14 @@ Resources:
           ONEMONEY_MERCHANT_ID: !Ref OnemoneyMerchantId
           ONEMONEY_API_KEY: !Ref OnemoneyApiKey
       Events:
+        PaymentHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /payments/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         InitiatePayment:
           Type: Api
           Properties:
@@ -743,6 +775,14 @@ Resources:
           TRUSTONIC_API_SECRET: !Ref TrustonicApiSecret
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
+        LockHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /locks/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         LockDevice:
           Type: Api
           Properties:
@@ -834,6 +874,14 @@ Resources:
           WHATSAPP_API_URL: !Ref WhatsAppApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
+        NotificationHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /notifications/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         SendNotification:
           Type: Api
           Properties:
@@ -988,6 +1036,14 @@ Resources:
                 - cloudwatch:PutMetricData
               Resource: "*"
       Events:
+        FineractHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/fineract/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         # Loan Portfolio
         GetLoans:
           Type: Api
@@ -1216,6 +1272,15 @@ Resources:
             - ""
           SES_SENDER_EMAIL: !Ref SesSenderEmail
       Events:
+        # Health check (unauthenticated)
+        AdminHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /admin/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         # Catch-all proxy routes to avoid Lambda policy size limit (20KB)
         # The handler does its own path-based routing internally
         AdminMeAny:
@@ -1329,6 +1394,14 @@ Resources:
         Variables:
           SES_SENDER_EMAIL: !Ref SesSenderEmail
       Events:
+        DistributorHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         GetDistributorProfile:
           Type: Api
           Properties:
@@ -1658,6 +1731,14 @@ Resources:
                 - cloudwatch:PutMetricData
               Resource: "*"
       Events:
+        InvestorHealth:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/health
+            Method: GET
+            Auth:
+              Authorizer: NONE
         # Portfolio Summary
         GetPortfolio:
           Type: Api

@@ -89,6 +89,13 @@ import { handleGetPayments, handleGetPaymentStats, handleGetUnreconciledPayments
 // length so the router matches exact segments first.
 
 export const handler = createRouter({
+  // Health check (unauthenticated)
+  'GET /admin/health': async (_event, _params, _auth) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'admin-service', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
+
   // User management
   'GET /admin/me':                handleGetCurrentAdmin,
   'GET /admin/users':             handleGetUsers,

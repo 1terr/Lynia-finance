@@ -32,6 +32,11 @@ import {
 } from './handlers/transfers';
 
 export const handler = createRouter({
+  'GET /api/v1/distributor/health': async (_event, _params, _auth) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'distributor-service', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
   'GET /api/v1/distributor/profile': handleGetProfile,
   'PATCH /api/v1/distributor/profile': handleUpdateProfile,
   'GET /api/v1/distributor/stats': handleGetStats,

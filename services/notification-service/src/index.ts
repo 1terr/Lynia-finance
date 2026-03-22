@@ -28,6 +28,15 @@ export const handler = async (
     const path = apiEvent.path;
     const method = apiEvent.httpMethod;
 
+    // Health check (unauthenticated, lightweight)
+    if (path === '/notifications/health' && method === 'GET') {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ status: 'ok', service: 'notification-service', timestamp: new Date().toISOString() }),
+        headers: { 'Content-Type': 'application/json', ...getSecurityHeaders(apiEvent) },
+      };
+    }
+
     if (path === '/notifications/send' && method === 'POST') {
       return await sendNotification(apiEvent);
     }
