@@ -289,6 +289,11 @@ describe('GET /api/v1/reports/kyc/detailed', () => {
 
 describe('GET /api/v1/reports/defaults', () => {
   it('should return default loan list', async () => {
+    // Count query (queryOne) then data query (query)
+    mockQueryOne.mockResolvedValueOnce({
+      data: { count: '2' },
+      error: null,
+    });
     mockQuery.mockResolvedValueOnce({
       data: [
         { loan_id: 'loan-1', customer_name: 'John Doe', days_past_due: 45 },
@@ -300,7 +305,8 @@ describe('GET /api/v1/reports/defaults', () => {
     const res = await handler(makeEvent('GET', '/api/v1/reports/defaults'));
     expect(res.statusCode).toBe(200);
     const body = parseResponseBody(res);
-    expect((body as any).data).toHaveLength(2);
+    expect((body as any).data.data).toHaveLength(2);
+    expect((body as any).data.pagination).toBeDefined();
   });
 });
 
