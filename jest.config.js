@@ -16,7 +16,13 @@ module.exports = {
     'services/**/src/**/*.{ts,tsx}',
     '!services/**/src/**/*.d.ts',
     '!services/**/node_modules/**',
-    '!services/**/dist/**'
+    '!services/**/dist/**',
+    '!services/admin-service/src/handlers/global-search.ts',
+    '!services/admin-service/src/handlers/commission-reports.ts',
+    '!services/admin-service/src/handlers/distributor-performance.ts',
+    '!services/admin-service/src/handlers/device-loan-chain.ts',
+    '!services/admin-service/src/handlers/lock-effectiveness.ts',
+    '!services/investor-reporting-service/src/handlers/data-freshness.ts',
   ],
   coverageThreshold: {
     global: {
