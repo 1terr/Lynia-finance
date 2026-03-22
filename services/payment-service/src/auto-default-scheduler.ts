@@ -181,7 +181,7 @@ export async function processAutoDefaults(): Promise<AutoDefaultResult> {
     { name: 'AutoDefault.Processed', value: result.processed, unit: 'Count', dimensions: { Service: 'payment-service' } },
     { name: 'AutoDefault.Defaulted', value: result.defaulted, unit: 'Count', dimensions: { Service: 'payment-service' } },
     { name: 'AutoDefault.Errors', value: result.errors, unit: 'Count', dimensions: { Service: 'payment-service' } },
-  ]).catch(() => {});
+  ]).catch(err => logger.error('Failed to publish auto-default metrics', { error: err instanceof Error ? err.message : String(err), action: 'auto-default.metrics' }));
 
   return result;
 }

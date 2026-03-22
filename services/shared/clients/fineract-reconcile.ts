@@ -21,6 +21,7 @@ import { getFineractClient, FineractApiError } from './fineract';
 import { syncProductToFineract } from './fineract-sync/sync-product';
 import { db } from './database';
 import { CloudWatchClient, PutMetricDataCommand } from '@aws-sdk/client-cloudwatch';
+import { logger } from '../utils/logger';
 
 const cloudwatch = new CloudWatchClient({ region: process.env.AWS_REGION || 'us-east-1' });
 const METRIC_NAMESPACE = `Lynia/${process.env.NODE_ENV || 'development'}`;
@@ -109,7 +110,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
     timestamp: new Date().toISOString(),
   };
 
-  console.log('[reconcile] Starting reconciliation cycle');
+  logger.info('Starting reconciliation cycle', { action: 'reconciliation.start' });
 
   // ----------------------------------------------------------
   // Step 1: Reconcile loan balances
@@ -122,14 +123,14 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
       .execute();
 
     if (error || !loans) {
-      console.error('[reconcile] Failed to query Lynia loans:', error);
+      logger.error('Failed to query Lynia loans', { action: 'reconciliation.query_loans', error: String(error) });
       result.durationMs = Date.now() - startTime;
       return result;
     }
 
     const loanRows = loans as unknown as LyniaLoanRow[];
     result.totalLoansChecked = loanRows.length;
-    console.log(`[reconcile] Checking ${loanRows.length} loans with Fineract IDs`);
+    logger.info('Checking loans with Fineract IDs', { action: 'reconciliation.check_loans', count: loanRows.length });
 
     const fineract = await getFineractClient();
 
@@ -170,19 +171,23 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
             })
             .execute();
 
-          console.warn(
-            `[reconcile] DISCREPANCY loan ${loan.loan_number}: ` +
-            `Lynia=$${lyniaOutstanding.toFixed(2)} vs Fineract=$${fineractOutstanding.toFixed(2)} ` +
-            `(diff=$${difference.toFixed(2)}, severity=${severity})`
-          );
+          logger.warn('Loan balance discrepancy detected', {
+            action: 'reconciliation.discrepancy',
+            loanNumber: loan.loan_number,
+            lyniaOutstanding,
+            fineractOutstanding,
+            difference,
+            severity,
+            productCategory: loan.product_category,
+          });
         }
       } catch (checkError) {
         result.failedChecks++;
-        console.error(`[reconcile] Failed to check loan ${loan.id}:`, checkError);
+        logger.error('Failed to check loan balance', { action: 'reconciliation.check_loan', loanId: loan.id, error: checkError instanceof Error ? checkError.message : String(checkError) });
       }
     }
   } catch (queryError) {
-    console.error('[reconcile] Loan query failed:', queryError);
+    logger.error('Loan query failed', { action: 'reconciliation.query_loans', error: queryError instanceof Error ? queryError.message : String(queryError) });
   }
 
   // ----------------------------------------------------------
@@ -200,10 +205,10 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
       .execute();
 
     if (error || !failedSyncs) {
-      console.error('[reconcile] Failed to query failed syncs:', error);
+      logger.error('Failed to query failed syncs', { action: 'reconciliation.query_failed_syncs', error: String(error) });
     } else {
       const syncRows = failedSyncs as unknown as FailedSyncRow[];
-      console.log(`[reconcile] Found ${syncRows.length} failed syncs to retry`);
+      logger.info('Found failed syncs to retry', { action: 'reconciliation.retry_syncs', count: syncRows.length });
 
       for (const sync of syncRows) {
         result.retriedSyncs++;
@@ -213,12 +218,12 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
             result.retriedSuccesses++;
           }
         } catch (retryError) {
-          console.error(`[reconcile] Retry failed for sync ${sync.id}:`, retryError);
+          logger.error('Retry failed for sync operation', { action: 'reconciliation.retry', syncId: sync.id, error: retryError instanceof Error ? retryError.message : String(retryError) });
         }
       }
     }
   } catch (retryQueryError) {
-    console.error('[reconcile] Failed sync retry query failed:', retryQueryError);
+    logger.error('Failed sync retry query failed', { action: 'reconciliation.retry_query', error: retryQueryError instanceof Error ? retryQueryError.message : String(retryQueryError) });
   }
 
   // ----------------------------------------------------------
@@ -229,7 +234,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
     result.glMismatches = glResult.mismatches;
     result.glProductsChecked = glResult.productsChecked;
   } catch (glError) {
-    console.error('[reconcile] GL account reconciliation failed:', glError);
+    logger.error('GL account reconciliation failed', { action: 'reconciliation.gl_accounts', error: glError instanceof Error ? glError.message : String(glError) });
   }
 
   // ----------------------------------------------------------
@@ -256,7 +261,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
 
     totalPendingSyncFailures = Array.isArray(allFailed) ? allFailed.length : 0;
   } catch (countError) {
-    console.error('[reconcile] Failed to count sync failures:', countError);
+    logger.error('Failed to count sync failures', { action: 'reconciliation.count_failures', error: countError instanceof Error ? countError.message : String(countError) });
   }
 
   // ----------------------------------------------------------
@@ -314,7 +319,8 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
         },
       ],
     }));
-    console.log('[reconcile] CloudWatch metrics emitted:', {
+    logger.info('CloudWatch metrics emitted', {
+      action: 'reconciliation.metrics',
       approvalSyncFailures,
       totalPendingSyncFailures,
       discrepancies: result.discrepancies.length,
@@ -323,7 +329,7 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
       glMismatches: result.glMismatches.length,
     });
   } catch (metricError) {
-    console.error('[reconcile] Failed to emit CloudWatch metrics:', metricError);
+    logger.error('Failed to emit CloudWatch metrics', { action: 'reconciliation.metrics', error: metricError instanceof Error ? metricError.message : String(metricError) });
   }
 
   // ----------------------------------------------------------
@@ -335,7 +341,8 @@ export async function runReconciliation(): Promise<ReconciliationResult> {
   const smartphoneTotal = result.discrepancies.filter((d) => d.productCategory === 'smartphone').length;
   const digitalTotal = result.discrepancies.filter((d) => d.productCategory === 'digital').length;
 
-  console.log('[reconcile] Reconciliation complete:', {
+  logger.info('Reconciliation complete', {
+    action: 'reconciliation.complete',
     totalLoansChecked: result.totalLoansChecked,
     matched: result.matchedLoans,
     discrepancies: result.discrepancies.length,
@@ -397,12 +404,12 @@ async function reconcileGLAccounts(): Promise<GLReconciliationResult> {
     .execute();
 
   if (error || !products) {
-    console.error('[reconcile] Failed to query loan products for GL reconciliation:', error);
+    logger.error('Failed to query loan products for GL reconciliation', { action: 'reconciliation.gl_accounts', error: String(error) });
     return { productsChecked: 0, mismatches: [] };
   }
 
   const productRows = products as unknown as Array<Record<string, unknown>>;
-  console.log(`[reconcile] Checking GL accounts for ${productRows.length} products`);
+  logger.info('Checking GL accounts for products', { action: 'reconciliation.gl_accounts', count: productRows.length });
 
   const fineract = await getFineractClient();
 
@@ -437,8 +444,8 @@ async function reconcileGLAccounts(): Promise<GLReconciliationResult> {
           };
           mismatches.push(mismatch);
 
-          console.warn('[reconcile] GL mismatch:', {
-            action: 'gl_reconciliation.mismatch',
+          logger.warn('GL account mismatch detected', {
+            action: 'reconciliation.gl_mismatch',
             productId,
             fineractProductId,
             field: lyniaField,
@@ -449,11 +456,11 @@ async function reconcileGLAccounts(): Promise<GLReconciliationResult> {
         }
       }
     } catch (checkError) {
-      console.error(`[reconcile] Failed to check GL accounts for product ${productId}:`, checkError);
+      logger.error('Failed to check GL accounts for product', { action: 'reconciliation.gl_accounts', productId, error: checkError instanceof Error ? checkError.message : String(checkError) });
     }
   }
 
-  console.log(`[reconcile] GL reconciliation complete: ${productRows.length} products checked, ${mismatches.length} mismatches`);
+  logger.info('GL reconciliation complete', { action: 'reconciliation.gl_complete', productsChecked: productRows.length, mismatches: mismatches.length });
   return { productsChecked: productRows.length, mismatches };
 }
 
@@ -592,7 +599,7 @@ async function retrySyncOperation(sync: FailedSyncRow): Promise<boolean> {
       }
 
       default:
-        console.warn(`[reconcile] Unknown sync operation: ${sync.entity_type}:${sync.operation}`);
+        logger.warn('Unknown sync operation', { action: 'reconciliation.retry', entityType: sync.entity_type, operation: sync.operation });
     }
   } catch (error) {
     const apiError = error instanceof FineractApiError ? error : null;
@@ -620,7 +627,7 @@ async function retrySyncOperation(sync: FailedSyncRow): Promise<boolean> {
       .eq('id', sync.id)
       .execute();
 
-    console.log(`[reconcile] Retry successful for ${sync.entity_type}:${sync.operation} (entity: ${sync.entity_id})`);
+    logger.info('Retry successful', { action: 'reconciliation.retry', entityType: sync.entity_type, operation: sync.operation, entityId: sync.entity_id });
   }
 
   return success;
@@ -659,7 +666,7 @@ export async function reconciliationHandler(): Promise<{
       }),
     };
   } catch (error) {
-    console.error('[reconcile] Handler error:', error);
+    logger.error('Reconciliation handler error', { action: 'reconciliation.handler', error: error instanceof Error ? error.message : String(error) });
     return {
       statusCode: 500,
       body: JSON.stringify({

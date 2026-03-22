@@ -11,7 +11,7 @@
 
 import { createRouter } from '../../shared/utils/lambda-router';
 import { handleGetLoans, handleGetPendingLoans, handleGetOverdueLoans, handleGetAgingSummary, handleGetLoanDetail } from './handlers/loans';
-import { handleLoanApprove, handleLoanDisburse, handleLoanRepayment, handleLoanReject, handleLoanWriteOff, handleLoanClose, handleLoanReschedule, handleEarlyPayoff, handleLoanRetrySync } from './handlers/loan-actions';
+import { handleLoanApprove, handleLoanDisburse, handleLoanRepayment, handleLoanReject, handleLoanWriteOff, handleLoanClose, handleLoanCancel, handleLoanReschedule, handleEarlyPayoff, handleLoanRetrySync } from './handlers/loan-actions';
 import { handleGetLoanProducts, handleGetLoanProduct, handleCreateFineractProduct } from './handlers/loan-products';
 import { handleGetGLAccounts, handleGetJournalEntries, handleGetTrialBalance } from './handlers/gl-accounts';
 import { handleGetReconciliation, handleRunReconciliation } from './handlers/reconciliation';
@@ -31,6 +31,7 @@ export const handler = createRouter({
   'POST /api/v1/fineract/loans/:loanId/reject':     handleLoanReject,
   'POST /api/v1/fineract/loans/:loanId/writeoff':   handleLoanWriteOff,
   'POST /api/v1/fineract/loans/:loanId/close':      handleLoanClose,
+  'POST /api/v1/fineract/loans/:loanId/cancel':     handleLoanCancel,
   'POST /api/v1/fineract/loans/:loanId/reschedule': handleLoanReschedule,
   'POST /api/v1/fineract/loans/:loanId/early-payoff': handleEarlyPayoff,
   'POST /api/v1/fineract/loans/:loanId/retry-sync':  handleLoanRetrySync,

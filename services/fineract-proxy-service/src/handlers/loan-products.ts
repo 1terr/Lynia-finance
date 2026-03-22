@@ -12,6 +12,7 @@ import type { SyncProductResult } from '../../../shared/clients/fineract-sync/sy
 import { CircuitOpenError } from '../../../shared/utils/circuit-breaker';
 import type { RouteParams } from '../../../shared/utils/lambda-router';
 import type { AuthContext } from '../../../shared/middleware/authorization';
+import { logger } from '../../../shared/utils/logger';
 import { ok, err } from './helpers';
 
 /**
@@ -125,7 +126,7 @@ export async function handleGetLoanProducts(
     });
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : 'Unknown error';
-    console.warn('Fineract unreachable, falling back to Lynia products:', message);
+    logger.warn('Fineract unreachable, falling back to Lynia products', { action: 'loan_products.list', error: message });
   }
 
   // If Fineract returned products, use them
@@ -170,7 +171,7 @@ export async function handleGetLoanProducts(
     return ok(mapped, event);
   } catch (dbErr: unknown) {
     const message = dbErr instanceof Error ? dbErr.message : 'Unknown error';
-    console.error('Failed to fetch Lynia loan products fallback:', message);
+    logger.error('Failed to fetch Lynia loan products fallback', { action: 'loan_products.list_fallback', error: message });
     return err(502, `Unable to load loan products: ${message}`, event);
   }
 }

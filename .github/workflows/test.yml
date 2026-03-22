@@ -34,7 +34,6 @@ jobs:
 
       - name: Run linter
         run: pnpm run lint
-        continue-on-error: true
 
       - name: Run tests with coverage
         run: pnpm run test:coverage

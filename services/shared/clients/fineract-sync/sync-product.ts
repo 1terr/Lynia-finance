@@ -9,6 +9,7 @@
 import { getFineractClient, FineractApiError } from '../fineract';
 import { db } from '../database';
 import { logSync, queueSyncRetry } from './sync-scheduler';
+import { logger } from '../../utils/logger';
 import type { FineractLoanProductCreateRequest, FineractLoanProduct } from '../../types/fineract';
 
 export interface SyncProductResult {
@@ -107,7 +108,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
     existingProducts = await fineract.listLoanProducts();
   } catch (listError) {
     // Non-fatal — proceed to create (shortName dedup won't work but creation may still succeed)
-    console.warn('[fineract-sync] Could not list existing products:', listError);
+    logger.warn('Could not list existing Fineract products', { action: 'fineract_sync.list_products', error: listError instanceof Error ? listError.message : String(listError) });
   }
 
   // Orphan recovery: check if a product was created in Fineract but linkage failed
@@ -136,9 +137,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(
-      `[fineract-sync] Recovered orphaned link: ${lyniaProductId} -> Fineract product ${existing.id}`
-    );
+    logger.info('Recovered orphaned product link', { action: 'fineract_sync.recover_orphan', lyniaProductId, fineractProductId: existing.id });
 
     return { success: true, fineract_product_id: existing.id };
   }
@@ -287,9 +286,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(
-      `[fineract-sync] Product ${lyniaProductId} -> Fineract product ${result.resourceId}`
-    );
+    logger.info('Product synced to Fineract', { action: 'fineract_sync.create_product', lyniaProductId, fineractProductId: result.resourceId });
 
     return { success: true, fineract_product_id: result.resourceId };
   } catch (error) {
@@ -312,7 +309,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Failed to sync product ${lyniaProductId}:`, error);
+    logger.error('Failed to sync product to Fineract', { action: 'fineract_sync.create_product', lyniaProductId, error: error instanceof Error ? error.message : String(error) });
 
     await queueSyncRetry({
       entityType: 'loan_product',
@@ -333,7 +330,7 @@ export async function syncProductToFineract(lyniaProductId: string): Promise<Syn
   } catch (outerError) {
     // Master catch-all: DB errors, config failures, generateUniqueShortName, logSync, etc.
     const errorMessage = outerError instanceof Error ? outerError.message : String(outerError);
-    console.error(`[fineract-sync] Unexpected error syncing product ${lyniaProductId}:`, outerError);
+    logger.error('Unexpected error syncing product', { action: 'fineract_sync.create_product', lyniaProductId, error: outerError instanceof Error ? outerError.message : String(outerError) });
     return { success: false, error: errorMessage };
   }
 }

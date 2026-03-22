@@ -223,7 +223,7 @@ export class CompensationHandler {
           gateway: message.gateway,
           actor_type: 'system',
           actor_id: 'compensation-webhook-missing',
-        }).catch(() => {});
+        }).catch(err => logger.error('Failed to log reconciliation event for missing webhook', { error: err instanceof Error ? err.message : String(err), action: 'compensation.event_log' }));
 
         return { outcome: 'resolved', newStatus: status.status };
       }
@@ -322,7 +322,7 @@ export class CompensationHandler {
       error_message: reason,
       actor_type: 'system',
       actor_id: 'compensation-escalation',
-    }).catch(() => {});
+    }).catch(err => logger.error('Failed to log escalation event', { error: err instanceof Error ? err.message : String(err), action: 'compensation.event_log' }));
 
     // Notify admin via notification queue
     try {

@@ -254,7 +254,7 @@ export class PaymentService {
         to_status: 'pending',
         event_type: 'initiated',
         gateway,
-      }).catch(() => {});
+      }).catch(err => logger.error('Failed to log payment initiation event', { error: err instanceof Error ? err.message : String(err), action: 'payment.event_log' }));
 
       // Transition pending -> held (PREPARE phase)
       try {
@@ -632,7 +632,7 @@ export class PaymentService {
         description: `Deposit of $${payment.amount} paid. Loan status: paid_deposit`,
         changes: JSON.stringify({ payment_id: payment.id, amount: payment.amount, new_status: 'paid_deposit' }),
         created_at: new Date().toISOString(),
-      }).execute().catch(() => {});
+      }).execute().catch(err => logger.error('Failed to create audit log for deposit payment', { error: err instanceof Error ? err.message : String(err), action: 'payment.audit_log' }));
 
     } else if (payment.payment_type === 'repayment' || payment.payment_type === 'early_payoff') {
       // Update loan balance
@@ -685,7 +685,7 @@ export class PaymentService {
           payment_type: payment.payment_type,
         }),
         created_at: new Date().toISOString(),
-      }).execute().catch(() => {});
+      }).execute().catch(err => logger.error('Failed to create audit log for repayment', { error: err instanceof Error ? err.message : String(err), action: 'payment.audit_log' }));
 
     } else if (payment.payment_type === 'disbursement') {
       // Disbursement: mark loan as active with disbursement details
@@ -713,7 +713,7 @@ export class PaymentService {
         description: `Loan disbursed: $${payment.amount}. Status: active`,
         changes: JSON.stringify({ payment_id: payment.id, amount: payment.amount, new_status: 'active' }),
         created_at: new Date().toISOString(),
-      }).execute().catch(() => {});
+      }).execute().catch(err => logger.error('Failed to create audit log for disbursement', { error: err instanceof Error ? err.message : String(err), action: 'payment.audit_log' }));
     }
   }
 

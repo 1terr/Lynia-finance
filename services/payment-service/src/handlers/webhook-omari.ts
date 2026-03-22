@@ -53,7 +53,7 @@ export const handleOmariWebhook: RouteHandler = async (event, _params, _auth) =>
       actor_type: 'webhook',
       actor_id: 'omari-webhook',
       provider_response: payload as unknown as Record<string, unknown>,
-    }).catch(() => {});
+    }).catch(err => logger.error('Failed to log Omari webhook event', { error: err instanceof Error ? err.message : String(err), action: 'omari.webhook.event_log' }));
 
     if (payload.status === 'SUCCESS') {
       let resolved = false;

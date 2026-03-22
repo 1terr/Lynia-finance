@@ -378,6 +378,48 @@ export async function handleLoanClose(
 }
 
 // ============================================================
+// POST /api/v1/fineract/loans/:loanId/cancel
+// ============================================================
+
+export async function handleLoanCancel(
+  event: APIGatewayProxyEvent,
+  params: RouteParams,
+  _auth: AuthContext
+): Promise<APIGatewayProxyResult> {
+  const result = await lookupFineractLoan(event, params.loanId);
+  if ('error' in result) return result.error;
+
+  const { withdrawnOnDate, note } = result.body;
+  if (!withdrawnOnDate) {
+    return err(400, 'withdrawnOnDate is required', event);
+  }
+
+  const fineract = await getFineractClient();
+
+  try {
+    const response = await fineract.withdrawLoan(
+      result.fineractLoanId,
+      new Date(withdrawnOnDate as string),
+      note as string | undefined
+    );
+
+    // Update loan status in Lynia DB
+    await db
+      .from('loans')
+      .update({ status: 'cancelled' })
+      .eq('id', params.loanId)
+      .execute();
+
+    return ok(
+      { success: true, resourceId: response.resourceId, loanId: response.loanId },
+      event
+    );
+  } catch (e) {
+    return handleFineractError(e, 'loanCancel', params.loanId, event);
+  }
+}
+
+// ============================================================
 // POST /api/v1/fineract/loans/:loanId/retry-sync
 // ============================================================
 

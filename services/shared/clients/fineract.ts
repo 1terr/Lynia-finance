@@ -20,6 +20,7 @@
 import https from 'https';
 import { CircuitBreaker } from '../utils/circuit-breaker';
 import { getSecret } from '../utils/secrets';
+import { logger } from '../utils/logger';
 import type {
   FineractClientConfig,
   FineractErrorResponse,
@@ -76,7 +77,7 @@ async function getConfig(): Promise<FineractClientConfig> {
   };
 
   if (!cachedConfig.rejectUnauthorized) {
-    console.warn('[fineract-client] TLS certificate validation disabled (non-production environment)');
+    logger.warn('TLS certificate validation disabled (non-production environment)', { service: 'fineract-client' });
   }
 
   return cachedConfig;
@@ -90,11 +91,11 @@ const fineractBreaker = new CircuitBreaker({
   name: 'fineract-api',
   failureThreshold: 5,
   resetTimeout: 60000,
-  onOpen: (name, failures) => {
-    console.error(`[fineract-client] Circuit OPEN after ${failures} failures`);
+  onOpen: (_name, failures) => {
+    logger.error('Circuit OPEN', { service: 'fineract-client', failures });
   },
   onClose: (_name) => {
-    console.log(`[fineract-client] Circuit CLOSED (recovered)`);
+    logger.info('Circuit CLOSED (recovered)', { service: 'fineract-client' });
   },
 });
 

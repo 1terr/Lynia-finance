@@ -153,9 +153,9 @@ export async function completeHandover(handoverId: string): Promise<{
       // Records the lock intent in DB; actual Trustonic API call is a no-op until integration.
       // Inside the transaction so the lock record is consistent with the handover state.
       await tx(
-        `INSERT INTO device_locks (device_id, loan_id, lock_status, lock_reason, requested_at, created_at)
-         VALUES ($1, $2, 'pending', 'handover_activation', $3, $4)`,
-        [handover.device_id, handover.loan_id, new Date().toISOString(), new Date().toISOString()]
+        `INSERT INTO device_locks (device_id, loan_id, customer_id, action, reason, execution_status, executed_at, created_at)
+         VALUES ($1, $2, $3, 'lock', 'handover_activation', 'pending', $4, $5)`,
+        [handover.device_id, handover.loan_id, handover.customer_id, new Date().toISOString(), new Date().toISOString()]
       );
 
       // Cancel any pending return transfers for this device (sold devices cannot be returned)

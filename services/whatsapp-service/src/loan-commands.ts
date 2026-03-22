@@ -18,6 +18,7 @@
 import { db } from '../../shared/clients/database';
 import { getFineractLoanBalance, getFineractRepaymentSchedule } from '../../shared/clients/fineract-sync';
 import { auditLogEntry } from '../../shared/utils/audit';
+import logger from '../../shared/utils/logger';
 
 // ===================================================================
 // COMMAND DEFINITIONS
@@ -393,7 +394,7 @@ async function handlePay(phoneNumber: string): Promise<string> {
     entityId: loan.id,
     description: `Customer initiated repayment of $${installmentAmount.toFixed(2)} via WhatsApp PAY command`,
     changes: { amount: installmentAmount, payment_type: 'repayment', channel: 'whatsapp' },
-  }).catch(() => {});
+  }).catch(err => logger.error('Failed to create audit log for PAY command', { error: err instanceof Error ? err.message : String(err), action: 'whatsapp.pay.audit_log' }));
 
   return `💰 *Payment for Loan ${loan.loan_reference || loan.id}*
 
@@ -480,7 +481,7 @@ async function handleSettle(phoneNumber: string, subCommand?: string): Promise<s
       entityId: loan.id,
       description: `Customer initiated early payoff of $${outstandingBalance.toFixed(2)} via WhatsApp SETTLE command`,
       changes: { amount: outstandingBalance, payment_type: 'early_payoff', channel: 'whatsapp' },
-    }).catch(() => {});
+    }).catch(err => logger.error('Failed to create audit log for SETTLE command', { error: err instanceof Error ? err.message : String(err), action: 'whatsapp.settle.audit_log' }));
 
     return `💰 *Early Payoff — Loan ${loan.loan_reference || loan.id}*
 
@@ -738,7 +739,7 @@ export async function routeLoanCommand(
     direction: 'inbound',
     content: `Command: ${command}`,
     status: 'delivered',
-  }).execute().then(() => {}).catch(() => {});
+  }).execute().then(() => {}).catch(err => logger.error('Failed to log WhatsApp command usage', { error: err instanceof Error ? err.message : String(err), action: 'whatsapp.command.log' }));
 
   switch (command) {
     case 'BALANCE': return handleBalance(phoneNumber);
