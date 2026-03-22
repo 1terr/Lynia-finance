@@ -338,8 +338,8 @@ describe('completeHandover invariants - property tests', () => {
 
     const lockInsert = dbOps.find(op => op.table === 'device_locks' && op.op === 'insert');
     expect(lockInsert).toBeDefined();
-    expect(lockInsert!.data.lock_status).toBe('pending');
-    expect(lockInsert!.data.lock_reason).toBe('handover_activation');
+    expect(lockInsert!.data.execution_status).toBe('pending');
+    expect(lockInsert!.data.reason).toBe('handover_activation');
   });
 
   it('on success: marks handover as completed', async () => {
