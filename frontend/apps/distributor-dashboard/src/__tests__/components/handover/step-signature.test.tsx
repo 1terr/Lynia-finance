@@ -31,7 +31,7 @@ describe('StepSignature', () => {
     it('renders drawing instruction', () => {
       render(<StepSignature signatureUrl={null} onUpdate={mockOnUpdate} />);
 
-      expect(screen.getByText(/Draw signature using finger or mouse/i)).toBeInTheDocument();
+      expect(screen.getByText(/Draw signature using finger or stylus/i)).toBeInTheDocument();
     });
 
     it('renders Clear button', () => {

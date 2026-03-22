@@ -21,7 +21,7 @@ import { CoreBankingHealth } from '@/components/dashboard/core-banking-health';
 import { AlertsPanel } from '@/components/dashboard/alerts-panel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { DateRangePicker, dateRangeToDays, type DateRange } from '@/components/dashboard/date-range-picker';
+import { DateRangePicker, dateRangeToDays, dateRangeToISO, type DateRange } from '@/components/dashboard/date-range-picker';
 import { formatCurrency, formatNumber, formatPercent, formatRelativeTime } from '@lynia/utils';
 import {
   Users,
@@ -51,10 +51,11 @@ function MetricCardSkeleton() {
 export default function DashboardPage() {
   const [dateRange, setDateRange] = useState<DateRange>('30d');
   const days = dateRangeToDays(dateRange);
+  const { from: dateFrom, to: dateTo } = dateRangeToISO(dateRange);
 
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { data: metrics, isLoading: metricsLoading, dataUpdatedAt: metricsUpdatedAt } = useDashboardMetrics();
+  const { data: metrics, isLoading: metricsLoading, dataUpdatedAt: metricsUpdatedAt } = useDashboardMetrics(dateFrom, dateTo);
   const { data: par } = usePortfolioAtRisk();
   const { data: trends } = useDailyTrends(days);
   const { data: loansByStatus } = useLoansByStatus();

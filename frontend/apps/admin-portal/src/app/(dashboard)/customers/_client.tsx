@@ -57,6 +57,13 @@ export default function CustomersPage() {
       ),
     },
     {
+      key: 'national_id',
+      header: 'National ID',
+      render: (row) => (
+        <span className="text-sm text-muted-foreground">{row.national_id || '—'}</span>
+      ),
+    },
+    {
       key: 'email',
       header: 'Email',
       render: (row) => (
@@ -132,7 +139,7 @@ export default function CustomersPage() {
               setSearchInput(e.target.value);
               setFilters((f) => ({ ...f, page: 1 }));
             }}
-            placeholder="Search by name, phone, or email..."
+            placeholder="Search by name, phone, email, or national ID..."
             className="block w-full rounded-md border border-border py-2 pl-10 pr-3 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
         </div>

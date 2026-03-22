@@ -215,7 +215,7 @@ export default function FineractLoansPage() {
               setSearchInput(e.target.value);
               setPage(1);
             }}
-            placeholder="Search by name, phone, or loan ID..."
+            placeholder="Search by name, phone, loan number, or national ID..."
             className="block w-full rounded-md border border-border py-2 pl-10 pr-8 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-border dark:bg-card dark:text-foreground"
           />
           {searchInput && (

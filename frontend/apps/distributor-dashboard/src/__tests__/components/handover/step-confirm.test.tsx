@@ -60,7 +60,7 @@ describe('StepConfirm', () => {
 
       expect(
         screen.getByText(
-          /Review all details below and verify the deposit payment/i
+          /Review all details and verify the deposit payment/i
         )
       ).toBeInTheDocument();
     });
@@ -70,7 +70,7 @@ describe('StepConfirm', () => {
         <StepConfirm data={mockHandoverData} onUpdate={mockOnUpdate} />
       );
 
-      expect(screen.getByText('HANDOVER CHECKLIST')).toBeInTheDocument();
+      expect(screen.getByText('Handover Checklist')).toBeInTheDocument();
     });
 
     it('renders Handover Details section', () => {
@@ -78,7 +78,7 @@ describe('StepConfirm', () => {
         <StepConfirm data={mockHandoverData} onUpdate={mockOnUpdate} />
       );
 
-      expect(screen.getByText('HANDOVER DETAILS')).toBeInTheDocument();
+      expect(screen.getByText('Handover Details')).toBeInTheDocument();
     });
 
     it('renders Deposit Payment section', () => {
@@ -86,7 +86,7 @@ describe('StepConfirm', () => {
         <StepConfirm data={mockHandoverData} onUpdate={mockOnUpdate} />
       );
 
-      expect(screen.getByText('DEPOSIT PAYMENT')).toBeInTheDocument();
+      expect(screen.getByText('Deposit Payment')).toBeInTheDocument();
     });
 
     it('renders Customer Payment Plan section', () => {
@@ -201,12 +201,10 @@ describe('StepConfirm', () => {
         <StepConfirm data={mockHandoverData} onUpdate={mockOnUpdate} />
       );
 
-      expect(
-        screen.getByText(mockHandoverData.selected_device!.brand)
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(mockHandoverData.selected_device!.model)
-      ).toBeInTheDocument();
+      // Brand and model are rendered together in the component
+      const brandModel = `${mockHandoverData.selected_device!.brand} ${mockHandoverData.selected_device!.model}`;
+      const matches = screen.getAllByText(new RegExp(brandModel));
+      expect(matches.length).toBeGreaterThan(0);
     });
 
     it('displays IMEI from selected_device', () => {
@@ -260,7 +258,8 @@ describe('StepConfirm', () => {
         <StepConfirm data={mockHandoverData} onUpdate={mockOnUpdate} />
       );
 
-      const photoMatches = screen.getAllByText('3 captured');
+      // "3 captured" in details, "3 photos captured" in checklist
+      const photoMatches = screen.getAllByText(/3 (?:captured|photos captured)/);
       expect(photoMatches.length).toBeGreaterThan(0);
     });
 
@@ -281,13 +280,13 @@ describe('StepConfirm', () => {
       expect(screen.getByText(loanId)).toBeInTheDocument();
     });
 
-    it('displays loan amount', () => {
+    it('displays device retail price', () => {
       render(
         <StepConfirm data={mockHandoverData} onUpdate={mockOnUpdate} />
       );
 
-      const loanAmount = mockHandoverData.selected_loan!.loan_amount;
-      expect(screen.getByText(`$${loanAmount}`)).toBeInTheDocument();
+      const retailPrice = mockHandoverData.selected_device!.retail_price;
+      expect(screen.getByText(`$${retailPrice}`)).toBeInTheDocument();
     });
   });
 
@@ -409,9 +408,9 @@ describe('StepConfirm', () => {
 
       const depositAmount =
         mockHandoverData.selected_loan!.deposit_amount;
-      expect(
-        screen.getByText(new RegExp(`\\$${depositAmount}`, 'i'))
-      ).toBeInTheDocument();
+      // Deposit amount appears in multiple places (warning text, verify button)
+      const matches = screen.getAllByText(new RegExp(`\\$${depositAmount}`, 'i'));
+      expect(matches.length).toBeGreaterThan(0);
     });
 
     it('renders payment method options', () => {
@@ -460,12 +459,9 @@ describe('StepConfirm', () => {
       const input = screen.getByPlaceholderText(/MP240207/i);
       await user.type(input, 'MP240223.1234.A56789');
 
-      expect(mockOnUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          deposit_transaction_ref:
-            expect.stringContaining('MP240223'),
-        })
-      );
+      // onUpdate is called per keystroke; the last call should contain the full ref
+      const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+      expect(lastCall.deposit_transaction_ref).toContain('MP240223');
     });
 
     it('renders verify button', () => {

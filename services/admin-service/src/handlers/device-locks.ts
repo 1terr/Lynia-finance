@@ -96,6 +96,12 @@ export const handleLockDevice: RouteHandler = async (event, params, auth) => {
       [params.id, device.data.customer_id || null, reason || 'Manual admin lock', now, auth.userId]
     );
 
+    // Log lock event for effectiveness tracking
+    await query(
+      `INSERT INTO device_lock_events (device_id, event_type, triggered_by) VALUES ($1, 'lock', $2)`,
+      [params.id, auth.userId]
+    );
+
     await auditLog(auth, 'device.lock', 'device', params.id,
       `Device locked: ${reason || 'Manual admin lock'}`, { reason });
 
@@ -145,6 +151,12 @@ export const handleUnlockDevice: RouteHandler = async (event, params, auth) => {
       `INSERT INTO device_locks (device_id, customer_id, action, reason, lock_type, executed_at, executed_by, execution_status, created_at)
        VALUES ($1, $2, 'unlock', $3, 'manual', $4, $5, 'success', $4)`,
       [params.id, device.data.customer_id || null, reason || 'Manual admin unlock', now, auth.userId]
+    );
+
+    // Log unlock event for effectiveness tracking
+    await query(
+      `INSERT INTO device_lock_events (device_id, event_type, triggered_by) VALUES ($1, 'unlock', $2)`,
+      [params.id, auth.userId]
     );
 
     await auditLog(auth, 'device.unlock', 'device', params.id,

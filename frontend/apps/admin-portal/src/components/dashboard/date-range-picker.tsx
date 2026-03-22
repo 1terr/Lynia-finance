@@ -78,3 +78,15 @@ export function dateRangeToDays(range: DateRange): number {
     default: return 30;
   }
 }
+
+/** Convert a DateRange preset to ISO date strings (from/to). */
+export function dateRangeToISO(range: DateRange): { from: string; to: string } {
+  const to = new Date();
+  const from = new Date();
+  const days = dateRangeToDays(range);
+  from.setDate(from.getDate() - days);
+  return {
+    from: from.toISOString().split('T')[0],
+    to: to.toISOString().split('T')[0],
+  };
+}

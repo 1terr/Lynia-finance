@@ -6,6 +6,7 @@ import { useDebounce } from '@/hooks/use-debounce';
 import type { InventoryDevice } from '@/types/distributor';
 import { fetchInventory } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { cn } from '@lynia/utils';
 import { InventorySkeleton } from '@/components/ui/skeleton';
 import {
@@ -19,6 +20,7 @@ import {
   ChevronDown,
   DollarSign,
   Package,
+  Download,
 } from 'lucide-react';
 
 type StatusFilter = 'all' | InventoryDevice['status'];
@@ -47,6 +49,24 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'price_low', label: 'Price: Low to High' },
   { value: 'brand', label: 'Brand A-Z' },
 ];
+
+function exportInventoryCSV(devices: InventoryDevice[]) {
+  const header = 'IMEI,Brand,Model,Status,Condition,Price,Received Date\n';
+  const rows = devices
+    .map(
+      (d) =>
+        `${d.imei},${d.brand},${d.model},${d.status},${CONDITION_LABELS[d.condition]},$${d.retail_price.toFixed(2)},${new Date(d.received_at).toLocaleDateString('en-ZW')}`,
+    )
+    .join('\n');
+
+  const blob = new Blob([header + rows], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `inventory_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function sortDevices(devices: InventoryDevice[], sort: SortOption): InventoryDevice[] {
   const sorted = [...devices];
@@ -107,11 +127,22 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold md:text-2xl">Device Inventory</h1>
-        <p className="text-sm text-muted-foreground">
-          {devices.length} devices assigned to you
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold md:text-2xl">Device Inventory</h1>
+          <p className="text-sm text-muted-foreground">
+            {devices.length} devices assigned to you
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportInventoryCSV(filteredDevices)}
+          className="hidden sm:inline-flex"
+        >
+          <Download className="h-3.5 w-3.5 mr-1.5" />
+          Export CSV
+        </Button>
       </div>
 
       {/* Low stock alert */}
@@ -208,6 +239,14 @@ export default function InventoryPage() {
               Clear: {STATUS_CONFIG[statusFilter].label}
             </button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportInventoryCSV(filteredDevices)}
+            className="sm:hidden"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
 

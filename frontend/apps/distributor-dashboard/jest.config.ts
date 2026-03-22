@@ -9,9 +9,18 @@ const config: Config.InitialOptions = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@lynia/utils$': '<rootDir>/../../packages/utils/src/index.ts',
+    '^@lynia/auth$': '<rootDir>/../../packages/auth/src/index.ts',
+    '^@lynia/api-client$': '<rootDir>/../../packages/api-client/src/index.ts',
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
     '\\.(jpg|jpeg|png|gif|svg)$': '<rootDir>/src/__tests__/mocks/fileMock.ts',
   },
+  // Allow Jest to resolve deps (clsx, tailwind-merge) from the app's node_modules
+  // when imports originate from workspace packages resolved via moduleNameMapper
+  modulePaths: ['<rootDir>/node_modules'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(clsx|tailwind-merge|amazon-cognito-identity-js)/)',
+  ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   coverageProvider: 'v8',
   collectCoverageFrom: [

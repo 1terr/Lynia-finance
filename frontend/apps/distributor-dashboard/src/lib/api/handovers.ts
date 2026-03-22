@@ -20,15 +20,54 @@ export async function searchApprovedLoans(query: string): Promise<ApprovedLoan[]
   return fetchAPI<ApprovedLoan[]>(`/api/v1/distributor/handovers/search?q=${encodeURIComponent(query)}`);
 }
 
+export interface FetchCompletedHandoversParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FetchCompletedHandoversResult {
+  data: CompletedHandover[];
+  total: number;
+}
+
 /**
- * Fetch completed handovers for this distributor.
+ * Fetch completed handovers for this distributor with search and pagination.
  */
-export async function fetchCompletedHandovers(): Promise<CompletedHandover[]> {
+export async function fetchCompletedHandovers(
+  params?: FetchCompletedHandoversParams,
+): Promise<FetchCompletedHandoversResult> {
   if (shouldUseMock()) {
     await delay(400);
-    return [...mockCompletedHandovers];
+    let filtered = [...mockCompletedHandovers];
+    if (params?.search) {
+      const q = params.search.toLowerCase();
+      filtered = filtered.filter(
+        (h) =>
+          h.customer_name.toLowerCase().includes(q) ||
+          h.device_model.toLowerCase().includes(q) ||
+          h.loan_id.toLowerCase().includes(q) ||
+          h.device_imei.includes(q),
+      );
+    }
+    const total = filtered.length;
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 20;
+    const start = (page - 1) * limit;
+    filtered = filtered.slice(start, start + limit);
+    return { data: filtered, total };
   }
-  return fetchAPI<CompletedHandover[]>('/api/v1/distributor/handovers?status=completed');
+
+  const searchParams = new URLSearchParams();
+  searchParams.set('status', 'completed');
+  if (params?.search) searchParams.set('search', params.search);
+  if (params?.page) searchParams.set('page', String(params.page));
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+
+  const qs = searchParams.toString();
+  return fetchAPI<FetchCompletedHandoversResult>(
+    `/api/v1/distributor/handovers?${qs}`,
+  );
 }
 
 /**

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { ReportFilters, KycStatusSummary } from '@/types/reports';
+import { useEffect, useState, useMemo } from 'react';
+import type { ReportFilters, KycStatusSummary, DateRange } from '@/types/reports';
+import { DateRangeFilter, getPresetDates } from '@/components/reports/date-range-filter';
 import { fetchKycStatusReport } from '@/lib/api/reports';
 import { exportToCsv, formatPct } from '@/lib/export/csv';
 import { MetricCard } from './metric-card';
@@ -11,9 +12,9 @@ import { SimpleBarChart } from './bar-chart';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 
-interface Props { filters: ReportFilters }
-
-export function KycStatusReport({ filters }: Props) {
+export function KycStatusReport() {
+  const [dateRange, setDateRange] = useState<DateRange>({ ...getPresetDates('30d'), preset: '30d' });
+  const filters: ReportFilters = useMemo(() => ({ dateRange }), [dateRange]);
   const [data, setData] = useState<KycStatusSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,9 +40,12 @@ export function KycStatusReport({ filters }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">KYC Status Report</h2>
-        <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export CSV</Button>
+        <div className="flex items-center gap-2">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export CSV</Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <MetricCard label="Total Submissions" value={String(data.totalSubmissions)} />

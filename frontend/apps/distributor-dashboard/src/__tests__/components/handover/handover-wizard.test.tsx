@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { HandoverWizard } from '@/components/handover/handover-wizard';
 import {
   createHandoverResult,
+  createApprovedLoan,
   resetFactoryCounters,
 } from '@/__tests__/fixtures/factories';
 import * as apiClient from '@/lib/api';
@@ -10,6 +11,7 @@ import * as apiClient from '@/lib/api';
 // Mock the API client
 jest.mock('@/lib/api', () => ({
   submitHandover: jest.fn(),
+  searchApprovedLoans: jest.fn(),
 }));
 
 describe('HandoverWizard', () => {
@@ -18,15 +20,36 @@ describe('HandoverWizard', () => {
   beforeEach(() => {
     resetFactoryCounters();
     jest.clearAllMocks();
+    // Clear session storage to avoid "Resume Handover?" prompt
+    sessionStorage.clear();
+    // Mock searchApprovedLoans to return results when query >= 3 chars
+    (apiClient as any).searchApprovedLoans.mockResolvedValue([
+      createApprovedLoan({ customer_name: 'Customer Test' }),
+    ]);
   });
+
+  /** Helper: search and select a loan */
+  async function selectLoan(user: ReturnType<typeof userEvent.setup>) {
+    const searchInput = screen.getByRole('textbox');
+    await user.type(searchInput, 'Customer Test');
+
+    // Wait for the customer name to appear in a search result
+    await waitFor(() => {
+      expect(screen.getByText('Customer Test')).toBeInTheDocument();
+    });
+
+    // Click the result button (the button containing the customer name)
+    const resultButton = screen.getByText('Customer Test').closest('button');
+    await user.click(resultButton!);
+  }
 
   describe('Initial Render', () => {
     it('renders step 1 (Find Customer) by default', () => {
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      expect(screen.getByText('Step 1: Find Customer')).toBeInTheDocument();
+      expect(screen.getByText('Find Customer')).toBeInTheDocument();
       expect(
-        screen.getByRole('heading', { name: /Step 1: Find Customer/i })
+        screen.getByRole('heading', { name: /Find Customer/i })
       ).toBeInTheDocument();
     });
 
@@ -62,18 +85,7 @@ describe('HandoverWizard', () => {
       const continueButton = screen.getByRole('button', { name: /Continue/i });
       expect(continueButton).toBeDisabled();
 
-      // Search and select a customer/loan (implementation depends on step component)
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
-
-      // Select the first result once it appears
-      await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
-      });
-
-      const selectButton = screen.getAllByRole('button', { name: /select/i })[0];
-      await user.click(selectButton);
+      await selectLoan(user);
 
       await waitFor(() => {
         expect(continueButton).toBeEnabled();
@@ -84,17 +96,7 @@ describe('HandoverWizard', () => {
       const user = userEvent.setup();
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Search and select a loan
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
-
-      await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
-      });
-
-      const selectButton = screen.getAllByRole('button', { name: /select/i })[0];
-      await user.click(selectButton);
+      await selectLoan(user);
 
       // Click Continue
       const continueButton = screen.getByRole('button', { name: /Continue/i });
@@ -102,7 +104,7 @@ describe('HandoverWizard', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('Step 2: Verify Identity')
+          screen.getByRole('heading', { name: /Verify Identity/i })
         ).toBeInTheDocument();
       });
     });
@@ -111,18 +113,7 @@ describe('HandoverWizard', () => {
       const user = userEvent.setup();
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Navigate to step 2
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
-
-      await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
-      });
-
-      await user.click(
-        screen.getAllByRole('button', { name: /select/i })[0]
-      );
+      await selectLoan(user);
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       await waitFor(() => {
@@ -136,24 +127,13 @@ describe('HandoverWizard', () => {
       const user = userEvent.setup();
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Navigate to step 2
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
-
-      await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
-      });
-
-      await user.click(
-        screen.getAllByRole('button', { name: /select/i })[0]
-      );
+      await selectLoan(user);
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       // Go back
       await waitFor(() => {
         expect(
-          screen.getByText('Step 2: Verify Identity')
+          screen.getByRole('heading', { name: /Verify Identity/i })
         ).toBeInTheDocument();
       });
 
@@ -161,7 +141,7 @@ describe('HandoverWizard', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('Step 1: Find Customer')
+          screen.getByRole('heading', { name: /Find Customer/i })
         ).toBeInTheDocument();
       });
     });
@@ -179,23 +159,12 @@ describe('HandoverWizard', () => {
       const user = userEvent.setup();
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Navigate to step 2
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
-
-      await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
-      });
-
-      await user.click(
-        screen.getAllByRole('button', { name: /select/i })[0]
-      );
+      await selectLoan(user);
       await user.click(screen.getByRole('button', { name: /Continue/i }));
 
       await waitFor(() => {
         expect(
-          screen.getByText('Step 2: Verify Identity')
+          screen.getByRole('heading', { name: /Verify Identity/i })
         ).toBeInTheDocument();
       });
 
@@ -267,18 +236,7 @@ describe('HandoverWizard', () => {
       const user = userEvent.setup();
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      // Search and select a loan
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
-
-      await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
-      });
-
-      await user.click(
-        screen.getAllByRole('button', { name: /select/i })[0]
-      );
+      await selectLoan(user);
 
       // Go to step 2
       await user.click(screen.getByRole('button', { name: /Continue/i }));
@@ -286,15 +244,15 @@ describe('HandoverWizard', () => {
       // Go back to step 1
       await waitFor(() => {
         expect(
-          screen.getByText('Step 2: Verify Identity')
+          screen.getByRole('heading', { name: /Verify Identity/i })
         ).toBeInTheDocument();
       });
       await user.click(screen.getByRole('button', { name: /Back/i }));
 
-      // Verify selection is still maintained
+      // Verify we're back on step 1
       await waitFor(() => {
         expect(
-          screen.getByText('Step 1: Find Customer')
+          screen.getByRole('heading', { name: /Find Customer/i })
         ).toBeInTheDocument();
       });
       // Selected loan should still be selected (visual indication)
@@ -304,20 +262,12 @@ describe('HandoverWizard', () => {
       const user = userEvent.setup();
       render(<HandoverWizard onComplete={mockOnComplete} />);
 
-      const searchInput = screen.getByRole('textbox');
-      await user.type(searchInput, 'Customer');
+      await selectLoan(user);
 
+      // Data should be updated with selected_loan — verified by Continue being enabled
       await waitFor(() => {
-        const results = screen.getAllByRole('button', { name: /select/i });
-        expect(results.length).toBeGreaterThan(0);
+        expect(screen.getByRole('button', { name: /Continue/i })).toBeEnabled();
       });
-
-      await user.click(
-        screen.getAllByRole('button', { name: /select/i })[0]
-      );
-
-      // Data should be updated with selected_loan
-      // This would be verified through API submission or step 7 display
     });
   });
 });

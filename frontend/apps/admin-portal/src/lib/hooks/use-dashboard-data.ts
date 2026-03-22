@@ -11,10 +11,10 @@ import {
   getCoreBankingHealth,
 } from '@/lib/api/client';
 
-export function useDashboardMetrics() {
+export function useDashboardMetrics(dateFrom?: string, dateTo?: string) {
   return useQuery({
-    queryKey: ['dashboard', 'metrics'],
-    queryFn: getDashboardMetrics,
+    queryKey: ['dashboard', 'metrics', dateFrom, dateTo],
+    queryFn: () => getDashboardMetrics(dateFrom, dateTo),
     staleTime: 5 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,

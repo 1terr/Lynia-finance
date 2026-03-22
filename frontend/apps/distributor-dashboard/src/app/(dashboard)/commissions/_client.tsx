@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/use-debounce';
 import type { CommissionEntry, DashboardStats } from '@/types/distributor';
 import { fetchCommissions, fetchDashboardStats, fetchDistributorProfile } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/shared/pagination';
 import { cn } from '@lynia/utils';
 import { CommissionsSkeleton } from '@/components/ui/skeleton';
 import {
@@ -21,10 +23,12 @@ import {
   Target,
   BarChart3,
   Info,
+  Search,
 } from 'lucide-react';
 
 type PaymentFilter = 'all' | 'paid' | 'pending';
-type PeriodFilter = 'all' | 'this_month' | 'last_month';
+
+const PAGE_LIMIT = 20;
 
 /** Determine performance tier based on total commissions earned */
 function getPerformanceTier(totalEarned: number): {
@@ -52,25 +56,6 @@ function getPerformanceTier(totalEarned: number): {
   };
 }
 
-/** Build monthly earnings for bar chart (last 6 months) */
-function getMonthlyEarnings(commissions: CommissionEntry[]): { month: string; amount: number }[] {
-  const now = new Date();
-  const months: { month: string; amount: number }[] = [];
-
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const label = d.toLocaleDateString('en-US', { month: 'short' });
-    const amount = commissions
-      .filter((c) => {
-        const cd = new Date(c.calculation_date);
-        return cd.getMonth() === d.getMonth() && cd.getFullYear() === d.getFullYear();
-      })
-      .reduce((sum, c) => sum + c.commission_amount, 0);
-    months.push({ month: label, amount });
-  }
-  return months;
-}
-
 function exportCSV(commissions: CommissionEntry[]) {
   const header = 'Date,Loan ID,Device,Customer,IMEI,Device Price,Rate,Commission,Status,Paid At\n';
   const rows = commissions
@@ -95,10 +80,28 @@ function exportCSV(commissions: CommissionEntry[]) {
 }
 
 export default function CommissionsPage() {
-  const { data: commissions = [], isLoading: commissionsLoading, isError: commissionsError, refetch: refetchCommissions } = useQuery({
-    queryKey: ['distributor', 'commissions'],
-    queryFn: fetchCommissions,
+  const [searchQuery, setSearchQuery] = useState('');
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, paymentFilter]);
+
+  const { data: commissionsResult, isLoading: commissionsLoading, isError: commissionsError, refetch: refetchCommissions } = useQuery({
+    queryKey: ['distributor', 'commissions', { search: debouncedSearch, status: paymentFilter, page, limit: PAGE_LIMIT }],
+    queryFn: () => fetchCommissions({
+      search: debouncedSearch || undefined,
+      status: paymentFilter !== 'all' ? paymentFilter : undefined,
+      page,
+      limit: PAGE_LIMIT,
+    }),
   });
+
+  const commissions = commissionsResult?.data ?? [];
+  const totalCommissions = commissionsResult?.total ?? 0;
 
   const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['distributor', 'stats'],
@@ -114,8 +117,6 @@ export default function CommissionsPage() {
 
   const loading = commissionsLoading || statsLoading;
   const hasError = commissionsError || statsError;
-  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>('all');
-  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('all');
 
   const [slowLoading, setSlowLoading] = useState(false);
 
@@ -128,47 +129,9 @@ export default function CommissionsPage() {
     return () => clearTimeout(timer);
   }, [loading]);
 
-  const filteredCommissions = useMemo(() => {
-    return commissions.filter((c) => {
-      const matchesPayment =
-        paymentFilter === 'all' || c.payment_status === paymentFilter;
+  const handoverCount = totalCommissions;
 
-      let matchesPeriod = true;
-      if (periodFilter !== 'all') {
-        const date = new Date(c.calculation_date);
-        const now = new Date();
-        if (periodFilter === 'this_month') {
-          matchesPeriod =
-            date.getMonth() === now.getMonth() &&
-            date.getFullYear() === now.getFullYear();
-        } else if (periodFilter === 'last_month') {
-          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
-          matchesPeriod =
-            date.getMonth() === lastMonth.getMonth() &&
-            date.getFullYear() === lastMonth.getFullYear();
-        }
-      }
-
-      return matchesPayment && matchesPeriod;
-    });
-  }, [commissions, paymentFilter, periodFilter]);
-
-  const monthlyTotal = useMemo(() => {
-    const now = new Date();
-    return commissions
-      .filter((c) => {
-        const d = new Date(c.calculation_date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-      })
-      .reduce((sum, c) => sum + c.commission_amount, 0);
-  }, [commissions]);
-
-  const monthlyEarnings = useMemo(() => getMonthlyEarnings(commissions), [commissions]);
-  const maxMonthly = Math.max(...monthlyEarnings.map((m) => m.amount), 1);
-
-  const handoverCount = commissions.length;
-
-  if (loading) {
+  if (loading && page === 1 && !debouncedSearch) {
     return (
       <div className="relative">
         <CommissionsSkeleton />
@@ -214,6 +177,8 @@ export default function CommissionsPage() {
 
   const tier = getPerformanceTier(stats.total_commissions_earned);
 
+  const monthlyTotal = Number(stats.pending_commissions) || 0;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -226,7 +191,7 @@ export default function CommissionsPage() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => exportCSV(filteredCommissions)}
+          onClick={() => exportCSV(commissions)}
           className="hidden sm:inline-flex"
         >
           <Download className="h-3.5 w-3.5 mr-1.5" />
@@ -261,9 +226,6 @@ export default function CommissionsPage() {
           <p className="text-2xl font-bold">
             ${(Number(stats.total_commissions_paid) || 0).toFixed(2)}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {commissions.filter((c) => c.payment_status === 'paid').length} payments
-          </p>
         </div>
 
         <div className="rounded-xl border bg-card p-4 shadow-sm">
@@ -275,9 +237,6 @@ export default function CommissionsPage() {
           </div>
           <p className="text-2xl font-bold text-yellow-600">
             ${(Number(stats.pending_commissions) || 0).toFixed(2)}
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            {commissions.filter((c) => c.payment_status === 'pending').length} awaiting
           </p>
         </div>
 
@@ -292,34 +251,6 @@ export default function CommissionsPage() {
           <p className="text-xs text-muted-foreground mt-1">
             {stats.monthly_handovers} handovers
           </p>
-        </div>
-      </div>
-
-      {/* Monthly earnings chart */}
-      <div className="rounded-xl border bg-card p-4 md:p-5 shadow-sm">
-        <h2 className="text-sm font-semibold mb-4 flex items-center gap-2">
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          Monthly Earnings (Last 6 Months)
-        </h2>
-        <div className="flex items-end gap-2 h-40 sm:h-32">
-          {monthlyEarnings.map((m) => (
-            <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-              <span className="text-xs font-medium text-muted-foreground">
-                {m.amount > 0 ? `$${m.amount.toFixed(0)}` : ''}
-              </span>
-              <div
-                className={cn(
-                  'w-full rounded-t transition-all',
-                  m.amount > 0 ? 'bg-primary' : 'bg-muted',
-                )}
-                style={{
-                  height: `${Math.max((m.amount / maxMonthly) * 100, m.amount > 0 ? 8 : 4)}%`,
-                  minHeight: 4,
-                }}
-              />
-              <span className="text-xs text-muted-foreground">{m.month}</span>
-            </div>
-          ))}
         </div>
       </div>
 
@@ -445,67 +376,50 @@ export default function CommissionsPage() {
         </div>
       </div>
 
-      {/* Filters & Commission history - only show when there are commissions */}
-      {commissions.length === 0 ? (
-        <div className="rounded-xl border bg-card p-8 shadow-sm text-center">
-          <DollarSign className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-          <h3 className="text-sm font-semibold mb-1">No commissions yet</h3>
-          <p className="text-sm text-muted-foreground">
-            Commissions are earned when you complete device handovers. They will appear here automatically.
-          </p>
-        </div>
-      ) : (
-      <>
-      {/* Filters — horizontally scrollable on mobile */}
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory">
-        <div role="group" aria-label="Filter by payment status" className="flex items-center gap-1 rounded-lg border p-1 flex-shrink-0">
-          {(['all', 'paid', 'pending'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setPaymentFilter(f)}
-              aria-pressed={paymentFilter === f}
-              className={cn(
-                'rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap touch-target',
-                paymentFilter === f
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent',
-              )}
-            >
-              {f === 'all' ? 'All' : f === 'paid' ? 'Paid' : 'Pending'}
-            </button>
-          ))}
+      {/* Search, Filters & Commission history */}
+      <div className="space-y-4">
+        {/* Search input */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search by customer, device, or loan ID..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            aria-label="Search commissions"
+            className="w-full rounded-lg border bg-background pl-9 pr-4 py-2.5 text-base h-11 focus:outline-none focus:ring-2 focus:ring-primary"
+          />
         </div>
 
-        <div role="group" aria-label="Filter by time period" className="flex items-center gap-1 rounded-lg border p-1 flex-shrink-0">
-          {(['all', 'this_month', 'last_month'] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setPeriodFilter(f)}
-              aria-pressed={periodFilter === f}
-              className={cn(
-                'rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap touch-target',
-                periodFilter === f
-                  ? 'bg-primary text-primary-foreground'
-                  : 'hover:bg-accent',
-              )}
-            >
-              {f === 'all'
-                ? 'All Time'
-                : f === 'this_month'
-                  ? 'This Month'
-                  : 'Last Month'}
-            </button>
-          ))}
-        </div>
+        {/* Filters */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1 snap-x snap-mandatory">
+          <div role="group" aria-label="Filter by payment status" className="flex items-center gap-1 rounded-lg border p-1 flex-shrink-0">
+            {(['all', 'paid', 'pending'] as const).map((f) => (
+              <button
+                key={f}
+                onClick={() => setPaymentFilter(f)}
+                aria-pressed={paymentFilter === f}
+                className={cn(
+                  'rounded-md px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap touch-target',
+                  paymentFilter === f
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-accent',
+                )}
+              >
+                {f === 'all' ? 'All' : f === 'paid' ? 'Paid' : 'Pending'}
+              </button>
+            ))}
+          </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportCSV(filteredCommissions)}
-          className="sm:hidden ml-auto flex-shrink-0"
-        >
-          <Download className="h-3.5 w-3.5" />
-        </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => exportCSV(commissions)}
+            className="sm:hidden ml-auto flex-shrink-0"
+          >
+            <Download className="h-3.5 w-3.5" />
+          </Button>
+        </div>
       </div>
 
       {/* Commission history */}
@@ -513,76 +427,84 @@ export default function CommissionsPage() {
         <div className="p-4 md:p-5 border-b">
           <h2 className="text-sm font-semibold">Commission History</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {filteredCommissions.length} entries
+            {totalCommissions} entries
           </p>
         </div>
-        {filteredCommissions.length === 0 ? (
+        {commissions.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
-            No commission entries match your filters
+            {debouncedSearch || paymentFilter !== 'all'
+              ? 'No commission entries match your filters'
+              : 'No commissions yet. Commissions are earned when you complete device handovers.'}
           </div>
         ) : (
-          <div className="divide-y">
-            {filteredCommissions.map((commission) => (
-              <div
-                key={commission.id}
-                className="flex items-center gap-3 p-4 md:px-5"
-              >
+          <>
+            <div className="divide-y">
+              {commissions.map((commission) => (
                 <div
-                  className={cn(
-                    'h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0',
-                    commission.payment_status === 'paid'
-                      ? 'bg-green-100 dark:bg-green-900/30'
-                      : 'bg-yellow-100 dark:bg-yellow-900/30',
-                  )}
+                  key={commission.id}
+                  className="flex items-center gap-3 p-4 md:px-5"
                 >
-                  {commission.payment_status === 'paid' ? (
-                    <ArrowUpRight className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <ArrowDownRight className="h-5 w-5 text-yellow-600" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium truncate">
-                      {commission.customer_name}
-                    </p>
-                    <Badge
-                      variant={
-                        commission.payment_status === 'paid'
-                          ? 'success'
-                          : 'warning'
-                      }
-                      className="text-xs"
-                    >
-                      {commission.payment_status === 'paid' ? 'Paid' : 'Pending'}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {commission.device_model} &middot; {commission.loan_id}
-                  </p>
-                </div>
-                <div className="text-right flex-shrink-0">
-                  <p className="text-sm font-semibold text-green-600">
-                    +${(Number(commission.commission_amount) || 0).toFixed(2)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {commission.commission_percentage}% of $
-                    {commission.device_retail_price}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {new Date(commission.calculation_date).toLocaleDateString(
-                      'en-ZW',
-                      { month: 'short', day: 'numeric' },
+                  <div
+                    className={cn(
+                      'h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0',
+                      commission.payment_status === 'paid'
+                        ? 'bg-green-100 dark:bg-green-900/30'
+                        : 'bg-yellow-100 dark:bg-yellow-900/30',
                     )}
-                  </p>
+                  >
+                    {commission.payment_status === 'paid' ? (
+                      <ArrowUpRight className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <ArrowDownRight className="h-5 w-5 text-yellow-600" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate">
+                        {commission.customer_name}
+                      </p>
+                      <Badge
+                        variant={
+                          commission.payment_status === 'paid'
+                            ? 'success'
+                            : 'warning'
+                        }
+                        className="text-xs"
+                      >
+                        {commission.payment_status === 'paid' ? 'Paid' : 'Pending'}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {commission.device_model} &middot; {commission.loan_id}
+                    </p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-semibold text-green-600">
+                      +${(Number(commission.commission_amount) || 0).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {commission.commission_percentage}% of $
+                      {commission.device_retail_price}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(commission.calculation_date).toLocaleDateString(
+                        'en-ZW',
+                        { month: 'short', day: 'numeric' },
+                      )}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            <Pagination
+              page={page}
+              limit={PAGE_LIMIT}
+              total={totalCommissions}
+              onPageChange={setPage}
+            />
+          </>
         )}
       </div>
-      </>
-      )}
     </div>
   );
 }

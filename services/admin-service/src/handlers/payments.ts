@@ -61,12 +61,14 @@ export const handleGetPayments: RouteHandler = async (event, _params, auth) => {
     }
 
     if (qs.search) {
+      const normalized = qs.search.replace(/[-\s]/g, '');
       const term = `%${qs.search}%`;
+      const normalizedTerm = `%${normalized}%`;
       conditions.push(
-        `(c.first_name ILIKE $${paramIdx} OR c.last_name ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR p.reference_number ILIKE $${paramIdx} OR p.transaction_id ILIKE $${paramIdx})`
+        `(c.first_name ILIKE $${paramIdx} OR c.last_name ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR p.reference_number ILIKE $${paramIdx} OR p.transaction_id ILIKE $${paramIdx} OR REPLACE(REPLACE(c.national_id, '-', ''), ' ', '') ILIKE $${paramIdx + 1})`
       );
-      paramIdx++;
-      values.push(term);
+      paramIdx += 2;
+      values.push(term, normalizedTerm);
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';

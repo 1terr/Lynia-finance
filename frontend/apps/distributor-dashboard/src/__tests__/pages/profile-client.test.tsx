@@ -67,7 +67,8 @@ describe('ProfilePage', () => {
     it('displays average rating', () => {
       render(<ProfilePage />);
 
-      expect(screen.getByText('4.7')).toBeInTheDocument();
+      const ratingElements = screen.getAllByText('4.7');
+      expect(ratingElements.length).toBeGreaterThan(0);
     });
 
     it('shows Edit Profile button', () => {

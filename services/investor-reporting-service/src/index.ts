@@ -27,6 +27,7 @@ import { handleCollections } from './handlers/collections';
 import { handleFinancials } from './handlers/financials';
 import { handleCovenantCompliance } from './handlers/covenant-compliance';
 import { handleFeeRevenue } from './handlers/fee-revenue';
+import { handleDataFreshness } from './handlers/data-freshness';
 
 /**
  * Route map for investor reporting endpoints.
@@ -40,6 +41,7 @@ const ROUTES: Record<string, (event: APIGatewayProxyEvent) => Promise<APIGateway
   'GET /api/v1/investor/financials': handleFinancials,
   'GET /api/v1/investor/covenant-compliance': handleCovenantCompliance,
   'GET /api/v1/investor/fee-revenue': handleFeeRevenue,
+  'GET /api/v1/investor/data-freshness': handleDataFreshness,
 };
 
 export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {

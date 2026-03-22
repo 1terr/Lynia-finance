@@ -58,6 +58,12 @@ export default function AnalyticsPage() {
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
   const queryClient = useQueryClient();
 
+  const { data: freshnessData } = useQuery({
+    queryKey: ['investor', 'data-freshness'],
+    queryFn: () => fetchInvestorData('data-freshness'),
+    staleTime: 5 * 60 * 1000,
+  });
+
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['investor'] });
     setLastRefreshed(new Date());
@@ -77,9 +83,16 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Analytics & BI</h1>
-          <p className="text-sm text-muted-foreground">
-            Real-time investor-grade portfolio analytics
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-muted-foreground">
+              Real-time investor-grade portfolio analytics
+            </p>
+            {freshnessData?.latest_snapshot_date && (
+              <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Data as of: {new Date(freshnessData.latest_snapshot_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground">

@@ -7,7 +7,7 @@
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { getFineractClient, parseFineractDate } from '../../../shared/clients/fineract';
-import { db, query } from '../../../shared/clients/database';
+import { db, query, queryOne } from '../../../shared/clients/database';
 import logger from '../../../shared/utils/logger';
 import type {
   FineractLoan,
@@ -36,33 +36,54 @@ export async function handleGetLoans(
   const statusFilter = qs.status || '';
   const search = qs.search || '';
 
-  // Query Lynia DB for loans that have been synced to Fineract
-  let query = db
-    .from('loans')
-    .select('id, customer_id, loan_number, fineract_loan_id, fineract_product_id, outstanding_balance_usd, total_paid_usd, status, created_at')
-    .not('fineract_loan_id', 'is', null)
-    .order('created_at', { ascending: false })
-    .range(offset, offset + limit - 1);
+  // Build WHERE conditions
+  const conditions: string[] = ['l.fineract_loan_id IS NOT NULL'];
+  const values: unknown[] = [];
+  let paramIdx = 1;
 
   if (statusFilter) {
-    query = query.eq('status', statusFilter);
+    conditions.push(`l.status = $${paramIdx++}`);
+    values.push(statusFilter);
   }
 
-  const { data: loans, error: loanError } = await query.execute();
+  if (search) {
+    const normalized = search.replace(/[-\s]/g, '');
+    const term = `%${search}%`;
+    const normalizedTerm = `%${normalized}%`;
+    conditions.push(
+      `(CONCAT(c.first_name, ' ', c.last_name) ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR l.loan_number ILIKE $${paramIdx} OR CAST(l.fineract_loan_id AS TEXT) ILIKE $${paramIdx} OR REPLACE(REPLACE(c.national_id, '-', ''), ' ', '') ILIKE $${paramIdx + 1})`
+    );
+    paramIdx += 2;
+    values.push(term, normalizedTerm);
+  }
+
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+  // Get total count with a proper COUNT(*) query
+  const countResult = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) as count FROM loans l LEFT JOIN customers c ON c.id = l.customer_id ${whereClause}`,
+    values
+  );
+  const totalCount = parseInt(countResult.data?.count || '0');
+
+  // Query loans with customer join
+  const { data: loans, error: loanError } = await query<LyniaLoanRow>(
+    `SELECT l.id, l.customer_id, l.loan_number, l.fineract_loan_id, l.fineract_product_id,
+            l.outstanding_balance_usd, l.total_paid_usd, l.status, l.created_at
+     FROM loans l
+     LEFT JOIN customers c ON c.id = l.customer_id
+     ${whereClause}
+     ORDER BY l.created_at DESC
+     LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+    [...values, limit, offset]
+  );
+
   if (loanError || !loans) {
     logger.error('Loan query error', { action: 'fineract.getLoans', meta: { error: loanError?.message || 'Unknown' } });
     return err(500, 'Failed to query loans', event);
   }
 
-  const loanRows = loans as unknown as LyniaLoanRow[];
-
-  // Get total count for pagination
-  const { data: countData } = await db
-    .from('loans')
-    .select('id')
-    .not('fineract_loan_id', 'is', null)
-    .execute();
-  const totalCount = Array.isArray(countData) ? countData.length : 0;
+  const loanRows = loans;
 
   // Fetch customer data for all loans
   const customerIds = [...new Set(loanRows.map((l) => l.customer_id))];
@@ -89,23 +110,9 @@ export async function handleGetLoans(
     });
   }
 
-  // Apply search filter client-side (customer name / phone / loan number)
-  const filtered = search
-    ? items.filter(
-        (item) => {
-          const s = search.toLowerCase();
-          return (
-            String(item.customerName || '').toLowerCase().includes(s) ||
-            String(item.customerPhone || '').toLowerCase().includes(s) ||
-            String(item.fineractAccountNo || '').toLowerCase().includes(s)
-          );
-        }
-      )
-    : items;
-
   return ok(
     {
-      data: filtered,
+      data: items,
       pagination: {
         page,
         limit,

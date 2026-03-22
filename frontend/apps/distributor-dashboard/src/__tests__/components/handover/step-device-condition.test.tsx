@@ -40,7 +40,7 @@ describe('StepDeviceCondition', () => {
         />
       );
 
-      expect(screen.getByText('PHYSICAL CONDITION')).toBeInTheDocument();
+      expect(screen.getByText('Physical Condition')).toBeInTheDocument();
       expect(screen.getByText('Screen Condition')).toBeInTheDocument();
       expect(screen.getByText('Body Condition')).toBeInTheDocument();
     });
@@ -57,7 +57,7 @@ describe('StepDeviceCondition', () => {
         />
       );
 
-      expect(screen.getByText('FUNCTIONALITY CHECKS')).toBeInTheDocument();
+      expect(screen.getByText('Functionality Checks')).toBeInTheDocument();
       expect(screen.getByText('Powers On')).toBeInTheDocument();
       expect(screen.getByText('Touch Responsive')).toBeInTheDocument();
       expect(screen.getByText('Buttons Work')).toBeInTheDocument();
@@ -76,8 +76,10 @@ describe('StepDeviceCondition', () => {
         />
       );
 
-      expect(screen.getByText('APP & LOCK SETUP')).toBeInTheDocument();
-      expect(screen.getByText(/Install the Lynia app/i)).toBeInTheDocument();
+      expect(screen.getByText(/App & Lock Setup/i)).toBeInTheDocument();
+      // The instruction text and warning text both match; use getAllByText
+      const appTexts = screen.getAllByText(/Install the Lynia app/i);
+      expect(appTexts.length).toBeGreaterThan(0);
     });
 
     it('renders Accessories Included section', () => {
@@ -92,7 +94,7 @@ describe('StepDeviceCondition', () => {
         />
       );
 
-      expect(screen.getByText('ACCESSORIES INCLUDED')).toBeInTheDocument();
+      expect(screen.getByText(/Accessories Included/i)).toBeInTheDocument();
     });
 
     it('renders Additional Notes field', () => {
@@ -427,9 +429,9 @@ describe('StepDeviceCondition', () => {
       );
 
       expect(screen.getByText('charger')).toBeInTheDocument();
-      expect(screen.getByText('cable')).toBeInTheDocument();
+      expect(screen.getByText('usb cable')).toBeInTheDocument();
       expect(screen.getByText('earphones')).toBeInTheDocument();
-      expect(screen.getByText('case')).toBeInTheDocument();
+      expect(screen.getByText('protective case')).toBeInTheDocument();
       expect(screen.getByText('screen protector')).toBeInTheDocument();
     });
 
@@ -501,9 +503,9 @@ describe('StepDeviceCondition', () => {
       const notesTextarea = screen.getByPlaceholderText(/Any additional observations/i);
       await user.type(notesTextarea, 'Device has minor scratch');
 
-      expect(mockOnUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ notes: expect.stringContaining('Device has minor scratch') })
-      );
+      // onUpdate is called per keystroke; the last call should contain the full text
+      const lastCall = mockOnUpdate.mock.calls[mockOnUpdate.mock.calls.length - 1][0];
+      expect(lastCall.notes).toBe('Device has minor scratch');
     });
 
     it('displays existing notes', () => {

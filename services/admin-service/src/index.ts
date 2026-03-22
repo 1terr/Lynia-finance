@@ -54,6 +54,12 @@ import { handleGetCustomers, handleGetCustomerById, handleUpdateCustomer, handle
 // ─── Reports ───
 import { handleGetPortfolioReport, handleGetPortfolioHealthReport, handleGetDisbursementReport, handleGetCollectionReport, handleGetCollectionDetailedReport, handleGetKYCReport, handleGetKYCDetailedReport, handleGetDefaultReport, handleGetDefaultSummaryReport, handleGetAcquisitionReport, handleGetRevenueReport, handleGetLoanApprovalReport } from './handlers/reports';
 
+// ─── Commission Reports ───
+import { handleGetCommissionOverview } from './handlers/commission-reports';
+
+// ─── Distributor Performance ───
+import { handleGetDistributorRankings } from './handlers/distributor-performance';
+
 // ─── Device Locks ───
 import { handleGetDeviceLockHistory, handleLockDevice, handleUnlockDevice, handleUpdateDeviceLockStatus } from './handlers/device-locks';
 
@@ -62,6 +68,15 @@ import { handleGetDeviceHandovers, handleUpdateHandoverStatus } from './handlers
 
 // ─── Product Snapshots ───
 import { handleGetProductSnapshots, handleGetSnapshotDiff } from './handlers/product-snapshots';
+
+// ─── Global Search ───
+import { handleGlobalSearch } from './handlers/global-search';
+
+// ─── Device-Loan Chain Report ───
+import { handleGetDeviceLoanChain } from './handlers/device-loan-chain';
+
+// ─── Lock Effectiveness Report ───
+import { handleGetLockEffectiveness } from './handlers/lock-effectiveness';
 
 // ─── Loans Admin ───
 import { handleCancelLoan } from './handlers/loans';
@@ -227,6 +242,13 @@ export const handler = createRouter({
   'GET /api/v1/reports/acquisition':            handleGetAcquisitionReport,
   'GET /api/v1/reports/revenue':                handleGetRevenueReport,
   'GET /api/v1/reports/loan-approvals':         handleGetLoanApprovalReport,
+  'GET /api/v1/reports/commissions/overview':   handleGetCommissionOverview,
+  'GET /api/v1/reports/distributor-performance/rankings': handleGetDistributorRankings,
+  'GET /api/v1/reports/device-loan-chain':     handleGetDeviceLoanChain,
+  'GET /api/v1/reports/lock-effectiveness':    handleGetLockEffectiveness,
+
+  // Global Search
+  'GET /api/v1/search':                              handleGlobalSearch,
 
   // Customers (sub-routes before single-ID routes)
   'GET /api/v1/customers':                              handleGetCustomers,

@@ -1,6 +1,25 @@
-import { render, screen } from '@/__tests__/utils/test-utils';
+import { render, screen, waitFor } from '@/__tests__/utils/test-utils';
 import userEvent from '@testing-library/user-event';
 import { StepCapturePhotos } from '@/components/handover/step-capture-photos';
+
+// Mock Image so that compressImage resolves immediately
+beforeAll(() => {
+  // Override the global Image class to fire onload synchronously
+  const OriginalImage = global.Image;
+  (global as any).Image = class MockImage {
+    onload: (() => void) | null = null;
+    onerror: (() => void) | null = null;
+    width = 300;
+    height = 400;
+    private _src = '';
+    get src() { return this._src; }
+    set src(val: string) {
+      this._src = val;
+      // Immediately fire onerror so compressImage returns the original dataUrl
+      setTimeout(() => this.onerror?.(), 0);
+    }
+  };
+});
 
 describe('StepCapturePhotos', () => {
   const mockOnUpdate = jest.fn();
@@ -17,12 +36,13 @@ describe('StepCapturePhotos', () => {
       expect(screen.getByText(/At least 2 photos are required/i)).toBeInTheDocument();
     });
 
-    it('renders all 3 photo slots', () => {
+    it('renders all 4 photo slots', () => {
       render(<StepCapturePhotos photos={[]} onUpdate={mockOnUpdate} />);
 
       expect(screen.getByText('Front View')).toBeInTheDocument();
       expect(screen.getByText('Back View')).toBeInTheDocument();
       expect(screen.getByText('Screen On')).toBeInTheDocument();
+      expect(screen.getByText('Serial Label')).toBeInTheDocument();
     });
 
     it('renders capture buttons for each slot', () => {
@@ -31,6 +51,7 @@ describe('StepCapturePhotos', () => {
       expect(screen.getByText('Screen facing camera')).toBeInTheDocument();
       expect(screen.getByText('Back panel visible')).toBeInTheDocument();
       expect(screen.getByText('Device powered on, home screen visible')).toBeInTheDocument();
+      expect(screen.getByText('IMEI/serial sticker visible')).toBeInTheDocument();
     });
   });
 
@@ -42,10 +63,13 @@ describe('StepCapturePhotos', () => {
       const frontViewButton = screen.getByText('Screen facing camera').closest('button');
       await user.click(frontViewButton!);
 
-      expect(mockOnUpdate).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockOnUpdate).toHaveBeenCalled();
+      });
       const callArg = mockOnUpdate.mock.calls[0][0];
       expect(callArg[0]).toContain('data:image/svg+xml');
-      expect(callArg[0]).toContain('Front View');
+      // The label is URL-encoded in the SVG data URL
+      expect(callArg[0]).toContain('Front%20View');
     });
 
     it('captures photo for second slot when clicked', async () => {
@@ -55,10 +79,12 @@ describe('StepCapturePhotos', () => {
       const backViewButton = screen.getByText('Back panel visible').closest('button');
       await user.click(backViewButton!);
 
-      expect(mockOnUpdate).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockOnUpdate).toHaveBeenCalled();
+      });
       const callArg = mockOnUpdate.mock.calls[0][0];
       expect(callArg[1]).toContain('data:image/svg+xml');
-      expect(callArg[1]).toContain('Back View');
+      expect(callArg[1]).toContain('Back%20View');
     });
 
     it('captures photo for third slot when clicked', async () => {
@@ -68,10 +94,12 @@ describe('StepCapturePhotos', () => {
       const screenOnButton = screen.getByText('Device powered on, home screen visible').closest('button');
       await user.click(screenOnButton!);
 
-      expect(mockOnUpdate).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockOnUpdate).toHaveBeenCalled();
+      });
       const callArg = mockOnUpdate.mock.calls[0][0];
       expect(callArg[2]).toContain('data:image/svg+xml');
-      expect(callArg[2]).toContain('Screen On');
+      expect(callArg[2]).toContain('Screen%20On');
     });
   });
 
@@ -92,15 +120,17 @@ describe('StepCapturePhotos', () => {
     it('shows remove button for captured photos', () => {
       const { container } = render(<StepCapturePhotos photos={mockPhotos} onUpdate={mockOnUpdate} />);
 
-      const removeButtons = container.querySelectorAll('button .h-3\\.5.w-3\\.5');
+      // Remove buttons have aria-label "Remove X photo"
+      const removeButtons = screen.getAllByRole('button', { name: /Remove .* photo/i });
       expect(removeButtons.length).toBeGreaterThan(0);
     });
 
     it('shows capture button for empty slots', () => {
       render(<StepCapturePhotos photos={mockPhotos} onUpdate={mockOnUpdate} />);
 
-      // Third slot should still show capture button
+      // Third and fourth slots should still show capture buttons
       expect(screen.getByText('Device powered on, home screen visible')).toBeInTheDocument();
+      expect(screen.getByText('IMEI/serial sticker visible')).toBeInTheDocument();
     });
   });
 
@@ -219,7 +249,9 @@ describe('StepCapturePhotos', () => {
       const addButton = screen.getByText('Add another photo').closest('button');
       await user.click(addButton!);
 
-      expect(mockOnUpdate).toHaveBeenCalled();
+      await waitFor(() => {
+        expect(mockOnUpdate).toHaveBeenCalled();
+      });
       const callArg = mockOnUpdate.mock.calls[0][0];
       expect(callArg).toHaveLength(4);
       expect(callArg[3]).toContain('data:image/svg+xml');
