@@ -23,7 +23,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
   const dateClauseDisbursedAt = hasDateFilter
     ? ` AND disbursed_at >= '${dateFrom}'::date AND disbursed_at <= '${dateTo}'::date + INTERVAL '1 day'`
     : '';
-  const dateClausePaymentDate = hasDateFilter
+  const _dateClausePaymentDate = hasDateFilter
     ? ` AND payment_date >= '${dateFrom}'::date AND payment_date <= '${dateTo}'::date + INTERVAL '1 day'`
     : '';
   const monthStart = hasDateFilter ? `'${dateFrom}'::date` : "date_trunc('month', CURRENT_DATE)";
