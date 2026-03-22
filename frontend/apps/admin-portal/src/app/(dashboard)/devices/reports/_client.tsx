@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import {
@@ -104,7 +104,7 @@ export default function InventoryReportsPage() {
     setChainPage(1);
   }, []);
 
-  const chainFilters: DeviceLoanChainFilters = {
+  const chainFilters: DeviceLoanChainFilters = useMemo(() => ({
     view: chainView,
     search: chainSearchDebounced || undefined,
     lock_status: chainLockStatus || undefined,
@@ -113,7 +113,7 @@ export default function InventoryReportsPage() {
     date_to: chainDateRange.to,
     page: chainPage,
     limit: 25,
-  };
+  }), [chainView, chainSearchDebounced, chainLockStatus, chainLoanStatus, chainDateRange, chainPage]);
 
   const { data: report, isLoading: reportLoading } = useQuery({
     queryKey: ['inventory-report'],
@@ -775,6 +775,7 @@ export default function InventoryReportsPage() {
           {/* Date filter */}
           <div className="flex items-end gap-4">
             <div>
+              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
               <label className="mb-1 block text-xs font-medium text-muted-foreground">
                 Date Range
               </label>
@@ -1006,12 +1007,13 @@ export default function InventoryReportsPage() {
             <div className="flex flex-wrap items-end gap-4">
               {/* Search */}
               <div className="min-w-[240px] flex-1">
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label htmlFor="chain-search" className="mb-1 block text-xs font-medium text-muted-foreground">
                   Search
                 </label>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <input
+                    id="chain-search"
                     type="text"
                     placeholder="IMEI, name, national ID, loan number..."
                     value={chainSearch}
@@ -1023,10 +1025,11 @@ export default function InventoryReportsPage() {
 
               {/* Lock Status */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label htmlFor="chain-lock-status" className="mb-1 block text-xs font-medium text-muted-foreground">
                   Lock Status
                 </label>
                 <select
+                  id="chain-lock-status"
                   value={chainLockStatus}
                   onChange={(e) => handleChainLockStatusChange(e.target.value)}
                   className="rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -1040,10 +1043,11 @@ export default function InventoryReportsPage() {
 
               {/* Loan Status */}
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                <label htmlFor="chain-loan-status" className="mb-1 block text-xs font-medium text-muted-foreground">
                   Loan Status
                 </label>
                 <select
+                  id="chain-loan-status"
                   value={chainLoanStatus}
                   onChange={(e) => handleChainLoanStatusChange(e.target.value)}
                   className="rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
@@ -1059,6 +1063,7 @@ export default function InventoryReportsPage() {
 
               {/* Date Range */}
               <div>
+                {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">
                   Date Range
                 </label>
