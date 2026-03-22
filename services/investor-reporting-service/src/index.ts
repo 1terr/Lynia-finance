@@ -33,6 +33,11 @@ import { handleDataFreshness } from './handlers/data-freshness';
  * Route map for investor reporting endpoints.
  */
 const ROUTES: Record<string, (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>> = {
+  'GET /api/v1/investor/health': async (_event: APIGatewayProxyEvent) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'investor-reporting-service', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
   'GET /api/v1/investor/portfolio': handlePortfolioSummary,
   'GET /api/v1/investor/vintages': handleVintageAnalysis,
   'GET /api/v1/investor/loan-tape': handleLoanTape,

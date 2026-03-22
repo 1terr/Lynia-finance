@@ -14,6 +14,11 @@ import { handleGetKYCStatus } from './handlers/get-kyc-status';
 import { handleRetryKYC } from './handlers/retry-kyc';
 
 export const handler = createRouter({
+  'GET /kyc/health': async (_event, _params, _auth) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'kyc-service', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
   'POST /kyc/initiate':     handleInitiateKYC,
   'POST /kyc/callback':     handleKYCCallback,
   'GET /kyc/:customerId':   handleGetKYCStatus,

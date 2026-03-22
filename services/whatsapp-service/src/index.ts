@@ -40,6 +40,15 @@ export const handler = async (
     const path = event.path;
     const method = event.httpMethod;
 
+    // Health check (unauthenticated, lightweight)
+    if (path === '/whatsapp/health' && method === 'GET') {
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ status: 'ok', service: 'whatsapp-service', timestamp: new Date().toISOString() }),
+        headers: { 'Content-Type': 'application/json', ...getSecurityHeaders(event) },
+      };
+    }
+
     // Route handling
     if (path === '/whatsapp/send' && method === 'POST') {
       return await sendMessage(event);

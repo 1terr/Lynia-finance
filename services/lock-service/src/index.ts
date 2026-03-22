@@ -211,6 +211,13 @@ const handleGetHandoverStatus: RouteHandler = async (event, params, _auth) => {
 // ─── Router ──────────────────────────────────────────────────────────
 
 export const handler = createRouter({
+  // Health check
+  'GET /locks/health': async (_event, _params, _auth) => ({
+    statusCode: 200,
+    body: JSON.stringify({ status: 'ok', service: 'lock-service', timestamp: new Date().toISOString() }),
+    headers: { 'Content-Type': 'application/json' },
+  }),
+
   // Lock routes (static before parameterized)
   'POST /locks/lock': handleLockDevice,
   'POST /locks/unlock': handleUnlockDevice,
