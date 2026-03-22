@@ -53,7 +53,7 @@ export const handleOneMoneyWebhook: RouteHandler = async (event, _params, _auth)
       actor_type: 'webhook',
       actor_id: 'onemoney-webhook',
       provider_response: payload as unknown as Record<string, unknown>,
-    }).catch(() => {});
+    }).catch(err => logger.error('Failed to log OneMoney webhook event', { error: err instanceof Error ? err.message : String(err), action: 'onemoney.webhook.event_log' }));
 
     if (payload.status === 'SUCCESS') {
       let resolved = false;

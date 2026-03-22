@@ -638,17 +638,41 @@ Resources:
           ONEMONEY_MERCHANT_ID: !Ref OnemoneyMerchantId
           ONEMONEY_API_KEY: !Ref OnemoneyApiKey
       Events:
-        ProcessPayment:
+        InitiatePayment:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
-            Path: /payments/process
+            Path: /payments/initiate
             Method: POST
-        PaymentWebhook:
+        WebhookEcoCash:
           Type: Api
           Properties:
             RestApiId: !Ref LyniaApi
-            Path: /payments/webhook
+            Path: /payments/webhook/ecocash
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WebhookOneMoney:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /payments/webhook/onemoney
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WebhookOmari:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /payments/webhook/omari
+            Method: POST
+            Auth:
+              Authorizer: NONE
+        WebhookInnBucks:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /payments/webhook/innbucks
             Method: POST
             Auth:
               Authorizer: NONE
@@ -658,6 +682,12 @@ Resources:
             RestApiId: !Ref LyniaApi
             Path: /payments/{paymentId}
             Method: GET
+        ReconcilePayments:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /payments/reconcile
+            Method: POST
         # PaymentCallbackQueue:
         #   Type: SQS
         #   Properties:
@@ -1462,6 +1492,132 @@ Resources:
           Properties:
             RestApiId: !Ref LyniaApi
             Path: /api/v1/distributor/notifications
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        GetDeviceMovements:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/devices/{id}/movements
+            Method: GET
+        DeviceMovementsOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/devices/{id}/movements
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        UploadHandoverPhoto:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/upload-photo
+            Method: POST
+        UploadHandoverPhotoOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/handovers/upload-photo
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        GetTransfersPendingCount:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/pending-count
+            Method: GET
+        TransfersPendingCountOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/pending-count
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        GetDistributorTransfers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers
+            Method: GET
+        DistributorTransfersOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        InitiateTransferReturn:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/return
+            Method: POST
+        TransferReturnOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/return
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        ConfirmTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/{id}/confirm
+            Method: POST
+        ConfirmTransferOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/{id}/confirm
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        RejectTransfer:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/{id}/reject
+            Method: POST
+        RejectTransferOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/{id}/reject
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        GetTransferById:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/{id}
+            Method: GET
+        GetTransferByIdOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/transfers/{id}
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
+        MarkNotificationRead:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/notifications/{id}/read
+            Method: PATCH
+        MarkNotificationReadOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/distributor/notifications/{id}/read
             Method: OPTIONS
             Auth:
               Authorizer: NONE

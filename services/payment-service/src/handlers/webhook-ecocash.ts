@@ -54,7 +54,7 @@ export const handleEcoCashWebhook: RouteHandler = async (event, _params, _auth) 
       actor_type: 'webhook',
       actor_id: 'ecocash-webhook',
       provider_response: payload as unknown as Record<string, unknown>,
-    }).catch(() => {});
+    }).catch(err => logger.error('Failed to log EcoCash webhook event', { error: err instanceof Error ? err.message : String(err), action: 'ecocash.webhook.event_log' }));
 
     if (payload.status === 'SUCCESS') {
       // Try normal flow first (pre-initiated payment with our payment_id)

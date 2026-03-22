@@ -46,7 +46,7 @@ export const handleInnBucksWebhook: RouteHandler = async (event, _params, _auth)
       actor_type: 'webhook',
       actor_id: 'innbucks-webhook',
       provider_response: payload as unknown as Record<string, unknown>,
-    }).catch(() => {});
+    }).catch(err => logger.error('Failed to log InnBucks webhook event', { error: err instanceof Error ? err.message : String(err), action: 'innbucks.webhook.event_log' }));
 
     if (payload.status === 'SUCCESS') {
       let resolved = false;

@@ -265,6 +265,28 @@ export function createLoanOperations(request: RequestFn, formatDate: (d: Date) =
     },
 
     /**
+     * Withdraw a loan application (cancel).
+     * Transitions: submittedAndPendingApproval -> withdrawnByApplicant
+     */
+    async withdrawLoan(
+      loanId: number,
+      withdrawnOnDate: Date,
+      note?: string
+    ): Promise<FineractCommandResponse> {
+      const body: Record<string, unknown> = {
+        withdrawnOnDate: formatDate(withdrawnOnDate),
+        locale: LOCALE,
+        dateFormat: DATE_FORMAT,
+      };
+
+      if (note) {
+        body.note = note;
+      }
+
+      return request<FineractCommandResponse>('POST', `/loans/${loanId}?command=withdrawnByApplicant`, body);
+    },
+
+    /**
      * Restructure (reschedule) a loan.
      * Submits a reschedule request to Fineract with optional grace periods,
      * extra terms, or a new interest rate.

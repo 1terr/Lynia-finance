@@ -10,6 +10,7 @@ import { getFineractClient, FineractApiError } from '../fineract';
 import { db } from '../database';
 import { randomUUID } from 'crypto';
 import { logSync, queueSyncRetry } from './sync-scheduler';
+import { logger } from '../../utils/logger';
 
 // Feature flag: enable Fineract interop module (Mojaloop-compatible two-phase transfers)
 const FINERACT_USE_INTEROP = process.env.FINERACT_USE_INTEROP === 'true';
@@ -68,7 +69,7 @@ export async function syncCustomerToFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[fineract-sync] Customer ${params.customerId} -> Fineract client ${fineractClientId}`);
+    logger.info('Customer synced to Fineract', { action: 'fineract_sync.create_client', customerId: params.customerId, fineractClientId });
 
     // Register MSISDN with interop module for Mojaloop party lookup
     if (FINERACT_USE_INTEROP && params.mobileNo) {
@@ -90,10 +91,10 @@ export async function syncCustomerToFineract(params: {
           duration_ms: Date.now() - startTime,
         });
 
-        console.log(`[fineract-sync] Registered MSISDN ${params.mobileNo} for interop party lookup`);
+        logger.info('Registered MSISDN for interop party lookup', { action: 'fineract_sync.register_interop_party', customerId: params.customerId });
       } catch (interopError) {
         // Non-fatal -- interop registration failure shouldn't block customer sync
-        console.warn(`[fineract-sync] Failed to register interop party for ${params.customerId}:`, interopError);
+        logger.warn('Failed to register interop party', { action: 'fineract_sync.register_interop_party', customerId: params.customerId, error: interopError instanceof Error ? interopError.message : String(interopError) });
 
         await logSync({
           entity_type: 'client',
@@ -124,7 +125,7 @@ export async function syncCustomerToFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Failed to sync customer ${params.customerId}:`, error);
+    logger.error('Failed to sync customer to Fineract', { action: 'fineract_sync.create_client', customerId: params.customerId, error: error instanceof Error ? error.message : String(error) });
     await queueSyncRetry({
       entityType: 'client',
       entityId: params.customerId,
@@ -198,7 +199,7 @@ export async function syncLoanToFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[fineract-sync] Loan ${params.loanId} -> Fineract loan ${fineractLoanId}`);
+    logger.info('Loan synced to Fineract', { action: 'fineract_sync.create_loan', loanId: params.loanId, fineractLoanId });
     return fineractLoanId;
   } catch (error) {
     const apiError = error instanceof FineractApiError ? error : null;
@@ -215,7 +216,7 @@ export async function syncLoanToFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Failed to sync loan ${params.loanId}:`, error);
+    logger.error('Failed to sync loan to Fineract', { action: 'fineract_sync.create_loan', loanId: params.loanId, error: error instanceof Error ? error.message : String(error) });
     await queueSyncRetry({
       entityType: 'loan',
       entityId: params.loanId,
@@ -252,7 +253,7 @@ export async function approveLoanInFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[fineract-sync] Loan ${params.loanId} approved in Fineract`);
+    logger.info('Loan approved in Fineract', { action: 'fineract_sync.approve_loan', loanId: params.loanId, fineractLoanId: params.fineractLoanId });
     return true;
   } catch (error) {
     const apiError = error instanceof FineractApiError ? error : null;
@@ -269,7 +270,7 @@ export async function approveLoanInFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Failed to approve loan ${params.loanId} in Fineract:`, error);
+    logger.error('Failed to approve loan in Fineract', { action: 'fineract_sync.approve_loan', loanId: params.loanId, error: error instanceof Error ? error.message : String(error) });
     await queueSyncRetry({
       entityType: 'loan',
       entityId: params.loanId,
@@ -322,7 +323,7 @@ export async function disburseLoanInFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[fineract-sync] Loan ${params.loanId} disbursed in Fineract`);
+    logger.info('Loan disbursed in Fineract', { action: 'fineract_sync.disburse_loan', loanId: params.loanId, fineractLoanId: params.fineractLoanId });
     return true;
   } catch (error) {
     const apiError = error instanceof FineractApiError ? error : null;
@@ -339,7 +340,7 @@ export async function disburseLoanInFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Failed to disburse loan ${params.loanId}:`, error);
+    logger.error('Failed to disburse loan in Fineract', { action: 'fineract_sync.disburse_loan', loanId: params.loanId, error: error instanceof Error ? error.message : String(error) });
     await queueSyncRetry({
       entityType: 'loan',
       entityId: params.loanId,
@@ -416,15 +417,15 @@ async function disburseViaInterop(
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[fineract-sync] Loan ${params.loanId} disbursed via interop (transfer ${transferId})`);
+    logger.info('Loan disbursed via interop', { action: 'fineract_sync.interop_disburse', loanId: params.loanId, transferId });
     return true;
   } catch (error) {
     // Release the reserved funds if prepare succeeded but commit failed
     try {
       await fineract.releaseInteropTransfer(transferId);
-      console.log(`[fineract-sync] Released interop transfer ${transferId} after failure`);
+      logger.info('Released interop transfer after failure', { action: 'fineract_sync.interop_release', transferId });
     } catch (releaseError) {
-      console.error(`[fineract-sync] Failed to release interop transfer ${transferId}:`, releaseError);
+      logger.error('Failed to release interop transfer', { action: 'fineract_sync.interop_release', transferId, error: releaseError instanceof Error ? releaseError.message : String(releaseError) });
     }
 
     const apiError = error instanceof FineractApiError ? error : null;
@@ -442,7 +443,7 @@ async function disburseViaInterop(
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Interop disbursement failed for loan ${params.loanId}:`, error);
+    logger.error('Interop disbursement failed', { action: 'fineract_sync.interop_disburse', loanId: params.loanId, error: error instanceof Error ? error.message : String(error) });
     await queueSyncRetry({
       entityType: 'loan',
       entityId: params.loanId,
@@ -509,7 +510,7 @@ export async function syncRepaymentToFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.log(`[fineract-sync] Payment ${params.paymentId} -> Fineract txn ${fineractTxnId}`);
+    logger.info('Repayment synced to Fineract', { action: 'fineract_sync.repayment', paymentId: params.paymentId, fineractTxnId });
     return fineractTxnId;
   } catch (error) {
     const apiError = error instanceof FineractApiError ? error : null;
@@ -526,7 +527,7 @@ export async function syncRepaymentToFineract(params: {
       duration_ms: Date.now() - startTime,
     });
 
-    console.error(`[fineract-sync] Failed to sync repayment ${params.paymentId}:`, error);
+    logger.error('Failed to sync repayment to Fineract', { action: 'fineract_sync.repayment', paymentId: params.paymentId, error: error instanceof Error ? error.message : String(error) });
     await queueSyncRetry({
       entityType: 'repayment',
       entityId: params.paymentId,

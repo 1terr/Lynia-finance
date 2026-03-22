@@ -192,7 +192,7 @@ describe('Device Handover Journey', () => {
       // Device lock entry created
       const lockInsert = dbOps.find(op => op.table === 'device_locks' && op.op === 'insert');
       expect(lockInsert).toBeDefined();
-      expect(lockInsert!.data.lock_status).toBe('pending');
+      expect(lockInsert!.data.execution_status).toBe('pending');
     });
 
     it('next_payment_date is 30 days from handover', async () => {

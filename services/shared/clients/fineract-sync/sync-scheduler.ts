@@ -7,6 +7,7 @@
 
 import { db } from '../database';
 import { SQSQueues } from '../../utils/sqs-publisher';
+import { logger } from '../../utils/logger';
 
 // ============================================================
 // SYNC LOGGING
@@ -47,10 +48,10 @@ export async function queueSyncRetry(entry: {
       retryCount: 0,
       originalError: entry.errorMessage,
     });
-    console.log(`[fineract-sync] Queued SQS retry for ${entry.entityType}:${entry.operation} (${entry.entityId})`);
+    logger.info('Queued SQS retry', { action: 'fineract_sync.queue_retry', entityType: entry.entityType, operation: entry.operation, entityId: entry.entityId });
   } catch (sqsError) {
     // SQS publish failure is non-fatal; reconciliation job is the safety net
-    console.error('[fineract-sync] Failed to queue SQS retry:', sqsError);
+    logger.error('Failed to queue SQS retry', { action: 'fineract_sync.queue_retry', error: sqsError instanceof Error ? sqsError.message : String(sqsError) });
   }
 }
 
@@ -80,6 +81,6 @@ export async function logSync(entry: SyncLogEntry): Promise<void> {
       .execute();
   } catch (logError) {
     // Never let sync logging failures propagate
-    console.error('[fineract-sync] Failed to write sync log:', logError);
+    logger.error('Failed to write sync log', { action: 'fineract_sync.log', error: logError instanceof Error ? logError.message : String(logError) });
   }
 }

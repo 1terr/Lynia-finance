@@ -9,8 +9,9 @@
 #
 # This script:
 #   1. Runs the AWS pre-migration stub (auth schema + extensions)
-#   2. Runs all 17 standard migrations in order
-#   3. Runs the AWS post-migration cleanup (removes RLS + auth schema)
+#   2. Applies fix_missing_tables.sql (fixes dependency order from 001)
+#   3. Runs all standard migrations (001-056+) in order
+#   4. Runs the AWS post-migration cleanup (removes RLS + auth schema)
 
 set -euo pipefail
 
@@ -27,21 +28,26 @@ echo "=== Lynia Finance - RDS Schema Deployment ==="
 echo ""
 
 # Step 1: Pre-migration (auth stub + extensions)
-echo "[1/3] Running pre-migration setup..."
+echo "[1/4] Running pre-migration setup..."
 psql "$RDS_URL" -f "$SCRIPT_DIR/migrations/aws/000_pre_migration.sql"
 echo "  Done."
 
-# Step 2: Standard migrations (001-017)
-echo "[2/3] Running standard migrations..."
-for migration in "$SCRIPT_DIR"/migrations/0*.sql; do
+# Step 2: Fix table dependency order from 001_initial_schema.sql
+echo "[2/4] Applying fix_missing_tables (dependency order fix)..."
+psql "$RDS_URL" -f "$SCRIPT_DIR/migrations/aws/fix_missing_tables.sql"
+echo "  Done."
+
+# Step 3: Standard migrations (001-056+)
+echo "[3/4] Running standard migrations..."
+for migration in "$SCRIPT_DIR"/migrations/[0-9][0-9][0-9]_*.sql; do
   filename=$(basename "$migration")
   echo "  Applying $filename..."
   psql "$RDS_URL" -f "$migration"
 done
 echo "  Done."
 
-# Step 3: Post-migration (remove RLS + auth schema)
-echo "[3/3] Running post-migration cleanup..."
+# Step 4: Post-migration (remove RLS + auth schema)
+echo "[4/4] Running post-migration cleanup..."
 psql "$RDS_URL" -f "$SCRIPT_DIR/migrations/aws/018_remove_rls_for_aws.sql"
 echo "  Done."
 

@@ -7,6 +7,7 @@
  */
 
 import { getFineractClient, parseFineractDate } from '../fineract';
+import { logger } from '../../utils/logger';
 
 // ============================================================
 // QUERY HELPERS (used by whatsapp-service)
@@ -44,7 +45,7 @@ export async function getFineractLoanBalance(fineractLoanId: number): Promise<{
       currency: loan.currency.code,
     };
   } catch (error) {
-    console.error(`[fineract-sync] Failed to get loan balance for Fineract loan ${fineractLoanId}:`, error);
+    logger.error('Failed to get loan balance from Fineract', { action: 'fineract_sync.get_balance', fineractLoanId, error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }
@@ -84,7 +85,7 @@ export async function getFineractRepaymentSchedule(fineractLoanId: number): Prom
         complete: p.complete,
       }));
   } catch (error) {
-    console.error(`[fineract-sync] Failed to get schedule for Fineract loan ${fineractLoanId}:`, error);
+    logger.error('Failed to get repayment schedule from Fineract', { action: 'fineract_sync.get_schedule', fineractLoanId, error: error instanceof Error ? error.message : String(error) });
     return null;
   }
 }

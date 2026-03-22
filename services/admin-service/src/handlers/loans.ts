@@ -99,7 +99,7 @@ export const handleCancelLoan: RouteHandler = async (event, params, auth) => {
           status: 'pending',
           description: `Deposit refund for cancelled loan ${loan.loan_number}`,
           created_at: new Date().toISOString(),
-        }).execute().catch(() => {});
+        }).execute().catch(err => logger.error('Failed to create refund payment record', { error: err instanceof Error ? err.message : String(err), action: 'loan.cancel.refund' }));
 
         // Queue loan status update for downstream processing
         SQSQueues.processLoanUpdate({
@@ -110,7 +110,7 @@ export const handleCancelLoan: RouteHandler = async (event, params, auth) => {
             refund_amount: loan.deposit_amount_usd,
             reason: 'loan_cancellation_deposit_refund',
           },
-        }).catch(() => {});
+        }).catch(err => logger.error('Failed to queue loan status update for cancellation', { error: err instanceof Error ? err.message : String(err), action: 'loan.cancel.queue_update' }));
 
         // Notify customer via WhatsApp
         SQSQueues.sendNotification({
@@ -121,7 +121,7 @@ export const handleCancelLoan: RouteHandler = async (event, params, auth) => {
             amount: String(loan.deposit_amount_usd),
             loan_number: loan.loan_number,
           },
-        }).catch(() => {});
+        }).catch(err => logger.error('Failed to send deposit refund notification', { error: err instanceof Error ? err.message : String(err), action: 'loan.cancel.notification' }));
 
         logger.info('Deposit refund queued', {
           action: 'loan.cancel.refund',
