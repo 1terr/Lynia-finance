@@ -45,9 +45,12 @@ export const handleGetDevices: RouteHandler = async (event, _params, auth) => {
   }
 
   if (qs.search) {
+    const normalized = qs.search.replace(/[-\s]/g, '');
     params.push(`%${qs.search}%`);
     const idx = params.length;
-    whereClause += ` AND (d.imei ILIKE $${idx} OR d.manufacturer ILIKE $${idx} OR d.model ILIKE $${idx} OR d.serial_number ILIKE $${idx} OR c.phone_number ILIKE $${idx} OR c.first_name ILIKE $${idx} OR c.last_name ILIKE $${idx})`;
+    params.push(`%${normalized}%`);
+    const nIdx = params.length;
+    whereClause += ` AND (d.imei ILIKE $${idx} OR d.manufacturer ILIKE $${idx} OR d.model ILIKE $${idx} OR d.serial_number ILIKE $${idx} OR c.phone_number ILIKE $${idx} OR c.first_name ILIKE $${idx} OR c.last_name ILIKE $${idx} OR REPLACE(REPLACE(c.national_id, '-', ''), ' ', '') ILIKE $${nIdx})`;
   }
 
   const { data: countRows } = await query<{ count: string }>(

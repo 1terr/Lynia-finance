@@ -10,6 +10,24 @@ import { mapActionToEventType } from './helpers';
  */
 export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth) => {
   try {
+  // Optional date range filtering
+  const qs = event.queryStringParameters || {};
+  const dateFrom = qs.date_from || null; // ISO date string e.g. '2026-01-01'
+  const dateTo = qs.date_to || null;
+
+  // Build optional date clauses for queries that support date filtering
+  const hasDateFilter = dateFrom && dateTo;
+  const dateClauseCreatedAt = hasDateFilter
+    ? ` AND created_at >= '${dateFrom}'::date AND created_at <= '${dateTo}'::date + INTERVAL '1 day'`
+    : '';
+  const dateClauseDisbursedAt = hasDateFilter
+    ? ` AND disbursed_at >= '${dateFrom}'::date AND disbursed_at <= '${dateTo}'::date + INTERVAL '1 day'`
+    : '';
+  const _dateClausePaymentDate = hasDateFilter
+    ? ` AND payment_date >= '${dateFrom}'::date AND payment_date <= '${dateTo}'::date + INTERVAL '1 day'`
+    : '';
+  const monthStart = hasDateFilter ? `'${dateFrom}'::date` : "date_trunc('month', CURRENT_DATE)";
+
   // Run all DB queries in parallel for performance
   const [
     customersResult,
@@ -25,26 +43,26 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     overdueResult,
   ] = await Promise.all([
     // Total active customers
-    queryOne<{ count: string }>('SELECT COUNT(*) as count FROM customers WHERE onboarding_status = $1', ['completed']),
+    queryOne<{ count: string }>(`SELECT COUNT(*) as count FROM customers WHERE onboarding_status = $1${dateClauseCreatedAt}`, ['completed']),
     // Active loans and outstanding balance
     queryOne<{ count: string; outstanding: string }>(
-      "SELECT COUNT(*) as count, COALESCE(SUM(outstanding_balance_usd), 0) as outstanding FROM loans WHERE status = 'active'"
+      `SELECT COUNT(*) as count, COALESCE(SUM(outstanding_balance_usd), 0) as outstanding FROM loans WHERE status = 'active'${dateClauseCreatedAt}`
     ),
     // Total disbursed
     queryOne<{ total: string }>(
-      'SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursed_at IS NOT NULL'
+      `SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursed_at IS NOT NULL${dateClauseDisbursedAt}`
     ),
-    // Monthly revenue (completed payments this month)
+    // Revenue (completed payments in period)
     queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(amount_usd), 0) as total FROM payments WHERE status = 'confirmed' AND payment_date >= date_trunc('month', CURRENT_DATE)"
+      `SELECT COALESCE(SUM(amount_usd), 0) as total FROM payments WHERE status = 'confirmed' AND payment_date >= ${monthStart}${hasDateFilter ? ` AND payment_date <= '${dateTo}'::date + INTERVAL '1 day'` : ''}`
     ),
-    // Collection rate: completed payments / total expected installments this month
+    // Collection rate: completed payments / total expected installments in period
     queryOne<{ collected: string; expected: string }>(
       `SELECT
         COALESCE(SUM(CASE WHEN status = 'confirmed' THEN amount_usd ELSE 0 END), 0) as collected,
         COALESCE(SUM(amount_usd), 1) as expected
       FROM payments
-      WHERE payment_date >= date_trunc('month', CURRENT_DATE)`
+      WHERE payment_date >= ${monthStart}${hasDateFilter ? ` AND payment_date <= '${dateTo}'::date + INTERVAL '1 day'` : ''}`
     ),
     // Default rate: defaulted / (active + defaulted)
     queryOne<{ defaulted: string; total_active: string }>(
@@ -70,9 +88,9 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
     queryOne<{ count: string }>(
       "SELECT COUNT(*) as count FROM loans WHERE status = 'pending'"
     ),
-    // New customers this month
+    // New customers in period
     queryOne<{ count: string }>(
-      "SELECT COUNT(*) as count FROM customers WHERE created_at >= date_trunc('month', CURRENT_DATE)"
+      `SELECT COUNT(*) as count FROM customers WHERE created_at >= ${monthStart}${hasDateFilter ? ` AND created_at <= '${dateTo}'::date + INTERVAL '1 day'` : ''}`
     ),
     // Overdue payments
     queryOne<{ count: string; amount: string }>(
@@ -108,7 +126,7 @@ export const handleDashboardMetrics: RouteHandler = async (event, _params, _auth
       "SELECT COUNT(*) as count FROM fineract_sync_log WHERE operation = 'reconcile' AND status = 'failed' AND created_at >= NOW() - INTERVAL '24 hours'"
     ),
     queryOne<{ total: string }>(
-      "SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursed_at >= date_trunc('month', CURRENT_DATE)"
+      `SELECT COALESCE(SUM(loan_amount_usd), 0) as total FROM loans WHERE disbursed_at >= ${monthStart}${hasDateFilter ? ` AND disbursed_at <= '${dateTo}'::date + INTERVAL '1 day'` : ''}`
     ),
   ]);
 

@@ -1,5 +1,5 @@
 import { RouteHandler } from '../../../shared/utils/lambda-router';
-import { db, query } from '../../../shared/clients/database';
+import { db, query, queryOne } from '../../../shared/clients/database';
 import {
   successResponse,
   errorResponse,
@@ -27,10 +27,46 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
     return notFoundResponse('Distributor', event);
   }
 
-  const status = event.queryStringParameters?.status;
+  const qs = event.queryStringParameters || {};
+  const page = Math.max(1, parseInt(qs.page || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
+  const offset = (page - 1) * limit;
 
-  let sql = `
-    SELECT
+  const conditions: string[] = ['dh.distributor_id = $1'];
+  const values: unknown[] = [dist.id];
+  let paramIdx = 2;
+
+  if (qs.status) {
+    conditions.push(`dh.status = $${paramIdx++}`);
+    values.push(qs.status);
+  }
+
+  if (qs.search) {
+    const term = `%${qs.search}%`;
+    conditions.push(
+      `(c.first_name ILIKE $${paramIdx} OR c.last_name ILIKE $${paramIdx} OR d.imei ILIKE $${paramIdx} OR CONCAT(d.manufacturer, ' ', d.model) ILIKE $${paramIdx} OR l.id::text ILIKE $${paramIdx})`
+    );
+    paramIdx++;
+    values.push(term);
+  }
+
+  const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+  const fromClause = `FROM device_handovers dh
+    JOIN loans l ON l.id = dh.loan_id
+    JOIN customers c ON c.id = dh.customer_id
+    JOIN devices d ON d.id = dh.device_id
+    LEFT JOIN distributor_commissions dc ON dc.loan_id = l.id AND dc.distributor_id = dh.distributor_id`;
+
+  const countResult = await queryOne<{ count: string }>(
+    `SELECT COUNT(*) as count ${fromClause} ${whereClause}`,
+    values
+  );
+  const total = parseInt(countResult.data?.count || '0');
+
+  values.push(limit, offset);
+  const result = await query(
+    `SELECT
       dh.id,
       l.id AS loan_id,
       CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
@@ -41,23 +77,12 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
       dh.handed_over_at AS completed_at,
       dh.status,
       dh.created_at
-    FROM device_handovers dh
-    JOIN loans l ON l.id = dh.loan_id
-    JOIN customers c ON c.id = dh.customer_id
-    JOIN devices d ON d.id = dh.device_id
-    LEFT JOIN distributor_commissions dc ON dc.loan_id = l.id AND dc.distributor_id = dh.distributor_id
-    WHERE dh.distributor_id = $1
-  `;
-  const params: unknown[] = [dist.id];
-
-  if (status) {
-    params.push(status);
-    sql += ` AND dh.status = $${params.length}`;
-  }
-
-  sql += ' ORDER BY dh.created_at DESC';
-
-  const result = await query(sql, params);
+    ${fromClause}
+    ${whereClause}
+    ORDER BY dh.created_at DESC
+    LIMIT $${paramIdx++} OFFSET $${paramIdx++}`,
+    values
+  );
 
   // PostgreSQL DECIMAL columns return strings via the pg driver.
   // Convert to numbers so the frontend can call .toFixed() safely.
@@ -67,7 +92,15 @@ export const handleGetHandovers: RouteHandler = async (event, _params, auth) => 
     commission_earned: Number(row.commission_earned) || 0,
   }));
 
-  return successResponse(handovers, 200, event);
+  return successResponse({
+    data: handovers,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
+  }, 200, event);
 };
 
 /**

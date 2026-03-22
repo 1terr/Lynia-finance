@@ -33,6 +33,7 @@ jest.mock('../../../services/shared/clients/database', () => {
       from: jest.fn().mockImplementation(() => createChain()),
     },
     query: jest.fn().mockResolvedValue({ data: [] }),
+    queryOne: jest.fn().mockResolvedValue({ data: null, error: null }),
   };
 });
 
@@ -99,7 +100,7 @@ jest.mock('../../../services/shared/utils/logger', () => {
 // ── Import handler AFTER mocks ────────────────────────────────────────
 
 import { handler } from '../../../services/distributor-service/src/index';
-import { db, query } from '../../../services/shared/clients/database';
+import { db, query, queryOne } from '../../../services/shared/clients/database';
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
@@ -157,6 +158,7 @@ beforeEach(() => {
   // Reset once-queues on shared mocks to prevent leakage between tests
   mockExecute.mockReset();
   (query as jest.Mock).mockReset();
+  (queryOne as jest.Mock).mockReset();
   mockCompleteHandover.mockReset();
   mockGetAuthContext.mockReturnValue({
     userId: 'user-1',
@@ -166,6 +168,7 @@ beforeEach(() => {
   mockRequireRole.mockReturnValue(undefined); // passes by default
   mockExecute.mockResolvedValue({ data: null, error: null });
   (query as jest.Mock).mockResolvedValue({ data: [] });
+  (queryOne as jest.Mock).mockResolvedValue({ data: null, error: null });
 });
 
 // =====================================================================
@@ -381,6 +384,8 @@ describe('GET /api/v1/distributor/handovers', () => {
     const handovers = [
       { id: 'h1', status: 'initiated', customer_name: 'John', loan_amount: '200.00', commission_earned: '10.00' },
     ];
+    // queryOne for count, then query for handovers
+    (queryOne as jest.Mock).mockResolvedValueOnce({ data: { count: '1' }, error: null });
     (query as jest.Mock).mockResolvedValueOnce({ data: handovers });
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/handovers' });
@@ -388,14 +393,19 @@ describe('GET /api/v1/distributor/handovers', () => {
 
     expect(response.statusCode).toBe(200);
     const body = parseBody(response);
+    // Handler now returns paginated response: { data: [...], pagination: {...} }
     // DECIMAL columns are converted from strings to numbers
-    expect(body.data).toEqual([
+    expect(body.data.data).toEqual([
       { id: 'h1', status: 'initiated', customer_name: 'John', loan_amount: 200, commission_earned: 10 },
     ]);
+    expect(body.data.pagination).toBeDefined();
+    expect(body.data.pagination.page).toBe(1);
   });
 
   it('should support ?status=X filter', async () => {
     mockExecute.mockResolvedValueOnce({ data: { id: 'dist-1' }, error: null });
+    // queryOne for count, then query for handovers
+    (queryOne as jest.Mock).mockResolvedValueOnce({ data: { count: '0' }, error: null });
     (query as jest.Mock).mockResolvedValueOnce({ data: [] });
 
     const event = createEvent({
@@ -406,10 +416,10 @@ describe('GET /api/v1/distributor/handovers', () => {
     const response = await handler(event);
 
     expect(response.statusCode).toBe(200);
-    // Verify the query received status filter parameter
+    // Verify the query received status filter parameter (now the second call after queryOne count)
     expect((query as jest.Mock)).toHaveBeenCalledWith(
       expect.stringContaining('$2'),
-      ['dist-1', 'completed']
+      expect.arrayContaining(['dist-1', 'completed'])
     );
   });
 
@@ -678,6 +688,8 @@ describe('GET /api/v1/distributor/commissions', () => {
     const commissions = [
       { id: 'c1', commission_amount: '50.00', commission_percentage: '5.00', device_retail_price: '199.00', payment_status: 'paid' },
     ];
+    // queryOne for count, then query for commissions
+    (queryOne as jest.Mock).mockResolvedValueOnce({ data: { count: '1' }, error: null });
     (query as jest.Mock).mockResolvedValueOnce({ data: commissions });
 
     const event = createEvent({ httpMethod: 'GET', path: '/api/v1/distributor/commissions' });
@@ -685,10 +697,13 @@ describe('GET /api/v1/distributor/commissions', () => {
 
     expect(response.statusCode).toBe(200);
     const body = parseBody(response);
+    // Handler now returns paginated response: { data: [...], pagination: {...} }
     // DECIMAL columns are converted from strings to numbers
-    expect(body.data).toEqual([
+    expect(body.data.data).toEqual([
       { id: 'c1', commission_amount: 50, commission_percentage: 5, device_retail_price: 199, payment_status: 'paid' },
     ]);
+    expect(body.data.pagination).toBeDefined();
+    expect(body.data.pagination.page).toBe(1);
   });
 
   it('should return 404 when distributor not found', async () => {

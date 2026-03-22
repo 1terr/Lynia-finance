@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { ReportFilters, CustomerAcquisitionSummary } from '@/types/reports';
+import { useEffect, useState, useMemo } from 'react';
+import type { ReportFilters, CustomerAcquisitionSummary, DateRange } from '@/types/reports';
+import { DateRangeFilter, getPresetDates } from '@/components/reports/date-range-filter';
 import { fetchCustomerAcquisitionReport } from '@/lib/api/reports';
 import { exportToCsv, formatCurrency, formatPct } from '@/lib/export/csv';
 import { MetricCard } from './metric-card';
@@ -11,9 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { cn } from '@lynia/utils';
 
-interface Props { filters: ReportFilters }
-
-export function CustomerAcquisitionReport({ filters }: Props) {
+export function CustomerAcquisitionReport() {
+  const [dateRange, setDateRange] = useState<DateRange>({ ...getPresetDates('30d'), preset: '30d' });
+  const filters: ReportFilters = useMemo(() => ({ dateRange }), [dateRange]);
   const [data, setData] = useState<CustomerAcquisitionSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,9 +41,12 @@ export function CustomerAcquisitionReport({ filters }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-lg font-semibold">Customer Acquisition Report</h2>
-        <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export CSV</Button>
+        <div className="flex items-center gap-2">
+          <DateRangeFilter value={dateRange} onChange={setDateRange} />
+          <Button variant="outline" size="sm" onClick={handleExport}><Download className="h-4 w-4 mr-1.5" />Export CSV</Button>
+        </div>
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard label="New Customers" value={String(data.newCustomers)} />

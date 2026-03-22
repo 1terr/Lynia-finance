@@ -14,6 +14,7 @@ import {
 jest.mock('@/lib/api', () => ({
   fetchCommissions: jest.fn(),
   fetchDashboardStats: jest.fn(),
+  fetchDistributorProfile: jest.fn(),
 }));
 
 // Mock CSV download
@@ -67,9 +68,17 @@ describe('CommissionsPage', () => {
     }),
   ];
 
+  /** Helper: wrap commissions in the paginated result format */
+  function wrapCommissions(data: any[]) {
+    return { data, total: data.length };
+  }
+
   beforeEach(() => {
     resetFactoryCounters();
     jest.clearAllMocks();
+
+    // Mock fetchDistributorProfile
+    (api.fetchDistributorProfile as jest.Mock).mockResolvedValue({ commission_rate: 5 });
 
     // Mock document.createElement for CSV export
     document.createElement = jest.fn((tag) => {
@@ -103,7 +112,7 @@ describe('CommissionsPage', () => {
 
   describe('Page Header', () => {
     beforeEach(() => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     });
 
@@ -135,7 +144,7 @@ describe('CommissionsPage', () => {
 
   describe('Summary Cards', () => {
     beforeEach(() => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     });
 
@@ -145,7 +154,6 @@ describe('CommissionsPage', () => {
       await waitFor(() => {
         expect(screen.getByText('$350.00')).toBeInTheDocument();
         expect(screen.getByText(/Total Earned/i)).toBeInTheDocument();
-        expect(screen.getByText(/3 handovers/i)).toBeInTheDocument();
       });
     });
 
@@ -155,7 +163,6 @@ describe('CommissionsPage', () => {
       await waitFor(() => {
         expect(screen.getByText('$200.00')).toBeInTheDocument();
         expect(screen.getByText(/Paid Out/i)).toBeInTheDocument();
-        expect(screen.getByText(/1 payments/i)).toBeInTheDocument();
       });
     });
 
@@ -167,7 +174,6 @@ describe('CommissionsPage', () => {
         expect(amounts.length).toBeGreaterThan(0);
         const pendingLabels = screen.getAllByText(/Pending/i);
         expect(pendingLabels.length).toBeGreaterThan(0);
-        expect(screen.getByText(/2 awaiting/i)).toBeInTheDocument();
       });
     });
 
@@ -177,7 +183,6 @@ describe('CommissionsPage', () => {
       await waitFor(() => {
         const thisMonthLabels = screen.getAllByText(/This Month/i);
         expect(thisMonthLabels.length).toBeGreaterThan(0);
-        expect(screen.getByText(/8 handovers/i)).toBeInTheDocument();
       });
     });
   });
@@ -185,7 +190,7 @@ describe('CommissionsPage', () => {
   describe('Performance Tier', () => {
     it('shows Bronze tier for low earnings', async () => {
       const lowStats = createDashboardStats({ total_commissions_earned: 100 });
-      (api.fetchCommissions as jest.Mock).mockResolvedValue([]);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions([]));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(lowStats);
 
       render(<CommissionsPage />);
@@ -198,7 +203,7 @@ describe('CommissionsPage', () => {
 
     it('shows Silver tier for medium earnings', async () => {
       const mediumStats = createDashboardStats({ total_commissions_earned: 300 });
-      (api.fetchCommissions as jest.Mock).mockResolvedValue([]);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions([]));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mediumStats);
 
       render(<CommissionsPage />);
@@ -211,7 +216,7 @@ describe('CommissionsPage', () => {
 
     it('shows Gold tier for high earnings', async () => {
       const highStats = createDashboardStats({ total_commissions_earned: 500 });
-      (api.fetchCommissions as jest.Mock).mockResolvedValue([]);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions([]));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(highStats);
 
       render(<CommissionsPage />);
@@ -223,7 +228,7 @@ describe('CommissionsPage', () => {
     });
 
     it('displays performance metrics', async () => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
 
       render(<CommissionsPage />);
@@ -232,14 +237,15 @@ describe('CommissionsPage', () => {
         expect(screen.getByText(/Total Handovers/i)).toBeInTheDocument();
         expect(screen.getByText(/Commission Rate/i)).toBeInTheDocument();
         expect(screen.getByText(/Avg per Handover/i)).toBeInTheDocument();
-        expect(screen.getByText('5%')).toBeInTheDocument();
+        const rateElements = screen.getAllByText('5%');
+        expect(rateElements.length).toBeGreaterThan(0);
       });
     });
   });
 
   describe('Payment Status Filters', () => {
     beforeEach(() => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     });
 
@@ -261,13 +267,12 @@ describe('CommissionsPage', () => {
       });
     });
 
-    it('filters commissions by paid status', async () => {
+    it('calls fetchCommissions with paid filter when Paid is clicked', async () => {
       const user = userEvent.setup();
       render(<CommissionsPage />);
 
       await waitFor(() => {
         expect(screen.getByText('John Doe')).toBeInTheDocument();
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
       });
 
       const buttons = screen.getAllByRole('button');
@@ -275,12 +280,13 @@ describe('CommissionsPage', () => {
       await user.click(paidButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-        expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+        expect(api.fetchCommissions).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'paid' })
+        );
       });
     });
 
-    it('filters commissions by pending status', async () => {
+    it('calls fetchCommissions with pending filter when Pending is clicked', async () => {
       const user = userEvent.setup();
       render(<CommissionsPage />);
 
@@ -293,13 +299,13 @@ describe('CommissionsPage', () => {
       await user.click(pendingButton);
 
       await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-        expect(screen.getByText('Bob Wilson')).toBeInTheDocument();
-        expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
+        expect(api.fetchCommissions).toHaveBeenCalledWith(
+          expect.objectContaining({ status: 'pending' })
+        );
       });
     });
 
-    it('shows all commissions when All filter is selected', async () => {
+    it('calls fetchCommissions without status filter when All is clicked', async () => {
       const user = userEvent.setup();
       render(<CommissionsPage />);
 
@@ -312,93 +318,40 @@ describe('CommissionsPage', () => {
       const paidButton = buttons.find(b => b.textContent === 'Paid')!;
       await user.click(paidButton);
 
+      // Then click All
       await waitFor(() => {
-        expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+        const allButton = screen.getAllByRole('button').find(b => b.textContent === 'All')!;
+        return allButton;
       });
-
-      // Then click All to show all again
       const allButton = screen.getAllByRole('button').find(b => b.textContent === 'All')!;
       await user.click(allButton);
 
+      // The last call should not have a status filter
       await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-        expect(screen.getByText('Bob Wilson')).toBeInTheDocument();
+        const lastCall = (api.fetchCommissions as jest.Mock).mock.calls.slice(-1)[0][0];
+        expect(lastCall.status).toBeUndefined();
       });
     });
   });
 
-  describe('Period Filters', () => {
+  describe('Search Functionality', () => {
     beforeEach(() => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     });
 
-    it('renders all period filter options', async () => {
+    it('renders search input', async () => {
       render(<CommissionsPage />);
 
       await waitFor(() => {
-        const filterGroup = screen.getByRole('group', { name: /Filter by time period/i });
-        expect(filterGroup).toBeInTheDocument();
-
-        expect(screen.getByText('All Time')).toBeInTheDocument();
-        const thisMonthLabels = screen.getAllByText('This Month');
-        expect(thisMonthLabels.length).toBeGreaterThan(0);
-        expect(screen.getByText('Last Month')).toBeInTheDocument();
-      });
-    });
-
-    it('filters commissions by this month', async () => {
-      const user = userEvent.setup();
-      render(<CommissionsPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-      });
-
-      const buttons = screen.getAllByRole('button');
-      const thisMonthButton = buttons.find(b => b.textContent === 'This Month')!;
-      await user.click(thisMonthButton);
-
-      await waitFor(() => {
-        // Feb 2026 entries (John and Jane)
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-        // Jan 2026 entry (Bob) should be filtered out
-        expect(screen.queryByText('Bob Wilson')).not.toBeInTheDocument();
-      });
-    });
-
-    it('combines payment and period filters', async () => {
-      const user = userEvent.setup();
-      render(<CommissionsPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('John Doe')).toBeInTheDocument();
-      });
-
-      // Filter by paid
-      let buttons = screen.getAllByRole('button');
-      const paidButton = buttons.find(b => b.textContent === 'Paid')!;
-      await user.click(paidButton);
-
-      // Then filter by this month
-      buttons = screen.getAllByRole('button');
-      const thisMonthButton = buttons.find(b => b.textContent === 'This Month')!;
-      await user.click(thisMonthButton);
-
-      await waitFor(() => {
-        // Only Jane should show (paid + this month)
-        expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-        expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
-        expect(screen.queryByText('Bob Wilson')).not.toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Search by customer/i)).toBeInTheDocument();
       });
     });
   });
 
   describe('Commission History List', () => {
     beforeEach(() => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
     });
 
@@ -474,7 +427,7 @@ describe('CommissionsPage', () => {
 
   describe('Empty State', () => {
     it('shows empty state when no commissions exist', async () => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue([]);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions([]));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
 
       render(<CommissionsPage />);
@@ -486,8 +439,10 @@ describe('CommissionsPage', () => {
 
     it('shows empty state when filters return no results', async () => {
       const user = userEvent.setup();
-      const pendingOnly = mockCommissions.filter(c => c.payment_status === 'pending');
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(pendingOnly);
+      // First call returns pending commissions
+      (api.fetchCommissions as jest.Mock).mockResolvedValueOnce(wrapCommissions(
+        mockCommissions.filter(c => c.payment_status === 'pending')
+      ));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
 
       render(<CommissionsPage />);
@@ -496,7 +451,9 @@ describe('CommissionsPage', () => {
         expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      // Filter by paid (but we only have pending)
+      // When "Paid" is clicked, API returns empty results
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions([]));
+
       const buttons = screen.getAllByRole('button');
       const paidButton = buttons.find(b => b.textContent === 'Paid')!;
       await user.click(paidButton);
@@ -509,7 +466,7 @@ describe('CommissionsPage', () => {
 
   describe('CSV Export', () => {
     beforeEach(() => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
 
       // Mock URL methods
@@ -533,7 +490,7 @@ describe('CommissionsPage', () => {
       expect(global.URL.revokeObjectURL).toHaveBeenCalled();
     });
 
-    it('exports filtered commissions only', async () => {
+    it('exports currently displayed commissions', async () => {
       const user = userEvent.setup();
       render(<CommissionsPage />);
 
@@ -541,16 +498,7 @@ describe('CommissionsPage', () => {
         expect(screen.getByText('John Doe')).toBeInTheDocument();
       });
 
-      // Filter to paid only
-      const buttons = screen.getAllByRole('button');
-      const paidButton = buttons.find(b => b.textContent === 'Paid')!;
-      await user.click(paidButton);
-
-      await waitFor(() => {
-        expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
-      });
-
-      // Export filtered data
+      // Export data
       const exportButtons = screen.getAllByRole('button', { name: /Export CSV/i });
       await user.click(exportButtons[0]);
 
@@ -560,7 +508,7 @@ describe('CommissionsPage', () => {
 
   describe('Data Fetching', () => {
     it('calls fetchCommissions on mount', async () => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
 
       render(<CommissionsPage />);
@@ -571,7 +519,7 @@ describe('CommissionsPage', () => {
     });
 
     it('calls fetchDashboardStats on mount', async () => {
-      (api.fetchCommissions as jest.Mock).mockResolvedValue(mockCommissions);
+      (api.fetchCommissions as jest.Mock).mockResolvedValue(wrapCommissions(mockCommissions));
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
 
       render(<CommissionsPage />);

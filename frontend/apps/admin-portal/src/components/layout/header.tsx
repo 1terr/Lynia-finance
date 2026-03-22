@@ -9,6 +9,7 @@ import { useAuthStore } from '@/lib/store/auth-store';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { NotificationsDropdown } from '@/components/layout/notifications-dropdown';
+import { GlobalSearch } from '@/components/layout/global-search';
 
 interface HeaderProps {
   sidebarCollapsed: boolean;
@@ -56,8 +57,8 @@ export function Header({ sidebarCollapsed }: HeaderProps) {
         sidebarCollapsed ? 'left-16' : 'left-64'
       )}
     >
-      {/* Page title area */}
-      <div />
+      {/* Global search */}
+      <GlobalSearch />
 
       {/* Right actions */}
       <div className="flex items-center gap-3">

@@ -103,8 +103,12 @@ export async function getCurrentAdmin(): Promise<AdminUser | null> {
 
 // --- Dashboard ---
 
-export async function getDashboardMetrics(): Promise<DashboardMetrics> {
-  return fetchAPI<DashboardMetrics>('/api/v1/dashboard/metrics');
+export async function getDashboardMetrics(dateFrom?: string, dateTo?: string): Promise<DashboardMetrics> {
+  const params = new URLSearchParams();
+  if (dateFrom) params.set('date_from', dateFrom);
+  if (dateTo) params.set('date_to', dateTo);
+  const qs = params.toString();
+  return fetchAPI<DashboardMetrics>(`/api/v1/dashboard/metrics${qs ? `?${qs}` : ''}`);
 }
 
 export async function getPortfolioAtRisk(): Promise<PortfolioAtRisk> {

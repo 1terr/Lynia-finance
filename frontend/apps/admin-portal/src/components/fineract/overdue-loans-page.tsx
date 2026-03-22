@@ -7,10 +7,11 @@
  * device lock status, and portfolio-at-risk metrics.
  */
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getOverdueLoans, getAgingSummary } from '@/lib/api/fineract';
+import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import { formatCurrency, formatDate } from '@lynia/utils';
 import { getFineractStatusDisplay, type OverdueLoan } from '@/types/fineract';
 import { Pagination } from '@/components/ui/pagination';
@@ -20,6 +21,9 @@ import {
   Lock,
   Unlock,
   TrendingDown,
+  Search,
+  X,
+  Download,
 } from 'lucide-react';
 
 const BUCKET_COLORS = {
@@ -29,9 +33,76 @@ const BUCKET_COLORS = {
   '90+': { bg: 'bg-red-200', text: 'text-red-900', border: 'border-red-300' },
 };
 
+// ---------------------------------------------------------------------------
+// CSV Export Helper
+// ---------------------------------------------------------------------------
+
+function downloadOverdueCSV(loans: OverdueLoan[]) {
+  if (!loans.length) return;
+
+  const headers = [
+    'Loan ID',
+    'Customer Name',
+    'Phone',
+    'Product',
+    'Days Past Due',
+    'Outstanding Amount',
+    'Overdue Amount',
+    'Lock Status',
+    'Status',
+    'Aging Bucket',
+    'Last Payment Date',
+  ];
+
+  /** Escape a cell value for CSV with formula-injection protection */
+  const escapeCell = (val: unknown): string => {
+    let str = val === null || val === undefined ? '' : String(val);
+    // Protect against formula injection
+    if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`;
+    return str.includes(',') || str.includes('"') || str.includes('\n')
+      ? `"${str.replace(/"/g, '""')}"`
+      : str;
+  };
+
+  const rows = loans.map((loan) => [
+    loan.lyniaLoanId,
+    loan.customerName,
+    loan.customerPhone || '',
+    loan.productName.replace('Lynia Device Finance - ', ''),
+    loan.daysPastDue,
+    loan.totalOutstanding,
+    loan.totalOverdue,
+    loan.deviceLockStatus,
+    getFineractStatusDisplay(loan.status.code).label,
+    loan.agingBucket,
+    loan.lastPaymentDate || '',
+  ]);
+
+  const csv = [
+    headers.map(escapeCell).join(','),
+    ...rows.map((r) => r.map(escapeCell).join(',')),
+  ].join('\n');
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `overdue-loans-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
+
 export default function OverdueLoansPage() {
   const router = useRouter();
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState('');
+  const debouncedSearch = useDebouncedValue(searchInput);
 
   const { data: aging } = useQuery({
     queryKey: ['aging-summary'],
@@ -39,18 +110,62 @@ export default function OverdueLoansPage() {
   });
 
   const { data: overdueData, isLoading } = useQuery({
-    queryKey: ['overdue-loans', page],
-    queryFn: () => getOverdueLoans(page),
+    queryKey: ['overdue-loans', page, debouncedSearch],
+    queryFn: () => getOverdueLoans(page, 25, debouncedSearch || undefined),
   });
+
+  const handleExport = useCallback(() => {
+    downloadOverdueCSV(overdueData?.data || []);
+  }, [overdueData]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Overdue Loans</h1>
-        <p className="text-sm text-muted-foreground">
-          Portfolio aging analysis and delinquency tracking.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Overdue Loans</h1>
+          <p className="text-sm text-muted-foreground">
+            Portfolio aging analysis and delinquency tracking.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {overdueData && (
+            <p className="text-sm text-muted-foreground">
+              {overdueData.total} overdue loan{overdueData.total !== 1 ? 's' : ''}
+            </p>
+          )}
+          <button
+            onClick={handleExport}
+            disabled={!overdueData?.data?.length}
+            className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </button>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-xl">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => {
+            setSearchInput(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search by name, phone, national ID, or loan number..."
+          className="block w-full rounded-md border border-border py-2 pl-10 pr-8 text-sm shadow-sm placeholder:text-muted-foreground focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500 dark:border-border dark:bg-card dark:text-foreground"
+        />
+        {searchInput && (
+          <button
+            onClick={() => setSearchInput('')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Aging Summary Cards */}
@@ -195,7 +310,7 @@ export default function OverdueLoansPage() {
           <div className="flex flex-col items-center justify-center py-12">
             <Clock className="h-10 w-10 text-green-400" />
             <p className="mt-3 text-sm font-medium text-muted-foreground">
-              No overdue loans
+              {debouncedSearch ? 'No matching overdue loans' : 'No overdue loans'}
             </p>
           </div>
         )}

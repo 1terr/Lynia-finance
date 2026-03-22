@@ -70,22 +70,23 @@ describe('API Client', () => {
   describe('fetchCompletedHandovers', () => {
     it('calls fetchAPI with correct endpoint and status filter', async () => {
       const mockHandovers = createCompletedHandovers(3);
-      (fetchAPI as jest.Mock).mockResolvedValue(mockHandovers);
+      const mockResult = { data: mockHandovers, total: 3 };
+      (fetchAPI as jest.Mock).mockResolvedValue(mockResult);
 
       const result = await fetchCompletedHandovers();
 
       expect(fetchAPI).toHaveBeenCalledWith('/api/v1/distributor/handovers?status=completed');
-      expect(result).toEqual(mockHandovers);
+      expect(result).toEqual(mockResult);
     });
 
-    it('returns completed handovers array', async () => {
+    it('returns completed handovers result', async () => {
       const mockHandovers = createCompletedHandovers(2);
-      (fetchAPI as jest.Mock).mockResolvedValue(mockHandovers);
+      (fetchAPI as jest.Mock).mockResolvedValue({ data: mockHandovers, total: 2 });
 
       const result = await fetchCompletedHandovers();
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(2);
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data.length).toBe(2);
     });
 
     it('propagates errors from fetchAPI', async () => {
@@ -163,22 +164,22 @@ describe('API Client', () => {
   describe('fetchCommissions', () => {
     it('calls fetchAPI with correct endpoint', async () => {
       const mockCommissions = createCommissions(4);
-      (fetchAPI as jest.Mock).mockResolvedValue(mockCommissions);
+      (fetchAPI as jest.Mock).mockResolvedValue({ data: mockCommissions, total: 4 });
 
       const result = await fetchCommissions();
 
       expect(fetchAPI).toHaveBeenCalledWith('/api/v1/distributor/commissions');
-      expect(result).toEqual(mockCommissions);
+      expect(result).toEqual({ data: mockCommissions, total: 4 });
     });
 
-    it('returns commissions array', async () => {
+    it('returns commissions result', async () => {
       const mockCommissions = createCommissions(2);
-      (fetchAPI as jest.Mock).mockResolvedValue(mockCommissions);
+      (fetchAPI as jest.Mock).mockResolvedValue({ data: mockCommissions, total: 2 });
 
       const result = await fetchCommissions();
 
-      expect(Array.isArray(result)).toBe(true);
-      expect(result.length).toBe(2);
+      expect(Array.isArray(result.data)).toBe(true);
+      expect(result.data.length).toBe(2);
     });
 
     it('propagates errors from fetchAPI', async () => {

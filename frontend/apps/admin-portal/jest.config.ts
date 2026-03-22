@@ -11,7 +11,14 @@ const config: Config.InitialOptions = {
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    '^@lynia/utils$': '<rootDir>/../../packages/utils/src/index.ts',
+    '^@lynia/auth$': '<rootDir>/../../packages/auth/src/index.ts',
+    '^@lynia/api-client$': '<rootDir>/../../packages/api-client/src/index.ts',
   },
+  modulePaths: ['<rootDir>/node_modules'],
+  transformIgnorePatterns: [
+    'node_modules/(?!(clsx|tailwind-merge|amazon-cognito-identity-js)/)',
+  ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

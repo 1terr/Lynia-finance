@@ -53,10 +53,19 @@ export const handleGetTransfers: RouteHandler = async (event, _params, auth) => 
     whereClause += ` AND t.transfer_type = $${params.length}`;
   }
 
+  if (qs.search) {
+    const term = `%${qs.search}%`;
+    params.push(term);
+    whereClause += ` AND (d.imei ILIKE $${params.length} OR d.model ILIKE $${params.length} OR d.manufacturer ILIKE $${params.length} OR fd.business_name ILIKE $${params.length} OR td.business_name ILIKE $${params.length})`;
+  }
+
   // Count query
   const { data: countRows } = await query<{ count: string }>(
     `SELECT COUNT(*) as count
      FROM stock_transfers t
+     LEFT JOIN devices d ON t.device_id = d.id
+     LEFT JOIN distributors fd ON t.from_distributor_id = fd.id
+     LEFT JOIN distributors td ON t.to_distributor_id = td.id
      WHERE ${whereClause}`,
     params
   );

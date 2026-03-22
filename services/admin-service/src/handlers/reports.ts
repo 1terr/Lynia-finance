@@ -416,12 +416,40 @@ export const handleGetDefaultReport: RouteHandler = async (event, _params, auth)
   }
 
   try {
+    const qs = event.queryStringParameters || {};
+    const page = Math.max(1, parseInt(qs.page || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(qs.limit || '25')));
+    const offset = (page - 1) * limit;
+
+    const conditions: string[] = ['l.days_past_due > 0', "l.status IN ('active', 'disbursed')"];
+    const values: unknown[] = [];
+    let paramIdx = 1;
+
+    if (qs.search) {
+      const term = `%${qs.search}%`;
+      const normalized = `%${qs.search.replace(/[-\s]/g, '')}%`;
+      conditions.push(
+        `(CONCAT(c.first_name, ' ', c.last_name) ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR REPLACE(REPLACE(c.national_id, '-', ''), ' ', '') ILIKE $${paramIdx + 1})`
+      );
+      paramIdx += 2;
+      values.push(term, normalized);
+    }
+
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
+
+    const countResult = await queryOne<{ count: string }>(
+      `SELECT COUNT(*) as count FROM loans l JOIN customers c ON c.id = l.customer_id ${whereClause}`,
+      values
+    );
+    const total = parseInt(countResult.data?.count || '0');
+
     const result = await query(
       `SELECT
         l.id AS loan_id,
         l.customer_id,
         CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
         c.phone_number AS customer_phone,
+        c.national_id AS customer_national_id,
         l.loan_amount_usd,
         l.outstanding_balance_usd,
         l.days_past_due,
@@ -429,10 +457,10 @@ export const handleGetDefaultReport: RouteHandler = async (event, _params, auth)
         NULL::date AS maturity_date
       FROM loans l
       JOIN customers c ON c.id = l.customer_id
-      WHERE l.days_past_due > 0
-        AND l.status IN ('active', 'disbursed')
+      ${whereClause}
       ORDER BY l.days_past_due DESC
-      LIMIT 500`
+      LIMIT $${paramIdx} OFFSET $${paramIdx + 1}`,
+      [...values, limit, offset]
     );
 
     if (result.error) {
@@ -443,7 +471,10 @@ export const handleGetDefaultReport: RouteHandler = async (event, _params, auth)
       return errorResponse('Failed to fetch default report', 500, {}, event);
     }
 
-    return successResponse(result.data, 200, event);
+    return successResponse({
+      data: result.data,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    }, 200, event);
   } catch (error) {
     logger.error('Failed to fetch default report', {
       action: 'reports.defaults', status: 'failed',

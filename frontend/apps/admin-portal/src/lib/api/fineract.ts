@@ -360,12 +360,14 @@ export async function triggerReconciliation(): Promise<ReconciliationResult> {
 /** Fetch overdue loans with aging analysis */
 export async function getOverdueLoans(
   page = 1,
-  rawLimit = 25
+  rawLimit = 25,
+  search?: string
 ): Promise<PaginatedResponse<OverdueLoan>> {
   const limit = Math.min(rawLimit, MAX_PAGE_SIZE);
   const params = new URLSearchParams();
   params.set('page', String(page));
   params.set('limit', String(limit));
+  if (search) params.set('search', search);
 
   return fetchFineractAPI<PaginatedResponse<OverdueLoan>>(
     `/api/v1/fineract/loans/overdue?${params.toString()}`

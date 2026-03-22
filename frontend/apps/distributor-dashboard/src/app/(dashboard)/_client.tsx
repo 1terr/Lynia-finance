@@ -23,7 +23,7 @@ export default function DashboardHome() {
   // Prefetch likely next pages (inventory + commissions) so they load instantly from nav
   useEffect(() => {
     queryClient.prefetchQuery({ queryKey: ['distributor', 'inventory'], queryFn: fetchInventory });
-    queryClient.prefetchQuery({ queryKey: ['distributor', 'commissions'], queryFn: fetchCommissions });
+    queryClient.prefetchQuery({ queryKey: ['distributor', 'commissions'], queryFn: () => fetchCommissions() });
   }, [queryClient]);
 
   const { data: stats, isLoading: statsLoading, isError: statsError, refetch: refetchStats } = useQuery({
@@ -31,10 +31,12 @@ export default function DashboardHome() {
     queryFn: fetchDashboardStats,
   });
 
-  const { data: recentHandovers = [], isLoading: handoversLoading, isError: handoversError, refetch: refetchHandovers } = useQuery({
+  const { data: handoverResult, isLoading: handoversLoading, isError: handoversError, refetch: refetchHandovers } = useQuery({
     queryKey: ['distributor', 'handovers', 'completed'],
-    queryFn: fetchCompletedHandovers,
+    queryFn: () => fetchCompletedHandovers(),
   });
+
+  const recentHandovers = handoverResult?.data ?? [];
 
   const loading = statsLoading || handoversLoading;
   const hasError = statsError || handoversError;

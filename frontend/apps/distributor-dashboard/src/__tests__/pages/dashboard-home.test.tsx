@@ -12,6 +12,8 @@ import {
 jest.mock('@/lib/api', () => ({
   fetchDashboardStats: jest.fn(),
   fetchCompletedHandovers: jest.fn(),
+  fetchInventory: jest.fn().mockResolvedValue([]),
+  fetchCommissions: jest.fn().mockResolvedValue({ data: [], total: 0 }),
 }));
 
 describe('DashboardHome', () => {
@@ -222,8 +224,10 @@ describe('DashboardHome', () => {
       render(<DashboardHome />);
 
       await waitFor(() => {
-        expect(screen.getByText('$1250.00')).toBeInTheDocument();
-        expect(screen.getByText(/Total Earned/i)).toBeInTheDocument();
+        const earnedElements = screen.getAllByText('$1250.00');
+        expect(earnedElements.length).toBeGreaterThanOrEqual(1);
+        const earnedLabels = screen.getAllByText(/Total Earned/i);
+        expect(earnedLabels.length).toBeGreaterThanOrEqual(1);
       });
     });
 

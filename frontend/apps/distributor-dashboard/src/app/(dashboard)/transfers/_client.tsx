@@ -1,11 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from '@/hooks/use-debounce';
 import type { TransferListItem, SpotCheckInput } from '@/types/distributor';
 import { fetchTransfers, confirmTransfer, rejectTransfer, requestReturn } from '@/lib/api/transfers';
 import { fetchInventory } from '@/lib/api';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/shared/pagination';
 import { cn } from '@lynia/utils';
 import { TransfersSkeleton } from '@/components/ui/skeleton';
 import {
@@ -18,9 +21,13 @@ import {
   RotateCcw,
   ChevronDown,
   Truck,
+  Search,
+  Download,
 } from 'lucide-react';
 
 type TabId = 'pending' | 'returns' | 'history';
+
+const PAGE_LIMIT = 20;
 
 const STATUS_CONFIG: Record<string, {
   label: string;
@@ -48,9 +55,30 @@ function formatTimeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-ZW', { month: 'short', day: 'numeric' });
 }
 
+function exportTransfersCSV(transfers: TransferListItem[]) {
+  const header = 'Date,Type,Device,IMEI,Status,From,To\n';
+  const rows = transfers
+    .map(
+      (t) =>
+        `${new Date(t.created_at).toLocaleDateString('en-ZW')},${t.transfer_type},${t.device_manufacturer} ${t.device_model},${t.device_imei},${STATUS_CONFIG[t.status]?.label ?? t.status},${t.from_distributor_name ?? t.from_location ?? '-'},${t.to_distributor_name ?? t.to_location ?? '-'}`,
+    )
+    .join('\n');
+
+  const blob = new Blob([header + rows], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `transfers_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function TransfersPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabId>('pending');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(searchQuery, 300);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -58,9 +86,18 @@ export default function TransfersPage() {
   const [returnReason, setReturnReason] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
+  // Reset page when search or tab changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, activeTab]);
+
   const { data: transferData, isLoading } = useQuery({
-    queryKey: ['distributor', 'transfers'],
-    queryFn: () => fetchTransfers(),
+    queryKey: ['distributor', 'transfers', { search: debouncedSearch, page, limit: PAGE_LIMIT }],
+    queryFn: () => fetchTransfers({
+      search: debouncedSearch || undefined,
+      page,
+      limit: PAGE_LIMIT,
+    }),
   });
 
   const { data: inventory = [] } = useQuery({
@@ -70,6 +107,7 @@ export default function TransfersPage() {
   });
 
   const transfers = transferData?.data ?? [];
+  const totalTransfers = transferData?.total ?? 0;
   const pendingCount = transferData?.pending_count ?? 0;
 
   const confirmMutation = useMutation({
@@ -126,7 +164,7 @@ export default function TransfersPage() {
     return inventory.filter(d => d.status === 'available');
   }, [inventory]);
 
-  if (isLoading) {
+  if (isLoading && page === 1 && !debouncedSearch) {
     return <TransfersSkeleton />;
   }
 
@@ -138,11 +176,35 @@ export default function TransfersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-bold md:text-2xl">Transfers</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage incoming shipments and device returns
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold md:text-2xl">Transfers</h1>
+          <p className="text-sm text-muted-foreground">
+            Manage incoming shipments and device returns
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportTransfersCSV(filteredTransfers)}
+          className="hidden sm:inline-flex"
+        >
+          <Download className="h-3.5 w-3.5 mr-1.5" />
+          Export CSV
+        </Button>
+      </div>
+
+      {/* Search input */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          type="text"
+          placeholder="Search by device, IMEI, or distributor..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          aria-label="Search transfers"
+          className="w-full rounded-lg border bg-background pl-9 pr-4 py-2.5 text-base h-11 focus:outline-none focus:ring-2 focus:ring-primary"
+        />
       </div>
 
       {/* Summary stats */}
@@ -175,26 +237,36 @@ export default function TransfersPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
-              activeTab === tab.id
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground',
-            )}
-          >
-            {tab.label}
-            {tab.count !== undefined && tab.count > 0 && (
-              <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                {tab.count}
-              </span>
-            )}
-          </button>
-        ))}
+      <div className="flex items-center justify-between border-b">
+        <div className="flex">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
+                activeTab === tab.id
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {tab.label}
+              {tab.count !== undefined && tab.count > 0 && (
+                <span className="ml-2 inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportTransfersCSV(filteredTransfers)}
+          className="sm:hidden mb-1"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </Button>
       </div>
 
       {/* Return button on returns tab */}
@@ -215,11 +287,13 @@ export default function TransfersPage() {
         <div className="rounded-xl border bg-card p-8 shadow-sm text-center">
           <Package className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-sm text-muted-foreground">
-            {activeTab === 'pending'
-              ? 'No pending transfers'
-              : activeTab === 'returns'
-                ? 'No return requests'
-                : 'No transfer history'}
+            {debouncedSearch
+              ? 'No transfers match your search'
+              : activeTab === 'pending'
+                ? 'No pending transfers'
+                : activeTab === 'returns'
+                  ? 'No return requests'
+                  : 'No transfer history'}
           </p>
         </div>
       ) : (
@@ -348,6 +422,18 @@ export default function TransfersPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalTransfers > PAGE_LIMIT && (
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
+          <Pagination
+            page={page}
+            limit={PAGE_LIMIT}
+            total={totalTransfers}
+            onPageChange={setPage}
+          />
         </div>
       )}
 

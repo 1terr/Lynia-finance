@@ -8,6 +8,7 @@ import { mockTransfers } from '@/test/mocks/transfers';
  * Supports filtering by status, type, and pagination.
  */
 export async function fetchTransfers(params?: {
+  search?: string;
   status?: string;
   type?: string;
   page?: number;
@@ -16,6 +17,17 @@ export async function fetchTransfers(params?: {
   if (shouldUseMock()) {
     await delay(400);
     let filtered = [...mockTransfers];
+    if (params?.search) {
+      const q = params.search.toLowerCase();
+      filtered = filtered.filter(
+        (t) =>
+          t.device_model?.toLowerCase().includes(q) ||
+          t.device_manufacturer?.toLowerCase().includes(q) ||
+          t.device_imei?.includes(q) ||
+          t.from_distributor_name?.toLowerCase().includes(q) ||
+          t.to_distributor_name?.toLowerCase().includes(q),
+      );
+    }
     if (params?.status) {
       filtered = filtered.filter(t => t.status === params.status);
     }
@@ -23,10 +35,16 @@ export async function fetchTransfers(params?: {
       filtered = filtered.filter(t => t.transfer_type === params.type);
     }
     const pendingCount = mockTransfers.filter(t => t.status === 'pending_receipt').length;
-    return { data: filtered, total: filtered.length, pending_count: pendingCount };
+    const total = filtered.length;
+    const page = params?.page ?? 1;
+    const limit = params?.limit ?? 20;
+    const start = (page - 1) * limit;
+    filtered = filtered.slice(start, start + limit);
+    return { data: filtered, total, pending_count: pendingCount };
   }
 
   const searchParams = new URLSearchParams();
+  if (params?.search) searchParams.set('search', params.search);
   if (params?.status) searchParams.set('status', params.status);
   if (params?.type) searchParams.set('type', params.type);
   if (params?.page) searchParams.set('page', String(params.page));

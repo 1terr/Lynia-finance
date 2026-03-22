@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BarChart,
@@ -18,18 +19,16 @@ import { MetricCard } from '@/components/reports/metric-card';
 import { formatCurrency } from '@lynia/utils';
 import { useChartTheme } from '@/hooks/use-chart-theme';
 import { BarChart3 } from 'lucide-react';
-import type { ReportFilters } from '@/types/reports';
+import type { DateRange } from '@/types/reports';
+import { DateRangeFilter, getPresetDates } from '@/components/reports/date-range-filter';
 import { fetchFeeRevenueReport, type FeeRevenueData } from '@/lib/api/fee-revenue';
 
-interface FeeRevenueReportProps {
-  filters: ReportFilters;
-}
-
-export function FeeRevenueReport({ filters }: FeeRevenueReportProps) {
+export function FeeRevenueReport() {
+  const [dateRange, setDateRange] = useState<DateRange>({ ...getPresetDates('30d'), preset: '30d' });
   const { data, isLoading } = useQuery({
-    queryKey: ['reports', 'fee-revenue', filters.dateRange.from, filters.dateRange.to],
+    queryKey: ['reports', 'fee-revenue', dateRange.from, dateRange.to],
     queryFn: () =>
-      fetchFeeRevenueReport(filters.dateRange.from, filters.dateRange.to),
+      fetchFeeRevenueReport(dateRange.from, dateRange.to),
   });
 
   if (isLoading) {
@@ -57,6 +56,12 @@ export function FeeRevenueReport({ filters }: FeeRevenueReportProps) {
 
   return (
     <div className="space-y-6">
+      {/* Date Range Filter */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="text-lg font-semibold">Fee Revenue Report</h2>
+        <DateRangeFilter value={dateRange} onChange={setDateRange} />
+      </div>
+
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         <MetricCard

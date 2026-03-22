@@ -34,12 +34,14 @@ export const handleGetCustomers: RouteHandler = async (event, _params, auth) => 
   }
 
   if (qs.search) {
+    const normalized = qs.search.replace(/[-\s]/g, '');
     const term = `%${qs.search}%`;
+    const normalizedTerm = `%${normalized}%`;
     conditions.push(
-      `(CONCAT(c.first_name, ' ', c.last_name) ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR c.email ILIKE $${paramIdx})`
+      `(CONCAT(c.first_name, ' ', c.last_name) ILIKE $${paramIdx} OR c.phone_number ILIKE $${paramIdx} OR c.email ILIKE $${paramIdx} OR REPLACE(REPLACE(c.national_id, '-', ''), ' ', '') ILIKE $${paramIdx + 1})`
     );
-    paramIdx++;
-    values.push(term);
+    paramIdx += 2;
+    values.push(term, normalizedTerm);
   }
 
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
@@ -69,6 +71,7 @@ export const handleGetCustomers: RouteHandler = async (event, _params, auth) => 
       c.employment_status,
       c.employment_type,
       c.monthly_income_usd,
+      c.national_id,
       c.kyc_status,
       c.risk_level,
       c.status,

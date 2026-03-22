@@ -1622,6 +1622,21 @@ Resources:
             Method: OPTIONS
             Auth:
               Authorizer: NONE
+        # Data Freshness
+        GetDataFreshness:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/data-freshness
+            Method: GET
+        GetDataFreshnessOptions:
+          Type: Api
+          Properties:
+            RestApiId: !Ref LyniaApi
+            Path: /api/v1/investor/data-freshness
+            Method: OPTIONS
+            Auth:
+              Authorizer: NONE
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

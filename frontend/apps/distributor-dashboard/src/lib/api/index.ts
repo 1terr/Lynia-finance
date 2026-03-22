@@ -19,6 +19,7 @@ export { fetchInventory } from './inventory';
 
 // Commissions
 export { fetchCommissions } from './commissions';
+export type { FetchCommissionsParams, FetchCommissionsResult } from './commissions';
 
 // Transfers
 export {
@@ -39,3 +40,4 @@ export {
   verifyDepositPayment,
   submitHandover,
 } from './handovers';
+export type { FetchCompletedHandoversParams, FetchCompletedHandoversResult } from './handovers';

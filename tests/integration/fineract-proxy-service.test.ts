@@ -68,6 +68,7 @@ const mockInsert = jest.fn(() => ({ execute: mockExecute }));
 const mockUpdate = jest.fn(() => ({ eq: mockEq }));
 
 const mockQuery: any = jest.fn();
+const mockQueryOne: any = jest.fn();
 
 jest.mock('../../services/shared/clients/database', () => ({
   db: {
@@ -78,6 +79,7 @@ jest.mock('../../services/shared/clients/database', () => ({
     })),
   },
   query: (...args: any[]) => mockQuery(...args),
+  queryOne: (...args: any[]) => mockQueryOne(...args),
 }));
 
 // Mock Fineract client
@@ -258,6 +260,8 @@ describe('Fineract Proxy Service', () => {
 
     // Reset DB mock for default success
     mockExecute.mockResolvedValue({ data: [], error: null });
+    mockQuery.mockResolvedValue({ data: [], error: null });
+    mockQueryOne.mockResolvedValue({ data: null, error: null });
   });
 
   // --------------------------------------------------------
@@ -273,16 +277,16 @@ describe('Fineract Proxy Service', () => {
     });
 
     it('should strip trailing slashes', async () => {
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+      mockQuery.mockResolvedValueOnce({ data: [], error: null });
       const event = makeEvent({ path: '/api/v1/fineract/loans/' });
       const result = await handler(event);
       expect(result.statusCode).toBe(200);
     });
 
     it('should include security headers in response', async () => {
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+      mockQuery.mockResolvedValueOnce({ data: [], error: null });
       const event = makeEvent({ path: '/api/v1/fineract/loans' });
       const result = await handler(event);
       expect(result.headers['X-Content-Type-Options']).toBe('nosniff');
@@ -290,8 +294,8 @@ describe('Fineract Proxy Service', () => {
     });
 
     it('should allow CloudFront origin in CORS', async () => {
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+      mockQuery.mockResolvedValueOnce({ data: [], error: null });
       const event = makeEvent({
         path: '/api/v1/fineract/loans',
         headers: { origin: 'https://d1qwfy2tsdmpe4.cloudfront.net' },
@@ -309,9 +313,9 @@ describe('Fineract Proxy Service', () => {
 
   describe('GET /api/v1/fineract/loans', () => {
     it('should return empty paginated list when no loans exist', async () => {
-      // First call: loans query, second call: count query
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
+      // queryOne for count, query for loans
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+      mockQuery.mockResolvedValueOnce({ data: [], error: null });
 
       const event = makeEvent({ path: '/api/v1/fineract/loans' });
       const result = await handler(event);
@@ -324,17 +328,14 @@ describe('Fineract Proxy Service', () => {
     });
 
     it('should return loan data merged with Fineract balances', async () => {
-      // Loans query
-      mockExecute.mockResolvedValueOnce({
+      // Count query (queryOne)
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '1' }, error: null });
+      // Loans query (query)
+      mockQuery.mockResolvedValueOnce({
         data: [SAMPLE_LYNIA_LOAN],
         error: null,
       });
-      // Count query
-      mockExecute.mockResolvedValueOnce({
-        data: [{ id: 'loan-uuid-1' }],
-        error: null,
-      });
-      // Customer query
+      // Customer query (db.from chain)
       mockExecute.mockResolvedValueOnce({
         data: [SAMPLE_CUSTOMER],
         error: null,
@@ -359,8 +360,8 @@ describe('Fineract Proxy Service', () => {
     });
 
     it('should handle pagination parameters', async () => {
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
-      mockExecute.mockResolvedValueOnce({ data: [], error: null });
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+      mockQuery.mockResolvedValueOnce({ data: [], error: null });
 
       const event = makeEvent({
         path: '/api/v1/fineract/loans',
@@ -374,7 +375,8 @@ describe('Fineract Proxy Service', () => {
     });
 
     it('should return 500 when database query fails', async () => {
-      mockExecute.mockResolvedValueOnce({ data: null, error: { message: 'DB error' } });
+      mockQueryOne.mockResolvedValueOnce({ data: { count: '0' }, error: null });
+      mockQuery.mockResolvedValueOnce({ data: null, error: { message: 'DB error' } });
 
       const event = makeEvent({ path: '/api/v1/fineract/loans' });
       const result = await handler(event);
