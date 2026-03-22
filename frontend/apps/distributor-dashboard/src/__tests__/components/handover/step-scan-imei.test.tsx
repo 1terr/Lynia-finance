@@ -85,9 +85,9 @@ describe('StepScanImei', () => {
         const brandModelMatches = screen.getAllByText(`${firstDevice.brand} ${firstDevice.model}`);
         expect(brandModelMatches.length).toBeGreaterThan(0);
         expect(screen.getByText(firstDevice.imei)).toBeInTheDocument();
-        expect(
-          screen.getByText(new RegExp(`\\$${firstDevice.retail_price}`))
-        ).toBeInTheDocument();
+        // Price text appears in multiple elements (budget line + device cards), use getAllByText
+        const priceMatches = screen.getAllByText(new RegExp(`\\$${firstDevice.retail_price}`));
+        expect(priceMatches.length).toBeGreaterThan(0);
       });
     });
 
@@ -152,13 +152,14 @@ describe('StepScanImei', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(`${mockDevices[0].brand} ${mockDevices[0].model}`)).toBeInTheDocument();
+        expect(screen.getAllByText(`${mockDevices[0].brand} ${mockDevices[0].model}`).length).toBeGreaterThan(0);
       });
 
-      // Click on a device to select it
-      const deviceRow = screen.getByText(`${mockDevices[0].brand} ${mockDevices[0].model}`).closest('button')
-        || screen.getByText(`${mockDevices[0].brand} ${mockDevices[0].model}`).closest('[role="button"]')
-        || screen.getByText(`${mockDevices[0].brand} ${mockDevices[0].model}`);
+      // Click on the first device to select it
+      const deviceLabels = screen.getAllByText(`${mockDevices[0].brand} ${mockDevices[0].model}`);
+      const deviceRow = deviceLabels[0].closest('button')
+        || deviceLabels[0].closest('[role="button"]')
+        || deviceLabels[0];
       await user.click(deviceRow);
 
       expect(mockOnUpdate).toHaveBeenCalledWith(
@@ -182,7 +183,7 @@ describe('StepScanImei', () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(`${mockDevices[0].brand} ${mockDevices[0].model}`)).toBeInTheDocument();
+        expect(screen.getAllByText(`${mockDevices[0].brand} ${mockDevices[0].model}`).length).toBeGreaterThan(0);
       });
 
       const searchInput = screen.getByPlaceholderText(/search|filter/i);
@@ -190,7 +191,7 @@ describe('StepScanImei', () => {
 
       // Should filter the device list based on search text
       await waitFor(() => {
-        expect(screen.getByText(/Galaxy/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/Galaxy/i).length).toBeGreaterThan(0);
       });
     });
   });
@@ -213,9 +214,9 @@ describe('StepScanImei', () => {
       );
 
       await waitFor(() => {
-        expect(
-          screen.getByText(/Confirm.*IMEI|IMEI Confirmation|Scan Barcode|Type IMEI/i)
-        ).toBeInTheDocument();
+        // Multiple elements match (Scan Barcode button, Type IMEI button, label, etc.)
+        const matches = screen.getAllByText(/Confirm.*IMEI|IMEI Confirmation|Scan Barcode|Type IMEI/i);
+        expect(matches.length).toBeGreaterThan(0);
       });
     });
 

@@ -73,7 +73,7 @@ describe('HandoversPage', () => {
 
   describe('Page Header', () => {
     beforeEach(() => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockCompletedHandovers, total: mockCompletedHandovers.length });
     });
 
     it('renders page title and description', async () => {
@@ -96,7 +96,7 @@ describe('HandoversPage', () => {
 
   describe('Stats Cards', () => {
     beforeEach(() => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockCompletedHandovers, total: mockCompletedHandovers.length });
     });
 
     it('displays completed handovers count', async () => {
@@ -129,7 +129,7 @@ describe('HandoversPage', () => {
     });
 
     it('displays zero counts and $0.00 commission when no handovers', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       render(<HandoversPage />);
 
@@ -143,7 +143,7 @@ describe('HandoversPage', () => {
 
   describe('Completed Handovers List', () => {
     beforeEach(() => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockCompletedHandovers, total: mockCompletedHandovers.length });
     });
 
     it('renders section header with completed count', async () => {
@@ -208,7 +208,7 @@ describe('HandoversPage', () => {
     });
 
     it('does not show completed section when there are no completed handovers', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       render(<HandoversPage />);
 
@@ -222,7 +222,7 @@ describe('HandoversPage', () => {
 
   describe('Empty State', () => {
     beforeEach(() => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
     });
 
     it('shows empty state when no completed handovers exist', async () => {
@@ -268,7 +268,7 @@ describe('HandoversPage', () => {
 
   describe('Wizard View', () => {
     beforeEach(() => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockCompletedHandovers, total: mockCompletedHandovers.length });
     });
 
     it('switches to wizard view when "Start Handover" is clicked', async () => {
@@ -333,7 +333,7 @@ describe('HandoversPage', () => {
 
   describe('Data Fetching', () => {
     it('calls fetchCompletedHandovers on mount', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockCompletedHandovers, total: mockCompletedHandovers.length });
 
       render(<HandoversPage />);
 
@@ -343,7 +343,7 @@ describe('HandoversPage', () => {
     });
 
     it('refetches data when wizard completes', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockCompletedHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockCompletedHandovers, total: mockCompletedHandovers.length });
 
       const user = userEvent.setup();
       render(<HandoversPage />);
@@ -377,7 +377,7 @@ describe('HandoversPage', () => {
   describe('With Factory-Generated Data', () => {
     it('renders a list of factory-generated handovers', async () => {
       const handovers = createCompletedHandovers(5);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: handovers, total: handovers.length });
 
       render(<HandoversPage />);
 
@@ -395,7 +395,7 @@ describe('HandoversPage', () => {
       const handovers = createCompletedHandovers(3);
       // Default commission_earned from factory is 15.00 each
       const expectedTotal = handovers.reduce((sum, h) => sum + h.commission_earned, 0);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: handovers, total: handovers.length });
 
       render(<HandoversPage />);
 

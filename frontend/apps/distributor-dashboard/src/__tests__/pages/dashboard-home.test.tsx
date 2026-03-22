@@ -40,7 +40,7 @@ describe('DashboardHome', () => {
       (api.fetchDashboardStats as jest.Mock).mockImplementation(
         () => new Promise(() => {}) // Never resolves
       );
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       const { container } = render(<DashboardHome />);
 
@@ -64,7 +64,7 @@ describe('DashboardHome', () => {
       (api.fetchDashboardStats as jest.Mock).mockRejectedValue(
         new Error('Network error')
       );
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       render(<DashboardHome />);
 
@@ -90,7 +90,7 @@ describe('DashboardHome', () => {
       (api.fetchDashboardStats as jest.Mock).mockRejectedValue(
         new Error('Network error')
       );
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       render(<DashboardHome />);
 
@@ -103,7 +103,7 @@ describe('DashboardHome', () => {
   describe('Dashboard Header', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
     });
 
     it('renders dashboard title', async () => {
@@ -126,7 +126,7 @@ describe('DashboardHome', () => {
   describe('Start New Handover CTA', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
     });
 
     it('renders Start New Handover link', async () => {
@@ -150,7 +150,7 @@ describe('DashboardHome', () => {
   describe('Stats Display', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
     });
 
     it('displays total devices distributed', async () => {
@@ -245,7 +245,7 @@ describe('DashboardHome', () => {
   describe('Quick Actions', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
     });
 
     it('renders Start Handover quick action linking to /handovers', async () => {
@@ -279,7 +279,7 @@ describe('DashboardHome', () => {
   describe('Commission Summary', () => {
     beforeEach(() => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
     });
 
     it('renders commission summary heading', async () => {
@@ -340,7 +340,7 @@ describe('DashboardHome', () => {
     });
 
     it('renders recent handovers heading', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
@@ -350,7 +350,7 @@ describe('DashboardHome', () => {
     });
 
     it('displays handover customer names', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
@@ -362,7 +362,7 @@ describe('DashboardHome', () => {
     });
 
     it('displays handover device models and loan IDs', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
@@ -381,7 +381,7 @@ describe('DashboardHome', () => {
         createCompletedHandover({ loan_amount: 500 }),
         createCompletedHandover({ loan_amount: 750 }),
       ];
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handoversWithAmounts);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: handoversWithAmounts, total: handoversWithAmounts.length });
 
       render(<DashboardHome />);
 
@@ -396,7 +396,7 @@ describe('DashboardHome', () => {
         createCompletedHandover({ commission_earned: 25.0 }),
         createCompletedHandover({ commission_earned: 37.5 }),
       ];
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(handoversWithCommission);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: handoversWithCommission, total: handoversWithCommission.length });
 
       render(<DashboardHome />);
 
@@ -408,7 +408,7 @@ describe('DashboardHome', () => {
 
     it('shows only the last 5 completed handovers', async () => {
       const manyHandovers = createCompletedHandovers(8);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(manyHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: manyHandovers, total: manyHandovers.length });
 
       render(<DashboardHome />);
 
@@ -425,7 +425,7 @@ describe('DashboardHome', () => {
     });
 
     it('shows empty state when no completed handovers', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       render(<DashboardHome />);
 
@@ -435,7 +435,7 @@ describe('DashboardHome', () => {
     });
 
     it('shows link to handovers page', async () => {
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
@@ -461,7 +461,7 @@ describe('DashboardHome', () => {
         last_month_handovers: 0,
       });
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(emptyStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue([]);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: [], total: 0 });
 
       render(<DashboardHome />);
 
@@ -472,7 +472,7 @@ describe('DashboardHome', () => {
 
     it('does not show welcome banner for active distributor', async () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
@@ -487,7 +487,7 @@ describe('DashboardHome', () => {
   describe('Data Fetching', () => {
     it('calls fetchDashboardStats on mount', async () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
@@ -498,7 +498,7 @@ describe('DashboardHome', () => {
 
     it('calls fetchCompletedHandovers on mount', async () => {
       (api.fetchDashboardStats as jest.Mock).mockResolvedValue(mockStats);
-      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue(mockHandovers);
+      (api.fetchCompletedHandovers as jest.Mock).mockResolvedValue({ data: mockHandovers, total: mockHandovers.length });
 
       render(<DashboardHome />);
 
