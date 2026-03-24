@@ -32,7 +32,7 @@ on:
 
 concurrency:
   group: deploy-frontend-${{ inputs.environment || 'production' }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 env:
   AWS_REGION: us-east-1

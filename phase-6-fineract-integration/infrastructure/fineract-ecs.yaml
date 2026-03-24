@@ -20,8 +20,18 @@ Parameters:
     Type: String
     Description: Full ARN of the Fineract Secrets Manager secret (including random suffix)
 
+  FineractDesiredCount:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 3
+    Description: >
+      Number of Fineract ECS tasks to run. Set to 0 pre-launch to save ~$35-70/month.
+      Set to 1 for testing or production.
+
 Conditions:
   IsProduction: !Equals [!Ref Environment, production]
+  FineractRunning: !Not [!Equals [!Ref FineractDesiredCount, 0]]
 
 Resources:
   # ==========================================================
@@ -378,7 +388,7 @@ Resources:
       ServiceName: fineract-server
       Cluster: !Ref FineractCluster
       TaskDefinition: !Ref FineractTaskDefinition
-      DesiredCount: 1
+      DesiredCount: !Ref FineractDesiredCount
       LaunchType: FARGATE
       DeploymentConfiguration:
         MaximumPercent: 200
@@ -410,7 +420,7 @@ Resources:
   # ==========================================================
   FineractScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Condition: IsProduction
+    Condition: FineractRunning
     Properties:
       MaxCapacity: 3
       MinCapacity: 1
@@ -421,7 +431,7 @@ Resources:
 
   FineractScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Condition: IsProduction
+    Condition: FineractRunning
     Properties:
       PolicyName: !Sub "${Environment}-lynia-fineract-cpu-scaling"
       PolicyType: TargetTrackingScaling

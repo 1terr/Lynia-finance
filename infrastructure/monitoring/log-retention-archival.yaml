@@ -28,10 +28,17 @@ Conditions:
 Resources:
   # ==========================================================
   # CLOUDWATCH LOG GROUPS WITH RETENTION POLICIES
-  # Per CLAUDE.md: 5+ years for audit logs in production
-  # Production: 1827 days (5 years) for Lambda service logs
-  # Staging: 90 days
-  # Development: 14 days
+  # Pre-launch: 90 days in CloudWatch (hot storage).
+  # Long-term compliance (RBZ 5-7yr) handled by S3 archival
+  # pipeline below (Glacier → Deep Archive → 10yr expiry).
+  #
+  # IMPORTANT: Before deploying this to production, verify the
+  # S3 archival bucket exists and contains exported logs:
+  #   aws s3 ls s3://production-lynia-log-archive-${AWS::AccountId}/ --recursive | tail -5
+  # If empty, DO NOT reduce retention — set up log export first.
+  #
+  # At launch, consider increasing to 365 days for operational
+  # debugging while keeping archival for compliance.
   # ==========================================================
 
   ScoringServiceLogGroup:
@@ -40,7 +47,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-scoring-service'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -56,7 +63,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-payment-service'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -72,7 +79,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-whatsapp-service'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -88,7 +95,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-kyc-service'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -104,7 +111,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-lock-service'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -120,7 +127,7 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/${Environment}-lynia-notification-service'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -137,7 +144,7 @@ Resources:
       LogGroupName: !Sub '/aws/apigateway/${Environment}-lynia-access-logs'
       RetentionInDays: !If
         - IsProduction
-        - 1827
+        - 90
         - !If [IsNotDevelopment, 90, 14]
       Tags:
         - Key: Environment
@@ -546,7 +553,7 @@ Outputs:
     Description: Log retention period in days
     Value: !If
       - IsProduction
-      - '1827'
+      - '90'
       - !If [IsNotDevelopment, '90', '14']
 
   MetricFilterCount:

@@ -33,7 +33,7 @@ Globals:
     Runtime: nodejs20.x
     Architectures:
       - arm64
-    Tracing: Active
+    Tracing: PassThrough
     EphemeralStorage:
       Size: 512
     Environment:
@@ -1925,6 +1925,7 @@ Resources:
             Queue: !Sub "arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:${Environment}-lynia-dw-sync"
             BatchSize: 5
             MaximumBatchingWindowInSeconds: 10
+            Enabled: false  # Pre-launch: disable idle polling to reduce costs. Re-enable at launch.
     Metadata:
       BuildMethod: esbuild
       BuildProperties:

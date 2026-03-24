@@ -12,12 +12,29 @@ Parameters:
       - staging
       - production
 
+  PreLaunch:
+    Type: String
+    Default: 'true'
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Description: >
+      Set to 'true' to disable provisioned concurrency and auto-scaling
+      (saves ~$120/month). Set to 'false' to restore full capacity at launch.
+
 Conditions:
   IsProduction: !Equals [!Ref Environment, production]
   IsStaging: !Equals [!Ref Environment, staging]
-  UseProvisionedConcurrency: !Or
+  IsPreLaunch: !Equals [!Ref PreLaunch, 'true']
+  UseProvisionedConcurrency: !And
+    - !Or
+      - !Condition IsProduction
+      - !Condition IsStaging
+    - !Not [!Condition IsPreLaunch]
+  # Auto-scaling requires both production AND provisioned concurrency enabled
+  EnableAutoScaling: !And
     - !Condition IsProduction
-    - !Condition IsStaging
+    - !Not [!Condition IsPreLaunch]
 
 Resources:
   # ==========================================================
@@ -88,7 +105,7 @@ Resources:
   # Auto Scaling Target - Payment Service
   PaymentScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     DependsOn: PaymentProvisionedConcurrency
     Properties:
       MaxCapacity: 50
@@ -100,7 +117,7 @@ Resources:
 
   PaymentScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     Properties:
       PolicyName: !Sub "${Environment}-lynia-payment-scaling"
       PolicyType: TargetTrackingScaling
@@ -115,7 +132,7 @@ Resources:
   # Auto Scaling Target - Scoring Service
   ScoringScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     DependsOn: ScoringProvisionedConcurrency
     Properties:
       MaxCapacity: 30
@@ -127,7 +144,7 @@ Resources:
 
   ScoringScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     Properties:
       PolicyName: !Sub "${Environment}-lynia-scoring-scaling"
       PolicyType: TargetTrackingScaling
@@ -142,7 +159,7 @@ Resources:
   # Auto Scaling Target - WhatsApp Service
   WhatsAppScalableTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     DependsOn: WhatsAppProvisionedConcurrency
     Properties:
       MaxCapacity: 30
@@ -154,7 +171,7 @@ Resources:
 
   WhatsAppScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     Properties:
       PolicyName: !Sub "${Environment}-lynia-whatsapp-scaling"
       PolicyType: TargetTrackingScaling
@@ -173,7 +190,7 @@ Resources:
 
   PaymentScheduledScaleUp:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     DependsOn: PaymentProvisionedConcurrency
     Properties:
       MaxCapacity: 50
@@ -205,7 +222,7 @@ Resources:
 
   AutoScalingRole:
     Type: AWS::IAM::Role
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     Properties:
       RoleName: !Sub "${Environment}-lynia-autoscaling-role"
       AssumeRolePolicyDocument:
@@ -255,7 +272,7 @@ Resources:
 
   PaymentConcurrencyAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     Properties:
       AlarmName: !Sub "${Environment}-lynia-payment-high-concurrency"
       AlarmDescription: "Payment service provisioned concurrency utilization > 85%"
@@ -275,7 +292,7 @@ Resources:
 
   SpilloverAlarm:
     Type: AWS::CloudWatch::Alarm
-    Condition: IsProduction
+    Condition: EnableAutoScaling
     Properties:
       AlarmName: !Sub "${Environment}-lynia-concurrency-spillover"
       AlarmDescription: "Provisioned concurrency spillover detected - cold starts occurring"
@@ -292,21 +309,28 @@ Outputs:
   PaymentProvisionedConcurrency:
     Description: Payment service provisioned concurrency
     Condition: UseProvisionedConcurrency
-    Value: !If [IsProduction, "5 (auto-scales 5-50)", "2 (fixed)"]
+    Value: !If [EnableAutoScaling, "5 (auto-scales 5-50)", "2 (fixed)"]
 
   ScoringProvisionedConcurrency:
     Description: Scoring service provisioned concurrency
     Condition: UseProvisionedConcurrency
-    Value: !If [IsProduction, "3 (auto-scales 3-30)", "1 (fixed)"]
+    Value: !If [EnableAutoScaling, "3 (auto-scales 3-30)", "1 (fixed)"]
 
   WhatsAppProvisionedConcurrency:
     Description: WhatsApp service provisioned concurrency
     Condition: UseProvisionedConcurrency
-    Value: !If [IsProduction, "3 (auto-scales 3-30)", "1 (fixed)"]
+    Value: !If [EnableAutoScaling, "3 (auto-scales 3-30)", "1 (fixed)"]
 
   AutoScalingStrategy:
     Description: Auto-scaling strategy summary
     Value: !If
-      - IsProduction
-      - "Target tracking at 70% utilization with scheduled scaling for ZW business hours"
-      - "Fixed provisioned concurrency, no auto-scaling"
+      - IsPreLaunch
+      - "Pre-launch mode: provisioned concurrency and auto-scaling DISABLED to reduce costs"
+      - !If
+        - IsProduction
+        - "Target tracking at 70% utilization with scheduled scaling for ZW business hours"
+        - "Fixed provisioned concurrency, no auto-scaling"
+
+  PreLaunchMode:
+    Description: Whether pre-launch cost savings are active
+    Value: !If [IsPreLaunch, "ENABLED - provisioned concurrency disabled", "DISABLED - full capacity"]

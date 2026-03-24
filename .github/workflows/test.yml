@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master, develop]
 
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   NODE_ENV: test
   NODE_VERSION: '20.x'
