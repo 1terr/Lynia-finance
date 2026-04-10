@@ -27,7 +27,8 @@ import {
   trackSecurityEvent,
 } from './error-handler';
 import { logger } from '../../shared/utils/logger';
-import { sendTextMessage, storeMessage } from './message-sender';
+import { sendTextMessage, sendInteractiveButtons, sendInteractiveList, storeMessage } from './message-sender';
+import type { WhatsAppResponse } from './onboarding/types';
 
 /**
  * Process incoming message from customer
@@ -222,8 +223,8 @@ export async function processIncomingMessage(
       timestamp: parseInt(message.timestamp, 10)
     };
 
-    const responseMessage = await routeOnboardingMessage(context, imageUrl);
-    await sendTextMessage(phoneNumber, responseMessage);
+    const response = await routeOnboardingMessage(context, imageUrl);
+    await dispatchWhatsAppResponse(phoneNumber, response);
 
   } catch (error) {
     logger.error('Error processing incoming message', { action: 'message.process', meta: { error: error instanceof Error ? error.message : 'Unknown', stack: error instanceof Error ? error.stack : undefined } });
@@ -244,6 +245,30 @@ export async function processIncomingMessage(
     } catch (sendError) {
       logger.error('Failed to send error message', { action: 'message.send', meta: { error: sendError instanceof Error ? sendError.message : 'Unknown' } });
     }
+  }
+}
+
+/**
+ * Helper: Dispatch a WhatsAppResponse to the appropriate sender.
+ * - string → sendTextMessage (skips empty strings)
+ * - ButtonsResponse → sendInteractiveButtons
+ * - ListResponse → sendInteractiveList
+ */
+async function dispatchWhatsAppResponse(to: string, response: WhatsAppResponse): Promise<void> {
+  if (typeof response === 'string') {
+    if (response.length > 0) {
+      await sendTextMessage(to, response);
+    }
+    return;
+  }
+
+  if (response.type === 'buttons') {
+    await sendInteractiveButtons(to, response.body, response.buttons);
+    return;
+  }
+
+  if (response.type === 'list') {
+    await sendInteractiveList(to, response.body, response.buttonText, response.sections);
   }
 }
 

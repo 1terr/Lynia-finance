@@ -9,7 +9,7 @@ import { query } from '../../../../shared/clients/database';
 import { logger } from '../../../../shared/utils/logger';
 import { t, type SupportedLanguage } from '../../i18n';
 import { updateSession } from '../session';
-import type { OnboardingSession, MessageContext } from '../types';
+import type { OnboardingSession, MessageContext, WhatsAppResponse, ButtonsResponse } from '../types';
 
 const METHODS = ['ecocash', 'onemoney', 'innbucks'] as const;
 type DisbursementMethod = typeof METHODS[number];
@@ -46,7 +46,7 @@ const ZW_PHONE_REGEX = /^(?:\+?263|0)7[1-9]\d{7}$/;
 export async function handleDisbursementMethodSelection(
   session: OnboardingSession,
   context: MessageContext
-): Promise<string> {
+): Promise<WhatsAppResponse> {
   const message = context.message.trim();
   const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
 
@@ -72,26 +72,30 @@ export async function handleDisbursementMethodSelection(
   // Resolve allowed methods from product config
   const allowedMethods = await getAllowedDisbursementMethods(session);
 
-  // Parse method selection
+  // Parse method selection (button IDs, numbered choices, and text matches)
   const choice = message.toLowerCase();
   let method: DisbursementMethod | undefined;
 
-  if (choice === '1' || choice.includes('ecocash')) {
+  if (choice === '1' || choice === 'method_ecocash' || choice.includes('ecocash')) {
     method = 'ecocash';
-  } else if (choice === '2' || choice.includes('onemoney') || choice.includes('one money')) {
+  } else if (choice === '2' || choice === 'method_onemoney' || choice.includes('onemoney') || choice.includes('one money')) {
     method = 'onemoney';
-  } else if (choice === '3' || choice.includes('innbucks')) {
+  } else if (choice === '3' || choice === 'method_innbucks' || choice.includes('innbucks')) {
     method = 'innbucks';
   }
 
   // Validate selected method is allowed by product config
   if (method && !allowedMethods.includes(method)) {
     const allowedNames = allowedMethods.map(m => formatMethodName(m)).join(', ');
-    return `${formatMethodName(method)} is not available for this loan product. Available methods: ${allowedNames}\n\n` + t('disbursement_method_prompt', lang);
+    const unavailableMsg = `${formatMethodName(method)} is not available for this loan product. Available methods: ${allowedNames}`;
+    const buttons = buildMethodButtons(allowedMethods, lang);
+    return typeof buttons === 'string'
+      ? unavailableMsg + '\n\n' + buttons
+      : { ...buttons, body: unavailableMsg + '\n\n' + buttons.body };
   }
 
   if (!method) {
-    return t('disbursement_method_prompt', lang);
+    return buildMethodButtons(allowedMethods, lang);
   }
 
   // Store method, ask for phone confirmation
@@ -116,7 +120,7 @@ async function handlePhoneConfirmation(
   session: OnboardingSession,
   context: MessageContext,
   lang: SupportedLanguage
-): Promise<string> {
+): Promise<WhatsAppResponse> {
   const message = context.message.trim().toLowerCase();
 
   // Accept default phone
@@ -146,16 +150,17 @@ async function handlePhoneConfirmation(
     return showDigitalTerms(session, lang);
   }
 
-  // If 'back', let them re-choose method
+  // If 'back', let them re-choose method with buttons
   if (message === 'back') {
     await updateSession(context.from, {
       state_data: {
         ...session.state_data,
         disbursement_method: undefined,
-      }
+      },
     });
 
-    return t('disbursement_method_prompt', lang);
+    const allMethods: DisbursementMethod[] = ['ecocash', 'onemoney', 'innbucks'];
+    return buildMethodButtons(allMethods, lang);
   }
 
   return t('disbursement_confirm_phone', lang, { phone: session.phone_number });
@@ -203,4 +208,28 @@ function formatMethodName(method: string): string {
     case 'innbucks': return 'InnBucks';
     default: return method;
   }
+}
+
+/**
+ * Build interactive buttons for mobile money method selection.
+ * WhatsApp allows max 3 buttons; we have exactly 3 methods so this fits perfectly.
+ */
+function buildMethodButtons(allowedMethods: DisbursementMethod[], lang: SupportedLanguage): ButtonsResponse {
+  const bodyText = lang === 'sn'
+    ? 'Sarudza nzira yekugamuchira mari yako:'
+    : lang === 'nd'
+    ? 'Khetha indlela yokuthola imali yakho:'
+    : 'How would you like to receive your loan?';
+
+  // Map each allowed method to a button (max 3)
+  const methodButtons: Array<{ id: string; title: string }> = allowedMethods.slice(0, 3).map(m => ({
+    id: `method_${m}`,
+    title: formatMethodName(m),
+  }));
+
+  return {
+    type: 'buttons',
+    body: bodyText,
+    buttons: methodButtons,
+  };
 }

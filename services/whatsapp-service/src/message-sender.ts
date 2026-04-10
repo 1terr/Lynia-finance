@@ -21,7 +21,7 @@ import { SQSQueues } from '../../shared/utils/sqs-publisher';
 import { logger } from '../../shared/utils/logger';
 import { db } from '../../shared/clients/database';
 
-const WHATSAPP_API_URL = 'https://graph.facebook.com/v18.0';
+const WHATSAPP_API_URL = 'https://graph.facebook.com/v21.0';
 const PHONE_NUMBER_ID = process.env.WHATSAPP_PHONE_NUMBER_ID!;
 const ACCESS_TOKEN = process.env.WHATSAPP_ACCESS_TOKEN!;
 
@@ -210,6 +210,143 @@ export async function sendTextMessage(to: string, message: string): Promise<void
     }
 
     logger.error('Error sending text message', { action: 'message.send', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+  }
+}
+
+/**
+ * Helper: Send interactive button message (up to 3 buttons) via WhatsApp Cloud API
+ *
+ * Buttons are ideal for binary/ternary choices: Yes/No, language selection,
+ * product selection, confirm/back. Max 3 buttons per message (WhatsApp limit).
+ */
+export async function sendInteractiveButtons(
+  to: string,
+  body: string,
+  buttons: Array<{ id: string; title: string }>
+): Promise<void> {
+  if (buttons.length === 0 || buttons.length > 3) {
+    throw new Error(`sendInteractiveButtons: must have 1–3 buttons, got ${buttons.length}`);
+  }
+
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: sanitizePhoneNumber(to),
+    type: 'interactive',
+    interactive: {
+      type: 'button',
+      body: { text: body },
+      action: {
+        buttons: buttons.map(btn => ({
+          type: 'reply',
+          reply: { id: btn.id, title: btn.title.substring(0, 20) }, // WhatsApp title limit: 20 chars
+        })),
+      },
+    },
+  };
+
+  try {
+    const response = await whatsappCircuitBreaker.execute(() =>
+      axios.post<WhatsAppSendMessageResponse>(
+        `${WHATSAPP_API_URL}/${PHONE_NUMBER_ID}/messages`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    );
+
+    await storeMessage({
+      phone_number: to,
+      message_type: 'interactive',
+      direction: 'outbound',
+      content: body,
+      whatsapp_message_id: response.data.messages[0].id,
+      status: 'sent',
+    });
+  } catch (error) {
+    if (error instanceof CircuitOpenError) {
+      logger.error('WhatsApp API circuit open, interactive button message not sent', { action: 'message.send_buttons' });
+      await storeMessage({ phone_number: to, message_type: 'interactive', direction: 'outbound', content: body, status: 'queued' });
+      await SQSQueues.retryWhatsAppMessage({ phoneNumber: to, messageContent: body, messageType: 'interactive', retryCount: 0, originalError: 'circuit_open' })
+        .catch(sqsErr => logger.error('Failed to enqueue interactive retry', { action: 'sqs.enqueue', meta: { error: sqsErr instanceof Error ? sqsErr.message : 'Unknown' } }));
+      return;
+    }
+    logger.error('Error sending interactive button message', { action: 'message.send_buttons', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    // Fall back to plain text so the user still gets a response
+    await sendTextMessage(to, body);
+  }
+}
+
+/**
+ * Helper: Send interactive list message via WhatsApp Cloud API
+ *
+ * Lists support up to 10 rows across sections and are ideal for term
+ * selection, device selection, or any multi-option choice.
+ */
+export async function sendInteractiveList(
+  to: string,
+  body: string,
+  buttonText: string,
+  sections: Array<{
+    title: string;
+    rows: Array<{ id: string; title: string; description?: string }>;
+  }>
+): Promise<void> {
+  const payload = {
+    messaging_product: 'whatsapp',
+    to: sanitizePhoneNumber(to),
+    type: 'interactive',
+    interactive: {
+      type: 'list',
+      body: { text: body },
+      action: {
+        button: buttonText.substring(0, 20),
+        sections: sections.map(section => ({
+          title: section.title.substring(0, 24),
+          rows: section.rows.map(row => ({
+            id: row.id,
+            title: row.title.substring(0, 24),
+            ...(row.description ? { description: row.description.substring(0, 72) } : {}),
+          })),
+        })),
+      },
+    },
+  };
+
+  try {
+    const response = await whatsappCircuitBreaker.execute(() =>
+      axios.post<WhatsAppSendMessageResponse>(
+        `${WHATSAPP_API_URL}/${PHONE_NUMBER_ID}/messages`,
+        payload,
+        {
+          headers: {
+            'Authorization': `Bearer ${ACCESS_TOKEN}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      )
+    );
+
+    await storeMessage({
+      phone_number: to,
+      message_type: 'interactive',
+      direction: 'outbound',
+      content: body,
+      whatsapp_message_id: response.data.messages[0].id,
+      status: 'sent',
+    });
+  } catch (error) {
+    if (error instanceof CircuitOpenError) {
+      logger.error('WhatsApp API circuit open, list message not sent', { action: 'message.send_list' });
+      await storeMessage({ phone_number: to, message_type: 'interactive', direction: 'outbound', content: body, status: 'queued' });
+      return;
+    }
+    logger.error('Error sending interactive list message', { action: 'message.send_list', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
+    // Fall back to plain text so the user still gets a response
+    await sendTextMessage(to, body);
   }
 }
 

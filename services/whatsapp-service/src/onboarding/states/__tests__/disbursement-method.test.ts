@@ -6,7 +6,7 @@
  */
 
 import { handleDisbursementMethodSelection } from '../disbursement-method';
-import type { OnboardingSession, MessageContext } from '../../types';
+import type { OnboardingSession, MessageContext, ButtonsResponse } from '../../types';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -147,24 +147,29 @@ describe('handleDisbursementMethodSelection', () => {
   });
 
   // -----------------------------------------------------------------------
-  // Invalid method selection
+  // Invalid method selection — now returns interactive buttons
   // -----------------------------------------------------------------------
 
-  it('rejects invalid option with prompt to re-select', async () => {
-    const result = await handleDisbursementMethodSelection(makeSession(), makeContext('4'));
+  it('returns interactive method buttons for invalid option', async () => {
+    const result = await handleDisbursementMethodSelection(makeSession(), makeContext('4')) as ButtonsResponse;
 
-    expect(result).toContain('How would you like to receive');
-    expect(result).toContain('EcoCash');
-    expect(result).toContain('OneMoney');
-    expect(result).toContain('InnBucks');
+    expect(result).toMatchObject({
+      type: 'buttons',
+      body: expect.stringContaining('How would you like to receive'),
+      buttons: expect.arrayContaining([
+        expect.objectContaining({ title: 'EcoCash' }),
+        expect.objectContaining({ title: 'OneMoney' }),
+        expect.objectContaining({ title: 'InnBucks' }),
+      ]),
+    });
     // Should NOT update session for invalid input
     expect(mockUpdateSession).not.toHaveBeenCalled();
   });
 
-  it('rejects random text with prompt', async () => {
+  it('returns interactive buttons for random text (paypal)', async () => {
     const result = await handleDisbursementMethodSelection(makeSession(), makeContext('paypal'));
 
-    expect(result).toContain('How would you like to receive');
+    expect(result).toMatchObject({ type: 'buttons' });
     expect(mockUpdateSession).not.toHaveBeenCalled();
   });
 
@@ -353,16 +358,16 @@ describe('handleDisbursementMethodSelection', () => {
   });
 
   // -----------------------------------------------------------------------
-  // BACK command from phone confirmation sub-state
+  // BACK command from phone confirmation sub-state — returns interactive buttons
   // -----------------------------------------------------------------------
 
-  it('returns to method selection on BACK from phone confirmation', async () => {
+  it('returns interactive method buttons on BACK from phone confirmation', async () => {
     const session = makeSession({
       disbursement_method: 'ecocash',
       // No disbursement_phone — in phone confirmation sub-state
     });
 
-    const result = await handleDisbursementMethodSelection(session, makeContext('back'));
+    const result = await handleDisbursementMethodSelection(session, makeContext('back')) as ButtonsResponse;
 
     expect(mockUpdateSession).toHaveBeenCalledWith(
       '+263771234567',
@@ -373,8 +378,11 @@ describe('handleDisbursementMethodSelection', () => {
       })
     );
 
-    // Should show method selection prompt
-    expect(result).toContain('How would you like to receive');
+    // Should show interactive method selection buttons
+    expect(result).toMatchObject({
+      type: 'buttons',
+      body: expect.stringContaining('How would you like to receive'),
+    });
   });
 
   // -----------------------------------------------------------------------

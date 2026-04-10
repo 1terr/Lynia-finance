@@ -20,6 +20,8 @@ export { processIncomingMessage } from './message-router';
 export {
   sendMessage,
   sendTextMessage,
+  sendInteractiveButtons,
+  sendInteractiveList,
   storeMessage,
   updateMessageStatus,
   sanitizePhoneNumber,
