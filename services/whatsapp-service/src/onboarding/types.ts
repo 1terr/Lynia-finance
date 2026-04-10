@@ -6,6 +6,40 @@
 
 import type { SupportedLanguage } from '../i18n';
 
+// ===================================================================
+// WHATSAPP RESPONSE TYPES
+// ===================================================================
+
+/**
+ * Interactive buttons response (max 3 buttons, WhatsApp limit).
+ * Used for binary/ternary choices: language, product, yes/no.
+ */
+export interface ButtonsResponse {
+  type: 'buttons';
+  body: string;
+  buttons: Array<{ id: string; title: string }>;
+}
+
+/**
+ * Interactive list response (up to 10 rows across sections).
+ * Used for multi-option choices: term selection, device selection.
+ */
+export interface ListResponse {
+  type: 'list';
+  body: string;
+  buttonText: string;
+  sections: Array<{
+    title: string;
+    rows: Array<{ id: string; title: string; description?: string }>;
+  }>;
+}
+
+/**
+ * Union type for all outbound WhatsApp responses.
+ * Plain strings are sent as text; structured objects trigger interactive messages.
+ */
+export type WhatsAppResponse = string | ButtonsResponse | ListResponse;
+
 export type OnboardingState =
   | 'welcome'
   | 'phone_validation'
@@ -43,6 +77,8 @@ export interface OnboardingSession {
   state_data: {
     // Language preference
     preferred_language?: SupportedLanguage;
+    /** Set to true once the language-selection buttons have been shown */
+    language_selection_shown?: boolean;
 
     // Personal info
     full_name?: string;
@@ -162,6 +198,10 @@ export interface OnboardingSession {
     // Tracking
     retry_count?: number;
     started_at?: string;
+
+    // UI state
+    /** Tracks whether product-selection buttons were already shown (avoids re-sending on re-entry) */
+    product_selection_shown?: boolean;
   };
   last_activity_at: Date;
   created_at: Date;

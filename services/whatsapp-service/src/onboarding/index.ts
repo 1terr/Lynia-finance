@@ -33,19 +33,21 @@ import { handleTermSelection } from './states/term-selection';
 import { handleLoanSummary, handleLoanOffer, handleTermsAcceptance } from './states/loan-offer';
 import { handleDisbursementMethodSelection } from './states/disbursement-method';
 import handleKYCProcessing from './states/kyc-processing';
-import type { MessageContext } from './types';
+import type { MessageContext, WhatsAppResponse } from './types';
 
 // ===================================================================
 // MAIN ONBOARDING ROUTER
 // ===================================================================
 
 /**
- * Route incoming message to appropriate state handler
+ * Route incoming message to appropriate state handler.
+ * Returns a WhatsAppResponse: either a plain string (text message)
+ * or a ButtonsResponse/ListResponse (interactive message).
  */
 export async function routeOnboardingMessage(
   context: MessageContext,
   imageUrl?: string
-): Promise<string> {
+): Promise<WhatsAppResponse> {
   try {
     const session = await getOrCreateSession(context.from);
 
@@ -135,7 +137,7 @@ Need help? Reply *Support*`;
     }
   } catch (error) {
     logger.error('Onboarding routing error', { action: 'onboarding.route', meta: { error: error instanceof Error ? error.message : 'Unknown' } });
-    return `\u26A0\uFE0F Technical error. Please try again or contact support@lynia.finance`;
+    return '⚠️ Technical error. Please try again or contact support@lynia.finance';
   }
 }
 
@@ -143,7 +145,7 @@ Need help? Reply *Support*`;
 // RE-EXPORTS for backward compatibility
 // ===================================================================
 
-export type { OnboardingState, OnboardingSession, MessageContext } from './types';
+export type { OnboardingState, OnboardingSession, MessageContext, WhatsAppResponse, ButtonsResponse, ListResponse } from './types';
 export { getOrCreateSession, updateSession } from './session';
 export { handleWelcome } from './states/welcome';
 export { handlePersonalInfo } from './states/personal-info';

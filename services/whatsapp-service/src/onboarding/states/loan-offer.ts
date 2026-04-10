@@ -11,7 +11,7 @@ import { getAllowedTermsForProduct } from '../../../../shared/utils/loan-calcula
 import { syncLoanToFineract, approveLoanInFineract } from '../../../../shared/clients/fineract-sync';
 import { logger } from '../../../../shared/utils/logger';
 import { t, type SupportedLanguage } from '../../i18n';
-import type { OnboardingSession, MessageContext } from '../types';
+import type { OnboardingSession, MessageContext, WhatsAppResponse, ButtonsResponse } from '../types';
 
 function formatDisbursementMethod(method: string): string {
   switch (method) {
@@ -23,6 +23,26 @@ function formatDisbursementMethod(method: string): string {
 }
 
 /**
+ * Build Yes / Back interactive buttons for loan confirmation screens.
+ */
+function buildYesBackButtons(lang: SupportedLanguage): ButtonsResponse {
+  const body = lang === 'sn'
+    ? 'Unobvuma nezvisungo zvepfungwa here?'
+    : lang === 'nd'
+    ? 'Uyavuma ngezimiso lezi yini?'
+    : 'Do you accept these terms?';
+
+  return {
+    type: 'buttons',
+    body,
+    buttons: [
+      { id: 'confirm_yes', title: lang === 'sn' ? '✅ Ndinobvuma' : lang === 'nd' ? '✅ Ngiyavuma' : '✅ Yes, I Accept' },
+      { id: 'confirm_back', title: '← Change Selection' },
+    ],
+  };
+}
+
+/**
  * Handle LOAN_SUMMARY state (and legacy LOAN_OFFER state for in-flight sessions).
  *
  * The customer has already seen the summary in the term_selection response.
@@ -31,13 +51,13 @@ function formatDisbursementMethod(method: string): string {
 export async function handleLoanSummary(
   session: OnboardingSession,
   context: MessageContext
-): Promise<string> {
+): Promise<WhatsAppResponse> {
   const message = context.message.trim().toLowerCase();
 
   const isDigital = session.state_data.selected_product === 'digital_credit';
 
   // "Back" — return to term_selection, preserving device/amount choice
-  if (message === 'back' || message.includes('change')) {
+  if (message === 'back' || message === 'confirm_back' || message.includes('change')) {
     const minTerm = session.state_data.matched_product_min_term ?? 6;
     const maxTerm = session.state_data.matched_product_max_term ?? 12;
     const allowedTerms = getAllowedTermsForProduct(minTerm, maxTerm);
@@ -82,7 +102,7 @@ ${termList}
 Reply with the number of your choice, or *Back* to change device.`;
   }
 
-  if (message.includes('yes') || message.includes('continue') || message.includes('accept')) {
+  if (message.includes('yes') || message.includes('i accept') || message.includes('ndinobvuma') || message.includes('ngiyavuma') || message.includes('continue') || message.includes('accept') || message.includes('confirm_yes')) {
     if (isDigital) {
       // Digital: go to disbursement method selection before terms acceptance
       await updateSession(context.from, {
@@ -122,7 +142,9 @@ Do you accept these terms?
 Reply *I Accept* to continue`;
   }
 
-  // Unrecognized input — re-show summary
+  // Unrecognized input — re-show summary with interactive Yes/Back buttons
+  const lang: SupportedLanguage = session.state_data.preferred_language || 'en';
+
   if (isDigital) {
     const loanAmount = session.state_data.financed_amount || 0;
     const termMonths = session.state_data.selected_term_months || 6;
@@ -130,17 +152,19 @@ Reply *I Accept* to continue`;
     const totalRepayment = session.state_data.total_repayment || 0;
     const interestRate = session.state_data.interest_rate_apr || 24;
 
-    return `*Your Loan Summary*
+    const summaryText = `*Your Loan Summary*
 
 Cash Loan: $${loanAmount.toFixed(2)}
 Term: ${termMonths} months
 Interest: ${interestRate}% flat rate
 Monthly Payment: *$${monthlyPayment.toFixed(2)}*
 Total Repayment: $${totalRepayment.toFixed(2)}
-Total Cost of Credit: $${(totalRepayment - loanAmount).toFixed(2)}
-Effective APR: ${loanAmount > 0 && termMonths > 0 ? Math.round(((totalRepayment - loanAmount) / loanAmount) * (12 / termMonths) * 100 * 100) / 100 : 0}%
+Total Cost of Credit: $${(totalRepayment - loanAmount).toFixed(2)}`;
 
-Reply *Yes* to accept or *Back* to change your selection.`;
+    return {
+      ...(buildYesBackButtons(lang)),
+      body: summaryText + '\n\n' + buildYesBackButtons(lang).body,
+    } as ButtonsResponse;
   }
 
   const deviceName = session.state_data.selected_device_name || 'Selected device';
@@ -155,7 +179,7 @@ Reply *Yes* to accept or *Back* to change your selection.`;
     ? Math.round((totalInterest / financedAmt) * (12 / termMonths) * 100 * 100) / 100
     : 0;
 
-  return `*Your Loan Summary*
+  const smartphoneSummary = `*Your Loan Summary*
 
 Device: ${deviceName} ($${devicePrice.toFixed(2)})
 Deposit: $${depositAmt.toFixed(2)}
@@ -164,9 +188,12 @@ Term: ${termMonths} months
 Monthly Payment: *$${monthlyPayment.toFixed(2)}*
 Total Repayment: $${totalRepayment.toFixed(2)}
 Total Cost of Credit: $${totalInterest.toFixed(2)}
-Effective APR: ${effectiveApr}%
+Effective APR: ${effectiveApr}%`;
 
-Reply *Yes* to accept or *Back* to change your selection.`;
+  return {
+    ...(buildYesBackButtons(lang)),
+    body: smartphoneSummary + '\n\n' + buildYesBackButtons(lang).body,
+  } as ButtonsResponse;
 }
 
 // Backward compatibility alias for in-flight sessions
@@ -178,7 +205,7 @@ export const handleLoanOffer = handleLoanSummary;
 export async function handleTermsAcceptance(
   session: OnboardingSession,
   context: MessageContext
-): Promise<string> {
+): Promise<WhatsAppResponse> {
   const message = context.message.trim().toLowerCase();
 
   if (message.includes('accept') || message.includes('i accept') || message.includes('ndinobvuma') || message.includes('ngiyavuma')) {

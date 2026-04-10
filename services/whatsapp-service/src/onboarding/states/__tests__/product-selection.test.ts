@@ -6,7 +6,7 @@
  */
 
 import { handleProductSelection } from '../product-selection';
-import type { OnboardingSession, MessageContext } from '../../types';
+import type { OnboardingSession, MessageContext, ButtonsResponse } from '../../types';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -198,26 +198,31 @@ describe('handleProductSelection', () => {
   // ── Invalid input ───────────────────────────────────────────────────
 
   describe('invalid input', () => {
-    it('returns product selection prompt for invalid input', async () => {
-      const result = await handleProductSelection(makeSession(), makeContext('3'));
+    it('returns interactive product selection buttons for invalid input', async () => {
+      const result = await handleProductSelection(makeSession(), makeContext('3')) as ButtonsResponse;
 
-      expect(result).toContain('What would you like to apply for');
-      expect(result).toContain('Smartphone Financing');
-      expect(result).toContain('Digital Credit');
+      expect(result).toMatchObject({
+        type: 'buttons',
+        body: expect.stringContaining('What would you like to apply for'),
+        buttons: expect.arrayContaining([
+          expect.objectContaining({ title: expect.stringContaining('Smartphone') }),
+          expect.objectContaining({ title: expect.stringContaining('Digital Credit') }),
+        ]),
+      });
       expect(mockUpdateSession).not.toHaveBeenCalled();
     });
 
-    it('returns prompt for empty message', async () => {
+    it('returns interactive buttons for empty message', async () => {
       const result = await handleProductSelection(makeSession(), makeContext(''));
 
-      expect(result).toContain('What would you like to apply for');
+      expect(result).toMatchObject({ type: 'buttons' });
       expect(mockUpdateSession).not.toHaveBeenCalled();
     });
 
-    it('returns prompt for random text', async () => {
+    it('returns interactive buttons for random text', async () => {
       const result = await handleProductSelection(makeSession(), makeContext('hello world'));
 
-      expect(result).toContain('What would you like to apply for');
+      expect(result).toMatchObject({ type: 'buttons' });
       expect(mockUpdateSession).not.toHaveBeenCalled();
     });
 
