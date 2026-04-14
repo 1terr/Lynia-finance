@@ -2,11 +2,14 @@
 
 import Link from 'next/link';
 import { MessageCircle } from 'lucide-react';
+import { WHATSAPP_URL } from '@/lib/constants';
 
 export function WhatsAppFAB() {
   return (
     <Link
-      href="/contact"
+      href={WHATSAPP_URL}
+      target="_blank"
+      rel="noopener noreferrer"
       aria-label="Chat with us on WhatsApp"
       className="group fixed bottom-6 right-6 md:bottom-6 md:right-6 z-fab flex items-center gap-2"
     >

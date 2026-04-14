@@ -6,7 +6,7 @@
  */
 
 // TODO(launch): Replace 263XXXXXXXXX with the real Lynia WhatsApp business number
-export const WHATSAPP_URL = 'https://wa.me/263XXXXXXXXX';
+export const WHATSAPP_URL = 'https://wa.me/2637187211703?text=Hi%20Lynia%20Finance%2C%20I%27d%20like%20to%20enquire%20about%20a%20loan.';
 
 export const SOCIAL_LINKS = {
   // TODO(launch): Verify these social media URLs are correct before go-live
