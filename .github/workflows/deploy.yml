@@ -733,7 +733,9 @@ jobs:
           WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
           WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
-          WHATSAPP_EXPECTED_DISPLAY_NUMBER: ${{ secrets.PRODUCTION_WHATSAPP_EXPECTED_DISPLAY_NUMBER }}
+          # Note: WHATSAPP_EXPECTED_DISPLAY_NUMBER is hard-coded in the shell script above
+          # to ensure the health check always verifies the correct number is bound.
+          # Do not override it with a GitHub secret.
           META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
           DIDIT_API_KEY: ${{ secrets.PRODUCTION_DIDIT_API_KEY }}
           DIDIT_WEBHOOK_SECRET: ${{ secrets.PRODUCTION_DIDIT_WEBHOOK_SECRET }}
