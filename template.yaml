@@ -432,12 +432,12 @@ Resources:
               Resource: "*"
       Environment:
         Variables:
-          WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
-          WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
-          WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
+          WHATSAPP_PHONE_NUMBER_ID: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_PHONE_NUMBER_ID}}"
+          WHATSAPP_ACCESS_TOKEN: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_ACCESS_TOKEN}}"
+          WHATSAPP_WEBHOOK_VERIFY_TOKEN: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_WEBHOOK_VERIFY_TOKEN}}"
           WHATSAPP_BUSINESS_ACCOUNT_ID: !Ref WhatsAppBusinessAccountId
           WHATSAPP_EXPECTED_DISPLAY_NUMBER: !Ref WhatsAppExpectedDisplayNumber
-          META_APP_SECRET: !Ref MetaAppSecret
+          META_APP_SECRET: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:META_APP_SECRET}}"
           SCORING_API_URL: !Ref ScoringApiUrl
           KYC_API_URL: !Ref KycApiUrl
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
@@ -516,8 +516,8 @@ Resources:
               Resource: "*"
       Environment:
         Variables:
-          WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
-          WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
+          WHATSAPP_PHONE_NUMBER_ID: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_PHONE_NUMBER_ID}}"
+          WHATSAPP_ACCESS_TOKEN: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_ACCESS_TOKEN}}"
           ENVIRONMENT: !Ref Environment
       Events:
         WhatsAppRetryQueue:
@@ -574,8 +574,8 @@ Resources:
           KYC_PROVIDER: didit
           DIDIT_API_KEY: !Ref DiditApiKey
           DIDIT_WEBHOOK_SECRET: !Ref DiditWebhookSecret
-          WHATSAPP_PHONE_NUMBER_ID: !Ref WhatsAppPhoneNumberId
-          WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
+          WHATSAPP_PHONE_NUMBER_ID: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_PHONE_NUMBER_ID}}"
+          WHATSAPP_ACCESS_TOKEN: "{{resolve:secretsmanager:lynia-whatsapp-business-credentials:SecretString:WHATSAPP_ACCESS_TOKEN}}"
       # AutoPublishAlias: live  # Temporarily disabled to avoid circular dependency
       Events:
         KYCHealth:
