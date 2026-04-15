@@ -347,30 +347,19 @@ jobs:
           echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
           echo "kyc_api_url=$KYC_API_URL" >> $GITHUB_OUTPUT
 
-      - name: Check WhatsApp credentials are wired
+      - name: Check WhatsApp Secrets Manager secret is configured
         id: check-wa-staging
         run: |
-          # Warn loudly (not fail) if any WhatsApp secret is missing so the
-          # deep health check at the end of this job is expected to fail.
-          # Required to actually connect the Lynia WhatsApp Business number
-          # to the backend for automated bot responses.
-          MISSING=()
-          [ -z "${STAGING_WHATSAPP_PHONE_ID}" ] && MISSING+=("STAGING_WHATSAPP_PHONE_ID")
-          [ -z "${STAGING_WHATSAPP_TOKEN}" ] && MISSING+=("STAGING_WHATSAPP_TOKEN")
-          [ -z "${STAGING_WEBHOOK_TOKEN}" ] && MISSING+=("STAGING_WEBHOOK_TOKEN")
-          [ -z "${STAGING_META_APP_SECRET}" ] && MISSING+=("STAGING_META_APP_SECRET")
-          if [ ${#MISSING[@]} -gt 0 ]; then
-            echo "::warning::WhatsApp bot will NOT respond to messages until these secrets are set: ${MISSING[*]}"
-            echo "wa_wired=false" >> $GITHUB_OUTPUT
-          else
-            echo "All WhatsApp secrets present - bot should be reachable after deploy"
+          # Verify the WhatsApp credentials are available in AWS Secrets Manager
+          # The Lambda resolves them at runtime: lynia-whatsapp-business-credentials
+          SECRET_NAME="lynia-whatsapp-business-credentials"
+          if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" &>/dev/null; then
+            echo "WhatsApp Secrets Manager secret found - bot should be reachable after deploy"
             echo "wa_wired=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::WhatsApp Secrets Manager secret not found: $SECRET_NAME"
+            echo "wa_wired=false" >> $GITHUB_OUTPUT
           fi
-        env:
-          STAGING_WHATSAPP_PHONE_ID: ${{ secrets.STAGING_WHATSAPP_PHONE_ID }}
-          STAGING_WHATSAPP_TOKEN: ${{ secrets.STAGING_WHATSAPP_TOKEN }}
-          STAGING_WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
-          STAGING_META_APP_SECRET: ${{ secrets.STAGING_META_APP_SECRET }}
 
       - name: SAM Deploy to Staging
         run: |
@@ -410,12 +399,7 @@ jobs:
               "ScoringApiUrl=${SCORING_URL}" \
               "WhatsAppApiUrl=${WHATSAPP_URL}" \
               "KycApiUrl=${KYC_URL}" \
-              "WhatsAppPhoneNumberId=${WA_PHONE}" \
-              "WhatsAppAccessToken=${WA_TOKEN}" \
-              "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
-              "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
               "WhatsAppExpectedDisplayNumber=${WA_EXPECTED_NUMBER}" \
-              "MetaAppSecret=${META_SECRET}" \
               "DiditApiKey=${DIDIT_KEY}" \
               "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
               "EcocashMerchantId=${ECO_MID}" \
@@ -661,40 +645,29 @@ jobs:
           echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
           echo "kyc_api_url=$KYC_API_URL" >> $GITHUB_OUTPUT
 
-      - name: Check WhatsApp credentials are wired
+      - name: Check WhatsApp Secrets Manager secret is configured
         id: check-wa-prod
         run: |
           # Hard gate: a production deploy without the WhatsApp Business
           # credentials would silently ship a broken bot to real customers.
           # The landing page WhatsApp button points at +263 71 925 2094 and
-          # clicks must reach the bot, so we fail fast if the secrets are
-          # missing. Override by dispatching with the force_deploy_without_wa
-          # input set to true, for emergency deploys only.
-          MISSING=()
-          [ -z "${PRODUCTION_WHATSAPP_PHONE_ID}" ] && MISSING+=("PRODUCTION_WHATSAPP_PHONE_ID")
-          [ -z "${PRODUCTION_WHATSAPP_TOKEN}" ] && MISSING+=("PRODUCTION_WHATSAPP_TOKEN")
-          [ -z "${PRODUCTION_WEBHOOK_TOKEN}" ] && MISSING+=("PRODUCTION_WEBHOOK_TOKEN")
-          [ -z "${PRODUCTION_META_APP_SECRET}" ] && MISSING+=("PRODUCTION_META_APP_SECRET")
-          [ -z "${PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID}" ] && MISSING+=("PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID")
-          if [ ${#MISSING[@]} -gt 0 ]; then
+          # clicks must reach the bot. Credentials are now stored in AWS
+          # Secrets Manager: lynia-whatsapp-business-credentials
+          SECRET_NAME="lynia-whatsapp-business-credentials"
+          if aws secretsmanager describe-secret --secret-id "$SECRET_NAME" &>/dev/null; then
+            echo "WhatsApp Secrets Manager secret found - bot will be live after deploy"
+            echo "wa_wired=true" >> $GITHUB_OUTPUT
+          else
             if [ "${FORCE_DEPLOY_WITHOUT_WA}" = "true" ]; then
-              echo "::warning::force_deploy_without_wa=true - deploying anyway. Missing: ${MISSING[*]}"
+              echo "::warning::force_deploy_without_wa=true - deploying anyway. Secret not found: $SECRET_NAME"
               echo "wa_wired=false" >> $GITHUB_OUTPUT
             else
-              echo "::error::Cannot deploy to production: missing WhatsApp secrets: ${MISSING[*]}"
-              echo "::error::Set them in repo Settings > Secrets, or re-run with force_deploy_without_wa=true"
+              echo "::error::Cannot deploy to production: missing WhatsApp secret in AWS Secrets Manager: $SECRET_NAME"
+              echo "::error::Create it in AWS Secrets Manager, or re-run with force_deploy_without_wa=true"
               exit 1
             fi
-          else
-            echo "All WhatsApp Business secrets present - bot will be live after deploy"
-            echo "wa_wired=true" >> $GITHUB_OUTPUT
           fi
         env:
-          PRODUCTION_WHATSAPP_PHONE_ID: ${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}
-          PRODUCTION_WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
-          PRODUCTION_WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
-          PRODUCTION_META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
-          PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
           FORCE_DEPLOY_WITHOUT_WA: ${{ github.event.inputs.force_deploy_without_wa }}
 
       - name: SAM Deploy to Production
@@ -739,12 +712,7 @@ jobs:
               "ScoringApiUrl=${SCORING_URL}" \
               "WhatsAppApiUrl=${WHATSAPP_URL}" \
               "KycApiUrl=${KYC_URL}" \
-              "WhatsAppPhoneNumberId=${WA_PHONE}" \
-              "WhatsAppAccessToken=${WA_TOKEN}" \
-              "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
-              "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
               "WhatsAppExpectedDisplayNumber=${WA_EXPECTED_NUMBER}" \
-              "MetaAppSecret=${META_SECRET}" \
               "DiditApiKey=${DIDIT_KEY}" \
               "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
               "EcocashMerchantId=${ECO_MID}" \
