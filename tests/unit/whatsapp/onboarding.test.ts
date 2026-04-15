@@ -285,7 +285,9 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ from: '+263771234567', message: 'Hi' });
       const result = await handleWelcome(context);
 
-      expect(result).toContain('Welcome to Lynia Finance');
+      // Response can be ButtonsResponse (with body property) or string
+      const responseText = typeof result === 'string' ? result : result.body;
+      expect(responseText).toContain('Welcome to Lynia Finance');
     });
 
     it('should return service_not_available for a non-Zimbabwean phone number', async () => {
@@ -304,7 +306,8 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ from: '+1234567890', message: 'Hello' });
       const result = await handleWelcome(context);
 
-      expect(result).toContain('Service Not Available');
+      const responseText = typeof result === 'string' ? result : result.body;
+      expect(responseText).toContain('Service Not Available');
     });
 
     it('should return invalid_phone for an invalid Zimbabwe number', async () => {
@@ -322,7 +325,8 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ from: '026377123', message: 'Hello' });
       const result = await handleWelcome(context);
 
-      expect(result).toContain('Invalid Phone Number');
+      const responseText = typeof result === 'string' ? result : result.body;
+      expect(responseText).toContain('Invalid Phone Number');
     });
   });
 
@@ -714,7 +718,8 @@ describe('WhatsApp Onboarding', () => {
       const context = createMessageContext({ message: 'something else' });
       const result = await handleProductSelection(session, context);
 
-      expect(result).toContain('apply for');
+      const responseText = typeof result === 'string' ? result : result.body;
+      expect(responseText).toContain('apply for');
     });
 
     it('should accept Shona affirmative "hongu" as smartphone selection', async () => {

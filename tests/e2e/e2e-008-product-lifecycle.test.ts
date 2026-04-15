@@ -642,8 +642,9 @@ describe('Product Lifecycle E2E', () => {
     );
 
     // Should mention InnBucks is not available
-    expect(result).toContain('InnBucks');
-    expect(result.toLowerCase()).toContain('not available');
+    const responseText = typeof result === 'string' ? result : result.body;
+    expect(responseText).toContain('InnBucks');
+    expect(responseText.toLowerCase()).toContain('not available');
   });
 
   // =========================================================================
