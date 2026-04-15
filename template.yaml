@@ -145,6 +145,15 @@ Parameters:
     NoEcho: true
     Default: ""
 
+  WhatsAppExpectedDisplayNumber:
+    Type: String
+    Description: >-
+      Human-readable WhatsApp Business number (e.g. "+263 71 925 2094")
+      that the configured Phone Number ID must resolve to. Used by the
+      /whatsapp/health?deep=true endpoint to assert the Lambda is bound
+      to the intended number. Leave empty to skip the assertion.
+    Default: ""
+
   MetaAppSecret:
     Type: String
     Description: Meta App Secret for webhook HMAC signature validation
@@ -427,6 +436,7 @@ Resources:
           WHATSAPP_ACCESS_TOKEN: !Ref WhatsAppAccessToken
           WHATSAPP_WEBHOOK_VERIFY_TOKEN: !Ref WhatsAppWebhookVerifyToken
           WHATSAPP_BUSINESS_ACCOUNT_ID: !Ref WhatsAppBusinessAccountId
+          WHATSAPP_EXPECTED_DISPLAY_NUMBER: !Ref WhatsAppExpectedDisplayNumber
           META_APP_SECRET: !Ref MetaAppSecret
           SCORING_API_URL: !Ref ScoringApiUrl
           KYC_API_URL: !Ref KycApiUrl

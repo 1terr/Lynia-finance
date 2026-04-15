@@ -349,6 +349,7 @@ jobs:
           WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
           WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
+          WA_EXPECTED_NUMBER="${WHATSAPP_EXPECTED_DISPLAY_NUMBER:-}"
           META_SECRET="${META_APP_SECRET:-placeholder}"
           DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
           DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
@@ -383,6 +384,7 @@ jobs:
               "WhatsAppAccessToken=${WA_TOKEN}" \
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
               "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
+              "WhatsAppExpectedDisplayNumber=${WA_EXPECTED_NUMBER}" \
               "MetaAppSecret=${META_SECRET}" \
               "DiditApiKey=${DIDIT_KEY}" \
               "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
@@ -403,6 +405,7 @@ jobs:
           WHATSAPP_TOKEN: ${{ secrets.STAGING_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
           WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.STAGING_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          WHATSAPP_EXPECTED_DISPLAY_NUMBER: ${{ secrets.STAGING_WHATSAPP_EXPECTED_DISPLAY_NUMBER }}
           META_APP_SECRET: ${{ secrets.STAGING_META_APP_SECRET }}
           DIDIT_API_KEY: ${{ secrets.STAGING_DIDIT_API_KEY }}
           DIDIT_WEBHOOK_SECRET: ${{ secrets.STAGING_DIDIT_WEBHOOK_SECRET }}
@@ -614,6 +617,10 @@ jobs:
           WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
           WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
+          # Defaults to the live Lynia Business number so production self-asserts
+          # the Phone Number ID binding even if the secret is unset. See
+          # docs/external-integrations/WHATSAPP-BUSINESS-NUMBER-VERIFICATION.md
+          WA_EXPECTED_NUMBER="${WHATSAPP_EXPECTED_DISPLAY_NUMBER:-+263 71 925 2094}"
           META_SECRET="${META_APP_SECRET:-placeholder}"
           DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
           DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
@@ -649,6 +656,7 @@ jobs:
               "WhatsAppAccessToken=${WA_TOKEN}" \
               "WhatsAppWebhookVerifyToken=${WA_WEBHOOK}" \
               "WhatsAppBusinessAccountId=${WA_BIZ_ACCT}" \
+              "WhatsAppExpectedDisplayNumber=${WA_EXPECTED_NUMBER}" \
               "MetaAppSecret=${META_SECRET}" \
               "DiditApiKey=${DIDIT_KEY}" \
               "DiditWebhookSecret=${DIDIT_WH_SECRET}" \
@@ -669,6 +677,7 @@ jobs:
           WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
           WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
           WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          WHATSAPP_EXPECTED_DISPLAY_NUMBER: ${{ secrets.PRODUCTION_WHATSAPP_EXPECTED_DISPLAY_NUMBER }}
           META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
           DIDIT_API_KEY: ${{ secrets.PRODUCTION_DIDIT_API_KEY }}
           DIDIT_WEBHOOK_SECRET: ${{ secrets.PRODUCTION_DIDIT_WEBHOOK_SECRET }}

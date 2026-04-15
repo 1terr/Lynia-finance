@@ -13,6 +13,7 @@ import { getSecurityHeaders } from '../../shared/utils/response';
 import { logger, setRequestContext } from '../../shared/utils/logger';
 import { verifyWebhook, handleWebhook } from './webhook-handler';
 import { sendMessage } from './message-sender';
+import { verifyConnection } from './connection-check';
 
 // Re-export all modules for backwards compatibility
 export { verifyWebhook, validateWebhookSignature, handleWebhook } from './webhook-handler';
@@ -26,6 +27,8 @@ export {
   updateMessageStatus,
   sanitizePhoneNumber,
 } from './message-sender';
+export { verifyConnection, normalizePhoneNumber } from './connection-check';
+export type { ConnectionCheckResult } from './connection-check';
 
 /**
  * WhatsApp Service Lambda Handler
@@ -42,11 +45,34 @@ export const handler = async (
     const path = event.path;
     const method = event.httpMethod;
 
-    // Health check (unauthenticated, lightweight)
+    // Health check (unauthenticated)
+    //
+    // Shallow (default):  lightweight liveness probe, no external calls.
+    // Deep (?deep=true):  hits Graph API to confirm the Lambda is wired to
+    //                     the configured Phone Number ID and, when
+    //                     WHATSAPP_EXPECTED_DISPLAY_NUMBER is set, that the
+    //                     number Meta reports matches the expected business
+    //                     number. Used by operator smoke tests and the
+    //                     WhatsApp cutover runbook.
     if (path === '/whatsapp/health' && method === 'GET') {
+      const deep = event.queryStringParameters?.deep === 'true';
+      if (!deep) {
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ status: 'ok', service: 'whatsapp-service', timestamp: new Date().toISOString() }),
+          headers: { 'Content-Type': 'application/json', ...getSecurityHeaders(event) },
+        };
+      }
+
+      const check = await verifyConnection();
       return {
-        statusCode: 200,
-        body: JSON.stringify({ status: 'ok', service: 'whatsapp-service', timestamp: new Date().toISOString() }),
+        statusCode: check.connected ? 200 : 503,
+        body: JSON.stringify({
+          status: check.connected ? 'ok' : 'degraded',
+          service: 'whatsapp-service',
+          timestamp: new Date().toISOString(),
+          connection: check,
+        }),
         headers: { 'Content-Type': 'application/json', ...getSecurityHeaders(event) },
       };
     }

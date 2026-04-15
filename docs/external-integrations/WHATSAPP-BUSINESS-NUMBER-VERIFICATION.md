@@ -231,6 +231,100 @@ Only run this section if Step 1 shows the old test number
 
 ---
 
+## Step 7 - Automated operator verification (recommended)
+
+Rather than running Steps 2-5 manually, use the operator script which
+calls both the Graph API and the Lambda deep health endpoint in one pass:
+
+```bash
+# Default: production environment, expected number +263 71 925 2094
+bash scripts/verify-whatsapp-connection.sh
+
+# Staging
+ENVIRONMENT=staging bash scripts/verify-whatsapp-connection.sh
+
+# Override if you already have credentials in the shell
+WA_TOKEN="$MY_TOKEN" PHONE_NUMBER_ID="1008788982315015" \
+  bash scripts/verify-whatsapp-connection.sh
+
+# Skip the live Lambda call (Graph API only)
+SKIP_LIVE_CALL=1 bash scripts/verify-whatsapp-connection.sh
+```
+
+The script exits `0` only when **all** of the following are true:
+
+1. `display_phone_number` matches the expected business number (`+263 71 925 2094`)
+2. `quality_rating` is `GREEN`
+3. `code_verification_status` is `VERIFIED`
+4. Lambda `/whatsapp/health?deep=true` returns `connection.connected = true`
+
+**Exit codes**: `0` = all pass · `1` = Graph API mismatch · `2` = Lambda health failure · `3` = AWS/dependency error
+
+---
+
+## Step 8 - Lambda deep health check endpoint
+
+The deployed Lambda exposes a self-verification endpoint that calls the
+same Graph API checks from inside AWS:
+
+```bash
+# Resolve the API base URL
+API_URL=$(aws cloudformation describe-stacks \
+  --stack-name lynia-finance-prod \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiGatewayUrl'].OutputValue" \
+  --output text)
+
+curl -sS "${API_URL}whatsapp/health?deep=true" | jq
+```
+
+**Healthy response** (`HTTP 200`):
+
+```json
+{
+  "status": "ok",
+  "service": "whatsapp-service",
+  "timestamp": "2026-04-15T10:00:00.000Z",
+  "connection": {
+    "connected": true,
+    "phoneNumberId": "1008788982315015",
+    "displayPhoneNumber": "+263 71 925 2094",
+    "verifiedName": "Lynia Finance",
+    "qualityRating": "GREEN",
+    "codeVerificationStatus": "VERIFIED",
+    "expectedDisplayNumber": "+263 71 925 2094",
+    "matchesExpected": true,
+    "error": null
+  }
+}
+```
+
+**Unhealthy response** (`HTTP 503`):
+
+```json
+{
+  "status": "degraded",
+  "service": "whatsapp-service",
+  "connection": {
+    "connected": false,
+    "error": "display_phone_number mismatch: ..."
+  }
+}
+```
+
+**How `matchesExpected` is set**: the Lambda reads the
+`WHATSAPP_EXPECTED_DISPLAY_NUMBER` environment variable (wired from the
+`WhatsAppExpectedDisplayNumber` CloudFormation parameter). In
+production, this is hardcoded to `+263 71 925 2094` in the deploy
+workflow so the self-assertion is always active.
+
+| `matchesExpected` value | Meaning |
+|---|---|
+| `true` | Meta agrees: this Phone Number ID resolves to `+263 71 925 2094` |
+| `false` | **Mismatch** — wrong number registered on Meta side |
+| `null` | Env var not set — no assertion made (staging with no override) |
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
@@ -256,6 +350,8 @@ Mark every box before declaring the business number live:
 [ ] Step 4: Test message from a personal device receives an automated bot reply within 5s
 [ ] Step 4: CloudWatch logs show webhook.received -> signature.verified -> onboarding.state.entered -> whatsapp.outbound
 [ ] Step 5: Landing page FAB and /contact page both route to wa.me/263719252094
+[ ] Step 7/8: `bash scripts/verify-whatsapp-connection.sh` exits 0 (all checks green)
+[ ] Step 8: GET /whatsapp/health?deep=true returns HTTP 200 with connected=true and matchesExpected=true
 [ ] Screenshots captured and attached to the verification ticket
 [ ] Old test number (+1 555 191 0708) detached or deleted from production WABA
 ```
@@ -272,3 +368,5 @@ with date, operator, and any deviations.
 - `docs/ON-CALL-RUNBOOK.md` - general incident response
 - `landing-page/frontend/lib/constants.ts` - single source of truth for the WhatsApp link
 - `services/whatsapp-service/README.md` - bot state machine and webhook handler
+- `services/whatsapp-service/src/connection-check.ts` - Lambda-side Graph API verifier
+- `scripts/verify-whatsapp-connection.sh` - operator CLI (combines Graph API + Lambda health check)
