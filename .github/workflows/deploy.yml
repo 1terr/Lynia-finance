@@ -677,10 +677,11 @@ jobs:
           WA_TOKEN="${WHATSAPP_TOKEN:-placeholder}"
           WA_WEBHOOK="${WEBHOOK_TOKEN:-placeholder}"
           WA_BIZ_ACCT="${WHATSAPP_BUSINESS_ACCOUNT_ID:-placeholder}"
-          # Defaults to the live Lynia Business number so production self-asserts
-          # the Phone Number ID binding even if the secret is unset. See
+          # Hard-coded to the live Lynia Business number for production.
+          # This ensures the health check always verifies the correct number
+          # is bound to the backend. See
           # docs/external-integrations/WHATSAPP-BUSINESS-NUMBER-VERIFICATION.md
-          WA_EXPECTED_NUMBER="${WHATSAPP_EXPECTED_DISPLAY_NUMBER:-+263 71 925 2094}"
+          WA_EXPECTED_NUMBER="+263 71 925 2094"
           META_SECRET="${META_APP_SECRET:-placeholder}"
           DIDIT_KEY="${DIDIT_API_KEY:-placeholder}"
           DIDIT_WH_SECRET="${DIDIT_WEBHOOK_SECRET:-placeholder}"
