@@ -294,7 +294,7 @@ describe('WhatsApp Onboarding', () => {
       const activeSession = createSession({
         phone_number: '+1234567890',
         current_state: 'welcome',
-        state_data: { started_at: new Date().toISOString(), retry_count: 0 },
+        state_data: { started_at: new Date().toISOString(), retry_count: 0, language_selection_shown: true, preferred_language: 'en' },
       });
 
       // getOrCreateSession select
@@ -314,7 +314,7 @@ describe('WhatsApp Onboarding', () => {
       const activeSession = createSession({
         phone_number: '026377123',
         current_state: 'welcome',
-        state_data: { started_at: new Date().toISOString(), retry_count: 0 },
+        state_data: { started_at: new Date().toISOString(), retry_count: 0, language_selection_shown: true, preferred_language: 'en' },
       });
 
       mockQueryBuilder.execute.mockResolvedValueOnce({
