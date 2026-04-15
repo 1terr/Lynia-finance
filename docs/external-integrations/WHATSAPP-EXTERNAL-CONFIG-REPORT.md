@@ -82,7 +82,7 @@ All 10 WhatsApp-related secrets are configured:
 | Meta App ID | `919783197240242` |
 | WABA ID | `1589372019465976` |
 | Phone Number ID | `1008788982315015` |
-| Test Number | +1 555 191 0708 |
+| Business Number | +263 71 925 2094 |
 | Webhook URL | `https://kly80hrgca.execute-api.us-east-1.amazonaws.com/Prod/whatsapp/webhook` |
 | Lambda Function | `production-lynia-whatsapp-service` |
 | Log Group | `/aws/lambda/production-lynia-whatsapp-service` |
