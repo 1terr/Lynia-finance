@@ -11,6 +11,11 @@ on:
         options:
           - staging
           - production
+      force_deploy_without_wa:
+        description: 'Deploy to production even if WhatsApp Business secrets are missing (emergency use only - bot will be offline)'
+        required: false
+        default: false
+        type: boolean
   push:
     branches:
       - master
@@ -342,6 +347,31 @@ jobs:
           echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
           echo "kyc_api_url=$KYC_API_URL" >> $GITHUB_OUTPUT
 
+      - name: Check WhatsApp credentials are wired
+        id: check-wa-staging
+        run: |
+          # Warn loudly (not fail) if any WhatsApp secret is missing so the
+          # deep health check at the end of this job is expected to fail.
+          # Required to actually connect the Lynia WhatsApp Business number
+          # to the backend for automated bot responses.
+          MISSING=()
+          [ -z "${STAGING_WHATSAPP_PHONE_ID}" ] && MISSING+=("STAGING_WHATSAPP_PHONE_ID")
+          [ -z "${STAGING_WHATSAPP_TOKEN}" ] && MISSING+=("STAGING_WHATSAPP_TOKEN")
+          [ -z "${STAGING_WEBHOOK_TOKEN}" ] && MISSING+=("STAGING_WEBHOOK_TOKEN")
+          [ -z "${STAGING_META_APP_SECRET}" ] && MISSING+=("STAGING_META_APP_SECRET")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            echo "::warning::WhatsApp bot will NOT respond to messages until these secrets are set: ${MISSING[*]}"
+            echo "wa_wired=false" >> $GITHUB_OUTPUT
+          else
+            echo "All WhatsApp secrets present - bot should be reachable after deploy"
+            echo "wa_wired=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          STAGING_WHATSAPP_PHONE_ID: ${{ secrets.STAGING_WHATSAPP_PHONE_ID }}
+          STAGING_WHATSAPP_TOKEN: ${{ secrets.STAGING_WHATSAPP_TOKEN }}
+          STAGING_WEBHOOK_TOKEN: ${{ secrets.STAGING_WEBHOOK_TOKEN }}
+          STAGING_META_APP_SECRET: ${{ secrets.STAGING_META_APP_SECRET }}
+
       - name: SAM Deploy to Staging
         run: |
           # Shell-level fallbacks for secrets (GitHub Actions || operator unreliable for empty secrets)
@@ -450,6 +480,27 @@ jobs:
           # Payment service
           HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/payments/health" || echo "000")
           echo "Payment service: $HTTP_CODE"
+
+          # WhatsApp deep health check - proves the Lambda is bound to the
+          # configured Meta Phone Number ID and (when WhatsAppExpectedDisplayNumber
+          # is set) that Meta reports the expected business number. This is
+          # the only thing that actually verifies the WhatsApp bot will reply
+          # to incoming customer messages. Only runs when WA secrets were wired.
+          if [ "${{ steps.check-wa-staging.outputs.wa_wired }}" = "true" ]; then
+            WA_RESPONSE=$(curl -s --max-time 15 "$API_URL/whatsapp/health?deep=true" || echo '{}')
+            WA_CONNECTED=$(echo "$WA_RESPONSE" | jq -r '.connection.connected // false')
+            WA_DISPLAY=$(echo "$WA_RESPONSE" | jq -r '.connection.displayPhoneNumber // empty')
+            WA_NAME=$(echo "$WA_RESPONSE" | jq -r '.connection.verifiedName // empty')
+            if [ "$WA_CONNECTED" = "true" ]; then
+              echo "WhatsApp bot connected: $WA_DISPLAY ($WA_NAME)"
+            else
+              WA_ERROR=$(echo "$WA_RESPONSE" | jq -r '.connection.error // "unknown"')
+              echo "::warning::WhatsApp bot NOT connected in staging: $WA_ERROR"
+              FAILED=1
+            fi
+          else
+            echo "::notice::Skipping WhatsApp deep health check (secrets not wired)"
+          fi
 
           if [ "$FAILED" -eq 1 ]; then
             echo "::warning::Some smoke tests failed - review before promoting to production"
@@ -610,6 +661,42 @@ jobs:
           echo "whatsapp_api_url=$WHATSAPP_API_URL" >> $GITHUB_OUTPUT
           echo "kyc_api_url=$KYC_API_URL" >> $GITHUB_OUTPUT
 
+      - name: Check WhatsApp credentials are wired
+        id: check-wa-prod
+        run: |
+          # Hard gate: a production deploy without the WhatsApp Business
+          # credentials would silently ship a broken bot to real customers.
+          # The landing page WhatsApp button points at +263 71 925 2094 and
+          # clicks must reach the bot, so we fail fast if the secrets are
+          # missing. Override by dispatching with the force_deploy_without_wa
+          # input set to true, for emergency deploys only.
+          MISSING=()
+          [ -z "${PRODUCTION_WHATSAPP_PHONE_ID}" ] && MISSING+=("PRODUCTION_WHATSAPP_PHONE_ID")
+          [ -z "${PRODUCTION_WHATSAPP_TOKEN}" ] && MISSING+=("PRODUCTION_WHATSAPP_TOKEN")
+          [ -z "${PRODUCTION_WEBHOOK_TOKEN}" ] && MISSING+=("PRODUCTION_WEBHOOK_TOKEN")
+          [ -z "${PRODUCTION_META_APP_SECRET}" ] && MISSING+=("PRODUCTION_META_APP_SECRET")
+          [ -z "${PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID}" ] && MISSING+=("PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID")
+          if [ ${#MISSING[@]} -gt 0 ]; then
+            if [ "${FORCE_DEPLOY_WITHOUT_WA}" = "true" ]; then
+              echo "::warning::force_deploy_without_wa=true - deploying anyway. Missing: ${MISSING[*]}"
+              echo "wa_wired=false" >> $GITHUB_OUTPUT
+            else
+              echo "::error::Cannot deploy to production: missing WhatsApp secrets: ${MISSING[*]}"
+              echo "::error::Set them in repo Settings > Secrets, or re-run with force_deploy_without_wa=true"
+              exit 1
+            fi
+          else
+            echo "All WhatsApp Business secrets present - bot will be live after deploy"
+            echo "wa_wired=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          PRODUCTION_WHATSAPP_PHONE_ID: ${{ secrets.PRODUCTION_WHATSAPP_PHONE_ID }}
+          PRODUCTION_WHATSAPP_TOKEN: ${{ secrets.PRODUCTION_WHATSAPP_TOKEN }}
+          PRODUCTION_WEBHOOK_TOKEN: ${{ secrets.PRODUCTION_WEBHOOK_TOKEN }}
+          PRODUCTION_META_APP_SECRET: ${{ secrets.PRODUCTION_META_APP_SECRET }}
+          PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID: ${{ secrets.PRODUCTION_WHATSAPP_BUSINESS_ACCOUNT_ID }}
+          FORCE_DEPLOY_WITHOUT_WA: ${{ github.event.inputs.force_deploy_without_wa }}
+
       - name: SAM Deploy to Production
         run: |
           # Shell-level fallbacks for secrets (GitHub Actions || operator unreliable for empty secrets)
@@ -716,6 +803,34 @@ jobs:
               FAILED=1
             fi
           done
+
+          # WhatsApp deep health check - confirms the production Lambda is
+          # bound to +263 71 925 2094 (WhatsAppExpectedDisplayNumber) and
+          # that Meta reports the WhatsApp Business number as connected.
+          # This is the single authoritative signal that the WhatsApp bot
+          # will actually respond to customer messages post-deploy.
+          if [ "${{ steps.check-wa-prod.outputs.wa_wired }}" = "true" ]; then
+            echo "--- WhatsApp Business connection check ---"
+            WA_RESPONSE=$(curl -s --max-time 15 "$API_URL/whatsapp/health?deep=true" || echo '{}')
+            WA_CONNECTED=$(echo "$WA_RESPONSE" | jq -r '.connection.connected // false')
+            WA_MATCHES=$(echo "$WA_RESPONSE" | jq -r '.connection.matchesExpected // null')
+            WA_DISPLAY=$(echo "$WA_RESPONSE" | jq -r '.connection.displayPhoneNumber // empty')
+            WA_NAME=$(echo "$WA_RESPONSE" | jq -r '.connection.verifiedName // empty')
+            WA_QUALITY=$(echo "$WA_RESPONSE" | jq -r '.connection.qualityRating // empty')
+            if [ "$WA_CONNECTED" = "true" ]; then
+              echo "whatsapp: connected to $WA_DISPLAY ($WA_NAME, quality=$WA_QUALITY)"
+              if [ "$WA_MATCHES" = "false" ]; then
+                echo "::error::WhatsApp Phone Number ID resolves to the wrong business number!"
+                FAILED=1
+              fi
+            else
+              WA_ERROR=$(echo "$WA_RESPONSE" | jq -r '.connection.error // "unknown"')
+              echo "::error::WhatsApp bot NOT connected: $WA_ERROR"
+              FAILED=1
+            fi
+          else
+            echo "::warning::Skipping WhatsApp deep health check (deploy proceeded without WA secrets)"
+          fi
 
           echo "failed=$FAILED" >> $GITHUB_OUTPUT
 
