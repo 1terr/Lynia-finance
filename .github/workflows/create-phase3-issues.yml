@@ -14,7 +14,7 @@ jobs:
     if: github.event.inputs.confirm == 'create'
     steps:
       - name: Create Phase 3 Labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const labels = [
@@ -60,7 +60,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T001 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -121,7 +121,7 @@ jobs:
             });
 
       - name: Create P3-T002 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -178,7 +178,7 @@ jobs:
             });
 
       - name: Create P3-T003 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -235,7 +235,7 @@ jobs:
             });
 
       - name: Create P3-T004 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -291,7 +291,7 @@ jobs:
             });
 
       - name: Create P3-T005 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -344,7 +344,7 @@ jobs:
             });
 
       - name: Create P3-T006 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -397,7 +397,7 @@ jobs:
             });
 
       - name: Create P3-T007 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -450,7 +450,7 @@ jobs:
             });
 
       - name: Create P3-T008 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -505,7 +505,7 @@ jobs:
             });
 
       - name: Create P3-T009 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -558,7 +558,7 @@ jobs:
             });
 
       - name: Create P3-T010 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -617,7 +617,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T011 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -670,7 +670,7 @@ jobs:
             });
 
       - name: Create P3-T012 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -733,7 +733,7 @@ jobs:
             });
 
       - name: Create P3-T013 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -788,7 +788,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T014 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -844,7 +844,7 @@ jobs:
             });
 
       - name: Create P3-T015 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -901,7 +901,7 @@ jobs:
             });
 
       - name: Create P3-T016 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -956,7 +956,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T017 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1009,7 +1009,7 @@ jobs:
             });
 
       - name: Create P3-T018 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1066,7 +1066,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T019 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1113,7 +1113,7 @@ jobs:
             });
 
       - name: Create P3-T020 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1170,7 +1170,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T021 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1217,7 +1217,7 @@ jobs:
             });
 
       - name: Create P3-T022 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1274,7 +1274,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T023 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1321,7 +1321,7 @@ jobs:
             });
 
       - name: Create P3-T024 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1380,7 +1380,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T025 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1434,7 +1434,7 @@ jobs:
             });
 
       - name: Create P3-T026 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1487,7 +1487,7 @@ jobs:
             });
 
       - name: Create P3-T027 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1545,7 +1545,7 @@ jobs:
       # ============================================
 
       - name: Create P3-T028 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
@@ -1598,7 +1598,7 @@ jobs:
             });
 
       - name: Create P3-T029 Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             await github.rest.issues.create({
