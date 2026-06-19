@@ -102,7 +102,7 @@ jobs:
 
       - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-results-${{ matrix.task }}
           path: |
@@ -113,7 +113,7 @@ jobs:
 
       - name: Archive Progressive Loan JAR
         if: matrix.job_type == 'progressive-loan' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: progressive-loan-jar
           path: ${{ env.EMBEDDABLE_JAR_FILE }}
@@ -122,7 +122,7 @@ jobs:
 
       - name: Archive server logs
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: server-logs-${{ matrix.task }}
           path: '**/build/cargo/'
